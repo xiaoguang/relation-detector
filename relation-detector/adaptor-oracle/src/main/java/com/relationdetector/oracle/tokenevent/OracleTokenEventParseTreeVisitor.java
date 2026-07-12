@@ -24,6 +24,20 @@ public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWrit
     }
 
     @Override
+    public Void visitCreateTriggerStatement(OracleRelationSqlParser.CreateTriggerStatementContext ctx) {
+        routineScope.enterRoutine();
+        String targetTable = qualifiedName(ctx.qualifiedName(1));
+        String targetName = baseName(targetTable);
+        emitter.addRowset(events, ctx, StructuredParseEventType.TRIGGER_TARGET_TABLE,
+                "TRIGGER", targetTable, targetName, "", "", targetTable, "");
+        emitter.addRowset(events, ctx, StructuredParseEventType.TRIGGER_PSEUDO_ROWSET,
+                "TRIGGER", targetTable, targetName, "NEW", "NEW", targetTable, "");
+        emitter.addRowset(events, ctx, StructuredParseEventType.TRIGGER_PSEUDO_ROWSET,
+                "TRIGGER", targetTable, targetName, "OLD", "OLD", targetTable, "");
+        return null;
+    }
+
+    @Override
     public Void visitBlockEndStatement(OracleRelationSqlParser.BlockEndStatementContext ctx) {
         routineScope.leaveRoutineEnd(ctx.IF() != null || ctx.LOOP() != null
                 || ctx.WHILE() != null || ctx.REPEAT() != null);

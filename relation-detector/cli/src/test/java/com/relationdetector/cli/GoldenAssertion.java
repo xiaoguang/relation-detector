@@ -53,7 +53,10 @@ final class GoldenAssertion {
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")) {
-            writer.writeRelations(fixture, actualFingerprints.stream().toList(), expected.forbiddenTables());
+            if (!Files.exists(fixture.expectedRelationsFile())
+                    || !new TreeSet<>(expected.fingerprints()).equals(actualFingerprints)) {
+                writer.writeRelations(fixture, actualFingerprints.stream().toList(), expected.forbiddenTables());
+            }
             return;
         }
         TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
@@ -87,7 +90,12 @@ final class GoldenAssertion {
             }
         }
         if (Boolean.getBoolean("updateCorrectnessGold") && Files.exists(fixture.inputFile())) {
-            writer.writeDiagnostics(fixture, fixtureSha256ForDiagnostics(fixture, expected), actualCodes);
+            String fixtureSha256 = fixtureSha256ForDiagnostics(fixture, expected);
+            if (!Files.exists(fixture.expectedDiagnosticsFile())
+                    || !expected.fixtureSha256().equals(fixtureSha256)
+                    || !expected.warningCodes().equals(actualCodes)) {
+                writer.writeDiagnostics(fixture, fixtureSha256, actualCodes);
+            }
             return;
         }
         assertEquals(expected.warningCodes(), actualCodes,
@@ -111,12 +119,15 @@ final class GoldenAssertion {
                 .toList();
         if (Boolean.getBoolean("updateCorrectnessGold")
                 && (expected.exists() || !actualFingerprints.isEmpty())) {
-            writer.writeLineage(
-                    fixture,
-                    new TreeSet<>(actualFingerprints).stream().toList(),
-                    expected.forbiddenSources(),
-                    expected.forbiddenTargets(),
-                    expected.warningCodes());
+            TreeSet<String> actualFingerprintSet = new TreeSet<>(actualFingerprints);
+            if (!expected.exists() || !new TreeSet<>(expected.fingerprints()).equals(actualFingerprintSet)) {
+                writer.writeLineage(
+                        fixture,
+                        actualFingerprintSet.stream().toList(),
+                        expected.forbiddenSources(),
+                        expected.forbiddenTargets(),
+                        expected.warningCodes());
+            }
             return;
         }
         if (!expected.exists()) {
@@ -158,7 +169,9 @@ final class GoldenAssertion {
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")
                 && (expected.exists() || !actualFingerprints.isEmpty())) {
-            writer.writeNamingEvidence(fixture, actualFingerprints.stream().toList());
+            if (!expected.exists() || !new TreeSet<>(expected.fingerprints()).equals(actualFingerprints)) {
+                writer.writeNamingEvidence(fixture, actualFingerprints.stream().toList());
+            }
             return;
         }
         if (!expected.exists()) {

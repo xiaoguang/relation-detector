@@ -2,7 +2,7 @@
   "fingerprints": [
     "CO_OCCURRENCE:contracts.prepared_by->employees.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:employees.id->tax_filings.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE",
     "CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN",
     "FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
@@ -10,20 +10,20 @@
     "FK_LIKE:cashier_journals.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
     "FK_LIKE:departments.parent_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE,TRIGGER_REFERENCE",
+    "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE",
+    "FK_LIKE:inventory_transactions.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH",
     "FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "FK_LIKE:projects.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:promotion_products.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE",
     "FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_returns.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:reconciliations.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE,TRIGGER_REFERENCE",
+    "FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE",
     "FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:service_tickets.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:settlements.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH",
@@ -34,5 +34,5 @@
     "FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:work_order_materials.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

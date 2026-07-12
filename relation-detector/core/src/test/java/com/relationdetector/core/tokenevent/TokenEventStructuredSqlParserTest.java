@@ -78,6 +78,26 @@ class TokenEventStructuredSqlParserTest {
     }
 
     @Test
+    void triggerPredicateUsesTriggerReferenceEvidence() {
+        assertTriggerReference(record(
+                "SELECT 1 FROM orders o JOIN users u ON o.user_id = u.id",
+                StatementSourceType.TRIGGER));
+    }
+
+    @Test
+    void postgresTriggerFunctionPredicateUsesTriggerReferenceEvidence() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT 1 FROM orders o JOIN users u ON o.user_id = u.id",
+                StatementSourceType.FUNCTION,
+                "ROUTINE:public.trg_orders",
+                1,
+                1,
+                java.util.Map.of("routineReturnsTrigger", true));
+
+        assertTriggerReference(statement);
+    }
+
+    @Test
     void relationExtractionVisitorResolvesLineageAwareRelations() {
         String sql = """
                 WITH recent_orders AS (
@@ -218,5 +238,20 @@ class TokenEventStructuredSqlParserTest {
 
     private SqlStatementRecord record(String sql, StatementSourceType sourceType) {
         return new SqlStatementRecord(sql, sourceType, "antlr-test.sql", 1, 1, java.util.Map.of());
+    }
+
+    private void assertTriggerReference(SqlStatementRecord statement) {
+        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES)
+                .parseSql(statement, null);
+        List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor()
+                .extract(statement, result);
+
+        assertTrue(relationships.stream().anyMatch(relation ->
+                        relation.source().displayName().equals("orders.user_id")
+                                && relation.target().displayName().equals("users.id")
+                                && relation.evidence().stream().anyMatch(evidence ->
+                                evidence.type()
+                                        == com.relationdetector.contracts.Enums.EvidenceType.TRIGGER_REFERENCE)),
+                () -> "trigger predicate must use TRIGGER_REFERENCE: " + relationships);
     }
 }

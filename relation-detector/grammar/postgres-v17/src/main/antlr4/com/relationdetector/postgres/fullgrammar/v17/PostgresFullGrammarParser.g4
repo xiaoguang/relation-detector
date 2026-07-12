@@ -1911,7 +1911,11 @@ nulls_order_
 createfunctionstmt
     : CREATE or_replace_? (FUNCTION | PROCEDURE) func_name func_args_with_defaults (
         RETURNS (func_return | TABLE OPEN_PAREN table_func_column_list CLOSE_PAREN)
-    )? createfunc_opt_list
+    )? (createfunc_opt_list routine_sql_body? | routine_sql_body)
+    ;
+
+routine_sql_body
+    : BEGIN_P ATOMIC stmtmulti END_P
     ;
 
 or_replace_

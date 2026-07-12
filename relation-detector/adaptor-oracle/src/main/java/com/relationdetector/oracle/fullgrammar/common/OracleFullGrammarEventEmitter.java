@@ -42,6 +42,19 @@ final class OracleFullGrammarEventEmitter extends OracleFullGrammarParseTreeSupp
         }
     }
 
+    void emitTriggerTarget(ParserRuleContext ctx, String targetTable) {
+        if (targetTable.isBlank()) {
+            return;
+        }
+        String targetName = core.baseName(targetTable);
+        core.rowset(ctx, StructuredParseEventType.TRIGGER_TARGET_TABLE,
+                "TRIGGER", targetTable, targetName, "", "", targetTable, "");
+        core.rowset(ctx, StructuredParseEventType.TRIGGER_PSEUDO_ROWSET,
+                "TRIGGER", targetTable, targetName, "NEW", "NEW", targetTable, "");
+        core.rowset(ctx, StructuredParseEventType.TRIGGER_PSEUDO_ROWSET,
+                "TRIGGER", targetTable, targetName, "OLD", "OLD", targetTable, "");
+    }
+
     void endWriteTarget() {
         writeTargetAliases.pop();
         writeTargetTables.pop();

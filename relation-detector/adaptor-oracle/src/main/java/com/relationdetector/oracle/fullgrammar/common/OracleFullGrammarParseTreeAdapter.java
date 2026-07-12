@@ -11,6 +11,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public interface OracleFullGrammarParseTreeAdapter {
     enum Role {
         ROUTINE_BODY,
+        CREATE_TRIGGER,
+        DML_EVENT_CLAUSE,
+        BIND_VARIABLE,
         CTE,
         CREATE_TABLE,
         ALTER_TABLE,

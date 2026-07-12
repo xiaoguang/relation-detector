@@ -1,4 +1,12 @@
 {
-  "fingerprints": [],
-  "forbiddenTables": []
+  "fingerprints": [
+    "CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE",
+    "CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE",
+    "CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE",
+    "FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH"
+  ],
+  "forbiddenTables": [ ]
 }

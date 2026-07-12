@@ -196,8 +196,19 @@ public final class StructuredDataLineageExtractor {
         // Preserve the identifier exactly as SQL wrote it. The scan namespace is
         // applied only when comparing this endpoint with cross-source facts.
         AliasSymbolTable aliases = new AliasSymbolTable(identifiers, NamespaceContext.empty());
+        Map<String, TableId> triggerPseudoTables = triggerPseudoTables(events, aliases);
         for (StructuredSqlEvent event : events) {
-            if (event.type() == StructuredParseEventType.ROWSET_REFERENCE || event.type() == StructuredParseEventType.WRITE_TARGET) {
+            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
+                String table = event.targetTable().isBlank() ? event.qualifiedTable() : event.targetTable();
+                if (!table.isBlank()) {
+                    TableId tableId = tableId(table);
+                    aliases.bind(event.name(), tableId);
+                    aliases.bind(event.alias(), tableId);
+                }
+                continue;
+            }
+            if (event.type() == StructuredParseEventType.ROWSET_REFERENCE
+                    || event.type() == StructuredParseEventType.WRITE_TARGET) {
                 String table = event.qualifiedTable();
                 if (table.isBlank()) {
                     table = event.table();
@@ -205,7 +216,8 @@ public final class StructuredDataLineageExtractor {
                 if (table.isBlank()) {
                     continue;
                 }
-                TableId tableId = tableId(table);
+                TableId tableId = triggerPseudoTables.getOrDefault(
+                        aliases.normalizeIdentifier(table), tableId(table));
                 aliases.bind(event.qualifiedTable(), tableId);
                 aliases.bind(event.table(), tableId);
                 String alias = event.alias();
@@ -215,6 +227,23 @@ public final class StructuredDataLineageExtractor {
             }
         }
         return aliases;
+    }
+
+    private Map<String, TableId> triggerPseudoTables(
+            List<StructuredSqlEvent> events,
+            AliasSymbolTable aliases
+    ) {
+        Map<String, TableId> result = new LinkedHashMap<>();
+        for (StructuredSqlEvent event : events) {
+            if (event.type() != StructuredParseEventType.TRIGGER_PSEUDO_ROWSET
+                    || event.targetTable().isBlank()) {
+                continue;
+            }
+            TableId table = tableId(event.targetTable());
+            result.put(aliases.normalizeIdentifier(event.name()), table);
+            result.put(aliases.normalizeIdentifier(event.alias()), table);
+        }
+        return result;
     }
 
     private ColumnRef targetColumn(StructuredSqlEvent event, AliasSymbolTable aliases) {

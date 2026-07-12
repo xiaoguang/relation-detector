@@ -178,7 +178,7 @@ sources:
 - `SQL_LOG_JOIN`
 - `SQL_LOG_EXISTS`
 - `SQL_LOG_SUBQUERY_IN`
-- `VIEW_JOIN` / `PROCEDURE_JOIN` / `TRIGGER_REFERENCE`，当未来独立产出时
+- 已独立产出的 `VIEW_JOIN` / `TRIGGER_REFERENCE`，以及兼容输入中的 `PROCEDURE_JOIN`
 - relationship 中引用了 top-level `NAMING_MATCH` 的候选
 
 默认只对 A 层画像。

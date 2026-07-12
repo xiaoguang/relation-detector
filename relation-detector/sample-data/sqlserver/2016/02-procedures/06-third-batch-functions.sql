@@ -92,6 +92,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_employee_performance_kpi]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT pr.[employee_id], pr.[reviewer_id], k.[id] AS [kpi_id], k.[target_value], pr.[overall_score] FROM [dbo].[performance_reviews] AS pr LEFT JOIN [dbo].[kpi_indicators] AS k ON k.[applicable_role_id] = pr.[employee_id]
+    SELECT pr.[employee_id], pr.[reviewer_id], k.[id] AS [kpi_id], k.[target_value], pr.[total_score]
+    FROM [dbo].[performance_reviews] AS pr
+    JOIN [dbo].[employee_roles] AS er ON er.[employee_id] = pr.[employee_id]
+    LEFT JOIN [dbo].[kpi_indicators] AS k ON k.[applicable_role_id] = er.[role_id]
 );
 -- relation-detector-fixture-end

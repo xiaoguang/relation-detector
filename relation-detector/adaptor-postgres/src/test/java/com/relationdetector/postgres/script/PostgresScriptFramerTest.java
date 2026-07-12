@@ -24,7 +24,10 @@ class PostgresScriptFramerTest {
 
         assertEquals(2, result.statements().size());
         assertTrue(result.statements().get(0).sql().contains("PERFORM '; $other$';"));
-        assertEquals(StatementSourceType.TRIGGER, result.statements().get(0).sourceType());
+        assertEquals(StatementSourceType.FUNCTION, result.statements().get(0).sourceType());
+        assertEquals("ROUTINE:app.refresh_rollup", result.statements().get(0).sourceName());
+        assertEquals("FUNCTION", result.statements().get(0).attributes().get("sourceObjectType"));
+        assertEquals(true, result.statements().get(0).attributes().get("routineReturnsTrigger"));
         assertEquals("app.refresh_rollup", result.statements().get(0).attributes().get("sourceObjectName"));
     }
 
@@ -48,10 +51,14 @@ class PostgresScriptFramerTest {
                 """, "sample-data/postgres/18/01-schema/03-triggers.sql", StatementSourceType.PROCEDURE));
 
         assertEquals(4, result.statements().size());
-        assertEquals(StatementSourceType.TRIGGER, result.statements().get(0).sourceType());
+        assertEquals(StatementSourceType.FUNCTION, result.statements().get(0).sourceType());
+        assertEquals("FUNCTION", result.statements().get(0).attributes().get("sourceObjectType"));
+        assertEquals(true, result.statements().get(0).attributes().get("routineReturnsTrigger"));
         assertEquals("trg_first", result.statements().get(0).attributes().get("sourceObjectName"));
         assertEquals("trg_first", result.statements().get(0).attributes().get("sourceStatementId"));
-        assertEquals(StatementSourceType.TRIGGER, result.statements().get(2).sourceType());
+        assertEquals(StatementSourceType.FUNCTION, result.statements().get(2).sourceType());
+        assertEquals("FUNCTION", result.statements().get(2).attributes().get("sourceObjectType"));
+        assertEquals(true, result.statements().get(2).attributes().get("routineReturnsTrigger"));
         assertEquals("trg_second", result.statements().get(2).attributes().get("sourceObjectName"));
     }
 }

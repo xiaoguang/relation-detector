@@ -17,7 +17,11 @@ import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.parse.DdlEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.identity.CanonicalEndpointKey;
+import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.relation.RelationshipMerger;
 
 class DdlEvidenceInventoryTest {
@@ -90,6 +94,35 @@ class DdlEvidenceInventoryTest {
                 "indexEndpoint", "shop.orders.customer_id"));
         assertTrue(hasEvidenceAttribute(merged, EvidenceType.TARGET_UNIQUE,
                 "uniqueEndpoint", "shop.customers.id"));
+        assertTrue(hasEvidenceAttribute(merged, EvidenceType.SOURCE_INDEX,
+                "endpointSide", "source"));
+        assertTrue(hasEvidenceAttribute(merged, EvidenceType.TARGET_UNIQUE,
+                "endpointSide", "target"));
+    }
+
+    @Test
+    void compositeUniqueMemberDoesNotEnhanceSingleColumnRelationship() {
+        DdlEvent firstMember = new DdlEvent(
+                StructuredParseEventType.DDL_INDEX,
+                SourceProvenance.source("tables.sql", 7),
+                "", "", "", "",
+                "shop.customers", "tenant_id", "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", 1, 2);
+        DdlEvent secondMember = new DdlEvent(
+                StructuredParseEventType.DDL_INDEX,
+                SourceProvenance.source("tables.sql", 7),
+                "", "", "", "",
+                "shop.customers", "external_id", "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", 2, 2);
+        DdlEvidenceInventory inventory = new DdlRelationExtractionVisitor().inventory(
+                List.of(firstMember, secondMember), EvidenceSourceType.DDL_FILE, "tables.sql");
+        RelationshipCandidate relationship = relationship(
+                "shop", "orders", "customer_external_id",
+                "shop", "customers", "external_id");
+
+        inventory.enhance(List.of(relationship));
+
+        assertFalse(relationship.evidence().stream().anyMatch(evidence ->
+                        evidence.type() == EvidenceType.TARGET_UNIQUE),
+                "A member of UNIQUE(tenant_id, external_id) is not independently unique");
     }
 
     private DdlEvidenceInventory.Observation observation(String source, String role, String kind) {

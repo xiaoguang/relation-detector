@@ -175,37 +175,24 @@ Oracle correctness 当前统计：
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 41 | 33 / 8 | 623 | 247 | 0 | 241 | 309 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v26ai | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
+| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
+| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
 
 `sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
 
-当前 sample-data CLI 专项对比为：
+当前 Oracle sample-data CLI 专项结果为；跨方言完整表只维护在
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)，避免多处复制后漂移：
 
-| Parser family | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
+| Parser family | Fixture | SQL / DDL | Rel | Lin | Direct Name | Diag |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 315 | 109 | 250 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 352 | 286 | 248 | 0 |
-| MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 330 | 281 | 244 | 0 |
-| MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 281 | 248 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
-| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
-| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
-| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 333 | 297 | 245 | 0 |
-| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| Oracle token-event root | 38 | 32 / 6 | 366 | 259 | 248 | 0 |
+| Oracle full-grammar v12c | 38 | 32 / 6 | 366 | 257 | 248 | 0 |
+| Oracle full-grammar v19c | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
+| Oracle full-grammar v21c | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
+| Oracle full-grammar v26ai | 38 | 32 / 6 | 366 | 259 | 248 | 0 |
 
 ## 后续收口
 

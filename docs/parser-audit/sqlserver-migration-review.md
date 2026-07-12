@@ -95,42 +95,29 @@ Current SQL Server per-fixture correctness output is still tracked by the correc
 
 | Golden group | Fixtures | SQL / DDL | Relations | Lineage | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server root token-event | 38 | 32 / 6 | 465 | 299 | 0 | 125 | 191 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
+| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
+| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
 
-SQL Server sample-data now keeps natural ERP business SQL at a density comparable to the other dialects; the high-density JOIN/EXISTS/IN relation-probe corpus lives under semantic-equivalent benchmark. Root token-event and versioned full-grammar produce the same lineage count; full-grammar produces more relationship and `NAMING_MATCH` evidence because the generated T-SQL parser exposes richer DDL and predicate context than the compact token-event fallback grammar. The five versioned full-grammar profiles match because the sample-data baseline intentionally uses a SQL Server 2016-compatible T-SQL subset.
+SQL Server sample-data keeps natural ERP business SQL at a density comparable to the other dialects; high-density JOIN/EXISTS/IN relation probes live under semantic-equivalent benchmark. Per-fixture correctness totals differ because versioned directories include profile and version-boundary fixtures. On the same 38-file natural sample-data scan, root token-event and all five full profiles have equal facts and semantic observations.
 
-Current merged sample-data CLI comparison:
+Current merged SQL Server sample-data CLI comparison; the complete cross-dialect table is maintained only in [`parser-comparison-summary.md`](parser-comparison-summary.md):
 
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 319 | 105 | 248 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 347 | 242 | 238 | 0 |
-| MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 337 | 264 | 242 | 0 |
-| MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 366 | 253 | 244 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
-| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
-| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
-| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 343 | 266 | 251 | 0 |
-| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
+| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
+| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
+| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
+| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
+| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
 
 The earlier low-count SQL Server surface was a sample-data asset gap: the directories had 38 files but only a thin subset of the ERP semantics. The current SQL Server sample-data now carries full schema, FK, procedure, trigger, natural query, data-generation and analytic coverage. Remaining cross-dialect count differences are parser coverage and dialect expression differences, not missing SQL Server ERP sample-data coverage.
 
-Current output audit note: SQL Server full-grammar has one remaining full-only weak relationship candidate, `dbo.accounting_periods.period_code -> dbo.sales_orders.order_date`, from `period_code = CONVERT(NVARCHAR(7), order_date, 120)` in the deep scenario data SQL. If `CO_OCCURRENCE` is intended to represent direct column equality only, this should be tightened in the full-grammar predicate collector; it is not a SQL asset gap.
+Current output audit note: the former full-only `period_code = CONVERT(...order_date...)` relationship was a false positive and has been removed. Direct equality now requires typed physical columns, or a projection alias proven to be a single direct-column trace. Trigger predicates use `TRIGGER_REFERENCE`; SQL Server FK targets no longer manufacture `REFERENCED_KEY` uniqueness evidence.
 
 ## 6. Parser Fixes Made
 

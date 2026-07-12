@@ -11,7 +11,7 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 | Total correctness fixtures | 1198 |
 | SQL fixtures | 984 |
 | DDL fixtures | 214 |
-| Fixtures with expected lineage | 411 |
+| Fixtures with expected lineage | 439 |
 | Common directory fixtures | 39 |
 | MySQL directory fixtures | 261 |
 | PostgreSQL directory fixtures | 449 |
@@ -70,7 +70,7 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:damage_report_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:damage_report_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:damage_report_items.report_id->damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -210,14 +210,14 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -348,7 +348,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:damage_report_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:damage_report_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:damage_report_items.report_id->damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -492,14 +492,14 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -603,25 +603,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -629,13 +629,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -651,7 +651,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -659,7 +659,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -689,24 +689,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -809,6 +809,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:DIRECT:customers.id->invoices.customer_id`
 - `VALUE:DIRECT:sales_orders.id->invoices.id`
 - `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
@@ -852,7 +853,7 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:contracts.prepared_by->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->tax_filings.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
 - `CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
@@ -860,20 +861,20 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:cashier_journals.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:departments.parent_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE,TRIGGER_REFERENCE`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
+- `FK_LIKE:inventory_transactions.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH`
 - `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
 - `FK_LIKE:projects.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
 - `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_returns.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:reconciliations.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE,TRIGGER_REFERENCE`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
 - `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:service_tickets.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -1009,6 +1010,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:DIRECT:customers.id->invoices.customer_id`
 - `VALUE:DIRECT:sales_orders.id->invoices.id`
 - `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
@@ -2195,14 +2197,14 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:employees.id->vouchers.prepared_by:TRIGGER_REFERENCE`
+- `FK_LIKE:employees.department_id->departments.id:TRIGGER_REFERENCE,NAMING_MATCH,TRIGGER_REFERENCE`
+- `FK_LIKE:inventory.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:TRIGGER_REFERENCE,NAMING_MATCH,TRIGGER_REFERENCE`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -2247,7 +2249,7 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:contracts.prepared_by->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->tax_filings.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
 - `CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
@@ -2255,20 +2257,20 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:cashier_journals.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:departments.parent_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE,TRIGGER_REFERENCE`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
+- `FK_LIKE:inventory_transactions.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH`
 - `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
 - `FK_LIKE:projects.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
 - `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_returns.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:reconciliations.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
-- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE,TRIGGER_REFERENCE`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,TRIGGER_REFERENCE`
 - `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:service_tickets.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -2547,6 +2549,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:DIRECT:customers.id->invoices.customer_id`
 - `VALUE:DIRECT:sales_orders.id->invoices.id`
 - `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
@@ -3177,8 +3180,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -3191,7 +3194,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -3199,13 +3202,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -3778,8 +3781,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -3792,7 +3795,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -3800,13 +3803,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -3978,7 +3981,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -4071,22 +4074,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -4147,7 +4150,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -4156,19 +4159,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -4177,7 +4180,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -4223,25 +4226,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -4249,13 +4252,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -4271,7 +4274,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -4279,7 +4282,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -4309,24 +4312,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -4855,8 +4858,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -4869,7 +4872,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -4877,13 +4880,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -5055,7 +5058,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -5148,22 +5151,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -5224,7 +5227,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -5233,19 +5236,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -5254,7 +5257,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -5300,25 +5303,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -5326,13 +5329,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -5348,7 +5351,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -5356,7 +5359,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -5386,24 +5389,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -5531,7 +5534,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -5624,22 +5627,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -5700,7 +5703,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -5709,19 +5712,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -5730,7 +5733,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -5776,25 +5779,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -5802,13 +5805,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -5824,7 +5827,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -5832,7 +5835,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -5862,24 +5865,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -7108,6 +7111,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -9621,6 +9626,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -10069,27 +10076,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:TRIGGER_REFERENCE,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
+- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:CONCAT_FORMAT:customers.balance,customers.credit_limit->audit_log.new_value`
+- `VALUE:CONCAT_FORMAT:salary_payments.salary_month->cashier_journals.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->inventory_transactions.remark`
+- `VALUE:DIRECT:customers.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
 - `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:purchase_requisitions.id->audit_log.target_id`
+- `VALUE:DIRECT:salary_payments.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->cashier_journals.amount`
+- `VALUE:DIRECT:salary_payments.payment_date->cashier_journals.journal_date`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->inventory_transactions.operator_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:FUNCTION_CALL:employees.name,employees.employee_no,employees.department_id,employees.salary,employees.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.old_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.old_value`
 
 **Forbidden Tables**
 
@@ -10134,9 +10161,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -10281,9 +10314,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -10337,6 +10373,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
@@ -10659,6 +10696,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -10791,12 +10830,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
@@ -13446,6 +13488,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -13932,27 +13976,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:TRIGGER_REFERENCE,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
+- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:CONCAT_FORMAT:customers.balance,customers.credit_limit->audit_log.new_value`
+- `VALUE:CONCAT_FORMAT:salary_payments.salary_month->cashier_journals.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->inventory_transactions.remark`
+- `VALUE:DIRECT:customers.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
 - `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:purchase_requisitions.id->audit_log.target_id`
+- `VALUE:DIRECT:salary_payments.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->cashier_journals.amount`
+- `VALUE:DIRECT:salary_payments.payment_date->cashier_journals.journal_date`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->inventory_transactions.operator_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:FUNCTION_CALL:employees.name,employees.employee_no,employees.department_id,employees.salary,employees.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.old_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.old_value`
 
 **Forbidden Tables**
 
@@ -13997,9 +14061,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -14057,6 +14127,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 - `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
 
 **Forbidden Tables**
@@ -14146,9 +14218,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -14202,6 +14277,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
@@ -14414,6 +14490,12 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
 - `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:COALESCE:sales_returns.remark->sales_returns.remark`
 - `VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary`
 - `VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary`
 
@@ -14580,6 +14662,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -14712,12 +14796,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
@@ -15777,27 +15864,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:TRIGGER_REFERENCE,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
+- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:CONCAT_FORMAT:customers.balance,customers.credit_limit->audit_log.new_value`
+- `VALUE:CONCAT_FORMAT:salary_payments.salary_month->cashier_journals.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->inventory_transactions.remark`
+- `VALUE:DIRECT:customers.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
 - `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:purchase_requisitions.id->audit_log.target_id`
+- `VALUE:DIRECT:salary_payments.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->cashier_journals.amount`
+- `VALUE:DIRECT:salary_payments.payment_date->cashier_journals.journal_date`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->inventory_transactions.operator_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:FUNCTION_CALL:employees.name,employees.employee_no,employees.department_id,employees.salary,employees.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.old_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.old_value`
 
 **Forbidden Tables**
 
@@ -15842,9 +15949,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -15902,6 +16015,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 - `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
 
 **Forbidden Tables**
@@ -15947,9 +16062,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -16003,6 +16121,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
@@ -16171,6 +16290,12 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
 - `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:COALESCE:sales_returns.remark->sales_returns.remark`
 - `VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary`
 - `VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary`
 
@@ -16337,6 +16462,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -16469,12 +16596,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
@@ -17445,7 +17575,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.precompute_urs_taxid.precompute_urs_id->precompute_urs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.precompute_urs_taxid.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.qa_status.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_models.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -17457,9 +17587,9 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.rfam_model_hits.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rfam_models.rfam_clan_id->rfam_clans.rfam_clan_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rfam_models.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_accession_sequence_feature.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_accession_sequence_feature.accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
 - `FK_LIKE:case_01.rnc_accession_sequence_feature.rnc_sequence_feature_id->rnc_sequence_features.rnc_sequence_features_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_accession_sequence_region.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_accession_sequence_region.accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
 - `FK_LIKE:case_01.rnc_accession_sequence_region.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_database_references.dbid->rnc_database.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_database_references.reference_id->rnc_references.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -17479,17 +17609,17 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.rnc_modifications.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:case_01.rnc_reference_map.reference_id->rnc_references.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_related_sequences.relationship_type->rnc_relationship_types.relationship_type:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_related_sequences.source_accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_related_sequences.source_accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
 - `FK_LIKE:case_01.rnc_related_sequences.source_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_related_sequences.target_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.assigned_so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_exons.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.feature_provider->rnc_sequence_feature_providers.name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -18462,8 +18592,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -18476,7 +18606,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -18484,13 +18614,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -18637,7 +18767,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.precompute_urs_taxid.precompute_urs_id->precompute_urs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.precompute_urs_taxid.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.qa_status.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_models.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -18676,13 +18806,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.rnc_related_sequences.source_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_related_sequences.target_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.assigned_so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_exons.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.feature_provider->rnc_sequence_feature_providers.name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -19611,8 +19741,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -19625,7 +19755,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -19633,13 +19763,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -19811,7 +19941,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -19903,22 +20033,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -19979,7 +20109,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -19988,19 +20118,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -20009,7 +20139,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -20055,25 +20185,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -20081,13 +20211,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -20103,7 +20233,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -20111,7 +20241,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -20141,24 +20271,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -20218,7 +20348,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.precompute_urs_taxid.precompute_urs_id->precompute_urs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.precompute_urs_taxid.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.qa_status.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_models.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -20257,13 +20387,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.rnc_related_sequences.source_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_related_sequences.target_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.assigned_so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_exons.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.feature_provider->rnc_sequence_feature_providers.name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -21236,8 +21366,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -21250,7 +21380,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -21258,13 +21388,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -21436,7 +21566,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -21528,22 +21658,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -21604,7 +21734,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -21613,19 +21743,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -21634,7 +21764,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -21680,25 +21810,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -21706,13 +21836,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -21728,7 +21858,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -21736,7 +21866,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -21766,24 +21896,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -21843,7 +21973,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.precompute_urs_taxid.precompute_urs_id->precompute_urs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.precompute_urs_taxid.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.qa_status.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_models.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.r2dt_results.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -21882,13 +22012,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:case_01.rnc_related_sequences.source_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_related_sequences.target_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.assigned_so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_rna_precomputed.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_exons.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.feature_provider->rnc_sequence_feature_providers.name:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_features.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:case_01.rnc_sequence_regions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -22861,8 +22991,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -22875,7 +23005,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -22883,13 +23013,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -23145,7 +23275,7 @@ CREATE TABLE ledger_entries (
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -23237,22 +23367,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -23313,7 +23443,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -23322,19 +23452,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -23343,7 +23473,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -23389,25 +23519,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -23415,13 +23545,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -23437,7 +23567,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -23445,7 +23575,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -23475,24 +23605,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -23621,7 +23751,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -23713,22 +23843,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -23789,7 +23919,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -23798,19 +23928,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -23819,7 +23949,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -23865,25 +23995,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -23891,13 +24021,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -23913,7 +24043,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -23921,7 +24051,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -23951,24 +24081,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -24555,7 +24685,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_profiles.id->orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -26263,7 +26395,7 @@ _Preview truncated; see input file for full content._
 | Schema | `public` |
 | Input | `test-fixtures/correctness/postgres/postgres-pg11-sql/input.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/postgres-pg11-sql/expected-relations.json` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-pg11-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg11-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
@@ -26272,7 +26404,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Forbidden Tables**
 
@@ -26643,6 +26776,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -26683,7 +26818,7 @@ _Preview truncated; see input file for full content._
 | Schema | `public` |
 | Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/sample-data-pg18-specific-sql/expected-relations.json` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/sample-data-pg18-specific-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/sample-data-pg18-specific-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
@@ -26692,7 +26827,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg18_generated_margin_demo.sales_amount->pg18_generated_margin_demo.sales_amount`
 
 **Forbidden Tables**
 
@@ -27935,7 +28070,7 @@ _Preview truncated; see input file for full content._
 | Schema | `public` |
 | Input | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/input.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/expected-relations.json` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
@@ -27944,7 +28079,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Forbidden Tables**
 
@@ -28125,7 +28261,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
-- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 - `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
@@ -28443,7 +28579,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Forbidden Tables**
@@ -28485,7 +28621,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_profiles.id->orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -30448,6 +30586,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -30978,8 +31118,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
 
 **Expected Data Lineage Fingerprints**
 
@@ -30987,6 +31127,8 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -31037,9 +31179,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -31095,7 +31243,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -31140,9 +31289,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -31194,6 +31346,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -31306,7 +31459,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Forbidden Tables**
 
@@ -31414,6 +31572,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -31555,12 +31715,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -32897,7 +33060,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Forbidden Tables**
@@ -32939,7 +33102,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_profiles.id->orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -34776,7 +34941,7 @@ _Preview truncated; see input file for full content._
 | Schema | `public` |
 | Input | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/input.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/expected-relations.json` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
@@ -34785,7 +34950,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Forbidden Tables**
 
@@ -34966,7 +35132,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
-- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 - `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
@@ -35059,13 +35225,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
 - `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
-- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
-- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:CONCAT_FORMAT:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
@@ -35175,6 +35341,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -36031,8 +36199,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
 
 **Expected Data Lineage Fingerprints**
 
@@ -36040,6 +36208,8 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -36090,9 +36260,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -36148,7 +36324,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -36193,9 +36370,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -36247,6 +36427,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -36359,7 +36540,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Forbidden Tables**
 
@@ -36467,6 +36653,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -36608,12 +36796,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -37950,7 +38141,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Forbidden Tables**
@@ -37992,7 +38183,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_profiles.id->orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39741,7 +39934,7 @@ _Preview truncated; see input file for full content._
 | Schema | `public` |
 | Input | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/input.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/expected-relations.json` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
@@ -39750,7 +39943,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Forbidden Tables**
 
@@ -39931,7 +40125,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
-- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 - `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
@@ -40024,13 +40218,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
 - `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
-- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
-- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:CONCAT_FORMAT:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
@@ -40181,6 +40375,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -40221,7 +40417,7 @@ _Preview truncated; see input file for full content._
 | Schema | `public` |
 | Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-relations.json` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
@@ -40230,7 +40426,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg18_generated_margin_demo.sales_amount->pg18_generated_margin_demo.sales_amount`
 
 **Forbidden Tables**
 
@@ -41037,8 +41233,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41046,6 +41242,8 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -41096,9 +41294,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -41154,7 +41358,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -41199,9 +41404,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -41253,6 +41461,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -41365,7 +41574,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Forbidden Tables**
 
@@ -41473,6 +41687,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -41614,12 +41830,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -42513,8 +42732,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42522,6 +42741,8 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -42572,9 +42793,15 @@ _Preview truncated; see input file for full content._
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -42630,7 +42857,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -42675,9 +42903,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -42729,6 +42960,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -42841,7 +43073,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Forbidden Tables**
 
@@ -42949,6 +43186,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -43090,12 +43329,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -44061,7 +44303,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -44196,22 +44438,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -44272,7 +44514,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -44281,19 +44523,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -44302,7 +44544,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -44350,8 +44592,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -44364,7 +44606,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -44372,13 +44614,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -44421,25 +44663,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -44447,13 +44689,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -44469,7 +44711,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -44477,7 +44719,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -44507,24 +44749,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -44696,7 +44938,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -44831,22 +45073,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -44907,7 +45149,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -44916,19 +45158,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -44937,7 +45179,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -44985,8 +45227,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -44999,7 +45241,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -45007,13 +45249,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -45056,25 +45298,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -45082,13 +45324,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -45104,7 +45346,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -45112,7 +45354,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -45142,24 +45384,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -45331,7 +45573,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -45466,22 +45708,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -45542,7 +45784,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -45551,19 +45793,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -45572,7 +45814,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -45620,8 +45862,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -45634,7 +45876,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -45642,13 +45884,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -45691,25 +45933,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -45717,13 +45959,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -45739,7 +45981,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -45747,7 +45989,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -45777,24 +46019,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -45966,7 +46208,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -46101,22 +46343,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -46177,7 +46419,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -46186,19 +46428,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -46207,7 +46449,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -46255,8 +46497,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -46269,7 +46511,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -46277,13 +46519,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -46326,25 +46568,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -46352,13 +46594,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -46374,7 +46616,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -46382,7 +46624,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -46412,24 +46654,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -46601,7 +46843,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -46736,22 +46978,22 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_commissions.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:service_tickets.assigned_to->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:service_tickets.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -46812,7 +47054,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
@@ -46821,19 +47063,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -46842,7 +47084,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
@@ -46890,8 +47132,8 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
@@ -46904,7 +47146,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -46912,13 +47154,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -46961,25 +47203,25 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:account_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:account_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:account_subjects.parent_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:ar_invoices.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_items.department_id->departments.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_items.version_id->budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:budget_versions.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:budget_versions.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:category_dim.source_category_id->product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:cogs_entries.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:cogs_entries.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:data_permission_scopes.role_id->roles.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:finished_goods_receipts.received_by->employees.id:DDL_FOREIGN_KEY`
@@ -46987,13 +47229,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fiscal_calendar.accounting_period_id->accounting_periods.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.batch_id->product_batches.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:inventory_cost_layers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_cost_layers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_location_balances.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:master_data_change_requests.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:master_data_change_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
@@ -47009,7 +47251,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.created_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:opening_balances.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:opening_balances.subject_id->account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:operation_reports.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -47017,7 +47259,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_request_items.request_id->payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_requests.requested_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_requests.supplier_id->suppliers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:payments.customer_id->customers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.journal_id->cashier_journals.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payments.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY`
@@ -47047,24 +47289,24 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:repair_orders.technician_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.category_dim_id->category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_fact.fiscal_date->fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sales_fact.order_item_id->sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.payment_id->payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.product_id->products.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.region_dim_id->region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:sales_fact.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:sensitive_access_logs.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:standard_costs.approved_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:standard_costs.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouse_zones.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_costs.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:work_order_operations.work_order_id->work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -47501,7 +47743,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -47601,6 +47844,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -48010,12 +48254,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -48242,12 +48489,11 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -49071,7 +49317,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:oracle_12c_identity_demo.sales_amount->oracle_12c_identity_demo.sales_amount`
 
 **Forbidden Tables**
 
@@ -49607,7 +49853,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -49707,6 +49954,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -50116,12 +50364,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -50348,12 +50599,11 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -51751,7 +52001,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -51851,6 +52102,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -52260,12 +52512,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -52492,12 +52747,11 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -53897,7 +54151,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -53997,6 +54252,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -54162,7 +54418,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Forbidden Tables**
 
@@ -54406,12 +54667,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -54638,12 +54902,11 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -56045,7 +56308,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Forbidden Tables**
 
@@ -56145,6 +56409,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -56310,7 +56575,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Forbidden Tables**
 
@@ -56554,12 +56824,15 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -56786,12 +57059,11 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -57762,95 +58034,95 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -57935,46 +58207,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58017,36 +58289,36 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58089,40 +58361,40 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58165,110 +58437,110 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58311,95 +58583,95 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58484,46 +58756,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58566,36 +58838,36 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58638,40 +58910,40 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58714,110 +58986,110 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -58860,95 +59132,95 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59033,46 +59305,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59115,36 +59387,36 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59187,40 +59459,40 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59263,110 +59535,110 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59409,95 +59681,95 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59582,46 +59854,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59664,36 +59936,36 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59736,40 +60008,40 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59812,110 +60084,110 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -59958,95 +60230,95 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60131,46 +60403,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60213,36 +60485,36 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60285,40 +60557,40 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60361,110 +60633,110 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60507,95 +60779,95 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cashier_journals.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.executed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employees.position_id->dbo.positions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.positions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.purchase_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliations.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.salesperson_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_returns.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.posted_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.vouchers.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60680,46 +60952,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.boms.child_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.contracts.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.contracts.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.service_tickets.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.settlements.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.settlements.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60762,36 +61034,36 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.submitted_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_instances.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.approver_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.approval_records.instance_id->dbo.approval_instances.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.approval_records.node_id->dbo.approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.consignment_inventory.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.foreign_currency_accounts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.performance_reviews.reviewer_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.projects.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.projects.manager_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_number_logs.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.serial_numbers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.serial_numbers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_filings.prepared_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.tax_invoices.verified_by->dbo.employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60834,40 +61106,40 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.accounting_periods.closed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.accounting_periods.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.consignment_consumptions.consignment_id->dbo.consignment_inventory.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.customer_addresses.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_reservations.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ledger_books.tenant_id->dbo.tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipt_allocations.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_receipts.account_id->dbo.accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_receipts.handled_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.period_close_jobs.period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.price_change_logs.changed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.price_change_logs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_operations.predecessor_operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_operations.route_id->dbo.production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.production_routes.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfer_items.transfer_id->dbo.stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stock_transfers.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stock_transfers.to_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.stocktakes.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.reviewed_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.stocktakes.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.supplier_addresses.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -60910,110 +61182,110 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.account_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.account_subjects.parent_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.ap_invoices.purchase_order_id->dbo.purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.ar_invoices.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.department_id->dbo.departments.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_items.version_id->dbo.budget_versions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.budget_versions.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.budget_versions.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.category_dim.source_category_id->dbo.product_categories.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.cogs_entries.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.cogs_entries.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.data_permission_scopes.role_id->dbo.roles.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.received_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.fiscal_calendar.accounting_period_id->dbo.accounting_periods.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_cost_layers.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.inventory_location_balances.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_items.request_id->dbo.master_data_change_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.master_data_change_requests.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.master_data_change_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issue_items.issue_id->dbo.material_issues.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.material_issue_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.issued_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.material_issues.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.parent_product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.created_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.mrp_runs.plan_id->dbo.production_plans.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.opening_balances.ledger_book_id->dbo.ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.opening_balances.subject_id->dbo.account_subjects.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.operation_reports.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.operation_reports.work_order_operation_id->dbo.work_order_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.ap_invoice_id->dbo.ap_invoices.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_request_items.request_id->dbo.payment_requests.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.payment_requests.requested_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payment_requests.supplier_id->dbo.suppliers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.journal_id->dbo.cashier_journals.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.payments.receipt_id->dbo.payment_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.picking_task_items.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_task_items.sales_order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.picking_tasks.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.planner_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.assigned_to->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.receipt_id->dbo.purchase_receipts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.putaway_tasks.to_location_id->dbo.warehouse_locations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_order_parts.batch_id->dbo.product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.issued_from_warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.serial_number_id->dbo.serial_numbers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.repair_orders.technician_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.category_dim_id->dbo.category_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.customer_id->dbo.customers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.fiscal_date->dbo.fiscal_calendar.calendar_date:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.order_id->dbo.sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.order_item_id->dbo.sales_order_items.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.payment_id->dbo.payments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.sales_fact.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.sensitive_access_logs.employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.approved_by->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.warehouse_locations.zone_id->dbo.warehouse_zones.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.warehouse_zones.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_costs.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:dbo.work_order_operations.assigned_employee_id->dbo.employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.operation_id->dbo.production_operations.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:dbo.work_order_operations.work_order_id->dbo.work_orders.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -61056,7 +61328,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:dbo.product_embeddings.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dbo.product_embeddings.product_id->dbo.products.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
 
@@ -61099,11 +61371,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Forbidden Tables**
 
@@ -61117,13 +61404,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 _Preview truncated; see input file for full content._
 
@@ -61396,7 +61683,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.employee_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.role_id->dbo.kpi_indicators.applicable_role_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN`
 - `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -63007,11 +63295,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Forbidden Tables**
 
@@ -63025,13 +63328,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 _Preview truncated; see input file for full content._
 
@@ -63304,7 +63607,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.employee_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.role_id->dbo.kpi_indicators.applicable_role_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN`
 - `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -65253,11 +65557,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Forbidden Tables**
 
@@ -65271,13 +65590,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 _Preview truncated; see input file for full content._
 
@@ -65550,7 +65869,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.employee_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.role_id->dbo.kpi_indicators.applicable_role_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN`
 - `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -67542,11 +67862,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Forbidden Tables**
 
@@ -67560,13 +67895,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 _Preview truncated; see input file for full content._
 
@@ -67839,7 +68174,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.employee_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.role_id->dbo.kpi_indicators.applicable_role_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN`
 - `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -69788,11 +70124,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Forbidden Tables**
 
@@ -69806,13 +70157,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 _Preview truncated; see input file for full content._
 
@@ -70085,7 +70436,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.employee_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.role_id->dbo.kpi_indicators.applicable_role_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN`
 - `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -72077,11 +72429,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.product_id->dbo.inventory_transactions.product_id:TRIGGER_REFERENCE`
+- `CO_OCCURRENCE:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id:TRIGGER_REFERENCE`
+- `FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:TRIGGER_REFERENCE,NAMING_MATCH`
+- `FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:TRIGGER_REFERENCE,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Forbidden Tables**
 
@@ -72095,13 +72462,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 _Preview truncated; see input file for full content._
 
@@ -72374,7 +72741,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.employee_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.employee_roles.role_id->dbo.kpi_indicators.applicable_role_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN`
 - `FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH`

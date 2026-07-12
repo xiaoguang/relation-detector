@@ -433,10 +433,10 @@ class FullGrammarSqlBehaviorTest {
         assertTrue(lineages.contains(
                 "VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price"), () -> lineages.toString());
         assertTrue(lineages.contains(
-                "VALUE:COALESCE:pg17_price_updates.stock_adjustment,pg17_product_catalog.stock_level->pg17_product_catalog.stock_level"),
+                "VALUE:ARITHMETIC:pg17_price_updates.stock_adjustment,pg17_product_catalog.stock_level->pg17_product_catalog.stock_level"),
                 () -> lineages.toString());
         assertTrue(lineages.contains(
-                "VALUE:COALESCE:pg17_price_updates.attribute_updates,pg17_product_catalog.attributes->pg17_product_catalog.attributes"),
+                "VALUE:CONCAT_FORMAT:pg17_price_updates.attribute_updates,pg17_product_catalog.attributes->pg17_product_catalog.attributes"),
                 () -> lineages.toString());
         assertTrue(lineages.contains(
                 "VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by"), () -> lineages.toString());

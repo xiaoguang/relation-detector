@@ -19,6 +19,25 @@ import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
 class MySqlTransformConsistencyTest {
     @Test
+    void unqualifiedArithmeticSelfUpdateIsResolvedOnlyToWriteTarget() {
+        SqlStatementRecord statement = statement("""
+                UPDATE purchase_order_items
+                SET received_qty = received_qty + v_accepted_qty
+                WHERE id = p_order_item_id;
+                """);
+
+        for (NamedParser parser : parsers()) {
+            List<DataLineageCandidate> lineages = extract(parser.parser(), statement);
+            assertLineage(parser.name(), lineages,
+                    "purchase_order_items.received_qty", "purchase_order_items.received_qty",
+                    LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC);
+            assertTrue(lineages.stream().noneMatch(lineage -> lineage.sources().stream()
+                            .anyMatch(source -> source.displayName().contains("v_accepted_qty"))),
+                    () -> parser.name() + " must not bind a routine variable as a physical column: " + lineages);
+        }
+    }
+
+    @Test
     void arithmeticDominatesNestedCoalesceForEveryMysqlParser() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO sales_commissions (commission_amount)

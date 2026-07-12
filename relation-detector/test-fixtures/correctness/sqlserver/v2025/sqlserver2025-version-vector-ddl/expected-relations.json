@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "FK_LIKE:dbo.product_embeddings.product_id->dbo.products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+    "FK_LIKE:dbo.product_embeddings.product_id->dbo.products.id:DDL_FOREIGN_KEY"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

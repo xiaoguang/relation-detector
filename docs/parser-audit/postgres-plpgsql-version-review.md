@@ -18,6 +18,12 @@ The PL/pgSQL grammar recognizes the procedural shell. It does not reimplement
 PostgreSQL SQL. Dynamic `EXECUTE` is reported as unresolved and its string is
 never scanned for physical facts.
 
+SQL-standard `BEGIN ATOMIC` bodies are produced by the outer token-event or
+versioned full SQL grammar as typed statement contexts. They bypass the
+PL/pgSQL parser and dispatch each statement to the current-mode SQL parser.
+String bodies without an explicit `LANGUAGE` are rejected with
+`POSTGRES_ROUTINE_LANGUAGE_MISSING`; an atomic body without `LANGUAGE` is SQL.
+
 ## Official Pins
 
 | Artifact | PostgreSQL tag | Commit | Official source |
@@ -50,11 +56,24 @@ accepts the versioned form. No Java regex version blacklist remains.
 
 - `PostgresFullGrammarVersionBoundaryTest`: SQL and routine version probes.
 - `PostgresRoutineSampleLineageTest`: natural routine/trigger facts in all modes.
-- `PlPgSqlStaticStatementCollectorTest`: typed static SQL boundaries and
+- `PlPgSqlShellCollectorTest`: typed static SQL boundaries and
   procedural `INTO` masking.
-- `PostgresRoutineLanguageDispatcherTest`: absolute source ranges.
+- `PostgresTokenEventPlPgSqlParserTest`, `Postgres16PlPgSqlParserTest`,
+  `Postgres17PlPgSqlParserTest`, and `Postgres18PlPgSqlParserTest`: shared
+  procedural contract, FOREACH, recovery, and dynamic SQL diagnostics.
+- `PostgresRoutineLanguageDispatcherTest`: body/language matrix and absolute source ranges.
 - `PostgresRoutineParserIndependenceTest`: token/full and cross-version imports.
 
 Current review status: no `REVIEW_NEEDED` item. Natural sample-data routines
 must remain diagnostic-free; unsupported language and dynamic SQL diagnostics
 are expected only in dedicated negative fixtures.
+
+## Audited migration delta
+
+Replacing the duplicated SQL subgrammar with current-mode static SQL dispatch
+closed one historical gap in `sp_cross_border_reconciliation_engine`. The
+previous golden was empty even though its `RETURN QUERY` contains three direct
+physical equalities: exchange-rate currency to SKU currency, order customer to
+customer profile, and the correlated order customer to transaction ledger
+user. Token-event and v16/v17/v18 now emit the same three `SQL_LOG_JOIN`
+observations. This is a confirmed parser-gap correction, not a version delta.

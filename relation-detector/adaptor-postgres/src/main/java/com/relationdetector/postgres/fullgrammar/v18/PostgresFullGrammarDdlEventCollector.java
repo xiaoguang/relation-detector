@@ -113,13 +113,11 @@ final class PostgresFullGrammarDdlEventCollector {
                 return null;
             }
             if (constraint.PRIMARY() != null && constraint.KEY() != null) {
-                for (String column : postgresColumnList(constraint, 0, List.of())) {
-                    core.out().addIndex(core.currentTable(), column, "TARGET_UNIQUE", "PRIMARY_KEY", line);
-                }
+                core.out().addIndex(core.currentTable(), postgresColumnList(constraint, 0, List.of()),
+                        "TARGET_UNIQUE", "PRIMARY_KEY", line);
             } else if (constraint.UNIQUE() != null) {
-                for (String column : postgresColumnList(constraint, 0, List.of())) {
-                    core.out().addIndex(core.currentTable(), column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
-                }
+                core.out().addIndex(core.currentTable(), postgresColumnList(constraint, 0, List.of()),
+                        "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
             }
             return null;
         }
@@ -134,14 +132,10 @@ final class PostgresFullGrammarDdlEventCollector {
             }
             String table = relationExprTable(ctx.relation_expr());
             boolean unique = ctx.unique_() != null;
-            for (PostgresFullGrammarParser.Index_elemContext elem : ctx.index_params().index_elem()) {
-                String column = postgresIndexColumn(elem);
-                if (column.isBlank()) {
-                    continue;
-                }
-                core.out().addIndex(table, column, unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
-                        unique ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX", ctx.getStart().getLine());
-            }
+            core.out().addIndex(table, ctx.index_params().index_elem().stream()
+                            .map(this::postgresIndexColumn).filter(column -> !column.isBlank()).toList(),
+                    unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
+                    unique ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX", ctx.getStart().getLine());
             return null;
         }
 

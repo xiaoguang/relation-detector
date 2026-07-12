@@ -11,4 +11,5 @@ class SqlServerSqlAssetHygieneTest {
     @Test void sampleDataHasNoRelationProbeTemplates() throws Exception { DialectSqlAssetHygieneSupport.sqlServerSampleDataDoesNotCarryRelationProbeBenchmarkTemplates(); }
     @Test void dataFilesHaveDistinctBusinessContents() throws Exception { DialectSqlAssetHygieneSupport.sqlServerDataFilesHaveDistinctBusinessContentsWithinEachVersion(); }
     @Test void proceduresHaveNoNumberedProbeResidue() throws Exception { DialectSqlAssetHygieneSupport.sqlServerSampleDataDoesNotUseNumberedRelationProbeProcedures(); }
+    @Test void naturalKpiAndTriggerAssetsAreConsistent() throws Exception { DialectSqlAssetHygieneSupport.sqlServerNaturalAssetsUseRoleBasedKpiJoinAndSetBasedTriggers(); }
 }

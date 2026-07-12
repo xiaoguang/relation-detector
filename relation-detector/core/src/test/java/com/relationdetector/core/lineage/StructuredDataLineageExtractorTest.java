@@ -27,6 +27,102 @@ import com.relationdetector.core.identity.NamespaceContext;
 
 class StructuredDataLineageExtractorTest {
     @Test
+    void triggerPseudoRowsetAliasInFromClauseKeepsPhysicalBindingForLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "UPDATE dbo.product_batches SET current_qty = i.quantity FROM inserted i",
+                StatementSourceType.TRIGGER, "sqlserver-trigger.sql", 1, 1, Map.of());
+        StructuredParseResult structured = new StructuredParseResult(
+                "TEST", "sqlserver", statement.sourceName(), List.of(
+                new RowsetEvent(StructuredParseEventType.TRIGGER_PSEUDO_ROWSET, provenance(1),
+                        "TRIGGER", "dbo.inventory", "inventory", "inserted", "inserted",
+                        "dbo.inventory", ""),
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "FROM", "inserted", "inserted", "i", "", "", ""),
+                new WriteEvent(StructuredParseEventType.WRITE_TARGET, provenance(1),
+                        "product_batches", "dbo.product_batches", "pb", "", "", "", "",
+                        ExpressionTrace.empty()),
+                new WriteEvent(StructuredParseEventType.UPDATE_ASSIGNMENT, provenance(1),
+                        "", "", "", "pb", "dbo.product_batches", "current_qty", "UPDATE_SET",
+                        ExpressionTrace.of(List.of("i"), List.of("quantity"),
+                                LineageFlowKind.VALUE, LineageTransformType.DIRECT))), List.of(), Map.of());
+
+        var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertEquals(1, lineages.size());
+        assertEquals(List.of("dbo.inventory.quantity"),
+                lineages.get(0).sources().stream().map(source -> source.displayName()).toList());
+    }
+
+    @Test
+    void triggerPseudoRowsetResolvesToTypedTargetTable() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "UPDATE product_batches SET current_qty = :NEW.quantity",
+                StatementSourceType.TRIGGER,
+                "oracle-trigger.sql",
+                1,
+                1,
+                Map.of());
+        StructuredParseResult structured = new StructuredParseResult(
+                "TEST",
+                "oracle",
+                statement.sourceName(),
+                List.of(
+                        new RowsetEvent(StructuredParseEventType.TRIGGER_PSEUDO_ROWSET, provenance(1),
+                                "TRIGGER", "inventory", "inventory", "NEW", "NEW", "inventory", ""),
+                        new WriteEvent(StructuredParseEventType.WRITE_TARGET, provenance(1),
+                                "product_batches", "product_batches", "product_batches",
+                                "", "", "", "", ExpressionTrace.empty()),
+                        new WriteEvent(StructuredParseEventType.UPDATE_ASSIGNMENT, provenance(1),
+                                "", "", "", "product_batches", "product_batches", "current_qty",
+                                "UPDATE_SET",
+                                ExpressionTrace.of(List.of("NEW"), List.of("quantity"),
+                                        LineageFlowKind.VALUE, LineageTransformType.DIRECT))),
+                List.of(),
+                Map.of());
+
+        var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertEquals(1, lineages.size());
+        assertEquals(List.of("inventory.quantity"),
+                lineages.get(0).sources().stream().map(source -> source.displayName()).toList());
+        assertEquals("product_batches.current_qty", lineages.get(0).target().displayName());
+    }
+
+    @Test
+    void resolvesOnlyUnqualifiedWriteTargetSelfReference() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "UPDATE purchase_order_items SET received_qty = received_qty + v_accepted_qty",
+                StatementSourceType.PROCEDURE,
+                "self-update.sql",
+                1,
+                1,
+                Map.of());
+        StructuredParseResult structured = new StructuredParseResult(
+                "TEST",
+                "mysql",
+                statement.sourceName(),
+                List.of(
+                        new WriteEvent(StructuredParseEventType.WRITE_TARGET, provenance(1),
+                                "purchase_order_items", "purchase_order_items", "purchase_order_items",
+                                "", "", "", "", ExpressionTrace.empty()),
+                        new WriteEvent(StructuredParseEventType.UPDATE_ASSIGNMENT, provenance(1),
+                                "", "", "", "purchase_order_items", "purchase_order_items", "received_qty",
+                                "UPDATE_SET",
+                                ExpressionTrace.of(List.of("", ""), List.of("received_qty", "v_accepted_qty"),
+                                        LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC))),
+                List.of(),
+                Map.of());
+
+        var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertEquals(1, lineages.size());
+        assertEquals(List.of("purchase_order_items.received_qty"),
+                lineages.get(0).sources().stream().map(source -> source.displayName()).toList());
+        assertEquals("purchase_order_items.received_qty", lineages.get(0).target().displayName());
+        assertEquals(LineageTransformType.ARITHMETIC, lineages.get(0).transformType());
+    }
+
+    @Test
     void copiesTypedEventLineIntoCandidateAndRawEvidence() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "INSERT INTO sales_fact(order_id) SELECT o.id FROM sales_orders o",

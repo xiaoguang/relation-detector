@@ -133,6 +133,51 @@ Status: `RESOLVED_SQL_ASSET_GAP`
 
 Oracle natural assets use `VIRTUAL` generated columns and omit empty parentheses on zero-argument routine definitions; unconfirmed `STORED` syntax is not treated as a positive feature. Common natural has one canonical `payments` declaration with all fields used by its processes. Hygiene and schema-consistency tests protect both rules.
 
+### 17. Composite uniqueness is not single-column uniqueness
+
+Status: `RESOLVED_EVIDENCE_MODEL_GAP`
+
+Typed DDL events preserve the complete PK/UNIQUE/index column group through
+`compositePosition/compositeSize`. Only a one-column declaration may enhance a single endpoint with
+`TARGET_UNIQUE` or `SOURCE_INDEX`; `UNIQUE(a, b)` no longer proves either `a` or `b` unique by
+itself. Composite FK column pairs remain structural relationship facts.
+
+### 18. SQL Server referenced-key observation inflation
+
+Status: `RESOLVED_FALSE_POSITIVE`
+
+SQL Server FK declarations no longer manufacture `TARGET_UNIQUE/REFERENCED_KEY` for the referenced
+column. Parent uniqueness now comes only from a typed PK, UNIQUE constraint, unique index, or
+metadata observation. Relationship orientation recomputes `endpointSide` against the final source
+and target endpoints.
+
+### 19. Non-trivial self-update lineage
+
+Status: `RESOLVED_PARSER_GAP`
+
+Unqualified references to the current assignment target resolve to the physical write table only for
+typed `UPDATE_ASSIGNMENT` and `MERGE_WRITE_MAPPING` events. This restores arithmetic updates such as
+`received_qty = received_qty + ...` without treating parameters or unrelated local identifiers as
+columns. PostgreSQL 18 `UPDATE ... RETURNING old/new` no longer suppresses the assignment event.
+
+### 20. Natural trigger facts and evidence
+
+Status: `RESOLVED_PARSER_AND_ASSET_GAP`
+
+Oracle token/full parsers map typed `:NEW/:OLD` references to the trigger target table. SQL Server
+natural assets use six set-based business triggers separated by `GO`, rather than one-relation probe
+triggers. Trigger predicates use `TRIGGER_REFERENCE`; trigger VALUE/CONTROL lineage keeps object,
+statement, block and line provenance.
+
+### 21. PostgreSQL trigger-function provenance
+
+Status: `RESOLVED_PROVENANCE_GAP`
+
+`CREATE FUNCTION ... RETURNS TRIGGER` remains a `FUNCTION` routine object with
+`routineReturnsTrigger=true`; it is no longer relabeled as a trigger statement. The separate
+`CREATE TRIGGER` declaration retains `TRIGGER` provenance, while the function body can still resolve
+typed `NEW/OLD` pseudo rowsets and emit trigger-reference evidence.
+
 ## Validation
 
 The repair is accepted only after all of these run on the same working tree:

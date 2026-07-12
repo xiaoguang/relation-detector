@@ -2,13 +2,19 @@
   "fingerprints": [
     "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount",
     "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount",
+    "VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance",
+    "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
+    "VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty",
+    "VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty",
+    "VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty",
     "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount",
     "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount",
     "VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description",
+    "VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark",
     "VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id",
     "VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

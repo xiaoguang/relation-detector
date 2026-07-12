@@ -283,9 +283,9 @@ public record Evidence(
 | --- | --- | --- |
 | `METADATA_FOREIGN_KEY` | 已产出 | MySQL/PostgreSQL live metadata collector 会从 catalog 外键生成；其它 adaptor 需要等 live metadata collector 补齐后自然接入。 |
 | `DDL_FOREIGN_KEY` | 已产出 | typed DDL parser / DDL relation extraction 会从 `CREATE TABLE`、`ALTER TABLE` 等 DDL 生成。 |
-| `VIEW_JOIN` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前对象 SQL 解析通常仍产出具体 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`，尚未按 `StatementSourceType.VIEW` 改写为 view 专属 evidence。 |
+| `VIEW_JOIN` | 已产出 | typed `CREATE VIEW` / `CREATE MATERIALIZED VIEW` 查询体中的物理列谓词使用该 evidence；它保留 view 对象 provenance，但不能单独证明 FK-like 方向。 |
 | `PROCEDURE_JOIN` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前 procedure/function/routine body 中的谓词仍复用 SQL predicate evidence。 |
-| `TRIGGER_REFERENCE` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前 trigger body 中可解析的物理表谓词仍复用 SQL predicate evidence，`NEW/OLD` pseudo rowset 不作为物理 endpoint。 |
+| `TRIGGER_REFERENCE` | 已产出 | typed trigger body，以及带 `routineReturnsTrigger=true` 的 PostgreSQL trigger function 中的物理列谓词使用该 evidence；`NEW/OLD` pseudo rowset 只解析回 trigger target table，不作为独立物理 endpoint。 |
 | `SQL_LOG_JOIN` | 已产出 | typed SQL parser 对 `JOIN ... ON`、comma join、`JOIN USING` 等明确列级谓词生成。 |
 | `SQL_LOG_SUBQUERY_IN` | 已产出 | typed SQL parser 对 scalar / tuple `IN (SELECT ...)` 且能确认两侧都是列端点时生成。 |
 | `SQL_LOG_EXISTS` | 已产出 | typed SQL parser 对 correlated `EXISTS` / `NOT EXISTS` 内部明确列级关联谓词生成。 |
@@ -303,7 +303,7 @@ public record Evidence(
 
 兼容 evidence 与当前替代关系：
 
-- `SQL_LOG_COLUMN_CO_OCCURRENCE` 没有被“无声抛弃”。在当前 typed parser 能识别具体 SQL 结构时，它被更可审计的语法 evidence 取代：`JOIN` / comma join / `JOIN USING` 产出 `SQL_LOG_JOIN`，correlated `EXISTS` 产出 `SQL_LOG_EXISTS`，scalar / tuple `IN (SELECT ...)` 产出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 表达的是同一类“列级谓词证明”，但保留了来源语法，因此优先级高于泛化 column co-occurrence。未来如果按对象来源细分，view / procedure / trigger 中的同类谓词可进一步使用预留的 `VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`。
+- `SQL_LOG_COLUMN_CO_OCCURRENCE` 没有被“无声抛弃”。在当前 typed parser 能识别具体 SQL 结构时，它被更可审计的语法 evidence 取代：`JOIN` / comma join / `JOIN USING` 产出 `SQL_LOG_JOIN`，correlated `EXISTS` 产出 `SQL_LOG_EXISTS`，scalar / tuple `IN (SELECT ...)` 产出 `SQL_LOG_SUBQUERY_IN`。view 查询体使用 `VIEW_JOIN`，trigger / trigger function 查询体使用 `TRIGGER_REFERENCE`；procedure/function/routine body 当前仍复用具体 SQL predicate evidence，`PROCEDURE_JOIN` 保留为兼容类型。
 - `SQL_LOG_COLUMN_CO_OCCURRENCE` 只在历史结果、外部 adaptor 导入、或确实无法保留具体谓词形态的兼容输入中仍可被 merger/score 理解；生产 parser / extractor 不主动降级生成它。
 - `SQL_LOG_TABLE_CO_OCCURRENCE` 对“同一 SQL 出现多张表但没有列级谓词”的场景没有现役替代 evidence。当前实现选择不产出 relationship，因为这种表级共现无法证明列关系和方向，false positive 风险高。如果 SQL 中存在明确 JOIN / EXISTS / IN 谓词，则不会走表级共现，而是产出上面的具体列级 predicate evidence。
 

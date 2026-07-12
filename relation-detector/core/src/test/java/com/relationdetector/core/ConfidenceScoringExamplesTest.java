@@ -230,7 +230,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example10TriggerJoinWithNewRowScoresAs06310() {
+    void example10TriggerJoinWithNewRowScoresAs07130() {
         String sql = """
                 SELECT new_order.id, u.email
                 FROM orders new_order
@@ -239,12 +239,12 @@ class ConfidenceScoringExamplesTest {
 
         RelationshipCandidate relation = parsedRelation(sql, StatementSourceType.TRIGGER,
                 "orders", "user_id", "users", "id");
-        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_JOIN),
-                () -> "trigger example should preserve JOIN evidence while direction remains separate");
+        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.TRIGGER_REFERENCE),
+                () -> "trigger example should use trigger-specific reference evidence");
         addEvidence(relation, EvidenceType.TARGET_UNIQUE, 0.18d, EvidenceSourceType.METADATA,
                 "users.id is primary key");
 
-        assertConfidence("0.6310", mergeOne(relation));
+        assertConfidence("0.7130", mergeOne(relation));
     }
 
     @Test

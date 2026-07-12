@@ -1,19 +1,24 @@
 package com.relationdetector.postgres.routine;
 
+import java.util.Map;
+
 public record PostgresRoutineDescriptor(
-        PostgresRoutineBodyKind kind,
         String declaredLanguage,
-        String body,
-        int bodyStartLine,
+        PostgresRoutineBody body,
         String sourceObjectType,
-        String sourceObjectName
+        String sourceObjectName,
+        Map<String, Object> provenance
 ) {
+    public PostgresRoutineDescriptor(String declaredLanguage, PostgresRoutineBody body,
+            String sourceObjectType, String sourceObjectName) {
+        this(declaredLanguage, body, sourceObjectType, sourceObjectName, Map.of());
+    }
+
     public PostgresRoutineDescriptor {
-        kind = kind == null ? PostgresRoutineBodyKind.UNSUPPORTED_LANGUAGE : kind;
         declaredLanguage = declaredLanguage == null ? "" : declaredLanguage;
-        body = body == null ? "" : body;
-        bodyStartLine = Math.max(1, bodyStartLine);
+        body = body == null ? new UnsupportedRoutineBody(declaredLanguage, 1) : body;
         sourceObjectType = sourceObjectType == null ? "" : sourceObjectType;
         sourceObjectName = sourceObjectName == null ? "" : sourceObjectName;
+        provenance = provenance == null ? Map.of() : Map.copyOf(provenance);
     }
 }

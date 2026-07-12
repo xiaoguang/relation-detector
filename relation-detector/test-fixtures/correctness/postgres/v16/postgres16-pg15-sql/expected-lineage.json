@@ -8,7 +8,7 @@
     "VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price",
     "VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price",
     "VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata",
-    "VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata",
+    "VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata",
     "VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata",
     "VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated",
     "VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku",

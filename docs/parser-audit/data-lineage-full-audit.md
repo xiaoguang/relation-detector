@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 1198 |
-| EXISTING_GOLD | 411 |
+| EXISTING_GOLD | 439 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 787 |
+| NOT_APPLICABLE | 759 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -225,6 +225,7 @@ SELECT 2;
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:DIRECT:customers.id->invoices.customer_id`
 - `VALUE:DIRECT:sales_orders.id->invoices.id`
 - `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
@@ -359,6 +360,7 @@ INSERT INTO sales_returns (id, order_id)
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:DIRECT:customers.id->invoices.customer_id`
 - `VALUE:DIRECT:sales_orders.id->invoices.id`
 - `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
@@ -1505,6 +1507,7 @@ INSERT INTO mrp_run_items (run_id, parent_product_id, component_product_id, sugg
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:DIRECT:customers.id->invoices.customer_id`
 - `VALUE:DIRECT:sales_orders.id->invoices.id`
 - `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
@@ -4185,6 +4188,8 @@ USE erp_system;
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -5966,6 +5971,8 @@ SELECT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -6293,18 +6300,38 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
+- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:CONCAT_FORMAT:customers.balance,customers.credit_limit->audit_log.new_value`
+- `VALUE:CONCAT_FORMAT:salary_payments.salary_month->cashier_journals.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->inventory_transactions.remark`
+- `VALUE:DIRECT:customers.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
 - `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:purchase_requisitions.id->audit_log.target_id`
+- `VALUE:DIRECT:salary_payments.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->cashier_journals.amount`
+- `VALUE:DIRECT:salary_payments.payment_date->cashier_journals.journal_date`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->inventory_transactions.operator_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:FUNCTION_CALL:employees.name,employees.employee_no,employees.department_id,employees.salary,employees.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.old_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.old_value`
 
 **Extractor Candidate Fingerprints**
 
@@ -6339,9 +6366,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -6450,9 +6483,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -6492,6 +6528,7 @@ CREATE PROCEDURE sp_create_shipment(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
@@ -6739,6 +6776,8 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -6817,12 +6856,15 @@ BEGIN
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
@@ -8710,6 +8752,8 @@ USE erp_system;
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -9037,18 +9081,38 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
+- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:CONCAT_FORMAT:customers.balance,customers.credit_limit->audit_log.new_value`
+- `VALUE:CONCAT_FORMAT:salary_payments.salary_month->cashier_journals.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->inventory_transactions.remark`
+- `VALUE:DIRECT:customers.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
 - `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:purchase_requisitions.id->audit_log.target_id`
+- `VALUE:DIRECT:salary_payments.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->cashier_journals.amount`
+- `VALUE:DIRECT:salary_payments.payment_date->cashier_journals.journal_date`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->inventory_transactions.operator_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:FUNCTION_CALL:employees.name,employees.employee_no,employees.department_id,employees.salary,employees.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.old_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.old_value`
 
 **Extractor Candidate Fingerprints**
 
@@ -9083,9 +9147,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -9121,6 +9191,8 @@ CREATE PROCEDURE sp_create_department(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 - `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
 
 **Extractor Candidate Fingerprints**
@@ -9187,9 +9259,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -9229,6 +9304,7 @@ CREATE PROCEDURE sp_create_shipment(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
@@ -9368,6 +9444,12 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
 - `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:COALESCE:sales_returns.remark->sales_returns.remark`
 - `VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary`
 - `VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary`
 
@@ -9477,6 +9559,8 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -9555,12 +9639,15 @@ BEGIN
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
@@ -10251,18 +10338,38 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
+- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:CONCAT_FORMAT:customers.balance,customers.credit_limit->audit_log.new_value`
+- `VALUE:CONCAT_FORMAT:salary_payments.salary_month->cashier_journals.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->inventory_transactions.remark`
+- `VALUE:DIRECT:customers.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
 - `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:purchase_requisitions.id->audit_log.target_id`
+- `VALUE:DIRECT:salary_payments.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->cashier_journals.amount`
+- `VALUE:DIRECT:salary_payments.payment_date->cashier_journals.journal_date`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->inventory_transactions.operator_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:FUNCTION_CALL:employees.name,employees.employee_no,employees.department_id,employees.salary,employees.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:employees.salary,employees.status,employees.department_id,employees.position_id->audit_log.old_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.new_value`
+- `VALUE:FUNCTION_CALL:purchase_requisitions.status->audit_log.old_value`
 
 **Extractor Candidate Fingerprints**
 
@@ -10297,9 +10404,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:COALESCE:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -10335,6 +10448,8 @@ CREATE PROCEDURE sp_create_department(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 - `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
 
 **Extractor Candidate Fingerprints**
@@ -10368,9 +10483,12 @@ CREATE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -10410,6 +10528,7 @@ CREATE PROCEDURE sp_create_shipment(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
@@ -10516,6 +10635,12 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
 - `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:COALESCE:sales_returns.remark->sales_returns.remark`
 - `VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary`
 - `VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary`
 
@@ -10625,6 +10750,8 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -10703,12 +10830,15 @@ BEGIN
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
@@ -12932,8 +13062,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -12942,7 +13072,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -13016,6 +13147,7 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -13269,12 +13401,15 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -13467,12 +13602,11 @@ INSERT ALL
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 
 ## `oracle12c-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
@@ -13953,8 +14087,8 @@ SELECT
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -13963,7 +14097,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:oracle_12c_identity_demo.sales_amount->oracle_12c_identity_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -14311,8 +14445,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -14321,7 +14455,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -14395,6 +14530,7 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -14648,12 +14784,15 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -14846,12 +14985,11 @@ INSERT ALL
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 
 ## `oracle19c-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
@@ -15719,8 +15857,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -15729,7 +15867,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -15803,6 +15942,7 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -16056,12 +16196,15 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -16254,12 +16397,11 @@ INSERT ALL
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 
 ## `oracle21c-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
@@ -17129,8 +17271,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -17139,7 +17281,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -17213,6 +17356,7 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -17306,8 +17450,8 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -17316,7 +17460,12 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -17466,12 +17615,15 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -17664,12 +17816,11 @@ INSERT ALL
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 
 ## `oracle26ai-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
@@ -18538,8 +18689,8 @@ CREATE TABLE product_embeddings (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -18548,7 +18699,8 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -18622,6 +18774,7 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -18715,8 +18868,8 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -18725,7 +18878,12 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -18875,12 +19033,15 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -19073,12 +19234,11 @@ INSERT ALL
 ```sql
 -- ============================================================
 -- ERP深业务场景验证数据
--- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 目标: 为每个新增业务域提供自然、可执行的 seed rows
+-- literal INSERT VALUES 不产生物理 source lineage；lineage 来自过程、trigger、query 和自然派生 SQL
 -- 数据库: MySQL 8.0
 -- ============================================================
 
-
--- ============================================================
 ```
 
 ## `oraclesample-data-full-03-data-05-erp-coverage-gap-data-sql`
@@ -23769,17 +23929,18 @@ SELECT *
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/postgres-pg11-sql/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-pg11-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Extractor Candidate Fingerprints**
 
@@ -24050,6 +24211,8 @@ SELECT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -24079,17 +24242,17 @@ DECLARE
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/sample-data-pg18-specific-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg18_generated_margin_demo.sales_amount->pg18_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -24994,17 +25157,18 @@ DECLARE
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Extractor Candidate Fingerprints**
 
@@ -25144,7 +25308,7 @@ DECLARE
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
-- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 - `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
@@ -25384,7 +25548,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Extractor Candidate Fingerprints**
@@ -26726,6 +26890,8 @@ SELECT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -27091,6 +27257,8 @@ SELECT
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -27131,9 +27299,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -27157,8 +27331,8 @@ $$ LANGUAGE plpgsql;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -27167,7 +27341,8 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -27200,9 +27375,12 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -27241,6 +27419,7 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -27300,8 +27479,8 @@ RETURNS TABLE(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -27310,7 +27489,12 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -27385,6 +27569,8 @@ RETURNS NUMERIC(10,2)
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -27467,12 +27653,15 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -28377,7 +28566,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Extractor Candidate Fingerprints**
@@ -29631,17 +29820,18 @@ SELECT *
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Extractor Candidate Fingerprints**
 
@@ -29781,7 +29971,7 @@ SELECT *
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
-- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 - `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
@@ -29854,13 +30044,13 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
 - `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
-- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
-- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:CONCAT_FORMAT:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
@@ -29931,6 +30121,8 @@ SELECT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -30541,6 +30733,8 @@ SELECT
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -30581,9 +30775,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -30607,8 +30807,8 @@ $$ LANGUAGE plpgsql;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -30617,7 +30817,8 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -30650,9 +30851,12 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -30691,6 +30895,7 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -30750,8 +30955,8 @@ RETURNS TABLE(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -30760,7 +30965,12 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -30835,6 +31045,8 @@ RETURNS NUMERIC(10,2)
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -30917,12 +31129,15 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -31827,7 +32042,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Extractor Candidate Fingerprints**
@@ -33014,17 +33229,18 @@ SELECT *
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
+- `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
 **Extractor Candidate Fingerprints**
 
@@ -33164,7 +33380,7 @@ SELECT *
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
 - `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
-- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 - `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
@@ -33237,13 +33453,13 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
 - `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
-- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
-- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
 - `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:CONCAT_FORMAT:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
 - `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
 - `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
@@ -33345,6 +33561,8 @@ SELECT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -33374,17 +33592,17 @@ DECLARE
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg18_generated_margin_demo.sales_amount->pg18_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -33955,6 +34173,8 @@ SELECT
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -33995,9 +34215,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -34021,8 +34247,8 @@ $$ LANGUAGE plpgsql;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -34031,7 +34257,8 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -34064,9 +34291,12 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -34105,6 +34335,7 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -34164,8 +34395,8 @@ RETURNS TABLE(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -34174,7 +34405,12 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -34249,6 +34485,8 @@ RETURNS NUMERIC(10,2)
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -34331,12 +34569,15 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -34897,6 +35138,8 @@ SELECT
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -34937,9 +35180,15 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:purchase_order_items.received_qty->purchase_order_items.received_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:purchase_requisitions.remark->purchase_requisitions.remark`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -34963,8 +35212,8 @@ $$ LANGUAGE plpgsql;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -34973,7 +35222,8 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
 **Extractor Candidate Fingerprints**
 
@@ -35006,9 +35256,12 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
@@ -35047,6 +35300,7 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -35106,8 +35360,8 @@ RETURNS TABLE(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -35116,7 +35370,12 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -35191,6 +35450,8 @@ RETURNS NUMERIC(10,2)
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
+- `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
@@ -35273,12 +35534,15 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at`
+- `VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
@@ -37007,8 +37271,8 @@ CREATE TABLE dbo.product_embeddings (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -37017,7 +37281,16 @@ CREATE TABLE dbo.product_embeddings (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37027,13 +37300,13 @@ CREATE TABLE dbo.product_embeddings (
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-01-procedures-sql`
@@ -38428,8 +38701,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -38438,7 +38711,16 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38448,13 +38730,13 @@ BEGIN
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-01-procedures-sql`
@@ -39882,8 +40164,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -39892,7 +40174,16 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39902,13 +40193,13 @@ BEGIN
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-01-procedures-sql`
@@ -41369,8 +41660,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -41379,7 +41670,16 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41389,13 +41689,13 @@ GROUP BY c.id;
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-01-procedures-sql`
@@ -42823,8 +43123,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -42833,7 +43133,16 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42843,13 +43152,13 @@ BEGIN
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-01-procedures-sql`
@@ -44310,8 +44619,8 @@ CROSS APPLY GENERATE_SERIES(1, 12) AS gs
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -44320,7 +44629,16 @@ CROSS APPLY GENERATE_SERIES(1, 12) AS gs
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
+- `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty`
+- `VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44330,13 +44648,13 @@ CROSS APPLY GENERATE_SERIES(1, 12) AS gs
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural, set-based triggers.
+-- This file uses a SQL Server 2016-compatible baseline shared by all versions.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
-CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+-- relation-detector-fixture-source:sqlserver.tr_audit_employee_insert
+CREATE OR ALTER TRIGGER [dbo].[tr_audit_employee_insert]
+ON [dbo].[employees]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-01-procedures-sql`

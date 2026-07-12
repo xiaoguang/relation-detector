@@ -40,12 +40,15 @@
     "VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change",
     "VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount",
     "VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty",
+    "VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount",
     "VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address",
     "VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person",
     "VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email",
     "VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone",
     "VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name",
     "VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty",
+    "VALUE:COALESCE:master_data_change_requests.approved_at->master_data_change_requests.approved_at",
+    "VALUE:COALESCE:master_data_change_requests.approved_by->master_data_change_requests.approved_by",
     "VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount",
     "VALUE:COALESCE:product_categories.name->category_dim.level1_name",
     "VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date",
@@ -134,7 +137,7 @@
     "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end",
     "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

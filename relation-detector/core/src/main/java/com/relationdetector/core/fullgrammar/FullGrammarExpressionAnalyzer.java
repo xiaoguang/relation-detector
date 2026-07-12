@@ -374,8 +374,8 @@ public abstract class FullGrammarExpressionAnalyzer {
                     if (qualifier.isBlank()) {
                         qualifier = cleanIdentifier(defaultQualifier);
                     }
-                    if (name.isBlank() || qualifier.isBlank()
-                            || isNonColumnIdentifier(qualifier)
+                    if (name.isBlank()
+                            || (!qualifier.isBlank() && isNonColumnIdentifier(qualifier))
                             || isNonColumnIdentifier(name)) {
                         return null;
                     }

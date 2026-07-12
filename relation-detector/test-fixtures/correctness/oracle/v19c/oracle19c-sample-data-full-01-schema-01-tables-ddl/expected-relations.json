@@ -86,7 +86,7 @@
     "FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
-    "FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
@@ -95,5 +95,5 @@
     "FK_LIKE:vouchers.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:warehouses.manager_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

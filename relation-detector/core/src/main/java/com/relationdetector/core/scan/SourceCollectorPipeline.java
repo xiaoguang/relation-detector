@@ -79,7 +79,8 @@ final class SourceCollectorPipeline {
                                 file, StatementSourceType.DDL_FILE, ctx.adaptor.parsers().scriptFramer(),
                                 ctx.result.warnings()::add)
                         .toList();
-                StatementDispatchService.DdlFileDispatch dispatch = statementDispatch.dispatchDdlFile(statements);
+                StatementDispatchService.DdlFileDispatch dispatch = statementDispatch.dispatchDdlFile(
+                        statements, ctx.config.database().databaseType());
                 if (!dispatch.ddlStatements().isEmpty()) {
                     tasks.add(new ParseTask(
                             context -> statementParser.executeDdlStatements(

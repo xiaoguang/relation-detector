@@ -342,13 +342,27 @@ final class SampleDataSchemaConsistencySupport {
                 if (!"SQL".equals(fixture.parserTarget())) {
                     continue;
                 }
+                List<EndpointUse> endpoints = new ArrayList<>();
                 for (String fingerprint : ExpectedRelations.read(fixture.expectedRelationsFile()).fingerprints()) {
-                    relationEndpoints(fingerprint).forEach(endpoint -> validate(
-                            profile, fixture, "relationship", endpoint, declared, findings));
+                    relationEndpoints(fingerprint).forEach(endpoint ->
+                            endpoints.add(new EndpointUse("relationship", endpoint)));
                 }
                 for (String fingerprint : ExpectedLineage.readIfPresent(fixture.expectedLineageFile()).fingerprints()) {
-                    lineageEndpoints(fingerprint).forEach(endpoint -> validate(
-                            profile, fixture, "lineage", endpoint, declared, findings));
+                    lineageEndpoints(fingerprint).forEach(endpoint ->
+                            endpoints.add(new EndpointUse("lineage", endpoint)));
+                }
+                Set<String> available = declared;
+                if (endpoints.stream().anyMatch(endpoint -> !declared.contains(normalize(endpoint.endpoint())))) {
+                    available = new LinkedHashSet<>(declared);
+                    try {
+                        available.addAll(declaredColumnsInFixture(profile, fixture));
+                    } catch (Exception error) {
+                        throw new IllegalStateException("Failed to build fixture-local DDL inventory for "
+                                + fixture.id(), error);
+                    }
+                }
+                for (EndpointUse endpoint : endpoints) {
+                    validate(profile, fixture, endpoint.factKind(), endpoint.endpoint(), available, findings);
                 }
             }
         });
@@ -519,6 +533,26 @@ final class SampleDataSchemaConsistencySupport {
         return declared;
     }
 
+    private static Set<String> declaredColumnsInFixture(
+            ProfileKey profile,
+            CorrectnessFixture fixture
+    ) throws Exception {
+        DatabaseAdaptor adaptor = adaptor(profile.databaseType());
+        ScanConfig config = ddlInventoryConfig(profile);
+        AdaptorContext context = new AdaptorContext(
+                new ScanScope(null, fixture.schema(), List.of(), List.of()), Map.of(), warning -> { });
+        ParserBundle bundle = new ParserBundleSelector().select(adaptor, config, context);
+        var framed = adaptor.parsers().scriptFramer().frame(new ScriptFrameRequest(
+                Files.readString(fixture.inputFile()), fixture.inputFile().toString(), fixture.sourceType()));
+        Set<String> declared = new LinkedHashSet<>();
+        for (SqlStatementRecord statement : framed.statements()) {
+            StructuredParseResult result = bundle.ddlParser().parseDdl(
+                    statement.sql(), statement.sourceName(), context);
+            result.events().forEach(event -> addDeclaredColumns(event, declared));
+        }
+        return declared;
+    }
+
     private static List<SqlStatementRecord> scriptStatements(
             DatabaseAdaptor adaptor,
             Path file,
@@ -676,6 +710,9 @@ final class SampleDataSchemaConsistencySupport {
         String label() {
             return databaseType + "/" + parserMode + "/" + grammarProfile + "/" + databaseVersion;
         }
+    }
+
+    private record EndpointUse(String factKind, String endpoint) {
     }
 
     private static final class InventoryBuildFailure extends RuntimeException {

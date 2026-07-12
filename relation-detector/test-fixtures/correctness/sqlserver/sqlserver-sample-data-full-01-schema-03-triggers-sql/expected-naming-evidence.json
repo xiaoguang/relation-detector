@@ -1,3 +1,8 @@
 {
-  "fingerprints": []
+  "fingerprints": [
+    "naming:dbo.inventory.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.sales_orders.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.sales_return_items.order_item_id->dbo.sales_order_items.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.sales_return_items.return_id->dbo.sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+  ]
 }

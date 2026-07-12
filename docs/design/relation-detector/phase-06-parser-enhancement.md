@@ -111,7 +111,8 @@ adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/common
   AbstractMySqlFullGrammarStructuredSqlParser
   AbstractMySqlFullGrammarStructuredDdlParser
   MySqlSqlEventVisitorCore
-  MySqlDdlEventVisitorCore
+  MySqlDdlEventSink
+  MySqlExpressionContextAdapter
 
 adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/v5_7
 adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/v8_0
@@ -120,7 +121,7 @@ adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/v8_0
   MySqlFullGrammarStructuredSqlParser
   MySqlFullGrammarStructuredDdlParser
   MySqlFullGrammarParseTreeVisitor
-  MySqlExpressionAnalyzer
+  MySqlFullGrammarExpressionAnalyzer
   MySqlFullGrammarDdlEventCollector
 
 adaptor-postgres/src/main/java/com/relationdetector/postgres/tokenevent
@@ -717,7 +718,7 @@ sqlserver-2016 / 2017 / 2019 / 2022 / 2025
 
 full-grammar SQL parser 使用 versioned ANTLR `.g4`。MySQL 5.7/8.0 当前来自 vendored grammars-v4 并按官方文档收紧版本边界；PostgreSQL 16/17/18 以官方 `gram.y` / `scan.l` / keywords 为 source-of-truth，仓库 `.g4` 作为按 major version 约束的 ANTLR projection。SQL Server 2016/2017/2019/2022/2025 来自固定 grammars-v4 T-SQL 快照，版本边界最终以 Microsoft Learn T-SQL reference 为准；当前已在 `.g4` 中编码 2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES` 和 2025 `VECTOR(...)` 的首批边界。它们运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。
 
-PostgreSQL routine 使用两条独立的第二阶段解析路径：token-event 外层 parser 调用 `postgres-plpgsql-token-event`，其中的静态 SQL 回到 token-event SQL parser；v16/v17/v18 full-grammar 外层 parser分别调用 `plpgsql-v16/v17/v18`，其中的静态 SQL回到同版本 full-grammar SQL parser。两条路径只共享 descriptor、provenance、typed event 和无状态语义 helper，任何 versioned PL/pgSQL parser都不得调用 token-event parser。`LANGUAGE sql` 字符串体由 PostgreSQL Script Framer切分后交回当前 mode parser，dynamic SQL只产生 unresolved diagnostic，不扫描字符串内容。
+PostgreSQL routine 使用两条独立的第二阶段解析路径：token-event 外层 parser 调用 `postgres-plpgsql-token-event`，其中的静态 SQL 回到 token-event SQL parser；v16/v17/v18 full-grammar 外层 parser分别调用 `plpgsql-v16/v17/v18`，其中的静态 SQL回到同版本 full-grammar SQL parser。两条路径只共享 sealed body descriptor、provenance、typed event 和无状态语义 helper，任何 versioned PL/pgSQL parser都不得调用 token-event parser。`LANGUAGE sql` 字符串体由 PostgreSQL Script Framer切分后交回当前 mode parser；string body缺省 language产生 diagnostic；outer grammar typed `BEGIN ATOMIC` body逐 statement交回当前 mode SQL parser；dynamic SQL只产生 unresolved diagnostic，不扫描字符串内容。
 
 full-grammar 仍只替换“语法结构识别”。它不会改变：
 
@@ -747,25 +748,25 @@ full-grammar SQL 直接通过对应 versioned golden 验收，不再拿 token-ev
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 39 | 34 / 5 | 756 | 328 | 0 | 219 | 441 |
-| MySQL root token-event | 83 | 65 / 18 | 652 | 350 | 0 | 252 | 321 |
-| MySQL full-grammar v5_7 | 89 | 71 / 18 | 696 | 414 | 0 | 257 | 327 |
-| MySQL full-grammar v8_0 | 89 | 71 / 18 | 883 | 398 | 0 | 421 | 491 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1365 | 332 | 0 | 353 | 353 |
-| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1417 | 351 | 0 | 374 | 450 |
-| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1420 | 364 | 0 | 375 | 451 |
-| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1420 | 362 | 0 | 374 | 450 |
-| Oracle root token-event | 41 | 33 / 8 | 623 | 247 | 0 | 241 | 309 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v26ai | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| SQL Server root token-event | 38 | 32 / 6 | 465 | 299 | 0 | 125 | 191 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
+| common token-event | 39 | 34 / 5 | 760 | 332 | 0 | 219 | 442 |
+| MySQL root token-event | 83 | 65 / 18 | 837 | 462 | 0 | 395 | 465 |
+| MySQL full-grammar v5_7 | 89 | 71 / 18 | 698 | 496 | 0 | 281 | 351 |
+| MySQL full-grammar v8_0 | 89 | 71 / 18 | 879 | 500 | 0 | 422 | 492 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1428 | 424 | 0 | 397 | 472 |
+| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1479 | 435 | 0 | 418 | 494 |
+| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1482 | 448 | 0 | 419 | 495 |
+| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1482 | 447 | 0 | 418 | 494 |
+| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
+| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
+| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
+| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
+| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
 
 root token-event 与对应 full-grammar 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 分别记录在 `docs/parser-audit/all-golden-semantic-review.md`、`parser-comparison-summary.md` 与 `sample-data-output-audit-backlog.md`。Golden review 只覆盖 fixture 基线；sample-data JSON/SQL 审计仍可能发现未进入 golden 分类的 parser gap：
 
@@ -1177,26 +1178,26 @@ ParserConfigRemovalTest
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1197 | 983 / 214 | 16151 | 5936 | 0 | 5935 | 7330 |
-| common token-event | 39 | 34 / 5 | 756 | 328 | 0 | 219 | 441 |
-| MySQL root token-event | 83 | 65 / 18 | 652 | 350 | 0 | 252 | 321 |
-| MySQL full-grammar v5_7 | 89 | 71 / 18 | 696 | 414 | 0 | 257 | 327 |
-| MySQL full-grammar v8_0 | 89 | 71 / 18 | 883 | 398 | 0 | 421 | 491 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1365 | 332 | 0 | 353 | 353 |
-| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1417 | 351 | 0 | 374 | 450 |
-| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1420 | 364 | 0 | 375 | 451 |
-| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1420 | 362 | 0 | 374 | 450 |
-| Oracle root token-event | 41 | 33 / 8 | 623 | 247 | 0 | 241 | 309 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| Oracle full-grammar v26ai | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
-| SQL Server root token-event | 38 | 32 / 6 | 465 | 299 | 0 | 125 | 191 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
+| 全部 correctness | 1198 | 984 / 214 | 17097 | 7294 | 0 | 6658 | 8130 |
+| common token-event | 39 | 34 / 5 | 760 | 332 | 0 | 219 | 442 |
+| MySQL root token-event | 83 | 65 / 18 | 837 | 462 | 0 | 395 | 465 |
+| MySQL full-grammar v5_7 | 89 | 71 / 18 | 698 | 496 | 0 | 281 | 351 |
+| MySQL full-grammar v8_0 | 89 | 71 / 18 | 879 | 500 | 0 | 422 | 492 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1428 | 424 | 0 | 397 | 472 |
+| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1479 | 435 | 0 | 418 | 494 |
+| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1482 | 448 | 0 | 419 | 495 |
+| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1482 | 447 | 0 | 418 | 494 |
+| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
+| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
+| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
+| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
+| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
 
 验证要求：代码或 fixture 变化后应至少运行 full correctness golden；文档或统计变化后应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。报告生成器仍需显式运行，不进入普通 `mvn test` 默认重负担路径。
 

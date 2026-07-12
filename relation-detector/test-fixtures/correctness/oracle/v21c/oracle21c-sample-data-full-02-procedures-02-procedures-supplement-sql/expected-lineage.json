@@ -1,6 +1,9 @@
 {
-  "fingerprints": [],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "fingerprints": [
+    "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
+    "VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty"
+  ],
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

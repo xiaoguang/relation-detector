@@ -36,6 +36,24 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
  */
 class StructuredRelationshipExtractorIndependenceTest {
     @Test
+    void triggerPseudoRowsetAliasInFromClauseKeepsPhysicalBinding() {
+        StructuredParseResult structured = structured(List.of(
+                new RowsetEvent(StructuredParseEventType.TRIGGER_PSEUDO_ROWSET, provenance(1),
+                        "TRIGGER", "dbo.inventory", "inventory", "inserted", "inserted",
+                        "dbo.inventory", ""),
+                table("FROM", "inserted", "i", 2),
+                table("JOIN", "dbo.product_batches", "pb", 2),
+                equality("i", "batch_id", "pb", "id", 2)));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
+                .extract(record("SELECT 1"), structured);
+
+        assertEquals(1, relations.size());
+        assertEquals("dbo.inventory.batch_id", relations.get(0).source().displayName());
+        assertEquals("dbo.product_batches.id", relations.get(0).target().displayName());
+    }
+
+    @Test
     void extractsRelationsFromStructuredEventsWhenRawSqlHasNoJoin() {
         SqlStatementRecord statement = record("SELECT 1");
         StructuredParseResult structured = structured(List.of(

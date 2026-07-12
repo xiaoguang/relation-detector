@@ -30,6 +30,111 @@ import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 
 class OracleAdaptorParserTest {
     @Test
+    void oracleTokenAndFullGrammarResolveTypedTriggerPseudoRows() {
+        SqlStatementRecord statement = statement("""
+                CREATE OR REPLACE TRIGGER tr_inventory_update_batch
+                AFTER UPDATE OF quantity ON inventory
+                FOR EACH ROW
+                BEGIN
+                    UPDATE product_batches
+                    SET current_qty = :NEW.quantity
+                    WHERE id = :NEW.batch_id;
+                END;
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertLineageSource(lineages, "inventory", "quantity", "product_batches", "current_qty",
+                    LineageFlowKind.VALUE, LineageTransformType.DIRECT, result);
+            var relationships = new StructuredSqlRelationshipParser(parser).parse(statement, null);
+            assertTrue(relationships.stream().anyMatch(relationship ->
+                            "inventory.batch_id".equals(relationship.source().displayName())
+                                    && "product_batches.id".equals(relationship.target().displayName())),
+                    () -> parser.getClass().getSimpleName() + " missing trigger predicate relationship; actual="
+                            + relationships + " events=" + result.events());
+        }
+    }
+
+    @Test
+    void oracleTokenAndAllFullProfilesResolveUnqualifiedArithmeticSelfUpdate() {
+        SqlStatementRecord statement = statement("""
+                UPDATE purchase_order_items
+                SET received_qty = received_qty + v_accepted_qty
+                WHERE id = p_order_item_id
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertLineageSource(lineages, "purchase_order_items", "received_qty",
+                    "purchase_order_items", "received_qty",
+                    LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC, result);
+        }
+    }
+
+    @Test
+    void oracleTokenAndAllFullProfilesKeepOuterArithmeticAroundCaseSelfUpdate() {
+        SqlStatementRecord statement = statement("""
+                UPDATE sales_orders
+                SET paid_amount = paid_amount
+                    + CASE WHEN p_status = 'paid' THEN p_amount ELSE 0.00 END
+                WHERE id = p_order_id
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertLineageSource(lineages, "sales_orders", "paid_amount", "sales_orders", "paid_amount",
+                    LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC, result);
+        }
+    }
+
+    @Test
+    void oracleTokenAndAllFullProfilesKeepTopLevelCaseWhenBranchesContainArithmetic() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO shipments (actual_delivery_date)
+                SELECT CASE
+                         WHEN so.status = 'delivered' THEN so.order_date + 2
+                         ELSE so.order_date
+                       END
+                FROM sales_orders so
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertLineageSource(lineages, "sales_orders", "order_date",
+                    "shipments", "actual_delivery_date",
+                    LineageFlowKind.VALUE, LineageTransformType.CASE_WHEN, result);
+        }
+    }
+
+    @Test
     void oracleTokenEventAndFullGrammarSeparateCaseValueAndControlSources() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO reconciliation_items (credit_amount)

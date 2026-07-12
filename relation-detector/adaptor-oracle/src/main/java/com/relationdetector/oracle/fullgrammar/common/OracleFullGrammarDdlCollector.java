@@ -63,9 +63,8 @@ final class OracleFullGrammarDdlCollector extends OracleFullGrammarParseTreeSupp
         }
         if (hasSymbol(ctx, Symbol.PRIMARY) || hasSymbol(ctx, Symbol.UNIQUE)) {
             String kind = hasSymbol(ctx, Symbol.PRIMARY) ? "PRIMARY_KEY" : "UNIQUE_CONSTRAINT";
-            for (String column : columns(children(ctx, Role.COLUMN_NAME))) {
-                addIndexEvent(currentTable(), column, "TARGET_UNIQUE", kind, ctx);
-            }
+            addIndexEvents(currentTable(), columns(children(ctx, Role.COLUMN_NAME)),
+                    "TARGET_UNIQUE", kind, ctx);
             return;
         }
         visitChildren(ctx);
@@ -91,12 +90,12 @@ final class OracleFullGrammarDdlCollector extends OracleFullGrammarParseTreeSupp
         String table = name(child(tableIndex, Role.TABLEVIEW_NAME));
         String role = hasSymbol(ctx, Symbol.UNIQUE) ? "TARGET_UNIQUE" : "SOURCE_INDEX";
         String kind = hasSymbol(ctx, Symbol.UNIQUE) ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX";
-        for (ParserRuleContext expr : children(tableIndex, Role.INDEX_EXPRESSION)) {
-            ParserRuleContext column = child(expr, Role.COLUMN_NAME);
-            if (column != null) {
-                addIndexEvent(table, name(column), role, kind, ctx);
-            }
-        }
+        addIndexEvents(table, children(tableIndex, Role.INDEX_EXPRESSION).stream()
+                        .map(expr -> child(expr, Role.COLUMN_NAME))
+                        .filter(java.util.Objects::nonNull)
+                        .map(this::name)
+                        .toList(),
+                role, kind, ctx);
     }
 
     private void addForeignKeyEvents(
@@ -118,6 +117,17 @@ final class OracleFullGrammarDdlCollector extends OracleFullGrammarParseTreeSupp
             ParserRuleContext ctx
     ) {
         OracleDdlEventVisitorCore.addIndexEvent(core, ctx, table, lastPart(column), role, kind);
+    }
+
+    private void addIndexEvents(
+            String table,
+            List<String> columns,
+            String role,
+            String kind,
+            ParserRuleContext ctx
+    ) {
+        OracleDdlEventVisitorCore.addIndexEvents(core, ctx, table,
+                columns.stream().map(this::lastPart).toList(), role, kind);
     }
 
     private String currentTable() {

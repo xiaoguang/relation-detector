@@ -5,10 +5,15 @@ import java.util.Locale;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.postgres.plpgsql.tokenevent.TokenEventPlPgSqlBodyParser;
-import com.relationdetector.postgres.routine.PostgresRoutineBodyKind;
+import com.relationdetector.postgres.routine.PlPgSqlStringBody;
 import com.relationdetector.postgres.routine.PostgresRoutineDescriptor;
+import com.relationdetector.postgres.routine.PostgresRoutineBody;
 import com.relationdetector.postgres.routine.PostgresRoutineLanguageDispatcher;
 import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
+import com.relationdetector.postgres.routine.PostgresRoutineStatementFactory;
+import com.relationdetector.postgres.routine.SqlAtomicBody;
+import com.relationdetector.postgres.routine.SqlStringBody;
+import com.relationdetector.postgres.routine.UnsupportedRoutineBody;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
@@ -47,21 +52,33 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
                 .filter(element -> element.LANGUAGE() != null && element.identifier() != null)
                 .map(element -> clean(element.identifier().getText()).toLowerCase(Locale.ROOT))
                 .findFirst().orElse("");
-        String body = unquoteDollarBody(quotedBody);
-        if (body.isBlank()) return null;
-        PostgresRoutineBodyKind kind = switch (language) {
-            case "plpgsql" -> PostgresRoutineBodyKind.PLPGSQL;
-            case "sql", "" -> PostgresRoutineBodyKind.SQL_STRING;
-            default -> PostgresRoutineBodyKind.UNSUPPORTED_LANGUAGE;
-        };
         String objectType = ctx.PROCEDURE() == null ? "FUNCTION" : "PROCEDURE";
         String objectName = qualifiedName(ctx.qualifiedName());
-        int bodyLine = Math.toIntExact(statement.startLine() + Math.max(0,
+        String body = unquoteDollarBody(quotedBody);
+        int stringBodyLine = Math.toIntExact(statement.startLine() + Math.max(0,
                 ctx.routineDeclarationElement().stream()
                         .filter(element -> element.DOLLAR_QUOTED_STRING() != null)
                         .mapToInt(element -> element.getStart().getLine()).findFirst().orElse(1) - 1));
+        PostgresRoutineBody routineBody;
+        if (ctx.routineSqlAtomicBody() != null) {
+            var statements = ctx.routineSqlAtomicBody().atomicSqlStatement().stream()
+                    .map(item -> PostgresRoutineStatementFactory.fromContext(statement, item))
+                    .toList();
+            int bodyLine = Math.toIntExact(statement.startLine()
+                    + ctx.routineSqlAtomicBody().getStart().getLine() - 1L);
+            routineBody = new SqlAtomicBody(statements, bodyLine);
+        } else if (!body.isBlank()) {
+            routineBody = switch (language) {
+                case "plpgsql" -> new PlPgSqlStringBody(body, stringBodyLine);
+                case "sql", "" -> new SqlStringBody(body, stringBodyLine);
+                default -> new UnsupportedRoutineBody(language, stringBodyLine);
+            };
+        } else {
+            return null;
+        }
         var outcome = new PostgresRoutineLanguageDispatcher(new TokenEventPlPgSqlBodyParser()).dispatch(
-                new PostgresRoutineDescriptor(kind, language, body, bodyLine, objectType, objectName),
+                new PostgresRoutineDescriptor(language, routineBody, objectType, objectName,
+                        statement.attributes()),
                 PostgresRoutineAttributes.withNonColumnIdentifiers(statement,
                         ctx.routineParameterList().routineParameter().stream()
                                 .map(parameter -> clean(parameter.identifier().getText())).toList()),

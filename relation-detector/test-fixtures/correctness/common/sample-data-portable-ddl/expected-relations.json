@@ -27,7 +27,7 @@
     "FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
-    "FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:damage_report_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:damage_report_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:damage_report_items.report_id->damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
@@ -167,14 +167,14 @@
     "FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
-    "FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
-    "FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
+    "FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
-    "FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
-    "FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
+    "FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
@@ -194,5 +194,5 @@
     "FK_LIKE:work_orders.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:work_orders.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

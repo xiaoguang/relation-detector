@@ -169,9 +169,12 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
         List<OracleExpressionAnalysis> result = new ArrayList<>(2);
         if (!values.isEmpty()) {
             LineageTransformType outer = transforms.transformFor(expression);
-            LineageTransformType transform = outer == LineageTransformType.AGGREGATE
-                    || outer == LineageTransformType.CUMULATIVE
-                    ? outer : LineageTransformType.CASE_WHEN;
+            LineageTransformType transform = isTopLevelCaseExpression(expression)
+                    && outer != LineageTransformType.AGGREGATE
+                    && outer != LineageTransformType.CUMULATIVE
+                    && outer != LineageTransformType.WINDOW_DERIVED
+                    ? LineageTransformType.CASE_WHEN
+                    : transforms.dominantValueTransform(outer, LineageTransformType.CASE_WHEN);
             result.add(new OracleExpressionAnalysis(values, transform, LineageFlowKind.VALUE));
         }
         if (!caseControls.isEmpty()) {
@@ -179,6 +182,26 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
                     LineageFlowKind.CONTROL));
         }
         return List.copyOf(result);
+    }
+
+    private boolean isTopLevelCaseExpression(ParseTree tree) {
+        ParseTree current = tree;
+        while (current != null) {
+            if (hasRole(current, Role.CASE_EXPRESSION)) {
+                return true;
+            }
+            if (operatorSemantic(current) != OracleFullGrammarParseTreeAdapter.OperatorSemantic.NONE
+                    || hasRole(current, Role.FUNCTION_EXPRESSION)
+                    || functionName(current).filter(name -> !name.isBlank()).isPresent()) {
+                return false;
+            }
+            List<ParseTree> children = typedChildren(current);
+            if (children.size() != 1) {
+                return false;
+            }
+            current = children.get(0);
+        }
+        return false;
     }
 
     private List<OracleExpressionAnalysis> caseRoleAnalyses(ParserRuleContext caseExpression) {
@@ -339,6 +362,10 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
         if (tree == null) {
             return;
         }
+        if (hasRole(tree, Role.BIND_VARIABLE)) {
+            addColumnRead(name(tree), reads);
+            return;
+        }
         if (hasRole(tree, Role.COLUMN_REFERENCE)) {
             addColumnRead(name(tree), reads);
             return;
@@ -367,7 +394,7 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
         if (dot < 0) {
             String alias = defaultAlias.get();
             String column = core.clean(value);
-            if (!alias.isBlank() && !column.isBlank()) {
+            if (!column.isBlank()) {
                 reads.putIfAbsent(alias + "." + column, new OracleColumnRead(alias, column));
             }
             return;
@@ -376,6 +403,9 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             return;
         }
         String alias = core.clean(value.substring(0, dot));
+        if (alias.startsWith(":")) {
+            alias = alias.substring(1);
+        }
         String column = core.clean(value.substring(dot + 1));
         if (!alias.isBlank() && !column.isBlank()) {
             reads.putIfAbsent(alias + "." + column, new OracleColumnRead(alias, column));

@@ -42,9 +42,19 @@ public final class DdlEventBuilder {
     }
 
     public void addIndex(String table, String column, String role, String kind, long line) {
-        events.add(new DdlEvent(StructuredParseEventType.DDL_INDEX,
-                SourceProvenance.source(sourceName, line), "", "", "", "",
-                table, column, role, kind, 1, 1));
+        addIndex(table, List.of(column), role, kind, line);
+    }
+
+    public void addIndex(String table, List<String> columns, String role, String kind, long line) {
+        List<String> safeColumns = columns == null ? List.of() : columns.stream()
+                .filter(column -> column != null && !column.isBlank())
+                .toList();
+        int count = safeColumns.size();
+        for (int index = 0; index < count; index++) {
+            events.add(new DdlEvent(StructuredParseEventType.DDL_INDEX,
+                    SourceProvenance.source(sourceName, line), "", "", "", "",
+                    table, safeColumns.get(index), role, kind, index + 1, count));
+        }
     }
 
     public void addColumn(String table, String column, long line) {

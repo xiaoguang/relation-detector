@@ -13,6 +13,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 public final class PostgresRoutineAttributes {
     public static final String NON_COLUMN_IDENTIFIERS = "routineNonColumnIdentifiers";
     public static final String EMBEDDED_SQL = "postgresRoutineEmbeddedSql";
+    public static final String RETURNS_TRIGGER = "routineReturnsTrigger";
 
     private PostgresRoutineAttributes() {
     }
@@ -66,7 +67,8 @@ public final class PostgresRoutineAttributes {
     }
 
     public static List<String> triggerPseudoIdentifiers(SqlStatementRecord statement) {
-        return statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.TRIGGER
+        return (statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.TRIGGER
+                || Boolean.TRUE.equals(statement.attributes().get(RETURNS_TRIGGER)))
                 ? List.of("new", "old") : List.of();
     }
 

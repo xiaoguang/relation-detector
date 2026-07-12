@@ -104,6 +104,11 @@ public final class DdlRelationExtractionVisitor {
                     Endpoint.column(ColumnRef.of(table, column)), resolver, namespace);
             if (event.type() == StructuredParseEventType.DDL_COLUMN) {
                 inventory.addColumn(key, observation);
+            } else if (event.compositeSize() > 1) {
+                // Composite keys/indexes describe an ordered column group. A member
+                // endpoint is not independently indexed or unique for relationship
+                // direction inference.
+                continue;
             } else if ("SOURCE_INDEX".equals(clean(event.role()))) {
                 inventory.addSourceIndex(key, observation);
             } else if ("TARGET_UNIQUE".equals(clean(event.role()))) {

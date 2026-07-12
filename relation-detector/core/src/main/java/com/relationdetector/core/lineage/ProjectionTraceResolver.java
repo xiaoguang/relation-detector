@@ -164,6 +164,15 @@ final class ProjectionTraceResolver {
         for (int index = 0; index < count; index++) {
             String sourceAlias = sourceAliases.get(index);
             String sourceColumn = sourceColumns.get(index);
+            TableId selfReferenceTable = selfReferenceTable(
+                    event, sourceAlias, sourceColumn, aliases, physicalAliases);
+            if (selfReferenceTable != null) {
+                endpoints.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
+                        .add(Endpoint.column(column(aliases, selfReferenceTable, sourceColumn)));
+                transforms.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
+                        .add(LineageTransformType.DIRECT);
+                continue;
+            }
             ProjectionAnchor wildcardAnchor = wildcardAnchors.get(
                     aliases.normalizeIdentifier(sourceAlias));
             if (event.type() != StructuredParseEventType.PROJECTION_ITEM
@@ -218,6 +227,28 @@ final class ProjectionTraceResolver {
             }
         }
         return List.copyOf(result);
+    }
+
+    private static TableId selfReferenceTable(
+            StructuredSqlEvent event,
+            String sourceAlias,
+            String sourceColumn,
+            AliasSymbolTable aliases,
+            Map<String, TableId> physicalAliases
+    ) {
+        if ((event.type() != StructuredParseEventType.UPDATE_ASSIGNMENT
+                && event.type() != StructuredParseEventType.MERGE_WRITE_MAPPING)
+                || !clean(sourceAlias).isBlank()
+                || event.targetColumn().isBlank()
+                || !aliases.normalizeIdentifier(sourceColumn)
+                .equals(aliases.normalizeIdentifier(event.targetColumn()))) {
+            return null;
+        }
+        TableId table = physicalAliases.get(aliases.normalizeIdentifier(event.targetAlias()));
+        if (table != null) {
+            return table;
+        }
+        return physicalAliases.get(aliases.normalizeIdentifier(event.targetTable()));
     }
 
     private static List<ProjectionTrace> projectionVariants(
@@ -523,17 +554,42 @@ final class ProjectionTraceResolver {
     ) {
         Map<String, TableId> result = new LinkedHashMap<>();
         Set<String> ambiguous = new LinkedHashSet<>();
+        Map<String, TableId> triggerPseudoTables = new LinkedHashMap<>();
         for (StructuredSqlEvent event : events) {
+            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET
+                    && !event.targetTable().isBlank()) {
+                TableId table = aliases.resolveQualified(event.targetTable());
+                triggerPseudoTables.put(aliases.normalizeIdentifier(event.name()), table);
+                triggerPseudoTables.put(aliases.normalizeIdentifier(event.alias()), table);
+            }
+        }
+        for (StructuredSqlEvent event : events) {
+            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
+                String qualified = event.targetTable().isBlank()
+                        ? event.qualifiedTable() : event.targetTable();
+                if (!qualified.isBlank()) {
+                    TableId table = aliases.resolveQualified(qualified);
+                    bindPhysicalAlias(result, ambiguous, aliases, event.name(), table);
+                    bindPhysicalAlias(result, ambiguous, aliases, event.alias(), table);
+                }
+                continue;
+            }
             if (event.type() != StructuredParseEventType.ROWSET_REFERENCE
                     && event.type() != StructuredParseEventType.WRITE_TARGET) {
                 continue;
             }
             String qualified = event.qualifiedTable().isBlank()
                     ? event.table() : event.qualifiedTable();
-            if (qualified.isBlank() || isIgnoredRowsetName(qualified, ignoredRowsets, aliases)) {
+            if (qualified.isBlank()) {
                 continue;
             }
-            TableId table = aliases.resolveQualified(qualified);
+            TableId table = triggerPseudoTables.get(aliases.normalizeIdentifier(qualified));
+            if (table == null && isIgnoredRowsetName(qualified, ignoredRowsets, aliases)) {
+                continue;
+            }
+            if (table == null) {
+                table = aliases.resolveQualified(qualified);
+            }
             bindPhysicalAlias(result, ambiguous, aliases, qualified, table);
             bindPhysicalAlias(result, ambiguous, aliases, event.table(), table);
             bindPhysicalAlias(result, ambiguous, aliases, event.alias(), table);

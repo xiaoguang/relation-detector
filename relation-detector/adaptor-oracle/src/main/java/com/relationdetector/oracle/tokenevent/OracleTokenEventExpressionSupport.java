@@ -51,6 +51,9 @@ abstract class OracleTokenEventExpressionSupport extends OracleTokenEventVisitor
     }
 
     protected OracleColumnRead singleColumn(OracleRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof OracleRelationSqlParser.TriggerPseudoColumnExpressionContext pseudo) {
+            return pseudoColumn(pseudo.triggerPseudoColumn());
+        }
         if (expression instanceof OracleRelationSqlParser.ColumnExpressionContext columnExpression) {
             List<String> nameParts = parts(columnExpression.qualifiedName());
             if (nameParts.size() == 1) {
@@ -65,6 +68,11 @@ abstract class OracleTokenEventExpressionSupport extends OracleTokenEventVisitor
     }
 
     protected OracleExpressionAnalysis analyze(OracleRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof OracleRelationSqlParser.TriggerPseudoColumnExpressionContext pseudo) {
+            OracleColumnRead column = pseudoColumn(pseudo.triggerPseudoColumn());
+            return column == null ? OracleExpressionAnalysis.empty()
+                    : OracleExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
+        }
         if (expression instanceof OracleRelationSqlParser.ColumnExpressionContext columnExpression) {
             OracleColumnRead column = singleColumn(columnExpression);
             return column == null ? OracleExpressionAnalysis.empty()
@@ -144,6 +152,15 @@ abstract class OracleTokenEventExpressionSupport extends OracleTokenEventVisitor
                     new OracleExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE));
         }
         return OracleExpressionAnalysis.empty();
+    }
+
+    private OracleColumnRead pseudoColumn(OracleRelationSqlParser.TriggerPseudoColumnContext pseudo) {
+        String alias = clean(pseudo.PARAMETER().getText());
+        if (alias.startsWith(":")) {
+            alias = alias.substring(1);
+        }
+        String column = clean(pseudo.identifier().getText());
+        return alias.isBlank() || column.isBlank() ? null : new OracleColumnRead(alias, column);
     }
 
     protected abstract OracleExpressionAnalysis scalarSubquerySelectExpression(

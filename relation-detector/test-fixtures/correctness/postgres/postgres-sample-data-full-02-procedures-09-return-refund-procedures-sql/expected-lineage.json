@@ -1,5 +1,12 @@
 {
-  "fingerprints": [ ],
+  "fingerprints": [
+    "VALUE:ARITHMETIC:customers.balance->customers.balance",
+    "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
+    "VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty",
+    "VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty",
+    "VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount",
+    "VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark"
+  ],
   "forbiddenSources": [ ],
   "forbiddenTargets": [ ],
   "warningCodes": { }

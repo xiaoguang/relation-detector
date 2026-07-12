@@ -1,6 +1,8 @@
 {
   "fingerprints": [
     "VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change",
+    "VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message",
+    "VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at",
     "VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark",
     "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty",
     "VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id",
@@ -9,7 +11,7 @@
     "VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id",
     "VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

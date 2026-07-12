@@ -45,7 +45,15 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
             emitAssignmentMapping(assignment, targetAlias, targetTable,
                     StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
         }
-        if (ctx.whereClause() != null) visit(ctx.whereClause());
+        if (ctx.whereClause() != null) {
+            queryScopes.push(new QueryScope());
+            try {
+                registerCurrentRowset(targetAlias, targetTable);
+                visit(ctx.whereClause());
+            } finally {
+                queryScopes.pop();
+            }
+        }
         return null;
     }
 
@@ -96,25 +104,22 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
 
     @Override
     public Void visitPrimaryKeyConstraint(OracleRelationSqlParser.PrimaryKeyConstraintContext ctx) {
-        for (String column : identifiers(ctx.identifierList())) {
-            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
-        }
+        addIndexEvents(currentDdlTable(), identifiers(ctx.identifierList()),
+                "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
         return null;
     }
 
     @Override
     public Void visitUniqueConstraint(OracleRelationSqlParser.UniqueConstraintContext ctx) {
-        for (String column : identifiers(ctx.identifierList())) {
-            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
-        }
+        addIndexEvents(currentDdlTable(), identifiers(ctx.identifierList()),
+                "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
         return null;
     }
 
     @Override
     public Void visitTableIndexConstraint(OracleRelationSqlParser.TableIndexConstraintContext ctx) {
-        for (String column : safeIndexColumns(ctx.indexPartList())) {
-            addIndexEvent(currentDdlTable(), column, "SOURCE_INDEX", "CREATE_TABLE_INDEX", ctx);
-        }
+        addIndexEvents(currentDdlTable(), safeIndexColumns(ctx.indexPartList()),
+                "SOURCE_INDEX", "CREATE_TABLE_INDEX", ctx);
         return null;
     }
 
@@ -142,9 +147,8 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
     public Void visitCreateIndexStatement(OracleRelationSqlParser.CreateIndexStatementContext ctx) {
         String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
         String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
-        for (String column : safeIndexColumns(ctx.indexPartList())) {
-            addIndexEvent(qualifiedName(ctx.qualifiedName()), column, role, kind, ctx);
-        }
+        addIndexEvents(qualifiedName(ctx.qualifiedName()), safeIndexColumns(ctx.indexPartList()),
+                role, kind, ctx);
         return null;
     }
 
@@ -218,6 +222,11 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
 
     private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
         emitter.addIndexEvent(events, ctx, table, column, role, kind);
+    }
+
+    private void addIndexEvents(String table, List<String> columns, String role, String kind,
+            ParserRuleContext ctx) {
+        emitter.addIndexEvents(events, ctx, table, columns, role, kind);
     }
 
     private void addDdlColumnEvent(String table, String column, ParserRuleContext ctx) {

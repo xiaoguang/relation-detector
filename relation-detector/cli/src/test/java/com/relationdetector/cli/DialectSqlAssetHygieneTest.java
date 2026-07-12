@@ -243,7 +243,7 @@ final class DialectSqlAssetHygieneSupport {
                 if (density.functions() < 10) {
                     findings.add(versionDir.getFileName() + " function count too low: " + density.functions());
                 }
-                if (density.triggers() < 8) {
+                if (density.triggers() < 6) {
                     findings.add(versionDir.getFileName() + " trigger count too low: " + density.triggers());
                 }
                 if (density.insertSelects() < 35) {
@@ -377,6 +377,43 @@ final class DialectSqlAssetHygieneSupport {
         assertTrue(findings.isEmpty(),
                 "SQL Server sample-data should model natural ERP routines; numbered relation-probe procedures belong in semantic-equivalent benchmark: "
                         + findings);
+    }
+
+    static void sqlServerNaturalAssetsUseRoleBasedKpiJoinAndSetBasedTriggers() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        List<String> findings = new ArrayList<>();
+        try (Stream<Path> versions = Files.list(sampleRoot)) {
+            for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
+                String functions = Files.readString(versionDir.resolve("02-procedures/06-third-batch-functions.sql"));
+                if (functions.contains("pr.[overall_score]")) {
+                    findings.add(versionDir.getFileName() + " references nonexistent performance_reviews.overall_score");
+                }
+                if (functions.contains("k.[applicable_role_id] = pr.[employee_id]")) {
+                    findings.add(versionDir.getFileName() + " joins KPI role id directly to employee id");
+                }
+                if (!functions.contains("er.[employee_id] = pr.[employee_id]")
+                        || !functions.contains("k.[applicable_role_id] = er.[role_id]")) {
+                    findings.add(versionDir.getFileName() + " is missing employee-role-KPI path");
+                }
+
+                String triggers = Files.readString(versionDir.resolve("01-schema/03-triggers.sql"));
+                for (String trigger : List.of(
+                        "tr_audit_employee_insert",
+                        "tr_inventory_update_batch",
+                        "tr_sales_order_delivered",
+                        "tr_purchase_order_received",
+                        "tr_sales_return_approved",
+                        "tr_inventory_transaction_after_insert")) {
+                    if (!triggers.contains("TRIGGER [dbo].[" + trigger + "]")) {
+                        findings.add(versionDir.getFileName() + " is missing natural trigger " + trigger);
+                    }
+                }
+                if (!triggers.contains("[target_type]")) {
+                    findings.add(versionDir.getFileName() + " audit trigger omits required target_type");
+                }
+            }
+        }
+        assertTrue(findings.isEmpty(), "SQL Server natural KPI/trigger assets are inconsistent: " + findings);
     }
 
     static void commonNaturalSampleDataDoesNotContainParserCoverageBodies() throws IOException {

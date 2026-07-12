@@ -13,6 +13,6 @@ public final class GeneratedPlPgSqlBodyParser implements PlPgSqlBodyParser {
             StructuredSqlParser embeddedSqlParser) {
         return GeneratedPlPgSqlBodyParserSupport.parse(body, context, embeddedSqlParser,
                 PlPgSqlLexer::new, PlPgSqlParser::new, PlPgSqlParser::script,
-                root -> new PlPgSqlStaticStatementCollector(body.sql()).collect(root));
+                root -> new PlPgSqlShellCollector(body.sql()).collect(root));
     }
 }

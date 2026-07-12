@@ -18,7 +18,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 public interface DatabaseAdaptor {
     /**
      * Binary SPI version. Implementations that do not explicitly implement the
-     * current grouped parser contract, including dialect script parsing, inherit
+     * current grouped parser contract, including dialect script framing, inherit
      * {@code 1} and are rejected before capabilities are used.
      */
     default int spiVersion() {

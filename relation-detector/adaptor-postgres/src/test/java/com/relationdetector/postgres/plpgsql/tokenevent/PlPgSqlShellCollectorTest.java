@@ -16,7 +16,7 @@ import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-class PlPgSqlStaticStatementCollectorTest {
+class PlPgSqlShellCollectorTest {
     @Test
     void extractsStaticSqlFromNestedProceduralBlockWithoutRewritingIt() {
         String body = """
@@ -38,7 +38,7 @@ class PlPgSqlStaticStatementCollectorTest {
         var root = parser.script();
         tokens.fill();
 
-        var structure = new PlPgSqlStaticStatementCollector(body).collect(root);
+        var structure = new PlPgSqlShellCollector(body).collect(root);
 
         assertEquals(2, structure.staticStatements().size(), structure::toString);
         assertEquals(java.util.Set.of("v_count"), structure.localIdentifiers(), structure::toString);
@@ -57,7 +57,7 @@ class PlPgSqlStaticStatementCollectorTest {
         var root = parser.script();
         tokens.fill();
 
-        var structure = new PlPgSqlStaticStatementCollector(body).collect(root);
+        var structure = new PlPgSqlShellCollector(body).collect(root);
 
         assertTrue(structure.staticStatements().isEmpty(), structure::toString);
         assertEquals(1, structure.dynamicSqlLines().size(), structure::toString);
@@ -78,7 +78,7 @@ class PlPgSqlStaticStatementCollectorTest {
         var root = parser.script();
         tokens.fill();
 
-        var structure = new PlPgSqlStaticStatementCollector(body).collect(root);
+        var structure = new PlPgSqlShellCollector(body).collect(root);
 
         assertEquals(3, structure.staticStatements().size(), structure::toString);
         assertTrue(structure.staticStatements().stream().noneMatch(statement ->
@@ -103,7 +103,7 @@ class PlPgSqlStaticStatementCollectorTest {
         PlPgSqlParser parser = new PlPgSqlParser(tokens);
         var root = parser.script();
         tokens.fill();
-        var structure = new PlPgSqlStaticStatementCollector(body).collect(root);
+        var structure = new PlPgSqlShellCollector(body).collect(root);
         var categoryInsert = structure.staticStatements().stream()
                 .filter(fragment -> fragment.sql().contains("INSERT INTO category_dim"))
                 .findFirst().orElseThrow();
@@ -135,7 +135,7 @@ class PlPgSqlStaticStatementCollectorTest {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         PlPgSqlParser parser = new PlPgSqlParser(tokens);
 
-        var structure = new PlPgSqlStaticStatementCollector(body).collect(parser.script());
+        var structure = new PlPgSqlShellCollector(body).collect(parser.script());
 
         assertEquals(1, structure.staticStatements().size(), structure::toString);
         String sql = structure.staticStatements().get(0).sql();
@@ -161,7 +161,7 @@ class PlPgSqlStaticStatementCollectorTest {
         var root = parser.script();
         tokens.fill();
 
-        var structure = new PlPgSqlStaticStatementCollector(body).collect(root);
+        var structure = new PlPgSqlShellCollector(body).collect(root);
 
         assertEquals(1, structure.staticStatements().size(), structure::toString);
         assertTrue(structure.staticStatements().get(0).sql().contains("IS NOT DISTINCT FROM"),

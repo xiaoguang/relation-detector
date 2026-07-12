@@ -1,8 +1,11 @@
 {
   "fingerprints": [
+    "VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation",
+    "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
     "VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus",
     "VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount",
     "VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount",
+    "VALUE:ARITHMETIC:work_order_materials.issued_qty->work_order_materials.issued_qty",
     "VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus",
     "VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate",
     "VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount",

@@ -47,7 +47,10 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
 
     @Override
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
-        return scalarSubquery(expression) != null || containsAggregateFunction(expression);
+        return scalarSubquery(expression) != null
+                || containsAggregateFunction(expression)
+                || containsRole(expression,
+                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION);
     }
 
     @Override
@@ -128,7 +131,6 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             ParseTree expression,
             FullGrammarExpressionAnalysis analysis
     ) {
-        if (!routineSql) return analysis;
         if ("AGGREGATE".equals(analysis.transformType())
                 && containsRole(expression,
                         com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)) {
@@ -141,7 +143,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         }
         if (operator == com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic
                 .ARITHMETIC
-                || containsOperator(expression,
+                || containsOperatorOutsideCase(expression,
                         com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic
                                 .ARITHMETIC)) {
             var dominant = com.relationdetector.core.lineage.LineageTransformClassifier.dominant(
@@ -153,14 +155,18 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         return analysis;
     }
 
-    private boolean containsOperator(
+    private boolean containsOperatorOutsideCase(
             ParseTree tree,
             com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic expected
     ) {
         if (tree == null) return false;
+        if (parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION)) {
+            return false;
+        }
         if (parseTreeAdapter().operatorSemantic(tree) == expected) return true;
         for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            if (containsOperator(child, expected)) return true;
+            if (containsOperatorOutsideCase(child, expected)) return true;
         }
         return false;
     }

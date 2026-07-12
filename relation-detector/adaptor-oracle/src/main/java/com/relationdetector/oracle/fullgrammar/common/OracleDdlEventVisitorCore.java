@@ -42,6 +42,23 @@ public final class OracleDdlEventVisitorCore {
         core.ddlIndex(ctx, table, core.baseName(column), role, kind);
     }
 
+    public static void addIndexEvents(
+            OracleSqlEventVisitorCore core,
+            ParserRuleContext ctx,
+            String table,
+            List<String> columns,
+            String role,
+            String kind
+    ) {
+        if (table.isBlank() || columns == null) {
+            return;
+        }
+        core.ddlIndex(ctx, table, columns.stream()
+                .map(core::baseName)
+                .filter(column -> !column.isBlank())
+                .toList(), role, kind);
+    }
+
     public static void addColumnEvent(
             OracleSqlEventVisitorCore core,
             ParserRuleContext ctx,

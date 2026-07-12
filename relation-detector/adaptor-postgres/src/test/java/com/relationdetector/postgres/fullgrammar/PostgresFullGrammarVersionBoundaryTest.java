@@ -19,6 +19,29 @@ import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 
 class PostgresFullGrammarVersionBoundaryTest {
     @Test
+    void postgres18ReturningOldNewDoesNotHideUnqualifiedArithmeticSelfUpdate() {
+        var module = new com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule();
+        SqlStatementRecord statement = statement("""
+                UPDATE pg18_generated_margin_demo
+                SET sales_amount = sales_amount * 1.05
+                RETURNING old.sales_amount, new.sales_amount;
+                """);
+
+        var structured = module.sqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind() == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE
+                                && lineage.transformType()
+                                == com.relationdetector.contracts.Enums.LineageTransformType.ARITHMETIC
+                                && "pg18_generated_margin_demo.sales_amount".equals(lineage.target().displayName())
+                                && lineage.sources().stream().anyMatch(source ->
+                                "pg18_generated_margin_demo.sales_amount".equals(source.displayName()))),
+                () -> "PostgreSQL 18 UPDATE RETURNING must preserve self-update lineage; lineages="
+                        + lineages + " events=" + structured.events() + " warnings=" + structured.warnings());
+    }
+
+    @Test
     void fullGrammarPreservesNonTrivialArithmeticSelfUpdateAcrossVersions() {
         List<com.relationdetector.core.fullgrammar.FullGrammarDialectModule> modules = List.of(
                 new com.relationdetector.postgres.fullgrammar.v16.FullGrammarDialectModule(),

@@ -36,7 +36,24 @@ statement
 
 routineDeclarationStatement
     : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION) qualifiedName routineParameterList
-      routineDeclarationElement* SEMI?
+      routineDeclarationElement* routineSqlAtomicBody? SEMI?
+    ;
+
+routineSqlAtomicBody
+    : BEGIN ATOMIC atomicSqlStatement* END
+    ;
+
+atomicSqlStatement
+    : (selectStatement
+      | insertSelectStatement
+      | insertValuesStatement
+      | updateStatement
+      | mergeStatement
+      | deleteStatement
+      | createTableStatement
+      | alterTableStatement
+      | createIndexStatement
+      | createViewStatement) SEMI
     ;
 
 routineParameterList
@@ -65,7 +82,7 @@ routineDeclarationElement
     ;
 
 routineDeclarationToken
-    : ~(AS | LANGUAGE | DOLLAR_QUOTED_STRING | LPAREN | RPAREN | SEMI)
+    : ~(AS | LANGUAGE | DOLLAR_QUOTED_STRING | BEGIN | LPAREN | RPAREN | SEMI)
     ;
 
 createViewStatement
@@ -616,7 +633,7 @@ sqlToken
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | CONFLICT | DO | NOTHING
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | EXTRACT | INTERVAL | DATE | CAST | ARRAY
-    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
+    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | ATOMIC | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
@@ -685,6 +702,7 @@ TABLE: T A B L E;
 TEMPORARY: T E M P O R A R Y;
 UNLOGGED: U N L O G G E D;
 BEGIN: B E G I N;
+ATOMIC: A T O M I C;
 IF: I F;
 ELSEIF: E L S E I F;
 WHILE: W H I L E;

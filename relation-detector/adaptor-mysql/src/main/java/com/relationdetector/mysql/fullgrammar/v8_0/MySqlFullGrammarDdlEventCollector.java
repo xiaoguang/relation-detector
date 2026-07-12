@@ -128,21 +128,18 @@ final class MySqlFullGrammarDdlEventCollector {
                 return null;
             }
             if (ctx.PRIMARY_SYMBOL() != null) {
-                for (String column : keyListWithExpression(ctx.keyListWithExpression())) {
-                    out.addIndex(currentTable, column, "TARGET_UNIQUE", "PRIMARY_KEY", line);
-                }
+                out.addIndex(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
+                        "TARGET_UNIQUE", "PRIMARY_KEY", line);
                 return null;
             }
             if (ctx.UNIQUE_SYMBOL() != null) {
-                for (String column : keyListWithExpression(ctx.keyListWithExpression())) {
-                    out.addIndex(currentTable, column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
-                }
+                out.addIndex(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
+                        "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
                 return null;
             }
             if (ctx.KEY_SYMBOL() != null || ctx.INDEX_SYMBOL() != null) {
-                for (String column : keyListWithExpression(ctx.keyListWithExpression())) {
-                    out.addIndex(currentTable, column, "SOURCE_INDEX", "CREATE_TABLE_INDEX", line);
-                }
+                out.addIndex(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
+                        "SOURCE_INDEX", "CREATE_TABLE_INDEX", line);
             }
             return null;
         }
@@ -154,10 +151,9 @@ final class MySqlFullGrammarDdlEventCollector {
             }
             String table = table(ctx.createIndexTarget().tableRef());
             boolean unique = ctx.UNIQUE_SYMBOL() != null;
-            for (String column : keyListWithExpression(ctx.createIndexTarget().keyListWithExpression())) {
-                out.addIndex(table, column, unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
-                        unique ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX", ctx.getStart().getLine());
-            }
+            out.addIndex(table, keyListWithExpression(ctx.createIndexTarget().keyListWithExpression()),
+                    unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
+                    unique ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX", ctx.getStart().getLine());
             return null;
         }
 

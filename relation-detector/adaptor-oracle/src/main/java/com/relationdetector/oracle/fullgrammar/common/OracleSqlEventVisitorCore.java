@@ -90,8 +90,18 @@ public final class OracleSqlEventVisitorCore {
     }
 
     public void ddlIndex(ParserRuleContext ctx, String table, String column, String role, String kind) {
-        events.add(new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance(ctx),
-                "", "", "", "", table, column, role, kind, 1, 1));
+        ddlIndex(ctx, table, List.of(column), role, kind);
+    }
+
+    public void ddlIndex(ParserRuleContext ctx, String table, List<String> columns, String role, String kind) {
+        List<String> safeColumns = columns == null ? List.of() : columns.stream()
+                .filter(column -> column != null && !column.isBlank())
+                .toList();
+        int count = safeColumns.size();
+        for (int index = 0; index < count; index++) {
+            events.add(new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance(ctx),
+                    "", "", "", "", table, safeColumns.get(index), role, kind, index + 1, count));
+        }
     }
 
     public void ddlColumn(ParserRuleContext ctx, String table, String column) {

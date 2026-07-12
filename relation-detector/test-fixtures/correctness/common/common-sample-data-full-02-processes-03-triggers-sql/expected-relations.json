@@ -1,13 +1,13 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN",
-    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
-    "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
-    "FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "CO_OCCURRENCE:employees.id->vouchers.prepared_by:TRIGGER_REFERENCE",
+    "FK_LIKE:employees.department_id->departments.id:TRIGGER_REFERENCE,NAMING_MATCH,TRIGGER_REFERENCE",
+    "FK_LIKE:inventory.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:inventory_transactions.product_id->products.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customers.id:TRIGGER_REFERENCE,NAMING_MATCH,TRIGGER_REFERENCE",
+    "FK_LIKE:sales_returns.order_id->sales_orders.id:TRIGGER_REFERENCE,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

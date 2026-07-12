@@ -16,26 +16,11 @@ import org.junit.jupiter.api.Test;
 
 class DialectGrammarArchitectureTest {
     @Test
-    void coreAntlrDirectoryContainsNoGrammarSources() throws IOException {
+    void coreDoesNotRetainThePreMigrationAntlrSourceTree() {
         Path root = repoRoot();
         Path coreAntlr = root.resolve("core/src/main/antlr4/com/relationdetector/core/antlr");
-
-        List<Path> grammars;
-        try (Stream<Path> stream = Files.walk(coreAntlr)) {
-            grammars = stream
-                    .filter(path -> path.getFileName().toString().endsWith(".g4"))
-                    .map(coreAntlr::relativize)
-                    .toList();
-        }
-
-        assertTrue(grammars.isEmpty(),
-                "all grammar sources, including common grammar, belong in grammar modules: " + grammars);
-        assertFalse(grammars.stream().anyMatch(path -> startsWithDialect(path, "mysql")),
-                "MySQL token-event grammar belongs in grammar/mysql-token-event, not core");
-        assertFalse(grammars.stream().anyMatch(path -> startsWithDialect(path, "postgres")),
-                "PostgreSQL token-event grammar belongs in grammar/postgres-token-event, not core");
-        assertFalse(grammars.stream().anyMatch(path -> startsWithDialect(path, "oracle")),
-                "Oracle token-event grammar belongs in grammar/oracle-token-event, not core");
+        assertFalse(Files.exists(coreAntlr),
+                "the migrated core ANTLR source tree must be removed; grammar sources belong in grammar modules");
     }
 
     @Test
@@ -1047,11 +1032,6 @@ class DialectGrammarArchitectureTest {
         assertTrue(loader.contains("readValue(file.toFile(), ScanYamlConfigDto.class)"));
         assertFalse(loader.contains("readTree("),
                 "Scan YAML must deserialize through the typed transport model");
-    }
-
-    private static boolean startsWithDialect(Path path, String dialect) {
-        return path.getNameCount() > 0
-                && path.getName(0).toString().toLowerCase(Locale.ROOT).equals(dialect);
     }
 
     private static boolean containsDialectCoreGeneratedImport(Path path) {

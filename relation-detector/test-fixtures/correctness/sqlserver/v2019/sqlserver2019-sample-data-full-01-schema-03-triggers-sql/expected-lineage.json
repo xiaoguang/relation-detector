@@ -1,6 +1,17 @@
 {
-  "fingerprints": [],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "fingerprints": [
+    "VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance",
+    "VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty",
+    "VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value",
+    "VALUE:DIRECT:dbo.employees.id->dbo.audit_log.employee_id",
+    "VALUE:DIRECT:dbo.employees.id->dbo.audit_log.target_id",
+    "VALUE:DIRECT:dbo.inventory.quantity->dbo.product_batches.current_qty",
+    "VALUE:DIRECT:dbo.inventory_transactions.after_qty->dbo.inventory.quantity",
+    "VALUE:DIRECT:dbo.purchase_orders.id->dbo.audit_log.target_id",
+    "VALUE:DIRECT:dbo.purchase_orders.order_no->dbo.audit_log.new_value",
+    "VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.audit_log.employee_id"
+  ],
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

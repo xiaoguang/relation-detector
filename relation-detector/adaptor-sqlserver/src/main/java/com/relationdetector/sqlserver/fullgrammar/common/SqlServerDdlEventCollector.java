@@ -56,11 +56,6 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
                 if (!targetTable.isBlank() && !targetColumns.isEmpty()) {
                     builder.addForeignKey(qualifiedTable(table), List.of(columnName),
                             qualifiedTable(targetTable), targetColumns, line(fk));
-                    builder.addIndex(qualifiedTable(table), columnName,
-                            "SOURCE_INDEX", "IMPLICIT_FK_SOURCE", line(fk));
-                    targetColumns.forEach(targetColumn -> builder.addIndex(
-                            qualifiedTable(targetTable), targetColumn,
-                            "TARGET_UNIQUE", "REFERENCED_KEY", line(fk)));
                 }
             });
         }
@@ -70,10 +65,9 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
                 addForeignKeyConstraint(table, constraint, false);
             } else if (semantic == DdlConstraintSemantic.PRIMARY_KEY
                     || semantic == DdlConstraintSemantic.UNIQUE) {
-                firstDirect(constraint, Role.ORDERED_COLUMN_LIST)
-                        .map(this::identifierList).orElse(List.of())
-                        .forEach(column -> builder.addIndex(qualifiedTable(table), column,
-                                "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint)));
+                builder.addIndex(qualifiedTable(table), firstDirect(constraint, Role.ORDERED_COLUMN_LIST)
+                                .map(this::identifierList).orElse(List.of()),
+                        "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint));
             }
         }
     }
@@ -105,9 +99,9 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
         }
         String role = ddlConstraintSemantic(ctx) == DdlConstraintSemantic.UNIQUE
                 ? "TARGET_UNIQUE" : "SOURCE_INDEX";
-        firstDirect(ctx, Role.ORDERED_COLUMN_LIST).map(this::identifierList).orElse(List.of())
-                .forEach(column -> builder.addIndex(qualifiedTable(table), column,
-                        role, "CREATE_INDEX", line(ctx)));
+        builder.addIndex(qualifiedTable(table),
+                firstDirect(ctx, Role.ORDERED_COLUMN_LIST).map(this::identifierList).orElse(List.of()),
+                role, "CREATE_INDEX", line(ctx));
     }
 
     private void addForeignKeyConstraint(
@@ -132,10 +126,6 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
         }
         builder.addForeignKey(qualifiedTable(table), sourceColumns,
                 qualifiedTable(targetTable), targetColumns, line(constraint));
-        sourceColumns.forEach(sourceColumn -> builder.addIndex(qualifiedTable(table), sourceColumn,
-                "SOURCE_INDEX", "FK_SOURCE", line(constraint)));
-        targetColumns.forEach(targetColumn -> builder.addIndex(qualifiedTable(targetTable), targetColumn,
-                "TARGET_UNIQUE", "REFERENCED_KEY", line(constraint)));
     }
 
     private void visitChildren(ParseTree tree) {

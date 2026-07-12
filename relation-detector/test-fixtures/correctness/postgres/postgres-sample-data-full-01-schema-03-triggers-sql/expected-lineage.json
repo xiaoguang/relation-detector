@@ -4,6 +4,8 @@
     "CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty",
     "CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty",
     "VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty",
+    "VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance",
+    "VALUE:ARITHMETIC:customers.balance->customers.balance",
     "VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity",
     "VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty",
     "VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty",

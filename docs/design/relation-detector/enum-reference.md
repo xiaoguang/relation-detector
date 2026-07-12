@@ -374,9 +374,9 @@ public enum StatementSourceType {
 | `DDL_FILE` | DDL 文件中的语句。 | `DDL_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE` |
 | `PROCEDURE` | 存储过程 body。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `FUNCTION` | 函数 body。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
-| `VIEW` | 视图定义 SQL。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
-| `MATERIALIZED_VIEW` | 物化视图定义 SQL。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
-| `TRIGGER` | 触发器 body 或 trigger function。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
+| `VIEW` | 视图定义 SQL。 | `VIEW_JOIN` |
+| `MATERIALIZED_VIEW` | 物化视图定义 SQL。 | `VIEW_JOIN` |
+| `TRIGGER` | 触发器 body。 | `TRIGGER_REFERENCE` |
 | `EVENT` | MySQL scheduler event body。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `RULE` | PostgreSQL rewrite rule definition。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `PACKAGE` | Oracle package specification，后续 adaptor 预留。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
@@ -388,10 +388,10 @@ public enum StatementSourceType {
 维护说明：
 
 - `FUNCTION` 和 `PROCEDURE` 未来可共用 `PROCEDURE_JOIN` evidence，因为二者都属于持久化数据库逻辑；当前生产 parser 仍保留具体 SQL predicate evidence。
-- `VIEW`、`MATERIALIZED_VIEW`、`RULE` 的 JOIN 后续可提升为 `VIEW_JOIN`；当前生产 parser 仍保留具体 SQL predicate evidence。
+- `VIEW`、`MATERIALIZED_VIEW` 的物理列谓词已经提升为 `VIEW_JOIN`；`RULE` 当前仍保留具体 SQL predicate evidence。
 - `EVENT`、`PACKAGE`、`PACKAGE_BODY` 属于持久化数据库逻辑，后续可按 procedure/function 专属 evidence 处理。
 - `MIGRATION` 不是数据库持久对象，证据来源按 `PLAIN_SQL` 处理。
-- `TRIGGER` 解析失败时常见，失败应记录 warning，不应中断扫描。
+- `TRIGGER` 及带 `routineReturnsTrigger=true` 的 PostgreSQL trigger function 使用 `TRIGGER_REFERENCE`；解析失败必须记录 warning，不能静默丢弃。
 
 ## 10. DatabaseObjectType
 

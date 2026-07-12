@@ -478,6 +478,10 @@ public final class StructuredScriptFramer {
         attributes.put("sourceFile", normalizedFile);
         attributes.put("sourceFileLineCount", lines.lineCount());
         attributes.put("sourceObjectType", semanticObjectType(sourceType));
+        if (descriptor.routineReturnsTrigger()) {
+            attributes.put("sourceObjectType", "FUNCTION");
+            attributes.put("routineReturnsTrigger", true);
+        }
         String sourceName = normalizedFile;
         String explicitBlock = markerBlockId(slice.explicitSource());
         String objectName = descriptor.isObject() ? descriptor.objectName() : markerObjectName(explicitBlock);
@@ -573,12 +577,10 @@ public final class StructuredScriptFramer {
         if (objectName.isBlank()) {
             return ObjectDescriptor.none();
         }
-        if (type == StatementSourceType.FUNCTION
+        boolean routineReturnsTrigger = type == StatementSourceType.FUNCTION
                 && containsKindSequence(significant, cursor + 1,
-                ScriptLexemeKind.RETURNS, ScriptLexemeKind.TRIGGER)) {
-            type = StatementSourceType.TRIGGER;
-        }
-        return new ObjectDescriptor(type, objectName);
+                ScriptLexemeKind.RETURNS, ScriptLexemeKind.TRIGGER);
+        return new ObjectDescriptor(type, objectName, routineReturnsTrigger);
     }
 
     private StatementSourceType objectType(List<ScriptLexeme> tokens, int index) {
@@ -760,8 +762,12 @@ public final class StructuredScriptFramer {
         }
     }
     private record DelimiterDirective(int startOffset, int endOffset, String delimiter) {}
-    private record ObjectDescriptor(StatementSourceType sourceType, String objectName) {
-        static ObjectDescriptor none() { return new ObjectDescriptor(null, ""); }
+    private record ObjectDescriptor(
+            StatementSourceType sourceType,
+            String objectName,
+            boolean routineReturnsTrigger
+    ) {
+        static ObjectDescriptor none() { return new ObjectDescriptor(null, "", false); }
         boolean isObject() { return sourceType != null && objectName != null && !objectName.isBlank(); }
     }
 

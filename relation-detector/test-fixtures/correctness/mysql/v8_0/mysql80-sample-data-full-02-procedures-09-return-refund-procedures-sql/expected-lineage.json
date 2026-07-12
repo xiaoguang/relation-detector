@@ -2,10 +2,16 @@
   "fingerprints": [
     "CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary",
     "CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary",
+    "VALUE:ARITHMETIC:customers.balance->customers.balance",
+    "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
+    "VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty",
+    "VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty",
+    "VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount",
+    "VALUE:COALESCE:sales_returns.remark->sales_returns.remark",
     "VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary",
     "VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

@@ -123,11 +123,28 @@ public final class TokenEventEventEmitter {
             String role,
             String kind
     ) {
-        if (table == null || table.isBlank() || column == null || column.isBlank()) {
+        addIndexEvents(events, ctx, table, List.of(column), role, kind);
+    }
+
+    public void addIndexEvents(
+            List<StructuredSqlEvent> events,
+            ParserRuleContext ctx,
+            String table,
+            List<String> columns,
+            String role,
+            String kind
+    ) {
+        if (table == null || table.isBlank() || columns == null) {
             return;
         }
-        add(events, new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance(ctx),
-                "", "", "", "", table, column, role, kind, 1, 1));
+        List<String> safeColumns = columns.stream()
+                .filter(column -> column != null && !column.isBlank())
+                .toList();
+        int count = safeColumns.size();
+        for (int index = 0; index < count; index++) {
+            add(events, new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance(ctx),
+                    "", "", "", "", table, safeColumns.get(index), role, kind, index + 1, count));
+        }
     }
 
     public void addDdlColumnEvent(List<StructuredSqlEvent> events, ParserRuleContext ctx,

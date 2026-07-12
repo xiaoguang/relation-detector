@@ -1,6 +1,8 @@
 {
-  "fingerprints": [],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "fingerprints": [
+    "VALUE:ARITHMETIC:oracle_12c_identity_demo.sales_amount->oracle_12c_identity_demo.sales_amount"
+  ],
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

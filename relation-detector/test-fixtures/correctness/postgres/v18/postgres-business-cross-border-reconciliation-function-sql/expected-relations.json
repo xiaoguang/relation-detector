@@ -1,5 +1,9 @@
 {
-  "fingerprints": [ ],
+  "fingerprints": [
+    "CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:customer_profiles.id->orders.customer_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_JOIN"
+  ],
   "forbiddenTables": [
     "memory_input_cargo",
     "fx_valuation",

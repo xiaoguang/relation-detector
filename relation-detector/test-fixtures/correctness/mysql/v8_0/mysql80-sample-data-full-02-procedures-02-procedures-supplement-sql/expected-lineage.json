@@ -1,9 +1,11 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:products.id->product_batches.expiry_date",
+    "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
+    "VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty",
     "VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

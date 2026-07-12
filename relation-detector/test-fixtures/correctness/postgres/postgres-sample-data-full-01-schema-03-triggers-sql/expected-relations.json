@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
-    "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION"
+    "CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION",
+    "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:TRIGGER_REFERENCE,REPEATED_OBSERVATION"
   ],
   "forbiddenTables": [ ]
 }

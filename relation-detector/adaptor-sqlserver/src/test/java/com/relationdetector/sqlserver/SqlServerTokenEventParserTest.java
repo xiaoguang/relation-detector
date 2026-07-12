@@ -401,12 +401,31 @@ class SqlServerTokenEventParserTest {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/01-schema/03-triggers.sql");
         List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.TRIGGER);
         SqlStatementRecord statement = statements.stream()
-                .filter(record -> record.sourceName().equals("sqlserver.tr_departments_1_audit"))
+                .filter(record -> record.sourceName().equals("sqlserver.tr_audit_employee_insert"))
                 .findFirst()
                 .orElseThrow();
 
         assertEquals("TRIGGER", statement.attributes().get("sourceObjectType"));
-        assertEquals("dbo.tr_departments_1_audit", statement.attributes().get("sourceObjectName"));
+        assertEquals("dbo.tr_audit_employee_insert", statement.attributes().get("sourceObjectName"));
+    }
+
+    @Test
+    void tokenEventParserTraversesNaturalSetBasedTriggerFile() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/01-schema/03-triggers.sql");
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.TRIGGER);
+        assertEquals(6, statements.size(), "GO must frame every natural trigger independently");
+        SqlStatementRecord statement = statements.stream()
+                .filter(record -> record.sourceName().equals("sqlserver.tr_inventory_update_batch"))
+                .findFirst()
+                .orElseThrow();
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+        var relationships = new StructuredRelationshipExtractor().extract(statement, result);
+        assertLineage(lineages, "inventory", "quantity", "product_batches", "current_qty");
+        assertTrue(relationships.stream().anyMatch(relation -> matchesPair(relation,
+                        "inventory", "batch_id", "product_batches", "id")),
+                () -> "Natural trigger JOIN must remain typed: " + relationships + " events=" + result.events());
     }
 
     @Test

@@ -75,8 +75,8 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2025
   FullGrammarBinding
   FullGrammarDialectModule
 
-adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/routine
-  SqlServerRoutineScopePolicy
+SQL Server routine scope由 token-event/full-grammar 的 typed object context直接维护，
+不再保留无生产引用的独立 routine scope policy。
 ```
 
 ANTLR grammar：
@@ -124,12 +124,12 @@ flowchart TD
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server root token-event | 38 | 32 / 6 | 465 | 299 | 0 | 125 | 191 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
+| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
+| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
+| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
+| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
 
 当前 fixture 语义：
 
@@ -138,7 +138,7 @@ flowchart TD
 - 预期 relationship：DDL FK/index 关系，以及 SQL predicate join / subquery relation。
 - 预期 lineage：明确字段写入、聚合写入、`UPDATE ... FROM` 与 `MERGE` 更新映射；参数、局部变量、临时表和动态 SQL 不作为物理 source。
 
-SQL Server root token-event 与 versioned full-grammar 在 correctness golden 中分别验证自己的输出，不能据此声明 broad sample-data 已完全 parity。当前 natural sample-data CLI 中，token-event 为 `333 Rel / 297 Lin / 245 direct Name`，各 full-grammar 为 `338 Rel / 306 Lin / 245 direct Name`；剩余 5 个 relationship 和 9 个 lineage 差异必须按具体 SQL/context 审计，不能写成“只剩一个 weak relationship”。五个 versioned full-grammar 的 sample-data 输出一致，来自当前 sample-data 的跨版本保守 T-SQL 子集；版本差异仍由 version-only fixture 和 `SqlServerParserArchitectureTest` 单独验证。
+SQL Server root token-event 与 versioned full-grammar 在 correctness golden 中分别验证自己的输出。当前 natural sample-data CLI 中，token-event 与五个 full-grammar profile 均为 `342 Rel / 320 Lin / 246 direct Name`，semantic observation diff 为 0。该 parity 只证明当前同一套 natural SQL 资产的一致性；版本差异仍由 version-only fixture 和 `SqlServerParserArchitectureTest` 单独验证。
 
 ## 后续收口
 

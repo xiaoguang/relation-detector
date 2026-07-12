@@ -281,6 +281,15 @@ public final class StructuredRelationshipExtractor {
         Map<String, TableId> aliases = new LinkedHashMap<>();
         Map<String, List<AliasBinding>> bindings = new LinkedHashMap<>();
         Set<String> ambiguousAliases = new HashSet<>();
+        Map<String, TableId> triggerPseudoTables = new LinkedHashMap<>();
+        for (StructuredSqlEvent event : events) {
+            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET
+                    && !event.targetTable().isBlank()) {
+                TableId tableId = tableId(event.targetTable());
+                triggerPseudoTables.put(normalize(event.name()), tableId);
+                triggerPseudoTables.put(normalize(event.alias()), tableId);
+            }
+        }
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
                 TableId tableId = tableId(event.targetTable());
@@ -293,6 +302,14 @@ public final class StructuredRelationshipExtractor {
             String qualified = event.qualifiedTable();
             String table = event.table();
             String alias = event.alias();
+            TableId pseudoTable = triggerPseudoTables.get(normalize(
+                    qualified.isBlank() ? table : qualified));
+            if (pseudoTable != null) {
+                putAlias(aliases, bindings, ambiguousAliases, qualified, pseudoTable, event.line());
+                putAlias(aliases, bindings, ambiguousAliases, table, pseudoTable, event.line());
+                putAlias(aliases, bindings, ambiguousAliases, alias, pseudoTable, event.line());
+                continue;
+            }
             if (ignoredRowsets.contains(normalize(table))
                     || ignoredRowsets.contains(normalize(qualified))) {
                 continue;
@@ -608,6 +625,7 @@ public final class StructuredRelationshipExtractor {
     private double score(EvidenceType type) {
         return switch (type) {
             case VIEW_JOIN -> DefaultEvidenceScores.VIEW_JOIN;
+            case TRIGGER_REFERENCE -> DefaultEvidenceScores.TRIGGER_REFERENCE;
             case SQL_LOG_JOIN -> DefaultEvidenceScores.SQL_LOG_JOIN;
             case SQL_LOG_EXISTS -> DefaultEvidenceScores.SQL_LOG_EXISTS;
             case SQL_LOG_SUBQUERY_IN -> DefaultEvidenceScores.SQL_LOG_SUBQUERY_IN;
@@ -616,9 +634,16 @@ public final class StructuredRelationshipExtractor {
     }
 
     private EvidenceType relationshipEvidenceType(SqlStatementRecord statement, EvidenceType predicateType) {
-        return statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.VIEW
-                || statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.MATERIALIZED_VIEW
-                ? EvidenceType.VIEW_JOIN : predicateType;
+        if (statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.VIEW
+                || statement.sourceType()
+                == com.relationdetector.contracts.Enums.StatementSourceType.MATERIALIZED_VIEW) {
+            return EvidenceType.VIEW_JOIN;
+        }
+        if (statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.TRIGGER
+                || Boolean.TRUE.equals(statement.attributes().get("routineReturnsTrigger"))) {
+            return EvidenceType.TRIGGER_REFERENCE;
+        }
+        return predicateType;
     }
 
     private List<String> stringList(Object value) {

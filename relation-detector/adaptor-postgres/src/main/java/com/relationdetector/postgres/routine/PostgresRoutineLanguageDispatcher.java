@@ -1,6 +1,7 @@
 package com.relationdetector.postgres.routine;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,14 +23,24 @@ public final class PostgresRoutineLanguageDispatcher {
 
     public PlPgSqlParseOutcome dispatch(PostgresRoutineDescriptor descriptor, SqlStatementRecord outer,
             AdaptorContext context, StructuredSqlParser embeddedSqlParser) {
-        if (descriptor.body().isBlank()) return PlPgSqlParseOutcome.empty();
-        SqlStatementRecord body = bodyStatement(descriptor, outer);
-        return switch (descriptor.kind()) {
-            case PLPGSQL -> plPgSqlParser.parse(body, context, embeddedSqlParser);
-            case SQL_STRING -> parseSqlBody(body, context, embeddedSqlParser);
-            case SQL_ATOMIC -> parseEmbedded(body, context, embeddedSqlParser);
-            case UNSUPPORTED_LANGUAGE -> unsupported(descriptor, outer);
-        };
+        if (descriptor.body() instanceof PlPgSqlStringBody body) {
+            if (!"plpgsql".equals(descriptor.declaredLanguage())) return mismatch(descriptor, outer);
+            SqlStatementRecord statement = bodyStatement(descriptor, outer, body.text(), body.startLine());
+            return plPgSqlParser.parse(statement, context, embeddedSqlParser);
+        }
+        if (descriptor.body() instanceof SqlStringBody body) {
+            SqlStatementRecord statement = bodyStatement(descriptor, outer, body.text(), body.startLine());
+            if (descriptor.declaredLanguage().isBlank()) return missingLanguage(descriptor, statement);
+            if (!"sql".equals(descriptor.declaredLanguage())) return mismatch(descriptor, outer);
+            return parseSqlBody(statement, context, embeddedSqlParser);
+        }
+        if (descriptor.body() instanceof SqlAtomicBody body) {
+            if (!descriptor.declaredLanguage().isBlank() && !"sql".equals(descriptor.declaredLanguage())) {
+                return mismatch(descriptor, outer);
+            }
+            return parseAtomicBody(descriptor, outer, body, context, embeddedSqlParser);
+        }
+        return unsupported(descriptor, outer);
     }
 
     private PlPgSqlParseOutcome parseSqlBody(SqlStatementRecord body, AdaptorContext context,
@@ -49,15 +60,59 @@ public final class PostgresRoutineLanguageDispatcher {
         return new PlPgSqlParseOutcome(events, warnings, framed.statements().size(), 0);
     }
 
-    private PlPgSqlParseOutcome parseEmbedded(SqlStatementRecord body, AdaptorContext context,
+    private PlPgSqlParseOutcome parseAtomicBody(PostgresRoutineDescriptor descriptor,
+            SqlStatementRecord outer, SqlAtomicBody body, AdaptorContext context,
             StructuredSqlParser embeddedSqlParser) {
-        if (embeddedSqlParser == null) return unsupported("sql atomic", body);
-        var result = embeddedSqlParser.parseSql(body, context);
-        return new PlPgSqlParseOutcome(result.events(), result.warnings(), 1, 0);
+        if (embeddedSqlParser == null) {
+            return unsupported("sql atomic", bodyStatement(descriptor, outer, "", body.startLine()));
+        }
+        List<StructuredSqlEvent> events = new ArrayList<>();
+        List<WarningMessage> warnings = new ArrayList<>();
+        for (SqlStatementRecord rawStatement : body.statements()) {
+            SqlStatementRecord statement = atomicStatement(descriptor, outer, rawStatement);
+            var result = embeddedSqlParser.parseSql(statement, context);
+            events.addAll(result.events());
+            warnings.addAll(result.warnings());
+        }
+        return new PlPgSqlParseOutcome(events, warnings, body.statements().size(), 0);
+    }
+
+    private SqlStatementRecord atomicStatement(PostgresRoutineDescriptor descriptor,
+            SqlStatementRecord outer, SqlStatementRecord statement) {
+        Map<String, Object> attributes = new LinkedHashMap<>(outer.attributes());
+        attributes.putAll(descriptor.provenance());
+        attributes.putAll(statement.attributes());
+        attributes.put("sourceObjectType", descriptor.sourceObjectType());
+        attributes.put("sourceObjectName", descriptor.sourceObjectName());
+        attributes.put(PostgresRoutineAttributes.EMBEDDED_SQL, true);
+        attributes.put(PostgresRoutineAttributes.NON_COLUMN_IDENTIFIERS,
+                PostgresRoutineAttributes.merge(attributes,
+                        PostgresRoutineAttributes.triggerPseudoIdentifiers(outer)));
+        return new SqlStatementRecord(statement.sql(), outer.sourceType(), outer.sourceName(),
+                statement.startLine(), statement.endLine(), attributes);
+    }
+
+    private PlPgSqlParseOutcome missingLanguage(PostgresRoutineDescriptor descriptor,
+            SqlStatementRecord body) {
+        WarningMessage warning = WarningMessage.warn(WarningType.PARSE_WARNING,
+                "POSTGRES_ROUTINE_LANGUAGE_MISSING",
+                "PostgreSQL string routine body requires an explicit LANGUAGE",
+                body.sourceName(), body.startLine(), warningAttributes(descriptor, body));
+        return new PlPgSqlParseOutcome(List.of(), List.of(warning), 0, 1);
+    }
+
+    private PlPgSqlParseOutcome mismatch(PostgresRoutineDescriptor descriptor, SqlStatementRecord outer) {
+        SqlStatementRecord body = bodyStatement(descriptor, outer, "", descriptor.body().startLine());
+        WarningMessage warning = WarningMessage.warn(WarningType.PARSE_WARNING,
+                "POSTGRES_ROUTINE_BODY_LANGUAGE_MISMATCH",
+                "PostgreSQL routine body form does not match LANGUAGE " + descriptor.declaredLanguage(),
+                body.sourceName(), body.startLine(), warningAttributes(descriptor, body));
+        return new PlPgSqlParseOutcome(List.of(), List.of(warning), 0, 1);
     }
 
     private PlPgSqlParseOutcome unsupported(PostgresRoutineDescriptor descriptor, SqlStatementRecord outer) {
-        return unsupported(descriptor.declaredLanguage(), bodyStatement(descriptor, outer));
+        return unsupported(descriptor.declaredLanguage(),
+                bodyStatement(descriptor, outer, "", descriptor.body().startLine()));
     }
 
     private PlPgSqlParseOutcome unsupported(String language, SqlStatementRecord body) {
@@ -72,26 +127,37 @@ public final class PostgresRoutineLanguageDispatcher {
         return new PlPgSqlParseOutcome(List.of(), List.of(warning), 0, 1);
     }
 
-    private SqlStatementRecord bodyStatement(PostgresRoutineDescriptor descriptor, SqlStatementRecord outer) {
-        Map<String, Object> attributes = new java.util.LinkedHashMap<>(outer.attributes());
+    private SqlStatementRecord bodyStatement(PostgresRoutineDescriptor descriptor, SqlStatementRecord outer,
+            String text, int startLine) {
+        Map<String, Object> attributes = new LinkedHashMap<>(outer.attributes());
+        attributes.putAll(descriptor.provenance());
         attributes.put("sourceObjectType", descriptor.sourceObjectType());
         attributes.put("sourceObjectName", descriptor.sourceObjectName());
         attributes.put(PostgresRoutineAttributes.EMBEDDED_SQL, true);
         attributes.put(PostgresRoutineAttributes.NON_COLUMN_IDENTIFIERS,
                 PostgresRoutineAttributes.merge(attributes,
                         PostgresRoutineAttributes.triggerPseudoIdentifiers(outer)));
-        long lineCount = Math.max(1L, descriptor.body().lines().count());
-        return new SqlStatementRecord(descriptor.body(), outer.sourceType(), outer.sourceName(),
-                descriptor.bodyStartLine(), descriptor.bodyStartLine() + lineCount - 1L,
-                attributes);
+        long lineCount = Math.max(1L, text.lines().count());
+        return new SqlStatementRecord(text, outer.sourceType(), outer.sourceName(),
+                startLine, startLine + lineCount - 1L, attributes);
     }
 
     private SqlStatementRecord offsetStatement(SqlStatementRecord body, SqlStatementRecord relative) {
         long start = body.startLine() + relative.startLine() - 1L;
         long end = body.startLine() + relative.endLine() - 1L;
-        Map<String, Object> attributes = new java.util.LinkedHashMap<>(body.attributes());
+        Map<String, Object> attributes = new LinkedHashMap<>(body.attributes());
         attributes.putAll(relative.attributes());
         attributes.put("sourceLine", start);
         return new SqlStatementRecord(relative.sql(), body.sourceType(), body.sourceName(), start, end, attributes);
+    }
+
+    private Map<String, Object> warningAttributes(PostgresRoutineDescriptor descriptor,
+            SqlStatementRecord body) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("sourceFile", String.valueOf(body.attributes().getOrDefault("sourceFile", "")));
+        attributes.put("sourceObjectType", descriptor.sourceObjectType());
+        attributes.put("sourceObjectName", descriptor.sourceObjectName());
+        attributes.put("declaredLanguage", descriptor.declaredLanguage());
+        return attributes;
     }
 }

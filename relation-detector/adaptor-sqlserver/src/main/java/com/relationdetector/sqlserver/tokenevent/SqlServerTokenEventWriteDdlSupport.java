@@ -147,9 +147,8 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
         }
         if (ctx.PRIMARY() != null || ctx.UNIQUE() != null) {
             String kind = ctx.PRIMARY() != null ? "PRIMARY_KEY" : "UNIQUE_CONSTRAINT";
-            for (String column : identifiers(ctx.column_name_list_with_order())) {
-                addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", kind, ctx);
-            }
+            addIndexEvents(currentDdlTable(), identifiers(ctx.column_name_list_with_order()),
+                    "TARGET_UNIQUE", kind, ctx);
         }
         return null;
     }
@@ -159,9 +158,7 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
         String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
         String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
         String table = qualifiedName(ctx.table_name().full_table_name());
-        for (String column : identifiers(ctx.column_name_list_with_order())) {
-            addIndexEvent(table, column, role, kind, ctx);
-        }
+        addIndexEvents(table, identifiers(ctx.column_name_list_with_order()), role, kind, ctx);
         return null;
     }
 
@@ -267,14 +264,15 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
     private void addForeignKeyEvents(ParserRuleContext ctx, String sourceTable,
             List<String> sourceColumns, String targetTable, List<String> targetColumns) {
         emitter.addForeignKeyEvents(events, ctx, sourceTable, sourceColumns, targetTable, targetColumns);
-        for (int index = 0; index < Math.min(sourceColumns.size(), targetColumns.size()); index++) {
-            addIndexEvent(sourceTable, sourceColumns.get(index), "SOURCE_INDEX", "FK_SOURCE", ctx);
-            addIndexEvent(targetTable, targetColumns.get(index), "TARGET_UNIQUE", "REFERENCED_KEY", ctx);
-        }
     }
 
     private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
         emitter.addIndexEvent(events, ctx, table, column, role, kind);
+    }
+
+    private void addIndexEvents(String table, List<String> columns, String role, String kind,
+            ParserRuleContext ctx) {
+        emitter.addIndexEvents(events, ctx, table, columns, role, kind);
     }
 
     private String currentDdlTable() { return ddlTables.isEmpty() ? "" : ddlTables.peek(); }

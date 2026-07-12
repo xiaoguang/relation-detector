@@ -14,7 +14,8 @@ script
     ;
 
 statement
-    : routineStartStatement
+    : createTriggerStatement
+    | routineStartStatement
     | blockStartStatement SEMI?
     | blockEndStatement SEMI?
     | declarationStatement SEMI?
@@ -44,7 +45,19 @@ unknownStatement
     ;
 
 routineStartStatement
-    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION) routineHeaderToken* BEGIN
+    ;
+
+createTriggerStatement
+    : CREATE (OR REPLACE)? TRIGGER qualifiedName triggerBeforeOnToken* ON qualifiedName triggerAfterOnToken* BEGIN
+    ;
+
+triggerBeforeOnToken
+    : ~(ON | BEGIN)
+    ;
+
+triggerAfterOnToken
+    : ~BEGIN
     ;
 
 routineHeaderToken
@@ -482,9 +495,14 @@ expression
     | CAST LPAREN expression AS identifier RPAREN                         # castExpression
     | functionCall withinGroupClause? windowClause?                       # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
+    | triggerPseudoColumn                                                 # triggerPseudoColumnExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
     | LPAREN expression RPAREN                                            # parenExpression
+    ;
+
+triggerPseudoColumn
+    : PARAMETER DOT identifier
     ;
 
 caseWhenClause

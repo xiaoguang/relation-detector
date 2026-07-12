@@ -28,6 +28,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     private final OracleFullGrammarExpressionSupport expressionSupport;
     private final OracleFullGrammarDdlCollector ddlCollector;
     private final OracleFullGrammarEventEmitter emitter;
+    private final OracleJoinSemanticSupport joinSemantics;
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
@@ -41,6 +42,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         this.expressionSupport = new OracleFullGrammarExpressionSupport(core, adapter, this::defaultColumnAlias);
         this.ddlCollector = new OracleFullGrammarDdlCollector(core, adapter, this::visit);
         this.emitter = new OracleFullGrammarEventEmitter(core, adapter, expressionSupport, this::registerCurrentRowset);
+        this.joinSemantics = new OracleJoinSemanticSupport(adapter);
     }
 
     public List<StructuredSqlEvent> collect(ParseTree root) {
@@ -55,7 +57,9 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         if (!(tree instanceof ParserRuleContext ctx)) {
             return;
         }
-        if (hasRole(ctx, Role.ROUTINE_BODY)) {
+        if (hasRole(ctx, Role.CREATE_TRIGGER)) {
+            visitTrigger(ctx);
+        } else if (hasRole(ctx, Role.ROUTINE_BODY)) {
             visitRoutineBody(ctx);
         } else if (hasRole(ctx, Role.CTE)) {
             visitSubqueryFactoringClause(ctx);
@@ -103,6 +107,15 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitRoutineBody(ParserRuleContext ctx) {
+        routineScope.enterRoutine();
+        visitChildren(ctx);
+        routineScope.leaveRoutineEnd(false);
+    }
+
+    private void visitTrigger(ParserRuleContext ctx) {
+        ParserRuleContext eventClause = first(ctx, Role.DML_EVENT_CLAUSE);
+        String targetTable = name(first(eventClause, Role.TABLEVIEW_NAME));
+        emitter.emitTriggerTarget(ctx, targetTable);
         routineScope.enterRoutine();
         visitChildren(ctx);
         routineScope.leaveRoutineEnd(false);
@@ -198,7 +211,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitJoinClause(ParserRuleContext ctx) {
-        joinKinds.push(joinKind(ctx));
+        joinKinds.push(joinSemantics.joinKind(ctx));
         visitChildren(ctx);
         joinKinds.pop();
     }
@@ -266,7 +279,21 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         String table = tableFrom(child(general, Role.DML_TABLE_EXPRESSION));
         String alias = child(general, Role.TABLE_ALIAS) == null ? core.baseName(table) : name(child(general, Role.TABLE_ALIAS));
         emitter.beginWriteTarget(general, alias, table);
-        visitChildren(ctx);
+        ParserRuleContext where = child(ctx, Role.WHERE_CLAUSE);
+        for (ParseTree child : typedChildren(ctx)) {
+            if (child != where) {
+                visit(child);
+            }
+        }
+        if (where != null) {
+            queryScopes.push(new QueryScope());
+            try {
+                registerCurrentRowset(alias);
+                visit(where);
+            } finally {
+                queryScopes.pop();
+            }
+        }
         emitter.endWriteTarget();
     }
 
@@ -351,34 +378,6 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
 
     private String currentJoinKind() {
         return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
-    }
-
-    private String joinKind(ParserRuleContext ctx) {
-        if (hasSymbolInTree(ctx, Symbol.LEFT)) {
-            return "LEFT_JOIN";
-        }
-        if (hasSymbolInTree(ctx, Symbol.RIGHT)) {
-            return "RIGHT_JOIN";
-        }
-        if (hasSymbolInTree(ctx, Symbol.FULL)) {
-            return "FULL_JOIN";
-        }
-        if (hasSymbolInTree(ctx, Symbol.CROSS)) {
-            return "CROSS_JOIN";
-        }
-        return "JOIN";
-    }
-
-    private boolean hasSymbolInTree(ParseTree tree, Symbol symbol) {
-        if (hasSymbol(tree, symbol)) {
-            return true;
-        }
-        for (ParseTree child : typedChildren(tree)) {
-            if (hasSymbolInTree(child, symbol)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private record ProjectionOwner(String alias, List<String> columns) {

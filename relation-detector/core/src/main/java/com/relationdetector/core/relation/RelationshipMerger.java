@@ -292,11 +292,42 @@ public final class RelationshipMerger {
             RelationSubType subType
     ) {
         RelationshipCandidate copy = new RelationshipCandidate(source, target, type, subType);
-        copy.evidence().addAll(candidate.evidence());
-        copy.rawEvidence().addAll(candidate.rawEvidence());
+        candidate.evidence().stream()
+                .map(evidence -> normalizeEndpointSide(evidence, source, target))
+                .forEach(copy.evidence()::add);
+        candidate.rawEvidence().stream()
+                .map(evidence -> normalizeEndpointSide(evidence, source, target))
+                .forEach(copy.rawEvidence()::add);
         copy.warnings().addAll(candidate.warnings());
         copy.confidence(candidate.confidence());
         return copy;
+    }
+
+    private Evidence normalizeEndpointSide(Evidence evidence, Endpoint source, Endpoint target) {
+        Map<String, Object> attributes = new LinkedHashMap<>(evidence.attributes());
+        String explicitEndpoint = explicitEndpoint(attributes);
+        if (explicitEndpoint.isBlank()) {
+            return evidence;
+        }
+        if (explicitEndpoint.equals(source.normalizedKey())) {
+            attributes.put("endpointSide", "source");
+        } else if (explicitEndpoint.equals(target.normalizedKey())) {
+            attributes.put("endpointSide", "target");
+        } else {
+            attributes.remove("endpointSide");
+        }
+        return new Evidence(evidence.type(), evidence.score(), evidence.sourceType(),
+                evidence.source(), evidence.detail(), attributes);
+    }
+
+    private String explicitEndpoint(Map<String, Object> attributes) {
+        for (String key : List.of("uniqueEndpoint", "indexEndpoint", "indexedEndpoint")) {
+            Object value = attributes.get(key);
+            if (value != null && !String.valueOf(value).isBlank()) {
+                return normalizeEndpoint(String.valueOf(value));
+            }
+        }
+        return "";
     }
 
     private void putOrMerge(Map<String, RelationshipCandidate> merged, RelationshipCandidate candidate) {

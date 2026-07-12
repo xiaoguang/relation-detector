@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance",
+    "VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata"
+  ],
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
+}

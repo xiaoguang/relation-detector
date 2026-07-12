@@ -28,6 +28,42 @@ import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDd
 
 class SqlServerFullGrammarLineageExpressionTest {
     @Test
+    void tokenAndEveryFullProfileTraverseSetBasedTriggerPseudoRows() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                CREATE OR ALTER TRIGGER [dbo].[tr_inventory_update_batch]
+                ON [dbo].[inventory]
+                AFTER UPDATE
+                AS
+                BEGIN
+                    UPDATE pb
+                    SET pb.[current_qty] = i.[quantity]
+                    FROM [dbo].[product_batches] AS pb
+                    JOIN inserted AS i ON i.[batch_id] = pb.[id];
+                END;
+                """, StatementSourceType.TRIGGER, "sqlserver-trigger.sql", 1, 11, Map.of());
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = new java.util.ArrayList<>();
+        parsers.add(new SqlServerTokenEventStructuredSqlParser());
+        fullProfiles().forEach(profile -> parsers.add(profile.sqlParser()));
+
+        for (var parser : parsers) {
+            StructuredParseResult result = parser.parseSql(statement, null);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, result);
+            assertTrue(relationships.stream().anyMatch(relationship ->
+                            "dbo.inventory.batch_id".equals(relationship.source().displayName())
+                                    && "dbo.product_batches.id".equals(relationship.target().displayName())),
+                    () -> parser.getClass().getSimpleName() + " missing trigger relation; actual="
+                            + relationships + " events=" + result.events());
+            var lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertTrue(lineages.stream().anyMatch(lineage ->
+                            "dbo.product_batches.current_qty".equals(lineage.target().displayName())
+                                    && lineage.sources().stream().anyMatch(source ->
+                                    "dbo.inventory.quantity".equals(source.displayName()))),
+                    () -> parser.getClass().getSimpleName() + " missing trigger lineage; actual="
+                            + lineages + " events=" + result.events());
+        }
+    }
+
+    @Test
     void everyFullProfilePreservesTypedLeftJoinKindAndPredicateLine() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 SELECT o.[id]
@@ -745,18 +781,19 @@ class SqlServerFullGrammarLineageExpressionTest {
                                 && "dbo.employees".equals(event.table())
                                 && "id".equals(event.column())),
                 () -> parser + " must emit target DDL column evidence, events=" + result.events());
-        assertTrue(result.events().stream().anyMatch(event ->
+        assertTrue(result.events().stream().noneMatch(event ->
                         event.type() == StructuredParseEventType.DDL_INDEX
                                 && "dbo.departments".equals(event.table())
                                 && "manager_id".equals(event.column())
                                 && "SOURCE_INDEX".equals(event.role())),
-                () -> parser + " must emit source index evidence, events=" + result.events());
-        assertTrue(result.events().stream().anyMatch(event ->
+                () -> parser + " must not invent an index from the FK declaration, events=" + result.events());
+        assertTrue(result.events().stream().noneMatch(event ->
                         event.type() == StructuredParseEventType.DDL_INDEX
                                 && "dbo.employees".equals(event.table())
                                 && "id".equals(event.column())
-                                && "TARGET_UNIQUE".equals(event.role())),
-                () -> parser + " must emit target index evidence, events=" + result.events());
+                                && "REFERENCED_KEY".equals(event.kind())),
+                () -> parser + " must not treat a referenced FK target as declared unique, events="
+                        + result.events());
     }
 
     private SqlStatementRecord schemaQualifiedInsertSelectStatement(String sourceName) {

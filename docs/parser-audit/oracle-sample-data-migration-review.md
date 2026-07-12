@@ -33,43 +33,30 @@ The source `sample-data/oracle/<version>` directories remain complete ERP sample
 
 ## Current Golden Statistics
 
-| Golden group | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammar v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Golden group | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
+| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
+| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
+| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
 
 The versioned full-grammar counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
 
-The sample-data-only cross-parser comparison is:
+The current Oracle-only sample-data comparison is below. The complete cross-dialect table has a
+single canonical home in [`parser-comparison-summary.md`](parser-comparison-summary.md).
 
-| Parser family | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
+| Parser family | Fixture | SQL / DDL | Rel | Lin | Direct Name | Diag |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 315 | 109 | 250 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 352 | 286 | 248 | 0 |
-| MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 330 | 280 | 244 | 0 |
-| MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 279 | 248 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
-| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
-| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
-| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 333 | 297 | 245 | 0 |
-| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| Oracle token-event root | 38 | 32 / 6 | 366 | 259 | 248 | 0 |
+| Oracle full-grammar v12c | 38 | 32 / 6 | 366 | 257 | 248 | 0 |
+| Oracle full-grammar v19c | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
+| Oracle full-grammar v21c | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
+| Oracle full-grammar v26ai | 38 | 32 / 6 | 366 | 259 | 248 | 0 |
 
 The Oracle full-grammar sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 
-Current audit note: Oracle token-event and all four full-grammar profiles align on the audited direct relation/lineage/naming counts. Token-event scalar aggregate updates include their selected aggregate sources and predicate/correlated control sources. Routine `sourceStatementId` / `sourceBlockId` values are canonicalized without the historical trailing `)`.
+Current audit note: Oracle token-event and v26ai full-grammar align on the same natural SQL facts and semantic observations. Lower version lineage totals differ only where their version-specific natural SQL assets differ. Token-event scalar aggregate updates include selected aggregate sources and predicate/correlated control sources; routine provenance is canonicalized without the historical trailing `)`.
 
 ## Translation Method
 

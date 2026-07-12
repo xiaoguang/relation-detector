@@ -33,6 +33,85 @@ import org.antlr.v4.runtime.CommonTokenStream;
 class PostgresRoutineSampleLineageTest {
 
     @Test
+    void beginAtomicBodyUsesTheCurrentSqlParserForEveryProfile() {
+        String sql = """
+                CREATE FUNCTION apply_account_snapshot() RETURNS void
+                BEGIN ATOMIC
+                  INSERT INTO account_snapshots (account_id)
+                  SELECT a.id
+                  FROM accounts a
+                  JOIN customers c ON c.id = a.customer_id;
+                END;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.FUNCTION,
+                "ROUTINE:apply_account_snapshot", 20, 27, Map.of(
+                        "sourceFile", "sample-data/postgres/routine.sql",
+                        "sourceStatementId", "lines:20-27"));
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
+            assertTrue(structured.warnings().isEmpty(),
+                    () -> parser.name() + " failed BEGIN ATOMIC: " + structured.warnings());
+            assertTrue(relationships.stream().anyMatch(candidate ->
+                            "accounts.customer_id".equals(candidate.source().displayName())
+                                    && "customers.id".equals(candidate.target().displayName())),
+                    () -> parser.name() + " did not dispatch atomic SQL: " + structured.events());
+        }
+    }
+
+    @Test
+    void stringBodyWithoutLanguageIsRejectedForEveryProfile() {
+        String sql = """
+                CREATE FUNCTION read_account() RETURNS bigint AS $$
+                  SELECT a.id FROM accounts a;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.FUNCTION,
+                "ROUTINE:read_account", 1, 3, Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            assertTrue(structured.events().isEmpty(),
+                    () -> parser.name() + " guessed a language for a string body: " + structured.events());
+            assertTrue(structured.warnings().stream().anyMatch(warning ->
+                            "POSTGRES_ROUTINE_LANGUAGE_MISSING".equals(warning.code())),
+                    () -> parser.name() + " did not report missing LANGUAGE: " + structured.warnings());
+        }
+    }
+
+    @Test
+    void foreachBodyKeepsStaticSqlForEveryProfile() {
+        String sql = """
+                CREATE PROCEDURE refresh_accounts(p_ids bigint[]) LANGUAGE plpgsql AS $$
+                DECLARE
+                  v_id bigint;
+                BEGIN
+                  FOREACH v_id SLICE 0 IN ARRAY p_ids LOOP
+                    UPDATE accounts a
+                    SET active = true
+                    FROM customers c
+                    WHERE c.id = a.customer_id;
+                  END LOOP;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:refresh_accounts", 1, 12, Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
+            assertTrue(structured.warnings().isEmpty(),
+                    () -> parser.name() + " did not type FOREACH: " + structured.warnings());
+            assertTrue(relationships.stream().anyMatch(candidate ->
+                            "accounts.customer_id".equals(candidate.source().displayName())
+                                    && "customers.id".equals(candidate.target().displayName())),
+                    () -> parser.name() + " lost SQL inside FOREACH: " + structured.events());
+        }
+    }
+
+    @Test
     void legalProceduralStatementsDoNotBecomeUnsupportedDiagnostics() {
         String sql = """
                 DECLARE

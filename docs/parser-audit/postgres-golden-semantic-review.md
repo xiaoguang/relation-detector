@@ -6,10 +6,10 @@ This report records the PostgreSQL correctness audit pass for root token-event a
 
 | Fixture group | Fixtures | Relations | Lineage | Notes |
 | --- | ---: | ---: | ---: | --- |
-| PostgreSQL root token-event | 111 | 1402 | 332 | Fallback parser golden. |
-| PostgreSQL full-grammar v16 | 111 | 1474 | 351 | Version-strict full-grammar golden. |
-| PostgreSQL full-grammar v17 | 113 | 1478 | 364 | Includes v17-only fixtures. |
-| PostgreSQL full-grammar v18 | 114 | 1477 | 362 | Includes v18-only fixtures. |
+| PostgreSQL root token-event | 111 | 1428 | 424 | Fallback parser golden. |
+| PostgreSQL full-grammar v16 | 111 | 1479 | 435 | Version-strict full-grammar golden. |
+| PostgreSQL full-grammar v17 | 113 | 1482 | 448 | Includes v17-only fixtures. |
+| PostgreSQL full-grammar v18 | 114 | 1482 | 447 | Includes v18-only fixtures. |
 
 ## Decisions
 

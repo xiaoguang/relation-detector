@@ -33,6 +33,10 @@ public final class MySqlDdlEventSink {
         builder.addIndex(table, column, role, kind, line);
     }
 
+    public void addIndex(String table, List<String> columns, String role, String kind, long line) {
+        builder.addIndex(table, columns, role, kind, line);
+    }
+
     public void addColumn(String table, String column, long line) {
         builder.addColumn(clean(table), clean(column), line);
     }
