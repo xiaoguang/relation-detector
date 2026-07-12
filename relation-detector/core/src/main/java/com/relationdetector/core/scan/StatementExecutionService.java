@@ -1,6 +1,5 @@
 package com.relationdetector.core.scan;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -15,13 +14,16 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
-import com.relationdetector.core.relation.NamingEvidenceExtractor;
+import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.provenance.SourceProvenanceValidator;
 
 /**
  * Executes one SQL or DDL statement through the same structured parser,
@@ -33,6 +35,7 @@ public final class StatementExecutionService {
     private final StructuredDataLineageExtractor dataLineageExtractor = new StructuredDataLineageExtractor();
     private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
     private final TokenEventRelationExtractor tokenEventRelationExtractor = new TokenEventRelationExtractor();
+    private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
 
     public StatementExecutionOutcome executeSql(
             DatabaseAdaptor adaptor,
@@ -55,9 +58,12 @@ public final class StatementExecutionService {
         SqlRelationParserRunner.ParsedSqlRelations parsed = parserBundle == null
                 || adaptor.parsers().structuredSql().isEmpty()
                 ? sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context)
-                : sqlParserRunner.parseStructuredAndRelations(config, statement, context, parserBundle);
+                : sqlParserRunner.parseStructuredAndRelations(
+                        config, statement, context, parserBundle, adaptor.identifierRules());
         List<DataLineageCandidate> lineages = parsed.structured()
-                .map(structured -> dataLineageExtractor.extract(statement, structured, knownPhysicalTables))
+                .map(structured -> new StructuredDataLineageExtractor(
+                        adaptor.identifierRules(), namespace(context))
+                        .extract(statement, structured, knownPhysicalTables))
                 .orElseGet(List::of);
         List<NamingEvidenceCandidate> namingEvidence =
                 namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships(), config);
@@ -86,26 +92,8 @@ public final class StatementExecutionService {
                 dataLineageExtractor.extract(statement, structured, knownPhysicalTables);
         List<NamingEvidenceCandidate> namingEvidence =
                 namingEvidenceExtractor.extractFromRelationshipCandidates(relationships, config);
-        return new StatementExecutionOutcome(relationships, lineages, namingEvidence, List.of());
-    }
-
-    public StatementExecutionOutcome executeDdlFile(
-            ParserBundle parserBundle,
-            Path file,
-            AdaptorContext context
-    ) {
-        DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(parserBundle, file, context);
-        return ddlOutcome(parsed);
-    }
-
-    public StatementExecutionOutcome executeDdlFile(
-            ParserBundle parserBundle,
-            Path file,
-            AdaptorContext context,
-            ScanConfig config
-    ) {
-        DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(parserBundle, file, context, config);
-        return ddlOutcome(parsed);
+        return new StatementExecutionOutcome(
+                relationships, lineages, namingEvidence, provenanceValidator.validate(statement, structured));
     }
 
     public StatementExecutionOutcome executeDdlText(
@@ -142,6 +130,21 @@ public final class StatementExecutionService {
     }
 
     public StatementExecutionOutcome executeDdlText(
+            ParserBundle parserBundle,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
+        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(
+                parserBundle.ddlParser(), ddl, sourceName, sourceType, context, config,
+                identifierRules, namespace));
+    }
+
+    public StatementExecutionOutcome executeDdlText(
             StructuredDdlParser parser,
             String ddl,
             String sourceName,
@@ -162,11 +165,54 @@ public final class StatementExecutionService {
         return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, config));
     }
 
+    public StatementExecutionOutcome executeDdlStatements(
+            ParserBundle parserBundle,
+            List<SqlStatementRecord> statements,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
+        return ddlOutcome(ddlParserRunner.parseStatementsWithEvidence(
+                parserBundle, statements, sourceType, context, config));
+    }
+
+    public StatementExecutionOutcome executeDdlStatements(
+            ParserBundle parserBundle,
+            List<SqlStatementRecord> statements,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
+        return ddlOutcome(ddlParserRunner.parseStatementsWithEvidence(
+                parserBundle, statements, sourceType, context, config, identifierRules, namespace));
+    }
+
+    public StatementExecutionOutcome executeDdlStatements(
+            StructuredDdlParser parser,
+            List<SqlStatementRecord> statements,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
+        return ddlOutcome(ddlParserRunner.parseStatementsWithEvidence(
+                parser, statements, sourceType, context, config));
+    }
+
     private StatementExecutionOutcome ddlOutcome(DdlParseOutcome parsed) {
         return new StatementExecutionOutcome(
                 parsed.relationships(),
                 List.of(),
                 parsed.namingEvidence(),
-                List.of());
+                List.of(),
+                parsed.inventory());
+    }
+
+    private NamespaceContext namespace(AdaptorContext context) {
+        if (context == null || context.scope() == null) {
+            return NamespaceContext.empty();
+        }
+        return new NamespaceContext(context.scope().catalog(), context.scope().schema(), List.of());
     }
 }

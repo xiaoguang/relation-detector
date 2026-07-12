@@ -46,7 +46,7 @@ public final class PostgresFullGrammerStructuredSqlParser extends AbstractPostgr
     }
 
     @Override
-    protected List<StructuredSqlEvent> extractEvents(
+    protected PostgresFullGrammerEventOutcome extractEvents(
             SqlStatementRecord statement,
             List<Token> visibleTokens,
             ParserRuleContext root

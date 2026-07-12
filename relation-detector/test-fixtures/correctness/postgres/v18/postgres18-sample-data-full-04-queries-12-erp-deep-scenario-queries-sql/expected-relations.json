@@ -63,5 +63,5 @@
     "FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

@@ -59,7 +59,6 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;

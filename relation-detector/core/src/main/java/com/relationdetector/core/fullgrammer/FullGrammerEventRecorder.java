@@ -53,6 +53,11 @@ final class FullGrammerEventRecorder {
         add(new ProjectionEvent(type, source.provenance(ctx), outputAlias, outputColumn, trace(analysis)));
     }
 
+    void projection(ParserRuleContext ctx, StructuredParseEventType type,
+            String outputAlias, String outputColumn, ExpressionTrace trace) {
+        add(new ProjectionEvent(type, source.provenance(ctx), outputAlias, outputColumn, trace));
+    }
+
     void writeTarget(ParserRuleContext ctx, String table, String qualifiedTable, String alias) {
         add(new WriteEvent(StructuredParseEventType.WRITE_TARGET, source.provenance(ctx),
                 table, qualifiedTable, alias, "", "", "", "", ExpressionTrace.empty()));

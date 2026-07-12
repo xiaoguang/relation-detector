@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH"
+    "FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

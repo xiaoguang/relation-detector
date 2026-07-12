@@ -14,20 +14,28 @@ script
     ;
 
 statement
-    : routineStartStatement
+    : triggerStartStatement
+    | routineStartStatement
     | blockStartStatement SEMI?
     | blockEndStatement SEMI?
+    | cursorDeclarationStatement SEMI?
     | declarationStatement SEMI?
     | controlStartStatement
     | selectStatement SEMI?
     | insertSelectStatement SEMI?
+    | insertValuesStatement SEMI?
     | updateStatement SEMI?
     | deleteStatement SEMI?
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
+    | createViewStatement SEMI?
     | unknownStatement SEMI?
     | SEMI
+    ;
+
+createViewStatement
+    : CREATE (OR REPLACE)? VIEW qualifiedName AS selectStatement
     ;
 
 unknownStatement
@@ -35,7 +43,31 @@ unknownStatement
     ;
 
 routineStartStatement
-    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION) qualifiedName routineParameterList routineHeaderToken* BEGIN
+    ;
+
+routineParameterList
+    : LPAREN (routineParameter (COMMA routineParameter)*)? RPAREN
+    ;
+
+routineParameter
+    : (IN | OUT | INOUT)? identifier routineParameterTypeToken+
+    ;
+
+routineParameterTypeToken
+    : identifier
+    | LPAREN routineParameterTypeParenToken* RPAREN
+    ;
+
+routineParameterTypeParenToken
+    : identifier
+    | literal
+    | COMMA
+    ;
+
+triggerStartStatement
+    : CREATE (OR REPLACE)? TRIGGER identifier (BEFORE | AFTER)
+      (INSERT | UPDATE | DELETE) ON qualifiedName FOR EACH ROW BEGIN
     ;
 
 routineHeaderToken
@@ -51,7 +83,15 @@ blockEndStatement
     ;
 
 declarationStatement
-    : DECLARE ~SEMI+
+    : DECLARE identifier declarationToken*
+    ;
+
+declarationToken
+    : ~SEMI
+    ;
+
+cursorDeclarationStatement
+    : DECLARE identifier CURSOR FOR selectStatement
     ;
 
 controlStartStatement
@@ -82,7 +122,7 @@ commonTableExpression
     ;
 
 querySpecification
-    : SELECT selectModifier* selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    : SELECT selectModifier* selectList selectIntoClause? fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
     ;
 
 selectModifier
@@ -93,6 +133,10 @@ selectModifier
 
 selectList
     : selectItem (COMMA selectItem)*
+    ;
+
+selectIntoClause
+    : INTO identifier (COMMA identifier)*
     ;
 
 selectItem
@@ -107,8 +151,14 @@ selectItemFallback
     ;
 
 selectItemFallbackToken
-    : LPAREN selectItemFallbackToken* RPAREN
+    : LPAREN selectItemNestedFallbackToken* RPAREN
     | ~(COMMA | FROM | RPAREN | SEMI)
+    ;
+
+selectItemNestedFallbackToken
+    : LPAREN selectStatement RPAREN
+    | LPAREN selectItemNestedFallbackToken* RPAREN
+    | ~(RPAREN | SELECT)
     ;
 
 fromClause
@@ -148,7 +198,8 @@ tableAlias
     ;
 
 joinClause
-    : joinType? joinOperator tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
+    : CROSS JOIN tablePrimary
+    | joinType? joinOperator tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
     ;
 
 joinType
@@ -156,7 +207,6 @@ joinType
     | LEFT OUTER?
     | RIGHT OUTER?
     | FULL OUTER?
-    | CROSS
     ;
 
 joinOperator
@@ -194,6 +244,15 @@ limitClause
 
 insertSelectStatement
     : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement onDuplicateKeyUpdateClause?
+    ;
+
+insertValuesStatement
+    : INSERT INTO qualifiedName LPAREN identifierList RPAREN VALUES valueRow (COMMA valueRow)*
+      onDuplicateKeyUpdateClause?
+    ;
+
+valueRow
+    : LPAREN expressionList? RPAREN
     ;
 
 onDuplicateKeyUpdateClause
@@ -468,7 +527,8 @@ expression
     | CASE selector=expression? caseWhenClause+ (ELSE elseBranch=expression)? END # caseExpression
     | INTERVAL expression identifier                                      # intervalExpression
     | IF LPAREN predicate COMMA expression COMMA expression RPAREN        # ifExpression
-    | functionCall                                                        # functionExpression
+    | CAST LPAREN expression AS typeName RPAREN                           # castExpression
+    | functionCall windowSpecification?                                  # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
@@ -480,16 +540,27 @@ caseWhenClause
     ;
 
 functionCall
-    : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN
+    : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionOrderBy? functionSeparator? RPAREN
     ;
 
-functionCallOption
-    : ORDER BY functionCallOptionToken+
-    | identifier functionCallOptionToken*
+typeName
+    : qualifiedName (LPAREN NUMBER (COMMA NUMBER)? RPAREN)?
     ;
 
-functionCallOptionToken
-    : LPAREN functionCallOptionToken* RPAREN
+functionOrderBy
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+functionSeparator
+    : SEPARATOR expression
+    ;
+
+windowSpecification
+    : OVER LPAREN windowSpecificationToken* RPAREN
+    ;
+
+windowSpecificationToken
+    : LPAREN windowSpecificationToken* RPAREN
     | ~RPAREN
     ;
 
@@ -535,11 +606,13 @@ sqlToken
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | UNION | INSERT | INTO | UPDATE
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | ALL | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE | DO
-    | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE
+    | LOOP | REPEAT | DECLARE | CURSOR | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE
+    | BEFORE | AFTER | EACH | ROW | VALUES | SEPARATOR
+    | OUT | INOUT
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | PARTITION | USE | IGNORE | FORCE | FOR | OJ | JSON_TABLE | INTERVAL
-    | IS | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
+    | INCLUDE | TABLESPACE | PARTITION | USE | IGNORE | FORCE | FOR | OJ | JSON_TABLE | INTERVAL | OVER
+    | IS | CAST | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | NULL_SAFE_EQ | LPAREN | RPAREN | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | LBRACE | RBRACE | OTHER
     ;
@@ -553,6 +626,7 @@ JOIN: J O I N;
 STRAIGHT_JOIN: S T R A I G H T '_' J O I N;
 JSON_TABLE: J S O N '_' T A B L E;
 INTERVAL: I N T E R V A L;
+OVER: O V E R;
 ON: O N;
 USING: U S I N G;
 INNER: I N N E R;
@@ -571,6 +645,8 @@ VIRTUAL: V I R T U A L;
 NOT: N O T;
 EXISTS: E X I S T S;
 IN: I N;
+OUT: O U T;
+INOUT: I N O U T;
 IS: I S;
 LIKE: L I K E;
 ESCAPE: E S C A P E;
@@ -601,10 +677,19 @@ DO: D O;
 LOOP: L O O P;
 REPEAT: R E P E A T;
 DECLARE: D E C L A R E;
+CURSOR: C U R S O R;
 PROCEDURE: P R O C E D U R E;
 FUNCTION: F U N C T I O N;
 TRIGGER: T R I G G E R;
+BEFORE: B E F O R E;
+AFTER: A F T E R;
+EACH: E A C H;
+ROW: R O W;
+VALUES: V A L U E S;
+SEPARATOR: S E P A R A T O R;
 REPLACE: R E P L A C E;
+CAST: C A S T;
+VIEW: V I E W;
 ADD: A D D;
 CONSTRAINT: C O N S T R A I N T;
 FOREIGN: F O R E I G N;

@@ -40,6 +40,8 @@ relation-detector/target/sample-data-parser-cli/results/
 relation-detector/target/sample-data-parser-cli/summary.tsv
 relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv
 relation-detector/target/sample-data-parser-cli/warning-codes.tsv
+relation-detector/target/sample-data-parser-cli/observation-parity.tsv
+relation-detector/target/sample-data-parser-cli/observation-diffs/
 ```
 
 By default the script also runs `*-derived-fresh` variants with `derivedPaths.enabled=true`.
@@ -62,6 +64,12 @@ SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM=1 \
 Case logs are retained under `relation-detector/target/sample-data-parser-cli/logs/`.
 The compact summary columns mean `Rel` = direct relationships, `Lin` = direct lineage,
 `Name` = direct naming evidence, and `Der*` = the corresponding derived counts.
+
+When both sides of a same-asset parser pair are requested, the runner also compares
+token-event and full-grammer semantic observations. The comparison includes fact
+endpoints, relationship/flow/transform semantics, source object or file, statement,
+block, line, and join/write mapping kind; parser implementation flags are ignored.
+Any difference fails the run and is written to `observation-diffs/`.
 
 Run the explicit serial-versus-parallel consistency check for all 38 JSON artifacts:
 

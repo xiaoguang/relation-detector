@@ -118,7 +118,8 @@ class ScanExecutionParallelismTest {
         }
         @Override public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
-                    (statement, context) -> List.of(), Optional.of(parser), Optional.empty());
+                    (statement, context) -> List.of(), Optional.of(parser), Optional.empty(),
+                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
         }
         @Override public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
             return new com.relationdetector.contracts.spi.AdaptorProfiling(

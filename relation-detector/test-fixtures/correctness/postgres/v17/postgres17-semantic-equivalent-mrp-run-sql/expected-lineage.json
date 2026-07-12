@@ -6,7 +6,7 @@
     "VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id",
     "VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

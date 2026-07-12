@@ -3,7 +3,7 @@
     "VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str",
     "VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

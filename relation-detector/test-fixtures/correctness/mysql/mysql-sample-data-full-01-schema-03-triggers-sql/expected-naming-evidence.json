@@ -1,0 +1,3 @@
+{
+  "fingerprints" : [ "naming:salary_payments.employee_id->employees.id:TABLE_ID:NAMING_MATCH", "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH", "naming:voucher_items.voucher_id->vouchers.id:TABLE_ID:NAMING_MATCH" ]
+}

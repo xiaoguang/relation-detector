@@ -3,6 +3,9 @@ package com.relationdetector.core.profile;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.relationdetector.contracts.model.ColumnRef;
+import com.relationdetector.contracts.model.TableId;
+
 /**
  * Dialect-aware identifier rendering for bounded profiling queries.
  */
@@ -27,22 +30,25 @@ public final class IdentifierQuoter {
         return new IdentifierQuoter("[", "]");
     }
 
-    public String table(String qualifiedName) {
-        if (qualifiedName == null || qualifiedName.isBlank()) {
+    public String table(TableId table) {
+        if (table == null) {
             return "";
         }
         List<String> rendered = new ArrayList<>();
-        for (String part : qualifiedName.split("\\.")) {
-            String clean = part.trim();
-            if (!clean.isBlank()) {
-                rendered.add(identifier(clean));
-            }
-        }
+        addComponent(rendered, table.catalog());
+        addComponent(rendered, table.schema());
+        addComponent(rendered, table.tableName());
         return String.join(".", rendered);
     }
 
-    public String column(String columnName) {
-        return identifier(columnName);
+    public String column(ColumnRef column) {
+        return column == null ? "" : identifier(column.columnName());
+    }
+
+    private void addComponent(List<String> rendered, String value) {
+        if (value != null && !value.isBlank()) {
+            rendered.add(identifier(value));
+        }
     }
 
     private String identifier(String raw) {
@@ -50,32 +56,28 @@ public final class IdentifierQuoter {
             return "";
         }
         String text = raw.trim();
-        if (alreadyQuoted(text) || safeIdentifier(text)) {
+        if (quotedByThisDialect(text)) {
             return text;
         }
+        text = unquoteOtherDialect(text);
         return openQuote + text.replace(closeQuote, closeQuote + closeQuote) + closeQuote;
     }
 
-    private boolean alreadyQuoted(String text) {
-        return (text.startsWith("`") && text.endsWith("`"))
-                || (text.startsWith("\"") && text.endsWith("\""))
-                || (text.startsWith("[") && text.endsWith("]"));
+    private boolean quotedByThisDialect(String text) {
+        return text.startsWith(openQuote) && text.endsWith(closeQuote);
     }
 
-    private boolean safeIdentifier(String text) {
-        if (text.isBlank()) {
-            return false;
+    private String unquoteOtherDialect(String text) {
+        if (text.length() < 2) {
+            return text;
         }
         char first = text.charAt(0);
-        if (!(Character.isLetter(first) || first == '_')) {
-            return false;
+        char last = text.charAt(text.length() - 1);
+        if ((first == '`' && last == '`') || (first == '"' && last == '"')
+                || (first == '[' && last == ']')) {
+            String body = text.substring(1, text.length() - 1);
+            return body.replace(String.valueOf(last) + last, String.valueOf(last));
         }
-        for (int index = 1; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (!(Character.isLetterOrDigit(ch) || ch == '_' || ch == '$')) {
-                return false;
-            }
-        }
-        return true;
+        return text;
     }
 }

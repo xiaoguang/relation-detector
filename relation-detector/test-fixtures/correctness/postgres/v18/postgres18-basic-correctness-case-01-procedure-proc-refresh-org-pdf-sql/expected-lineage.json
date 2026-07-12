@@ -6,7 +6,7 @@
     "VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id",
     "VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

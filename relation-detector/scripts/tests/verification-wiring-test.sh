@@ -16,6 +16,7 @@ grep -q -- '--cli-report' "$VERIFY"
 grep -q -- '--correctness-summary' "$VERIFY"
 grep -q -- '--fingerprints' "$VERIFY"
 grep -q 'SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE' "$RUNNER"
+grep -q 'audit-semantic-observations.sh' "$RUNNER"
 
 if SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE=true bash "$RUNNER" does-not-exist >/dev/null 2>&1; then
   echo "unknown sample-data parser case must fail" >&2

@@ -27,7 +27,7 @@ public interface PostgresFullGrammerSqlBinding {
 
     AbstractPostgresFullGrammerStructuredSqlParser.FullGrammerSqlParse parseSql(String sql);
 
-    List<StructuredSqlEvent> extractEvents(
+    PostgresFullGrammerEventOutcome extractEvents(
             SqlStatementRecord statement,
             List<Token> visibleTokens,
             ParserRuleContext root

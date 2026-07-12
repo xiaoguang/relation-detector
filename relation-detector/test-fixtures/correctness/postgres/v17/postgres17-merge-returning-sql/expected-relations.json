@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:account_balances.user_id->staging_account_balances.user_id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:account_balances.user_id->staging_account_balances.user_id:SQL_LOG_JOIN,REPEATED_OBSERVATION"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

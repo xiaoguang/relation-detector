@@ -47,6 +47,12 @@ final class WriteMappingSink {
                 targetAlias, targetTable, targetColumn, expression);
     }
 
+    void insertValues(ParserRuleContext ctx, String targetAlias, String targetTable, String targetColumn,
+            ParseTree expression) {
+        addWriteMapping(ctx, StructuredParseEventType.INSERT_SELECT_MAPPING, "INSERT_VALUES",
+                targetAlias, targetTable, targetColumn, expression);
+    }
+
     private void addWriteMapping(
             ParserRuleContext ctx,
             StructuredParseEventType type,

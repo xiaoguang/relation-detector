@@ -9,8 +9,9 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * Small base class for adaptors that expose grouped collector/parser/profiling
  * capabilities.
  *
- * <p>SPI v2 exposes only grouped capabilities. This base class keeps the
- * immutable assembly shared by built-in adaptors.
+ * <p>SPI v3 exposes only grouped capabilities and requires a dialect script
+ * parser in {@link AdaptorParsers}. This base class keeps the immutable
+ * assembly shared by built-in adaptors.
  */
 public abstract class AbstractDatabaseAdaptor implements DatabaseAdaptor {
     private final String id;

@@ -5,6 +5,6 @@
   "forbiddenSources": [
     "CURRENT_TIMESTAMP"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

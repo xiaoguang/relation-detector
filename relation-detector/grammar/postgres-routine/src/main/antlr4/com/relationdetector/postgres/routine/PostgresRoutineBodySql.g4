@@ -17,10 +17,17 @@ script
 
 statement
     : routineStartStatement
+    | blockLabel
+    | exceptionStartStatement
     | blockStartStatement SEMI?
     | blockEndStatement SEMI?
     | declarationStatement SEMI?
+    | forQueryStartStatement
+    | caseStartStatement
+    | caseWhenStartStatement
     | controlStartStatement
+    | returnQueryStatement SEMI?
+    | proceduralStatement SEMI?
     | selectStatement SEMI?
     | insertSelectStatement SEMI?
     | insertValuesStatement SEMI?
@@ -30,12 +37,7 @@ statement
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
-    | unknownStatement SEMI?
     | SEMI
-    ;
-
-unknownStatement
-    : ~SEMI+
     ;
 
 routineStartStatement
@@ -51,16 +53,57 @@ blockStartStatement
     ;
 
 blockEndStatement
-    : END (IF | LOOP | WHILE | REPEAT)?
+    : END (IF | LOOP identifier? | WHILE | REPEAT | CASE)?
+    ;
+
+blockLabel
+    : LT LT identifier GT GT
+    ;
+
+exceptionStartStatement
+    : EXCEPTION
     ;
 
 declarationStatement
-    : DECLARE ~SEMI+
+    : DECLARE (~BEGIN)*
+    ;
+
+forQueryStartStatement
+    : FOR identifier IN selectStatement LOOP
+    ;
+
+caseStartStatement
+    : CASE ~WHEN*
+    ;
+
+caseWhenStartStatement
+    : WHEN ~THEN* THEN
+    ;
+
+returnQueryStatement
+    : RETURN QUERY selectStatement
+    ;
+
+proceduralStatement
+    : RETURN ~SEMI*
+    | RAISE ~SEMI*
+    | PERFORM ~SEMI*
+    | CALL ~SEMI*
+    | GET ~SEMI*
+    | OPEN ~SEMI*
+    | FETCH ~SEMI*
+    | CLOSE ~SEMI*
+    | EXIT ~SEMI*
+    | CONTINUE ~SEMI*
+    | COMMIT
+    | ROLLBACK
+    | NULL
+    | identifier ASSIGN ~SEMI*
     ;
 
 controlStartStatement
     : IF ~THEN* THEN
-    | ELSEIF ~THEN* THEN
+    | (ELSIF | ELSEIF) ~THEN* THEN
     | ELSE
     | WHILE ~LOOP* LOOP
     | FOR ~LOOP* LOOP
@@ -91,7 +134,11 @@ cteMaterialization
     ;
 
 querySpecification
-    : SELECT DISTINCT? selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    : SELECT DISTINCT? selectList intoClause? fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    ;
+
+intoClause
+    : INTO identifierList
     ;
 
 selectList
@@ -100,13 +147,12 @@ selectList
 
 selectItem
     : STAR
-    | booleanProjection (AS? identifier)?
-    | expression (AS? identifier)?
+    | expression booleanProjectionTail? (AS? identifier)?
     | selectItemFallback (AS? identifier)?
     ;
 
-booleanProjection
-    : expression comparisonOperator expression ((AND | OR) expression comparisonOperator expression)*
+booleanProjectionTail
+    : comparisonOperator expression ((AND | OR) expression comparisonOperator expression)*
     ;
 
 selectItemFallback
@@ -127,10 +173,10 @@ tableReference
     ;
 
 tablePrimary
-    : ONLY? qualifiedName tableSampleClause? tableAlias? tableSampleClause?  # namedTablePrimary
+    : LATERAL? qualifiedName LPAREN looseToken* RPAREN withOrdinality? tableAlias? # functionRowsetPrimary
+    | ONLY? qualifiedName tableSampleClause? tableAlias? tableSampleClause?  # namedTablePrimary
     | LPAREN selectStatement RPAREN tableAlias?                              # derivedTablePrimary
     | ROWS FROM LPAREN rowsFromItem (COMMA rowsFromItem)* RPAREN tableAlias? # rowsFromTablePrimary
-    | LATERAL? qualifiedName LPAREN looseToken* RPAREN withOrdinality? tableAlias? # functionRowsetPrimary
     ;
 
 tableAlias
@@ -164,7 +210,8 @@ looseToken
     ;
 
 joinClause
-    : joinType? JOIN tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
+    : CROSS JOIN tablePrimary
+    | joinType? JOIN tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
     ;
 
 joinType
@@ -172,7 +219,6 @@ joinType
     | LEFT OUTER?
     | RIGHT OUTER?
     | FULL OUTER?
-    | CROSS
     ;
 
 usingAlias
@@ -192,11 +238,15 @@ havingClause
     ;
 
 orderByClause
-    : ORDER BY expression (COMMA expression)*
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+orderByItem
+    : expression (ASC | DESC)? (NULLS (FIRST | LAST))?
     ;
 
 limitClause
-    : LIMIT NUMBER
+    : LIMIT expression
     ;
 
 insertSelectStatement
@@ -270,10 +320,17 @@ returningClause
 
 createTableStatement
     : CREATE tableModifier* TABLE ifNotExists? qualifiedName LPAREN tableElement (COMMA tableElement)* RPAREN
+      createTableTail*
+    ;
+
+createTableTail
+    : ON COMMIT DROP
+    | identifier
     ;
 
 tableModifier
-    : TEMPORARY
+    : TEMP
+    | TEMPORARY
     | UNLOGGED
     ;
 
@@ -414,9 +471,12 @@ predicate
     | predicate OR predicate                                              # orPredicate
     | NOT predicate                                                       # notPredicate
     | EXISTS LPAREN selectStatement RPAREN                                # existsPredicate
-    | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
-    | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
-    | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
+    | expression NOT? IN LPAREN selectStatement RPAREN                    # inSubqueryPredicate
+    | LPAREN expressionList RPAREN NOT? IN LPAREN selectStatement RPAREN  # tupleInSubqueryPredicate
+    | expression NOT? IN LPAREN expressionList RPAREN                     # literalInPredicate
+    | expression NOT? BETWEEN expression AND expression                   # betweenPredicate
+    | expression IS NOT DISTINCT FROM expression                          # isNotDistinctPredicate
+    | expression IS DISTINCT FROM expression                              # isDistinctPredicate
     | expression IS NOT? NULL                                             # isNullPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
     | expression comparisonOperator expression                            # comparisonPredicate
@@ -431,6 +491,9 @@ likeOperator
 
 comparisonOperator
     : EQ
+    | OVERLAP
+    | CONTAINS
+    | CONTAINED_BY
     | LT
     | GT
     | LE
@@ -439,17 +502,34 @@ comparisonOperator
     ;
 
 expression
-    : expression arithmeticOperator expression                            # binaryExpression
-    | expression TYPE_CAST typeName                                       # typeCastExpression
-    | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
-    | functionCall windowClause?                                          # functionExpression
-    | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
-    | MINUS expression                                                    # unaryMinusExpression
-    | INTERVAL STRING_LITERAL                                             # intervalLiteralExpression
-    | DATE STRING_LITERAL                                                 # dateLiteralExpression
-    | qualifiedName                                                       # columnExpression
-    | literal                                                             # literalExpression
-    | LPAREN expression RPAREN                                            # parenExpression
+    : castAtom expressionContinuation
+    ;
+
+expressionContinuation
+    : CONCAT expression
+    | arithmeticOperator expression
+    |
+    ;
+
+castAtom
+    : expressionAtom castSuffix
+    ;
+
+castSuffix
+    : TYPE_CAST typeName
+    |
+    ;
+
+expressionAtom
+    : CASE expression? caseWhenClause+ (ELSE expression)? END
+    | functionCall windowClause?
+    | LPAREN selectStatement RPAREN
+    | MINUS expressionAtom
+    | INTERVAL STRING_LITERAL
+    | DATE STRING_LITERAL
+    | qualifiedName
+    | literal
+    | LPAREN expression RPAREN
     ;
 
 caseWhenClause
@@ -484,7 +564,6 @@ arithmeticOperator
     | STAR
     | SLASH
     | PERCENT
-    | CONCAT
     ;
 
 expressionList
@@ -503,6 +582,8 @@ identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
     | DATE
+    | INTERVAL
+    | REPLACE
     ;
 
 literal
@@ -522,8 +603,9 @@ sqlToken
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
     | UNION | ALL | INTERSECT | EXCEPT | CONFLICT
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
-    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
+    | NULL | CREATE | ALTER | TABLE | TEMP | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
+    | EXCEPTION | DROP | FILTER
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
@@ -573,20 +655,42 @@ MERGE: M E R G E;
 MATCHED: M A T C H E D;
 VALUES: V A L U E S;
 RETURNING: R E T U R N I N G;
+RETURN: R E T U R N;
+QUERY: Q U E R Y;
+RAISE: R A I S E;
+PERFORM: P E R F O R M;
+CALL: C A L L;
+GET: G E T;
+OPEN: O P E N;
+FETCH: F E T C H;
+CLOSE: C L O S E;
+EXIT: E X I T;
+CONTINUE: C O N T I N U E;
+COMMIT: C O M M I T;
+ROLLBACK: R O L L B A C K;
+BETWEEN: B E T W E E N;
+ASC: A S C;
+DESC: D E S C;
+NULLS: N U L L S;
+FIRST: F I R S T;
+LAST: L A S T;
 CONFLICT: C O N F L I C T;
 DO: D O;
 NOTHING: N O T H I N G;
 CREATE: C R E A T E;
 ALTER: A L T E R;
 TABLE: T A B L E;
+TEMP: T E M P;
 TEMPORARY: T E M P O R A R Y;
 UNLOGGED: U N L O G G E D;
 BEGIN: B E G I N;
 IF: I F;
 ELSEIF: E L S E I F;
+ELSIF: E L S I F;
 WHILE: W H I L E;
 LOOP: L O O P;
 REPEAT: R E P E A T;
+EXCEPTION: E X C E P T I O N;
 DECLARE: D E C L A R E;
 PROCEDURE: P R O C E D U R E;
 FUNCTION: F U N C T I O N;
@@ -622,6 +726,8 @@ FALSE: F A L S E;
 NULL: N U L L;
 INTERVAL: I N T E R V A L;
 DATE: D A T E;
+DROP: D R O P;
+FILTER: F I L T E R;
 
 DOT: '.';
 COMMA: ',';
@@ -638,9 +744,13 @@ SLASH: '/';
 PERCENT: '%';
 CONCAT: '||';
 TYPE_CAST: '::';
+ASSIGN: ':=';
 LE: '<=';
 GE: '>=';
 NEQ: '<>' | '!=';
+OVERLAP: '&&';
+CONTAINS: '@>';
+CONTAINED_BY: '<@';
 LT: '<';
 GT: '>';
 

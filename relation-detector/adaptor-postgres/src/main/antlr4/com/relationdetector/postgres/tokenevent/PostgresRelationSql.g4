@@ -27,8 +27,13 @@ statement
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
+    | createViewStatement SEMI?
     | unknownStatement SEMI?
     | SEMI
+    ;
+
+createViewStatement
+    : CREATE (OR REPLACE)? MATERIALIZED? VIEW qualifiedName AS selectStatement
     ;
 
 unknownStatement
@@ -148,7 +153,7 @@ looseToken
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | INTERVAL | DATE | CAST | ARRAY | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER | PARTITION
     | RECURSIVE | UNION | ALL | INTERSECT | EXCEPT
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | TYPECAST | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
@@ -467,7 +472,8 @@ comparisonOperator
     ;
 
 expression
-    : expression TYPECAST qualifiedName                                   # castExpression
+    : (PLUS | MINUS) expression                                           # unaryExpression
+    | expression TYPECAST qualifiedName                                   # castExpression
     | CAST LPAREN expression AS qualifiedName RPAREN                      # standardCastExpression
     | expression arithmeticOperator expression                            # binaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
@@ -491,7 +497,11 @@ functionCall
     ;
 
 windowClause
-    : OVER LPAREN functionCallOptionToken* RPAREN
+    : OVER LPAREN windowPartitionClause? orderByClause? functionCallOptionToken* RPAREN
+    ;
+
+windowPartitionClause
+    : PARTITION BY expressionList
     ;
 
 functionCallOption
@@ -552,7 +562,7 @@ sqlToken
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER | PARTITION
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | TYPECAST | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | CONTAINS | OTHER
@@ -637,11 +647,13 @@ ONLY: O N L Y;
 INCLUDE: I N C L U D E;
 TABLESPACE: T A B L E S P A C E;
 MATERIALIZED: M A T E R I A L I Z E D;
+VIEW: V I E W;
 ROWS: R O W S;
 TABLESAMPLE: T A B L E S A M P L E;
 LATERAL: L A T E R A L;
 ORDINALITY: O R D I N A L I T Y;
 OVER: O V E R;
+PARTITION: P A R T I T I O N;
 CASE: C A S E;
 WHEN: W H E N;
 THEN: T H E N;

@@ -4,8 +4,11 @@ final class EvidenceEnhancementPipeline {
     private final EvidenceEnhancementService enhancementService = new EvidenceEnhancementService();
 
     void enhance(ScanPipelineContext ctx) {
+        ctx.ddlEvidenceInventory.enhance(ctx.relationshipCandidates);
         enhancementService.enhance(ctx.relationshipCandidates, ctx.namingEvidencePool, ctx.metadataSnapshot,
-                ctx.parserConfig);
+                ctx.parserConfig, ctx.adaptor.identifierRules(),
+                new com.relationdetector.core.identity.NamespaceContext(
+                        ctx.scope.catalog(), ctx.scope.schema(), java.util.List.of()));
     }
 
     void enhanceProfiledCandidates(

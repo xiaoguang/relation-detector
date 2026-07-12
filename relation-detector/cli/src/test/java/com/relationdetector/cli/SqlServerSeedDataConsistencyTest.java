@@ -23,8 +23,9 @@ import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
+import com.relationdetector.sqlserver.script.SqlServerScriptParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerRelationSqlLexer;
 import com.relationdetector.sqlserver.tokenevent.SqlServerRelationSqlParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
@@ -138,9 +139,10 @@ class SqlServerSeedDataConsistencyTest {
         Map<String, Boolean> identityEnabled = new LinkedHashMap<>();
         String[] activeIdentityTable = {null};
         long[] sequence = {0L};
-        PlainSqlLogExtractor splitter = new PlainSqlLogExtractor();
+        SqlServerScriptParser splitter = new SqlServerScriptParser();
         for (Path file : files) {
-            for (var statement : splitter.extract(file, StatementSourceType.PLAIN_SQL).toList()) {
+            for (var statement : splitter.parse(new ScriptParseRequest(
+                    Files.readString(file), file.toString(), StatementSourceType.PLAIN_SQL)).statements()) {
                 SqlServerRelationSqlParser.Tsql_fileContext root = parse(statement.sql());
                 for (SqlServerRelationSqlParser.StatementContext context : root.statement()) {
                     if (context.set_identity_insert() != null) {

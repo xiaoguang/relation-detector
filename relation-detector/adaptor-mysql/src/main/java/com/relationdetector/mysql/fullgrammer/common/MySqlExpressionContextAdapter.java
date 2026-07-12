@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter;
+import com.relationdetector.core.fullgrammer.FullGrammerColumnReference;
 
 /** Version-owned typed access to generated MySQL expression contexts. */
 public interface MySqlExpressionContextAdapter extends FullGrammerParseTreeAdapter {
@@ -29,6 +30,47 @@ public interface MySqlExpressionContextAdapter extends FullGrammerParseTreeAdapt
     List<ProjectionItem> selectItems(ParseTree tree);
 
     List<ProjectionItem> topLevelProjectionItems(ParseTree tree);
+
+    /** Resolves only transparent wrappers around one typed direct-column projection. */
+    default Optional<FullGrammerColumnReference> directProjectionColumn(ParseTree tree) {
+        ParseTree current = tree;
+        while (current != null) {
+            Optional<FullGrammerColumnReference> direct = directColumn(current);
+            if (direct.isPresent()) {
+                return direct;
+            }
+            if (hasRole(current, Role.QUERY_BOUNDARY)
+                    || hasRole(current, Role.SCALAR_SUBQUERY)
+                    || hasRole(current, Role.FUNCTION_CALL)
+                    || hasRole(current, Role.CASE_EXPRESSION)
+                    || hasRole(current, Role.AGGREGATE_FUNCTION)
+                    || hasRole(current, Role.WINDOW_FUNCTION)
+                    || functionName(current).isPresent()
+                    || operatorSemantic(current) != OperatorSemantic.NONE
+                    || isNonColumnValue(current)) {
+                return Optional.empty();
+            }
+            List<ParseTree> children = typedChildren(current);
+            if (children.size() != 1) {
+                return Optional.empty();
+            }
+            current = children.get(0);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    default OperatorSemantic operatorSemantic(ParseTree tree) {
+        return isArithmeticExpression(tree) ? OperatorSemantic.ARITHMETIC : OperatorSemantic.NONE;
+    }
+
+    @Override
+    default CaseParts caseParts(ParseTree tree) {
+        ConditionalParts parts = conditionalParts(tree);
+        return parts.conditional()
+                ? new CaseParts(true, parts.values(), parts.controls())
+                : CaseParts.NONE;
+    }
 
     record ProjectionItem(ParserRuleContext context, ParseTree expression, ParseTree explicitAlias) { }
 

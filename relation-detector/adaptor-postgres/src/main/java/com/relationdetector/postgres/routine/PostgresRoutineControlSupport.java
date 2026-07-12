@@ -14,36 +14,8 @@ abstract class PostgresRoutineControlSupport extends PostgresRoutineExpressionSu
     PostgresRoutineControlSupport(SqlStatementRecord statement) { super(statement); }
 
     @Override
-    protected List<ExpressionAnalysis> binaryWriteAnalyses(
-            PostgresRoutineBodySqlParser.BinaryExpressionContext expression) {
-        LineageTransformType transform = "||".equals(expression.arithmeticOperator().getText())
-                ? LineageTransformType.CONCAT_FORMAT : LineageTransformType.ARITHMETIC;
-        ExpressionAnalysis value = ExpressionAnalysis.empty();
-        ExpressionAnalysis control = ExpressionAnalysis.empty();
-        for (PostgresRoutineBodySqlParser.ExpressionContext operand : expression.expression()) {
-            for (ExpressionAnalysis analysis : writeAnalyses(operand)) {
-                if (analysis.flowKind() == LineageFlowKind.CONTROL) {
-                    control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                            LineageFlowKind.CONTROL, control, analysis);
-                } else {
-                    value = ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, value, analysis);
-                }
-            }
-        }
-        List<ExpressionAnalysis> result = new ArrayList<>(2);
-        if (!value.sources().isEmpty()) {
-            LineageTransformType effective = value.transform() == LineageTransformType.AGGREGATE
-                    || value.transform() == LineageTransformType.CUMULATIVE ? value.transform() : transform;
-            result.add(new ExpressionAnalysis(value.sources(), effective, LineageFlowKind.VALUE));
-        }
-        if (!control.sources().isEmpty()) result.add(new ExpressionAnalysis(
-                control.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL));
-        return List.copyOf(result);
-    }
-
-    @Override
     protected List<ExpressionAnalysis> functionWriteAnalyses(
-            PostgresRoutineBodySqlParser.FunctionExpressionContext expression) {
+            PostgresRoutineBodySqlParser.ExpressionAtomContext expression) {
         PostgresRoutineBodySqlParser.FunctionCallContext function = expression.functionCall();
         String name = baseName(qualifiedName(function.qualifiedName())).toLowerCase(Locale.ROOT);
         LineageTransformType outer = switch (name) {

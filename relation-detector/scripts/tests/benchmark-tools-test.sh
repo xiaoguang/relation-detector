@@ -77,4 +77,27 @@ cp "$TMP_DIR/results/example.json" "$TMP_DIR/results/example-derived-fresh.json"
 python3 "$RELATION_ROOT/scripts/validate-sample-data-results.py" \
   "$TMP_DIR/results" --expected-categories 1 >/dev/null
 
+mkdir -p "$TMP_DIR/results-duplicate"
+cat >"$TMP_DIR/results-duplicate/example.json" <<'JSON'
+{"summary":{"directRelationshipCount":1,"derivedRelationshipCount":0,"totalRelationshipCount":1,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"relationships":[{"rawEvidence":[{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":1}},{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":1}}]}],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
+JSON
+cp "$TMP_DIR/results-duplicate/example.json" "$TMP_DIR/results-duplicate/example-derived-fresh.json"
+printf 'SELECT 1;\n' >"$TMP_DIR/query.sql"
+if (cd "$TMP_DIR" && python3 "$RELATION_ROOT/scripts/validate-sample-data-results.py" \
+  "$TMP_DIR/results-duplicate" --expected-categories 1 >/dev/null 2>&1); then
+  echo "duplicate raw observations must fail sample-data validation" >&2
+  exit 1
+fi
+
+mkdir -p "$TMP_DIR/results-line"
+cat >"$TMP_DIR/results-line/example.json" <<'JSON'
+{"summary":{"directRelationshipCount":1,"derivedRelationshipCount":0,"totalRelationshipCount":1,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"relationships":[{"rawEvidence":[{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":2}}]}],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
+JSON
+cp "$TMP_DIR/results-line/example.json" "$TMP_DIR/results-line/example-derived-fresh.json"
+if (cd "$TMP_DIR" && python3 "$RELATION_ROOT/scripts/validate-sample-data-results.py" \
+  "$TMP_DIR/results-line" --expected-categories 1 >/dev/null 2>&1); then
+  echo "sourceLine outside statement/file must fail sample-data validation" >&2
+  exit 1
+fi
+
 echo "benchmark tools test passed"

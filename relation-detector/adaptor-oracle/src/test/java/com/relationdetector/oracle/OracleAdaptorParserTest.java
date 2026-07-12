@@ -941,6 +941,53 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleFullGrammerOnlyTreatsStandaloneEqualsAsColumnEqualityForEveryVersion() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        var statement = statement("""
+                SELECT i.product_id
+                FROM inventory i
+                JOIN products p ON i.product_id = p.id
+                WHERE i.available_quantity <= p.min_stock
+                  AND i.available_quantity >= p.max_stock
+                """);
+
+        for (FullGrammerDialectModule module : modules) {
+            Set<String> fingerprints = relationFingerprints(statement, module.sqlParser());
+            assertRelation(fingerprints, "inventory.product_id", "products.id", module.profile().id());
+            assertTrue(fingerprints.stream().noneMatch(fingerprint ->
+                            fingerprint.contains("inventory.available_quantity")
+                                    && (fingerprint.contains("products.min_stock")
+                                    || fingerprint.contains("products.max_stock"))),
+                    () -> module.profile().id() + " must not promote <= or >= to equality: " + fingerprints);
+        }
+    }
+
+    @Test
+    void oracleFullGrammerClassifiesUnaryMinusAsArithmeticForEveryVersion() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        var statement = statement("""
+                INSERT INTO inventory_transactions (quantity_change)
+                SELECT -rop.quantity
+                FROM repair_order_parts rop
+                """);
+
+        for (FullGrammerDialectModule module : modules) {
+            Set<String> lineages = lineage(statement, module.sqlParser().parseSql(statement, null));
+            assertTrue(lineages.contains(
+                            "VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change"),
+                    () -> module.profile().id() + " " + lineages);
+        }
+    }
+
+    @Test
     void oracleFullGrammerProcedureBlockEmitsArAgingInsertSelectLineageForEveryVersion() {
         List<FullGrammerDialectModule> modules = List.of(
                 new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),

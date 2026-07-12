@@ -1,7 +1,7 @@
 {
   "fingerprints": [
     "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "projected",

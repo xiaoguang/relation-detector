@@ -192,23 +192,5 @@ final class PostgresFullGrammerDdlEventCollector {
             return "";
         }
 
-        private <T extends ParserRuleContext> T firstChild(ParserRuleContext ctx, Class<T> type) {
-            if (ctx == null) {
-                return null;
-            }
-            if (type.isInstance(ctx)) {
-                return type.cast(ctx);
-            }
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                ParseTree child = ctx.getChild(i);
-                if (child instanceof ParserRuleContext childContext) {
-                    T found = firstChild(childContext, type);
-                    if (found != null) {
-                        return found;
-                    }
-                }
-            }
-            return null;
-        }
     }
 }

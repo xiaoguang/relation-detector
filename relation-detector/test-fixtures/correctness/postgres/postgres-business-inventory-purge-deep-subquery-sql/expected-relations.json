@@ -1,5 +1,5 @@
 {
-  "fingerprints": [],
+  "fingerprints": [ ],
   "forbiddenTables": [
     "sales_summary",
     "core_inv",

@@ -15,7 +15,15 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.ExpressionTrace;
+import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.ProjectionEvent;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
@@ -49,6 +57,27 @@ class TokenEventStructuredSqlParserTest {
     }
 
     @Test
+    void createViewParsesItsTypedQueryBody() {
+        SqlStatementRecord statement = record("""
+                CREATE VIEW v_order_users AS
+                SELECT o.id, u.email
+                FROM orders o
+                JOIN users u ON o.user_id = u.id
+                """, StatementSourceType.VIEW);
+
+        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
+                .parseSql(statement, null);
+        List<RelationshipCandidate> relationships = new TokenEventRelationExtractor().extract(statement, result);
+
+        assertTrue(relationships.stream().anyMatch(relation ->
+                        relation.source().displayName().equals("orders.user_id")
+                                && relation.target().displayName().equals("users.id")
+                                && relation.evidence().stream().anyMatch(evidence ->
+                                evidence.type() == com.relationdetector.contracts.Enums.EvidenceType.VIEW_JOIN)),
+                () -> "CREATE VIEW query body must enter the relationship path: " + result);
+    }
+
+    @Test
     void relationExtractionVisitorResolvesLineageAwareRelations() {
         String sql = """
                 WITH recent_orders AS (
@@ -67,6 +96,56 @@ class TokenEventStructuredSqlParserTest {
                 relation.source().displayName().equals("orders.user_id")
                         && relation.target().displayName().equals("users.id")),
                 () -> "ANTLR extraction must resolve lineage-aware relations: " + relations);
+    }
+
+    @Test
+    void relationProjectionDoesNotDowngradeSchemaQualifiedAlias() {
+        SqlStatementRecord statement = record("SELECT 1", StatementSourceType.PLAIN_SQL);
+        SourceProvenance provenance = SourceProvenance.source(statement.sourceName(), 1);
+        StructuredParseResult result = new StructuredParseResult(
+                "TEST",
+                "common",
+                statement.sourceName(),
+                List.of(
+                        new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance,
+                                "FROM", "source_table", "shop.source_table", "s", "", "", ""),
+                        new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance,
+                                "JOIN", "customers", "customers", "c", "", "", ""),
+                        new ProjectionEvent(StructuredParseEventType.PROJECTION_ITEM, provenance,
+                                "shop.orders", "customer_id",
+                                ExpressionTrace.of(List.of("s"), List.of("customer_id"),
+                                        LineageFlowKind.VALUE, LineageTransformType.DIRECT)),
+                        new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY, provenance,
+                                new ExpressionSource("orders", "customer_id"),
+                                new ExpressionSource("c", "id"),
+                                List.of(), List.of(), "", "INNER", List.of(), false)),
+                List.of(),
+                java.util.Map.of());
+
+        assertTrue(new TokenEventRelationExtractor().extract(statement, result).isEmpty(),
+                "shop.orders projection must not be available through the bare orders key");
+    }
+
+    @Test
+    void relationshipCanResolveExplicitSchemaQualifiedRowsetSymbol() {
+        SqlStatementRecord statement = record("SELECT 1", StatementSourceType.PLAIN_SQL);
+        SourceProvenance provenance = SourceProvenance.source(statement.sourceName(), 1);
+        StructuredParseResult result = new StructuredParseResult(
+                "TEST", "common", statement.sourceName(), List.of(
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance,
+                        "FROM", "shop.orders", "orders", "", "", "", ""),
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance,
+                        "JOIN", "shop.customers", "customers", "", "", "", ""),
+                new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY, provenance,
+                        new ExpressionSource("shop.orders", "customer_id"),
+                        new ExpressionSource("shop.customers", "id"),
+                        List.of(), List.of(), "", "INNER", List.of(), false)), List.of(), java.util.Map.of());
+
+        List<RelationshipCandidate> relationships = new TokenEventRelationExtractor().extract(statement, result);
+
+        assertEquals(1, relationships.size());
+        assertTrue(relationships.get(0).source().displayName().startsWith("shop."));
+        assertTrue(relationships.get(0).target().displayName().startsWith("shop."));
     }
 
     @Test

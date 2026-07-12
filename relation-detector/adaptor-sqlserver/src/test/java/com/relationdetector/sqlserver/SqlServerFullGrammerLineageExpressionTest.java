@@ -1,6 +1,7 @@
 package com.relationdetector.sqlserver;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
-import com.relationdetector.core.relation.NamingEvidenceExtractor;
+import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.sqlserver.fullgrammer.v2016.SqlServer2016FullGrammerDialectModule;
 import com.relationdetector.sqlserver.fullgrammer.v2017.SqlServer2017FullGrammerDialectModule;
@@ -31,6 +32,37 @@ import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSq
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
 
 class SqlServerFullGrammerLineageExpressionTest {
+    @Test
+    void everyFullProfilePreservesTypedLeftJoinKindAndPredicateLine() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT o.[id]
+                FROM [dbo].[orders] AS o
+                LEFT JOIN [dbo].[customers] AS c
+                  ON c.[id] = o.[customer_id]
+                 AND c.[region_id] = o.[region_id];
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-left-join.sql", 20, 24, Map.of());
+
+        for (FullGrammerDialectModule profile : fullProfiles()) {
+            StructuredParseResult parsed = profile.sqlParser().parseSql(statement, null);
+            var relationships = new TokenEventRelationExtractor().extract(statement, parsed);
+            var observations = relationships.stream()
+                    .flatMap(relationship -> relationship.evidence().stream())
+                    .filter(evidence -> evidence.type()
+                            == com.relationdetector.contracts.Enums.EvidenceType.SQL_LOG_JOIN)
+                    .toList();
+
+            assertEquals(2, observations.size(),
+                    () -> profile.profile().id() + " relationships=" + relationships + " events=" + parsed.events());
+            assertTrue(observations.stream().allMatch(evidence ->
+                            "LEFT_JOIN".equals(evidence.attributes().get("joinKind"))),
+                    () -> profile.profile().id() + " must preserve the typed LEFT JOIN context: " + observations);
+            assertEquals(Set.of(23L, 24L), observations.stream()
+                            .map(evidence -> ((Number) evidence.attributes().get("sourceLine")).longValue())
+                            .collect(Collectors.toSet()),
+                    () -> profile.profile().id() + " must anchor each equality at its own SQL line: " + observations);
+        }
+    }
+
     @Test
     void tokenAndEveryFullProfileRecursivelySeparateNestedCaseRoles() {
         SqlStatementRecord statement = new SqlStatementRecord("""
@@ -98,6 +130,54 @@ class SqlServerFullGrammerLineageExpressionTest {
                             + " events=" + result.events());
         }
     }
+
+    @Test
+    void tokenAndFullDoNotInventColumnsForAggregateOrLiteralDerivedProjections() {
+        SqlStatementRecord headcount = new SqlStatementRecord("""
+                UPDATE d
+                SET [status] = CASE
+                    WHEN staffing.[active_headcount] < d.[headcount_plan]
+                    THEN 'understaffed' ELSE 'normal' END
+                FROM [dbo].[departments] AS d
+                INNER JOIN (
+                    SELECT e.[department_id], COUNT(*) AS [active_headcount]
+                    FROM [dbo].[employees] AS e
+                    GROUP BY e.[department_id]
+                ) AS staffing ON staffing.[department_id] = d.[id];
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-headcount-projection.sql", 1, 1, Map.of());
+        SqlStatementRecord region = new SqlStatementRecord("""
+                MERGE INTO [dbo].[region_dim] AS target
+                USING (
+                    SELECT w.[code] AS [region_code],
+                           'warehouse-city' AS [region_level]
+                    FROM [dbo].[warehouses] AS w
+                ) AS src
+                ON target.[region_code] = src.[region_code]
+                WHEN MATCHED THEN UPDATE SET target.[region_level] = src.[region_level];
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-literal-projection.sql", 1, 1, Map.of());
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = new java.util.ArrayList<>();
+        parsers.add(new SqlServerTokenEventStructuredSqlParser());
+        fullProfiles().forEach(profile -> parsers.add(profile.sqlParser()));
+
+        for (var parser : parsers) {
+            StructuredParseResult headcountResult = parser.parseSql(headcount, null);
+            var headcountLineages = new StructuredDataLineageExtractor().extract(headcount, headcountResult);
+            assertTrue(headcountLineages.stream().noneMatch(lineage -> lineage.sources().stream().anyMatch(source ->
+                            "employees".equals(source.table().tableName())
+                                    && "active_headcount".equals(source.column().columnName()))),
+                    () -> parser.getClass().getSimpleName() + " invented employees.active_headcount: "
+                            + headcountLineages + " events=" + headcountResult.events());
+
+            StructuredParseResult regionResult = parser.parseSql(region, null);
+            var regionLineages = new StructuredDataLineageExtractor().extract(region, regionResult);
+            assertTrue(regionLineages.stream().noneMatch(lineage -> lineage.sources().stream().anyMatch(source ->
+                            "warehouses".equals(source.table().tableName())
+                                    && "region_level".equals(source.column().columnName()))),
+                    () -> parser.getClass().getSimpleName() + " invented warehouses.region_level: "
+                            + regionLineages + " events=" + regionResult.events());
+        }
+    }
+
     @Test
     void everyFullProfileOnlyTreatsDirectProjectionAliasesAsEqualityOperands() {
         SqlStatementRecord statement = new SqlStatementRecord("""

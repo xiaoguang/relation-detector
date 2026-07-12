@@ -41,11 +41,11 @@ public final class OracleDataProfiler implements DataProfiler {
                     FETCH FIRST %d ROWS ONLY
                 ) s
                 """.formatted(
-                    QUOTER.table(request.candidate().target().table().displayName()),
-                    QUOTER.column(request.candidate().target().column().columnName()),
-                    QUOTER.column(request.candidate().source().column().columnName()),
-                    QUOTER.table(request.candidate().source().table().displayName()),
-                    QUOTER.column(request.candidate().source().column().columnName()),
+                    QUOTER.table(request.candidate().target().table()),
+                    QUOTER.column(request.candidate().target().column()),
+                    QUOTER.column(request.candidate().source().column()),
+                    QUOTER.table(request.candidate().source().table()),
+                    QUOTER.column(request.candidate().source().column()),
                     Math.min(request.options().maxDistinctValues(), request.options().sampleRows()));
         }
     }

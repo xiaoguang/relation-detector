@@ -12,14 +12,14 @@ This document separates three questions that used to be mixed together:
 
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 316 | 109 | 250 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 288 | 248 | 0 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 330 | 290 | 244 | 0 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 288 | 248 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 356 | 250 | 247 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 356 | 251 | 247 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 356 | 251 | 247 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 356 | 250 | 247 | 0 |
+| common token-event sample-data | 9 | 6 / 3 | 321 | 109 | 250 | 0 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 331 | 294 | 244 | 0 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 |
 | Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
 | Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
 | Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
@@ -46,25 +46,25 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 
 | Parser category | Fixtures | SQL / DDL | Rel | Lin | DirName | Diag | DerRel | DerLin | DerName |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 316 | 109 | 250 | 0 | 1008 | 7 | 728 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 288 | 248 | 0 | 1077 | 63 | 771 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 330 | 290 | 244 | 0 | 999 | 74 | 727 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 288 | 248 | 0 | 1077 | 63 | 771 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 356 | 250 | 247 | 0 | 1070 | 61 | 764 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 356 | 251 | 247 | 0 | 1070 | 61 | 764 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 356 | 251 | 247 | 0 | 1070 | 61 | 764 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 356 | 250 | 247 | 0 | 1070 | 61 | 764 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 1077 | 53 | 771 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 1077 | 53 | 771 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 1077 | 53 | 771 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 1077 | 53 | 771 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 1077 | 53 | 771 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 993 | 130 | 722 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 993 | 130 | 722 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 993 | 130 | 722 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 993 | 130 | 722 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 993 | 130 | 722 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 993 | 130 | 722 |
+| common token-event sample-data | 9 | 6 / 3 | 321 | 109 | 250 | 0 | 1349 | 7 | 962 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 | 1950 | 64 | 1304 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 331 | 294 | 244 | 0 | 1588 | 75 | 1098 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 | 1950 | 64 | 1304 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 | 2025 | 61 | 1320 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 | 2025 | 61 | 1320 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 | 2025 | 61 | 1320 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 | 2025 | 61 | 1320 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
 
 Derived relationship now uses reverse referenced-by traversal internally and still emits FK-like forward output. The large SQL Server derived relationship inflation caused by earlier forward FK + identity bridge traversal is removed; derived naming evidence is now visible as `TRANSITIVE_NAMING_PATH`.
 

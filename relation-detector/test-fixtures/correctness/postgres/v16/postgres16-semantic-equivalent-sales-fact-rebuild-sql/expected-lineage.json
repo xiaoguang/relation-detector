@@ -8,7 +8,7 @@
     "VALUE:DIRECT:sales_orders.id->sales_fact.order_id",
     "VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

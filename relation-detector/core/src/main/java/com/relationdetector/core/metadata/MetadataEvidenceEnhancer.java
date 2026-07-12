@@ -15,6 +15,10 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.core.identity.CanonicalEndpointKey;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
  * Adds catalog metadata evidence to already-discovered column relationships.
@@ -26,29 +30,43 @@ import com.relationdetector.contracts.Enums.RelationType;
  */
 public final class MetadataEvidenceEnhancer {
     public void enhance(List<RelationshipCandidate> candidates, MetadataSnapshot metadata) {
+        enhance(candidates, metadata, defaultIdentifierRules(), NamespaceContext.empty());
+    }
+
+    public void enhance(
+            List<RelationshipCandidate> candidates,
+            MetadataSnapshot metadata,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
         if (candidates.isEmpty()) {
             return;
         }
+        CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(identifierRules);
         for (RelationshipCandidate candidate : candidates) {
             if (!candidate.source().isColumnLevel()
                     || !candidate.target().isColumnLevel()) {
                 continue;
             }
+            CanonicalEndpointKey sourceKey = CanonicalEndpointKey.from(
+                    candidate.source(), resolver, namespace);
+            CanonicalEndpointKey targetKey = CanonicalEndpointKey.from(
+                    candidate.target(), resolver, namespace);
             String sourceTable = candidate.source().table().tableName();
             String sourceColumn = candidate.source().column().columnName();
             String targetTable = candidate.target().table().tableName();
             String targetColumn = candidate.target().column().columnName();
-            boolean sourceUnique = hasIndex(metadata.indexFacts(), sourceTable, sourceColumn, true);
-            boolean targetUnique = hasIndex(metadata.indexFacts(), targetTable, targetColumn, true);
+            boolean sourceUnique = hasIndex(metadata.indexFacts(), sourceKey, true, resolver, namespace);
+            boolean targetUnique = hasIndex(metadata.indexFacts(), targetKey, true, resolver, namespace);
             boolean columnCoOccurrence = candidate.relationType() == RelationType.CO_OCCURRENCE
                     && candidate.relationSubType() == RelationSubType.COLUMN_CO_OCCURRENCE;
-            if (hasIndex(metadata.indexFacts(), sourceTable, sourceColumn, false) && !sourceUnique) {
+            if (hasIndex(metadata.indexFacts(), sourceKey, false, resolver, namespace) && !sourceUnique) {
                 addIfAbsent(candidate, EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
                         "metadata source column is indexed",
                         Map.of("table", sourceTable, "column", sourceColumn,
                                 "indexedEndpoint", endpoint(candidate, "source"), "endpointSide", "source"));
             }
-            if (hasIndex(metadata.indexFacts(), targetTable, targetColumn, false) && !targetUnique
+            if (hasIndex(metadata.indexFacts(), targetKey, false, resolver, namespace) && !targetUnique
                     && columnCoOccurrence) {
                 addIfAbsent(candidate, EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
                         "metadata target-side non-unique column is indexed",
@@ -68,7 +86,8 @@ public final class MetadataEvidenceEnhancer {
                         Map.of("table", sourceTable, "column", sourceColumn,
                                 "uniqueEndpoint", endpoint(candidate, "source"), "endpointSide", "source"));
             }
-            if (compatible(column(metadata, sourceTable, sourceColumn), column(metadata, targetTable, targetColumn))) {
+            if (compatible(column(metadata, sourceKey, resolver, namespace),
+                    column(metadata, targetKey, resolver, namespace))) {
                 addIfAbsent(candidate, EvidenceType.COLUMN_TYPE_COMPATIBLE, DefaultEvidenceScores.COLUMN_TYPE_COMPATIBLE,
                         "metadata column types are compatible", Map.of("sourceColumn", sourceColumn, "targetColumn", targetColumn));
             }
@@ -83,16 +102,27 @@ public final class MetadataEvidenceEnhancer {
         };
     }
 
-    private boolean hasIndex(List<MetadataIndexFact> indexes, String table, String column, boolean requireUnique) {
+    private boolean hasIndex(
+            List<MetadataIndexFact> indexes,
+            CanonicalEndpointKey key,
+            boolean requireUnique,
+            CanonicalIdentifierResolver resolver,
+            NamespaceContext namespace
+    ) {
         return indexes.stream().anyMatch(index ->
-                equalsIgnoreCase(index.tableName(), table)
-                        && (!requireUnique || index.unique() || index.primary())
-                        && index.columns().stream().anyMatch(indexColumn -> equalsIgnoreCase(indexColumn, column)));
+                (!requireUnique || index.unique() || index.primary())
+                        && index.columns().stream().anyMatch(indexColumn ->
+                        CanonicalEndpointKey.from(index, indexColumn, resolver, namespace).equals(key)));
     }
 
-    private MetadataColumnFact column(MetadataSnapshot metadata, String table, String column) {
+    private MetadataColumnFact column(
+            MetadataSnapshot metadata,
+            CanonicalEndpointKey key,
+            CanonicalIdentifierResolver resolver,
+            NamespaceContext namespace
+    ) {
         return metadata.columnFacts().stream()
-                .filter(fact -> equalsIgnoreCase(fact.tableName(), table) && equalsIgnoreCase(fact.columnName(), column))
+                .filter(fact -> CanonicalEndpointKey.from(fact, resolver, namespace).equals(key))
                 .findFirst()
                 .orElse(null);
     }
@@ -120,11 +150,11 @@ public final class MetadataEvidenceEnhancer {
                 "metadata catalog facts", detail, new LinkedHashMap<>(attributes)));
     }
 
-    private boolean equalsIgnoreCase(String left, String right) {
-        return normalize(left).equals(normalize(right));
-    }
-
     private String normalize(String value) {
         return value == null ? "" : value.toLowerCase(Locale.ROOT);
+    }
+
+    private IdentifierRules defaultIdentifierRules() {
+        return value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
     }
 }

@@ -34,7 +34,7 @@ public final class FullGrammerTypedSqlEventSink {
     ) {
         this.expressionAnalyzer = expressionAnalyzer;
         this.parseTreeAdapter = expressionAnalyzer.parseTreeAdapter();
-        this.source = new SourceLocationSupport(statement);
+        this.source = new SourceLocationSupport(statement, parseTreeAdapter);
         this.recorder = new FullGrammerEventRecorder(statement, source);
         this.rowsets = new RowsetScopeSink(source);
         this.projectionEvents = new ProjectionEventSink(source, rowsets, recorder, expressionAnalyzer);
@@ -183,10 +183,38 @@ public final class FullGrammerTypedSqlEventSink {
         writeMappings.insertSelect(ctx, targetAlias, targetTable, targetColumn, expression);
     }
 
+    public void insertValues(
+            ParserRuleContext ctx, String targetAlias, String targetTable, String targetColumn, ParseTree expression
+    ) {
+        writeMappings.insertValues(ctx, targetAlias, targetTable, targetColumn, expression);
+    }
+
     public void projection(
             ParserRuleContext ctx, String outputAlias, String outputColumn, ParseTree expression
     ) {
         projectionEvents.projection(ctx, outputAlias, outputColumn, expression);
+    }
+
+    /** Emits a typed direct-column projection after a dialect visitor resolves its query-local alias. */
+    public void directProjection(
+            ParserRuleContext ctx,
+            String outputAlias,
+            String outputColumn,
+            String sourceQualifier,
+            String sourceColumn
+    ) {
+        FullGrammerExpressionAnalysis analysis = new FullGrammerExpressionAnalysis(
+                List.of(clean(sourceQualifier)),
+                List.of(clean(sourceColumn)),
+                "DIRECT",
+                "VALUE");
+        recorder.projection(ctx, StructuredParseEventType.PROJECTION_ITEM,
+                clean(outputAlias), clean(outputColumn), analysis);
+        projectionEvents.expressionSource(ctx, analysis);
+    }
+
+    public void wildcardProjection(ParserRuleContext ctx, String outputAlias) {
+        projectionEvents.wildcardProjection(ctx, outputAlias);
     }
 
     public void predicateEqualities(ParserRuleContext ctx, ParseTree predicate, String joinKind) {
@@ -221,6 +249,17 @@ public final class FullGrammerTypedSqlEventSink {
         predicateEvents.existsPredicateEquality(ctx, leftExpression, rightExpression);
     }
 
+    public void existsPredicateEqualityColumns(
+            ParserRuleContext ctx,
+            String leftAlias,
+            String leftColumn,
+            String rightAlias,
+            String rightColumn
+    ) {
+        predicateEvents.existsPredicateEqualityColumns(
+                ctx, leftAlias, leftColumn, rightAlias, rightColumn);
+    }
+
     public void inSubqueryPredicate(
             ParserRuleContext ctx, ParseTree outerExpression, ParseTree subquery
     ) {
@@ -247,6 +286,15 @@ public final class FullGrammerTypedSqlEventSink {
 
     public String firstIdentifier(ParseTree tree) {
         return source.firstIdentifier(tree);
+    }
+
+    /** Returns the output name only when the expression is a typed direct-column trace. */
+    public String directProjectedColumnName(ParseTree expression) {
+        FullGrammerExpressionAnalysis analysis =
+                expressionAnalyzer.analyzeRelationColumnExpression(expression, "_projection");
+        return analysis.sourceColumns().size() == 1
+                ? source.clean(analysis.sourceColumns().get(0))
+                : "";
     }
 
     public List<String> identifiers(ParseTree tree) {

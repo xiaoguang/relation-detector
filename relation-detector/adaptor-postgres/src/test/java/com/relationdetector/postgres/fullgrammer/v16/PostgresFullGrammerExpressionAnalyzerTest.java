@@ -199,6 +199,42 @@ class PostgresFullGrammerExpressionAnalyzerTest {
                         + fingerprints + " events=" + structured.events());
     }
 
+    @Test
+    void wildcardCteLayersPreservePhysicalProjectionLineage() {
+        SqlStatementRecord statement = statement("""
+                MERGE INTO inventory_target t
+                USING (
+                    WITH aggregated AS (
+                        SELECT s.sku, SUM(s.quantity_delta) AS total_qty_delta
+                        FROM inventory_source s
+                        GROUP BY s.sku
+                    ),
+                    validated AS (
+                        SELECT a.* FROM aggregated a
+                    ),
+                    risk_assessed AS (
+                        SELECT v.* FROM validated v
+                    )
+                    SELECT * FROM risk_assessed
+                ) s
+                ON t.sku = s.sku
+                WHEN MATCHED THEN UPDATE SET
+                    quantity = t.quantity + s.total_qty_delta;
+                """);
+
+        var structured = new PostgresFullGrammerDialectModule().sqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                .map(PostgresFullGrammerExpressionAnalyzerTest::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.contains("inventory_source.total_qty_delta")
+                                && fingerprint.endsWith("->inventory_target.quantity")),
+                () -> "Typed wildcard projections must preserve the anchored CTE output. Actual="
+                        + fingerprints + " events=" + structured.events());
+    }
+
     private static SqlStatementRecord statement(String sql) {
         return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 1, Map.of());
     }

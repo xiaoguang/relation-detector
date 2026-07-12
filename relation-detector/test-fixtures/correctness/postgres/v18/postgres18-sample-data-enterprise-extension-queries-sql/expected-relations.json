@@ -18,5 +18,5 @@
     "FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

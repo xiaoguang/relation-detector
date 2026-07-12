@@ -33,7 +33,7 @@ public final class SqlServerFullGrammerStructuredDdlParser implements Structured
         SqlServerFullGrammerSqlBinding.ParsedTree parsed = binding.parse(statement);
         List<StructuredSqlEvent> events = parsed.syntaxErrors() == 0
                 ? new SqlServerParseTreeEventCollector(
-                        parsed.parser(), statement, true, binding.parseTreeAdapter()).collect(parsed.root())
+                        statement, true, binding.parseTreeAdapter()).collect(parsed.root())
                 : List.of();
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("grammarProfile", profile.id());

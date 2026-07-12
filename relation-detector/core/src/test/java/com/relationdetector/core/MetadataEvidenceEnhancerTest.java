@@ -28,6 +28,7 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.core.identity.NamespaceContext;
 
 class MetadataEvidenceEnhancerTest {
     @Test
@@ -64,6 +65,66 @@ class MetadataEvidenceEnhancerTest {
         new MetadataEvidenceEnhancer().enhance(candidates, metadata);
 
         assertEquals(0, candidates.size(), "metadata index/column facts can enrich candidates but must not invent FK-like relations");
+    }
+
+    @Test
+    void doesNotAttachMetadataFromAnotherSchemaWithTheSameTableAndColumnNames() {
+        MetadataSnapshot metadata = metadataFacts();
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of("archive", "orders"), "user_id")),
+                Endpoint.column(ColumnRef.of(TableId.of("archive", "users"), "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.INFERRED_JOIN_FK);
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55),
+                EvidenceSourceType.PLAIN_SQL, "unit-test.sql", "archive.orders.user_id = archive.users.id", Map.of()));
+
+        new MetadataEvidenceEnhancer().enhance(List.of(candidate), metadata);
+
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                candidate.evidence().stream().map(Evidence::type).toList());
+    }
+
+    @Test
+    void honorsCaseSensitiveIdentifierRulesInsteadOfLowercasingKeys() {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columnFacts().add(new MetadataColumnFact("shop", "orders", "customerid",
+                "bigint", "bigint", false, null, "", "", 1));
+        metadata.indexFacts().add(new MetadataIndexFact("shop", "orders", "PRIMARY",
+                true, true, "BTREE", true, List.of("customerid"), List.of(), List.of(), List.of(1)));
+        TableId table = new TableId(null, "Shop", "Orders", "Shop.Orders");
+        ColumnRef column = new ColumnRef(table, "CustomerId", "CustomerId", null, false);
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(column), Endpoint.column(column),
+                RelationType.FK_LIKE, RelationSubType.INFERRED_JOIN_FK);
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55),
+                EvidenceSourceType.PLAIN_SQL, "case-sensitive.sql", "typed equality", Map.of()));
+
+        new MetadataEvidenceEnhancer().enhance(
+                List.of(candidate), metadata, value -> value == null ? "" : value, NamespaceContext.empty());
+
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                candidate.evidence().stream().map(Evidence::type).toList());
+    }
+
+    @Test
+    void resolvesBareCandidateAgainstExplicitScanSchemaWithoutChangingEndpoint() {
+        MetadataSnapshot metadata = metadataFacts();
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "user_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.INFERRED_JOIN_FK);
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55),
+                EvidenceSourceType.PLAIN_SQL, "unit-test.sql", "orders.user_id = users.id", Map.of()));
+
+        new MetadataEvidenceEnhancer().enhance(
+                List.of(candidate), metadata,
+                value -> value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT),
+                new NamespaceContext("", "shop", List.of()));
+
+        assertHasEvidence(candidate, EvidenceType.TARGET_UNIQUE);
+        assertEquals("orders.user_id", candidate.source().displayName());
+        assertEquals("users.id", candidate.target().displayName());
     }
 
     private MetadataSnapshot metadataFacts() {

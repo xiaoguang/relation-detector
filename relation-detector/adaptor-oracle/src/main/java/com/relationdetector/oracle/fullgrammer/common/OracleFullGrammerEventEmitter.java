@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.oracle.fullgrammer.common.OracleFullGrammerParseTreeAdapter.Role;
 
 /** Per-parse Oracle rowset, projection and write event emitter. */
 final class OracleFullGrammerEventEmitter extends OracleFullGrammerParseTreeSupport {
@@ -85,10 +86,10 @@ final class OracleFullGrammerEventEmitter extends OracleFullGrammerParseTreeSupp
         if (selectedList == null) {
             return;
         }
-        List<ParserRuleContext> items = children(selectedList, "select_list_elements");
+        List<ParserRuleContext> items = children(selectedList, Role.SELECT_LIST_ELEMENT);
         for (int index = 0; index < items.size(); index++) {
             ParserRuleContext item = items.get(index);
-            ParserRuleContext expression = child(item, "expression");
+            ParserRuleContext expression = child(item, Role.EXPRESSION);
             if (expression == null) {
                 continue;
             }
@@ -149,20 +150,20 @@ final class OracleFullGrammerEventEmitter extends OracleFullGrammerParseTreeSupp
     }
 
     private String outputColumn(ParserRuleContext item) {
-        ParserRuleContext alias = child(item, "column_alias");
+        ParserRuleContext alias = child(item, Role.COLUMN_ALIAS);
         if (alias != null) {
             return lastPart(columnAlias(alias));
         }
-        OracleColumnRead single = expressions.singleColumn(child(item, "expression"));
+        OracleColumnRead single = expressions.singleColumn(child(item, Role.EXPRESSION));
         return single == null ? "" : single.column();
     }
 
     private String columnAlias(ParserRuleContext ctx) {
-        ParserRuleContext identifier = child(ctx, "identifier");
+        ParserRuleContext identifier = child(ctx, Role.IDENTIFIER);
         if (identifier != null) {
             return name(identifier);
         }
-        ParserRuleContext quoted = child(ctx, "quoted_string");
+        ParserRuleContext quoted = child(ctx, Role.QUOTED_STRING);
         return quoted == null ? "" : core.clean(quoted.getText());
     }
 }

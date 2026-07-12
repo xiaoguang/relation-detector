@@ -2,5 +2,5 @@
   "fingerprints": [
     "FK_LIKE:documents.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

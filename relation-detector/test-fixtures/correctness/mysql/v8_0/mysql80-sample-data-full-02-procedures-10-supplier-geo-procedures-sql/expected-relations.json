@@ -2,12 +2,12 @@
   "fingerprints": [
     "CO_OCCURRENCE:inspection_reports.product_id->supplier_products.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:product_batches.supplier_id->supplier_products.supplier_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:purchase_order_items.product_id->supplier_products.product_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:purchase_orders.supplier_id->supplier_products.supplier_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:purchase_order_items.product_id->supplier_products.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
+    "CO_OCCURRENCE:purchase_orders.supplier_id->supplier_products.supplier_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "CO_OCCURRENCE:purchase_return_items.product_id->supplier_products.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:purchase_returns.supplier_id->supplier_products.supplier_id:SQL_LOG_JOIN",
     "FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN"

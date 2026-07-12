@@ -15,7 +15,7 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.TableId;
-import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidencePool;
 
 class NamingEvidencePoolTest {
     @Test

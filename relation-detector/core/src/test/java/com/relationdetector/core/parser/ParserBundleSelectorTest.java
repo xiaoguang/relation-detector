@@ -248,7 +248,8 @@ class ParserBundleSelectorTest {
                     Optional.of((statement, context) -> new StructuredParseResult("token-sql",
                             databaseType.name(), statement.sourceName(), List.of(), List.of(), Map.of())),
                     Optional.of((ddl, sourceName, context) -> new StructuredParseResult("token-ddl",
-                            databaseType.name(), sourceName, List.of(), List.of(), Map.of())));
+                            databaseType.name(), sourceName, List.of(), List.of(), Map.of())),
+                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
         }
 
         @Override

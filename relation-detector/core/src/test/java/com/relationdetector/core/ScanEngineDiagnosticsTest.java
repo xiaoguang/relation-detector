@@ -234,7 +234,8 @@ class ScanEngineDiagnosticsTest {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     sqlRelationParser,
                     structuredSqlParser,
-                    structuredDdlParser);
+                    structuredDdlParser,
+                    new com.relationdetector.core.script.CommonScriptParser());
         }
 
         @Override

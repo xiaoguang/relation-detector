@@ -3,11 +3,9 @@ package com.relationdetector.core.relation;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
@@ -22,7 +20,12 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.log.SourceNameNormalizer;
+import com.relationdetector.core.ddl.DdlEvidenceInventory;
+import com.relationdetector.core.identity.CanonicalEndpointKey;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
 
 /**
  * DDL relationship 语义抽取器。
@@ -42,19 +45,72 @@ public final class DdlRelationExtractionVisitor {
      * <p>EN: Builds relationship candidates from DDL structured events.
      */
     public List<RelationshipCandidate> extract(String ddl, String sourceName, StructuredParseResult result) {
-        DdlState state = new DdlState(SourceNameNormalizer.normalize(sourceName));
-        for (StructuredSqlEvent event : result.events()) {
-            if (event.type() == StructuredParseEventType.DDL_INDEX) {
-                addIndex(event, state);
-            }
-        }
+        return extract(ddl, sourceName, result, defaultIdentifierRules(), NamespaceContext.empty());
+    }
+
+    public List<RelationshipCandidate> extract(
+            String ddl,
+            String sourceName,
+            StructuredParseResult result,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
+        DdlState state = new DdlState(SourceNameNormalizer.normalize(sourceName), identifierRules, namespace);
         for (StructuredSqlEvent event : result.events()) {
             if (event.type() == StructuredParseEventType.DDL_FOREIGN_KEY) {
                 addForeignKey(event, state);
             }
         }
-        state.enhanceCandidatesWithIndexes();
+        inventory(result.events(), EvidenceSourceType.DDL_FILE, sourceName, identifierRules, namespace)
+                .enhance(state.candidates());
         return state.candidates();
+    }
+
+    public DdlEvidenceInventory inventory(
+            List<StructuredSqlEvent> events,
+            EvidenceSourceType sourceType,
+            String sourceName
+    ) {
+        return inventory(events, sourceType, sourceName, defaultIdentifierRules(), NamespaceContext.empty());
+    }
+
+    public DdlEvidenceInventory inventory(
+            List<StructuredSqlEvent> events,
+            EvidenceSourceType sourceType,
+            String sourceName,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
+        DdlEvidenceInventory inventory = new DdlEvidenceInventory(identifierRules, namespace);
+        CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(identifierRules);
+        for (StructuredSqlEvent event : events == null ? List.<StructuredSqlEvent>of() : events) {
+            if (event.type() != StructuredParseEventType.DDL_INDEX
+                    && event.type() != StructuredParseEventType.DDL_COLUMN) {
+                continue;
+            }
+            TableId table = table(event.table());
+            String column = clean(event.column());
+            if (column.isBlank()) {
+                continue;
+            }
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            copyProvenance(event, attributes);
+            String source = event.sourceName().isBlank()
+                    ? SourceNameNormalizer.normalize(sourceName)
+                    : SourceNameNormalizer.normalize(event.sourceName());
+            DdlEvidenceInventory.Observation observation = new DdlEvidenceInventory.Observation(
+                    event.role(), event.kind(), sourceType, source, event.line(), attributes);
+            CanonicalEndpointKey key = CanonicalEndpointKey.from(
+                    Endpoint.column(ColumnRef.of(table, column)), resolver, namespace);
+            if (event.type() == StructuredParseEventType.DDL_COLUMN) {
+                inventory.addColumn(key, observation);
+            } else if ("SOURCE_INDEX".equals(clean(event.role()))) {
+                inventory.addSourceIndex(key, observation);
+            } else if ("TARGET_UNIQUE".equals(clean(event.role()))) {
+                inventory.addTargetUnique(key, observation);
+            }
+        }
+        return inventory;
     }
 
     private void addForeignKey(StructuredSqlEvent event, DdlState state) {
@@ -70,28 +126,31 @@ public final class DdlRelationExtractionVisitor {
         RelationshipCandidate candidate = new RelationshipCandidate(
                 Endpoint.column(source), Endpoint.column(target),
                 RelationType.FK_LIKE, RelationSubType.DDL_DECLARED_FK);
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("compositePosition", event.compositePosition());
+        attributes.put("compositeSize", event.compositeSize());
+        copyProvenance(event, attributes);
         candidate.evidence().add(new Evidence(EvidenceType.DDL_FOREIGN_KEY,
                 BigDecimal.valueOf(DefaultEvidenceScores.DDL_FOREIGN_KEY),
                 EvidenceSourceType.DDL_FILE,
-                state.source(),
+                event.sourceName().isBlank() ? state.source() : SourceNameNormalizer.normalize(event.sourceName()),
                 "token-event DDL foreign key",
-                java.util.Map.of(
-                        "compositePosition", event.compositePosition(),
-                        "compositeSize", event.compositeSize())));
+                attributes));
         state.addCandidate(candidate);
     }
 
-    private void addIndex(StructuredSqlEvent event, DdlState state) {
-        TableId table = table(event.table());
-        String column = clean(event.column());
-        String role = clean(event.role());
-        if (column.isBlank()) {
-            return;
-        }
-        if ("SOURCE_INDEX".equals(role)) {
-            state.addSourceIndex(table, column);
-        } else if ("TARGET_UNIQUE".equals(role)) {
-            state.addTargetUnique(table, column);
+    private void copyProvenance(StructuredSqlEvent event, Map<String, Object> attributes) {
+        attributes.put("sourceLine", event.line());
+        putIfPresent(attributes, "sourceFile", event.provenance().sourceFile());
+        putIfPresent(attributes, "sourceStatementId", event.provenance().sourceStatementId());
+        putIfPresent(attributes, "sourceBlockId", event.provenance().sourceBlockId());
+        putIfPresent(attributes, "sourceObjectType", event.provenance().sourceObjectType());
+        putIfPresent(attributes, "sourceObjectName", event.provenance().sourceObjectName());
+    }
+
+    private void putIfPresent(Map<String, Object> attributes, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            attributes.put(key, value);
         }
     }
 
@@ -99,7 +158,13 @@ public final class DdlRelationExtractionVisitor {
         List<String> parts = identifierParts(raw);
         String tableName = parts.isEmpty() ? clean(raw) : parts.get(parts.size() - 1);
         String schema = parts.size() > 1 ? parts.get(parts.size() - 2) : null;
-        return TableId.of(schema, tableName);
+        String catalog = parts.size() > 2
+                ? String.join(".", parts.subList(0, parts.size() - 2))
+                : null;
+        String normalizedName = schema == null || schema.isBlank()
+                ? tableName
+                : schema + "." + tableName;
+        return new TableId(catalog, schema, tableName, normalizedName);
     }
 
     private List<String> identifierParts(String identifier) {
@@ -143,35 +208,37 @@ public final class DdlRelationExtractionVisitor {
             return "";
         }
         String value = identifier.trim();
-        if ((value.startsWith("`") && value.endsWith("`")) || (value.startsWith("\"") && value.endsWith("\""))) {
+        if ((value.startsWith("`") && value.endsWith("`"))
+                || (value.startsWith("\"") && value.endsWith("\""))
+                || (value.startsWith("[") && value.endsWith("]"))) {
             value = value.substring(1, value.length() - 1);
         }
         return value;
     }
 
-    private record ColumnKey(String table, String column) {
-        static ColumnKey of(TableId table, String column) {
-            return new ColumnKey(table.normalizedName(), column.toLowerCase(Locale.ROOT));
-        }
-    }
-
-    private record RelationshipKey(ColumnKey source, ColumnKey target) {
-        static RelationshipKey of(RelationshipCandidate candidate) {
+    private record RelationshipKey(CanonicalEndpointKey source, CanonicalEndpointKey target) {
+        static RelationshipKey of(
+                RelationshipCandidate candidate,
+                CanonicalIdentifierResolver resolver,
+                NamespaceContext namespace
+        ) {
             return new RelationshipKey(
-                    ColumnKey.of(candidate.source().table(), candidate.source().column().columnName()),
-                    ColumnKey.of(candidate.target().table(), candidate.target().column().columnName()));
+                    CanonicalEndpointKey.from(candidate.source(), resolver, namespace),
+                    CanonicalEndpointKey.from(candidate.target(), resolver, namespace));
         }
     }
 
     private static final class DdlState {
         private final String source;
+        private final CanonicalIdentifierResolver resolver;
+        private final NamespaceContext namespace;
         private final List<RelationshipCandidate> candidates = new ArrayList<>();
         private final Map<RelationshipKey, RelationshipCandidate> candidatesByEndpoint = new LinkedHashMap<>();
-        private final Set<ColumnKey> sourceIndexes = new LinkedHashSet<>();
-        private final Set<ColumnKey> targetUnique = new LinkedHashSet<>();
 
-        DdlState(String source) {
+        DdlState(String source, IdentifierRules identifierRules, NamespaceContext namespace) {
             this.source = source;
+            this.resolver = new CanonicalIdentifierResolver(identifierRules);
+            this.namespace = namespace == null ? NamespaceContext.empty() : namespace;
         }
 
         String source() {
@@ -183,7 +250,7 @@ public final class DdlRelationExtractionVisitor {
         }
 
         void addCandidate(RelationshipCandidate candidate) {
-            RelationshipKey key = RelationshipKey.of(candidate);
+            RelationshipKey key = RelationshipKey.of(candidate, resolver, namespace);
             RelationshipCandidate existing = candidatesByEndpoint.get(key);
             if (existing == null) {
                 candidatesByEndpoint.put(key, candidate);
@@ -195,34 +262,15 @@ public final class DdlRelationExtractionVisitor {
             }
         }
 
-        void addSourceIndex(TableId table, String column) {
-            sourceIndexes.add(ColumnKey.of(table, column));
-        }
-
-        void addTargetUnique(TableId table, String column) {
-            targetUnique.add(ColumnKey.of(table, column));
-        }
-
-        void enhanceCandidatesWithIndexes() {
-            for (RelationshipCandidate candidate : candidates) {
-                ColumnKey sourceKey = ColumnKey.of(candidate.source().table(), candidate.source().column().columnName());
-                ColumnKey targetKey = ColumnKey.of(candidate.target().table(), candidate.target().column().columnName());
-                if (sourceIndexes.contains(sourceKey)) {
-                    addEvidenceIfMissing(candidate, Evidence.of(EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
-                            EvidenceSourceType.DDL_FILE, source, "token-event DDL source-side index"));
-                }
-                if (targetUnique.contains(targetKey)) {
-                    addEvidenceIfMissing(candidate, Evidence.of(EvidenceType.TARGET_UNIQUE, DefaultEvidenceScores.TARGET_UNIQUE,
-                            EvidenceSourceType.DDL_FILE, source, "token-event DDL target-side primary/unique key"));
-                }
-            }
-        }
-
         private void addEvidenceIfMissing(RelationshipCandidate candidate, Evidence evidence) {
             boolean exists = candidate.evidence().stream().anyMatch(existing -> existing.type() == evidence.type());
             if (!exists) {
                 candidate.evidence().add(evidence);
             }
         }
+    }
+
+    private static IdentifierRules defaultIdentifierRules() {
+        return value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
     }
 }

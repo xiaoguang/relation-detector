@@ -1,5 +1,10 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary",
+    "CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary",
+    "VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary",
+    "VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary"
+  ],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

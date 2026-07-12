@@ -1,5 +1,5 @@
 {
-  "fingerprints": [],
+  "fingerprints": [ ],
   "forbiddenTables": [
     "pr",
     "pr_alias",

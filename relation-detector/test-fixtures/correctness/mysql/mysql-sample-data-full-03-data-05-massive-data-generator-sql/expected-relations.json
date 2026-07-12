@@ -1,4 +1,6 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
   "forbiddenTables": []
 }

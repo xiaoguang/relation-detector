@@ -35,6 +35,29 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
     }
 
     @Override
+    public Void visitInsertValuesStatement(MySqlRelationSqlParser.InsertValuesStatementContext ctx) {
+        String targetTable = qualifiedName(ctx.qualifiedName());
+        List<String> targetColumns = ctx.identifierList().identifier().stream()
+                .map(identifier -> clean(identifier.getText())).toList();
+        for (MySqlRelationSqlParser.ValueRowContext row : ctx.valueRow()) {
+            if (row.expressionList() == null) {
+                continue;
+            }
+            List<MySqlRelationSqlParser.ExpressionContext> values = row.expressionList().expression();
+            int count = Math.min(targetColumns.size(), values.size());
+            for (int index = 0; index < count; index++) {
+                MySqlRelationSqlParser.ExpressionContext value = values.get(index);
+                visit(value);
+                for (ExpressionAnalysis source : writeAnalyses(value, "")) {
+                    emitWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, value, "",
+                            targetTable, targetColumns.get(index), source, "INSERT_VALUES");
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Void visitUpdateStatement(MySqlRelationSqlParser.UpdateStatementContext ctx) {
         if (ctx.withClause() != null) {
             visit(ctx.withClause());

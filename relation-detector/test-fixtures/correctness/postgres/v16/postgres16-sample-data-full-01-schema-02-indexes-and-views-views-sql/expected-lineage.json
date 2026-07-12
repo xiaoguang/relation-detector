@@ -1,6 +1,6 @@
 {
-  "fingerprints": [],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "fingerprints": [ ],
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

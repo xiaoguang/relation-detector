@@ -11,6 +11,7 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
@@ -20,6 +21,7 @@ abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVis
     protected final SqlStatementRecord statement;
     protected final TokenEventEventEmitter emitter;
     protected final List<StructuredSqlEvent> events = new ArrayList<>();
+    protected final List<WarningMessage> warnings = new ArrayList<>();
     protected final Set<String> cteNames = new LinkedHashSet<>();
     protected final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     protected final ArrayDeque<String> joinKinds = new ArrayDeque<>();
@@ -42,7 +44,9 @@ abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVis
                 statement.startLine() + Math.max(0, tokenLine - 1),
                 statement.startLine() + Math.max(0, tokenLine - 1) + body.lines().count(),
                 statement.attributes());
-        events.addAll(PostgresRoutineBodyParser.extract(nested));
+        var outcome = PostgresRoutineBodyParser.parse(nested);
+        events.addAll(outcome.events());
+        warnings.addAll(outcome.warnings());
     }
 
     private String unquoteDollarBody(String raw) {
@@ -136,11 +140,10 @@ abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVis
 
     protected String joinKind(PostgresRelationSqlParser.JoinClauseContext join) {
         if (join.joinType() == null) return "JOIN";
-        String text = join.joinType().getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) return "LEFT_JOIN";
-        if (text.startsWith("RIGHT")) return "RIGHT_JOIN";
-        if (text.startsWith("FULL")) return "FULL_JOIN";
-        if (text.startsWith("CROSS")) return "CROSS_JOIN";
+        if (join.joinType().LEFT() != null) return "LEFT_JOIN";
+        if (join.joinType().RIGHT() != null) return "RIGHT_JOIN";
+        if (join.joinType().FULL() != null) return "FULL_JOIN";
+        if (join.joinType().CROSS() != null) return "CROSS_JOIN";
         return "JOIN";
     }
 

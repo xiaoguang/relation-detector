@@ -1,5 +1,6 @@
 package com.relationdetector.postgres.routine;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -7,19 +8,234 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
+import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule;
+import com.relationdetector.postgres.script.PostgresScriptParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 class PostgresRoutineSampleLineageTest {
+
+    @Test
+    void expressionGrammarConsumesPostgresConcat() {
+        PostgresRoutineBodySqlParser parser = new PostgresRoutineBodySqlParser(new CommonTokenStream(
+                new PostgresRoutineBodySqlLexer(CharStreams.fromString(
+                        "'MRP-' || REPLACE(p.plan_month, '-', '') || '-' || p.id"))));
+
+        PostgresRoutineBodySqlParser.ExpressionContext expression = parser.expression();
+
+        assertEquals(Token.EOF, parser.getCurrentToken().getType(), expression.toStringTree(parser));
+        assertTrue(expression.expressionContinuation().CONCAT() != null,
+                expression.toStringTree(parser));
+    }
+    @Test
+    void legalProceduralStatementsDoNotBecomeUnsupportedDiagnostics() {
+        String sql = """
+                DECLARE
+                    v_amount NUMERIC(12,2) DEFAULT 0;
+                BEGIN
+                    v_amount := v_amount + 1;
+                    IF v_amount > 0 THEN
+                        RAISE NOTICE 'amount: %', v_amount;
+                    ELSIF v_amount = 0 THEN
+                        RETURN 0;
+                    END IF;
+                    RETURN v_amount;
+                END;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.FUNCTION,
+                "ROUTINE:test_function", 10, 21, Map.of(
+                        "sourceFile", "sample-data/postgres/test.sql",
+                        "sourceStatementId", "test_function",
+                        "sourceObjectType", "ROUTINE",
+                        "sourceObjectName", "test_function"));
+
+        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+
+        assertEquals(0, outcome.unsupportedStatementCount(), () -> outcome.warnings().toString());
+        assertEquals(List.of(), outcome.warnings());
+    }
+
+    @Test
+    void mixedRoutineReportsEachUnsupportedStatementWithoutDroppingSupportedEvents() {
+        String sql = """
+                SELECT o.id FROM orders o JOIN customers c ON o.customer_id = c.id;
+                @unsupported;
+                SELECT p.id FROM products p JOIN categories pc ON p.category_id = pc.id;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_mixed", 100, 102, Map.of(
+                        "sourceFile", "sample-data/postgres/test.sql",
+                        "sourceStatementId", "test_mixed",
+                        "sourceBlockId", "test_mixed",
+                        "sourceObjectType", "ROUTINE",
+                        "sourceObjectName", "test_mixed"));
+
+        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+
+        assertEquals(1, outcome.unsupportedStatementCount());
+        assertTrue(outcome.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.PREDICATE_EQUALITY));
+        assertEquals(1, outcome.warnings().stream()
+                .filter(warning -> warning.code().equals("POSTGRES_ROUTINE_UNSUPPORTED_STATEMENT"))
+                .count());
+        assertEquals(101, outcome.warnings().stream()
+                .filter(warning -> warning.code().equals("POSTGRES_ROUTINE_UNSUPPORTED_STATEMENT"))
+                .findFirst().orElseThrow().line());
+    }
+
+    @Test
+    void tempTableUnnestAndPostgresRangePredicatesAreSupported() {
+        String sql = """
+                BEGIN
+                  CREATE TEMP TABLE IF NOT EXISTS temp_inputs (
+                    id INT GENERATED ALWAYS AS IDENTITY,
+                    source_id INT
+                  ) ON COMMIT DROP;
+                  INSERT INTO temp_inputs (source_id)
+                  SELECT source_id FROM UNNEST(p_source_ids) AS src(source_id);
+                  SELECT rb.id FROM room_bookings rb
+                  WHERE rb.booked_during && tsrange(p_start, p_end);
+                END;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_postgres_features", 20, 30, Map.of());
+
+        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+
+        assertEquals(0, outcome.unsupportedStatementCount(), () -> outcome.warnings().toString());
+        assertEquals(List.of(), outcome.warnings());
+    }
+
+    @Test
+    void naturalRoutinePredicateAndExpressionFormsAreSupported() {
+        String sql = """
+                BEGIN
+                  SELECT 'MRP-' || REPLACE(p.plan_month, '-', '') || '-' || p.id
+                  FROM production_plans p
+                  CROSS JOIN warehouses w
+                  WHERE p.batch_id IS NOT DISTINCT FROM w.batch_id
+                    AND p.expiry_date <= CURRENT_DATE + ('30' || ' days')::INTERVAL;
+                END;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_postgres_natural_forms", 40, 48, Map.of());
+
+        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+
+        assertEquals(List.of(), outcome.warnings());
+        assertTrue(outcome.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.PREDICATE_EQUALITY));
+    }
+
+    @Test
+    void outerConcatDominatesNestedCoalesceForWriteLineage() {
+        String expressionSql = "cj.journal_type::TEXT || ' - ' || COALESCE(cj.counterparty, '')"
+                + " || ' ' || COALESCE(cj.remark, '')";
+        PostgresRoutineBodySqlParser expressionParser = new PostgresRoutineBodySqlParser(new CommonTokenStream(
+                new PostgresRoutineBodySqlLexer(CharStreams.fromString(expressionSql))));
+        var expression = expressionParser.expression();
+        String bodySql = """
+                BEGIN
+                  INSERT INTO reconciliation_items (description)
+                  SELECT cj.journal_type::TEXT || ' - ' || COALESCE(cj.counterparty, '')
+                      || ' ' || COALESCE(cj.remark, '')
+                  FROM cashier_journals cj;
+                END;
+                """;
+        String sql = "CREATE OR REPLACE PROCEDURE test_concat() LANGUAGE plpgsql AS $$\n"
+                + bodySql + "$$;";
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_concat", 1, sql.lines().count(), Map.of());
+        var analyses = new PostgresRoutineBodyParseTreeVisitor(statement).writeAnalyses(expression);
+        assertTrue(analyses.stream().anyMatch(analysis ->
+                        analysis.transform() == LineageTransformType.CONCAT_FORMAT),
+                () -> "Expression analysis lost the outer concat: " + analyses);
+        PostgresRoutineBodySqlParser scriptParser = new PostgresRoutineBodySqlParser(new CommonTokenStream(
+                new PostgresRoutineBodySqlLexer(CharStreams.fromString(bodySql))));
+        var item = scriptParser.script().statement(1).insertSelectStatement().selectStatement()
+                .querySpecification().selectList().selectItem(0);
+        var itemAnalyses = new PostgresRoutineBodyParseTreeVisitor(statement).selectItemAnalyses(item);
+        assertTrue(itemAnalyses.stream().anyMatch(analysis ->
+                        analysis.transform() == LineageTransformType.CONCAT_FORMAT),
+                () -> "SELECT item analysis lost the outer concat: " + item.toStringTree(scriptParser)
+                        + "; analyses=" + itemAnalyses);
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+            assertTrue(lineages.stream().anyMatch(lineage ->
+                            "reconciliation_items.description".equals(lineage.target().displayName())
+                                    && lineage.transformType() == LineageTransformType.CONCAT_FORMAT),
+                    () -> parser.name() + " did not preserve the outer concat: lineages=" + lineages.stream()
+                            .map(lineage -> lineage.transformType() + ":" + lineage.sources())
+                            .toList() + "; events=" + structured.events());
+        }
+    }
+
+    @Test
+    void cumulativeWindowDominatesOuterArithmeticForWriteLineage() {
+        String sql = """
+                CREATE OR REPLACE PROCEDURE test_cumulative() LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO jsh_temp_mock_plan (mock_timestamp_str)
+                  SELECT hp.hour_val + SUM(hp.weight) OVER (ORDER BY hp.hour_val)
+                  FROM jsh_temp_hour_pdf hp;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_cumulative", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+            assertTrue(lineages.stream().anyMatch(lineage ->
+                            "jsh_temp_mock_plan.mock_timestamp_str".equals(lineage.target().displayName())
+                                    && lineage.transformType() == LineageTransformType.CUMULATIVE),
+                    () -> parser.name() + " did not preserve the cumulative window: "
+                            + structured.events());
+        }
+    }
+
+    @Test
+    void labeledExceptionBlocksAreSupportedProceduralStructure() {
+        String sql = """
+                BEGIN
+                  <<retry_block>>
+                  LOOP
+                    BEGIN
+                      PERFORM do_work();
+                    EXCEPTION
+                      WHEN OTHERS THEN
+                        EXIT retry_block;
+                    END;
+                  END LOOP retry_block;
+                END;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_exception", 40, 50, Map.of());
+
+        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+
+        assertEquals(0, outcome.unsupportedStatementCount(), () -> outcome.warnings().toString());
+        assertEquals(List.of(), outcome.warnings());
+    }
+
     @Test
     void routineBodyInsertSelectKeepsRowsetScope() {
         String body = "INSERT INTO category_dim (source_category_id) "
@@ -85,6 +301,46 @@ class PostgresRoutineSampleLineageTest {
                         "VALUE:sales_order_items.product_id->inventory_transactions.product_id",
                         "VALUE:sales_order_items.quantity->inventory_transactions.quantity_change",
                         "VALUE:inventory.quantity->inventory_transactions.before_qty"));
+    }
+
+    @Test
+    void naturalRoutineFileKeepsContractMilestoneJoin() throws IOException {
+        Path path = workspaceRoot().resolve(
+                "sample-data/postgres/18/02-procedures/06-third-batch-functions.sql");
+        var script = new PostgresScriptParser().parse(new ScriptParseRequest(
+                Files.readString(path), path.toString(), StatementSourceType.PROCEDURE));
+        SqlStatementRecord statement = script.statements().stream()
+                .filter(candidate -> "fn_get_project_completion_pct".equals(
+                        candidate.attributes().get("sourceObjectName")))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(statement.sql().contains("JOIN contracts c ON cm.contract_id = c.id"),
+                () -> "Script parser truncated function body: " + statement.sql());
+        int bodyStart = statement.sql().indexOf("$$") + 2;
+        int bodyEnd = statement.sql().lastIndexOf("$$");
+        SqlStatementRecord bodyStatement = new SqlStatementRecord(
+                statement.sql().substring(bodyStart, bodyEnd), statement.sourceType(),
+                statement.sourceName(), statement.startLine(), statement.endLine(), statement.attributes());
+        var bodyOutcome = PostgresRoutineBodyParser.parse(bodyStatement);
+        assertTrue(bodyOutcome.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.PREDICATE_EQUALITY
+                                && "cm".equals(event.left().alias())
+                                && "contract_id".equals(event.left().column())
+                                && "c".equals(event.right().alias())
+                                && "id".equals(event.right().column())),
+                () -> "Routine body recovery missed contract join; warnings=" + bodyOutcome.warnings()
+                        + "; events=" + bodyOutcome.events());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var relationships = new TokenEventRelationExtractor().extract(statement, structured);
+            assertTrue(relationships.stream().anyMatch(candidate ->
+                            "contract_milestones.contract_id".equals(candidate.source().displayName())
+                                    && "contracts.id".equals(candidate.target().displayName())),
+                    () -> parser.name() + " silently dropped the routine; warnings="
+                            + structured.warnings() + "; attributes=" + structured.attributes()
+                            + "; events=" + structured.events());
+        }
     }
 
     private void assertForEveryParser(String sourceObject, Set<String> expected) {

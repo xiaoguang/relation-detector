@@ -52,12 +52,12 @@ final class PostgresFullGrammerVersionBinding implements PostgresFullGrammerSqlB
     }
 
     @Override
-    public List<StructuredSqlEvent> extractEvents(
+    public com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerEventOutcome extractEvents(
             SqlStatementRecord statement,
             List<Token> visibleTokens,
             ParserRuleContext root
     ) {
-        return new PostgresFullGrammerParseTreeVisitor(statement, visibleTokens).extract(root);
+        return new PostgresFullGrammerParseTreeVisitor(statement, visibleTokens).extractOutcome(root);
     }
 
     @Override

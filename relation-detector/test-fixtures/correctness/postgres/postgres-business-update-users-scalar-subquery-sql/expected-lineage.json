@@ -6,6 +6,6 @@
   "forbiddenSources": [
     "0.00"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

@@ -27,7 +27,6 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.log.SqlLogNoiseFilter;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 
 /**
@@ -403,10 +402,6 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                     line,
                     line,
                     Map.of());
-            if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
-                line++;
-                continue;
-            }
             relationCount += runner.parse(adaptor, config, statement, context).size();
             line++;
         }

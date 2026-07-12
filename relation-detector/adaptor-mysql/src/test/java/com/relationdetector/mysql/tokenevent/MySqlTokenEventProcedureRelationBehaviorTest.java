@@ -22,10 +22,29 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.NamingEvidenceExtractor;
+import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class MySqlTokenEventProcedureRelationBehaviorTest {
+    @Test
+    void nestedProjectionFallbackDoesNotConsumeOuterFromAndJoin() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT CAST(SUM(i.quantity) AS DECIMAL(18, 2)) AS stock_value
+                FROM inventory i
+                LEFT JOIN products p ON i.product_id = p.id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-nested-fallback.sql", 1, 3, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        var relationships = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertTrue(relationships.stream().anyMatch(relationship ->
+                        Set.of(relationship.source().column().table().tableName(),
+                                        relationship.target().column().table().tableName())
+                                .equals(Set.of("inventory", "products"))),
+                () -> "Opaque nested projection syntax must not swallow the outer FROM/JOIN: "
+                        + structured.events());
+    }
+
     @Test
     void unaryMinusKeepsItsPhysicalOperandAsArithmeticValue() {
         SqlStatementRecord statement = new SqlStatementRecord("""

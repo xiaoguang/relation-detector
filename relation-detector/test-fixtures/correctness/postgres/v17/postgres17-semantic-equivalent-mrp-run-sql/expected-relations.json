@@ -3,5 +3,5 @@
     "CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

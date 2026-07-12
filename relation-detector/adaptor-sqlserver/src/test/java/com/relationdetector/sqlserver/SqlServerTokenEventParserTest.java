@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
@@ -20,14 +19,41 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.log.ObjectSqlFileExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.sqlserver.script.SqlServerScriptParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 class SqlServerTokenEventParserTest {
+    @Test
+    void tokenEventKeepsJoinsAfterCountDistinctProjection() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT s.[code], COUNT(DISTINCT po.[id]), SUM(poi.[amount])
+                FROM [dbo].[suppliers] AS s
+                LEFT JOIN [dbo].[purchase_orders] AS po ON po.[supplier_id] = s.[id]
+                LEFT JOIN [dbo].[purchase_order_items] AS poi ON poi.[order_id] = po.[id]
+                GROUP BY s.[code];
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-distinct-aggregate.sql", 1, 5, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        assertTypedComplete(result);
+        var relationships = new TokenEventRelationExtractor().extract(statement, result);
+
+        assertTrue(relationships.stream().anyMatch(relationship ->
+                        Set.of(relationship.source().column().table().tableName(),
+                                        relationship.target().column().table().tableName())
+                                .equals(Set.of("purchase_orders", "suppliers"))),
+                () -> "COUNT(DISTINCT ...) must not make the statement fall through to unknown: " + result.events());
+        assertTrue(relationships.stream().anyMatch(relationship ->
+                        Set.of(relationship.source().column().table().tableName(),
+                                        relationship.target().column().table().tableName())
+                                .equals(Set.of("purchase_order_items", "purchase_orders"))),
+                () -> "The second JOIN after COUNT(DISTINCT ...) must remain typed: " + result.events());
+    }
+
     @Test
     void tokenEventParsesSimpleCaseAsTypedValueAndControl() {
         SqlStatementRecord statement = new SqlStatementRecord("""
@@ -337,11 +363,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserExtractsCoalesceLineageFromRealSampleProcedureBlock() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(file.toString().isBlank() ? "" : readFixture(file),
-                        StatementSourceType.PROCEDURE,
-                        file.toString(),
-                        DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
         SqlStatementRecord statement = statements.stream()
                 .filter(record -> record.sourceName().equals("sqlserver.sp_post_finished_goods_receipt"))
                 .findFirst()
@@ -377,8 +399,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserPreservesTriggerSourceObjectMetadata() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/01-schema/03-triggers.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.TRIGGER, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.TRIGGER);
         SqlStatementRecord statement = statements.stream()
                 .filter(record -> record.sourceName().equals("sqlserver.tr_departments_1_audit"))
                 .findFirst()
@@ -391,8 +412,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserExtractsBusinessFieldChainFromSqlServerSampleData() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
 
         assertBusinessLineage(statements, "sqlserver.sp_record_customer_payment",
                 "sales_orders", "customer_id", "payments", "customer_id");
@@ -403,8 +423,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserEntersParameterizedProcedureBodyForInsertSelectLineage() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
 
         assertBusinessLineage(statements, "sqlserver.sp_post_finished_goods_receipt",
                 "finished_goods_receipts", "product_id", "inventory_transactions", "product_id");
@@ -415,8 +434,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserEntersParameterizedProcedureBodyForMergeSourceProjectionLineage() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
 
         assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
                 "work_order_materials", "actual_consumed", "work_order_costs", "material_cost");
@@ -427,8 +445,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserClassifiesConcatAsConcatFormatLineage() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
 
         assertBusinessLineage(statements, "sqlserver.sp_generate_picking_task_for_order",
                 "sales_orders", "order_no", "picking_tasks", "task_no", LineageTransformType.CONCAT_FORMAT);
@@ -437,8 +454,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserEmitsControlLineageForCaseConditions() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
 
         assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
                 "work_orders", "completed_quantity", "work_order_costs", "unit_cost", LineageFlowKind.CONTROL);
@@ -449,8 +465,7 @@ class SqlServerTokenEventParserTest {
     @Test
     void tokenEventParserHandlesUnaryMinusExpressionSources() {
         Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
-        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
-                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+        List<SqlStatementRecord> statements = scriptStatements(file, StatementSourceType.PROCEDURE);
 
         assertBusinessLineage(statements, "sqlserver.sp_issue_repair_order_parts",
                 "repair_order_parts", "quantity", "inventory_transactions", "quantity_change", LineageTransformType.ARITHMETIC);
@@ -701,6 +716,11 @@ class SqlServerTokenEventParserTest {
         } catch (java.io.IOException ex) {
             throw new java.io.UncheckedIOException(ex);
         }
+    }
+
+    private List<SqlStatementRecord> scriptStatements(Path file, StatementSourceType sourceType) {
+        return new SqlServerScriptParser().parse(
+                new ScriptParseRequest(readFixture(file), file.toString(), sourceType)).statements();
     }
 
     private Path repositoryRoot() {

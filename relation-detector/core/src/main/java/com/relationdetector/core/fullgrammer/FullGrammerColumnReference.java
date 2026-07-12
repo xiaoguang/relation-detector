@@ -1,4 +1,4 @@
 package com.relationdetector.core.fullgrammer;
 
-record FullGrammerColumnReference(String qualifier, String column) {
+public record FullGrammerColumnReference(String qualifier, String column) {
 }

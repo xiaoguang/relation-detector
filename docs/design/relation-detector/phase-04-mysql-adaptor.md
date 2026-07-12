@@ -6,6 +6,8 @@
 
 当前 MySQL adaptor 不只负责采集，也负责 MySQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.mysql.tokenevent`，MySQL 5.7 / 8.0 full-grammer module 分别位于 `com.relationdetector.mysql.fullgrammer.v5_7` 和 `com.relationdetector.mysql.fullgrammer.v8_0`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code MySQL 版本实现。
 
+MySQL 同时实现 SPI v3 的 `MySqlScriptParser`。它使用 MySQL generated script lexer 的 typed lexeme 识别 `DELIMITER` directive，并以当前 delimiter 切分 server statement；quoted text 与 comment 中的 delimiter 不参与分割。这个 framing 在 SQL/DDL grammar 之前完成，不再由 core raw-SQL splitter 猜测 routine 或 object 边界。
+
 MySQL 目前有两个严格 full-grammer profile：`mysql/5.7` 和 `mysql/8.0`。二者都使用 `adaptor-mysql` 内 vendored grammars-v4 MySQL grammar 固定快照、typed parse-tree visitor、expression analyzer 和 DDL collector；`mysql/5.7` 以 MySQL 5.7 官方文档作为版本边界 source-of-truth，在 grammar 层禁用 CTE、recursive CTE、window function、`JSON_TABLE`、invisible index 等 8.0-only 能力。未知版本仍依赖 token-event 的宽松兼容能力，或者后续新增独立 strict full-grammer profile。
 
 ## 支持范围

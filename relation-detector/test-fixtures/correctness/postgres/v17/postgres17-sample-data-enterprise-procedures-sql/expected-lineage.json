@@ -9,7 +9,7 @@
     "VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id",
     "VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

@@ -126,6 +126,29 @@ class DataProfileCandidateGeneratorTest {
         assertEquals(List.of(indexed), selected);
     }
 
+    @Test
+    void namingDiscoveryDoesNotUseUniqueIndexFromAnotherSchema() {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columnFacts().add(new MetadataColumnFact("shop", "orders", "customer_id",
+                "bigint", "bigint", true, null, "", null, 1));
+        metadata.columnFacts().add(new MetadataColumnFact("shop", "customers", "id",
+                "bigint", "bigint", false, null, "", null, 1));
+        metadata.indexFacts().add(new MetadataIndexFact("archive", "customers", "PRIMARY", true, true,
+                "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
+        NamingEvidenceCandidate naming = new NamingEvidenceCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of("shop", "orders"), "customer_id")),
+                Endpoint.column(ColumnRef.of(TableId.of("shop", "customers"), "id")),
+                Evidence.of(EvidenceType.NAMING_MATCH, 0.20d, EvidenceSourceType.NAMING_HEURISTIC,
+                        "metadata", "shop.orders.customer_id matches shop.customers.id"),
+                "TABLE_ID",
+                true);
+
+        List<RelationshipCandidate> selected = generator.select(List.of(), metadata, List.of(naming),
+                DataProfileOptions.defaults().withDiscoverFromNamingEvidence(true));
+
+        assertTrue(selected.isEmpty());
+    }
+
     private MetadataSnapshot metadataWithCustomerId() {
         MetadataSnapshot metadata = new MetadataSnapshot();
         metadata.columnFacts().add(column("orders", "customer_id", "bigint"));

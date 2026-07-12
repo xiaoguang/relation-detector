@@ -56,8 +56,11 @@ final class GoldenAssertion {
             writer.writeRelations(fixture, actualFingerprints.stream().toList(), expected.forbiddenTables());
             return;
         }
-        assertEquals(new TreeSet<>(expected.fingerprints()), actualFingerprints,
-                () -> fixture.id() + " relation fingerprints");
+        TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
+        assertEquals(expectedFingerprints, actualFingerprints,
+                () -> fixture.id() + " relation fingerprints. Missing="
+                        + difference(expectedFingerprints, actualFingerprints)
+                        + ", extra=" + difference(actualFingerprints, expectedFingerprints));
 
         for (String forbiddenTable : expected.forbiddenTables()) {
             assertTrue(merged.stream().noneMatch(relation ->
@@ -87,7 +90,14 @@ final class GoldenAssertion {
             writer.writeDiagnostics(fixture, fixtureSha256ForDiagnostics(fixture, expected), actualCodes);
             return;
         }
-        assertEquals(expected.warningCodes(), actualCodes, fixture.id() + " warningCodes");
+        assertEquals(expected.warningCodes(), actualCodes,
+                () -> fixture.id() + " warningCodes. Actual warnings=" + actual.stream()
+                        .map(warning -> Map.of(
+                                "code", warning.code(),
+                                "source", warning.source(),
+                                "line", warning.line(),
+                                "message", warning.message()))
+                        .toList());
     }
 
     private void assertLineage(
@@ -95,7 +105,8 @@ final class GoldenAssertion {
             ExpectedLineage expected,
             List<DataLineageCandidate> actual
     ) throws Exception {
-        List<String> actualFingerprints = new DataLineageMerger().merge(actual).stream()
+        List<DataLineageCandidate> merged = new DataLineageMerger().merge(actual);
+        List<String> actualFingerprints = merged.stream()
                 .map(this::lineageFingerprint)
                 .toList();
         if (Boolean.getBoolean("updateCorrectnessGold")
@@ -111,8 +122,12 @@ final class GoldenAssertion {
         if (!expected.exists()) {
             return;
         }
-        assertEquals(new TreeSet<>(expected.fingerprints()), new TreeSet<>(actualFingerprints),
-                () -> fixture.id() + " data lineage fingerprints");
+        TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
+        TreeSet<String> actualFingerprintSet = new TreeSet<>(actualFingerprints);
+        assertEquals(expectedFingerprints, actualFingerprintSet,
+                () -> fixture.id() + " data lineage fingerprints. Missing="
+                        + difference(expectedFingerprints, actualFingerprintSet)
+                        + ", extra=" + difference(actualFingerprintSet, expectedFingerprints));
         for (String forbiddenSource : expected.forbiddenSources()) {
             assertTrue(actualFingerprints.stream().noneMatch(lineage -> lineage.contains(forbiddenSource + "->")
                             || lineage.contains("," + forbiddenSource + "->")
@@ -125,6 +140,12 @@ final class GoldenAssertion {
                     () -> fixture.id() + " emitted forbidden lineage target " + forbiddenTarget
                             + ". Actual=" + actualFingerprints);
         }
+    }
+
+    private Set<String> difference(Set<String> left, Set<String> right) {
+        TreeSet<String> result = new TreeSet<>(left);
+        result.removeAll(right);
+        return result;
     }
 
     private void assertNamingEvidence(

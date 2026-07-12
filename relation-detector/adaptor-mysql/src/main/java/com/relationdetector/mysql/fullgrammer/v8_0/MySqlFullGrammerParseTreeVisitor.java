@@ -35,7 +35,6 @@ import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.Variab
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParserBaseVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.RuleNode;
 
 /**
  * MySQL 8.0 full-grammer SQL parse-tree visitor。
@@ -52,6 +51,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     private final FullGrammerTypedSqlEventSink sink;
     private final MySqlSqlEventVisitorCore core;
     private final MySqlExpressionContextAdapter adapter;
+    private int ownedJoinPredicateDepth;
 
     MySqlFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.adapter = new MySql80ParseTreeAdapter();
@@ -76,6 +76,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         String table = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
         String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
         sink.rowset(ctx, "FROM", table, alias);
+        core.bindPhysicalRowset(table, alias);
         core.rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
         return visitChildren(ctx);
     }
@@ -86,6 +87,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         if (!alias.isBlank()) {
             sink.ignoredRowset(ctx, alias, "DERIVED_TABLE");
             sink.rowset(ctx, "FROM", alias, alias);
+            core.bindDerivedRowset(alias);
             core.rememberRowset(alias);
             int rowsetScopeMark = sink.rowsetScopeMark();
             sink.withProjectionOwner(alias, () -> {
@@ -111,9 +113,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
 
     @Override
     public Void visitProcedureParameter(ProcedureParameterContext ctx) {
-        if (ctx.functionParameter() != null) {
-            rememberNonColumnParameter(ctx.functionParameter());
-        }
+        rememberNonColumnParameter(ctx.functionParameter());
         return visitChildren(ctx);
     }
 
@@ -126,7 +126,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     @Override
     public Void visitVariableDeclaration(VariableDeclarationContext ctx) {
         if (ctx.identifierList() != null) {
-            ctx.identifierList().identifier().forEach(identifier -> com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, identifier.getText()));
+            ctx.identifierList().identifier().forEach(identifier -> core.markNonColumnIdentifier(identifier.getText()));
         }
         return visitChildren(ctx);
     }
@@ -134,7 +134,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     @Override
     public Void visitQuerySpecification(QuerySpecificationContext ctx) {
         rememberSelectIntoVariables(ctx.intoClause());
-        sink.withSelectScope(() -> {
+        core.withQueryScope(() -> sink.withSelectScope(() -> {
             if (ctx.fromClause() != null) {
                 visit(ctx.fromClause());
             }
@@ -156,7 +156,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
             if (ctx.qualifyClause() != null) {
                 visit(ctx.qualifyClause());
             }
-        });
+        }));
         return null;
     }
 
@@ -166,8 +166,8 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         if (ctx == null || ctx.OUTFILE_SYMBOL() != null || ctx.DUMPFILE_SYMBOL() != null) {
             return;
         }
-        ctx.textOrIdentifier().forEach(identifier -> com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, identifier.getText()));
-        ctx.userVariable().forEach(variable -> com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, variable.getText()));
+        ctx.textOrIdentifier().forEach(identifier -> core.markNonColumnIdentifier(identifier.getText()));
+        ctx.userVariable().forEach(variable -> core.markNonColumnIdentifier(variable.getText()));
     }
 
     @Override
@@ -193,8 +193,13 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         }
         String right = core.lastRowsetAlias();
         if (ctx.expr() != null) {
-            sink.predicateEqualities(ctx, ctx.expr(), adapter.joinKind(ctx));
-            visit(ctx.expr());
+            sink.predicateEqualities(ctx.expr(), ctx.expr(), adapter.joinKind(ctx));
+            ownedJoinPredicateDepth++;
+            try {
+                visit(ctx.expr());
+            } finally {
+                ownedJoinPredicateDepth--;
+            }
         }
         if (ctx.identifierListWithParentheses() != null && !left.isBlank() && !right.isBlank()) {
             sink.joinUsing(ctx, left, right, sink.identifiers(ctx.identifierListWithParentheses()));
@@ -230,27 +235,14 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
 
     @Override
     public Void visitPrimaryExprCompare(PrimaryExprCompareContext ctx) {
-        if (ctx.compOp() != null && "=".equals(ctx.compOp().getText())) {
+        if (ctx.compOp() != null && ctx.compOp().EQUAL_OPERATOR() != null) {
             if (core.inExists()) {
                 sink.existsPredicateEquality(ctx, ctx.boolPri(), ctx.predicate());
-            } else {
+            } else if (ownedJoinPredicateDepth == 0) {
                 sink.predicateEquality(ctx, ctx.boolPri(), ctx.predicate(), "WHERE_OR_UNKNOWN");
             }
         }
         return visitChildren(ctx);
-    }
-
-    @Override
-    public Void visitChildren(RuleNode node) {
-        Void result = super.visitChildren(node);
-        if (node instanceof ParserRuleContext ctx && core.isExpressionContext(ctx)) {
-            if (core.inExists()) {
-                sink.existsPredicateEqualities(ctx, ctx);
-            } else {
-                sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
-            }
-        }
-        return result;
     }
 
     @Override
@@ -280,6 +272,13 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     public Void visitInsertStatement(InsertStatementContext ctx) {
         String target = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
         sink.writeTarget(ctx, target, "");
+        if (ctx.insertFromConstructor() != null) {
+            List<String> targets = adapter.insertTargets(ctx.insertFromConstructor().fields());
+            com.relationdetector.mysql.fullgrammer.common.MySqlInsertValuesSupport.emit(sink, target, targets,
+                    ctx.insertFromConstructor().insertValues().valueList().values().stream()
+                            .map(values -> values.expr()).toList());
+            return visitChildren(ctx.insertFromConstructor());
+        }
         if (ctx.insertQueryExpression() == null) {
             return visitChildren(ctx);
         }
@@ -324,7 +323,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         String outputColumn = ctx.selectAlias() == null
                 ? core.projectedColumnName(ctx.expr())
                 : sink.firstIdentifier(ctx.selectAlias());
-        sink.projection(ctx, sink.currentProjectionOwner(), outputColumn, ctx.expr());
+        emitProjection(ctx, sink.currentProjectionOwner(), outputColumn, ctx.expr());
         return visitChildren(ctx);
     }
 
@@ -338,7 +337,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
 
     @Override
     public Void visitCreateTable(CreateTableContext ctx) {
-        if (com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.isTemporaryTableDeclaration(ctx.getText()) && ctx.tableName() != null) {
+        if (ctx.TEMPORARY_SYMBOL() != null && ctx.tableName() != null) {
             sink.localTempTable(ctx, ctx.tableName().getText());
         }
         return visitChildren(ctx);
@@ -373,15 +372,27 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
             String outputColumn = item.explicitAlias() == null
                     ? core.projectedColumnName(item.expression())
                     : sink.firstIdentifier(item.explicitAlias());
-            sink.projection(item.context(), alias, outputColumn, item.expression());
+            emitProjection(item.context(), alias, outputColumn, item.expression());
         }
     }
 
+    private void emitProjection(
+            ParserRuleContext context, String outputAlias, String outputColumn, ParseTree expression
+    ) {
+        adapter.directProjectionColumn(expression)
+                .flatMap(source -> core.physicalTableForAlias(source.qualifier())
+                        .map(table -> new ResolvedProjection(table, source.column())))
+                .ifPresentOrElse(
+                        source -> sink.directProjection(
+                                context, outputAlias, outputColumn, source.table(), source.column()),
+                        () -> sink.projection(context, outputAlias, outputColumn, expression));
+    }
+
+    private record ResolvedProjection(String table, String column) { }
+
     private void rememberNonColumnParameter(FunctionParameterContext ctx) {
-        if (ctx == null || ctx.parameterName() == null || ctx.parameterName().identifier() == null) {
-            return;
-        }
-        com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, ctx.parameterName().identifier().getText());
+        if (ctx == null || ctx.parameterName() == null || ctx.parameterName().identifier() == null) return;
+        core.markNonColumnIdentifier(ctx.parameterName().identifier().getText());
     }
 
 }

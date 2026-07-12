@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.core.fullgrammer.AbstractFullGrammerParseTreeAdapter;
+import com.relationdetector.core.fullgrammer.FullGrammerColumnReference;
+import com.relationdetector.core.fullgrammer.FullGrammerIdentifiers;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.EqualityOperands;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.OperatorSemantic;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.RowsetBinding;
 import com.relationdetector.mysql.fullgrammer.common.MySqlExpressionContextAdapter;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.*;
 
@@ -39,17 +42,95 @@ final class MySql80ParseTreeAdapter extends AbstractFullGrammerParseTreeAdapter
     }
 
     @Override
-    public boolean isArithmeticExpression(ParseTree tree) {
-        if (tree instanceof TerminalNode terminal) {
-            int tokenType = terminal.getSymbol().getType();
-            return tokenType == MySqlFullGrammerParser.MULT_OPERATOR
-                    || tokenType == MySqlFullGrammerParser.DIV_OPERATOR
-                    || tokenType == MySqlFullGrammerParser.MOD_OPERATOR
-                    || tokenType == MySqlFullGrammerParser.DIV_SYMBOL
-                    || tokenType == MySqlFullGrammerParser.MOD_SYMBOL
-                    || tokenType == MySqlFullGrammerParser.PLUS_OPERATOR
-                    || tokenType == MySqlFullGrammerParser.MINUS_OPERATOR;
+    public Optional<FullGrammerColumnReference> directColumn(ParseTree tree) {
+        if (tree instanceof SimpleExprColumnRefContext simple) {
+            return directColumn(simple.columnRef());
         }
+        if (tree instanceof ColumnRefContext column && column.fieldIdentifier() != null) {
+            return FullGrammerIdentifiers.columnReference(column.fieldIdentifier().getText());
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<String> identifiers(ParseTree tree) {
+        if (tree == null) return List.of();
+        if (tree instanceof TableAliasContext alias) {
+            return alias.identifier() == null ? List.of() : identifiers(alias.identifier());
+        }
+        if (tree instanceof SelectAliasContext alias) {
+            ParseTree identifier = alias.identifier() != null
+                    ? alias.identifier()
+                    : alias.textStringLiteral();
+            return identifier == null ? List.of() : identifiers(identifier);
+        }
+        if (tree instanceof IdentifierListWithParenthesesContext list) {
+            return identifiers(list.identifierList());
+        }
+        if (tree instanceof IdentifierListContext list) {
+            return list.identifier().stream().map(ParseTree::getText)
+                    .map(FullGrammerIdentifiers::clean).filter(value -> !value.isBlank()).toList();
+        }
+        if (tree instanceof FieldsContext fields) {
+            return fields.insertIdentifier().stream().map(ParseTree::getText)
+                    .map(FullGrammerIdentifiers::clean).filter(value -> !value.isBlank()).toList();
+        }
+        if (tree instanceof ColumnRefContext || tree instanceof FieldIdentifierContext
+                || tree instanceof TableRefContext
+                || tree instanceof SelectAliasContext || tree instanceof IdentifierContext
+                || tree instanceof PureIdentifierContext || tree instanceof QualifiedIdentifierContext
+                || tree instanceof DotIdentifierContext) {
+            return FullGrammerIdentifiers.qualifiedParts(tree.getText());
+        }
+        return List.of();
+    }
+
+    @Override
+    public Optional<String> functionName(ParseTree tree) {
+        if (tree instanceof SumExprContext || tree instanceof FunctionCallContext
+                || tree instanceof RuntimeFunctionCallContext) {
+            return Optional.ofNullable(((org.antlr.v4.runtime.ParserRuleContext) tree).getStart())
+                    .map(org.antlr.v4.runtime.Token::getText)
+                    .map(FullGrammerIdentifiers::clean)
+                    .filter(value -> !value.isBlank());
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean isNonColumnValue(ParseTree tree) {
+        return tree instanceof SimpleExprLiteralContext
+                || tree instanceof LiteralContext
+                || tree instanceof SimpleExprParamMarkerContext
+                || tree instanceof SimpleExprUserVariableAssignmentContext
+                || tree instanceof SimpleExprDefaultContext;
+    }
+
+    @Override
+    public List<EqualityOperands> directEqualities(ParseTree tree) {
+        if (tree instanceof PrimaryExprCompareContext comparison
+                && comparison.compOp() != null
+                && comparison.compOp().EQUAL_OPERATOR() != null) {
+            return List.of(new EqualityOperands(comparison.boolPri(), comparison.predicate()));
+        }
+        return List.of();
+    }
+
+    @Override
+    public Optional<RowsetBinding> rowsetBinding(ParseTree tree) {
+        if (!(tree instanceof SingleTableContext table) || table.tableRef() == null) {
+            return Optional.empty();
+        }
+        String physical = String.join(".", FullGrammerIdentifiers.qualifiedParts(table.tableRef().getText()));
+        List<String> tableParts = FullGrammerIdentifiers.qualifiedParts(physical);
+        String qualifier = table.tableAlias() == null
+                ? (tableParts.isEmpty() ? "" : tableParts.get(tableParts.size() - 1))
+                : FullGrammerIdentifiers.clean(table.tableAlias().getText());
+        return physical.isBlank() ? Optional.empty() : Optional.of(new RowsetBinding(physical, qualifier));
+    }
+
+    @Override
+    public boolean isArithmeticExpression(ParseTree tree) {
         if (tree instanceof BitExprContext expression) {
             return expression.op != null
                     || expression.MULT_OPERATOR() != null
@@ -61,6 +142,14 @@ final class MySql80ParseTreeAdapter extends AbstractFullGrammerParseTreeAdapter
                     || expression.MINUS_OPERATOR() != null;
         }
         return tree instanceof SimpleExprUnaryContext;
+    }
+
+    @Override
+    public OperatorSemantic operatorSemantic(ParseTree tree) {
+        if (tree instanceof SimpleExprUserVariableAssignmentContext) {
+            return OperatorSemantic.CUMULATIVE;
+        }
+        return MySqlExpressionContextAdapter.super.operatorSemantic(tree);
     }
 
     @Override
@@ -251,29 +340,4 @@ final class MySql80ParseTreeAdapter extends AbstractFullGrammerParseTreeAdapter
         }
     }
 
-    private List<String> identifiers(ParseTree tree) {
-        List<String> result = new ArrayList<>();
-        collectIdentifiers(tree, result);
-        return result;
-    }
-
-    private void collectIdentifiers(ParseTree tree, List<String> result) {
-        if (tree == null) {
-            return;
-        }
-        if (tree instanceof TerminalNode terminal) {
-            String value = terminal.getText().replace("`", "").replace("\"", "");
-            String lower = value.toLowerCase(Locale.ROOT);
-            if (!value.isBlank()
-                    && !Set.of("as", "select", "from", "where", "join", "on", "left", "right", "inner", "outer")
-                    .contains(lower)
-                    && value.chars().allMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_' || ch == '$')) {
-                result.add(value);
-            }
-            return;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectIdentifiers(tree.getChild(index), result);
-        }
-    }
 }

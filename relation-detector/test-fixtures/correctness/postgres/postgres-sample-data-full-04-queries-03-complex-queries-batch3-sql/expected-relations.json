@@ -1,7 +1,7 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "CO_OCCURRENCE:purchase_receipt_items.product_id->serial_numbers.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN",
     "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH",
@@ -17,11 +17,11 @@
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
-    "FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:serial_numbers.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:serial_numbers.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:serial_numbers.sales_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:serial_numbers.sales_order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

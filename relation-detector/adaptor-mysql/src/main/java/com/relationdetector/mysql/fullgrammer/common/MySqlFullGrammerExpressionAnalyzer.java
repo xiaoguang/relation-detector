@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammer.FullGrammerExpressionAnalysis;
@@ -64,6 +63,10 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
     ) {
         List<FullGrammerExpressionAnalysis> result = new ArrayList<>();
         FullGrammerExpressionAnalysis value = valueOnlyAnalysis(expression, defaultQualifier);
+        if (value.hasSources() && "CASE_WHEN".equals(value.transformType())
+                && containsAggregateFunction(expression)) {
+            value = value.withTransform("AGGREGATE", "VALUE");
+        }
         if (value.hasSources()) {
             result.add(value);
         }
@@ -94,8 +97,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         if (contexts.isArithmeticExpression(tree)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsArithmeticExpression(tree.getChild(index))) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            if (containsArithmeticExpression(child)) {
                 return true;
             }
         }
@@ -120,9 +123,9 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        for (int index = 0; index < tree.getChildCount(); index++) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
             appendSources(aliases, columns, seen,
-                    valueOnlyAnalysis(tree.getChild(index), defaultQualifier));
+                    valueOnlyAnalysis(child, defaultQualifier));
         }
         String transform = "CASE_WHEN".equals(full.transformType()) && containsAggregateFunction(tree)
                 ? "AGGREGATE"
@@ -157,8 +160,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         if (isTopLevelConditionalExpression(tree)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsConditionalExpression(tree.getChild(index))) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            if (containsConditionalExpression(child)) {
                 return true;
             }
         }
@@ -192,8 +195,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
             }
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectNestedConditionalControlAnalyses(tree.getChild(index), defaultQualifier, result);
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            collectNestedConditionalControlAnalyses(child, defaultQualifier, result);
         }
     }
 
@@ -237,9 +240,9 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
             collectConditionalControlSources(tree, defaultQualifier, aliases, columns, seen);
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
             collectNestedConditionalControlSources(
-                    tree.getChild(index), defaultQualifier, aliases, columns, seen);
+                    child, defaultQualifier, aliases, columns, seen);
         }
     }
 
@@ -267,10 +270,13 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         Set<String> seen = new LinkedHashSet<>();
         collectAggregateArgumentSources(expression, defaultQualifier, aliases, columns, seen);
         removeConditionalControlOnlySources(expression, defaultQualifier, aliases, columns);
+        String transform = "CUMULATIVE".equals(selected.transformType())
+                ? "CUMULATIVE"
+                : "AGGREGATE";
         if (aliases.isEmpty()) {
-            return new FullGrammerExpressionAnalysis(List.of(), List.of(), selected.transformType(), "VALUE");
+            return new FullGrammerExpressionAnalysis(List.of(), List.of(), transform, "VALUE");
         }
-        return new FullGrammerExpressionAnalysis(aliases, columns, selected.transformType(), "VALUE");
+        return new FullGrammerExpressionAnalysis(aliases, columns, transform, "VALUE");
     }
 
     private void removeConditionalControlOnlySources(
@@ -305,8 +311,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
             addKeys(valueKeys, conditionalValueOnlyAnalysis(tree, defaultQualifier));
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectConditionalRoleKeys(tree.getChild(index), defaultQualifier, controlKeys, valueKeys);
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            collectConditionalRoleKeys(child, defaultQualifier, controlKeys, valueKeys);
         }
     }
 
@@ -328,18 +334,15 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
             return;
         }
         if (isAggregateFunctionContext(tree)) {
-            for (int index = 0; index < tree.getChildCount(); index++) {
-                ParseTree child = tree.getChild(index);
-                if (!(child instanceof TerminalNode)) {
-                    appendSources(aliases, columns, seen,
-                            valueOnlyAnalysis(child, defaultQualifier));
-                }
+            for (ParseTree child : contexts.typedChildren(tree)) {
+                appendSources(aliases, columns, seen,
+                        valueOnlyAnalysis(child, defaultQualifier));
             }
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
             collectAggregateArgumentSources(
-                    tree.getChild(index), defaultQualifier, aliases, columns, seen);
+                    child, defaultQualifier, aliases, columns, seen);
         }
     }
 
@@ -350,8 +353,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         if (isAggregateFunctionContext(tree)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsAggregateFunction(tree.getChild(index))) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            if (containsAggregateFunction(child)) {
                 return true;
             }
         }
@@ -363,8 +366,9 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
             return true;
         }
         return contexts.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)
-                && LineageTransformClassifier.classifyFunction(
-                        firstLeafText(tree).toLowerCase(java.util.Locale.ROOT), false)
+                && contexts.functionName(tree)
+                .map(name -> LineageTransformClassifier.classifyFunction(name, false))
+                .orElse(LineageTransformType.FUNCTION_CALL)
                 == LineageTransformType.AGGREGATE;
     }
 
@@ -381,9 +385,9 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        for (int index = 0; index < tree.getChildCount(); index++) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
             appendSources(aliases, columns, seen,
-                    scalarSubqueryControlAnalysis(tree.getChild(index), defaultQualifier));
+                    scalarSubqueryControlAnalysis(child, defaultQualifier));
         }
         return new FullGrammerExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
     }
@@ -435,9 +439,9 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        for (int index = 0; index < tree.getChildCount(); index++) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
             appendSources(aliases, columns, seen,
-                    controlSources(tree.getChild(index), defaultQualifier));
+                    controlSources(child, defaultQualifier));
         }
         return new FullGrammerExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
     }
@@ -462,8 +466,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         if (isScalarSubqueryBoundary(unwrapSingleChildContexts(tree))) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsScalarSubquery(tree.getChild(index))) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            if (containsScalarSubquery(child)) {
                 return true;
             }
         }
@@ -493,8 +497,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         if (contexts.hasRole(tree, FullGrammerParseTreeAdapter.Role.COLUMN_REFERENCE)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (hasColumnOutsideQueryBoundary(tree.getChild(index))) {
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            if (hasColumnOutsideQueryBoundary(child)) {
                 return true;
             }
         }
@@ -512,8 +516,8 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
         if (runtimeDateFunction(tree) != null) {
             return tree;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree found = firstRuntimeDateFunction(tree.getChild(index));
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            ParseTree found = firstRuntimeDateFunction(child);
             if (found != null) {
                 return found;
             }
@@ -548,13 +552,6 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
                 "VALUE");
     }
 
-    private String firstLeafText(ParseTree tree) {
-        if (tree == null) {
-            return "";
-        }
-        return tree.getChildCount() == 0 ? tree.getText() : firstLeafText(tree.getChild(0));
-    }
-
     private void appendSources(
             List<String> aliases,
             List<String> columns,
@@ -579,8 +576,12 @@ public class MySqlFullGrammerExpressionAnalyzer extends FullGrammerExpressionAna
 
     private ParseTree unwrapSingleChildContexts(ParseTree tree) {
         ParseTree current = tree;
-        while (current != null && current.getChildCount() == 1 && !(current instanceof TerminalNode)) {
-            current = current.getChild(0);
+        while (current != null) {
+            List<ParseTree> children = contexts.typedChildren(current);
+            if (children.size() != 1) {
+                break;
+            }
+            current = children.get(0);
         }
         return current;
     }

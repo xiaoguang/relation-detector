@@ -4,20 +4,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.ddl.DdlEventBuilder;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.DdlConstraintSemantic;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role;
 
 /** Per-parse DDL event collector used by the SQL Server full grammar. */
 final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     private final DdlEventBuilder builder;
     private final Consumer<ParseTree> visitor;
 
-    SqlServerDdlEventCollector(Parser parser, String sourceName, Consumer<ParseTree> visitor) {
-        super(parser);
+    SqlServerDdlEventCollector(
+            FullGrammerParseTreeAdapter adapter,
+            String sourceName,
+            Consumer<ParseTree> visitor
+    ) {
+        super(adapter);
         this.builder = new DdlEventBuilder(sourceName);
         this.visitor = visitor;
     }
@@ -27,23 +33,25 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     }
 
     void visitCreateTable(ParserRuleContext ctx) {
-        String table = firstDirectText(ctx, "table_name").orElse("");
+        String table = firstDirectText(ctx, Role.TABLE_NAME).orElse("");
         if (table.isBlank() || isLocalTemp(table)) {
             return;
         }
-        for (ParserRuleContext column : descendants(ctx, "column_definition")) {
-            String columnName = firstDirectText(column, "id_").orElse("");
+        for (ParserRuleContext column : descendants(ctx, Role.COLUMN_DEFINITION)) {
+            String columnName = firstDirectText(column, Role.IDENTIFIER).orElse("");
             if (columnName.isBlank()) {
                 continue;
             }
             builder.addColumn(qualifiedTable(table), columnName, line(column));
-            if (containsDirectKeyword(column, "PRIMARY") || containsDirectKeyword(column, "UNIQUE")) {
+            DdlConstraintSemantic columnConstraint = ddlConstraintSemantic(column);
+            if (columnConstraint == DdlConstraintSemantic.PRIMARY_KEY
+                    || columnConstraint == DdlConstraintSemantic.UNIQUE) {
                 builder.addIndex(qualifiedTable(table), columnName,
                         "TARGET_UNIQUE", "INLINE_CONSTRAINT", line(column));
             }
-            firstDescendant(column, "foreign_key_options").ifPresent(fk -> {
-                String targetTable = firstDirectText(fk, "table_name").orElse("");
-                List<String> targetColumns = firstDirect(fk, "column_name_list")
+            firstDescendant(column, Role.FOREIGN_KEY_OPTIONS).ifPresent(fk -> {
+                String targetTable = firstDirectText(fk, Role.TABLE_NAME).orElse("");
+                List<String> targetColumns = firstDirect(fk, Role.COLUMN_LIST)
                         .map(this::identifierList).orElse(List.of());
                 if (!targetTable.isBlank() && !targetColumns.isEmpty()) {
                     builder.addForeignKey(qualifiedTable(table), List.of(columnName),
@@ -56,12 +64,13 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
                 }
             });
         }
-        for (ParserRuleContext constraint : descendants(ctx, "table_constraint")) {
-            if (containsDirectKeyword(constraint, "FOREIGN")) {
+        for (ParserRuleContext constraint : descendants(ctx, Role.TABLE_CONSTRAINT)) {
+            DdlConstraintSemantic semantic = ddlConstraintSemantic(constraint);
+            if (semantic == DdlConstraintSemantic.FOREIGN_KEY) {
                 addForeignKeyConstraint(table, constraint, false);
-            } else if (containsDirectKeyword(constraint, "PRIMARY")
-                    || containsDirectKeyword(constraint, "UNIQUE")) {
-                firstDirect(constraint, "column_name_list_with_order")
+            } else if (semantic == DdlConstraintSemantic.PRIMARY_KEY
+                    || semantic == DdlConstraintSemantic.UNIQUE) {
+                firstDirect(constraint, Role.ORDERED_COLUMN_LIST)
                         .map(this::identifierList).orElse(List.of())
                         .forEach(column -> builder.addIndex(qualifiedTable(table), column,
                                 "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint)));
@@ -70,19 +79,19 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     }
 
     void visitAlterTable(ParserRuleContext ctx) {
-        String table = firstDirectText(ctx, "table_name").orElse("");
+        String table = firstDirectText(ctx, Role.TABLE_NAME).orElse("");
         if (table.isBlank() || isLocalTemp(table)) {
             visitChildren(ctx);
             return;
         }
-        for (ParserRuleContext column : descendants(ctx, "column_definition")) {
-            String columnName = firstDirectText(column, "id_").orElse("");
+        for (ParserRuleContext column : descendants(ctx, Role.COLUMN_DEFINITION)) {
+            String columnName = firstDirectText(column, Role.IDENTIFIER).orElse("");
             if (!columnName.isBlank()) {
                 builder.addColumn(qualifiedTable(table), columnName, line(column));
             }
         }
-        for (ParserRuleContext constraint : descendants(ctx, "table_constraint")) {
-            if (containsDirectKeyword(constraint, "FOREIGN")) {
+        for (ParserRuleContext constraint : descendants(ctx, Role.TABLE_CONSTRAINT)) {
+            if (ddlConstraintSemantic(constraint) == DdlConstraintSemantic.FOREIGN_KEY) {
                 addForeignKeyConstraint(table, constraint, true);
             }
         }
@@ -90,12 +99,13 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     }
 
     void visitCreateIndex(ParserRuleContext ctx) {
-        String table = firstDirectText(ctx, "table_name").orElse("");
+        String table = firstDirectText(ctx, Role.TABLE_NAME).orElse("");
         if (table.isBlank()) {
             return;
         }
-        String role = containsDirectKeyword(ctx, "UNIQUE") ? "TARGET_UNIQUE" : "SOURCE_INDEX";
-        firstDirect(ctx, "column_name_list_with_order").map(this::identifierList).orElse(List.of())
+        String role = ddlConstraintSemantic(ctx) == DdlConstraintSemantic.UNIQUE
+                ? "TARGET_UNIQUE" : "SOURCE_INDEX";
+        firstDirect(ctx, Role.ORDERED_COLUMN_LIST).map(this::identifierList).orElse(List.of())
                 .forEach(column -> builder.addIndex(qualifiedTable(table), column,
                         role, "CREATE_INDEX", line(ctx)));
     }
@@ -105,11 +115,11 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
             ParserRuleContext constraint,
             boolean addConstraintColumnInventory
     ) {
-        List<ParserRuleContext> lists = directChildren(constraint, "column_name_list");
-        Optional<ParserRuleContext> fkOptions = firstDirect(constraint, "foreign_key_options");
-        String targetTable = fkOptions.flatMap(fk -> firstDirectText(fk, "table_name")).orElse("");
+        List<ParserRuleContext> lists = directChildren(constraint, Role.COLUMN_LIST);
+        Optional<ParserRuleContext> fkOptions = firstDirect(constraint, Role.FOREIGN_KEY_OPTIONS);
+        String targetTable = fkOptions.flatMap(fk -> firstDirectText(fk, Role.TABLE_NAME)).orElse("");
         List<String> sourceColumns = lists.isEmpty() ? List.of() : identifierList(lists.get(0));
-        List<String> targetColumns = fkOptions.flatMap(fk -> firstDirect(fk, "column_name_list"))
+        List<String> targetColumns = fkOptions.flatMap(fk -> firstDirect(fk, Role.COLUMN_LIST))
                 .map(this::identifierList).orElse(List.of());
         if (targetTable.isBlank() || sourceColumns.isEmpty() || targetColumns.isEmpty()) {
             return;
@@ -129,8 +139,8 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     }
 
     private void visitChildren(ParseTree tree) {
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            visitor.accept(tree.getChild(index));
+        for (ParseTree child : typedChildren(tree)) {
+            visitor.accept(child);
         }
     }
 }

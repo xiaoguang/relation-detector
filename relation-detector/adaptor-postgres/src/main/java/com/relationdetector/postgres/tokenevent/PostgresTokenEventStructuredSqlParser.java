@@ -66,6 +66,16 @@ public final class PostgresTokenEventStructuredSqlParser
     }
 
     @Override
+    protected TypedEventCollection collectTypedResult(
+            SqlStatementRecord statement,
+            PostgresRelationSqlParser.ScriptContext root
+    ) {
+        PostgresTokenEventParseTreeVisitor visitor = new PostgresTokenEventParseTreeVisitor(statement);
+        List<StructuredSqlEvent> events = visitor.collect(root);
+        return new TypedEventCollection(events, visitor.warnings());
+    }
+
+    @Override
     protected boolean isUnknownStatement(ParseTree tree) {
         return tree instanceof PostgresRelationSqlParser.UnknownStatementContext;
     }

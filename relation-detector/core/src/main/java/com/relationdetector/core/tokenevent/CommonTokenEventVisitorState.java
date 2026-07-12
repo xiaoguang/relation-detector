@@ -101,17 +101,16 @@ abstract class CommonTokenEventVisitorState extends CommonRelationSqlBaseVisitor
         if (join.joinType() == null) {
             return "JOIN";
         }
-        String text = join.joinType().getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) {
+        if (join.joinType().LEFT() != null) {
             return "LEFT_JOIN";
         }
-        if (text.startsWith("RIGHT")) {
+        if (join.joinType().RIGHT() != null) {
             return "RIGHT_JOIN";
         }
-        if (text.startsWith("FULL")) {
+        if (join.joinType().FULL() != null) {
             return "FULL_JOIN";
         }
-        if (text.startsWith("CROSS")) {
+        if (join.joinType().CROSS() != null) {
             return "CROSS_JOIN";
         }
         return "JOIN";

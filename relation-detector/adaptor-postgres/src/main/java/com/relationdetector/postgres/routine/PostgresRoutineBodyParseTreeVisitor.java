@@ -129,16 +129,35 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineWr
 
     @Override
     public Void visitComparisonPredicate(PostgresRoutineBodySqlParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) return visitChildren(ctx);
-        ColumnRead left = singleColumn(ctx.expression(0));
-        ColumnRead right = singleColumn(ctx.expression(1));
-        if (left == null || right == null) return visitChildren(ctx);
-        emitter.addPredicate(events, ctx,
+        if (ctx.comparisonOperator().EQ() == null) return visitChildren(ctx);
+        emitDirectEquality(ctx, ctx.expression(0), ctx.expression(1));
+        return null;
+    }
+
+    @Override
+    public Void visitIsNotDistinctPredicate(PostgresRoutineBodySqlParser.IsNotDistinctPredicateContext ctx) {
+        emitDirectEquality(ctx, ctx.expression(0), ctx.expression(1));
+        return null;
+    }
+
+    @Override
+    public Void visitIsDistinctPredicate(PostgresRoutineBodySqlParser.IsDistinctPredicateContext ctx) {
+        return null;
+    }
+
+    private void emitDirectEquality(
+            org.antlr.v4.runtime.ParserRuleContext context,
+            PostgresRoutineBodySqlParser.ExpressionContext leftExpression,
+            PostgresRoutineBodySqlParser.ExpressionContext rightExpression
+    ) {
+        ColumnRead left = singleColumn(leftExpression);
+        ColumnRead right = singleColumn(rightExpression);
+        if (left == null || right == null) return;
+        emitter.addPredicate(events, context,
                 existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE
                         : StructuredParseEventType.PREDICATE_EQUALITY,
                 left.alias(), left.column(), right.alias(), right.column(),
                 existsDepth > 0 ? "EXISTS" : currentJoinKind());
-        return null;
     }
 
     @Override

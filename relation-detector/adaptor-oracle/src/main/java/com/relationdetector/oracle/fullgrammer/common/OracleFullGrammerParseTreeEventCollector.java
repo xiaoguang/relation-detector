@@ -14,6 +14,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 import com.relationdetector.oracle.fullgrammer.common.OracleFullGrammerParseTreeAdapter.Role;
+import com.relationdetector.oracle.fullgrammer.common.OracleFullGrammerParseTreeAdapter.Symbol;
 
 /**
  * Shared Oracle full-grammer parse-tree event collector.
@@ -108,30 +109,30 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitSubqueryFactoringClause(ParserRuleContext ctx) {
-        String cte = name(child(ctx, "query_name"));
+        String cte = name(child(ctx, Role.QUERY_NAME));
         if (cte.isBlank()) {
             visitChildren(ctx);
             return;
         }
         emitter.emitCteDeclaration(ctx, cte);
-        projectionOwners.push(new ProjectionOwner(cte, columnNamesFromParenColumnList(child(ctx, "paren_column_list"))));
-        visit(child(ctx, "subquery"));
+        projectionOwners.push(new ProjectionOwner(cte, columnNamesFromParenColumnList(child(ctx, Role.PAREN_COLUMN_LIST))));
+        visit(child(ctx, Role.SUBQUERY));
         projectionOwners.pop();
     }
 
     private void visitQueryBlock(ParserRuleContext ctx) {
         queryScopes.push(new QueryScope());
         try {
-            ParserRuleContext selectedList = child(ctx, "selected_list");
-            visit(child(ctx, "from_clause"));
-            visit(child(ctx, "where_clause"));
-            for (ParserRuleContext clause : children(ctx, "hierarchical_query_clause")) {
+            ParserRuleContext selectedList = child(ctx, Role.SELECTED_LIST);
+            visit(child(ctx, Role.FROM_CLAUSE));
+            visit(child(ctx, Role.WHERE_CLAUSE));
+            for (ParserRuleContext clause : children(ctx, Role.HIERARCHICAL_QUERY_CLAUSE)) {
                 visit(clause);
             }
-            for (ParserRuleContext clause : children(ctx, "group_by_clause")) {
+            for (ParserRuleContext clause : children(ctx, Role.GROUP_BY_CLAUSE)) {
                 visit(clause);
             }
-            visit(child(ctx, "model_clause"));
+            visit(child(ctx, Role.MODEL_CLAUSE));
             // Scalar subqueries in SELECT projections contain their own typed
             // rowsets and predicates. Visit them even when this query is not
             // currently materializing a CTE/derived projection.
@@ -146,9 +147,9 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitTableRefAux(ParserRuleContext ctx) {
-        ParserRuleContext internal = child(ctx, "table_ref_aux_internal");
+        ParserRuleContext internal = child(ctx, Role.TABLE_REF_INTERNAL_WRAPPER);
         String table = tableFrom(internal);
-        String alias = child(ctx, "table_alias") == null ? core.baseName(table) : name(child(ctx, "table_alias"));
+        String alias = child(ctx, Role.TABLE_ALIAS) == null ? core.baseName(table) : name(child(ctx, Role.TABLE_ALIAS));
         if (!table.isBlank()) {
             emitter.emitRowset(ctx, table, alias);
             visitChildren(ctx);
@@ -166,8 +167,8 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitGeneralTableRef(ParserRuleContext ctx) {
-        String table = tableFrom(child(ctx, "dml_table_expression_clause"));
-        String alias = child(ctx, "table_alias") == null ? core.baseName(table) : name(child(ctx, "table_alias"));
+        String table = tableFrom(child(ctx, Role.DML_TABLE_EXPRESSION));
+        String alias = child(ctx, Role.TABLE_ALIAS) == null ? core.baseName(table) : name(child(ctx, Role.TABLE_ALIAS));
         if (!table.isBlank()) {
             emitter.emitRowset(ctx, table, alias);
         }
@@ -175,16 +176,16 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitSelectedTableview(ParserRuleContext ctx) {
-        if (child(ctx, "tableview_name") != null) {
-            String table = name(child(ctx, "tableview_name"));
-            String alias = child(ctx, "table_alias") == null ? core.baseName(table) : name(child(ctx, "table_alias"));
+        if (child(ctx, Role.TABLEVIEW_NAME) != null) {
+            String table = name(child(ctx, Role.TABLEVIEW_NAME));
+            String alias = child(ctx, Role.TABLE_ALIAS) == null ? core.baseName(table) : name(child(ctx, Role.TABLE_ALIAS));
             emitter.emitRowset(ctx, table, alias);
             visitChildren(ctx);
             return;
         }
-        ParserRuleContext select = child(ctx, "select_statement");
+        ParserRuleContext select = child(ctx, Role.SELECT_STATEMENT);
         if (select != null) {
-            String alias = child(ctx, "table_alias") == null ? "" : name(child(ctx, "table_alias"));
+            String alias = child(ctx, Role.TABLE_ALIAS) == null ? "" : name(child(ctx, Role.TABLE_ALIAS));
             if (!alias.isBlank()) {
                 emitter.emitIgnoredRowset(ctx, alias);
                 projectionOwners.push(new ProjectionOwner(alias, List.of()));
@@ -203,13 +204,13 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitJoinUsingPart(ParserRuleContext ctx) {
-        core.joinUsing(ctx, columnNamesFromParenColumnList(child(ctx, "paren_column_list")));
+        core.joinUsing(ctx, columnNamesFromParenColumnList(child(ctx, Role.PAREN_COLUMN_LIST)));
     }
 
     private void visitRelationalExpression(ParserRuleContext ctx) {
-        ParserRuleContext op = child(ctx, "relational_operator");
-        if (op != null && "=".equals(op.getText())) {
-            List<ParserRuleContext> parts = children(ctx, "relational_expression");
+        ParserRuleContext op = child(ctx, Role.RELATIONAL_OPERATOR);
+        if (isDirectEquality(op)) {
+            List<ParserRuleContext> parts = children(ctx, Role.RELATIONAL_EXPRESSION);
             if (parts.size() == 2) {
                 OracleColumnRead left = expressionSupport.singleDirectColumn(parts.get(0));
                 OracleColumnRead right = expressionSupport.singleDirectColumn(parts.get(1));
@@ -221,12 +222,12 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
                             existsDepth > 0 ? "EXISTS" : currentJoinKind());
                 }
             }
-        } else if (node(ctx, "IN") != null && node(ctx, "NOT") == null && child(ctx, "in_elements") != null) {
-            List<ParserRuleContext> parts = children(ctx, "relational_expression");
-            ParserRuleContext inElements = child(ctx, "in_elements");
-            if (parts.size() == 1 && child(inElements, "subquery") != null) {
+        } else if (hasSymbol(ctx, Symbol.IN) && !hasSymbol(ctx, Symbol.NOT) && child(ctx, Role.IN_ELEMENTS) != null) {
+            List<ParserRuleContext> parts = children(ctx, Role.RELATIONAL_EXPRESSION);
+            ParserRuleContext inElements = child(ctx, Role.IN_ELEMENTS);
+            if (parts.size() == 1 && child(inElements, Role.SUBQUERY) != null) {
                 OracleColumnRead outer = expressionSupport.singleColumn(parts.get(0));
-                OracleColumnRead inner = expressionSupport.singleSelectColumn(child(inElements, "subquery"));
+                OracleColumnRead inner = expressionSupport.singleSelectColumn(child(inElements, Role.SUBQUERY));
                 if (outer != null && inner != null) {
                     core.inSubquery(ctx, outer.alias(), outer.column(), inner.alias(), inner.column(), "");
                 }
@@ -236,10 +237,10 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitCompoundExpression(ParserRuleContext ctx) {
-        ParserRuleContext inElements = child(ctx, "in_elements");
-        List<ParserRuleContext> concatenations = children(ctx, "concatenation");
-        ParserRuleContext subquery = child(inElements, "subquery");
-        if (node(ctx, "IN") != null && node(ctx, "NOT") == null
+        ParserRuleContext inElements = child(ctx, Role.IN_ELEMENTS);
+        List<ParserRuleContext> concatenations = children(ctx, Role.CONCATENATION);
+        ParserRuleContext subquery = child(inElements, Role.SUBQUERY);
+        if (hasSymbol(ctx, Symbol.IN) && !hasSymbol(ctx, Symbol.NOT)
                 && concatenations.size() == 1 && subquery != null) {
             OracleColumnRead outer = expressionSupport.singleColumn(concatenations.get(0));
             OracleColumnRead inner = expressionSupport.singleSelectColumn(subquery);
@@ -251,9 +252,9 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitQuantifiedExpression(ParserRuleContext ctx) {
-        if (node(ctx, "EXISTS") != null && child(ctx, "select_only_statement") != null) {
+        if (hasSymbol(ctx, Symbol.EXISTS) && child(ctx, Role.SELECT_ONLY_STATEMENT) != null) {
             existsDepth++;
-            visit(child(ctx, "select_only_statement"));
+            visit(child(ctx, Role.SELECT_ONLY_STATEMENT));
             existsDepth--;
             return;
         }
@@ -261,38 +262,38 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitUpdateStatement(ParserRuleContext ctx) {
-        ParserRuleContext general = child(ctx, "general_table_ref");
-        String table = tableFrom(child(general, "dml_table_expression_clause"));
-        String alias = child(general, "table_alias") == null ? core.baseName(table) : name(child(general, "table_alias"));
+        ParserRuleContext general = child(ctx, Role.GENERAL_TABLE_REF);
+        String table = tableFrom(child(general, Role.DML_TABLE_EXPRESSION));
+        String alias = child(general, Role.TABLE_ALIAS) == null ? core.baseName(table) : name(child(general, Role.TABLE_ALIAS));
         emitter.beginWriteTarget(general, alias, table);
         visitChildren(ctx);
         emitter.endWriteTarget();
     }
 
     private void visitColumnBasedUpdateSetClause(ParserRuleContext ctx) {
-        if (child(ctx, "column_name") != null && child(ctx, "expression") != null && emitter.hasWriteTarget()) {
-            emitter.emitAssignment(ctx, name(child(ctx, "column_name")), child(ctx, "expression"),
+        if (child(ctx, Role.COLUMN_NAME) != null && child(ctx, Role.EXPRESSION) != null && emitter.hasWriteTarget()) {
+            emitter.emitAssignment(ctx, name(child(ctx, Role.COLUMN_NAME)), child(ctx, Role.EXPRESSION),
                     StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
-            visit(child(ctx, "expression"));
+            visit(child(ctx, Role.EXPRESSION));
             return;
         }
         visitChildren(ctx);
     }
 
     private void visitSingleTableInsert(ParserRuleContext ctx) {
-        ParserRuleContext select = child(ctx, "select_statement");
-        ParserRuleContext insert = child(ctx, "insert_into_clause");
-        if (select == null || insert == null || child(insert, "paren_column_list") == null) {
+        ParserRuleContext select = child(ctx, Role.SELECT_STATEMENT);
+        ParserRuleContext insert = child(ctx, Role.INSERT_INTO_CLAUSE);
+        if (select == null || insert == null || child(insert, Role.PAREN_COLUMN_LIST) == null) {
             visitChildren(ctx);
             return;
         }
-        String targetTable = tableFrom(child(child(insert, "general_table_ref"), "dml_table_expression_clause"));
-        List<String> targetColumns = columnNamesFromParenColumnList(child(insert, "paren_column_list"));
+        String targetTable = tableFrom(child(child(insert, Role.GENERAL_TABLE_REF), Role.DML_TABLE_EXPRESSION));
+        List<String> targetColumns = columnNamesFromParenColumnList(child(insert, Role.PAREN_COLUMN_LIST));
         visit(select);
         List<ParserRuleContext> selectItems = expressionSupport.selectItems(select);
         int count = Math.min(targetColumns.size(), selectItems.size());
         for (int index = 0; index < count; index++) {
-            ParserRuleContext expression = child(selectItems.get(index), "expression");
+            ParserRuleContext expression = child(selectItems.get(index), Role.EXPRESSION);
             if (expression == null) {
                 continue;
             }
@@ -303,7 +304,7 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitMergeStatement(ParserRuleContext ctx) {
-        List<ParserRuleContext> tableviews = children(ctx, "selected_tableview");
+        List<ParserRuleContext> tableviews = children(ctx, Role.SELECTED_TABLEVIEW);
         if (tableviews.size() < 2) {
             visitChildren(ctx);
             return;
@@ -313,11 +314,11 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
         emitter.beginWriteTarget(tableviews.get(0), targetAlias, targetTable);
         visit(tableviews.get(0));
         visit(tableviews.get(1));
-        visit(child(ctx, "condition"));
-        ParserRuleContext update = child(ctx, "merge_update_clause");
+        visit(child(ctx, Role.CONDITION));
+        ParserRuleContext update = child(ctx, Role.MERGE_UPDATE_CLAUSE);
         if (update != null) {
-            for (ParserRuleContext element : children(update, "merge_element")) {
-                emitter.emitAssignment(element, name(child(element, "column_name")), child(element, "expression"),
+            for (ParserRuleContext element : children(update, Role.MERGE_ELEMENT)) {
+                emitter.emitAssignment(element, name(child(element, Role.COLUMN_NAME)), child(element, Role.EXPRESSION),
                         StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
             }
         }
@@ -343,8 +344,8 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
         if (tree == null) {
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            visit(tree.getChild(index));
+        for (ParseTree child : typedChildren(tree)) {
+            visit(child);
         }
     }
 
@@ -353,20 +354,31 @@ public final class OracleFullGrammerParseTreeEventCollector extends OracleFullGr
     }
 
     private String joinKind(ParserRuleContext ctx) {
-        String text = ctx.getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) {
+        if (hasSymbolInTree(ctx, Symbol.LEFT)) {
             return "LEFT_JOIN";
         }
-        if (text.startsWith("RIGHT")) {
+        if (hasSymbolInTree(ctx, Symbol.RIGHT)) {
             return "RIGHT_JOIN";
         }
-        if (text.startsWith("FULL")) {
+        if (hasSymbolInTree(ctx, Symbol.FULL)) {
             return "FULL_JOIN";
         }
-        if (text.startsWith("CROSS")) {
+        if (hasSymbolInTree(ctx, Symbol.CROSS)) {
             return "CROSS_JOIN";
         }
         return "JOIN";
+    }
+
+    private boolean hasSymbolInTree(ParseTree tree, Symbol symbol) {
+        if (hasSymbol(tree, symbol)) {
+            return true;
+        }
+        for (ParseTree child : typedChildren(tree)) {
+            if (hasSymbolInTree(child, symbol)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private record ProjectionOwner(String alias, List<String> columns) {

@@ -171,9 +171,13 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
             SqlServerRelationSqlParser.ExpressionContext expression = item.expression();
             if (expression == null) continue;
             ExpressionAnalysis source = analyze(expression, defaultQualifier);
-            if (!source.hasSources()) continue;
             String output = outputColumn(item);
             if (output.isBlank()) continue;
+            if (!source.hasSources()) {
+                emitProjectionItem(item, owner, output, List.of(), List.of(),
+                        source.transform(), source.flowKind());
+                continue;
+            }
             if (!source.sources().isEmpty()) emitProjectionItem(item, owner, output,
                     source.aliases(), source.columns(), source.transform(), source.flowKind());
             if (!source.controlSources().isEmpty()) emitProjectionItem(item, owner, output,

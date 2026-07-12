@@ -6,7 +6,7 @@
     "VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount",
     "VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

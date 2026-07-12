@@ -2,20 +2,20 @@ package com.relationdetector.sqlserver.fullgrammer.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
-import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter;
+import com.relationdetector.core.fullgrammer.FullGrammerColumnReference;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role;
 
 /** Stateless parse-tree access and identifier normalization for SQL Server collectors. */
 abstract class SqlServerParseTreeSupport {
-    private final Parser parser;
+    private final FullGrammerParseTreeAdapter adapter;
 
-    SqlServerParseTreeSupport(Parser parser) {
-        this.parser = parser;
+    SqlServerParseTreeSupport(FullGrammerParseTreeAdapter adapter) {
+        this.adapter = adapter;
     }
 
     final Optional<String> tableForAlias(ParseTree tree, String aliasOrTable) {
@@ -23,14 +23,14 @@ abstract class SqlServerParseTreeSupport {
         if (target.isBlank()) {
             return Optional.empty();
         }
-        for (ParserRuleContext item : descendants(tree, "table_source_item")) {
-            Optional<ParserRuleContext> tableName = firstDirect(item, "full_table_name");
-            if (tableName.isEmpty()) {
+        for (ParserRuleContext item : descendants(tree, Role.TABLE_SOURCE_ITEM)) {
+            Optional<FullGrammerParseTreeAdapter.RowsetBinding> binding = adapter.rowsetBinding(item);
+            if (binding.isEmpty()) {
                 continue;
             }
-            String alias = firstDirect(item, "as_table_alias").flatMap(this::lastIdText).orElse("");
-            String table = clean(tableName.get().getText());
-            if (target.equalsIgnoreCase(alias) || target.equalsIgnoreCase(baseName(table))) {
+            String alias = clean(binding.get().qualifier());
+            String table = clean(binding.get().table());
+            if (target.equalsIgnoreCase(alias) || target.equalsIgnoreCase(table)) {
                 return Optional.of(table);
             }
         }
@@ -38,73 +38,56 @@ abstract class SqlServerParseTreeSupport {
     }
 
     final boolean isEqualityComparison(ParserRuleContext predicate) {
-        return firstDirect(predicate, "comparison_operator")
-                .map(operator -> "=".equals(operator.getText()))
-                .orElse(false);
+        return !adapter.directEqualities(predicate).isEmpty();
     }
 
     final Optional<ColumnEndpoint> singleColumnEndpoint(ParseTree expression) {
-        Optional<ParserRuleContext> directColumn = directColumnExpression(expression);
+        Optional<FullGrammerColumnReference> directColumn = directColumnExpression(expression);
         if (directColumn.isEmpty()) {
             return Optional.empty();
         }
-        List<String> parts = splitQualified(clean(directColumn.get().getText())).stream()
-                .map(this::cleanOne)
-                .filter(part -> !part.isBlank())
-                .toList();
-        if (parts.size() < 2) {
+        String qualifier = clean(directColumn.get().qualifier());
+        String column = clean(directColumn.get().column());
+        if (qualifier.isBlank() || column.isBlank()) {
             return Optional.empty();
         }
-        return Optional.of(new ColumnEndpoint(parts.get(parts.size() - 2), parts.get(parts.size() - 1)));
+        return Optional.of(new ColumnEndpoint(qualifier, column));
     }
 
-    final Optional<ParserRuleContext> directColumnExpression(ParseTree expression) {
-        if (!(expression instanceof ParserRuleContext ctx)) {
-            return Optional.empty();
-        }
-        List<ParserRuleContext> columns = directChildren(ctx, "full_column_name");
-        if (columns.size() != 1) {
-            List<ParserRuleContext> nestedExpressions = directChildren(ctx, "expression");
-            if (columns.isEmpty() && nestedExpressions.size() == 1) {
-                return directColumnExpression(nestedExpressions.get(0));
-            }
-            return Optional.empty();
-        }
-        for (ParserRuleContext child : directChildren(ctx)) {
-            if (child != columns.get(0) && !ruleName(child).equals("id_")) {
-                return Optional.empty();
-            }
-        }
-        return Optional.of(columns.get(0));
+    final Optional<FullGrammerColumnReference> directColumnExpression(ParseTree expression) {
+        Optional<FullGrammerColumnReference> direct = adapter.directColumn(expression);
+        if (direct.isPresent()) return direct;
+        List<ParseTree> children = adapter.typedChildren(expression);
+        return children.size() == 1 ? directColumnExpression(children.get(0)) : Optional.empty();
     }
 
     final Optional<String> lastIdText(ParserRuleContext ctx) {
-        List<ParserRuleContext> ids = descendants(ctx, "id_");
+        List<String> ids = typedIdentifiers(ctx);
         if (ids.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(clean(ids.get(ids.size() - 1).getText()));
+        return Optional.of(clean(ids.get(ids.size() - 1)));
     }
 
-    final Optional<ParserRuleContext> firstDirect(ParserRuleContext ctx, String ruleName) {
+    final Optional<ParserRuleContext> firstDirect(ParserRuleContext ctx, Role role) {
         for (ParserRuleContext child : directChildren(ctx)) {
-            if (ruleName(child).equals(ruleName)) {
+            if (hasRole(child, role)) {
                 return Optional.of(child);
             }
         }
         return Optional.empty();
     }
 
-    final Optional<String> firstDirectText(ParserRuleContext ctx, String ruleName) {
-        return firstDirect(ctx, ruleName).map(child -> clean(child.getText()));
+    final Optional<String> firstDirectText(ParserRuleContext ctx, Role role) {
+        return firstDirect(ctx, role).map(child -> clean(child.getText()));
     }
 
-    final Optional<ParserRuleContext> firstDescendant(ParseTree tree, String ruleName) {
-        if (tree instanceof ParserRuleContext ctx && ruleName(ctx).equals(ruleName)) {
+    final Optional<ParserRuleContext> firstDescendant(ParseTree tree, Role role) {
+        if (tree instanceof ParserRuleContext ctx && hasRole(ctx, role)) {
             return Optional.of(ctx);
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            Optional<ParserRuleContext> match = firstDescendant(tree.getChild(index), ruleName);
+        for (ParseTree child : typedChildren(tree)) {
+            Optional<ParserRuleContext> match = firstDescendant(child, role);
             if (match.isPresent()) {
                 return match;
             }
@@ -112,103 +95,68 @@ abstract class SqlServerParseTreeSupport {
         return Optional.empty();
     }
 
-    final List<ParserRuleContext> descendants(ParseTree tree, String ruleName) {
+    final List<ParserRuleContext> descendants(ParseTree tree, Role role) {
         List<ParserRuleContext> result = new ArrayList<>();
-        collectDescendants(tree, ruleName, result);
+        collectDescendants(tree, role, result);
         return result;
     }
 
-    private void collectDescendants(ParseTree tree, String ruleName, List<ParserRuleContext> result) {
-        if (tree instanceof ParserRuleContext ctx && ruleName(ctx).equals(ruleName)) {
+    private void collectDescendants(ParseTree tree, Role role, List<ParserRuleContext> result) {
+        if (tree instanceof ParserRuleContext ctx && hasRole(ctx, role)) {
             result.add(ctx);
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectDescendants(tree.getChild(index), ruleName, result);
+        for (ParseTree child : typedChildren(tree)) {
+            collectDescendants(child, role, result);
         }
     }
 
     final List<ParserRuleContext> directChildren(ParserRuleContext ctx) {
-        List<ParserRuleContext> result = new ArrayList<>();
-        for (int index = 0; index < ctx.getChildCount(); index++) {
-            if (ctx.getChild(index) instanceof ParserRuleContext child) {
-                result.add(child);
-            }
-        }
-        return result;
+        return typedChildren(ctx).stream().map(ParserRuleContext.class::cast).toList();
     }
 
-    final List<ParserRuleContext> directChildren(ParserRuleContext ctx, String ruleName) {
-        return directChildren(ctx).stream().filter(child -> ruleName(child).equals(ruleName)).toList();
+    final List<ParserRuleContext> directChildren(ParserRuleContext ctx, Role role) {
+        return directChildren(ctx).stream().filter(child -> hasRole(child, role)).toList();
     }
 
     final List<String> identifierList(ParserRuleContext ctx) {
-        List<String> values = new ArrayList<>();
-        for (ParserRuleContext id : descendants(ctx, "id_")) {
-            String value = clean(id.getText());
-            if (!value.isBlank()) {
-                values.add(value);
-            }
-        }
-        if (!values.isEmpty()) {
-            return values;
-        }
-        return splitTopLevelIdentifiers(ctx.getText());
+        return typedIdentifiers(ctx).stream().map(this::clean).filter(value -> !value.isBlank()).toList();
     }
 
-    private List<String> splitTopLevelIdentifiers(String text) {
-        List<String> values = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int depth = 0;
-        for (int index = 0; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (ch == '(') {
-                depth++;
-            } else if (ch == ')' && depth > 0) {
-                depth--;
-            }
-            if (ch == ',' && depth == 0) {
-                addIdentifier(values, current.toString());
-                current.setLength(0);
-            } else {
-                current.append(ch);
-            }
-        }
-        addIdentifier(values, current.toString());
-        return values;
-    }
-
-    private void addIdentifier(List<String> values, String raw) {
-        String value = lastIdentifier(raw);
-        if (!value.isBlank()) {
-            values.add(value);
-        }
-    }
-
-    final boolean hasDirectTerminal(ParserRuleContext ctx, String text) {
-        return directTerminalTexts(ctx).stream().anyMatch(token -> token.equalsIgnoreCase(text));
-    }
-
-    final boolean containsDirectKeyword(ParserRuleContext ctx, String text) {
-        return hasDirectTerminal(ctx, text);
-    }
-
-    private List<String> directTerminalTexts(ParserRuleContext ctx) {
+    private List<String> typedIdentifiers(ParseTree tree) {
         List<String> result = new ArrayList<>();
-        for (int index = 0; index < ctx.getChildCount(); index++) {
-            if (ctx.getChild(index) instanceof TerminalNode node) {
-                result.add(node.getText());
-            }
-        }
+        collectTypedIdentifiers(tree, result);
         return result;
     }
 
-    final String ruleName(ParserRuleContext ctx) {
-        int index = ctx.getRuleIndex();
-        String[] names = parser.getRuleNames();
-        if (index < 0 || index >= names.length) {
-            return "";
+    private void collectTypedIdentifiers(ParseTree tree, List<String> result) {
+        List<String> direct = adapter.identifiers(tree);
+        if (!direct.isEmpty()) {
+            result.addAll(direct);
+            return;
         }
-        return names[index];
+        for (ParseTree child : adapter.typedChildren(tree)) {
+            collectTypedIdentifiers(child, result);
+        }
+    }
+
+    final boolean isExistsPredicate(ParseTree tree) { return adapter.isExistsPredicate(tree); }
+
+    final boolean isInPredicate(ParseTree tree) { return adapter.isInPredicate(tree); }
+
+    final List<FullGrammerParseTreeAdapter.EqualityOperands> directEqualities(ParseTree tree) {
+        return adapter.directEqualities(tree);
+    }
+
+    final FullGrammerParseTreeAdapter.DdlConstraintSemantic ddlConstraintSemantic(ParseTree tree) {
+        return adapter.ddlConstraintSemantic(tree);
+    }
+
+    final boolean hasRole(ParseTree tree, Role role) {
+        return adapter.hasRole(tree, role);
+    }
+
+    final List<ParseTree> typedChildren(ParseTree tree) {
+        return adapter.typedChildren(tree);
     }
 
     final long line(ParserRuleContext ctx) {

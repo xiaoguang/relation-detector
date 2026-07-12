@@ -74,12 +74,6 @@ public class CommonTokenEventStructuredSqlParser implements StructuredSqlParser 
                 root,
                 events,
                 CommonRelationSqlParser.UnknownStatementContext.class::isInstance));
-        warnings.forEach(warning -> {
-            if (context != null) {
-                context.warn(warning);
-            }
-        });
-
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("grammar", "CommonRelationSql");
         attributes.put("parser", CommonRelationSqlParser.class.getSimpleName());

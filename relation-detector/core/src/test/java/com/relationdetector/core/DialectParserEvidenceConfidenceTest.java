@@ -24,6 +24,12 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
+import com.relationdetector.contracts.parse.StructuredParseResult;
 
 /**
  * Evidence and confidence assertions for common token-event SQL fixtures.
@@ -73,7 +79,7 @@ class DialectParserEvidenceConfidenceTest {
                 "orders", "user_id", "users", "id");
 
         assertEquals(EvidenceSourceType.DATABASE_OBJECT,
-                evidence(viewRelation, EvidenceType.SQL_LOG_JOIN).sourceType());
+                evidence(viewRelation, EvidenceType.VIEW_JOIN).sourceType());
         assertEquals(EvidenceSourceType.DATABASE_OBJECT,
                 evidence(procedureRelation, EvidenceType.SQL_LOG_JOIN).sourceType());
     }
@@ -109,6 +115,31 @@ class DialectParserEvidenceConfidenceTest {
         assertEquals(EvidenceSourceType.PLAIN_SQL, existsEvidence.sourceType());
         assertEquals("IN_SUBQUERY", inEvidence.attributes().get("joinKind"));
         assertEquals("EXISTS", existsEvidence.attributes().get("joinKind"));
+    }
+
+    @Test
+    void fullGrammarRelationshipKeepsOnlyFullGrammarParserOrigin() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT * FROM orders o JOIN users u ON o.user_id = u.id",
+                StatementSourceType.PLAIN_SQL, "input.sql", 5, 5,
+                Map.of("sourceFile", "input.sql", "sourceStatementId", "input.sql:5-5"));
+        SourceProvenance full = SourceProvenance.fullGrammer(statement, 5, "", "typed-context");
+        StructuredParseResult structured = new StructuredParseResult("FULL", "mysql", statement.sourceName(),
+                List.of(
+                        new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, full,
+                                "FROM", "orders", "orders", "o", "", "", ""),
+                        new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, full,
+                                "JOIN", "users", "users", "u", "", "", ""),
+                        new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY, full,
+                                new ExpressionSource("o", "user_id"), new ExpressionSource("u", "id"),
+                                List.of(), List.of(), "", "JOIN_ON", List.of(), false)),
+                List.of(), Map.of());
+
+        Evidence evidence = new TokenEventRelationExtractor().extract(statement, structured).get(0).evidence().get(0);
+
+        assertTrue(Boolean.TRUE.equals(evidence.attributes().get("fullGrammerNative")));
+        assertTrue(!evidence.attributes().containsKey("tokenEventNative"));
+        assertEquals("typed column equality", evidence.detail());
     }
 
     @Test

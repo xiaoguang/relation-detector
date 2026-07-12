@@ -1,8 +1,9 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:inventory.product_id->stocktake_items.product_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:inventory.warehouse_id->stocktakes.warehouse_id:SQL_LOG_JOIN",
-    "FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "CO_OCCURRENCE:inventory.batch_id->stocktake_items.batch_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
+    "CO_OCCURRENCE:inventory.product_id->stocktake_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
+    "CO_OCCURRENCE:inventory.warehouse_id->stocktakes.warehouse_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
+    "FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

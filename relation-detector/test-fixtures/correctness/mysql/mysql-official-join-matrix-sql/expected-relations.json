@@ -5,6 +5,7 @@
     "FK_LIKE:invoices.payment_id->payments.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:returns.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],

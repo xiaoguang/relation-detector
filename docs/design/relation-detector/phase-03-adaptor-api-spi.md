@@ -15,7 +15,7 @@
 
 ## DatabaseAdaptor 接口
 
-当前公开契约是 **adaptor SPI v2**。`DatabaseAdaptor` 只暴露 grouped
+当前公开契约是 **adaptor SPI v3**。`DatabaseAdaptor` 只暴露 grouped
 capability；metadata、object、DDL、log、parser 和 profiling 的旧 getter 已从接口删除，
 不再保留双接口兼容桥。这是一次明确的二进制 SPI 升级：外部 adaptor 必须基于
 当前 `contracts` 重新编译。
@@ -41,10 +41,10 @@ public interface DatabaseAdaptor {
 - `supportedDatabaseTypes()` 用于匹配 YAML 中的 `database.type`。
 - `capabilities()` 声明该 adaptor 支持哪些来源和功能。
 - `spiVersion()` 是二进制 API 版本。内置 adaptor 显式返回
-  `AdaptorApiVersion.CURRENT`（当前为 2）；为了让旧二进制类可被加载并获得可读错误，
+  `AdaptorApiVersion.CURRENT`（当前为 3）；为了让旧二进制类可被加载并获得可读错误，
   接口 default 返回 1。
 - `collectors()` 聚合 metadata、object definition、database DDL 和 SQL log extractor。
-- `parsers()` 聚合 SQL relationship parser、structured SQL parser 和 structured DDL parser。
+- `parsers()` 聚合 SQL relationship parser、structured SQL parser、structured DDL parser 和必需的 dialect script parser。
 - `profiling()` 聚合 data profiler 和 evidence weight adjuster。
 - core/CLI 只能通过这三个 grouped capability 访问 adaptor。
 - `AdaptorRegistry` 在使用任何 capability 前检查 SPI 版本。不匹配时错误包含
@@ -124,8 +124,9 @@ public interface SqlLogExtractor {
 实现建议：
 
 - 文件级读取失败记录 `LOG_EXTRACT_FAILED`。
-- 如果 hint 是 `PLAIN_SQL`，可以委托 core 的纯 SQL extractor；该 extractor 会在读取失败时记录 `SQL_FILE_EXTRACT_FAILED`。
+- plain SQL、DDL file、object file 和 native-log 记录都先由 `parsers().scripts()` 做方言 client-script framing，再把产生的 server statement 交给 structured SQL/DDL parser；`DDL_FILE` 不得绕过这一步直接按文本整体提交给 `DdlRelationParserRunner`。文件读取失败仍记录 `SQL_FILE_EXTRACT_FAILED`。
 - 对于原生日志，最好保留每条 SQL 的 `sourceName`、`startLine`、`endLine`，以便后续 SQL parser 抛异常时能把原始语句写入 warning。
+- native log 的系统 catalog 噪声不能在原始 SQL 文本阶段靠关键词或正则删除。`TypedLogNoiseClassifier` 只在 structured parser 已输出 typed physical rowset event 后分类；当没有 physical rowset 时，才允许使用显式 metadata marker 作为运营输入过滤条件。
 
 ### AdaptorContext 诊断通道
 
@@ -189,8 +190,47 @@ public interface SqlRelationParser {
 当前 SQL/DDL 文本解析统一通过 `adaptor.parsers()` 内的 structured parser
 进入 core runner。ANTLR 是底层 lexer/parser 技术名；用户可见运行模式是
 `token-event` 或 `full-grammer`。`AdaptorParsers` 的 structured SQL/DDL 字段是
-`Optional`，但 `DatabaseAdaptor` 本身不再提供旧式 default getter。缺失的一侧不会由
+`Optional`，但 `scripts` 是必需的 `DialectScriptParser`，`DatabaseAdaptor` 本身不再提供旧式 default getter。缺失的一侧不会由
 core Simple parser 假装支持。
+
+### DialectScriptParser
+
+`DialectScriptParser` 将 client script 的边界处理与 server SQL grammar 明确分开：前者只
+产生可解析的 `SqlStatementRecord` 和 framing warning，后者才产生 `StructuredParseResult`。
+这是 adaptor SPI v3 的必需能力，不能再用 core 的通用文本 splitter、对象文件 extractor
+或 raw-SQL regex 推断 statement / object 边界。
+
+```java
+public record AdaptorParsers(
+    SqlRelationParser sqlRelations,
+    Optional<StructuredSqlParser> structuredSql,
+    Optional<StructuredDdlParser> structuredDdl,
+    DialectScriptParser scripts
+) {}
+
+@FunctionalInterface
+public interface DialectScriptParser {
+  ScriptParseResult parse(ScriptParseRequest request);
+}
+```
+
+`ScriptParseRequest` 保留原始文本、source file 和默认 `StatementSourceType`；
+`ScriptParseResult` 返回带准确 source/line provenance 的 server statements 与 framing
+warnings。共享 `StructuredScriptParser` 只消费各 adaptor generated script lexer 的 typed
+lexeme，不能按 rule name、反射或 raw SQL 文本作结构推断。
+
+script parser 不改变 server SQL 内显式写出的 catalog、schema、quote 或标识符拼写。后续
+SQL/DDL parser 也必须把这些原始可读 endpoint 写入 `TableId` / `ColumnRef` / `Endpoint` 和
+输出；`ScanScope` 的 catalog/schema 只可传给内部 `CanonicalEndpointKey` 解析，用于跨 source
+evidence lookup，不能作为输出端点的补写、重命名或显示等价规则。
+
+| Dialect | Client-script framing |
+| --- | --- |
+| MySQL | `DELIMITER` directive 改变后续 statement terminator；quoted/comment 区间不参与 delimiter 匹配。 |
+| PostgreSQL | `$tag$ ... $tag$` dollar-quoted 区间内的 semicolon 不分割 statement。 |
+| Oracle | 单独一行 `/` 结束 PL/SQL / object block；普通 SQL 仍由 semicolon 分割。 |
+| SQL Server | 单独一行 `GO` 结束 batch；procedure/function/trigger batch 不再被内部 semicolon 拆开。 |
+| Common | 使用 typed semicolon framing。 |
 
 职责：
 

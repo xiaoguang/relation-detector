@@ -6,22 +6,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
+
+import com.relationdetector.contracts.Enums.LineageTransformType;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.CaseParts;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.OperatorSemantic;
 
 /**
- * full-grammer 表达式分析基础类。
+ * Shared full-grammer expression semantics over dialect-owned typed context views.
  *
- * <p>CN: 方言 visitor 把 grammar expression context 传入这里，产出 sourceAliases、
- * sourceColumns、transformType 和 flowKind。当前实现递归 parse tree 节点与 terminal
- * leaves，不读取整段 SQL 文本做正则结构判断；最终 transform 含义仍由 core lineage
- * 语义层消费。
- *
- * <p>EN: Base expression analyzer for full-grammer profiles. Dialect visitors
- * pass grammar expression contexts here and receive source aliases, source
- * columns, transform type, and flow kind. The implementation walks parse-tree
- * nodes and terminal leaves rather than regex-matching full SQL text; final
- * transform semantics are consumed by the core lineage layer.
+ * <p>This class never interprets terminal text. Generated-context adapters expose
+ * physical columns, CASE branches, function symbols, operators, and scalar-query
+ * boundaries; core only combines those typed facts into VALUE/CONTROL analyses.</p>
  */
 public abstract class FullGrammerExpressionAnalyzer {
     private final FullGrammerParseTreeAdapter parseTreeAdapter;
@@ -35,6 +32,10 @@ public abstract class FullGrammerExpressionAnalyzer {
         return parseTreeAdapter;
     }
 
+    protected DialectFunctionSemanticRegistry functionRegistry() {
+        return DialectFunctionSemanticRegistry.standard();
+    }
+
     public void ignoreIdentifier(String identifier) {
         String clean = cleanIdentifier(identifier);
         if (!clean.isBlank()) {
@@ -46,12 +47,6 @@ public abstract class FullGrammerExpressionAnalyzer {
         return analyze(expression, "");
     }
 
-    /**
-     * 分析一个表达式 context，提取字段来源和粗粒度 transform。
-     *
-     * <p>EN: Analyzes one expression context and extracts source columns plus a
-     * coarse transform classification.
-     */
     public FullGrammerExpressionAnalysis analyze(ParseTree expression, String defaultQualifier) {
         Set<ExpressionColumn> columns = new LinkedHashSet<>();
         String transform = transform(expression);
@@ -64,47 +59,24 @@ public abstract class FullGrammerExpressionAnalyzer {
                 flowKind);
     }
 
-    /**
-     * Returns one or more write-side expression analyses for a DML assignment.
-     *
-     * <p>Most dialects have a single value analysis. Dialects with typed scalar
-     * subquery contexts can override this to split selected projection sources
-     * from predicate/correlation control sources.</p>
-     */
     public List<FullGrammerExpressionAnalysis> writeAnalyses(ParseTree expression, String defaultQualifier) {
         FullGrammerExpressionAnalysis analysis = analyze(expression, defaultQualifier);
         return analysis.hasSources() ? List.of(analysis) : List.of();
     }
 
-    /**
-     * Lets a dialect-specific analyzer take precedence over the generic nested
-     * CASE splitting path for statement forms where the dialect can already
-     * return a more precise VALUE/CONTROL split.
-     */
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
         return false;
     }
 
-    /**
-     * 分析关系谓词中的“裸列表达式”。
-     *
-     * <p>CN: JOIN/EXISTS/IN 关系只能从裸列或裸列 tuple 产生。拼接、算术、函数、
-     * 聚合、literal 等表达式仍可参与 lineage，但不能成为 relationship endpoint。
-     *
-     * <p>EN: Analyzes a relation-predicate column expression. JOIN/EXISTS/IN
-     * relationships are emitted only for bare columns or bare-column tuples.
-     * Concatenation, arithmetic, functions, aggregates, and literals may still
-     * feed lineage, but must not become relationship endpoints.
-     */
-    public FullGrammerExpressionAnalysis analyzeRelationColumnExpression(ParseTree expression, String defaultQualifier) {
+    public FullGrammerExpressionAnalysis analyzeRelationColumnExpression(
+            ParseTree expression,
+            String defaultQualifier
+    ) {
         if (hasRelationExpressionDisqualifier(expression)) {
             return emptyAnalysis();
         }
         FullGrammerExpressionAnalysis analysis = analyze(expression, defaultQualifier);
-        if (!"DIRECT".equals(analysis.transformType())) {
-            return emptyAnalysis();
-        }
-        return analysis;
+        return "DIRECT".equals(analysis.transformType()) ? analysis : emptyAnalysis();
     }
 
     public boolean isTopLevelCaseExpression(ParseTree expression) {
@@ -112,63 +84,57 @@ public abstract class FullGrammerExpressionAnalyzer {
         return unwrapped != null && isCaseContext(unwrapped);
     }
 
-    public List<FullGrammerExpressionAnalysis> caseExpressionAnalyses(ParseTree expression, String defaultQualifier) {
-        java.util.ArrayList<FullGrammerExpressionAnalysis> analyses = new java.util.ArrayList<>();
+    public List<FullGrammerExpressionAnalysis> caseExpressionAnalyses(
+            ParseTree expression,
+            String defaultQualifier
+    ) {
+        List<FullGrammerExpressionAnalysis> analyses = new ArrayList<>();
         collectCaseExpressionAnalyses(expression, defaultQualifier, analyses);
-        return analyses;
+        return List.copyOf(analyses);
     }
 
-    public List<FullGrammerExpressionAnalysis> caseWriteAnalyses(ParseTree expression, String defaultQualifier) {
+    public List<FullGrammerExpressionAnalysis> caseWriteAnalyses(
+            ParseTree expression,
+            String defaultQualifier
+    ) {
         ParseTree caseNode = singleCaseContext(expression);
         if (!isCaseContext(caseNode)) {
             return List.of();
         }
-        List<ParseTree> controlExpressions = new ArrayList<>();
-        List<ParseTree> valueExpressions = new ArrayList<>();
-        boolean elseValue = false;
-        boolean sawSwitchSection = false;
-        for (int index = 0; index < caseNode.getChildCount(); index++) {
-            ParseTree child = caseNode.getChild(index);
-            String terminal = terminalText(child);
-            if ("CASE".equals(terminal) || "END".equals(terminal)) {
-                continue;
-            }
-            if ("ELSE".equals(terminal)) {
-                elseValue = true;
-                continue;
-            }
-            if (elseValue) {
-                valueExpressions.add(child);
-                continue;
-            }
-            if (isSwitchSectionContext(child)) {
-                sawSwitchSection = true;
-                collectSwitchSectionExpressions(child, controlExpressions, valueExpressions);
-                continue;
-            }
-            if (isWhenClauseListContext(child)) {
-                sawSwitchSection = true;
-                collectWhenClauseListExpressions(child, controlExpressions, valueExpressions);
-                continue;
-            }
-            if (isCaseDefaultContext(child)) {
-                collectCaseDefaultExpressions(child, valueExpressions);
-                continue;
-            }
-            if (!sawSwitchSection && !(child instanceof TerminalNode)) {
-                controlExpressions.add(child);
-            }
+        CaseParts parts = parseTreeAdapter.caseParts(caseNode);
+        if (!parts.conditional()) {
+            return List.of();
         }
-        List<FullGrammerExpressionAnalysis> result = new ArrayList<>();
-        FullGrammerExpressionAnalysis value = caseAnalysis(valueExpressions, defaultQualifier, "VALUE");
+        List<FullGrammerExpressionAnalysis> result = new ArrayList<>(2);
+        FullGrammerExpressionAnalysis value = caseAnalysis(parts.values(), defaultQualifier, "VALUE");
         if (value.hasSources()) {
             result.add(value);
         }
-        FullGrammerExpressionAnalysis control = caseAnalysis(controlExpressions, defaultQualifier, "CONTROL");
+        FullGrammerExpressionAnalysis control = caseAnalysis(parts.controls(), defaultQualifier, "CONTROL");
         if (control.hasSources()) {
             result.add(control);
         }
-        return result;
+        return List.copyOf(result);
+    }
+
+    protected boolean preferAggregateArgumentSourcesOnly() {
+        return true;
+    }
+
+    protected boolean isCoalesceFunction(String value) {
+        return functionRegistry().classify(value) == LineageTransformType.COALESCE;
+    }
+
+    public String cleanIdentifier(String value) {
+        if (value == null) {
+            return "";
+        }
+        List<String> parts = FullGrammerIdentifiers.qualifiedParts(value);
+        return parts.isEmpty() ? FullGrammerIdentifiers.clean(value) : String.join(".", parts);
+    }
+
+    public boolean isNonColumnIdentifier(String value) {
+        return nonColumnIdentifiers.contains(cleanIdentifier(value).toLowerCase(Locale.ROOT));
     }
 
     private ParseTree singleCaseContext(ParseTree expression) {
@@ -176,9 +142,9 @@ public abstract class FullGrammerExpressionAnalyzer {
         if (isCaseContext(unwrapped)) {
             return unwrapped;
         }
-        List<ParseTree> caseContexts = new ArrayList<>();
-        collectCaseContexts(expression, caseContexts);
-        return caseContexts.size() == 1 ? caseContexts.get(0) : null;
+        List<ParseTree> cases = new ArrayList<>();
+        collectCaseContexts(expression, cases);
+        return cases.size() == 1 ? cases.get(0) : null;
     }
 
     private void collectCaseContexts(ParseTree tree, List<ParseTree> result) {
@@ -189,57 +155,8 @@ public abstract class FullGrammerExpressionAnalyzer {
             result.add(tree);
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectCaseContexts(tree.getChild(index), result);
-        }
-    }
-
-    private void collectSwitchSectionExpressions(
-            ParseTree section,
-            List<ParseTree> controlExpressions,
-            List<ParseTree> valueExpressions
-    ) {
-        boolean thenValue = false;
-        for (int index = 0; index < section.getChildCount(); index++) {
-            ParseTree child = section.getChild(index);
-            String terminal = terminalText(child);
-            if ("WHEN".equals(terminal)) {
-                continue;
-            }
-            if ("THEN".equals(terminal)) {
-                thenValue = true;
-                continue;
-            }
-            if (child instanceof TerminalNode) {
-                continue;
-            }
-            if (thenValue) {
-                valueExpressions.add(child);
-            } else {
-                controlExpressions.add(child);
-            }
-        }
-    }
-
-    private void collectWhenClauseListExpressions(
-            ParseTree list,
-            List<ParseTree> controlExpressions,
-            List<ParseTree> valueExpressions
-    ) {
-        for (int index = 0; index < list.getChildCount(); index++) {
-            ParseTree child = list.getChild(index);
-            if (isWhenClauseContext(child)) {
-                collectSwitchSectionExpressions(child, controlExpressions, valueExpressions);
-            }
-        }
-    }
-
-    private void collectCaseDefaultExpressions(ParseTree defaultClause, List<ParseTree> valueExpressions) {
-        for (int index = 0; index < defaultClause.getChildCount(); index++) {
-            ParseTree child = defaultClause.getChild(index);
-            if (!(child instanceof TerminalNode)) {
-                valueExpressions.add(child);
-            }
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            collectCaseContexts(child, result);
         }
     }
 
@@ -253,40 +170,17 @@ public abstract class FullGrammerExpressionAnalyzer {
         Set<String> seen = new LinkedHashSet<>();
         for (ParseTree expression : expressions) {
             FullGrammerExpressionAnalysis analysis = analyze(expression, defaultQualifier);
-            for (int index = 0; index < Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size()); index++) {
+            int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
+            for (int index = 0; index < count; index++) {
                 String alias = analysis.sourceAliases().get(index);
                 String column = analysis.sourceColumns().get(index);
-                String key = alias + "\u0000" + column;
-                if (seen.add(key)) {
+                if (seen.add(alias + "\u0000" + column)) {
                     aliases.add(alias);
                     columns.add(column);
                 }
             }
         }
         return new FullGrammerExpressionAnalysis(aliases, columns, "CASE_WHEN", flowKind);
-    }
-
-    private boolean isSwitchSectionContext(ParseTree tree) {
-        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_SWITCH_SECTION);
-    }
-
-    private boolean isWhenClauseListContext(ParseTree tree) {
-        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_WHEN_LIST);
-    }
-
-    private boolean isWhenClauseContext(ParseTree tree) {
-        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_WHEN);
-    }
-
-    private boolean isCaseDefaultContext(ParseTree tree) {
-        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_DEFAULT);
-    }
-
-    private String terminalText(ParseTree tree) {
-        if (tree instanceof TerminalNode terminal) {
-            return terminal.getText().toUpperCase(Locale.ROOT);
-        }
-        return "";
     }
 
     private void collectCaseExpressionAnalyses(
@@ -301,15 +195,19 @@ public abstract class FullGrammerExpressionAnalyzer {
             result.addAll(caseWriteAnalyses(tree, defaultQualifier));
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectCaseExpressionAnalyses(tree.getChild(index), defaultQualifier, result);
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            collectCaseExpressionAnalyses(child, defaultQualifier, result);
         }
     }
 
     private ParseTree unwrapSingleChildContexts(ParseTree tree) {
         ParseTree current = tree;
-        while (current != null && current.getChildCount() == 1 && !(current instanceof TerminalNode)) {
-            current = current.getChild(0);
+        while (current instanceof ParserRuleContext) {
+            List<ParseTree> children = parseTreeAdapter.typedChildren(current);
+            if (children.size() != 1) {
+                break;
+            }
+            current = children.get(0);
         }
         return current;
     }
@@ -338,41 +236,27 @@ public abstract class FullGrammerExpressionAnalyzer {
         collectColumns(expression, defaultQualifier, result);
     }
 
-    protected boolean preferAggregateArgumentSourcesOnly() {
-        return true;
-    }
-
     private void collectColumnsOutsideAggregateScalarSubquery(
             ParseTree tree,
             String defaultQualifier,
             Set<ExpressionColumn> result
     ) {
-        if (tree == null) {
+        if (tree == null || isAggregateScalarSubqueryContext(tree)) {
             return;
         }
-        if (isAggregateScalarSubqueryContext(tree)) {
+        ExpressionColumn direct = expressionColumn(tree, defaultQualifier);
+        if (direct != null) {
+            result.add(direct);
             return;
         }
-        if (isColumnReferenceContext(tree)) {
-            ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
-            if (column != null) {
-                result.add(column);
-                return;
-            }
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectColumnsOutsideAggregateScalarSubquery(tree.getChild(index), defaultQualifier, result);
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            collectColumnsOutsideAggregateScalarSubquery(child, defaultQualifier, result);
         }
     }
 
     private boolean isAggregateScalarSubqueryContext(ParseTree tree) {
-        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.SCALAR_SUBQUERY)
-                && containsAggregateFunction(tree)) {
-            return true;
-        }
-        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.QUERY_BOUNDARY)
-                && containsAggregateFunction(tree)
-                && containsTerminal(tree, "from");
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.SCALAR_SUBQUERY)
+                && containsAggregateFunction(tree);
     }
 
     private boolean containsAggregateFunction(ParseTree tree) {
@@ -382,31 +266,19 @@ public abstract class FullGrammerExpressionAnalyzer {
         if (isAggregateFunctionContext(tree)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsAggregateFunction(tree.getChild(index))) {
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            if (containsAggregateFunction(child)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean containsTerminal(ParseTree tree, String expectedLowerText) {
-        if (tree == null) {
-            return false;
-        }
-        if (tree instanceof TerminalNode terminal
-                && terminal.getText().equalsIgnoreCase(expectedLowerText)) {
-            return true;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsTerminal(tree.getChild(index), expectedLowerText)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void collectAggregateArgumentColumns(ParseTree tree, String defaultQualifier, Set<ExpressionColumn> result) {
+    private void collectAggregateArgumentColumns(
+            ParseTree tree,
+            String defaultQualifier,
+            Set<ExpressionColumn> result
+    ) {
         if (tree == null) {
             return;
         }
@@ -414,8 +286,8 @@ public abstract class FullGrammerExpressionAnalyzer {
             collectColumns(tree, defaultQualifier, result);
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectAggregateArgumentColumns(tree.getChild(index), defaultQualifier, result);
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            collectAggregateArgumentColumns(child, defaultQualifier, result);
         }
     }
 
@@ -423,85 +295,55 @@ public abstract class FullGrammerExpressionAnalyzer {
         if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
             return true;
         }
-        if (!parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)) {
-            return false;
-        }
-        return isAggregateFunction(firstLeafText(tree).toLowerCase(Locale.ROOT));
-    }
-
-    private boolean isColumnReferenceContext(ParseTree tree) {
-        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.COLUMN_REFERENCE);
+        return parseTreeAdapter.functionName(tree)
+                .map(functionRegistry()::classify)
+                .filter(LineageTransformType.AGGREGATE::equals)
+                .isPresent();
     }
 
     private void collectColumns(ParseTree tree, String defaultQualifier, Set<ExpressionColumn> result) {
         if (tree == null) {
             return;
         }
-        if (isColumnReferenceContext(tree)) {
-            ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
-            if (column != null) {
-                result.add(column);
-                return;
-            }
+        ExpressionColumn direct = expressionColumn(tree, defaultQualifier);
+        if (direct != null) {
+            result.add(direct);
+            return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectColumns(tree.getChild(index), defaultQualifier, result);
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            collectColumns(child, defaultQualifier, result);
         }
     }
 
-    private ExpressionColumn expressionColumn(String raw, String defaultQualifier) {
-        String text = cleanIdentifier(raw);
-        if (text.isBlank() || text.contains("(")) {
-            return null;
-        }
-        if (!defaultQualifier.isBlank() && text.startsWith("@")) {
-            return null;
-        }
-        List<String> parts = splitQualifiedName(text);
-        if (parts.size() >= 2) {
-            String qualifier = cleanIdentifier(parts.get(parts.size() - 2));
-            String column = cleanIdentifier(parts.get(parts.size() - 1));
-            if (isIdentifier(qualifier) && isIdentifier(column)
-                    && !isIgnoredIdentifier(qualifier) && !isIgnoredIdentifier(column)
-                    && !isNonColumnIdentifier(qualifier) && !isNonColumnIdentifier(column)) {
-                return new ExpressionColumn(qualifier, column);
-            }
-        }
-        if (!defaultQualifier.isBlank() && isIdentifier(text)
-                && !isIgnoredIdentifier(text) && !isLiteralLikeIdentifier(text)
-                && !isNonColumnIdentifier(text)) {
-            return new ExpressionColumn(defaultQualifier, text);
-        }
-        return null;
+    private ExpressionColumn expressionColumn(ParseTree tree, String defaultQualifier) {
+        return parseTreeAdapter.directColumn(tree)
+                .map(column -> {
+                    String qualifier = cleanIdentifier(column.qualifier());
+                    String name = cleanIdentifier(column.column());
+                    if (qualifier.isBlank()) {
+                        qualifier = cleanIdentifier(defaultQualifier);
+                    }
+                    if (name.isBlank() || qualifier.isBlank()
+                            || isNonColumnIdentifier(qualifier)
+                            || isNonColumnIdentifier(name)) {
+                        return null;
+                    }
+                    return new ExpressionColumn(qualifier, name);
+                })
+                .orElse(null);
     }
 
     private String transform(ParseTree expression) {
         TransformFlags flags = new TransformFlags();
         visitTransform(expression, flags);
-        if (flags.caseExpression) {
-            return "CASE_WHEN";
-        }
-        if (flags.cumulative) {
-            return "CUMULATIVE";
-        }
-        if (flags.aggregate) {
-            return "AGGREGATE";
-        }
-        if (flags.window) {
-            return "WINDOW_DERIVED";
-        }
-        if (flags.coalesce) {
-            return "COALESCE";
-        }
-        if (flags.concatFormat) {
-            return "CONCAT_FORMAT";
-        }
-        if (flags.arithmetic) {
-            return "ARITHMETIC";
-        }
-        if (flags.functionCall) {
-            return "FUNCTION_CALL";
-        }
+        if (flags.caseExpression) return "CASE_WHEN";
+        if (flags.cumulative) return "CUMULATIVE";
+        if (flags.aggregate) return "AGGREGATE";
+        if (flags.window) return "WINDOW_DERIVED";
+        if (flags.coalesce) return "COALESCE";
+        if (flags.concatFormat) return "CONCAT_FORMAT";
+        if (flags.arithmetic) return "ARITHMETIC";
+        if (flags.functionCall) return "FUNCTION_CALL";
         return "DIRECT";
     }
 
@@ -524,272 +366,50 @@ public abstract class FullGrammerExpressionAnalyzer {
             flags.concatFormat = true;
             flags.functionCall = true;
         }
-        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)) {
-            classifyFunctionName(firstLeafText(tree), flags);
-        }
-        if (tree instanceof TerminalNode terminal) {
-            String text = terminal.getText();
-            String lower = text.toLowerCase(Locale.ROOT);
-            if (isAggregateFunction(lower) || isWindowFunction(lower) || isCoalesceFunction(lower)
-                    || isConcatOrFormatFunction(lower)) {
-                classifyFunctionName(lower, flags);
-            }
-            if (text.equals("||")) {
-                flags.concatFormat = true;
-            }
-            if (isArithmeticOperator(text)) {
-                flags.arithmetic = true;
-            }
-            if (isCumulativeToken(text, lower)) {
-                flags.cumulative = true;
-            }
-            if (lower.equals("over")) {
-                flags.window = true;
-            }
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            visitTransform(tree.getChild(index), flags);
+        parseTreeAdapter.functionName(tree).ifPresent(name -> classifyFunctionName(name, flags));
+        OperatorSemantic operator = parseTreeAdapter.operatorSemantic(tree);
+        if (operator == OperatorSemantic.ARITHMETIC) flags.arithmetic = true;
+        if (operator == OperatorSemantic.CONCAT_FORMAT) flags.concatFormat = true;
+        if (operator == OperatorSemantic.CUMULATIVE) flags.cumulative = true;
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            visitTransform(child, flags);
         }
     }
 
-    private void classifyFunctionName(String raw, TransformFlags flags) {
-        String name = cleanIdentifier(raw).toLowerCase(Locale.ROOT);
-        if (name.isBlank()) {
-            return;
-        }
+    private void classifyFunctionName(String name, TransformFlags flags) {
         flags.functionCall = true;
-        if (isAggregateFunction(name)) {
-            flags.aggregate = true;
-        } else if (isWindowFunction(name)) {
-            flags.window = true;
-        } else if (isCoalesceFunction(name)) {
-            flags.coalesce = true;
-        } else if (isConcatOrFormatFunction(name)) {
-            flags.concatFormat = true;
-        }
-    }
-
-    private String firstLeafText(ParseTree tree) {
-        if (tree == null) {
-            return "";
-        }
-        if (tree.getChildCount() == 0) {
-            return tree.getText();
-        }
-        return firstLeafText(tree.getChild(0));
-    }
-
-    private boolean isAggregateFunction(String value) {
-        return value.equals("sum")
-                || value.equals("avg")
-                || value.equals("count")
-                || value.equals("min")
-                || value.equals("max");
-    }
-
-    private boolean isCumulativeToken(String text, String lower) {
-        return text.equals(":=");
-    }
-
-    private boolean isWindowFunction(String value) {
-        return value.equals("row_number")
-                || value.equals("rank")
-                || value.equals("dense_rank")
-                || value.equals("ntile")
-                || value.equals("lag")
-                || value.equals("lead");
-    }
-
-    protected boolean isCoalesceFunction(String value) {
-        return value.equals("coalesce");
-    }
-
-    private boolean isConcatOrFormatFunction(String value) {
-        return value.equals("concat")
-                || value.equals("format")
-                || value.equals("to_char")
-                || value.equals("group_concat");
-    }
-
-    private boolean isArithmeticOperator(String value) {
-        return value.equals("+") || value.equals("-") || value.equals("*") || value.equals("/");
+        LineageTransformType transform = isCoalesceFunction(name)
+                ? LineageTransformType.COALESCE
+                : functionRegistry().classify(name);
+        if (transform == LineageTransformType.AGGREGATE) flags.aggregate = true;
+        if (transform == LineageTransformType.WINDOW_DERIVED) flags.window = true;
+        if (transform == LineageTransformType.COALESCE) flags.coalesce = true;
+        if (transform == LineageTransformType.CONCAT_FORMAT) flags.concatFormat = true;
     }
 
     private boolean hasRelationExpressionDisqualifier(ParseTree tree) {
         if (tree == null) {
             return false;
         }
-        if (tree instanceof TerminalNode terminal) {
-            String text = terminal.getText();
-            String clean = cleanIdentifier(text);
-            if (text.startsWith("'") || text.startsWith("$") || isNumericLiteral(text)) {
-                return true;
-            }
-            return isRelationOperator(clean);
-        }
-        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)
+        if (parseTreeAdapter.isNonColumnValue(tree)
+                || parseTreeAdapter.operatorSemantic(tree) != OperatorSemantic.NONE
+                || parseTreeAdapter.functionName(tree).isPresent()
+                || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)
                 || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION)
                 || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)
                 || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.WINDOW_FUNCTION)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (hasRelationExpressionDisqualifier(tree.getChild(index))) {
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            if (hasRelationExpressionDisqualifier(child)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isRelationOperator(String value) {
-        return value.equals("||")
-                || value.equals("+")
-                || value.equals("-")
-                || value.equals("*")
-                || value.equals("/")
-                || value.equals("%")
-                || value.equals("?")
-                || value.equals(":")
-                || value.equals("::");
-    }
-
-    private boolean isNumericLiteral(String text) {
-        if (text == null || text.isBlank()) {
-            return false;
-        }
-        boolean sawDigit = false;
-        boolean sawDot = false;
-        for (int index = 0; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (Character.isDigit(ch)) {
-                sawDigit = true;
-            } else if (ch == '.' && !sawDot) {
-                sawDot = true;
-            } else {
-                return false;
-            }
-        }
-        return sawDigit;
-    }
-
     private FullGrammerExpressionAnalysis emptyAnalysis() {
         return new FullGrammerExpressionAnalysis(List.of(), List.of(), "UNKNOWN_EXPRESSION", "VALUE");
-    }
-
-    public String cleanIdentifier(String value) {
-        if (value == null) {
-            return "";
-        }
-        String clean = value.strip();
-        if (clean.indexOf('.') >= 0) {
-            return splitQualifiedName(clean).stream()
-                    .map(this::cleanIdentifier)
-                    .filter(part -> !part.isBlank())
-                    .collect(java.util.stream.Collectors.joining("."));
-        }
-        while ((clean.startsWith("`") && clean.endsWith("`"))
-                || (clean.startsWith("\"") && clean.endsWith("\""))
-                || (clean.startsWith("[") && clean.endsWith("]"))) {
-            if (clean.length() < 2) {
-                return "";
-            }
-            clean = clean.substring(1, clean.length() - 1);
-        }
-        return clean;
-    }
-
-    private List<String> splitQualifiedName(String text) {
-        java.util.ArrayList<String> parts = new java.util.ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        for (int index = 0; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (ch == '.') {
-                parts.add(current.toString());
-                current.setLength(0);
-            } else {
-                current.append(ch);
-            }
-        }
-        parts.add(current.toString());
-        return parts;
-    }
-
-    private boolean isIdentifier(String text) {
-        return text != null
-                && !text.isBlank()
-                && text.chars().allMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_' || ch == '$');
-    }
-
-    private boolean isLiteralLikeIdentifier(String value) {
-        if (value.isBlank()) {
-            return true;
-        }
-        String normalized = value.toLowerCase(Locale.ROOT);
-        return Character.isDigit(value.charAt(0))
-                || normalized.equals("true")
-                || normalized.equals("false")
-                || normalized.equals("null")
-                || normalized.equals("current_date")
-                || normalized.equals("current_timestamp");
-    }
-
-    public boolean isNonColumnIdentifier(String value) {
-        return nonColumnIdentifiers.contains(cleanIdentifier(value).toLowerCase(Locale.ROOT));
-    }
-
-    private boolean isIgnoredIdentifier(String value) {
-        String token = cleanIdentifier(value).toLowerCase(Locale.ROOT);
-        return token.isBlank()
-                || token.equals("select")
-                || token.equals("distinct")
-                || token.equals("from")
-                || token.equals("set")
-                || token.equals("where")
-                || token.equals("and")
-                || token.equals("or")
-                || token.equals("on")
-                || token.equals("is")
-                || token.equals("like")
-                || token.equals("in")
-                || token.equals("between")
-                || token.equals("exists")
-                || token.equals("join")
-                || token.equals("inner")
-                || token.equals("left")
-                || token.equals("right")
-                || token.equals("full")
-                || token.equals("outer")
-                || token.equals("cross")
-                || token.equals("natural")
-                || token.equals("straight_join")
-                || token.equals("as")
-                || token.equals("using")
-                || token.equals("with")
-                || token.equals("recursive")
-                || token.equals("materialized")
-                || token.equals("not")
-                || token.equals("temporary")
-                || token.equals("temp")
-                || token.equals("table")
-                || token.equals("insert")
-                || token.equals("into")
-                || token.equals("update")
-                || token.equals("delete")
-                || token.equals("merge")
-                || token.equals("do")
-                || token.equals("while")
-                || token.equals("loop")
-                || token.equals("if")
-                || token.equals("values")
-                || token.equals("case")
-                || token.equals("when")
-                || token.equals("then")
-                || token.equals("else")
-                || token.equals("end")
-                || token.equals("over")
-                || token.equals("partition")
-                || token.equals("by")
-                || token.equals("order");
     }
 
     private static final class TransformFlags {

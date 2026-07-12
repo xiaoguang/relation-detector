@@ -95,6 +95,14 @@ class ScanEngineDatabaseDdlSourceTest {
                                 && evidence.sourceType() == EvidenceSourceType.DATABASE_DDL
                                 && evidence.source().equals("SHOW CREATE TABLE")),
                 "SHOW CREATE TABLE evidence should use DATABASE_DDL, not DDL_FILE");
+        assertTrue(relation.evidence().stream().anyMatch(evidence ->
+                        evidence.type() == EvidenceType.SOURCE_INDEX
+                                && "SHOW CREATE TABLE orders".equals(evidence.source())),
+                "unqualified live DDL index should enhance the schema-qualified relationship");
+        assertTrue(relation.evidence().stream().anyMatch(evidence ->
+                        evidence.type() == EvidenceType.TARGET_UNIQUE
+                                && "SHOW CREATE TABLE users".equals(evidence.source())),
+                "unqualified live DDL unique key should enhance the schema-qualified relationship");
     }
 
     private static final class DatabaseDdlAdaptor implements DatabaseAdaptor {
@@ -128,19 +136,24 @@ class ScanEngineDatabaseDdlSourceTest {
             return new com.relationdetector.contracts.spi.AdaptorCollectors(
                     (connection, scope) -> new MetadataSnapshot(),
                     (connection, scope) -> List.of(),
-                    Optional.of((connection, scope) -> List.of(new DatabaseDdlDefinition(
-                            "shop",
-                            "orders",
-                            """
+                    Optional.of((connection, scope) -> List.of(
+                            new DatabaseDdlDefinition("shop", "orders", """
+                                    ALTER TABLE shop.orders
+                                      ADD CONSTRAINT fk_orders_users
+                                      FOREIGN KEY (user_id) REFERENCES shop.users (id)
+                                    """, "SHOW CREATE TABLE"),
+                            new DatabaseDdlDefinition("shop", "orders", """
                                     CREATE TABLE `orders` (
-                                      `id` bigint NOT NULL,
                                       `user_id` bigint NOT NULL,
-                                      KEY `idx_orders_user_id` (`user_id`),
-                                      CONSTRAINT `fk_orders_users`
-                                        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+                                      KEY `idx_orders_user_id` (`user_id`)
                                     ) ENGINE=InnoDB
-                                    """,
-                            "SHOW CREATE TABLE"))),
+                                    """, "SHOW CREATE TABLE orders"),
+                            new DatabaseDdlDefinition("shop", "users", """
+                                    CREATE TABLE `users` (
+                                      `id` bigint NOT NULL,
+                                      PRIMARY KEY (`id`)
+                                    ) ENGINE=InnoDB
+                                    """, "SHOW CREATE TABLE users"))),
                     (file, hint) -> Stream.empty());
         }
 
@@ -149,7 +162,8 @@ class ScanEngineDatabaseDdlSourceTest {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     (statement, context) -> List.of(),
                     Optional.empty(),
-                    Optional.of(new TokenEventStructuredDdlParser(SqlDialect.MYSQL)));
+                    Optional.of(new TokenEventStructuredDdlParser(SqlDialect.MYSQL)),
+                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
         }
 
         @Override

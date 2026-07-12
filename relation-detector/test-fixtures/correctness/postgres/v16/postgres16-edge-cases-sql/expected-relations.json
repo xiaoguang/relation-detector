@@ -3,5 +3,5 @@
     "CO_OCCURRENCE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN,REPEATED_OBSERVATION,SQL_LOG_EXISTS",
     "CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_EXISTS,REPEATED_OBSERVATION,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_SUBQUERY_IN"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

@@ -69,6 +69,9 @@ abstract class MySqlTokenEventExpressionSupport extends MySqlTokenEventVisitorSt
         if (expression instanceof MySqlRelationSqlParser.ColumnExpressionContext columnExpression) {
             List<String> nameParts = parts(columnExpression.qualifiedName());
             if (nameParts.size() == 1) {
+                if (nonColumnIdentifiers.contains(normalize(nameParts.get(0)))) {
+                    return null;
+                }
                 return new ColumnRead(defaultQualifier, nameParts.get(0));
             }
             return new ColumnRead(nameParts.get(nameParts.size() - 2), nameParts.get(nameParts.size() - 1));
@@ -96,7 +99,7 @@ abstract class MySqlTokenEventExpressionSupport extends MySqlTokenEventVisitorSt
             return analyze(paren.expression(), defaultQualifier);
         }
         if (expression instanceof MySqlRelationSqlParser.BinaryExpressionContext binary) {
-            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
+            LineageTransformType transform = binary.arithmeticOperator().CONCAT() != null
                     ? LineageTransformType.CONCAT_FORMAT : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,
                     analyze(binary.expression(0), defaultQualifier),
@@ -149,6 +152,11 @@ abstract class MySqlTokenEventExpressionSupport extends MySqlTokenEventVisitorSt
         }
         if (expression instanceof MySqlRelationSqlParser.IntervalExpressionContext interval) {
             return analyze(interval.expression(), defaultQualifier);
+        }
+        if (expression instanceof MySqlRelationSqlParser.CastExpressionContext cast) {
+            ExpressionAnalysis operand = analyze(cast.expression(), defaultQualifier);
+            return new ExpressionAnalysis(operand.sources(), LineageTransformClassifier.dominant(
+                    LineageTransformType.FUNCTION_CALL, operand.transform()), LineageFlowKind.VALUE);
         }
         if (expression instanceof MySqlRelationSqlParser.ScalarSubqueryExpressionContext scalar) {
             visit(scalar.selectStatement());
@@ -210,7 +218,7 @@ abstract class MySqlTokenEventExpressionSupport extends MySqlTokenEventVisitorSt
             return new ExpressionAnalysis(args.sources(), effective, LineageFlowKind.VALUE);
         }
         if (expression instanceof MySqlRelationSqlParser.BinaryExpressionContext binary) {
-            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
+            LineageTransformType transform = binary.arithmeticOperator().CONCAT() != null
                     ? LineageTransformType.CONCAT_FORMAT : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,
                     selectedValueAnalysis(binary.expression(0), defaultQualifier),
@@ -226,6 +234,11 @@ abstract class MySqlTokenEventExpressionSupport extends MySqlTokenEventVisitorSt
         }
         if (expression instanceof MySqlRelationSqlParser.IntervalExpressionContext interval) {
             return selectedValueAnalysis(interval.expression(), defaultQualifier);
+        }
+        if (expression instanceof MySqlRelationSqlParser.CastExpressionContext cast) {
+            ExpressionAnalysis operand = selectedValueAnalysis(cast.expression(), defaultQualifier);
+            return new ExpressionAnalysis(operand.sources(), LineageTransformClassifier.dominant(
+                    LineageTransformType.FUNCTION_CALL, operand.transform()), LineageFlowKind.VALUE);
         }
         return asValue(analyze(expression, defaultQualifier));
     }

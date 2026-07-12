@@ -28,10 +28,15 @@ statement
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
+    | createViewStatement SEMI?
     | commentStatement SEMI?
     | unknownStatement SEMI?
     | SLASH
     | SEMI
+    ;
+
+createViewStatement
+    : CREATE (OR REPLACE)? MATERIALIZED? VIEW qualifiedName AS selectStatement
     ;
 
 unknownStatement
@@ -43,7 +48,12 @@ routineStartStatement
     ;
 
 routineHeaderToken
-    : ~BEGIN
+    : cursorDeclaration
+    | ~(BEGIN | CURSOR)
+    ;
+
+cursorDeclaration
+    : CURSOR identifier IS selectStatement SEMI
     ;
 
 blockStartStatement
@@ -95,7 +105,15 @@ cteMaterialization
     ;
 
 querySpecification
-    : SELECT DISTINCT? selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    : SELECT selectModifier? selectList intoClause? fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    ;
+
+selectModifier
+    : DISTINCT (ON LPAREN expressionList RPAREN)?
+    ;
+
+intoClause
+    : INTO qualifiedName (COMMA qualifiedName)*
     ;
 
 selectList
@@ -461,6 +479,7 @@ expression
     | MINUS expression                                                    # unaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | EXTRACT LPAREN identifier FROM expression RPAREN                    # extractExpression
+    | CAST LPAREN expression AS identifier RPAREN                         # castExpression
     | functionCall withinGroupClause? windowClause?                       # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | qualifiedName                                                       # columnExpression
@@ -541,8 +560,8 @@ sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
     | USING | GROUP | WITHIN | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
-    | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
-    | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | TRUE | FALSE
+    | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING | CURSOR
+    | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | CAST | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
@@ -623,6 +642,7 @@ DECLARE: D E C L A R E;
 PROCEDURE: P R O C E D U R E;
 FUNCTION: F U N C T I O N;
 TRIGGER: T R I G G E R;
+CURSOR: C U R S O R;
 REPLACE: R E P L A C E;
 FOR: F O R;
 ADD: A D D;
@@ -638,6 +658,7 @@ ONLY: O N L Y;
 INCLUDE: I N C L U D E;
 TABLESPACE: T A B L E S P A C E;
 MATERIALIZED: M A T E R I A L I Z E D;
+VIEW: V I E W;
 ROWS: R O W S;
 TABLESAMPLE: T A B L E S A M P L E;
 LATERAL: L A T E R A L;
@@ -650,6 +671,7 @@ ELSE: E L S E;
 END: E N D;
 DISTINCT: D I S T I N C T;
 EXTRACT: E X T R A C T;
+CAST: C A S T;
 TRUE: T R U E;
 FALSE: F A L S E;
 NULL: N U L L;

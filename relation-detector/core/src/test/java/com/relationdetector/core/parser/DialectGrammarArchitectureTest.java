@@ -244,7 +244,6 @@ class DialectGrammarArchitectureTest {
         Path root = repoRoot();
         Set<Path> allowed = Set.of(
                 Path.of("core/src/main/java/com/relationdetector/core/fullgrammer/SqlGrammarProfileRegistry.java"),
-                Path.of("core/src/main/java/com/relationdetector/core/log/SqlLogNoiseFilter.java"),
                 Path.of("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java"),
                 Path.of("cli/src/main/java/com/relationdetector/cli/BatchManifestLoader.java"));
         try (Stream<Path> stream = Files.walk(root)) {
@@ -265,6 +264,160 @@ class DialectGrammarArchitectureTest {
             assertFalse(text.contains("new RelationshipCandidate") || text.contains("DataLineageCandidate")
                             || text.contains("StructuredSqlEvent"),
                     "Regex allowlist file must not create relationship/lineage/structured events: " + path);
+        }
+    }
+
+    @Test
+    void factExtractionDoesNotResolveGrammarRulesByNameOrReflection() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(this::isFactExtractionPath)
+                    .filter(path -> containsAny(path, List.of(
+                            "getRuleNames(",
+                            "getMethod(methodName)",
+                            "getDeclaredMethod(methodName)")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Fact extraction must use typed generated contexts, not grammar rule names or reflection, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void coreFullGrammerSemanticsDoNotInspectTerminalText() throws IOException {
+        Path root = repoRoot();
+        Path packageRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer");
+        List<String> semanticFiles = List.of(
+                "FullGrammerExpressionAnalyzer.java",
+                "DirectColumnTraceSupport.java",
+                "SubqueryProjectionTraceSupport.java",
+                "PredicateEventSink.java",
+                "SourceLocationSupport.java");
+
+        List<Path> offenders = semanticFiles.stream()
+                .map(packageRoot::resolve)
+                .filter(path -> containsAny(path, List.of(
+                        "TerminalNode",
+                        ".getText()",
+                        "Set.of(\"select\"",
+                        "directKeywordIndex(")))
+                .map(root::relativize)
+                .toList();
+
+        assertTrue(offenders.isEmpty(),
+                "Core full-grammer semantics must consume typed adapter views, not terminal text, offenders="
+                        + offenders);
+    }
+
+    @Test
+    void fullGrammerCollectorsTraverseOnlyTypedAdapterChildren() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> !path.getFileName().toString().contains("ParseTreeAdapter"))
+                    .filter(path -> containsAny(path, List.of(".getChild(", "getChildCount(")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Full-grammer collectors must recurse through adapter.typedChildren(), offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void factExtractionDoesNotUseStringRegexApis() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(this::isFactExtractionPath)
+                    .filter(path -> containsAny(path, List.of(
+                            "java.util.regex",
+                            "Pattern.compile(",
+                            ".replaceAll(\"",
+                            ".replaceFirst(\"",
+                            ".split(\"\\\\")))
+                    .filter(path -> !path.endsWith(Path.of(
+                            "core/fullgrammer/SqlGrammarProfileRegistry.java")))
+                    .filter(path -> !path.endsWith(Path.of(
+                            "postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Fact extraction must not infer structure with String regex APIs, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void dialectScriptParsersAreTheOnlySqlFileFramingPath() {
+        Path root = repoRoot();
+        assertFalse(Files.exists(root.resolve(
+                        "core/src/main/java/com/relationdetector/core/log/PlainSqlLogExtractor.java")),
+                "Plain SQL framing must go through DialectScriptParser");
+        assertFalse(Files.exists(root.resolve(
+                        "core/src/main/java/com/relationdetector/core/log/ObjectSqlFileExtractor.java")),
+                "Object framing must go through DialectScriptParser");
+        assertFalse(Files.exists(root.resolve(
+                        "adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/MySqlFullGrammerSqlNormalizer.java")),
+                "MySQL client directives must be removed by the script parser before parser selection");
+    }
+
+    @Test
+    void ddlFilesAreFramedByTheDialectScriptParserBeforeDdlGrammar() throws IOException {
+        Path root = repoRoot();
+        String pipeline = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/SourceCollectorPipeline.java"));
+        String ddlRunner = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/parser/DdlRelationParserRunner.java"));
+        String execution = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java"));
+
+        assertTrue(pipeline.contains("StatementSourceType.DDL_FILE")
+                        && pipeline.contains("ctx.adaptor.parsers().scripts()"),
+                "DDL files must use the selected adaptor script parser");
+        assertFalse(pipeline.contains("statementParser.executeDdlFile("),
+                "Production DDL file collection must not bypass dialect script framing");
+        assertFalse(ddlRunner.contains("Files.readString") || execution.contains("executeDdlFile("),
+                "Core must not expose a direct DDL-file-to-grammar bypass");
+    }
+
+    @Test
+    void nativeLogNoiseClassificationRunsAfterStructuredParsing() throws IOException {
+        Path root = repoRoot();
+        Path runner = root.resolve("core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java");
+        String runnerText = Files.readString(runner);
+
+        assertFalse(runnerText.contains("SqlLogNoiseFilter"),
+                "Raw SQL text must not be filtered before structured parsing");
+        assertTrue(Files.exists(root.resolve(
+                        "core/src/main/java/com/relationdetector/core/log/TypedLogNoiseClassifier.java")),
+                "Native log noise must be classified from typed ROWSET_REFERENCE events");
+    }
+
+    @Test
+    void nativeLogExtractorsDoNotFilterSqlByKeywordText() throws IOException {
+        Path root = repoRoot();
+        for (String extractor : List.of(
+                "adaptor-mysql/src/main/java/com/relationdetector/mysql/log/MySqlLogExtractor.java",
+                "adaptor-postgres/src/main/java/com/relationdetector/postgres/log/PostgresLogExtractor.java",
+                "adaptor-oracle/src/main/java/com/relationdetector/oracle/log/OracleLogExtractor.java",
+                "adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/log/SqlServerLogExtractor.java")) {
+            String text = Files.readString(root.resolve(extractor)).toLowerCase(Locale.ROOT);
+            assertFalse(text.contains("contains(\"select\")") || text.contains("contains(\"join\")")
+                            || text.contains("endswith(\";\")"),
+                    extractor + " must extract log payloads and delegate SQL framing/classification to typed parsers");
+            assertTrue(text.contains("scriptparser") || text.contains("scriptfileextractor"),
+                    extractor + " must delegate payload framing to the dialect script parser");
         }
     }
 
@@ -369,7 +522,7 @@ class DialectGrammarArchitectureTest {
     @Test
     void namingMatchEnhancerConsumesOnlyTopLevelNamingEvidencePool() throws IOException {
         Path root = repoRoot();
-        Path enhancer = root.resolve("core/src/main/java/com/relationdetector/core/relation/NamingMatchEvidenceEnhancer.java");
+        Path enhancer = root.resolve("core/src/main/java/com/relationdetector/core/naming/NamingMatchEvidenceEnhancer.java");
         String text = Files.readString(enhancer);
 
         assertTrue(text.contains("NamingEvidencePool namingEvidence"),
@@ -399,12 +552,35 @@ class DialectGrammarArchitectureTest {
                     .filter(path -> containsAny(path, List.of("new NamingRuleEngine", "namingRuleEngine.match")))
                     .map(root::relativize)
                     .filter(path -> !path.equals(Path.of(
-                            "core/src/main/java/com/relationdetector/core/relation/NamingEvidenceExtractor.java")))
+                            "core/src/main/java/com/relationdetector/core/naming/NamingEvidenceExtractor.java")))
                     .toList();
 
             assertTrue(offenders.isEmpty(),
                     "Only NamingEvidenceExtractor may execute naming rules; relationships consume the evidence pool, offenders="
                             + offenders);
+        }
+    }
+
+    @Test
+    void namingHeuristicsLiveOnlyInCoreNamingPackage() throws IOException {
+        Path root = repoRoot();
+        Path namingRoot = root.resolve("core/src/main/java/com/relationdetector/core/naming");
+        assertTrue(Files.exists(namingRoot.resolve("NamingRuleEngine.java")),
+                "Naming rules must have an explicit package boundary");
+
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> !path.startsWith(namingRoot))
+                    .filter(path -> containsAny(path, List.of(
+                            "singularStem(",
+                            "endsWith(\"_id\")")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Suffix/plural naming heuristics may run only inside core.naming, offenders=" + offenders);
         }
     }
 
@@ -492,7 +668,7 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void databaseAdaptorV2ExposesOnlyGroupedCapabilities() throws IOException {
+    void databaseAdaptorV3ExposesOnlyGroupedCapabilitiesAndScriptParsing() throws IOException {
         Path root = repoRoot();
         String adaptor = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/DatabaseAdaptor.java"));
@@ -500,6 +676,10 @@ class DialectGrammarArchitectureTest {
         assertTrue(adaptor.contains("AdaptorCollectors collectors()"));
         assertTrue(adaptor.contains("AdaptorParsers parsers()"));
         assertTrue(adaptor.contains("AdaptorProfiling profiling()"));
+        String parsers = Files.readString(root.resolve(
+                "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorParsers.java"));
+        assertTrue(parsers.contains("DialectScriptParser scripts"),
+                "SPI v3 parser capabilities must include dialect script framing");
         for (String legacyGetter : List.of(
                 "MetadataCollector metadataCollector()",
                 "ObjectDefinitionCollector objectDefinitionCollector()",
@@ -511,12 +691,12 @@ class DialectGrammarArchitectureTest {
                 "DataProfiler dataProfiler()",
                 "EvidenceWeightAdjuster evidenceWeightAdjuster()")) {
             assertFalse(adaptor.contains(legacyGetter),
-                    "SPI v2 must not restore legacy getter: " + legacyGetter);
+                    "SPI v3 must not restore legacy getter: " + legacyGetter);
         }
 
         String version = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorApiVersion.java"));
-        assertTrue(version.contains("CURRENT = 2"), "adaptor SPI must remain on v2");
+        assertTrue(version.contains("CURRENT = 3"), "adaptor SPI must expose dialect script parsing as v3");
     }
 
     @Test
@@ -626,7 +806,7 @@ class DialectGrammarArchitectureTest {
         for (String merger : List.of(
                 "core/src/main/java/com/relationdetector/core/relation/RelationshipMerger.java",
                 "core/src/main/java/com/relationdetector/core/lineage/DataLineageMerger.java",
-                "core/src/main/java/com/relationdetector/core/relation/NamingEvidenceMerger.java")) {
+                "core/src/main/java/com/relationdetector/core/naming/NamingEvidenceMerger.java")) {
             String text = Files.readString(root.resolve(merger));
             assertTrue(text.contains("EvidenceObservationAggregator"),
                     merger + " must use the common observation aggregation engine");
@@ -670,6 +850,28 @@ class DialectGrammarArchitectureTest {
 
             assertTrue(offenders.isEmpty(),
                     "Core token-event structure checks must use typed predicates, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void tokenEventAndRoutineSemanticsDoNotReconstructStructureFromTerminalText() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/tokenevent/")
+                            || path.toString().contains("/routine/"))
+                    .filter(path -> containsAny(path, List.of(
+                            "collectLeafText(",
+                            "join.joinType().getText()",
+                            "joinType.getText()")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Token-event/routine facts must use typed contexts, not terminal or join-keyword text, offenders="
+                            + offenders);
         }
     }
 
@@ -925,6 +1127,34 @@ class DialectGrammarArchitectureTest {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + path, e);
         }
+    }
+
+    private boolean isFactExtractionPath(Path path) {
+        String value = path.toString();
+        return value.contains("/core/src/main/java/com/relationdetector/core/relation/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/naming/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/lineage/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/derived/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/metadata/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/profile/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/fullgrammer/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/tokenevent/")
+                || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/")
+                || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/tokenevent/")
+                || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/routine/")
+                || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/ddl/")
+                || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/")
+                || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/tokenevent/")
+                || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/routine/")
+                || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/ddl/")
+                || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/")
+                || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent/")
+                || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/routine/")
+                || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/ddl/")
+                || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/")
+                || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/tokenevent/")
+                || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/routine/")
+                || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/ddl/");
     }
 
     private static boolean isThinOracleVersionVisitor(Path path) {

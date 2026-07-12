@@ -1,6 +1,5 @@
 package com.relationdetector.core.scan;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -17,6 +16,7 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
+import com.relationdetector.core.identity.NamespaceContext;
 
 final class StatementParsePipeline {
     private final StatementExecutionService statementExecutionService = new StatementExecutionService();
@@ -31,28 +31,34 @@ final class StatementParsePipeline {
         return parserBundle(adaptor, config, context, scanContext);
     }
 
-    StatementExecutionOutcome executeDdlFile(
+    StatementExecutionOutcome executeDdlStatements(
             ParserBundle parserBundle,
+            DatabaseAdaptor adaptor,
             ScanConfig config,
-            Path file,
+            List<SqlStatementRecord> statements,
             AdaptorContext context
     ) {
-        return statementExecutionService.executeDdlFile(parserBundle, file, context, config);
+        return statementExecutionService.executeDdlStatements(
+                parserBundle, statements, EvidenceSourceType.DDL_FILE, context, config,
+                adaptor.identifierRules(), namespace(context, null));
     }
 
     StatementExecutionOutcome executeDatabaseDdl(
             ParserBundle parserBundle,
+            DatabaseAdaptor adaptor,
             ScanConfig config,
             DatabaseDdlDefinition definition,
             AdaptorContext context
     ) {
         StatementExecutionOutcome outcome = statementExecutionService.executeDdlText(
-                parserBundle, definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context, config);
+                parserBundle, definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context, config,
+                adaptor.identifierRules(), namespace(context, definition.schema()));
         return new StatementExecutionOutcome(
                 qualifyDatabaseDdlCandidates(outcome.relationshipCandidates(), definition.schema()),
                 outcome.lineageCandidates(),
                 outcome.namingEvidence(),
-                outcome.warnings());
+                outcome.warnings(),
+                outcome.ddlEvidenceInventory());
     }
 
     StatementExecutionOutcome executeStatement(
@@ -126,5 +132,12 @@ final class StatementParsePipeline {
         ColumnRef column = endpoint.column();
         return Endpoint.column(new ColumnRef(table, column.columnName(), column.normalizedName(),
                 column.dataType(), column.nullable()));
+    }
+
+    private NamespaceContext namespace(AdaptorContext context, String schemaOverride) {
+        String catalog = context == null || context.scope() == null ? "" : context.scope().catalog();
+        String scopeSchema = context == null || context.scope() == null ? "" : context.scope().schema();
+        String schema = schemaOverride == null || schemaOverride.isBlank() ? scopeSchema : schemaOverride;
+        return new NamespaceContext(catalog, schema, List.of());
     }
 }

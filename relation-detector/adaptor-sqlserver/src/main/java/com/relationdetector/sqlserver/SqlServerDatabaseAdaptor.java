@@ -16,17 +16,20 @@ import com.relationdetector.sqlserver.log.SqlServerLogExtractor;
 import com.relationdetector.sqlserver.metadata.SqlServerMetadataCollector;
 import com.relationdetector.sqlserver.objects.SqlServerObjectCollector;
 import com.relationdetector.sqlserver.profile.SqlServerDataProfiler;
+import com.relationdetector.sqlserver.script.SqlServerScriptParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public SqlServerDatabaseAdaptor() {
-        this(new SqlServerTokenEventStructuredSqlParser(), new SqlServerTokenEventStructuredDdlParser());
+        this(new SqlServerTokenEventStructuredSqlParser(), new SqlServerTokenEventStructuredDdlParser(),
+                new SqlServerScriptParser());
     }
 
     private SqlServerDatabaseAdaptor(
             SqlServerTokenEventStructuredSqlParser structuredSqlParser,
-            SqlServerTokenEventStructuredDdlParser structuredDdlParser
+            SqlServerTokenEventStructuredDdlParser structuredDdlParser,
+            SqlServerScriptParser scriptParser
     ) {
         super(
                 "sqlserver",
@@ -44,11 +47,12 @@ public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new SqlServerMetadataCollector(),
                         new SqlServerObjectCollector(),
                         Optional.of(new SqlServerDatabaseDdlCollector()),
-                        new SqlServerLogExtractor()),
+                        new SqlServerLogExtractor(scriptParser)),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
-                        Optional.of(structuredDdlParser)),
+                        Optional.of(structuredDdlParser),
+                        scriptParser),
                 new AdaptorProfiling(Optional.of(new SqlServerDataProfiler()), (evidence, context) -> evidence));
     }
 

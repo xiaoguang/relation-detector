@@ -10,7 +10,7 @@
     "VALUE:DIRECT:sales_orders.id->sales_commissions.order_id",
     "VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

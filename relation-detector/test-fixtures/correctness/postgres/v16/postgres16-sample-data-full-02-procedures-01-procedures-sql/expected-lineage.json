@@ -8,7 +8,7 @@
     "VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id",
     "VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

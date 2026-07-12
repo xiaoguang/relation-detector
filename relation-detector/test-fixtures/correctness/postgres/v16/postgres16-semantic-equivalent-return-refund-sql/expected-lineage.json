@@ -7,7 +7,7 @@
     "VALUE:DIRECT:sales_returns.id->refund_records.return_id",
     "VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

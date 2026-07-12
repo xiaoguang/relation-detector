@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ class TokenEventRelationExtractorIndependenceTest {
         assertEquals("orders.user_id", relation.source().displayName());
         assertEquals("users.id", relation.target().displayName());
         assertEquals(EvidenceType.SQL_LOG_JOIN, relation.evidence().get(0).type());
-        assertTrue(relation.evidence().get(0).detail().contains("token-event"));
+        assertEquals("typed column equality", relation.evidence().get(0).detail());
     }
 
     @Test
@@ -87,6 +88,39 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
+    void ambientPredicateCopiedAcrossScopesProducesOneObservation() {
+        SqlStatementRecord statement = record("SELECT 1");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "orders", "o", 4),
+                table("JOIN", "users", "u", 4),
+                equality("o", "user_id", "u", "id", 4),
+                scopedTable("FROM", "audit_log", "a", 8, "scope-1"),
+                scopedTable("FROM", "order_items", "i", 12, "scope-2")
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertEquals(1, relations.size(),
+                () -> "An ambient predicate copied into multiple scopes is still one SQL observation: " + relations);
+    }
+
+    @Test
+    void sameEndpointAtDifferentSourceLinesKeepsBothObservations() {
+        SqlStatementRecord statement = record("SELECT 1");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "orders", "o", 4),
+                table("JOIN", "users", "u", 4),
+                equality("o", "user_id", "u", "id", 4),
+                equality("o", "user_id", "u", "id", 9)
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertEquals(2, relations.size(),
+                () -> "Equal endpoint facts observed at distinct SQL positions must remain separately auditable: " + relations);
+    }
+
+    @Test
     void sqlOnlyIdShapeDoesNotInferFkDirection() {
         SqlStatementRecord statement = record("SELECT * FROM invoices i JOIN accounts a ON i.account_id = a.id");
         StructuredParseResult structured = structured(List.of(
@@ -103,6 +137,23 @@ class TokenEventRelationExtractorIndependenceTest {
         assertEquals(EvidenceType.SQL_LOG_JOIN, relation.evidence().get(0).type());
         assertEquals("accounts.id", relation.source().displayName());
         assertEquals("invoices.account_id", relation.target().displayName());
+    }
+
+    @Test
+    void nonDirectionalOutputOrderDoesNotDependOnDialectCaseFolding() {
+        SqlStatementRecord statement = record("SELECT * FROM employees e JOIN employee_salary_log esl ON e.id = esl.approved_by");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "employees", "e", 1),
+                table("JOIN", "employee_salary_log", "esl", 1),
+                equality("e", "id", "esl", "approved_by", 1)
+        ));
+
+        RelationshipCandidate relation = new TokenEventRelationExtractor(
+                value -> value == null ? "" : value.toUpperCase(Locale.ROOT))
+                .extract(statement, structured).get(0);
+
+        assertEquals("employee_salary_log.approved_by", relation.source().displayName());
+        assertEquals("employees.id", relation.target().displayName());
     }
 
     @Test
@@ -286,6 +337,20 @@ class TokenEventRelationExtractorIndependenceTest {
 
     private StructuredSqlEvent table(String keyword, String table, String alias, long line) {
         return new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(line),
+                keyword, table, table, alias, "", "", "");
+    }
+
+    private StructuredSqlEvent scopedTable(
+            String keyword,
+            String table,
+            String alias,
+            long line,
+            String statementScope
+    ) {
+        SourceProvenance provenance = new SourceProvenance(
+                "independence.sql", line, statementScope, "", "", "", "", "",
+                false, false, "");
+        return new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance,
                 keyword, table, table, alias, "", "", "");
     }
 

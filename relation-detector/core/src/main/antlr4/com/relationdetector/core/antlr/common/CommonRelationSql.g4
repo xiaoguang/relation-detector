@@ -27,8 +27,13 @@ statement
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
+    | createViewStatement SEMI?
     | unknownStatement SEMI?
     | SEMI
+    ;
+
+createViewStatement
+    : CREATE (OR REPLACE)? MATERIALIZED? VIEW qualifiedName AS selectStatement
     ;
 
 unknownStatement
@@ -442,7 +447,7 @@ sqlToken
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | ATOMIC
     | IF | ELSEIF | WHILE | DO | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION
-    | TRIGGER | REPLACE | FOR | ADD | CONSTRAINT
+    | TRIGGER | REPLACE | MATERIALIZED | VIEW | FOR | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | PLUS
@@ -498,6 +503,8 @@ PROCEDURE: P R O C E D U R E;
 FUNCTION: F U N C T I O N;
 TRIGGER: T R I G G E R;
 REPLACE: R E P L A C E;
+MATERIALIZED: M A T E R I A L I Z E D;
+VIEW: V I E W;
 FOR: F O R;
 ADD: A D D;
 CONSTRAINT: C O N S T R A I N T;

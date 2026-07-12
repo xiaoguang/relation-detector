@@ -252,6 +252,8 @@ final class DerivedPathGraphBuilder {
             attributes.put("namingRule", DerivedNamingInference.TRANSITIVE_NAMING_RULE);
             attributes.put("suggestedSourceEndpoint", outputPath.get(0).normalizedKey());
             attributes.put("suggestedTargetEndpoint", outputPath.get(outputPath.size() - 1).normalizedKey());
+            attributes.put("suggestedSourceEndpointKey", outputPath.get(0).normalizedKey());
+            attributes.put("suggestedTargetEndpointKey", outputPath.get(outputPath.size() - 1).normalizedKey());
             attributes.put("directionHint", true);
         }
         return new Evidence(

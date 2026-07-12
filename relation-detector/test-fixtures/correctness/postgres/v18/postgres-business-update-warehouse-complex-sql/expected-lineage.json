@@ -8,6 +8,6 @@
     "p_max_limit_cap",
     "CURRENT_TIMESTAMP"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

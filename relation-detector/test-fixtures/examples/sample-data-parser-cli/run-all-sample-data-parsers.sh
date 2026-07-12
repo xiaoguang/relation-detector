@@ -493,8 +493,12 @@ derived_summary_path.write_text(
 )
 PY
 
+bash "$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/audit-semantic-observations.sh" \
+  "$RESULT_DIR" "$OUT_DIR/observation-parity.tsv" "$REQUESTED_CASES_CSV"
+
 echo
 echo "Summary: $OUT_DIR/summary.tsv"
 echo "Summary with derived: $OUT_DIR/summary-with-derived.tsv"
 echo "Warnings: $OUT_DIR/warning-codes.tsv"
+echo "Observation parity: $OUT_DIR/observation-parity.tsv"
 echo "Results: $RESULT_DIR"

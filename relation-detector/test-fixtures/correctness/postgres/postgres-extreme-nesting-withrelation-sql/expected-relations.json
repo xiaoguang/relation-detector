@@ -5,5 +5,5 @@
     "FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
     "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

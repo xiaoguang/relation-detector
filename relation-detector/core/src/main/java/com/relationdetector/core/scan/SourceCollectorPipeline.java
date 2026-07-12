@@ -18,13 +18,12 @@ import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.log.ObjectSqlFileExtractor;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.parser.ParserBundle;
+import com.relationdetector.core.script.ScriptFileExtractor;
 
 final class SourceCollectorPipeline {
-    private final PlainSqlLogExtractor plainExtractor = new PlainSqlLogExtractor();
-    private final ObjectSqlFileExtractor objectExtractor = new ObjectSqlFileExtractor();
+    private final ScriptFileExtractor scriptFileExtractor = new ScriptFileExtractor();
+    private final StatementDispatchService statementDispatch = new StatementDispatchService();
     private final StatementParsePipeline statementParser;
 
     SourceCollectorPipeline(StatementParsePipeline statementParser) {
@@ -45,7 +44,8 @@ final class SourceCollectorPipeline {
             ParserBundle parserBundle = parserBundle(ctx);
             execute(ctx, collectDatabaseDdl(connection, ctx).stream()
                     .map(definition -> new ParseTask(
-                            context -> statementParser.executeDatabaseDdl(parserBundle, ctx.parserConfig, definition, context),
+                            context -> statementParser.executeDatabaseDdl(
+                                    parserBundle, ctx.adaptor, ctx.parserConfig, definition, context),
                             error -> DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), error)))
                     .toList());
         }
@@ -72,11 +72,28 @@ final class SourceCollectorPipeline {
         if (sources.ddlEnabled()) {
             ctx.result.sources().add("ddl");
             ParserBundle parserBundle = parserBundle(ctx);
-            execute(ctx, sources.ddlFiles().stream()
-                    .map(file -> new ParseTask(
-                            context -> statementParser.executeDdlFile(parserBundle, ctx.parserConfig, file, context),
-                            error -> DiagnosticWarnings.ddlParseFailed(file, error)))
-                    .toList());
+            Set<TableId> fileKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
+            List<ParseTask> tasks = new ArrayList<>();
+            for (Path file : sources.ddlFiles()) {
+                List<SqlStatementRecord> statements = scriptFileExtractor.extract(
+                                file, StatementSourceType.DDL_FILE, ctx.adaptor.parsers().scripts(),
+                                ctx.result.warnings()::add)
+                        .toList();
+                StatementDispatchService.DdlFileDispatch dispatch = statementDispatch.dispatchDdlFile(statements);
+                if (!dispatch.ddlStatements().isEmpty()) {
+                    tasks.add(new ParseTask(
+                            context -> statementParser.executeDdlStatements(
+                                    parserBundle, ctx.adaptor, ctx.parserConfig, dispatch.ddlStatements(), context),
+                            error -> DiagnosticWarnings.ddlParseFailed(file, error)));
+                }
+                for (SqlStatementRecord query : dispatch.queryStatements()) {
+                    tasks.add(new ParseTask(
+                            context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
+                                    query, context, fileKnownPhysicalTables),
+                            error -> DiagnosticWarnings.sqlParseFailed(query, error)));
+                }
+            }
+            execute(ctx, tasks);
         }
 
         if (sources.objectsEnabled()) {
@@ -85,7 +102,7 @@ final class SourceCollectorPipeline {
             ParserBundle parserBundle = parserBundle(ctx);
             List<ParseTask> tasks = new ArrayList<>();
             for (Path file : sources.objectFiles()) {
-                objectExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.config.database().databaseType(),
+                scriptFileExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.adaptor.parsers().scripts(),
                                 ctx.result.warnings()::add)
                         .forEach(statement -> tasks.add(new ParseTask(
                                 context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
@@ -148,6 +165,7 @@ final class SourceCollectorPipeline {
         ctx.relationshipCandidates.addAll(outcome.relationshipCandidates());
         ctx.lineageCandidates.addAll(outcome.lineageCandidates());
         ctx.namingEvidencePool.addAll(outcome.namingEvidence());
+        ctx.ddlEvidenceInventory.merge(outcome.ddlEvidenceInventory());
         ctx.result.warnings().addAll(outcome.warnings());
         ctx.result.warnings().addAll(result.warnings());
     }
@@ -185,12 +203,13 @@ final class SourceCollectorPipeline {
     }
 
     private SqlStatementRecord objectStatement(DatabaseObjectDefinition definition) {
+        long lineCount = Math.max(1L, definition.sql().lines().count());
         return new SqlStatementRecord(
                 definition.sql(),
                 objectSourceType(definition.type()),
                 objectSourceName(definition),
-                0,
-                0,
+                1,
+                lineCount,
                 objectAttributes(definition));
     }
 

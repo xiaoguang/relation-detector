@@ -6,9 +6,11 @@ import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.metadata.MetadataEvidenceEnhancer;
-import com.relationdetector.core.relation.NamingEvidenceExtractor;
-import com.relationdetector.core.relation.NamingEvidencePool;
-import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.naming.NamingEvidenceExtractor;
+import com.relationdetector.core.naming.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
  * Scan-level evidence enhancement shared by production scans and correctness.
@@ -37,9 +39,23 @@ public final class EvidenceEnhancementService {
             MetadataSnapshot metadataSnapshot,
             ScanConfig config
     ) {
+        enhance(relationshipCandidates, namingEvidencePool, metadataSnapshot, config,
+                value -> value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT),
+                NamespaceContext.empty());
+    }
+
+    public void enhance(
+            List<RelationshipCandidate> relationshipCandidates,
+            NamingEvidencePool namingEvidencePool,
+            MetadataSnapshot metadataSnapshot,
+            ScanConfig config,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
         if (metadataSnapshot != null) {
             namingEvidencePool.addAll(namingEvidenceExtractor.extractFromMetadata(metadataSnapshot, config));
-            metadataEvidenceEnhancer.enhance(relationshipCandidates, metadataSnapshot);
+            metadataEvidenceEnhancer.enhance(
+                    relationshipCandidates, metadataSnapshot, identifierRules, namespace);
         }
         namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(relationshipCandidates,
                 config));

@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty",
     "CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty",
     "CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty",
     "CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty",
@@ -7,6 +8,7 @@
     "VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity",
     "VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty",
     "VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty",
+    "VALUE:DIRECT:employees.name->cashier_journals.counterparty",
     "VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id",
     "VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id",
     "VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change"

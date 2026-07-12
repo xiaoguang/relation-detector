@@ -12,7 +12,7 @@
     "VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price",
     "VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

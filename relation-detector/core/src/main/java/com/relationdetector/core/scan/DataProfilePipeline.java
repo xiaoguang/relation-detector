@@ -9,6 +9,7 @@ import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.core.profile.DataProfileCandidateGenerator;
+import com.relationdetector.core.identity.NamespaceContext;
 
 final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
@@ -25,7 +26,9 @@ final class DataProfilePipeline {
                     ctx.relationshipCandidates,
                     ctx.metadataSnapshot,
                     ctx.namingEvidencePool.merged(),
-                    evidenceConfig.dataProfileOptions());
+                    evidenceConfig.dataProfileOptions(),
+                    ctx.adaptor.identifierRules(),
+                    new NamespaceContext(ctx.scope.catalog(), ctx.scope.schema(), List.of()));
             for (RelationshipCandidate candidate : selected) {
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
                 List<Evidence> evidence = profiler.profile(connection,

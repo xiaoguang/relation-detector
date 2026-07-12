@@ -29,7 +29,6 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.log.SqlLogNoiseFilter;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 
 /**
@@ -429,9 +428,6 @@ public final class PostgresBasicCorrectnessFixtureExporter {
                     1,
                     sample.sql().lines().count(),
                     Map.of());
-            if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
-                continue;
-            }
             relationCount += runner.parse(adaptor, config, statement, context).size();
         }
         Map<String, Object> json = new LinkedHashMap<>();

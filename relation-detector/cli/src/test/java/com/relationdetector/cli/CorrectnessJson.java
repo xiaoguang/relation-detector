@@ -3,6 +3,9 @@ package com.relationdetector.cli;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.Separators;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +13,11 @@ import java.util.Map;
 final class CorrectnessJson {
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    private static final ObjectWriter WRITER = JSON.writerWithDefaultPrettyPrinter();
+    private static final DefaultPrettyPrinter PRETTY_PRINTER = new DefaultPrettyPrinter(
+            Separators.createDefaultInstance()
+                    .withObjectFieldValueSpacing(Separators.Spacing.AFTER))
+            .withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
+    private static final ObjectWriter WRITER = JSON.writer(PRETTY_PRINTER);
 
     private CorrectnessJson() {
     }

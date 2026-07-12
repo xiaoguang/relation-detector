@@ -135,7 +135,9 @@ final class DerivedRelationshipInference {
                             "namingRule", DerivedNamingInference.TRANSITIVE_NAMING_RULE,
                             "directionHint", true,
                             "suggestedSourceEndpoint", namingEvidence.source().normalizedKey(),
-                            "suggestedTargetEndpoint", namingEvidence.target().normalizedKey())));
+                            "suggestedTargetEndpoint", namingEvidence.target().normalizedKey(),
+                            "suggestedSourceEndpointKey", namingEvidence.source().normalizedKey(),
+                            "suggestedTargetEndpointKey", namingEvidence.target().normalizedKey())));
         }
         return candidate;
     }

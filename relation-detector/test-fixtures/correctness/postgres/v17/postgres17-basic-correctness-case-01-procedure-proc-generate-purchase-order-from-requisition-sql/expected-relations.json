@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:jsh_depot_head.id->jsh_depot_item.header_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:jsh_depot_head.id->jsh_depot_item.header_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

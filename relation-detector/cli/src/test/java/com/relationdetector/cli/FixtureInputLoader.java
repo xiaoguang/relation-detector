@@ -3,8 +3,9 @@ package com.relationdetector.cli;
 import java.util.List;
 
 import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
+import com.relationdetector.contracts.spi.DialectScriptParser;
 
 final class FixtureInputLoader {
     private final TestAssetCatalog assets;
@@ -29,19 +30,25 @@ final class FixtureInputLoader {
     List<SqlStatementRecord> sqlStatements(
             CorrectnessFixture fixture,
             String input,
-            List<WarningMessage> warnings
+            List<WarningMessage> warnings,
+            DialectScriptParser scriptParser
     ) {
-        if ("OBJECT_BLOCKS".equalsIgnoreCase(fixture.statementFormat())) {
-            return ObjectBlockStatementSplitter.parse(
-                    input,
-                    fixture.sourceType(),
-                    fixture.inputFile().toString(),
-                    fixture.databaseType(),
-                    fixture.objectSourceFilter());
+        var parsed = scriptParser.parse(new ScriptParseRequest(
+                input, fixture.inputFile().toString(), fixture.sourceType()));
+        warnings.addAll(parsed.warnings());
+        String filter = fixture.objectSourceFilter() == null ? "" : fixture.objectSourceFilter().trim();
+        if (filter.isBlank()) {
+            return parsed.statements();
         }
-        return new PlainSqlLogExtractor()
-                .extract(input, fixture.inputFile(), fixture.sourceType())
+        List<SqlStatementRecord> filtered = parsed.statements().stream()
+                .filter(statement -> filter.equals(statement.sourceName())
+                        || filter.equals(statement.attributes().get("sourceBlockId")))
                 .toList();
+        if (filtered.isEmpty()) {
+            throw new IllegalArgumentException("No script statement matched objectSourceFilter "
+                    + filter + " in " + fixture.inputFile());
+        }
+        return filtered;
     }
 
     private ExpectedRelations expectedRelations(CorrectnessFixture fixture) throws Exception {

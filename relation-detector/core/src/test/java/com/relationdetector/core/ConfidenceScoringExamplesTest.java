@@ -211,7 +211,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example9ViewJoinWithTargetUniqueScoresAs06310() {
+    void example9ViewJoinWithTargetUniqueScoresAs07704() {
         String sql = """
                 SELECT
                   o.id AS order_id,
@@ -226,7 +226,7 @@ class ConfidenceScoringExamplesTest {
         addEvidence(relation, EvidenceType.TARGET_UNIQUE, 0.18d, EvidenceSourceType.METADATA,
                 "users.id is primary key");
 
-        assertConfidence("0.6310", mergeOne(relation));
+        assertConfidence("0.7704", mergeOne(relation));
     }
 
     @Test

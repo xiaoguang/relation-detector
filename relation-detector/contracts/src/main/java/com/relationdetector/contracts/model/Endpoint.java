@@ -35,6 +35,9 @@ public record Endpoint(TableId table, ColumnRef column) {
     }
 
     public String normalizedKey() {
-        return table.normalizedName() + "." + (isColumnLevel() ? column.normalizedName() : "*");
+        String catalog = table.catalog() == null || table.catalog().isBlank()
+                ? ""
+                : table.catalog() + ".";
+        return catalog + table.normalizedName() + "." + (isColumnLevel() ? column.normalizedName() : "*");
     }
 }

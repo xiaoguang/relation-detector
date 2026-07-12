@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "FK_LIKE:invoices.customer_ref->customers.external_ref:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+    "FK_LIKE:invoices.customer_ref->customers.external_ref:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

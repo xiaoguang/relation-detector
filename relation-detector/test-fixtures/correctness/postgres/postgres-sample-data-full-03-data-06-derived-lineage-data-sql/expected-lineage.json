@@ -82,7 +82,7 @@
     "VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id",
     "VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

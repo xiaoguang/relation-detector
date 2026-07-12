@@ -27,7 +27,7 @@
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
@@ -49,8 +49,8 @@
     "FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

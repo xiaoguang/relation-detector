@@ -30,6 +30,8 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.Collectors.DataProfiler;
@@ -45,6 +47,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.WarningType;
 
 /**
@@ -135,7 +138,7 @@ class SqlRelationParserRunnerTest {
     }
 
     @Test
-    void nativeLogSystemMetadataQueryIsSkippedBeforeAnyParserRuns() {
+    void nativeLogSystemMetadataQueryIsSkippedAfterStructuredParsing() {
         AtomicInteger structuredCalls = new AtomicInteger();
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
@@ -147,14 +150,17 @@ class SqlRelationParserRunnerTest {
                 JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS t USING (CONSTRAINT_NAME, TABLE_NAME)
                 """, StatementSourceType.NATIVE_LOG, "mysql-native.log", 1, 4, Map.of());
 
-        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor((record, context) -> {
-                    structuredCalls.incrementAndGet();
-                    return List.of();
-                }), config, statement, context(new ArrayList<>()));
+        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+                        (record, context) -> {
+                            structuredCalls.incrementAndGet();
+                            return parsedWithRowsets(record, "INFORMATION_SCHEMA.KEY_COLUMN_USAGE",
+                                    "INFORMATION_SCHEMA.TABLE_CONSTRAINTS");
+                        }), config, statement, context(new ArrayList<>()));
 
-        assertTrue(relations.isEmpty(), "metadata-only native log SQL should be filtered as noise");
-        assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the token-event parser");
+        assertTrue(outcome.relationships().isEmpty(), "metadata-only native log SQL should be filtered as noise");
+        assertTrue(outcome.structured().isEmpty(), "filtered typed outcome should not enter fact extraction");
+        assertEquals(1, structuredCalls.get(), "native log filtering must run after structured parsing");
     }
 
     @Test
@@ -169,13 +175,15 @@ class SqlRelationParserRunnerTest {
                 JOIN users u ON sc.user_id = u.id
                 """, StatementSourceType.NATIVE_LOG, "mysql-native.log", 1, 4, Map.of());
 
-        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor((record, context) -> {
-                    structuredCalls.incrementAndGet();
-                    return List.of(fkLike("system_config", "user_id", "users", "id"));
-                }), config, statement, context(new ArrayList<>()));
+        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+                        (record, context) -> {
+                            structuredCalls.incrementAndGet();
+                            return parsedWithRowsets(record, "system_config", "users");
+                        }), config, statement, context(new ArrayList<>()));
 
-        assertEquals(1, relations.size(), "unqualified business tables must not be filtered by name substring");
+        assertTrue(outcome.structured().isPresent(),
+                "unqualified business tables must not be filtered by name substring");
         assertEquals(1, structuredCalls.get(), "non-system log SQL should still run the configured parser");
     }
 
@@ -191,14 +199,27 @@ class SqlRelationParserRunnerTest {
                 JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
                 """, StatementSourceType.NATIVE_LOG, "postgres-native.log", 1, 4, Map.of());
 
-        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor((record, context) -> {
-                    structuredCalls.incrementAndGet();
-                    return List.of();
-                }), config, statement, context(new ArrayList<>()));
+        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+                        (record, context) -> {
+                            structuredCalls.incrementAndGet();
+                            return parsedWithRowsets(record, "pg_catalog.pg_class", "pg_catalog.pg_namespace");
+                        }), config, statement, context(new ArrayList<>()));
 
-        assertTrue(relations.isEmpty(), "PostgreSQL catalog-only native log SQL should be filtered");
-        assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the parser");
+        assertTrue(outcome.relationships().isEmpty(), "PostgreSQL catalog-only native log SQL should be filtered");
+        assertTrue(outcome.structured().isEmpty(), "filtered typed outcome should not enter fact extraction");
+        assertEquals(1, structuredCalls.get(), "native log filtering must run after structured parsing");
+    }
+
+    private StructuredParseResult parsedWithRowsets(SqlStatementRecord statement, String... rowsets) {
+        List<com.relationdetector.contracts.parse.StructuredSqlEvent> events = Stream.of(rowsets)
+                .map(rowset -> new RowsetEvent(
+                        StructuredParseEventType.ROWSET_REFERENCE,
+                        SourceProvenance.tokenEvent(statement, statement.startLine(), ""),
+                        "FROM", rowset, rowset, "", "", "", ""))
+                .map(com.relationdetector.contracts.parse.StructuredSqlEvent.class::cast)
+                .toList();
+        return new StructuredParseResult("token-event", "test", statement.sourceName(), events, List.of(), Map.of());
     }
 
     private SqlStatementRecord statement() {
@@ -265,7 +286,8 @@ class SqlRelationParserRunnerTest {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     sqlRelationParser,
                     Optional.ofNullable(structuredParser),
-                    Optional.empty());
+                    Optional.empty(),
+                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
         }
 
         @Override

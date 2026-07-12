@@ -131,11 +131,10 @@ abstract class OracleTokenEventVisitorState extends OracleRelationSqlBaseVisitor
 
     protected String joinKind(OracleRelationSqlParser.JoinClauseContext join) {
         if (join.joinType() == null) return "JOIN";
-        String text = join.joinType().getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) return "LEFT_JOIN";
-        if (text.startsWith("RIGHT")) return "RIGHT_JOIN";
-        if (text.startsWith("FULL")) return "FULL_JOIN";
-        if (text.startsWith("CROSS")) return "CROSS_JOIN";
+        if (join.joinType().LEFT() != null) return "LEFT_JOIN";
+        if (join.joinType().RIGHT() != null) return "RIGHT_JOIN";
+        if (join.joinType().FULL() != null) return "FULL_JOIN";
+        if (join.joinType().CROSS() != null) return "CROSS_JOIN";
         return "JOIN";
     }
 

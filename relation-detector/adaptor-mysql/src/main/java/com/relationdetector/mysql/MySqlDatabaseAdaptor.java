@@ -15,18 +15,20 @@ import com.relationdetector.mysql.log.MySqlLogExtractor;
 import com.relationdetector.mysql.metadata.MySqlMetadataCollector;
 import com.relationdetector.mysql.objects.MySqlObjectCollector;
 import com.relationdetector.mysql.profile.MySqlDataProfiler;
+import com.relationdetector.mysql.script.MySqlScriptParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
 public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public MySqlDatabaseAdaptor() {
-        this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser());
+        this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser(), new MySqlScriptParser());
     }
 
     private MySqlDatabaseAdaptor(
             MySqlTokenEventStructuredSqlParser structuredSqlParser,
-            MySqlTokenEventStructuredDdlParser structuredDdlParser
+            MySqlTokenEventStructuredDdlParser structuredDdlParser,
+            MySqlScriptParser scriptParser
     ) {
         super(
                 "mysql",
@@ -44,11 +46,12 @@ public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new MySqlMetadataCollector(),
                         new MySqlObjectCollector(),
                         Optional.of(new MySqlDatabaseDdlCollector()),
-                        new MySqlLogExtractor()),
+                        new MySqlLogExtractor(scriptParser)),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
-                        Optional.of(structuredDdlParser)),
+                        Optional.of(structuredDdlParser),
+                        scriptParser),
                 new AdaptorProfiling(Optional.of(new MySqlDataProfiler()), (evidence, context) -> evidence));
     }
 

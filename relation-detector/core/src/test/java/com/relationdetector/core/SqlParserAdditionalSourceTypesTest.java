@@ -34,7 +34,7 @@ class SqlParserAdditionalSourceTypesTest {
 
     @Test
     void materializedViewsAndRulesKeepDatabaseObjectSource() {
-        assertEvidence(StatementSourceType.MATERIALIZED_VIEW, EvidenceType.SQL_LOG_JOIN,
+        assertEvidence(StatementSourceType.MATERIALIZED_VIEW, EvidenceType.VIEW_JOIN,
                 EvidenceSourceType.DATABASE_OBJECT);
         assertEvidence(StatementSourceType.RULE, EvidenceType.SQL_LOG_JOIN,
                 EvidenceSourceType.DATABASE_OBJECT);

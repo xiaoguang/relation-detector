@@ -3,5 +3,5 @@
     "FK_LIKE:invoices.account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE",
     "FK_LIKE:invoices.archived_account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

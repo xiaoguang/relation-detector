@@ -45,7 +45,10 @@ public abstract class AbstractPostgresFullGrammerStructuredSqlParser implements 
         List<WarningMessage> warnings = new java.util.ArrayList<>();
         if (parse.root() != null) {
             try {
-                nativeEvents = extractEvents(statement, parse.visibleTokens(), parse.root());
+                PostgresFullGrammerEventOutcome outcome = extractEvents(
+                        statement, parse.visibleTokens(), parse.root());
+                nativeEvents = outcome.events();
+                warnings.addAll(outcome.warnings());
             } catch (RuntimeException ex) {
                 warnings.add(fullGrammerWarning(statement, "full-grammer SQL visitor failed: " + ex.getMessage(),
                         parse.syntaxErrors()));
@@ -76,7 +79,7 @@ public abstract class AbstractPostgresFullGrammerStructuredSqlParser implements 
 
     protected abstract FullGrammerSqlParse parseFullGrammer(String sql);
 
-    protected abstract List<StructuredSqlEvent> extractEvents(
+    protected abstract PostgresFullGrammerEventOutcome extractEvents(
             SqlStatementRecord statement,
             List<Token> visibleTokens,
             ParserRuleContext root

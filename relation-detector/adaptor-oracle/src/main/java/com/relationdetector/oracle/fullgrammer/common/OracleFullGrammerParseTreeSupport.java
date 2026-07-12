@@ -1,13 +1,13 @@
 package com.relationdetector.oracle.fullgrammer.common;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.oracle.fullgrammer.common.OracleFullGrammerParseTreeAdapter.Role;
+import com.relationdetector.oracle.fullgrammer.common.OracleFullGrammerParseTreeAdapter.Symbol;
 
 /** Stateless typed-role and generated-context access shared by Oracle collectors. */
 abstract class OracleFullGrammerParseTreeSupport {
@@ -27,18 +27,18 @@ abstract class OracleFullGrammerParseTreeSupport {
             return "";
         }
         if (hasRole(ctx, Role.TABLE_REF_INTERNAL)) {
-            return tableFrom(child(ctx, "dml_table_expression_clause"));
+            return tableFrom(child(ctx, Role.DML_TABLE_EXPRESSION));
         }
-        ParserRuleContext dml = child(ctx, "dml_table_expression_clause");
+        ParserRuleContext dml = child(ctx, Role.DML_TABLE_EXPRESSION);
         if (dml != null) {
             return tableFrom(dml);
         }
-        ParserRuleContext tableview = child(ctx, "tableview_name");
+        ParserRuleContext tableview = child(ctx, Role.TABLEVIEW_NAME);
         return tableview == null ? "" : name(tableview);
     }
 
     final String aliasFrom(ParserRuleContext selectedTableview, String table) {
-        ParserRuleContext alias = child(selectedTableview, "table_alias");
+        ParserRuleContext alias = child(selectedTableview, Role.TABLE_ALIAS);
         return alias == null ? core.baseName(table) : name(alias);
     }
 
@@ -61,11 +61,11 @@ abstract class OracleFullGrammerParseTreeSupport {
         if (parenColumnList == null) {
             return List.of();
         }
-        ParserRuleContext columnList = child(parenColumnList, "column_list");
+        ParserRuleContext columnList = child(parenColumnList, Role.COLUMN_LIST);
         if (columnList == null) {
             return List.of();
         }
-        return children(columnList, "column_name").stream()
+        return children(columnList, Role.COLUMN_NAME).stream()
                 .map(this::name)
                 .map(this::lastPart)
                 .filter(column -> !column.isBlank())
@@ -79,8 +79,8 @@ abstract class OracleFullGrammerParseTreeSupport {
         if (hasRole(tree, role) && tree instanceof ParserRuleContext ctx) {
             return ctx;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParserRuleContext found = first(tree.getChild(index), role);
+        for (ParseTree child : typedChildren(tree)) {
+            ParserRuleContext found = first(child, role);
             if (found != null) {
                 return found;
             }
@@ -88,47 +88,45 @@ abstract class OracleFullGrammerParseTreeSupport {
         return null;
     }
 
-    final ParserRuleContext child(Object target, String methodName) {
-        List<ParserRuleContext> children = children(target, methodName);
+    final ParserRuleContext child(ParseTree target, Role role) {
+        List<ParserRuleContext> children = children(target, role);
         return children.isEmpty() ? null : children.get(0);
     }
 
-    final List<ParserRuleContext> children(Object target, String methodName) {
+    final List<ParserRuleContext> children(ParseTree target, Role role) {
         if (target == null) {
             return List.of();
         }
-        Object value = invoke(target, methodName);
-        if (value == null) {
-            return List.of();
+        List<ParserRuleContext> result = new ArrayList<>();
+        for (ParseTree child : typedChildren(target)) {
+            if (child instanceof ParserRuleContext context && hasRole(context, role)) {
+                result.add(context);
+            }
         }
-        if (value instanceof List<?> list) {
-            return list.stream()
-                    .filter(ParserRuleContext.class::isInstance)
-                    .map(ParserRuleContext.class::cast)
-                    .toList();
-        }
-        if (value instanceof ParserRuleContext context) {
-            return List.of(context);
-        }
-        return List.of();
+        return List.copyOf(result);
     }
 
-    final Object node(Object target, String methodName) {
-        return target == null ? null : invoke(target, methodName);
+    final boolean hasSymbol(ParseTree target, Symbol symbol) {
+        return target != null && adapter.hasSymbol(target, symbol);
     }
 
-    private Object invoke(Object target, String methodName) {
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            return method.invoke(target);
-        } catch (NoSuchMethodException ignored) {
-            return null;
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            throw new IllegalStateException("Failed to read Oracle parse context " + methodName, exception);
-        }
+    final boolean isDirectEquality(ParseTree target) {
+        return target != null && adapter.isDirectEquality(target);
     }
 
     final boolean hasRole(ParseTree tree, Role role) {
         return adapter.hasRole(tree, role);
+    }
+
+    final List<ParseTree> typedChildren(ParseTree tree) {
+        return adapter.typedChildren(tree);
+    }
+
+    final java.util.Optional<String> functionName(ParseTree tree) {
+        return adapter.functionName(tree);
+    }
+
+    final OracleFullGrammerParseTreeAdapter.OperatorSemantic operatorSemantic(ParseTree tree) {
+        return adapter.operatorSemantic(tree);
     }
 }

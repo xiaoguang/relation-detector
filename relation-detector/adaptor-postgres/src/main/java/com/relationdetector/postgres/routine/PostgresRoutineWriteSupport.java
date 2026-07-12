@@ -125,11 +125,11 @@ abstract class PostgresRoutineWriteSupport extends PostgresRoutineControlSupport
 
     @Override
     protected List<ExpressionAnalysis> selectItemAnalyses(PostgresRoutineBodySqlParser.SelectItemContext item) {
-        if (item.expression() != null) return writeAnalyses(item.expression());
-        if (item.booleanProjection() == null) return List.of();
-        ExpressionAnalysis combined = ExpressionAnalysis.empty();
+        if (item.expression() == null) return List.of();
+        if (item.booleanProjectionTail() == null) return writeAnalyses(item.expression());
+        ExpressionAnalysis combined = analyze(item.expression());
         for (PostgresRoutineBodySqlParser.ExpressionContext expression
-                : item.booleanProjection().expression()) {
+                : item.booleanProjectionTail().expression()) {
             combined = ExpressionAnalysis.combine(LineageTransformType.FUNCTION_CALL,
                     LineageFlowKind.VALUE, combined, analyze(expression));
         }

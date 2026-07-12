@@ -9,12 +9,14 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.mysql.script.MySqlScriptParser;
 
 class MySql57FullGrammerVersionBoundaryTest {
     private final FullGrammerDialectModule module = new MySql57FullGrammerDialectModule();
@@ -69,7 +71,8 @@ class MySql57FullGrammerVersionBoundaryTest {
 
     @Test
     void acceptsClientDelimitedRoutineObjectBlock() {
-        var result = module.sqlParser().parseSql(statement("""
+        var script = new MySqlScriptParser().parse(new ScriptParseRequest("""
+                DELIMITER //
                 CREATE PROCEDURE sp_copy_orders()
                 BEGIN
                   INSERT INTO order_archive (id, customer_id, total_amount)
@@ -77,10 +80,14 @@ class MySql57FullGrammerVersionBoundaryTest {
                   FROM orders o
                   JOIN customers c ON o.customer_id = c.id;
                 END//
-                """), null);
+                DELIMITER ;
+                """, "mysql57-client-script.sql", StatementSourceType.PROCEDURE));
+        assertEquals(1, script.statements().size(), "client script parser must frame one routine statement");
+
+        var result = module.sqlParser().parseSql(script.statements().get(0), null);
 
         assertEquals(0, syntaxErrors(result),
-                "MySQL full-grammer should normalize client routine delimiter outside SQL grammar");
+                "MySQL full-grammer should receive server SQL already framed by the dialect script parser");
     }
 
     @Test

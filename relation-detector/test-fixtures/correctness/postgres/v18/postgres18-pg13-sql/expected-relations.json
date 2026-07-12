@@ -2,5 +2,5 @@
   "fingerprints": [
     "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_EXISTS"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

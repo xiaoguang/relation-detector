@@ -1,9 +1,11 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status",
     "VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id",
     "VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id",
     "VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount",
     "VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount",
+    "VALUE:DIRECT:serial_numbers.status->serial_number_logs.to_status",
     "VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date"
   ],
   "forbiddenSources": [],

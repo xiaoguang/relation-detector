@@ -90,8 +90,8 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
             result.add(tree);
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectDirectScopeContexts(root, tree.getChild(index), result);
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectDirectScopeContexts(root, child, result);
         }
     }
 
@@ -102,8 +102,8 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
         if (isScalarBoundary(tree)) {
             return tree;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree found = scalarSubquery(tree.getChild(index));
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            ParseTree found = scalarSubquery(child);
             if (found != null) {
                 return found;
             }

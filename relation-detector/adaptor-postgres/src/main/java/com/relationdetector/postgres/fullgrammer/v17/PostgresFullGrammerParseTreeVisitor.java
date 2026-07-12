@@ -6,6 +6,7 @@ import java.util.List;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.postgres.fullgrammer.common.PostgresSqlEventVisitorCore;
+import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerEventOutcome;
 import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.A_exprContext;
@@ -26,11 +27,10 @@ import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.Table_primaryContext;
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.Table_refContext;
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.Target_labelContext;
+import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.Target_starContext;
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParser.UpdatestmtContext;
 import com.relationdetector.postgres.fullgrammer.v17.Postgres17FullGrammerParserBaseVisitor;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.RuleNode;
 
 /**
  * PostgreSQL 16 full-grammer SQL parse-tree visitor。
@@ -47,6 +47,8 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammerTypedSqlEventSink sink;
+    private final java.util.List<com.relationdetector.contracts.model.WarningMessage> warnings = new java.util.ArrayList<>();
+    private int ownedJoinPredicateDepth;
 
     PostgresFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
@@ -66,14 +68,20 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
         return core.mergedEvents();
     }
 
+    PostgresFullGrammerEventOutcome extractOutcome(ParseTree tree) {
+        return new PostgresFullGrammerEventOutcome(extract(tree), warnings);
+    }
+
     private List<StructuredSqlEvent> extractRoutineBody(SqlStatementRecord nestedStatement) {
-        return PostgresRoutineBodyParser.extract(nestedStatement);
+        var outcome = PostgresRoutineBodyParser.parse(nestedStatement);
+        warnings.addAll(outcome.warnings());
+        return outcome.events();
     }
 
     @Override
     public Void visitFunc_as(Func_asContext ctx) {
         for (var body : ctx.sconst()) {
-            core.routineBody(ctx, body.getText(), this::extractRoutineBody);
+            core.routineBody(body, body.getText(), this::extractRoutineBody);
         }
         return visitChildren(ctx);
     }
@@ -107,7 +115,10 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
                 sink.withProjectionOwner(alias, () -> visit(ctx.select_with_parens()));
             }
         } else if (ctx.func_table() != null) {
-            String alias = ctx.func_alias_clause() == null ? "FUNCTION_ROWSET" : firstFuncAlias(ctx.func_alias_clause());
+            String alias = ctx.func_alias_clause() == null ? "FUNCTION_ROWSET"
+                    : ctx.func_alias_clause().alias_clause() != null
+                            ? firstAlias(ctx.func_alias_clause().alias_clause())
+                            : firstIdentifier(ctx.func_alias_clause());
             sink.ignoredRowset(ctx, alias, "FUNCTION_ROWSET");
             sink.rowset(ctx, "FROM", alias, alias);
             rememberRowset(alias);
@@ -127,13 +138,32 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
         Join_qualContext join = ctx.join_qual();
         if (join != null) {
             if (join.a_expr() != null) {
-                sink.predicateEqualities(join, join.a_expr(), "JOIN_ON");
+                if (core.inExists()) {
+                    sink.existsPredicateEqualities(join.a_expr(), join.a_expr());
+                } else {
+                    sink.predicateEqualities(join.a_expr(), join.a_expr(), joinKind(ctx));
+                }
+                ownedJoinPredicateDepth++;
+                try {
+                    visit(join.a_expr());
+                } finally {
+                    ownedJoinPredicateDepth--;
+                }
             }
             if (join.name_list() != null && !left.isBlank() && !right.isBlank()) {
                 sink.joinUsing(join, left, right, sink.identifiers(join.name_list()));
             }
         }
         return null;
+    }
+
+    private String joinKind(Table_joinContext ctx) {
+        if (ctx.CROSS() != null) return "CROSS_JOIN";
+        if (ctx.join_type() == null) return "JOIN_ON";
+        if (ctx.join_type().LEFT() != null) return "LEFT_JOIN";
+        if (ctx.join_type().RIGHT() != null) return "RIGHT_JOIN";
+        if (ctx.join_type().FULL() != null) return "FULL_JOIN";
+        return "JOIN_ON";
     }
 
     @Override
@@ -233,7 +263,7 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
     public Void visitA_expr(A_exprContext ctx) {
         if (core.inExists()) {
             sink.existsPredicateEqualities(ctx, ctx);
-        } else {
+        } else if (ownedJoinPredicateDepth == 0) {
             sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
         }
         return visitChildren(ctx);
@@ -258,19 +288,6 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
     }
 
     @Override
-    public Void visitChildren(RuleNode node) {
-        Void result = super.visitChildren(node);
-        if (node instanceof ParserRuleContext ctx && isExpressionContext(ctx)) {
-            if (core.inExists()) {
-                sink.existsPredicateEqualities(ctx, ctx);
-            } else {
-                sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
-            }
-        }
-        return result;
-    }
-
-    @Override
     public Void visitTarget_label(Target_labelContext ctx) {
         if (ctx.a_expr() != null && core.hasInsertSelectTarget()) {
             PostgresSqlEventVisitorCore.InsertSelectTarget state = core.currentInsertSelectTarget();
@@ -287,6 +304,14 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
                 : ctx.colLabel() != null ? ctx.colLabel().getText() : projectedColumnName(ctx.a_expr());
         sink.projection(ctx, sink.currentProjectionOwner(), outputColumn, ctx.a_expr());
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitTarget_star(Target_starContext ctx) {
+        if (!sink.currentProjectionOwner().isBlank()) {
+            sink.wildcardProjection(ctx, sink.currentProjectionOwner());
+        }
+        return null;
     }
 
     @Override
@@ -353,13 +378,6 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
         return core.firstAlias(tree);
     }
 
-    private String firstFuncAlias(Func_alias_clauseContext ctx) {
-        if (ctx.alias_clause() != null) {
-            return firstAlias(ctx.alias_clause());
-        }
-        return firstIdentifier(ctx);
-    }
-
     private String firstIdentifier(ParseTree tree) {
         return core.firstIdentifier(tree);
     }
@@ -379,9 +397,4 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres17FullGrammerPar
     private String lastRowsetAlias() {
         return core.lastRowsetAlias();
     }
-
-    private boolean isExpressionContext(ParserRuleContext ctx) {
-        return core.isExpressionContext(ctx);
-    }
-
 }

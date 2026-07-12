@@ -40,12 +40,12 @@ public final class SqlServerDataProfiler implements DataProfiler {
                     WHERE %s IS NOT NULL
                 ) s
                 """.formatted(
-                    QUOTER.table(request.candidate().target().table().displayName()),
-                    QUOTER.column(request.candidate().target().column().columnName()),
+                    QUOTER.table(request.candidate().target().table()),
+                    QUOTER.column(request.candidate().target().column()),
                     Math.min(request.options().maxDistinctValues(), request.options().sampleRows()),
-                    QUOTER.column(request.candidate().source().column().columnName()),
-                    QUOTER.table(request.candidate().source().table().displayName()),
-                    QUOTER.column(request.candidate().source().column().columnName()));
+                    QUOTER.column(request.candidate().source().column()),
+                    QUOTER.table(request.candidate().source().table()),
+                    QUOTER.column(request.candidate().source().column()));
         }
     }
 }

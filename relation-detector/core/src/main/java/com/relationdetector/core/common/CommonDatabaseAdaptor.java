@@ -22,11 +22,11 @@ import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
+import com.relationdetector.core.script.CommonScriptParser;
 
 /**
  * Portable common SQL adaptor used when the CLI is explicitly configured with
@@ -38,12 +38,14 @@ import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
  */
 public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public CommonDatabaseAdaptor() {
-        this(new CommonTokenEventStructuredSqlParser(), new TokenEventStructuredDdlParser(SqlDialect.GENERIC));
+        this(new CommonTokenEventStructuredSqlParser(), new TokenEventStructuredDdlParser(SqlDialect.GENERIC),
+                new CommonScriptParser());
     }
 
     private CommonDatabaseAdaptor(
             CommonTokenEventStructuredSqlParser structuredSqlParser,
-            TokenEventStructuredDdlParser structuredDdlParser
+            TokenEventStructuredDdlParser structuredDdlParser,
+            CommonScriptParser scriptParser
     ) {
         super(
                 "common",
@@ -55,11 +57,12 @@ public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         (connection, scope) -> new MetadataSnapshot(),
                         CommonDatabaseAdaptor::emptyObjects,
                         Optional.empty(),
-                        new CommonPlainSqlLogExtractor()),
+                        new CommonScriptLogExtractor(scriptParser)),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
-                        Optional.of(structuredDdlParser)),
+                        Optional.of(structuredDdlParser),
+                        scriptParser),
                 new AdaptorProfiling(Optional.empty(), (evidence, context) -> evidence));
     }
 
@@ -81,12 +84,16 @@ public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
         return identifier;
     }
 
-    private static final class CommonPlainSqlLogExtractor implements SqlLogExtractor {
-        private final PlainSqlLogExtractor delegate = new PlainSqlLogExtractor();
+    private static final class CommonScriptLogExtractor implements SqlLogExtractor {
+        private final CommonScriptParser scriptParser;
+
+        private CommonScriptLogExtractor(CommonScriptParser scriptParser) {
+            this.scriptParser = scriptParser;
+        }
 
         @Override
         public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
-            return delegate.extract(file, StatementSourceType.PLAIN_SQL);
+            return extract(file, hint, warning -> { });
         }
 
         @Override
@@ -95,7 +102,8 @@ public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
                 LogFormatHint hint,
                 Consumer<WarningMessage> warnings
         ) {
-            return delegate.extract(file, StatementSourceType.PLAIN_SQL, warnings);
+            return new com.relationdetector.core.script.ScriptFileExtractor()
+                    .extract(file, StatementSourceType.PLAIN_SQL, scriptParser, warnings);
         }
     }
 }

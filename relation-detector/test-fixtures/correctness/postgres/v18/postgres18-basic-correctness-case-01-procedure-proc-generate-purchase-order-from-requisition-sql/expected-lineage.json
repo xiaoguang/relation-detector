@@ -22,7 +22,7 @@
     "VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id",
     "VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

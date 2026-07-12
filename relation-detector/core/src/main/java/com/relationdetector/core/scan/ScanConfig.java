@@ -9,8 +9,8 @@ import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.contracts.spi.DataProfileOptions;
-import com.relationdetector.core.relation.NamingRule;
-import com.relationdetector.core.relation.NamingRuleSet;
+import com.relationdetector.core.naming.NamingRule;
+import com.relationdetector.core.naming.NamingRuleSet;
 
 /**
  * Mutable YAML/CLI input DTO. Production scans immediately snapshot it into a

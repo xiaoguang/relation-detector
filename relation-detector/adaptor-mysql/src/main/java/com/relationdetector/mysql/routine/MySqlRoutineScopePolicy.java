@@ -23,11 +23,6 @@ public final class MySqlRoutineScopePolicy {
         }
     }
 
-    public static boolean isTemporaryTableDeclaration(String createTableContextText) {
-        return createTableContextText != null
-                && createTableContextText.toLowerCase(Locale.ROOT).contains("temporary");
-    }
-
     public static boolean isPseudoRowset(String identifier) {
         return identifier != null && PSEUDO_ROWSETS.contains(identifier.toUpperCase(Locale.ROOT));
     }

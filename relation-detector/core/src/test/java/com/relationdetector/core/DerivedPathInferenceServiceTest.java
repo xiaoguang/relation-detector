@@ -27,7 +27,7 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.derived.DerivedPathInferenceResult;
 import com.relationdetector.core.derived.DerivedPathInferenceService;
-import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.scan.EvidenceEnhancementService;
 import com.relationdetector.core.scan.ScanConfig;
 
@@ -363,6 +363,31 @@ class DerivedPathInferenceServiceTest {
         assertEquals(1, aToC.size(), "One canonical endpoint path should produce one derived fact");
         assertEquals(2, aToC.get(0).rawEvidence().size(),
                 "Distinct edge variants should remain available as raw path observations");
+    }
+
+    @Test
+    void identicalDerivedLineagePathObservationsAreFolded() {
+        ScanConfig config = enabledConfig();
+        Endpoint a = col("a", "amount");
+        Endpoint b = col("b", "amount");
+        Endpoint c = col("c", "amount");
+
+        DerivedPathInferenceResult result = service.infer(List.of(), List.of(
+                lineage(a, b, LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC,
+                        Map.of("mappingKind", "INSERT_SELECT")),
+                lineage(a, b, LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC,
+                        Map.of("mappingKind", "UPDATE_SET")),
+                lineage(b, c, LineageFlowKind.VALUE)
+        ), List.of(), config);
+
+        DerivedPathCandidate aToC = result.derivedDataLineages().stream()
+                .filter(candidate -> candidate.source().equals(a) && candidate.target().equals(c))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(1, aToC.rawEvidence().size(),
+                "Semantically identical path observations must be folded");
+        assertEquals(2, aToC.rawEvidence().get(0).attributes().get("occurrenceCount"),
+                "The folded observation must retain the number of contributing edge variants");
     }
 
     @Test

@@ -1,0 +1,57 @@
+package com.relationdetector.postgres.script;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
+
+class PostgresScriptParserTest {
+    @Test
+    void keepsTaggedDollarQuotedBodyAsOneServerStatement() {
+        var result = new PostgresScriptParser().parse(new ScriptParseRequest("""
+                CREATE OR REPLACE FUNCTION app.refresh_rollup()
+                RETURNS trigger AS $routine$
+                BEGIN
+                  PERFORM '; $other$';
+                  RETURN NEW;
+                END;
+                $routine$ LANGUAGE plpgsql;
+                SELECT 1;
+                """, "sample-data/postgres/18/routines.sql", StatementSourceType.PROCEDURE));
+
+        assertEquals(2, result.statements().size());
+        assertTrue(result.statements().get(0).sql().contains("PERFORM '; $other$';"));
+        assertEquals(StatementSourceType.TRIGGER, result.statements().get(0).sourceType());
+        assertEquals("app.refresh_rollup", result.statements().get(0).attributes().get("sourceObjectName"));
+    }
+
+    @Test
+    void keepsIndependentTriggerFunctionProvenance() {
+        var result = new PostgresScriptParser().parse(new ScriptParseRequest("""
+                CREATE OR REPLACE FUNCTION trg_first() RETURNS TRIGGER AS $$
+                BEGIN
+                  RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+                CREATE TRIGGER trg_first AFTER INSERT ON orders
+                FOR EACH ROW EXECUTE FUNCTION trg_first();
+                CREATE OR REPLACE FUNCTION trg_second() RETURNS TRIGGER AS $$
+                BEGIN
+                  RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+                CREATE TRIGGER trg_second AFTER UPDATE ON orders
+                FOR EACH ROW EXECUTE FUNCTION trg_second();
+                """, "sample-data/postgres/18/01-schema/03-triggers.sql", StatementSourceType.PROCEDURE));
+
+        assertEquals(4, result.statements().size());
+        assertEquals(StatementSourceType.TRIGGER, result.statements().get(0).sourceType());
+        assertEquals("trg_first", result.statements().get(0).attributes().get("sourceObjectName"));
+        assertEquals("trg_first", result.statements().get(0).attributes().get("sourceStatementId"));
+        assertEquals(StatementSourceType.TRIGGER, result.statements().get(2).sourceType());
+        assertEquals("trg_second", result.statements().get(2).attributes().get("sourceObjectName"));
+    }
+}

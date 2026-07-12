@@ -1,7 +1,7 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.output.JsonResultWriter;
-import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.scan.ScanResult;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;

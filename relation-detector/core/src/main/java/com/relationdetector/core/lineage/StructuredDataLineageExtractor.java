@@ -22,9 +22,14 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.spi.IdentifierRules;
+import com.relationdetector.core.identity.AliasSymbolTable;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.lineage.model.AssignmentMapping;
 import com.relationdetector.core.lineage.model.ExpressionSourceSet;
 import com.relationdetector.core.log.SourceNameNormalizer;
+import com.relationdetector.core.provenance.EvidenceProvenanceMapper;
 
 /**
  * SQL Data Lineage 语义抽取器。
@@ -39,6 +44,22 @@ import com.relationdetector.core.log.SourceNameNormalizer;
  * does not treat parameters, literals, JSON paths, or local variables as sources.
  */
 public final class StructuredDataLineageExtractor {
+    private final CanonicalIdentifierResolver identifiers;
+    private final NamespaceContext namespace;
+
+    public StructuredDataLineageExtractor() {
+        this(defaultIdentifierRules(), NamespaceContext.empty());
+    }
+
+    public StructuredDataLineageExtractor(IdentifierRules identifierRules) {
+        this(identifierRules, NamespaceContext.empty());
+    }
+
+    public StructuredDataLineageExtractor(IdentifierRules identifierRules, NamespaceContext namespace) {
+        this.identifiers = new CanonicalIdentifierResolver(identifierRules);
+        this.namespace = namespace == null ? NamespaceContext.empty() : namespace;
+    }
+
     /**
      * 从结构化 SQL events 抽取字段血缘。
      *
@@ -75,7 +96,7 @@ public final class StructuredDataLineageExtractor {
             Set<TableId> knownPhysicalTables,
             Set<String> allLocalTempTables
     ) {
-        Map<String, TableId> aliases = aliases(events);
+        AliasSymbolTable aliases = aliases(events);
         Set<String> localTempTables = new java.util.LinkedHashSet<>(allLocalTempTables);
         localTempTables.addAll(localTempTables(statement, events));
         Set<String> ignoredRowsets = ignoredRowsets(events);
@@ -119,28 +140,20 @@ public final class StructuredDataLineageExtractor {
                 BigDecimal score = score(transform, flowKind);
                 candidate.confidence(score);
                 Map<String, Object> attributes = new LinkedHashMap<>();
-                attributes.put("tokenEventNative", true);
                 attributes.put("mappingKind", event.mappingKind());
-                copySourceAttributes(statement, attributes);
-                attributes.put("sourceLine", absoluteSourceLine(statement, event));
+                EvidenceProvenanceMapper.copy(statement, event, attributes);
                 candidate.attributes().putAll(attributes);
                 candidate.evidence().add(new DataLineageEvidence(
                         transform,
                         score,
                         sourceType(statement.sourceType()),
                         SourceNameNormalizer.normalize(statement.sourceName()),
-                        "ANTLR token-event write mapping",
+                        "typed SQL write mapping",
                         attributes));
                 candidates.add(candidate);
             }
         }
         return candidates;
-    }
-
-    private long absoluteSourceLine(SqlStatementRecord statement, StructuredSqlEvent event) {
-        long eventLine = Math.max(1L, event.line());
-        long statementStart = Math.max(1L, statement.startLine());
-        return statementStart + eventLine - 1L;
     }
 
     private List<List<StructuredSqlEvent>> scopedEventGroups(List<StructuredSqlEvent> events) {
@@ -179,24 +192,10 @@ public final class StructuredDataLineageExtractor {
                 event.mappingKind());
     }
 
-    private void copySourceAttributes(SqlStatementRecord statement, Map<String, Object> attributes) {
-        copyAttribute(statement, attributes, "sourceObjectType");
-        copyAttribute(statement, attributes, "sourceObjectName");
-        copyAttribute(statement, attributes, "sourceFile");
-        copyAttribute(statement, attributes, "sourceStatementId");
-        copyAttribute(statement, attributes, "sourceBlockId");
-        copyAttribute(statement, attributes, "sourceObjectKind");
-    }
-
-    private void copyAttribute(SqlStatementRecord statement, Map<String, Object> attributes, String key) {
-        Object value = statement.attributes().get(key);
-        if (value != null && !String.valueOf(value).isBlank()) {
-            attributes.put(key, value);
-        }
-    }
-
-    private Map<String, TableId> aliases(List<StructuredSqlEvent> events) {
-        Map<String, TableId> aliases = new LinkedHashMap<>();
+    private AliasSymbolTable aliases(List<StructuredSqlEvent> events) {
+        // Preserve the identifier exactly as SQL wrote it. The scan namespace is
+        // applied only when comparing this endpoint with cross-source facts.
+        AliasSymbolTable aliases = new AliasSymbolTable(identifiers, NamespaceContext.empty());
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.ROWSET_REFERENCE || event.type() == StructuredParseEventType.WRITE_TARGET) {
                 String table = event.qualifiedTable();
@@ -207,34 +206,31 @@ public final class StructuredDataLineageExtractor {
                     continue;
                 }
                 TableId tableId = tableId(table);
-                aliases.put(normalize(event.table()), tableId);
-                aliases.put(normalize(baseName(table)), tableId);
+                aliases.bind(event.qualifiedTable(), tableId);
+                aliases.bind(event.table(), tableId);
                 String alias = event.alias();
                 if (!alias.isBlank()) {
-                    aliases.put(normalize(alias), tableId);
+                    aliases.bind(alias, tableId);
                 }
             }
         }
         return aliases;
     }
 
-    private ColumnRef targetColumn(StructuredSqlEvent event, Map<String, TableId> aliases) {
+    private ColumnRef targetColumn(StructuredSqlEvent event, AliasSymbolTable aliases) {
         String targetColumn = event.targetColumn();
         if (targetColumn.isBlank()) {
             return null;
         }
-        TableId table = aliases.get(normalize(event.targetAlias()));
+        TableId table = aliases.resolve(event.targetAlias()).orElse(null);
         if (table != null) {
-            return ColumnRef.of(table, targetColumn);
+            return column(table, targetColumn);
         }
         String targetTable = event.targetTable();
         if (!targetTable.isBlank()) {
-            return ColumnRef.of(tableId(targetTable), targetColumn);
+            return column(tableId(targetTable), targetColumn);
         }
-        if (table == null && aliases.size() == 1) {
-            table = aliases.values().iterator().next();
-        }
-        return table == null ? null : ColumnRef.of(table, targetColumn);
+        return table == null ? null : column(table, targetColumn);
     }
 
     private Set<String> ignoredRowsets(List<StructuredSqlEvent> events) {
@@ -261,7 +257,6 @@ public final class StructuredDataLineageExtractor {
             return;
         }
         ignored.add(normalize(raw));
-        ignored.add(normalize(baseName(raw)));
     }
 
     private Set<String> localTempTables(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
@@ -278,7 +273,6 @@ public final class StructuredDataLineageExtractor {
                 table = event.table();
             }
             if (!table.isBlank()) {
-                result.add(normalize(baseName(table)));
                 result.add(normalize(table));
             }
         }
@@ -286,15 +280,17 @@ public final class StructuredDataLineageExtractor {
     }
 
     private boolean isLocalTemp(TableId table, Set<String> localTempTables) {
-        return localTempTables.contains(normalize(table.tableName()))
-                || (table.schema() != null
-                && localTempTables.contains(normalize(table.schema() + "." + table.tableName())));
+        if (table.schema() != null && !table.schema().isBlank()) {
+            return localTempTables.contains(normalize(table.schema() + "." + table.tableName()));
+        }
+        return localTempTables.contains(normalize(table.tableName()));
     }
 
     private boolean isIgnoredRowsetTable(TableId table, Set<String> ignoredRowsets) {
-        return ignoredRowsets.contains(normalize(table.tableName()))
-                || (table.schema() != null
-                && ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName())));
+        if (table.schema() != null && !table.schema().isBlank()) {
+            return ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName()));
+        }
+        return ignoredRowsets.contains(normalize(table.tableName()));
     }
 
     private boolean isKnownPhysical(TableId table, Set<TableId> knownPhysicalTables) {
@@ -310,12 +306,11 @@ public final class StructuredDataLineageExtractor {
     }
 
     private boolean sameTable(TableId left, TableId right) {
-        if (!normalize(left.tableName()).equals(normalize(right.tableName()))) {
-            return false;
-        }
-        String leftSchema = left.schema() == null ? "" : normalize(left.schema());
-        String rightSchema = right.schema() == null ? "" : normalize(right.schema());
-        return leftSchema.isBlank() || rightSchema.isBlank() || leftSchema.equals(rightSchema);
+        return canonicalTableKey(left).equals(canonicalTableKey(right));
+    }
+
+    private String canonicalTableKey(TableId table) {
+        return identifiers.tableKey(table, namespace);
     }
 
     private List<String> stringList(Object value) {
@@ -358,18 +353,12 @@ public final class StructuredDataLineageExtractor {
     }
 
     private TableId tableId(String qualified) {
-        String clean = clean(qualified);
-        int dot = clean.lastIndexOf('.');
-        if (dot < 0) {
-            return TableId.of(null, clean);
-        }
-        return TableId.of(clean.substring(0, dot), clean.substring(dot + 1));
+        return identifiers.resolveQualified(qualified, NamespaceContext.empty());
     }
 
-    private String baseName(String qualified) {
-        String clean = clean(qualified);
-        int dot = clean.lastIndexOf('.');
-        return dot < 0 ? clean : clean.substring(dot + 1);
+    private ColumnRef column(TableId table, String name) {
+        String clean = clean(name);
+        return new ColumnRef(table, clean, identifiers.normalize(clean), null, true);
     }
 
     private String clean(String value) {
@@ -381,7 +370,11 @@ public final class StructuredDataLineageExtractor {
     }
 
     private String normalize(String value) {
-        return clean(value).toLowerCase(Locale.ROOT);
+        return identifiers.normalize(clean(value));
+    }
+
+    private static IdentifierRules defaultIdentifierRules() {
+        return value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
     }
 
 }

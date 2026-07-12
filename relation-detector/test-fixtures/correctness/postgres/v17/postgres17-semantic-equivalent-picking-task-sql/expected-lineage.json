@@ -7,7 +7,7 @@
     "VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty",
     "VALUE:DIRECT:sales_orders.id->picking_task_items.order_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

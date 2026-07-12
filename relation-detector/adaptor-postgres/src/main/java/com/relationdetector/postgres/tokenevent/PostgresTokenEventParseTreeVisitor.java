@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.model.WarningMessage;
 
 /** Typed traversal facade for the PostgreSQL token-event structural grammar. */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEventWriteDdlSupport {
@@ -17,6 +18,10 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
     public List<StructuredSqlEvent> collect(PostgresRelationSqlParser.ScriptContext root) {
         visit(root);
         return List.copyOf(events);
+    }
+
+    public List<WarningMessage> warnings() {
+        return List.copyOf(warnings);
     }
 
     @Override
@@ -52,9 +57,15 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
         try {
             if (ctx.fromClause() != null) visit(ctx.fromClause());
             if (ctx.whereClause() != null) visit(ctx.whereClause());
+            if (ctx.groupByClause() != null) visit(ctx.groupByClause());
             if (ctx.havingClause() != null) visit(ctx.havingClause());
-            if (!projectionOwners.isEmpty()) emitProjectionItems(ctx.selectList(), projectionOwners.peek());
-            else visit(ctx.selectList());
+            if (ctx.orderByClause() != null) visit(ctx.orderByClause());
+            if (!projectionOwners.isEmpty()) {
+                emitProjectionItems(ctx.selectList(), projectionOwners.peek());
+                // Projection mapping can be absent (for example an unaliased expression in a
+                // UNION branch), but nested query structure must still be traversed.
+                visit(ctx.selectList());
+            } else visit(ctx.selectList());
         } finally {
             queryScopes.pop();
         }
@@ -126,7 +137,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
 
     @Override
     public Void visitComparisonPredicate(PostgresRelationSqlParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) return visitChildren(ctx);
+        if (ctx.comparisonOperator().EQ() == null) return visitChildren(ctx);
         emitColumnEquality(ctx.expression(0), ctx.expression(1), ctx);
         return null;
     }

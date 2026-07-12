@@ -4,8 +4,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.relationdetector.contracts.spi.DataProfileOptions;
-import com.relationdetector.core.relation.NamingRule;
-import com.relationdetector.core.relation.NamingRuleSet;
+import com.relationdetector.core.naming.NamingRule;
+import com.relationdetector.core.naming.NamingRuleSet;
 
 /** Immutable evidence extraction, profiling, and derived-path configuration. */
 public record EvidenceConfig(

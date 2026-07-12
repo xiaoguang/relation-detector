@@ -242,8 +242,10 @@ class CorrectnessFixtureRunnerTest {
                 DatabaseType.ORACLE);
 
         assertEquals(2, statements.size());
-        assertEquals("oracle-routine-fixture.sql#sp_one", statements.get(0).sourceName());
-        assertEquals("oracle-routine-fixture.sql#sp_two", statements.get(1).sourceName());
+        assertEquals("ROUTINE:sp_one", statements.get(0).sourceName());
+        assertEquals("ROUTINE:sp_two", statements.get(1).sourceName());
+        assertEquals("oracle-routine-fixture.sql", statements.get(0).attributes().get("sourceFile"));
+        assertEquals("sp_one", statements.get(0).attributes().get("sourceObjectName"));
         assertTrue(statements.get(0).sql().contains("FROM customers c"));
         assertTrue(statements.get(1).sql().contains("FROM contracts c"));
     }

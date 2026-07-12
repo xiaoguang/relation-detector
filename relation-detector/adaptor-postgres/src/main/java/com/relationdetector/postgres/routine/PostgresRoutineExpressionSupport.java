@@ -38,123 +38,130 @@ abstract class PostgresRoutineExpressionSupport extends PostgresRoutineVisitorSt
     }
 
     protected ColumnRead singleColumn(PostgresRoutineBodySqlParser.ExpressionContext expression) {
-        if (expression instanceof PostgresRoutineBodySqlParser.ColumnExpressionContext columnExpression) {
-            List<String> nameParts = parts(columnExpression.qualifiedName());
+        if (expression.expressionContinuation().expression() != null
+                || expression.castAtom().castSuffix().TYPE_CAST() != null) return null;
+        PostgresRoutineBodySqlParser.ExpressionAtomContext atom = expression.castAtom().expressionAtom();
+        if (atom.qualifiedName() != null) {
+            List<String> nameParts = parts(atom.qualifiedName());
             if (nameParts.size() == 1) return new ColumnRead(defaultColumnAlias(), nameParts.get(0));
             return new ColumnRead(nameParts.get(nameParts.size() - 2), nameParts.get(nameParts.size() - 1));
         }
-        if (expression instanceof PostgresRoutineBodySqlParser.ParenExpressionContext paren) {
-            return singleColumn(paren.expression());
+        if (atom.CASE() == null && atom.expression().size() == 1) {
+            return singleColumn(atom.expression(0));
         }
         return null;
     }
 
     protected ExpressionAnalysis analyze(PostgresRoutineBodySqlParser.ExpressionContext expression) {
-        if (expression instanceof PostgresRoutineBodySqlParser.ColumnExpressionContext value) {
-            ColumnRead column = singleColumn(value);
-            return column == null ? ExpressionAnalysis.empty()
-                    : ExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
+        ExpressionAnalysis base = analyze(expression.castAtom().expressionAtom());
+        PostgresRoutineBodySqlParser.ExpressionContinuationContext continuation =
+                expression.expressionContinuation();
+        if (continuation.expression() == null) return base;
+        LineageTransformType transform = continuation.CONCAT() == null
+                ? LineageTransformType.ARITHMETIC : LineageTransformType.CONCAT_FORMAT;
+        return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,
+                base, analyze(continuation.expression()));
+    }
+
+    private ExpressionAnalysis analyze(PostgresRoutineBodySqlParser.ExpressionAtomContext atom) {
+        if (atom.qualifiedName() != null) {
+            List<String> nameParts = parts(atom.qualifiedName());
+            ColumnRead column = nameParts.size() == 1
+                    ? new ColumnRead(defaultColumnAlias(), nameParts.get(0))
+                    : new ColumnRead(nameParts.get(nameParts.size() - 2), nameParts.get(nameParts.size() - 1));
+            return ExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
         }
-        if (expression instanceof PostgresRoutineBodySqlParser.ParenExpressionContext value) {
-            return analyze(value.expression());
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.BinaryExpressionContext value) {
-            LineageTransformType transform = "||".equals(value.arithmeticOperator().getText())
-                    ? LineageTransformType.CONCAT_FORMAT : LineageTransformType.ARITHMETIC;
-            return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,
-                    analyze(value.expression(0)), analyze(value.expression(1)));
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.TypeCastExpressionContext value) {
-            return analyze(value.expression());
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.UnaryMinusExpressionContext value) {
-            ExpressionAnalysis operand = analyze(value.expression());
+        if (atom.expressionAtom() != null) {
+            ExpressionAnalysis operand = analyze(atom.expressionAtom());
             return new ExpressionAnalysis(operand.sources(), LineageTransformType.ARITHMETIC,
                     LineageFlowKind.VALUE);
         }
-        if (expression instanceof PostgresRoutineBodySqlParser.FunctionExpressionContext value) {
-            ExpressionAnalysis args = ExpressionAnalysis.empty();
-            if (value.functionCall().expressionList() != null) {
-                for (PostgresRoutineBodySqlParser.ExpressionContext argument
-                        : value.functionCall().expressionList().expression()) {
-                    args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
-                }
-            }
-            String functionName = baseName(qualifiedName(value.functionCall().qualifiedName()))
-                    .toLowerCase(Locale.ROOT);
-            boolean windowed = value.windowClause() != null;
-            LineageTransformType transform = switch (functionName) {
-                case "sum" -> windowed ? LineageTransformType.CUMULATIVE : LineageTransformType.AGGREGATE;
-                case "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
-                case "coalesce" -> LineageTransformType.COALESCE;
-                case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
-                default -> LineageTransformType.FUNCTION_CALL;
-            };
-            LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
-            return new ExpressionAnalysis(args.sources(), dominant,
-                    dominant == LineageTransformType.CASE_WHEN
-                            ? LineageFlowKind.CONTROL : LineageFlowKind.VALUE);
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.CaseExpressionContext value) {
-            ExpressionAnalysis combined = ExpressionAnalysis.empty();
-            for (PostgresRoutineBodySqlParser.CaseWhenClauseContext clause : value.caseWhenClause()) {
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, combined, analyze(clause.predicate()));
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, combined, analyze(clause.expression()));
-            }
-            for (PostgresRoutineBodySqlParser.ExpressionContext part : value.expression()) {
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, combined, analyze(part));
-            }
-            return new ExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL);
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.ScalarSubqueryExpressionContext value) {
-            return analyzeScalarSubquery(value.selectStatement());
-        }
+        if (atom.functionCall() != null) return analyzeFunction(atom);
+        if (atom.selectStatement() != null) return analyzeScalarSubquery(atom.selectStatement());
+        if (atom.CASE() != null) return analyzeCase(atom);
+        if (atom.expression().size() == 1) return analyze(atom.expression(0));
         return ExpressionAnalysis.empty();
     }
 
+    private ExpressionAnalysis analyzeFunction(PostgresRoutineBodySqlParser.ExpressionAtomContext atom) {
+        ExpressionAnalysis args = ExpressionAnalysis.empty();
+        if (atom.functionCall().expressionList() != null) {
+            for (PostgresRoutineBodySqlParser.ExpressionContext argument
+                    : atom.functionCall().expressionList().expression()) {
+                args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
+            }
+        }
+        String functionName = baseName(qualifiedName(atom.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
+        LineageTransformType transform = switch (functionName) {
+            case "sum" -> atom.windowClause() == null
+                    ? LineageTransformType.AGGREGATE : LineageTransformType.CUMULATIVE;
+            case "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
+            case "coalesce" -> LineageTransformType.COALESCE;
+            case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
+            default -> LineageTransformType.FUNCTION_CALL;
+        };
+        LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
+        return new ExpressionAnalysis(args.sources(), dominant,
+                dominant == LineageTransformType.CASE_WHEN ? LineageFlowKind.CONTROL : LineageFlowKind.VALUE);
+    }
+
+    private ExpressionAnalysis analyzeCase(PostgresRoutineBodySqlParser.ExpressionAtomContext atom) {
+        ExpressionAnalysis combined = ExpressionAnalysis.empty();
+        for (PostgresRoutineBodySqlParser.CaseWhenClauseContext clause : atom.caseWhenClause()) {
+            combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, combined, analyze(clause.predicate()));
+            combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, combined, analyze(clause.expression()));
+        }
+        for (PostgresRoutineBodySqlParser.ExpressionContext part : atom.expression()) {
+            combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, combined, analyze(part));
+        }
+        return new ExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN,
+                LineageFlowKind.CONTROL);
+    }
+
     protected List<ExpressionAnalysis> writeAnalyses(PostgresRoutineBodySqlParser.ExpressionContext expression) {
-        if (expression instanceof PostgresRoutineBodySqlParser.ScalarSubqueryExpressionContext value) {
-            return scalarSubqueryWriteAnalyses(value.selectStatement());
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.FunctionExpressionContext value) {
-            return functionWriteAnalyses(value);
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.BinaryExpressionContext value) {
-            return binaryWriteAnalyses(value);
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.TypeCastExpressionContext value) {
-            return writeAnalyses(value.expression());
-        }
-        if (expression instanceof PostgresRoutineBodySqlParser.UnaryMinusExpressionContext value) {
-            return writeAnalyses(value.expression()).stream()
+        List<ExpressionAnalysis> base = writeAtomAnalyses(expression.castAtom().expressionAtom());
+        PostgresRoutineBodySqlParser.ExpressionContinuationContext continuation =
+                expression.expressionContinuation();
+        if (continuation.expression() == null) return base;
+        LineageTransformType transform = continuation.CONCAT() == null
+                ? LineageTransformType.ARITHMETIC : LineageTransformType.CONCAT_FORMAT;
+        return combineWriteAnalyses(base, writeAnalyses(continuation.expression()), transform);
+    }
+
+    private List<ExpressionAnalysis> writeAtomAnalyses(
+            PostgresRoutineBodySqlParser.ExpressionAtomContext atom
+    ) {
+        if (atom.selectStatement() != null) return scalarSubqueryWriteAnalyses(atom.selectStatement());
+        if (atom.functionCall() != null) return functionWriteAnalyses(atom);
+        if (atom.expressionAtom() != null) {
+            return writeAtomAnalyses(atom.expressionAtom()).stream()
                     .map(analysis -> analysis.flowKind() == LineageFlowKind.CONTROL ? analysis
                             : new ExpressionAnalysis(analysis.sources(), LineageTransformType.ARITHMETIC,
                                     LineageFlowKind.VALUE))
                     .toList();
         }
-        if (!(expression instanceof PostgresRoutineBodySqlParser.CaseExpressionContext value)) {
-            ExpressionAnalysis analysis = analyze(expression);
+        if (atom.CASE() == null) {
+            ExpressionAnalysis analysis = analyze(atom);
             return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
         }
         ExpressionAnalysis values = ExpressionAnalysis.empty();
         ExpressionAnalysis controls = ExpressionAnalysis.empty();
-        for (PostgresRoutineBodySqlParser.CaseWhenClauseContext clause : value.caseWhenClause()) {
+        for (PostgresRoutineBodySqlParser.CaseWhenClauseContext clause : atom.caseWhenClause()) {
             values = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.VALUE, values, analyze(clause.expression()));
             controls = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL, controls, analyze(clause.predicate()));
         }
-        List<PostgresRoutineBodySqlParser.ExpressionContext> outer = value.expression();
-        int selectorCount = outer.size() - (value.ELSE() == null ? 0 : 1);
+        List<PostgresRoutineBodySqlParser.ExpressionContext> outer = atom.expression();
+        int selectorCount = outer.size() - (atom.ELSE() == null ? 0 : 1);
         for (int index = 0; index < selectorCount; index++) {
             controls = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL, controls, analyze(outer.get(index)));
         }
-        if (value.ELSE() != null && !outer.isEmpty()) {
+        if (atom.ELSE() != null && !outer.isEmpty()) {
             values = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.VALUE, values, analyze(outer.get(outer.size() - 1)));
         }
@@ -166,10 +173,35 @@ abstract class PostgresRoutineExpressionSupport extends PostgresRoutineVisitorSt
         return List.copyOf(result);
     }
 
-    protected abstract List<ExpressionAnalysis> binaryWriteAnalyses(
-            PostgresRoutineBodySqlParser.BinaryExpressionContext expression);
+    private List<ExpressionAnalysis> combineWriteAnalyses(
+            List<ExpressionAnalysis> left,
+            List<ExpressionAnalysis> right,
+            LineageTransformType transform
+    ) {
+        ExpressionAnalysis values = ExpressionAnalysis.empty();
+        ExpressionAnalysis controls = ExpressionAnalysis.empty();
+        for (ExpressionAnalysis analysis : java.util.stream.Stream.concat(left.stream(), right.stream()).toList()) {
+            if (analysis.flowKind() == LineageFlowKind.CONTROL) {
+                controls = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, controls, analysis);
+            } else {
+                values = ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, values, analysis);
+            }
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!values.sources().isEmpty()) {
+            LineageTransformType effective = transform == LineageTransformType.CONCAT_FORMAT
+                    ? LineageTransformType.CONCAT_FORMAT
+                    : LineageTransformClassifier.dominant(transform, values.transform());
+            result.add(new ExpressionAnalysis(values.sources(), effective, LineageFlowKind.VALUE));
+        }
+        if (!controls.sources().isEmpty()) result.add(new ExpressionAnalysis(controls.sources(),
+                LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL));
+        return List.copyOf(result);
+    }
+
     protected abstract List<ExpressionAnalysis> functionWriteAnalyses(
-            PostgresRoutineBodySqlParser.FunctionExpressionContext expression);
+            PostgresRoutineBodySqlParser.ExpressionAtomContext expression);
     protected abstract List<ExpressionAnalysis> scalarSubqueryWriteAnalyses(
             PostgresRoutineBodySqlParser.SelectStatementContext select);
     protected abstract ExpressionAnalysis analyzeScalarSubquery(

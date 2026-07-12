@@ -4,7 +4,7 @@
     "FK_LIKE:accounts.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:order_staging.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:staging_orders.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:staging_orders.order_id->orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "archived_rows",

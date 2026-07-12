@@ -29,9 +29,14 @@ statement
     | create_table SEMI?
     | alter_table SEMI?
     | create_index SEMI?
+    | create_view SEMI?
     | GO
     | SEMI
     | unknown_statement SEMI?
+    ;
+
+create_view
+    : CREATE (OR ALTER)? VIEW full_table_name AS select_statement
     ;
 
 unknown_statement
@@ -345,7 +350,7 @@ expression_atom
     ;
 
 function_call
-    : function_name LPAREN (STAR | expression_list_)? RPAREN over_clause?
+    : function_name LPAREN DISTINCT? (STAR | expression_list_)? RPAREN over_clause?
     ;
 
 function_name
@@ -387,7 +392,7 @@ binary_operator
     ;
 
 loose_token
-    : SELECT | WITH | AS | FROM | WHERE | JOIN | INNER | LEFT | RIGHT | FULL | OUTER | CROSS | APPLY
+    : SELECT | DISTINCT | WITH | AS | FROM | WHERE | JOIN | INNER | LEFT | RIGHT | FULL | OUTER | CROSS | APPLY
     | ON | AND | OR | NOT | EXISTS | IN | BETWEEN | GROUP | BY | HAVING | ORDER | ASC | DESC | TOP | FETCH
     | FIRST | NEXT | ROWS | ONLY | UNION | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING | IDENTITY_INSERT
     | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | ADD | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
@@ -405,6 +410,7 @@ id_
     ;
 
 SELECT: 'SELECT';
+DISTINCT: 'DISTINCT';
 WITH: 'WITH';
 AS: 'AS';
 FROM: 'FROM';
@@ -450,6 +456,7 @@ MATCHED: 'MATCHED';
 THEN: 'THEN';
 CREATE: 'CREATE';
 ALTER: 'ALTER';
+VIEW: 'VIEW';
 PROCEDURE: 'PROCEDURE';
 FUNCTION: 'FUNCTION';
 RETURNS: 'RETURNS';

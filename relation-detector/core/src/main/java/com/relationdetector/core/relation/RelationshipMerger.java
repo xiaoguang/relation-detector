@@ -259,13 +259,13 @@ public final class RelationshipMerger {
     }
 
     private DirectionHint namingDirection(RelationshipCandidate candidate, Evidence evidence) {
-        Object source = evidence.attributes().get("suggestedSourceEndpoint");
-        Object target = evidence.attributes().get("suggestedTargetEndpoint");
+        Object source = evidence.attributes().get("suggestedSourceEndpointKey");
+        Object target = evidence.attributes().get("suggestedTargetEndpointKey");
         if (source == null || target == null || !Boolean.TRUE.equals(evidence.attributes().get("directionHint"))) {
             return null;
         }
-        String suggestedSource = normalizeEndpoint(String.valueOf(source));
-        String suggestedTarget = normalizeEndpoint(String.valueOf(target));
+        String suggestedSource = String.valueOf(source);
+        String suggestedTarget = String.valueOf(target);
         String currentSource = candidate.source().normalizedKey();
         String currentTarget = candidate.target().normalizedKey();
         if (suggestedSource.equals(currentSource) && suggestedTarget.equals(currentTarget)) {

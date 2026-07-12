@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:pg15_inventory_source.sku->pg15_inventory_target.sku:SQL_LOG_JOIN,SQL_LOG_EXISTS",
-    "CO_OCCURRENCE:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id:SQL_LOG_JOIN,SQL_LOG_EXISTS"
+    "CO_OCCURRENCE:pg15_inventory_source.sku->pg15_inventory_target.sku:SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_EXISTS",
+    "CO_OCCURRENCE:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id:SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_EXISTS"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

@@ -32,6 +32,7 @@ final class MySqlFullGrammerDdlEventCollector {
     private static final class MysqlDdlVisitor extends MySqlFullGrammerParserBaseVisitor<Void> {
         private final MySqlDdlEventSink out;
         private String currentTable = "";
+        private String currentColumn = "";
 
         MysqlDdlVisitor(String sourceName) {
             this.out = new MySqlDdlEventSink(sourceName);
@@ -99,13 +100,20 @@ final class MySqlFullGrammerDdlEventCollector {
             if (hasInlineUnique(ctx.fieldDefinition())) {
                 out.addIndex(currentTable, column, "TARGET_UNIQUE", "INLINE_UNIQUE", ctx.getStart().getLine());
             }
-            MySqlFullGrammerParser.ReferencesContext references =
-                    firstChild(ctx, MySqlFullGrammerParser.ReferencesContext.class);
-            if (references != null) {
-                out.addForeignKeyEvents(currentTable, List.of(column), table(references.tableRef()),
-                        identifierList(references.identifierListWithParentheses()), ctx.getStart().getLine());
+            String previous = currentColumn;
+            currentColumn = column;
+            Void result = super.visitColumnDefinition(ctx);
+            currentColumn = previous;
+            return result;
+        }
+
+        @Override
+        public Void visitReferences(MySqlFullGrammerParser.ReferencesContext ctx) {
+            if (!currentTable.isBlank() && !currentColumn.isBlank()) {
+                out.addForeignKeyEvents(currentTable, List.of(currentColumn), table(ctx.tableRef()),
+                        identifierList(ctx.identifierListWithParentheses()), ctx.getStart().getLine());
             }
-            return super.visitColumnDefinition(ctx);
+            return null;
         }
 
         @Override
@@ -209,23 +217,5 @@ final class MySqlFullGrammerDdlEventCollector {
                     .toList());
         }
 
-        private <T extends ParserRuleContext> T firstChild(ParserRuleContext ctx, Class<T> type) {
-            if (ctx == null) {
-                return null;
-            }
-            if (type.isInstance(ctx)) {
-                return type.cast(ctx);
-            }
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                ParseTree child = ctx.getChild(i);
-                if (child instanceof ParserRuleContext childContext) {
-                    T found = firstChild(childContext, type);
-                    if (found != null) {
-                        return found;
-                    }
-                }
-            }
-            return null;
-        }
     }
 }

@@ -27,6 +27,19 @@ class CorrectnessJsonTest {
     }
 
     @Test
+    void writesGoldenArraysOneValuePerLine() throws Exception {
+        Path file = tempDir.resolve("expected-relations.json");
+
+        CorrectnessJson.writeRelations(file, new ExpectedRelations(
+                List.of("first", "second"),
+                List.of("forbidden.table")));
+
+        String json = Files.readString(file);
+        assertTrue(json.contains("\n    \"first\",\n    \"second\"\n  ]"), json);
+        assertTrue(json.contains("\n    \"forbidden.table\"\n  ]"), json);
+    }
+
+    @Test
     void malformedGoldenIncludesItsPathInTheFailure() throws Exception {
         Path file = tempDir.resolve("expected-relations.json");
         Files.writeString(file, "{\"fingerprints\":\"not-an-array\"}");

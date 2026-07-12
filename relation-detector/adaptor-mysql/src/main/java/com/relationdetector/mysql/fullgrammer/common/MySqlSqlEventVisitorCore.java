@@ -5,8 +5,14 @@ import com.relationdetector.core.fullgrammer.FullGrammerEventMerger;
 import com.relationdetector.core.fullgrammer.FullGrammerNativeEventTypes;
 import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter;
 import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
+import com.relationdetector.mysql.routine.MySqlRoutineScopePolicy;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
@@ -19,11 +25,13 @@ public final class MySqlSqlEventVisitorCore {
     private final FullGrammerTypedSqlEventSink sink;
     private final FullGrammerParseTreeAdapter parseTreeAdapter;
     private final List<String> rowsetAliases = new ArrayList<>();
+    private final ArrayDeque<Map<String, String>> queryRowsets = new ArrayDeque<>();
     private int existsDepth;
 
     public MySqlSqlEventVisitorCore(FullGrammerTypedSqlEventSink sink) {
         this.sink = sink;
         this.parseTreeAdapter = sink.parseTreeAdapter();
+        this.queryRowsets.push(new LinkedHashMap<>());
     }
 
     public FullGrammerTypedSqlEventSink sink() {
@@ -41,6 +49,56 @@ public final class MySqlSqlEventVisitorCore {
         }
     }
 
+    public void withQueryScope(Runnable visitor) {
+        queryRowsets.push(new LinkedHashMap<>());
+        try {
+            visitor.run();
+        } finally {
+            queryRowsets.pop();
+        }
+    }
+
+    public void bindPhysicalRowset(String qualifiedTable, String alias) {
+        String physical = sink.clean(qualifiedTable);
+        if (physical.isBlank()) {
+            return;
+        }
+        bindQueryRowset(sink.baseName(physical), physical);
+        bindQueryRowset(alias, physical);
+    }
+
+    public void bindDerivedRowset(String alias) {
+        bindQueryRowset(alias, "");
+    }
+
+    public Optional<String> physicalTableForAlias(String alias) {
+        String key = normalize(alias);
+        if (key.isBlank()) {
+            return Optional.empty();
+        }
+        for (Map<String, String> scope : queryRowsets) {
+            if (scope.containsKey(key)) {
+                return Optional.ofNullable(scope.get(key)).filter(value -> !value.isBlank());
+            }
+        }
+        return Optional.empty();
+    }
+
+    public void markNonColumnIdentifier(String identifier) {
+        MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, identifier);
+    }
+
+    private void bindQueryRowset(String alias, String physicalTable) {
+        String key = normalize(alias);
+        if (!key.isBlank()) {
+            queryRowsets.peek().put(key, physicalTable == null ? "" : physicalTable);
+        }
+    }
+
+    private String normalize(String value) {
+        return sink.clean(value).toLowerCase(Locale.ROOT);
+    }
+
     public String lastRowsetAlias() {
         return rowsetAliases.isEmpty() ? "" : rowsetAliases.get(rowsetAliases.size() - 1);
     }
@@ -51,8 +109,7 @@ public final class MySqlSqlEventVisitorCore {
     }
 
     public String projectedColumnName(ParseTree expression) {
-        List<String> identifiers = sink.identifiers(expression);
-        return identifiers.isEmpty() ? "" : identifiers.get(identifiers.size() - 1);
+        return sink.directProjectedColumnName(expression);
     }
 
     public ColumnParts columnParts(String raw) {

@@ -1,5 +1,8 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CONTROL:CASE_WHEN:products.id->product_batches.expiry_date",
+    "VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date"
+  ],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

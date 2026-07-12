@@ -21,8 +21,9 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
-import com.relationdetector.core.relation.NamingEvidencePool;
-import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.naming.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.relation.RelationshipMerger;
 
 class NamingMatchEvidenceEnhancerTest {
     @Test
@@ -97,6 +98,20 @@ class NamingMatchEvidenceEnhancerTest {
         assertEquals("SELF_ROLE_ID", naming.attributes().get("namingRule"));
         assertEquals("employees.manager_id", naming.attributes().get("suggestedSourceEndpoint"));
         assertEquals("employees.id", naming.attributes().get("suggestedTargetEndpoint"));
+    }
+
+    @Test
+    void reverseWrittenPredicateUsesPoolDirectionForFinalRelationship() {
+        RelationshipCandidate candidate = sqlCoOccurrence("customers", "id", "orders", "customer_id");
+        NamingEvidenceCandidate pooled = namingEvidence("orders", "customer_id", "customers", "id", "TABLE_ID");
+
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool(pooled));
+        RelationshipCandidate merged = new RelationshipMerger().merge(List.of(candidate), 0.0d).get(0);
+
+        assertEquals(RelationType.FK_LIKE, merged.relationType());
+        assertEquals("orders.customer_id", merged.source().displayName());
+        assertEquals("customers.id", merged.target().displayName());
+        assertEquals(pooled.id(), evidence(merged, EvidenceType.NAMING_MATCH).attributes().get("evidenceRef"));
     }
 
     @Test

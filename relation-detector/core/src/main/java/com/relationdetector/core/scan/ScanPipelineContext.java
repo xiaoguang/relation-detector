@@ -9,7 +9,9 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.parser.ParserBundle;
-import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidencePool;
+import com.relationdetector.core.ddl.DdlEvidenceInventory;
+import com.relationdetector.core.identity.NamespaceContext;
 
 final class ScanPipelineContext implements AutoCloseable {
     final ResolvedScanConfig config;
@@ -21,6 +23,7 @@ final class ScanPipelineContext implements AutoCloseable {
     final List<RelationshipCandidate> relationshipCandidates;
     final List<DataLineageCandidate> lineageCandidates;
     final NamingEvidencePool namingEvidencePool;
+    final DdlEvidenceInventory ddlEvidenceInventory;
     final ScanTaskExecutor taskExecutor;
     ParserBundle parserBundle;
     MetadataSnapshot metadataSnapshot;
@@ -43,6 +46,9 @@ final class ScanPipelineContext implements AutoCloseable {
         this.relationshipCandidates = relationshipCandidates;
         this.lineageCandidates = lineageCandidates;
         this.namingEvidencePool = new NamingEvidencePool();
+        this.ddlEvidenceInventory = new DdlEvidenceInventory(
+                adaptor.identifierRules(),
+                new NamespaceContext(scope.catalog(), scope.schema(), List.of()));
         this.taskExecutor = new ScanTaskExecutor(config.execution().parallelism());
     }
 

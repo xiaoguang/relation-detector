@@ -2,7 +2,7 @@
   "fingerprints": [
     "VALUE:ARITHMETIC:pg16_generated_margin_demo.sales_amount->pg16_generated_margin_demo.sales_amount"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

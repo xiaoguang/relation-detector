@@ -46,7 +46,7 @@ class FullGrammerSqlBehaviorTest {
         assertTrue(hasEvent(result, StructuredParseEventType.EXISTS_PREDICATE, "leftAlias", "u", "rightAlias", "o"));
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
         assertTrue(hasEvent(result, StructuredParseEventType.IN_SUBQUERY_PREDICATE, "outerAlias", "o", "innerTable", "customers"));
-        assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "tokenEventNative", true));
+        assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "fullGrammerNative", true));
 
         List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
                 .map(FullGrammerSqlBehaviorTest::relationFingerprint)
@@ -72,7 +72,7 @@ class FullGrammerSqlBehaviorTest {
         assertTrue(hasEvent(result, StructuredParseEventType.EXISTS_PREDICATE, "leftAlias", "u", "rightAlias", "o"));
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
         assertTrue(hasEvent(result, StructuredParseEventType.IN_SUBQUERY_PREDICATE, "outerAlias", "o", "innerTable", "customers"));
-        assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "tokenEventNative", true));
+        assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "fullGrammerNative", true));
     }
 
     @Test
@@ -561,7 +561,7 @@ class FullGrammerSqlBehaviorTest {
         assertTrue(hasEvent(result, StructuredParseEventType.PROJECTION_ITEM,
                 "outputColumn", "order_rank", "transformType", "WINDOW_DERIVED"));
         assertTrue(hasEvent(result, StructuredParseEventType.UPDATE_ASSIGNMENT,
-                "targetColumn", "total_spent", "transformType", "COALESCE"));
+                "targetColumn", "total_spent", "transformType", "COALESCE"), () -> result.events().toString());
         assertTrue(hasEvent(result, StructuredParseEventType.UPDATE_ASSIGNMENT,
                 "targetColumn", "risk_band", "flowKind", "CONTROL"));
     }
@@ -757,7 +757,7 @@ class FullGrammerSqlBehaviorTest {
         assertEquals(List.of(
                 "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_JOIN",
                 "CO_OCCURRENCE:account_balances.user_id->transaction_logs.user_id:SQL_LOG_JOIN"),
-                fingerprints);
+                fingerprints, () -> result.events().toString());
     }
 
     @Test
@@ -874,6 +874,7 @@ class FullGrammerSqlBehaviorTest {
             case "flowKind" -> event.expression().flowKind().name();
             case "transformType" -> event.expression().transformType().name();
             case "tokenEventNative" -> event.provenance().tokenEventNative();
+            case "fullGrammerNative" -> event.provenance().fullGrammerNative();
             default -> throw new IllegalArgumentException("Unsupported typed SQL event field: " + key);
         };
     }

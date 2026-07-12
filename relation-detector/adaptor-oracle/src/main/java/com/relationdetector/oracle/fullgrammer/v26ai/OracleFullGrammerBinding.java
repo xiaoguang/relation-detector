@@ -23,7 +23,7 @@ final class OracleFullGrammerBinding implements OracleFullGrammerSqlBinding, Ora
 
     @Override
     public OracleFullGrammerParseSupport.ParsedEvents parseSql(SqlStatementRecord statement) {
-        return parse(statement);
+        return parse(statement, true);
     }
 
     @Override

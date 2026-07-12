@@ -235,6 +235,8 @@ class RelationshipMergerEvidenceAggregationTest {
                         "namingRule", "TABLE_ID",
                         "suggestedSourceEndpoint", "orders.user_id",
                         "suggestedTargetEndpoint", "users.id",
+                        "suggestedSourceEndpointKey", "orders.user_id",
+                        "suggestedTargetEndpointKey", "users.id",
                         "directionHint", true)));
 
         RelationshipCandidate merged = merger.merge(List.of(sql), 0.0d).get(0);
@@ -262,6 +264,8 @@ class RelationshipMergerEvidenceAggregationTest {
                         "namingRule", "TABLE_ID",
                         "suggestedSourceEndpoint", "orders.user_id",
                         "suggestedTargetEndpoint", "users.id",
+                        "suggestedSourceEndpointKey", "orders.user_id",
+                        "suggestedTargetEndpointKey", "users.id",
                         "directionHint", true)));
 
         RelationshipCandidate merged = merger.merge(List.of(candidate), 0.0d).get(0);
@@ -324,6 +328,8 @@ class RelationshipMergerEvidenceAggregationTest {
                         "namingRule", "TABLE_ID",
                         "suggestedSourceEndpoint", "orders.user_id",
                         "suggestedTargetEndpoint", "users.id",
+                        "suggestedSourceEndpointKey", "orders.user_id",
+                        "suggestedTargetEndpointKey", "users.id",
                         "directionHint", true));
     }
 

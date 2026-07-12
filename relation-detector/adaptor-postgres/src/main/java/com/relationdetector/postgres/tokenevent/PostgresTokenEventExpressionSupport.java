@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -73,7 +70,7 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
             return analyze(value.expression());
         }
         if (expression instanceof PostgresRelationSqlParser.BinaryExpressionContext value) {
-            LineageTransformType transform = "||".equals(value.arithmeticOperator().getText())
+            LineageTransformType transform = value.arithmeticOperator().CONCAT() != null
                     ? LineageTransformType.CONCAT_FORMAT : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,
                     analyze(value.expression(0)), analyze(value.expression(1)));
@@ -207,26 +204,24 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
     }
 
     private ExpressionAnalysis analyzeWindowClause(PostgresRelationSqlParser.WindowClauseContext windowClause) {
-        List<String> tokens = new ArrayList<>();
-        collectLeafText(windowClause, tokens);
-        List<ColumnRead> columns = new ArrayList<>();
-        for (int index = 0; index + 2 < tokens.size(); index++) {
-            if (!".".equals(tokens.get(index + 1))) continue;
-            String alias = clean(tokens.get(index));
-            String column = clean(tokens.get(index + 2));
-            if (!alias.isBlank() && !column.isBlank()) columns.add(new ColumnRead(alias, column));
+        ExpressionAnalysis analysis = ExpressionAnalysis.empty();
+        if (windowClause.windowPartitionClause() != null) {
+            for (PostgresRelationSqlParser.ExpressionContext expression
+                    : windowClause.windowPartitionClause().expressionList().expression()) {
+                analysis = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.VALUE, analysis, analyze(expression));
+            }
         }
-        return columns.isEmpty() ? ExpressionAnalysis.empty()
-                : new ExpressionAnalysis(columns.stream().distinct().toList(),
+        if (windowClause.orderByClause() != null) {
+            for (PostgresRelationSqlParser.OrderByItemContext item
+                    : windowClause.orderByClause().orderByItem()) {
+                analysis = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.VALUE, analysis, analyze(item.expression()));
+            }
+        }
+        return analysis.sources().isEmpty() ? ExpressionAnalysis.empty()
+                : new ExpressionAnalysis(analysis.sources().stream().distinct().toList(),
                         LineageTransformType.WINDOW_DERIVED, LineageFlowKind.VALUE);
-    }
-
-    private void collectLeafText(ParseTree tree, List<String> tokens) {
-        if (tree instanceof TerminalNode terminal) {
-            if (terminal.getText() != null && !terminal.getText().isBlank()) tokens.add(terminal.getText());
-            return;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) collectLeafText(tree.getChild(index), tokens);
     }
 
     private ExpressionAnalysis analyzeScalarSubquery(PostgresRelationSqlParser.SelectStatementContext select) {

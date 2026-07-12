@@ -6,6 +6,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
+import com.relationdetector.contracts.parse.ExpressionTrace;
 
 final class ProjectionEventSink {
     private final SourceLocationSupport source;
@@ -31,10 +34,28 @@ final class ProjectionEventSink {
         if (cleanOutputAlias.isBlank() || cleanOutputColumn.isBlank()) {
             return;
         }
-        for (FullGrammerExpressionAnalysis analysis : projectionAnalyses(expression)) {
+        List<FullGrammerExpressionAnalysis> analyses = projectionAnalyses(expression);
+        if (analyses.isEmpty()) {
+            recorder.projection(ctx, StructuredParseEventType.PROJECTION_ITEM,
+                    cleanOutputAlias, cleanOutputColumn, ExpressionTrace.empty());
+            return;
+        }
+        for (FullGrammerExpressionAnalysis analysis : analyses) {
             addProjection(ctx, cleanOutputAlias, cleanOutputColumn, analysis);
             expressionSource(ctx, analysis);
         }
+    }
+
+    void wildcardProjection(ParserRuleContext ctx, String outputAlias) {
+        String cleanOutputAlias = source.clean(outputAlias);
+        String qualifier = source.clean(rowsets.defaultProjectionQualifier());
+        if (cleanOutputAlias.isBlank() || qualifier.isBlank()) {
+            return;
+        }
+        recorder.projection(ctx, StructuredParseEventType.PROJECTION_ITEM,
+                cleanOutputAlias, "*", ExpressionTrace.of(
+                        List.of(qualifier), List.of("*"), LineageFlowKind.VALUE,
+                        LineageTransformType.DIRECT));
     }
 
     private List<FullGrammerExpressionAnalysis> projectionAnalyses(ParseTree expression) {

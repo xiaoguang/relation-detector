@@ -168,8 +168,8 @@ public final class PostgresSqlEventVisitorCore {
             result.add(tree);
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectExpressionChildren(tree.getChild(index), result);
+        for (ParseTree child : sink.parseTreeAdapter().typedChildren(tree)) {
+            collectExpressionChildren(child, result);
         }
     }
 

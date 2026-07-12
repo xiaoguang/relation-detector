@@ -1,7 +1,7 @@
 target/
 */target/
 .DS_Store
-.mvn/build-cache/
+**/.mvn/build-cache/
 test-fixtures/local/
 亿问/
 mysql80-sample-data-provenance.ttl

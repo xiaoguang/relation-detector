@@ -2,7 +2,7 @@
   "fingerprints": [
     "VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

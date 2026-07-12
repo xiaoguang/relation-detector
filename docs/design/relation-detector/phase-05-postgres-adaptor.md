@@ -6,6 +6,8 @@
 
 当前 PostgreSQL adaptor 不只负责采集，也负责 PostgreSQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.postgres.tokenevent`，PostgreSQL full-grammer 公共抽象位于 `com.relationdetector.postgres.fullgrammer.common`，严格版本 profile 位于 `com.relationdetector.postgres.fullgrammer.v16`、`v17`、`v18`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code PostgreSQL 版本实现。
 
+PostgreSQL 同时实现 SPI v3 的 `PostgresScriptParser`。它使用 generated script lexer 的 typed dollar-tag lexeme，在匹配的 `$tag$ ... $tag$` 区间内不把 semicolon 当作 statement boundary；framing 先于 SQL/DDL grammar，避免函数体被通用 splitter 截断。
+
 PostgreSQL full-grammer 的设计目标是“按大版本严格表达官方语法边界”：
 
 - `postgresql/16` 只证明 PostgreSQL 16.x 语法。
@@ -32,7 +34,9 @@ PostgreSQL 特点：
 
 - adaptor 负责解析和规范化双引号标识符。
 - 未引用标识符 normalized 为小写。
-- schema 缺省时使用配置 schema 或 `search_path` 中的首选 schema。
+- SQL 中 schema 缺省时，输出 endpoint 仍保持裸表名；配置 schema 或可唯一确定的
+  `search_path` 仅作为 scan 内部 `CanonicalEndpointKey` 的 namespace context，用于跨
+  SQL、DDL 与 metadata 精确对齐，不回写或改名可读 endpoint。
 - core 不自行处理 PostgreSQL 大小写规则。
 
 ## 元数据采集

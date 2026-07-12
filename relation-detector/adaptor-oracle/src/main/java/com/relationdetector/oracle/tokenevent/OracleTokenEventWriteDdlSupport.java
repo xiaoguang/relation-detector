@@ -156,7 +156,10 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
             OracleRelationSqlParser.SelectItemContext item = items.get(index);
             if (item.expression() == null) continue;
             String output = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
-            if (output.isBlank()) continue;
+            if (output.isBlank()) {
+                visit(item.expression());
+                continue;
+            }
             for (OracleExpressionAnalysis raw : writeAnalyses(item.expression())) {
                 OracleExpressionAnalysis source = resolveCurrentScope(raw);
                 if (!source.sources().isEmpty()) {

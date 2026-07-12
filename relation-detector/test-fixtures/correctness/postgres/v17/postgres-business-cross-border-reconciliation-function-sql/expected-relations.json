@@ -1,5 +1,5 @@
 {
-  "fingerprints": [],
+  "fingerprints": [ ],
   "forbiddenTables": [
     "memory_input_cargo",
     "fx_valuation",

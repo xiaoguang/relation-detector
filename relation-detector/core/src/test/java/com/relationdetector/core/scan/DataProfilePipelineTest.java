@@ -153,7 +153,8 @@ class DataProfilePipelineTest {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     (statement, context) -> List.<RelationshipCandidate>of(),
                     Optional.empty(),
-                    Optional.empty());
+                    Optional.empty(),
+                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
         }
 
         @Override

@@ -10,17 +10,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.core.log.ObjectSqlFileExtractor;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.sqlserver.script.SqlServerScriptParser;
 
 /** Opt-in execution check for a dedicated empty SQL Server database. */
 class SqlServerSampleDataExecutionIT {
@@ -78,16 +75,11 @@ class SqlServerSampleDataExecutionIT {
     }
 
     private List<String> batches(Path file, boolean schema) throws Exception {
-        String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
-        if (schema && name.contains("trigger")) {
-            return new ObjectSqlFileExtractor().extract(
-                    Files.readString(file), StatementSourceType.DDL_FILE, file.toString(), DatabaseType.SQLSERVER)
-                    .stream().map(com.relationdetector.contracts.parse.SqlStatementRecord::sql).toList();
-        }
-        List<String> result = new ArrayList<>();
-        new PlainSqlLogExtractor().extract(file, schema ? StatementSourceType.DDL_FILE : StatementSourceType.PLAIN_SQL)
+        StatementSourceType sourceType = schema ? StatementSourceType.DDL_FILE : StatementSourceType.PLAIN_SQL;
+        return new SqlServerScriptParser().parse(
+                new ScriptParseRequest(Files.readString(file), file.toString(), sourceType))
+                .statements().stream()
                 .map(com.relationdetector.contracts.parse.SqlStatementRecord::sql)
-                .forEach(result::add);
-        return result;
+                .toList();
     }
 }

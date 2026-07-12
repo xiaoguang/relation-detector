@@ -80,11 +80,25 @@ final class DerivedLineageInference {
             candidate.evidence().add(new Evidence(
                     first.type(), candidate.confidence(), first.sourceType(),
                     first.source(), first.detail(), summary));
+            Map<Evidence, Integer> rawObservations = new LinkedHashMap<>();
             for (DerivedPathObservation variant : variants) {
                 List<Endpoint> variantEndpoints = graphs.endpoints(variant);
-                candidate.rawEvidence().add(graphs.pathEvidence(
+                Evidence rawObservation = graphs.pathEvidence(
                         variant, "derived:data_lineage", false,
-                        variantEndpoints, variantEndpoints));
+                        variantEndpoints, variantEndpoints);
+                rawObservations.merge(rawObservation, 1, Integer::sum);
+            }
+            for (Map.Entry<Evidence, Integer> entry : rawObservations.entrySet()) {
+                Evidence observation = entry.getKey();
+                if (entry.getValue() == 1) {
+                    candidate.rawEvidence().add(observation);
+                    continue;
+                }
+                Map<String, Object> attributes = new LinkedHashMap<>(observation.attributes());
+                attributes.put("occurrenceCount", entry.getValue());
+                candidate.rawEvidence().add(new Evidence(
+                        observation.type(), observation.score(), observation.sourceType(),
+                        observation.source(), observation.detail(), attributes));
             }
             result.add(candidate);
             if (graphs.limitReached(result.size())) {

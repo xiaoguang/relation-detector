@@ -7,7 +7,7 @@
     "VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta",
     "VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

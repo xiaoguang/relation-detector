@@ -18,6 +18,37 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlTokenEventWriteD
     }
 
     @Override
+    public Void visitTriggerStartStatement(MySqlRelationSqlParser.TriggerStartStatementContext ctx) {
+        String targetTable = qualifiedName(ctx.qualifiedName());
+        emitter.addRowset(events, ctx, StructuredParseEventType.TRIGGER_TARGET_TABLE,
+                "ON", targetTable, baseName(targetTable), "", "", targetTable, "");
+        for (String pseudo : List.of("NEW", "OLD")) {
+            emitter.addRowset(events, ctx, StructuredParseEventType.TRIGGER_PSEUDO_ROWSET,
+                    "", pseudo, pseudo, pseudo, pseudo, targetTable, "");
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitRoutineStartStatement(MySqlRelationSqlParser.RoutineStartStatementContext ctx) {
+        ctx.routineParameterList().routineParameter().forEach(parameter ->
+                nonColumnIdentifiers.add(normalize(parameter.identifier().getText())));
+        return null;
+    }
+
+    @Override
+    public Void visitDeclarationStatement(MySqlRelationSqlParser.DeclarationStatementContext ctx) {
+        nonColumnIdentifiers.add(normalize(ctx.identifier().getText()));
+        return null;
+    }
+
+    @Override
+    public Void visitCursorDeclarationStatement(MySqlRelationSqlParser.CursorDeclarationStatementContext ctx) {
+        nonColumnIdentifiers.add(normalize(ctx.identifier().getText()));
+        return visit(ctx.selectStatement());
+    }
+
+    @Override
     public Void visitCommonTableExpression(MySqlRelationSqlParser.CommonTableExpressionContext ctx) {
         String name = clean(ctx.identifier().getText());
         if (!name.isBlank()) {
@@ -42,6 +73,7 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlTokenEventWriteD
         if (ctx.havingClause() != null) visit(ctx.havingClause());
         if (!projectionOwners.isEmpty()) {
             emitProjectionItems(ctx.selectList(), projectionOwners.peek(), singleProjectionQualifier(ctx.fromClause()));
+            visit(ctx.selectList());
         } else {
             visit(ctx.selectList());
         }
@@ -110,7 +142,7 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlTokenEventWriteD
 
     @Override
     public Void visitComparisonPredicate(MySqlRelationSqlParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) {
+        if (ctx.comparisonOperator().EQ() == null) {
             return visitChildren(ctx);
         }
         String defaultQualifier = enclosingSingleProjectionQualifier(ctx);

@@ -2,5 +2,5 @@
   "fingerprints": [
     "FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_EXISTS,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

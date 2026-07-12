@@ -23,6 +23,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
@@ -31,8 +32,6 @@ import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.log.ObjectSqlFileExtractor;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
 import com.relationdetector.core.scan.ScanConfig;
@@ -222,8 +221,8 @@ final class SampleDataSchemaConsistencySupport {
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = commonContext(warnings);
         ParserBundle bundle = commonBundle(context);
-        SqlStatementRecord routine = new ObjectSqlFileExtractor()
-                .extract(processFile, StatementSourceType.PROCEDURE, DatabaseType.COMMON, warnings::add)
+        SqlStatementRecord routine = scriptStatements(
+                new CommonDatabaseAdaptor(), processFile, StatementSourceType.PROCEDURE, warnings).stream()
                 .filter(statement -> "sp_record_customer_receipt_and_payment"
                         .equals(statement.attributes().get("sourceObjectName")))
                 .findFirst()
@@ -292,9 +291,8 @@ final class SampleDataSchemaConsistencySupport {
                     .filter(path -> path.toString().endsWith(".sql"))
                     .sorted()
                     .toList()) {
-                for (var statement : new PlainSqlLogExtractor()
-                        .extract(schemaFile, StatementSourceType.DDL_FILE, warnings::add)
-                        .toList()) {
+                for (var statement : scriptStatements(
+                        new CommonDatabaseAdaptor(), schemaFile, StatementSourceType.DDL_FILE, warnings)) {
                     StructuredParseResult result = bundle.ddlParser().parseDdl(
                             statement.sql(), statement.sourceName(), context);
                     assertTrue(((Number) result.attributes().get("syntaxErrors")).intValue() == 0,
@@ -424,8 +422,8 @@ final class SampleDataSchemaConsistencySupport {
             List<WarningMessage> warnings
     ) throws Exception {
         for (Path file : sqlFiles(root)) {
-            for (SqlStatementRecord statement : new PlainSqlLogExtractor()
-                    .extract(file, StatementSourceType.DDL_FILE, warnings::add).toList()) {
+            for (SqlStatementRecord statement : scriptStatements(
+                    new CommonDatabaseAdaptor(), file, StatementSourceType.DDL_FILE, warnings)) {
                 assertSuccessfulParse(statement,
                         bundle.ddlParser().parseDdl(statement.sql(), statement.sourceName(), context));
             }
@@ -439,8 +437,8 @@ final class SampleDataSchemaConsistencySupport {
             List<WarningMessage> warnings
     ) throws Exception {
         for (Path file : sqlFiles(root)) {
-            for (SqlStatementRecord statement : new ObjectSqlFileExtractor()
-                    .extract(file, StatementSourceType.PROCEDURE, DatabaseType.COMMON, warnings::add).toList()) {
+            for (SqlStatementRecord statement : scriptStatements(
+                    new CommonDatabaseAdaptor(), file, StatementSourceType.PROCEDURE, warnings)) {
                 assertSuccessfulParse(statement, bundle.sqlParser().parseSql(statement, context));
             }
         }
@@ -453,8 +451,8 @@ final class SampleDataSchemaConsistencySupport {
             List<WarningMessage> warnings
     ) throws Exception {
         for (Path file : sqlFiles(root)) {
-            for (SqlStatementRecord statement : new PlainSqlLogExtractor()
-                    .extract(file, StatementSourceType.PLAIN_SQL, warnings::add).toList()) {
+            for (SqlStatementRecord statement : scriptStatements(
+                    new CommonDatabaseAdaptor(), file, StatementSourceType.PLAIN_SQL, warnings)) {
                 assertSuccessfulParse(statement, bundle.sqlParser().parseSql(statement, context));
             }
         }
@@ -508,9 +506,8 @@ final class SampleDataSchemaConsistencySupport {
                     .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).contains("table"))
                     .sorted()
                     .toList()) {
-                for (var statement : new PlainSqlLogExtractor()
-                        .extract(schemaFile, StatementSourceType.DDL_FILE, warnings::add)
-                        .toList()) {
+                for (var statement : scriptStatements(
+                        adaptor, schemaFile, StatementSourceType.DDL_FILE, warnings)) {
                     StructuredParseResult result = bundle.ddlParser().parseDdl(
                             statement.sql(), statement.sourceName(), context);
                     result.events().forEach(event -> addDeclaredColumns(event, declared));
@@ -520,6 +517,18 @@ final class SampleDataSchemaConsistencySupport {
 
         assertTrue(warnings.isEmpty(), () -> profile + " DDL inventory warnings=" + warnings);
         return declared;
+    }
+
+    private static List<SqlStatementRecord> scriptStatements(
+            DatabaseAdaptor adaptor,
+            Path file,
+            StatementSourceType sourceType,
+            List<WarningMessage> warnings
+    ) throws Exception {
+        var result = adaptor.parsers().scripts().parse(
+                new ScriptParseRequest(Files.readString(file), file.toString(), sourceType));
+        warnings.addAll(result.warnings());
+        return result.statements();
     }
 
     private static void addDeclaredColumns(

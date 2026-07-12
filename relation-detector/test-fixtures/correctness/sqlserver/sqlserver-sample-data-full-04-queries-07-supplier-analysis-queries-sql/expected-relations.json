@@ -2,7 +2,9 @@
   "fingerprints": [
     "FK_LIKE:dbo.ap_invoices.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.product_batches.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

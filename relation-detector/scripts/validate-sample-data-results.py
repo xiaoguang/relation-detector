@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 
@@ -76,6 +77,46 @@ def validate_sources(path, value):
             validate_sources(path, child)
 
 
+def validate_source_locations(path, value, line_counts):
+    if isinstance(value, dict):
+        source_file = value.get("sourceFile")
+        source_line = value.get("sourceLine")
+        statement_id = value.get("sourceStatementId")
+        if source_file and source_line is not None:
+            source_path = Path(source_file)
+            if not source_path.exists():
+                fail(f"{path}: sourceFile does not exist: {source_file}")
+            if source_path not in line_counts:
+                with source_path.open(encoding="utf-8", errors="ignore") as handle:
+                    line_counts[source_path] = sum(1 for _ in handle)
+            line = int(source_line)
+            if line < 1 or line > line_counts[source_path]:
+                fail(f"{path}: sourceLine {line} is outside {source_file} "
+                     f"(1-{line_counts[source_path]})")
+            if statement_id:
+                span = re.search(r":(\d+)-(\d+)$", str(statement_id))
+                if span and not int(span.group(1)) <= line <= int(span.group(2)):
+                    fail(f"{path}: sourceLine {line} is outside sourceStatementId {statement_id}")
+        for child in value.values():
+            validate_source_locations(path, child, line_counts)
+    elif isinstance(value, list):
+        for child in value:
+            validate_source_locations(path, child, line_counts)
+
+
+def validate_raw_observations(path, data):
+    for section in ("relationships", "dataLineages", "namingEvidence",
+                    "derivedRelationships", "derivedDataLineages"):
+        for fact_index, fact in enumerate(data.get(section) or []):
+            seen = set()
+            for observation_index, observation in enumerate(fact.get("rawEvidence") or []):
+                identity = json.dumps(observation, sort_keys=True, separators=(",", ":"))
+                if identity in seen:
+                    fail(f"{path}: duplicate raw observation in {section}[{fact_index}]"
+                         f".rawEvidence[{observation_index}]")
+                seen.add(identity)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("result_dir", type=Path)
@@ -92,11 +133,14 @@ def main():
     for stem in direct:
         if stem + DERIVED_SUFFIX not in stems:
             fail(f"Missing derived result for {stem}")
+    line_counts = {}
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
         validate_counts(path, data)
         validate_naming_refs(path, data)
         validate_sources(path, data)
+        validate_source_locations(path, data, line_counts)
+        validate_raw_observations(path, data)
         if data.get("warnings"):
             fail(f"{path}: expected zero warnings, found {len(data['warnings'])}")
     print(f"sample-data parser results validated: {len(direct)} categories, {len(paths)} JSON files")

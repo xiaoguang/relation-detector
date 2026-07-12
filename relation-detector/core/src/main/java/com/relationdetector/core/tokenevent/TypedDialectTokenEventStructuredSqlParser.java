@@ -61,21 +61,17 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
         SyntaxErrorCounter errors = new SyntaxErrorCounter();
         TypedParse<R> parsed = parseTyped(statement.sql(), errors);
 
-        List<StructuredSqlEvent> typedEvents = errors.count() == 0
-                ? collectTypedEvents(statement, parsed.root())
-                : List.of();
+        TypedEventCollection collection = errors.count() == 0
+                ? collectTypedResult(statement, parsed.root())
+                : TypedEventCollection.empty();
+        List<StructuredSqlEvent> typedEvents = collection.events();
+        warnings.addAll(collection.warnings());
 
         antlrSupport.detectDynamicSql(statement).ifPresent(warnings::add);
         if (errors.count() == 0) {
             warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(
                     statement, parsed.root(), typedEvents, this::isUnknownStatement));
         }
-        warnings.forEach(warning -> {
-            if (context != null) {
-                context.warn(warning);
-            }
-        });
-
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("grammar", grammarName);
         attributes.put("parser", parserName);
@@ -100,11 +96,29 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
 
     protected abstract List<StructuredSqlEvent> collectTypedEvents(SqlStatementRecord statement, R root);
 
+    protected TypedEventCollection collectTypedResult(SqlStatementRecord statement, R root) {
+        return new TypedEventCollection(collectTypedEvents(statement, root), List.of());
+    }
+
     protected abstract boolean isUnknownStatement(ParseTree tree);
 
     public record TypedParse<R extends ParserRuleContext>(
             R root,
             List<Token> visibleTokens
     ) {
+    }
+
+    protected record TypedEventCollection(
+            List<StructuredSqlEvent> events,
+            List<WarningMessage> warnings
+    ) {
+        public TypedEventCollection {
+            events = events == null ? List.of() : List.copyOf(events);
+            warnings = warnings == null ? List.of() : List.copyOf(warnings);
+        }
+
+        static TypedEventCollection empty() {
+            return new TypedEventCollection(List.of(), List.of());
+        }
     }
 }

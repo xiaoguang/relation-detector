@@ -27,7 +27,7 @@ import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
-import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.scan.EvidenceEnhancementService;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.scan.StatementExecutionOutcome;
@@ -74,7 +74,8 @@ final class FixtureExecutionEngine {
         ScanConfig config = config(fixture);
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
-        List<SqlStatementRecord> statements = inputLoader.sqlStatements(fixture, input.input(), warnings);
+        List<SqlStatementRecord> statements = inputLoader.sqlStatements(
+                fixture, input.input(), warnings, adaptor.parsers().scripts());
         List<RelationshipCandidate> relationships = new ArrayList<>();
         List<DataLineageCandidate> lineages = new ArrayList<>();
         NamingEvidencePool namingEvidencePool = new NamingEvidencePool();
@@ -98,16 +99,16 @@ final class FixtureExecutionEngine {
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
         ParserBundle parserBundle = runtime.parserBundle();
+        List<SqlStatementRecord> statements = inputLoader.sqlStatements(
+                fixture, input.input(), warnings, adaptor.parsers().scripts());
         StatementExecutionOutcome outcome = isCommonTokenEventFixture(fixture)
-                ? statementExecutionServices.get().executeDdlText(
-                        runtime.commonDdlParser(),
-                        input.input(),
-                        fixture.id() + ".ddl.sql",
+                ? statementExecutionServices.get().executeDdlStatements(
+                        runtime.commonDdlParser(), statements,
                         fixture.evidenceSourceType(),
                         context,
                         config)
-                : statementExecutionServices.get().executeDdlText(parserBundle, input.input(), fixture.id() + ".ddl.sql",
-                        fixture.evidenceSourceType(), context, config);
+                : statementExecutionServices.get().executeDdlStatements(
+                        parserBundle, statements, fixture.evidenceSourceType(), context, config);
         NamingEvidencePool namingEvidencePool = new NamingEvidencePool();
         namingEvidencePool.addAll(outcome.namingEvidence());
         return new FixtureActualResult(

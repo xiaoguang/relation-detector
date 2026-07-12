@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.ExpressionSource;
@@ -38,7 +37,7 @@ final class PredicateEventSink {
 
     void predicateEqualities(ParserRuleContext ctx, ParseTree predicate, String joinKind) {
         for (ColumnPair pair : equalityPairs(predicate)) {
-            predicateEvent(ctx, StructuredParseEventType.PREDICATE_EQUALITY,
+            predicateEvent(pair.context(), StructuredParseEventType.PREDICATE_EQUALITY,
                     pair.left(), pair.right(), joinKind);
         }
     }
@@ -75,7 +74,7 @@ final class PredicateEventSink {
 
     void existsPredicateEqualities(ParserRuleContext ctx, ParseTree predicate) {
         for (ColumnPair pair : equalityPairs(predicate)) {
-            predicateEvent(ctx, StructuredParseEventType.EXISTS_PREDICATE,
+            predicateEvent(pair.context(), StructuredParseEventType.EXISTS_PREDICATE,
                     pair.left(), pair.right(), "EXISTS");
         }
     }
@@ -88,6 +87,22 @@ final class PredicateEventSink {
         if (left.isPresent() && right.isPresent()) {
             predicateEvent(ctx, StructuredParseEventType.EXISTS_PREDICATE,
                     left.get(), right.get(), "EXISTS");
+        }
+    }
+
+    void existsPredicateEqualityColumns(
+            ParserRuleContext ctx,
+            String leftAlias,
+            String leftColumn,
+            String rightAlias,
+            String rightColumn
+    ) {
+        FullGrammerColumnReference left =
+                new FullGrammerColumnReference(source.clean(leftAlias), source.clean(leftColumn));
+        FullGrammerColumnReference right =
+                new FullGrammerColumnReference(source.clean(rightAlias), source.clean(rightColumn));
+        if (!left.column().isBlank() && !right.column().isBlank()) {
+            predicateEvent(ctx, StructuredParseEventType.EXISTS_PREDICATE, left, right, "EXISTS");
         }
     }
 
@@ -120,31 +135,24 @@ final class PredicateEventSink {
         if (!root && parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.QUERY_BOUNDARY)) {
             return;
         }
-        int equalsIndex = directLeafIndex(tree, "=");
-        if (equalsIndex > 0) {
-            Optional<FullGrammerColumnReference> left = directColumns.singlePredicateColumnInChildren(
-                    tree, 0, equalsIndex, equalsIndex + 1, tree.getChildCount());
-            Optional<FullGrammerColumnReference> right = directColumns.singlePredicateColumnInChildren(
-                    tree, equalsIndex + 1, tree.getChildCount(), 0, equalsIndex);
+        for (FullGrammerParseTreeAdapter.EqualityOperands operands
+                : parseTreeAdapter.directEqualities(tree)) {
+            Optional<FullGrammerColumnReference> left =
+                    directColumns.singlePredicateColumn(operands.left(), operands.right());
+            Optional<FullGrammerColumnReference> right =
+                    directColumns.singlePredicateColumn(operands.right(), operands.left());
             if (left.isPresent() && right.isPresent()) {
-                result.add(new ColumnPair(left.get(), right.get()));
+                ParserRuleContext context = tree instanceof ParserRuleContext parserContext
+                        ? parserContext
+                        : null;
+                if (context != null) {
+                    result.add(new ColumnPair(context, left.get(), right.get()));
+                }
                 return;
             }
         }
-        int nullSafeIndex = directTerminalSequenceStart(tree, List.of("IS", "NOT", "DISTINCT", "FROM"));
-        if (nullSafeIndex > 0) {
-            int rightStart = nullSafeIndex + 4;
-            Optional<FullGrammerColumnReference> left = directColumns.singlePredicateColumnInChildren(
-                    tree, 0, nullSafeIndex, rightStart, tree.getChildCount());
-            Optional<FullGrammerColumnReference> right = directColumns.singlePredicateColumnInChildren(
-                    tree, rightStart, tree.getChildCount(), 0, nullSafeIndex);
-            if (left.isPresent() && right.isPresent()) {
-                result.add(new ColumnPair(left.get(), right.get()));
-                return;
-            }
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectEqualityPairs(tree.getChild(index), result, false);
+        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
+            collectEqualityPairs(child, result, false);
         }
     }
 
@@ -191,41 +199,15 @@ final class PredicateEventSink {
         return new ExpressionSource(column.qualifier(), column.column());
     }
 
-    private int directLeafIndex(ParseTree tree, String text) {
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (tree.getChild(index) instanceof TerminalNode terminal && terminal.getText().equals(text)) {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    private int directTerminalSequenceStart(ParseTree tree, List<String> texts) {
-        if (texts.isEmpty() || tree.getChildCount() < texts.size()) {
-            return -1;
-        }
-        for (int index = 0; index <= tree.getChildCount() - texts.size(); index++) {
-            boolean matches = true;
-            for (int offset = 0; offset < texts.size(); offset++) {
-                ParseTree child = tree.getChild(index + offset);
-                if (!(child instanceof TerminalNode terminal)
-                        || !terminal.getText().equalsIgnoreCase(texts.get(offset))) {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches) {
-                return index;
-            }
-        }
-        return -1;
-    }
-
     private boolean sameQualifier(String leftQualifier, String rightQualifier) {
         return !source.clean(leftQualifier).isBlank()
                 && source.clean(leftQualifier).equalsIgnoreCase(source.clean(rightQualifier));
     }
 
-    private record ColumnPair(FullGrammerColumnReference left, FullGrammerColumnReference right) {
+    private record ColumnPair(
+            ParserRuleContext context,
+            FullGrammerColumnReference left,
+            FullGrammerColumnReference right
+    ) {
     }
 }

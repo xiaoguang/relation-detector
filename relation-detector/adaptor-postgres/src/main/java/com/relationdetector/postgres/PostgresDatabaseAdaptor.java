@@ -16,18 +16,21 @@ import com.relationdetector.postgres.log.PostgresLogExtractor;
 import com.relationdetector.postgres.metadata.PostgresMetadataCollector;
 import com.relationdetector.postgres.objects.PostgresObjectCollector;
 import com.relationdetector.postgres.profile.PostgresDataProfiler;
+import com.relationdetector.postgres.script.PostgresScriptParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 /** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
 public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public PostgresDatabaseAdaptor() {
-        this(new PostgresTokenEventStructuredSqlParser(), new PostgresTokenEventStructuredDdlParser());
+        this(new PostgresTokenEventStructuredSqlParser(), new PostgresTokenEventStructuredDdlParser(),
+                new PostgresScriptParser());
     }
 
     private PostgresDatabaseAdaptor(
             PostgresTokenEventStructuredSqlParser structuredSqlParser,
-            PostgresTokenEventStructuredDdlParser structuredDdlParser
+            PostgresTokenEventStructuredDdlParser structuredDdlParser,
+            PostgresScriptParser scriptParser
     ) {
         super(
                 "postgresql",
@@ -45,11 +48,12 @@ public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new PostgresMetadataCollector(),
                         new PostgresObjectCollector(),
                         Optional.of(new PostgresDatabaseDdlCollector()),
-                        new PostgresLogExtractor()),
+                        new PostgresLogExtractor(scriptParser)),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
-                        Optional.of(structuredDdlParser)),
+                        Optional.of(structuredDdlParser),
+                        scriptParser),
                 new AdaptorProfiling(Optional.of(new PostgresDataProfiler()), (evidence, context) -> evidence));
     }
 

@@ -36,7 +36,7 @@ public record SourceProvenance(
             String statementScope,
             String contextSource
     ) {
-        return from(statement, line, statementScope, true, true, contextSource);
+        return from(statement, line, statementScope, false, true, contextSource);
     }
 
     public static SourceProvenance source(String sourceName, long line) {
@@ -47,7 +47,24 @@ public record SourceProvenance(
     public SourceProvenance asFullGrammer(String sourceName, String contextSource) {
         return new SourceProvenance(sourceName, line, statementScope, sourceFile,
                 sourceStatementId, sourceBlockId, sourceObjectType, sourceObjectName,
-                true, true, contextSource);
+                false, true, contextSource);
+    }
+
+    /** Rebases parser-relative provenance onto the exact script statement slice. */
+    public SourceProvenance rebase(SqlStatementRecord statement) {
+        long absoluteLine = Math.max(1L, statement.startLine()) + Math.max(1L, line) - 1L;
+        return new SourceProvenance(
+                statement.sourceName(),
+                absoluteLine,
+                statementScope,
+                textOr(statement, "sourceFile", sourceFile),
+                textOr(statement, "sourceStatementId", sourceStatementId),
+                textOr(statement, "sourceBlockId", sourceBlockId),
+                textOr(statement, "sourceObjectType", sourceObjectType),
+                textOr(statement, "sourceObjectName", sourceObjectName),
+                tokenEventNative,
+                fullGrammerNative,
+                fullGrammerContextSource);
     }
 
     private static SourceProvenance from(
@@ -75,6 +92,11 @@ public record SourceProvenance(
     private static String text(SqlStatementRecord statement, String key) {
         Object value = statement.attributes().get(key);
         return value == null ? "" : String.valueOf(value);
+    }
+
+    private static String textOr(SqlStatementRecord statement, String key, String fallback) {
+        String value = text(statement, key);
+        return value.isBlank() ? clean(fallback) : value;
     }
 
     private static String clean(String value) {

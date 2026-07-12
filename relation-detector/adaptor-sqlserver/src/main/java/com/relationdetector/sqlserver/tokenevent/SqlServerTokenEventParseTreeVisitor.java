@@ -137,7 +137,7 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEve
         }
         List<SqlServerRelationSqlParser.ExpressionContext> expressions = ctx.expression();
         if (expressions.size() >= 2 && ctx.comparison_operator() != null
-                && "=".equals(ctx.comparison_operator().getText())) {
+                && ctx.comparison_operator().EQ() != null) {
             ColumnRead left = singleColumn(expressions.get(0));
             ColumnRead right = singleColumn(expressions.get(1));
             if (left != null && right != null) {

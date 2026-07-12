@@ -16,6 +16,7 @@ import com.relationdetector.oracle.log.OracleLogExtractor;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
 import com.relationdetector.oracle.profile.OracleDataProfiler;
+import com.relationdetector.oracle.script.OracleScriptParser;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredDdlParser;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
 
@@ -32,12 +33,14 @@ import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParse
  */
 public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public OracleDatabaseAdaptor() {
-        this(new OracleTokenEventStructuredSqlParser(), new OracleTokenEventStructuredDdlParser());
+        this(new OracleTokenEventStructuredSqlParser(), new OracleTokenEventStructuredDdlParser(),
+                new OracleScriptParser());
     }
 
     private OracleDatabaseAdaptor(
             OracleTokenEventStructuredSqlParser structuredSqlParser,
-            OracleTokenEventStructuredDdlParser structuredDdlParser
+            OracleTokenEventStructuredDdlParser structuredDdlParser,
+            OracleScriptParser scriptParser
     ) {
         super(
                 "oracle",
@@ -55,11 +58,12 @@ public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new OracleMetadataCollector(),
                         new OracleObjectCollector(),
                         Optional.of(new OracleDatabaseDdlCollector()),
-                        new OracleLogExtractor()),
+                        new OracleLogExtractor(scriptParser)),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
-                        Optional.of(structuredDdlParser)),
+                        Optional.of(structuredDdlParser),
+                        scriptParser),
                 new AdaptorProfiling(Optional.of(new OracleDataProfiler()), (evidence, context) -> evidence));
     }
 

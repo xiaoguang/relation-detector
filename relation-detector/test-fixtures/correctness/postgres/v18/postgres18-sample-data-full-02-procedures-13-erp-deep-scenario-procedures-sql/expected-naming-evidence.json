@@ -1,6 +1,7 @@
 {
   "fingerprints": [
     "naming:budget_items.subject_id->account_subjects.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:cogs_entries.sales_order_item_id->sales_order_items.id:TABLE_ID:NAMING_MATCH",
     "naming:finished_goods_receipts.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:inventory_location_balances.location_id->warehouse_locations.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:master_data_change_items.request_id->master_data_change_requests.id:ID_SUFFIX_TO_ID:NAMING_MATCH",

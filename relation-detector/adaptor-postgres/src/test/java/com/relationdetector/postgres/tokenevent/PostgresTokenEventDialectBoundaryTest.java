@@ -12,13 +12,14 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.ScriptParseRequest;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
+import com.relationdetector.postgres.script.PostgresScriptParser;
 
 /**
  * Verifies that PostgreSQL owns PostgreSQL-flavored token-event parser selection.
@@ -746,11 +747,13 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresTokenEventFindsCteJoinPredicatesInSampleDataComplexQueryFile() {
+    void postgresTokenEventFindsCteJoinPredicatesInSampleDataComplexQueryFile() throws Exception {
         java.nio.file.Path input = workspaceRoot().resolve(
                 "sample-data/postgres/18/04-queries/01-complex-queries.sql");
-        java.util.List<RelationshipCandidate> relations = new PlainSqlLogExtractor()
-                .extract(input, StatementSourceType.PLAIN_SQL)
+        java.util.List<RelationshipCandidate> relations = new PostgresScriptParser()
+                .parse(new ScriptParseRequest(java.nio.file.Files.readString(input), input.toString(),
+                        StatementSourceType.PLAIN_SQL))
+                .statements().stream()
                 .flatMap(statement -> new TokenEventSqlRelationParser(new PostgresTokenEventStructuredSqlParser())
                         .parse(statement).stream())
                 .toList();

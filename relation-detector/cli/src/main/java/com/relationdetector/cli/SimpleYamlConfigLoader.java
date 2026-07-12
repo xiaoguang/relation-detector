@@ -17,7 +17,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
-import com.relationdetector.core.relation.NamingRuleConfigLoader;
+import com.relationdetector.core.naming.NamingRuleConfigLoader;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**

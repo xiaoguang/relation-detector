@@ -24,6 +24,7 @@ abstract class MySqlTokenEventVisitorState extends MySqlRelationSqlBaseVisitor<V
     protected final TokenEventEventEmitter emitter;
     protected final List<StructuredSqlEvent> events = new ArrayList<>();
     protected final Set<String> cteNames = new LinkedHashSet<>();
+    protected final Set<String> nonColumnIdentifiers = new LinkedHashSet<>();
     protected final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     protected final ArrayDeque<String> joinKinds = new ArrayDeque<>();
     protected final ArrayDeque<String> ddlTables = new ArrayDeque<>();
@@ -144,17 +145,15 @@ abstract class MySqlTokenEventVisitorState extends MySqlRelationSqlBaseVisitor<V
     }
 
     protected String joinKind(MySqlRelationSqlParser.JoinClauseContext join) {
-        if (join.joinOperator() != null && "STRAIGHT_JOIN".equalsIgnoreCase(join.joinOperator().getText())) {
+        if (join.joinOperator() != null && join.joinOperator().STRAIGHT_JOIN() != null) {
             return "STRAIGHT_JOIN";
         }
         if (join.joinType() == null) {
             return "JOIN";
         }
-        String text = join.joinType().getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) return "LEFT_JOIN";
-        if (text.startsWith("RIGHT")) return "RIGHT_JOIN";
-        if (text.startsWith("FULL")) return "FULL_JOIN";
-        if (text.startsWith("CROSS")) return "CROSS_JOIN";
+        if (join.joinType().LEFT() != null) return "LEFT_JOIN";
+        if (join.joinType().RIGHT() != null) return "RIGHT_JOIN";
+        if (join.joinType().FULL() != null) return "FULL_JOIN";
         return "JOIN";
     }
 

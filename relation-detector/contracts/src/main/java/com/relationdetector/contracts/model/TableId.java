@@ -27,6 +27,7 @@ public record TableId(String catalog, String schema, String tableName, String no
     }
 
     public String displayName() {
-        return schema == null || schema.isBlank() ? tableName : schema + "." + tableName;
+        String schemaTable = schema == null || schema.isBlank() ? tableName : schema + "." + tableName;
+        return catalog == null || catalog.isBlank() ? schemaTable : catalog + "." + schemaTable;
     }
 }

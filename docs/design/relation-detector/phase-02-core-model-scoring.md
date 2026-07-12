@@ -61,7 +61,9 @@ public final class RelationshipCandidate {
 }
 ```
 
-`Endpoint` 包含 table 和可空 column。
+`Endpoint` 包含 table 和可空 column。parser 输出的 `TableId` / `ColumnRef` 保留 SQL 中显式
+写出的 catalog、schema、quote 和标识符拼写，作为 JSON 和 evidence 的可读 endpoint；不使用
+默认 schema 把裸 endpoint 改写成 schema-qualified endpoint。
 
 方向规则：
 
@@ -106,9 +108,20 @@ public record NamingEvidenceCandidate(
 naming:<source-normalized-key>-><target-normalized-key>:<rule>
 ```
 
+可读 endpoint 与 canonical endpoint key 是两个层次：
+
+- `source` / `target`、`suggestedSourceEndpoint` / `suggestedTargetEndpoint` 用于输出、审计和
+  人工阅读，保持 parser 捕获的显式拼写。
+- `suggestedSourceEndpointKey` / `suggestedTargetEndpointKey` 与内部
+  `CanonicalEndpointKey` 用于 scan 内的精确匹配、去重和 `NamingMatchEvidenceEnhancer` lookup；
+  它们不替代 display endpoint，也不属于 naming rule 的猜测结果。
+- `ScanScope` namespace 只作为 canonical key 跨 metadata、DDL、SQL source 对齐时的内部解析
+  上下文。它不改变输出 endpoint；bare 与 schema-qualified endpoint 不会因同名自动等价。
+
 输出边界：
 
-- top-level `namingEvidence` 保存完整 grouped `evidence` 和 `rawEvidence`。
+- top-level `namingEvidence` 保存完整 grouped `evidence` 和 `rawEvidence`，以及可读 endpoint；
+  用于内部匹配的 canonical key 仅以 key attribute 保存，不取代 endpoint 展示。
 - relationship 里的 `NAMING_MATCH` 只保存轻量摘要和 `evidenceRef`，指向 top-level naming evidence id。
 - `NamingEvidenceCandidate` 可以来自 metadata columns、DDL column inventory 或已有 SQL predicate candidate；具体来源由每条 `NamingRule.appliesTo` 控制。
 - name-only hint 不能单独生成 relationship；只有同端点已有 SQL / DDL / metadata / profile relationship candidate 时，才可被 `NamingMatchEvidenceEnhancer` 消费。

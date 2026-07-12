@@ -2,5 +2,5 @@
   "fingerprints": [
     "CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

@@ -104,7 +104,7 @@ public final class CommonTokenEventParseTreeVisitor extends CommonTokenEventWrit
 
     @Override
     public Void visitComparisonPredicate(CommonRelationSqlParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) {
+        if (ctx.comparisonOperator().EQ() == null) {
             return visitChildren(ctx);
         }
         ColumnRead left = singleColumn(ctx.expression(0));

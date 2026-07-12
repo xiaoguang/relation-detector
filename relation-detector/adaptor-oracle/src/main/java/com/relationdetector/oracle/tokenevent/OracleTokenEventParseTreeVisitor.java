@@ -20,7 +20,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWrit
     @Override
     public Void visitRoutineStartStatement(OracleRelationSqlParser.RoutineStartStatementContext ctx) {
         routineScope.enterRoutine();
-        return null;
+        return visitChildren(ctx);
     }
 
     @Override
@@ -115,7 +115,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWrit
 
     @Override
     public Void visitComparisonPredicate(OracleRelationSqlParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) return visitChildren(ctx);
+        if (ctx.comparisonOperator().EQ() == null) return visitChildren(ctx);
         OracleColumnRead left = singleColumn(ctx.expression(0));
         OracleColumnRead right = singleColumn(ctx.expression(1));
         if (left == null || right == null) return visitChildren(ctx);

@@ -2,5 +2,5 @@
   "fingerprints": [
     "FK_LIKE:invoices.customer_id->subscriptions.customer_id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

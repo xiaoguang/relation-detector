@@ -3,6 +3,8 @@
     "naming:dbo.inventory.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.inventory.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.purchase_orders.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH"
+    "naming:dbo.purchase_orders.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.sales_fact.category_dim_id->dbo.category_dim.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.sales_fact.region_dim_id->dbo.region_dim.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

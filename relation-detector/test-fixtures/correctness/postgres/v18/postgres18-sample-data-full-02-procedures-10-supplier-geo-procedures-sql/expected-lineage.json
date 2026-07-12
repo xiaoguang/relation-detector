@@ -10,7 +10,7 @@
     "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date",
     "VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

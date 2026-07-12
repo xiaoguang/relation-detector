@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:pg17_price_updates.sku->pg17_product_catalog.sku:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:pg17_price_updates.sku->pg17_product_catalog.sku:SQL_LOG_JOIN,REPEATED_OBSERVATION"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

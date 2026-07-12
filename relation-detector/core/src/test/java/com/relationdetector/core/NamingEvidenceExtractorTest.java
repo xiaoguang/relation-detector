@@ -27,10 +27,10 @@ import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.relation.NamingEvidenceExtractor;
-import com.relationdetector.core.relation.NamingRuleConfigLoader;
-import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
-import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidenceExtractor;
+import com.relationdetector.core.naming.NamingRuleConfigLoader;
+import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 

@@ -91,6 +91,9 @@ class ScanEngineObjectWarningProvenanceTest {
         assertEquals("rebuild_orders", warning.attributes().get("routineName"));
         assertEquals("PROCEDURE", warning.attributes().get("routineType"));
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("PREPARE stmt FROM @sql"));
+        assertTrue(result.warnings().stream().noneMatch(candidate ->
+                        candidate.code().equals("SOURCE_LINE_OUTSIDE_STATEMENT")),
+                "database-object statements must cover every line in their collected SQL text");
     }
 
     private static final class ObjectWarningAdaptor implements DatabaseAdaptor {
@@ -142,12 +145,14 @@ class ScanEngineObjectWarningProvenanceTest {
 
         @Override
         public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
+            TokenEventStructuredSqlParser structured = new TokenEventStructuredSqlParser(SqlDialect.MYSQL);
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     new TokenEventSqlRelationParser(
-                            new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
+                            structured,
                             new TokenEventRelationExtractor()),
+                    Optional.of(structured),
                     Optional.empty(),
-                    Optional.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
         }
 
         @Override

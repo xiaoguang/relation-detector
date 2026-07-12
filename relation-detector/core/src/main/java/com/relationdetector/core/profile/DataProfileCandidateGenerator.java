@@ -20,6 +20,10 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.DataProfileOptions;
+import com.relationdetector.core.identity.CanonicalEndpointKey;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
  * Selects bounded data-profile candidates without scanning arbitrary columns.
@@ -42,19 +46,32 @@ public final class DataProfileCandidateGenerator {
             List<NamingEvidenceCandidate> namingEvidence,
             DataProfileOptions options
     ) {
+        return select(candidates, metadata, namingEvidence, options,
+                defaultIdentifierRules(), NamespaceContext.empty());
+    }
+
+    public List<RelationshipCandidate> select(
+            List<RelationshipCandidate> candidates,
+            MetadataSnapshot metadata,
+            List<NamingEvidenceCandidate> namingEvidence,
+            DataProfileOptions options,
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
         DataProfileOptions effective = options == null ? DataProfileOptions.defaults() : options;
+        CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(identifierRules);
         List<RelationshipCandidate> result = new ArrayList<>();
         Map<String, RelationshipCandidate> seen = new LinkedHashMap<>();
         Map<String, Integer> targetsBySource = new HashMap<>();
         int limit = effective.maxCandidatePairs();
         for (RelationshipCandidate candidate : candidates == null ? List.<RelationshipCandidate>of() : candidates) {
-            if (selectedExistingCandidate(candidate, metadata, effective)) {
+            if (selectedExistingCandidate(candidate, metadata, effective, resolver, namespace)) {
                 add(seen, result, targetsBySource, candidate, limit, effective.maxTargetsPerSourceColumn());
             }
         }
         if (effective.discoverFromNamingEvidence()) {
             for (NamingEvidenceCandidate naming : namingEvidence == null ? List.<NamingEvidenceCandidate>of() : namingEvidence) {
-                if (namingCandidateAllowed(naming, metadata)) {
+                if (namingCandidateAllowed(naming, metadata, resolver, namespace)) {
                     add(seen, result, targetsBySource, discoveredCandidate(naming), limit,
                             effective.maxTargetsPerSourceColumn());
                 }
@@ -64,13 +81,14 @@ public final class DataProfileCandidateGenerator {
     }
 
     private boolean selectedExistingCandidate(RelationshipCandidate candidate, MetadataSnapshot metadata,
-            DataProfileOptions options) {
+            DataProfileOptions options, CanonicalIdentifierResolver resolver, NamespaceContext namespace) {
         if (candidate == null || !candidate.source().isColumnLevel() || !candidate.target().isColumnLevel()) {
             return false;
         }
         if (options.skipUnindexedLargeTargets()
                 && metadataHasIndexFacts(metadata)
-                && !targetIndexed(metadata, candidate.target().table().tableName(), candidate.target().column().columnName())) {
+                && !targetIndexed(metadata,
+                CanonicalEndpointKey.from(candidate.target(), resolver, namespace), resolver, namespace)) {
             return false;
         }
         boolean declared = candidate.evidence().stream().anyMatch(evidence ->
@@ -82,14 +100,21 @@ public final class DataProfileCandidateGenerator {
         return candidate.evidence().stream().anyMatch(evidence -> STRUCTURAL_PROFILE_EVIDENCE.contains(evidence.type()));
     }
 
-    private boolean namingCandidateAllowed(NamingEvidenceCandidate naming, MetadataSnapshot metadata) {
+    private boolean namingCandidateAllowed(
+            NamingEvidenceCandidate naming,
+            MetadataSnapshot metadata,
+            CanonicalIdentifierResolver resolver,
+            NamespaceContext namespace
+    ) {
         if (naming == null || !naming.directionHint()
                 || !naming.source().isColumnLevel() || !naming.target().isColumnLevel()) {
             return false;
         }
-        return targetUnique(metadata, naming.target().table().tableName(), naming.target().column().columnName())
-                && compatible(metadata, naming.source().table().tableName(), naming.source().column().columnName(),
-                naming.target().table().tableName(), naming.target().column().columnName());
+        return targetUnique(metadata,
+                CanonicalEndpointKey.from(naming.target(), resolver, namespace), resolver, namespace)
+                && compatible(metadata,
+                CanonicalEndpointKey.from(naming.source(), resolver, namespace),
+                CanonicalEndpointKey.from(naming.target(), resolver, namespace), resolver, namespace);
     }
 
     private RelationshipCandidate discoveredCandidate(NamingEvidenceCandidate naming) {
@@ -107,37 +132,39 @@ public final class DataProfileCandidateGenerator {
         return candidate;
     }
 
-    private boolean targetUnique(MetadataSnapshot metadata, String table, String column) {
+    private boolean targetUnique(MetadataSnapshot metadata, CanonicalEndpointKey key,
+            CanonicalIdentifierResolver resolver, NamespaceContext namespace) {
         if (metadata == null) {
             return false;
         }
         return metadata.indexFacts().stream().anyMatch(index ->
-                equals(index.tableName(), table)
-                        && (index.unique() || index.primary())
-                        && index.columns().stream().anyMatch(indexColumn -> equals(indexColumn, column)));
+                (index.unique() || index.primary())
+                        && index.columns().stream().anyMatch(indexColumn ->
+                        CanonicalEndpointKey.from(index, indexColumn, resolver, namespace).equals(key)));
     }
 
-    private boolean targetIndexed(MetadataSnapshot metadata, String table, String column) {
+    private boolean targetIndexed(MetadataSnapshot metadata, CanonicalEndpointKey key,
+            CanonicalIdentifierResolver resolver, NamespaceContext namespace) {
         if (metadata == null) {
             return false;
         }
         return metadata.indexFacts().stream().anyMatch(index ->
-                equals(index.tableName(), table)
-                        && index.visible()
-                        && index.columns().stream().anyMatch(indexColumn -> equals(indexColumn, column)));
+                index.visible()
+                        && index.columns().stream().anyMatch(indexColumn ->
+                        CanonicalEndpointKey.from(index, indexColumn, resolver, namespace).equals(key)));
     }
 
     private boolean metadataHasIndexFacts(MetadataSnapshot metadata) {
         return metadata != null && !metadata.indexFacts().isEmpty();
     }
 
-    private boolean compatible(MetadataSnapshot metadata, String sourceTable, String sourceColumn,
-            String targetTable, String targetColumn) {
+    private boolean compatible(MetadataSnapshot metadata, CanonicalEndpointKey sourceKey,
+            CanonicalEndpointKey targetKey, CanonicalIdentifierResolver resolver, NamespaceContext namespace) {
         if (metadata == null) {
             return false;
         }
-        MetadataColumnFact source = column(metadata, sourceTable, sourceColumn);
-        MetadataColumnFact target = column(metadata, targetTable, targetColumn);
+        MetadataColumnFact source = column(metadata, sourceKey, resolver, namespace);
+        MetadataColumnFact target = column(metadata, targetKey, resolver, namespace);
         if (source == null || target == null) {
             return false;
         }
@@ -145,9 +172,10 @@ public final class DataProfileCandidateGenerator {
                 || normalize(source.columnType()).equals(normalize(target.columnType()));
     }
 
-    private MetadataColumnFact column(MetadataSnapshot metadata, String table, String column) {
+    private MetadataColumnFact column(MetadataSnapshot metadata, CanonicalEndpointKey key,
+            CanonicalIdentifierResolver resolver, NamespaceContext namespace) {
         return metadata.columnFacts().stream()
-                .filter(fact -> equals(fact.tableName(), table) && equals(fact.columnName(), column))
+                .filter(fact -> CanonicalEndpointKey.from(fact, resolver, namespace).equals(key))
                 .findFirst()
                 .orElse(null);
     }
@@ -169,11 +197,11 @@ public final class DataProfileCandidateGenerator {
         }
     }
 
-    private boolean equals(String left, String right) {
-        return normalize(left).equals(normalize(right));
-    }
-
     private String normalize(String value) {
         return value == null ? "" : value.toLowerCase(Locale.ROOT);
+    }
+
+    private IdentifierRules defaultIdentifierRules() {
+        return value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
     }
 }

@@ -26,7 +26,7 @@
     "VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price",
     "VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

@@ -32,7 +32,7 @@
     "CO_OCCURRENCE:healthcare_providers.provider_id->medical_claims.billing_provider_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:hr_departments.dept_id->hr_employees.dept_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:hr_departments.loc_id->hr_locations.loc_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:hr_employees.emp_id->hr_employees.manager_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:hr_employees.emp_id->hr_employees.manager_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "CO_OCCURRENCE:insurance_policies.policy_id->patient_registry.policy_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:logistics_carriers.carrier_id->maritime_vessels.carrier_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:maritime_vessels.vessel_id->transit_legs.vessel_id:SQL_LOG_JOIN",

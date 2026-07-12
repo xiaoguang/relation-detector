@@ -24,6 +24,8 @@ Oracle adaptor 按 PostgreSQL versioned full-grammer 的设计方式接入 relat
 
 Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` full-grammer projection”的阶段。它已经不再是 sample-data facade：每个 full-grammer profile 都使用自己的 generated lexer/parser，并且 `.g4` 中已经存在官方来源可解释的首批版本差异。但它仍不是 Oracle 官方 SQL/PLSQL 手册的完整 ANTLR 转换，不能与 MySQL 8.0 / PostgreSQL v16-v18 的成熟 full-grammer 覆盖度等同展示。
 
+Oracle 的 SPI v3 `OracleScriptParser` 使用 generated script lexer 的 typed token，只有单独一行的 `/` 才结束 PL/SQL / object block；普通 SQL 仍按 semicolon framing。client-script slash 不是 server SQL operator，因此该边界在 SQL/DDL grammar 前处理。
+
 已实现：
 
 - Maven 模块：`adaptor-oracle`。

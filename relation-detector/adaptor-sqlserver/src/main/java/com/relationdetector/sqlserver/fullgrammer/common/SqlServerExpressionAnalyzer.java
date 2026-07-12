@@ -3,7 +3,6 @@ package com.relationdetector.sqlserver.fullgrammer.common;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,6 +11,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammer.FullGrammerExpressionAnalysis;
 import com.relationdetector.core.fullgrammer.FullGrammerExpressionAnalyzer;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.CaseParts;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.OperatorSemantic;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
@@ -109,8 +110,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
                 tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION)) {
             return true;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsCase(tree.getChild(index))) {
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            if (containsCase(child)) {
                 return true;
             }
         }
@@ -129,53 +130,18 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
             result.addValue(super.analyze(tree, defaultQualifier));
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectExpressionCases(tree.getChild(index), defaultQualifier, result);
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectExpressionCases(child, defaultQualifier, result);
         }
     }
 
     private void collectCase(ParseTree caseTree, String defaultQualifier, CaseAccumulator result) {
-        boolean elseValue = false;
-        boolean sawSection = false;
-        for (int index = 0; index < caseTree.getChildCount(); index++) {
-            ParseTree child = caseTree.getChild(index);
-            String terminal = child instanceof org.antlr.v4.runtime.tree.TerminalNode node
-                    ? node.getText().toUpperCase(Locale.ROOT)
-                    : "";
-            if (terminal.equals("ELSE")) {
-                elseValue = true;
-                continue;
-            }
-            if (parseTreeAdapter().hasRole(
-                    child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_SWITCH_SECTION)) {
-                sawSection = true;
-                List<ParseTree> expressions = parseTreeAdapter().directChildren(
-                        child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION);
-                if (expressions.size() >= 2) {
-                    result.addControl(super.analyze(expressions.get(0), defaultQualifier));
-                    collectExpressionCases(expressions.get(1), defaultQualifier, result);
-                }
-                continue;
-            }
-            if (parseTreeAdapter().hasRole(
-                    child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_SEARCH_SECTION)) {
-                sawSection = true;
-                ParseTree condition = parseTreeAdapter().firstDirectChild(
-                        child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CONTROL_SCOPE);
-                ParseTree value = parseTreeAdapter().firstDirectChild(
-                        child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION);
-                result.addControl(super.analyze(condition, defaultQualifier));
-                collectExpressionCases(value, defaultQualifier, result);
-                continue;
-            }
-            if (parseTreeAdapter().hasRole(
-                    child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION)) {
-                if (elseValue) {
-                    collectExpressionCases(child, defaultQualifier, result);
-                } else if (!sawSection) {
-                    result.addControl(super.analyze(child, defaultQualifier));
-                }
-            }
+        CaseParts parts = parseTreeAdapter().caseParts(caseTree);
+        for (ParseTree control : parts.controls()) {
+            result.addControl(super.analyze(control, defaultQualifier));
+        }
+        for (ParseTree value : parts.values()) {
+            collectExpressionCases(value, defaultQualifier, result);
         }
     }
 
@@ -231,8 +197,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
             return;
         }
         collectCurrentTransform(tree, state);
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectTransformsOutsideCases(tree.getChild(index), state);
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectTransformsOutsideCases(child, state);
         }
     }
 
@@ -241,17 +207,13 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
             return;
         }
         collectCurrentTransform(tree, state);
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectTransforms(tree.getChild(index), state);
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectTransforms(child, state);
         }
     }
 
     private void collectCurrentTransform(ParseTree tree, TransformState state) {
-        if (parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)
-                || parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
-            String name = firstTerminal(tree).toLowerCase(Locale.ROOT);
+        parseTreeAdapter().functionName(tree).ifPresent(name -> {
             LineageTransformType classified = LineageTransformClassifier.classifyFunction(
                     name, false, FUNCTION_EXTENSIONS);
             if (classified == LineageTransformType.AGGREGATE) {
@@ -263,43 +225,10 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
             } else {
                 state.function = true;
             }
-        }
-        if (tree instanceof org.antlr.v4.runtime.tree.TerminalNode terminal) {
-            String token = terminal.getText().toLowerCase(Locale.ROOT);
-            LineageTransformType classified = LineageTransformClassifier.classifyFunction(
-                    token, false, FUNCTION_EXTENSIONS);
-            if (classified == LineageTransformType.AGGREGATE) {
-                state.aggregate = true;
-            } else if (classified == LineageTransformType.COALESCE) {
-                state.coalesce = true;
-            } else if (classified == LineageTransformType.CONCAT_FORMAT) {
-                state.concatFormat = true;
-            } else if (token.equals("convert") || token.equals("cast") || token.equals("year")
-                    || token.equals("month") || token.equals("datepart") || token.equals("datename")
-                    || token.equals("dateadd") || token.equals("datediff")) {
-                state.function = true;
-            }
-            if (token.equals("+") || token.equals("-") || token.equals("*")
-                    || token.equals("/") || token.equals("%")) {
-                state.arithmetic = true;
-            }
-        }
-    }
-
-    private String firstTerminal(ParseTree tree) {
-        if (tree == null) {
-            return "";
-        }
-        if (tree instanceof org.antlr.v4.runtime.tree.TerminalNode terminal) {
-            return terminal.getText();
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            String value = firstTerminal(tree.getChild(index));
-            if (!value.isBlank()) {
-                return value;
-            }
-        }
-        return "";
+        });
+        OperatorSemantic operator = parseTreeAdapter().operatorSemantic(tree);
+        if (operator == OperatorSemantic.ARITHMETIC) state.arithmetic = true;
+        if (operator == OperatorSemantic.CONCAT_FORMAT) state.concatFormat = true;
     }
 
     private FullGrammerExpressionAnalysis scalarControl(ParseTree scalar, String defaultQualifier) {
@@ -330,8 +259,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
             result.add(tree);
             return;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectDirectScopeContexts(root, tree.getChild(index), result);
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectDirectScopeContexts(root, child, result);
         }
     }
 
@@ -342,8 +271,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         if (isScalarBoundary(tree)) {
             return tree;
         }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree found = scalarSubquery(tree.getChild(index));
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            ParseTree found = scalarSubquery(child);
             if (found != null) {
                 return found;
             }

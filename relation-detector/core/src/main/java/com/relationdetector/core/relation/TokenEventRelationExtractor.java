@@ -25,7 +25,11 @@ import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.spi.IdentifierRules;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.log.SourceNameNormalizer;
+import com.relationdetector.core.provenance.EvidenceProvenanceMapper;
 
 /**
  * SQL relationship 语义抽取器。
@@ -43,6 +47,20 @@ import com.relationdetector.core.log.SourceNameNormalizer;
  * rather than in dialect parsers.
  */
 public final class TokenEventRelationExtractor {
+    private final CanonicalIdentifierResolver identifiers;
+
+    public TokenEventRelationExtractor() {
+        this(value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT), NamespaceContext.empty());
+    }
+
+    public TokenEventRelationExtractor(IdentifierRules identifierRules) {
+        this(identifierRules, NamespaceContext.empty());
+    }
+
+    public TokenEventRelationExtractor(IdentifierRules identifierRules, NamespaceContext namespace) {
+        this.identifiers = new CanonicalIdentifierResolver(identifierRules);
+    }
+
     /**
      * 从结构化 SQL events 抽取 relationship 候选。
      *
@@ -55,9 +73,12 @@ public final class TokenEventRelationExtractor {
     private List<RelationshipCandidate> extractNative(SqlStatementRecord statement, StructuredParseResult structured) {
         List<RelationshipCandidate> candidates = new ArrayList<>();
         for (List<StructuredSqlEvent> events : scopedEventGroups(structured.events())) {
-            candidates.addAll(deduplicate(extractFromEvents(statement, events)));
+            candidates.addAll(extractFromEvents(statement, events));
         }
-        return candidates;
+        // Ambient events are intentionally visible in every statement scope so aliases and
+        // physical rowsets can be resolved. Deduplicate only after all scopes are assembled;
+        // otherwise the same ambient predicate becomes one observation per scope.
+        return deduplicate(candidates);
     }
 
     private List<RelationshipCandidate> extractFromEvents(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
@@ -77,12 +98,12 @@ public final class TokenEventRelationExtractor {
                 }
                 if (shouldEmitColumnCoOccurrence(left, right, event.left().alias(), event.right().alias())) {
                     candidates.add(columnCoOccurrenceCandidate(statement, left, right,
-                            EvidenceType.SQL_LOG_JOIN,
+                            relationshipEvidenceType(statement, EvidenceType.SQL_LOG_JOIN),
                             event.joinKind(),
                             event.left().alias(),
                             event.right().alias(),
-                            event.line(),
-                            "ANTLR token-event column equality"));
+                            event,
+                            "typed column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.EXISTS_PREDICATE) {
                 ColumnRef left = resolve(event.left().alias(), event.left().column(), aliases, projections, event.line());
@@ -95,12 +116,12 @@ public final class TokenEventRelationExtractor {
                 }
                 if (shouldEmitColumnCoOccurrence(left, right, event.left().alias(), event.right().alias())) {
                     candidates.add(columnCoOccurrenceCandidate(statement, left, right,
-                            EvidenceType.SQL_LOG_EXISTS,
+                            relationshipEvidenceType(statement, EvidenceType.SQL_LOG_EXISTS),
                             "EXISTS",
                             event.left().alias(),
                             event.right().alias(),
-                            event.line(),
-                            "ANTLR token-event EXISTS ambiguous column equality"));
+                            event,
+                            "typed EXISTS column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.JOIN_USING_COLUMNS) {
                 String leftAlias = event.left().alias();
@@ -115,12 +136,12 @@ public final class TokenEventRelationExtractor {
                         continue;
                     }
                     candidates.add(columnCoOccurrenceCandidate(statement, left, right,
-                            EvidenceType.SQL_LOG_JOIN,
+                            relationshipEvidenceType(statement, EvidenceType.SQL_LOG_JOIN),
                             "USING_JOIN",
                             leftAlias,
                             rightAlias,
-                            event.line(),
-                            "ANTLR token-event JOIN USING column equality"));
+                            event,
+                            "typed JOIN USING column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE) {
                 if (!isVerifiedColumnSubquery(event)) {
@@ -142,12 +163,12 @@ public final class TokenEventRelationExtractor {
                 }
                 if (shouldEmitColumnCoOccurrence(outer, inner, event.left().alias(), event.right().alias())) {
                     candidates.add(columnCoOccurrenceCandidate(statement, outer, inner,
-                            EvidenceType.SQL_LOG_SUBQUERY_IN,
+                            relationshipEvidenceType(statement, EvidenceType.SQL_LOG_SUBQUERY_IN),
                             "IN_SUBQUERY",
                             event.left().alias(),
                             event.right().alias(),
-                            event.line(),
-                            "ANTLR token-event IN subquery column co-occurrence"));
+                            event,
+                            "typed IN subquery column co-occurrence"));
                 }
             } else if (event.type() == StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE) {
                 if (!isVerifiedColumnSubquery(event)) {
@@ -175,12 +196,12 @@ public final class TokenEventRelationExtractor {
                     }
                     if (shouldEmitColumnCoOccurrence(outer, inner, outerAliases.get(index), innerAliases.get(index))) {
                         candidates.add(columnCoOccurrenceCandidate(statement, outer, inner,
-                                EvidenceType.SQL_LOG_SUBQUERY_IN,
+                                relationshipEvidenceType(statement, EvidenceType.SQL_LOG_SUBQUERY_IN),
                                 "TUPLE_IN_SUBQUERY",
                                 outerAliases.get(index),
                                 innerAliases.get(index),
-                                event.line(),
-                                "ANTLR token-event tuple IN subquery column co-occurrence position " + (index + 1)));
+                                event,
+                                "typed tuple IN subquery column co-occurrence position " + (index + 1)));
                     }
                 }
             }
@@ -226,12 +247,26 @@ public final class TokenEventRelationExtractor {
 
     private String candidateKey(RelationshipCandidate candidate) {
         EvidenceType evidenceType = firstEvidenceType(candidate);
-        EvidenceSourceType sourceType = candidate.evidence().isEmpty() ? null : candidate.evidence().get(0).sourceType();
+        Evidence evidence = candidate.evidence().isEmpty() ? null : candidate.evidence().get(0);
+        EvidenceSourceType sourceType = evidence == null ? null : evidence.sourceType();
         return candidate.relationType() + "|"
                 + candidate.relationSubType() + "|"
                 + endpointKey(candidate) + "|"
                 + evidenceType + "|"
-                + sourceType;
+                + sourceType + "|"
+                + evidenceAttribute(evidence, "sourceFile") + "|"
+                + evidenceAttribute(evidence, "sourceStatementId") + "|"
+                + evidenceAttribute(evidence, "sourceBlockId") + "|"
+                + evidenceAttribute(evidence, "sourceLine") + "|"
+                + evidenceAttribute(evidence, "joinKind");
+    }
+
+    private String evidenceAttribute(Evidence evidence, String key) {
+        if (evidence == null) {
+            return "";
+        }
+        Object value = evidence.attributes().get(key);
+        return value == null ? "" : String.valueOf(value);
     }
 
     private EvidenceType firstEvidenceType(RelationshipCandidate candidate) {
@@ -263,6 +298,7 @@ public final class TokenEventRelationExtractor {
                 continue;
             }
             TableId tableId = tableId(qualified.isBlank() ? table : qualified);
+            putAlias(aliases, bindings, ambiguousAliases, qualified, tableId, event.line());
             putAlias(aliases, bindings, ambiguousAliases, table, tableId, event.line());
             if (!alias.isBlank()) {
                 putAlias(aliases, bindings, ambiguousAliases, alias, tableId, event.line());
@@ -368,7 +404,8 @@ public final class TokenEventRelationExtractor {
                 continue;
             }
             for (Map.Entry<ColumnKey, ColumnRef> entry : List.copyOf(projections.entrySet())) {
-                if (entry.getKey().matches(table) || entry.getKey().matches(qualified)) {
+                if (entry.getKey().alias().equals(normalize(table))
+                        || entry.getKey().alias().equals(normalize(qualified))) {
                     changed |= putProjection(projections, alias, entry.getKey().column(), entry.getValue());
                 }
             }
@@ -382,12 +419,11 @@ public final class TokenEventRelationExtractor {
             String column,
             ColumnRef source
     ) {
-        ColumnKey key = ColumnKey.of(alias, column);
+        ColumnKey key = columnKey(alias, column);
         if (key.alias().isBlank() || key.column().isBlank() || projections.containsKey(key)) {
             return false;
         }
         projections.put(key, source);
-        projections.put(ColumnKey.of(baseName(key.alias()), column), source);
         return true;
     }
 
@@ -417,13 +453,16 @@ public final class TokenEventRelationExtractor {
             return;
         }
         ignored.add(normalize(raw));
-        ignored.add(normalize(baseName(raw)));
     }
 
     private boolean isIgnored(TableId table, Set<String> ignoredRowsets) {
-        return isSystemSchema(table.schema())
-                || ignoredRowsets.contains(normalize(table.tableName()))
-                || (table.schema() != null && ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName())));
+        if (isSystemSchema(table.schema())) {
+            return true;
+        }
+        if (table.schema() != null && !table.schema().isBlank()) {
+            return ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName()));
+        }
+        return ignoredRowsets.contains(normalize(table.tableName()));
     }
 
     private boolean isSystemSchema(String schema) {
@@ -462,7 +501,7 @@ public final class TokenEventRelationExtractor {
         if (table.isBlank() || column.isBlank()) {
             return null;
         }
-        return ColumnRef.of(tableId(table), clean(column));
+        return column(tableId(table), column);
     }
 
     private RelationshipCandidate columnCoOccurrenceCandidate(
@@ -473,12 +512,12 @@ public final class TokenEventRelationExtractor {
             String joinKind,
             String leftAlias,
             String rightAlias,
-            long sourceLine,
+            StructuredSqlEvent event,
             String detail
     ) {
         ColumnRef first = left;
         ColumnRef second = right;
-        if (normalize(left.displayName()).compareTo(normalize(right.displayName())) > 0) {
+        if (outputOrderKey(left).compareTo(outputOrderKey(right)) > 0) {
             first = right;
             second = left;
         }
@@ -488,12 +527,8 @@ public final class TokenEventRelationExtractor {
                 RelationType.CO_OCCURRENCE,
                 RelationSubType.COLUMN_CO_OCCURRENCE);
         Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("joinKind", joinKind.isBlank() ? "WHERE_OR_UNKNOWN" : joinKind);
-        attributes.put("tokenEventNative", true);
-        copyStatementProvenance(statement, attributes);
-        if (sourceLine > 0) {
-            attributes.put("sourceLine", sourceLine);
-        }
+        attributes.put("joinKind", canonicalJoinKind(joinKind));
+        EvidenceProvenanceMapper.copy(statement, event, attributes);
         if (isExplicitSelfJoinRole(left, right, leftAlias, rightAlias)) {
             attributes.put("selfJoinRole", true);
             attributes.put("leftAlias", clean(leftAlias));
@@ -509,15 +544,41 @@ public final class TokenEventRelationExtractor {
         return candidate;
     }
 
-    private void copyStatementProvenance(SqlStatementRecord statement, Map<String, Object> attributes) {
-        statement.attributes().forEach((key, value) -> {
-            if ("sourceFile".equals(key)
-                    || "sourceStatementId".equals(key)
-                    || "sourceBlockId".equals(key)
-                    || key.startsWith("sourceObject")) {
-                attributes.put(key, value);
-            }
-        });
+    private String canonicalJoinKind(String raw) {
+        String value = raw == null ? "" : raw.strip().toUpperCase(Locale.ROOT).replace("_", "");
+        if (value.contains("LEFT")) {
+            return "LEFT_JOIN";
+        }
+        if (value.contains("RIGHT")) {
+            return "RIGHT_JOIN";
+        }
+        if (value.contains("FULL")) {
+            return "FULL_JOIN";
+        }
+        if (value.contains("CROSS")) {
+            return "CROSS_JOIN";
+        }
+        if (value.contains("APPLY")) {
+            return value.contains("OUTER") ? "OUTER_APPLY" : "CROSS_APPLY";
+        }
+        if (value.contains("EXISTS")) {
+            return "EXISTS";
+        }
+        if (value.contains("IN_SUBQUERY") || value.contains("INSUBQUERY")) {
+            return "IN_SUBQUERY";
+        }
+        if (value.contains("MERGE")) {
+            return "MERGE_ON";
+        }
+        if (value.equals("JOIN") || value.equals("JOINON") || value.equals("INNER")
+                || value.equals("INNERJOIN")) {
+            return "JOIN_ON";
+        }
+        return "WHERE_OR_UNKNOWN";
+    }
+
+    private String outputOrderKey(ColumnRef column) {
+        return column.displayName().strip().toLowerCase(Locale.ROOT);
     }
 
     private boolean shouldEmitColumnCoOccurrence(ColumnRef left, ColumnRef right, String leftAlias, String rightAlias) {
@@ -546,11 +607,18 @@ public final class TokenEventRelationExtractor {
 
     private double score(EvidenceType type) {
         return switch (type) {
+            case VIEW_JOIN -> DefaultEvidenceScores.VIEW_JOIN;
             case SQL_LOG_JOIN -> DefaultEvidenceScores.SQL_LOG_JOIN;
             case SQL_LOG_EXISTS -> DefaultEvidenceScores.SQL_LOG_EXISTS;
             case SQL_LOG_SUBQUERY_IN -> DefaultEvidenceScores.SQL_LOG_SUBQUERY_IN;
             default -> DefaultEvidenceScores.SQL_LOG_COLUMN_CO_OCCURRENCE;
         };
+    }
+
+    private EvidenceType relationshipEvidenceType(SqlStatementRecord statement, EvidenceType predicateType) {
+        return statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.VIEW
+                || statement.sourceType() == com.relationdetector.contracts.Enums.StatementSourceType.MATERIALIZED_VIEW
+                ? EvidenceType.VIEW_JOIN : predicateType;
     }
 
     private List<String> stringList(Object value) {
@@ -570,7 +638,7 @@ public final class TokenEventRelationExtractor {
         if (column.isBlank()) {
             return null;
         }
-        ColumnRef projected = projections.get(ColumnKey.of(alias, column));
+        ColumnRef projected = projections.get(columnKey(alias, column));
         if (projected != null) {
             return projected;
         }
@@ -578,7 +646,7 @@ public final class TokenEventRelationExtractor {
         if (table == null) {
             return null;
         }
-        return ColumnRef.of(table, clean(column));
+        return column(table, column);
     }
 
     private ColumnRef resolveWithFallbackTable(
@@ -597,18 +665,13 @@ public final class TokenEventRelationExtractor {
     }
 
     private TableId tableId(String qualified) {
-        String clean = clean(qualified);
-        int dot = clean.lastIndexOf('.');
-        if (dot < 0) {
-            return TableId.of(null, clean);
-        }
-        return TableId.of(clean.substring(0, dot), clean.substring(dot + 1));
+        // Parser facts preserve only the namespace explicitly present in SQL.
+        return identifiers.resolveQualified(qualified, NamespaceContext.empty());
     }
 
-    private String baseName(String qualified) {
-        String clean = clean(qualified);
-        int dot = clean.lastIndexOf('.');
-        return dot < 0 ? clean : clean.substring(dot + 1);
+    private ColumnRef column(TableId table, String name) {
+        String clean = clean(name);
+        return ColumnRef.of(table, clean);
     }
 
     private EvidenceSourceType evidenceSourceType(StatementSourceType sourceType) {
@@ -629,26 +692,14 @@ public final class TokenEventRelationExtractor {
     }
 
     private String normalize(String value) {
-        return clean(value).toLowerCase(Locale.ROOT);
+        return identifiers.normalize(clean(value));
     }
 
     private record ColumnKey(String alias, String column) {
-        static ColumnKey of(String alias, String column) {
-            return new ColumnKey(normalizePart(alias), normalizePart(column));
-        }
+    }
 
-        boolean matches(String rawAlias) {
-            return alias.equals(normalizePart(rawAlias));
-        }
-
-        private static String normalizePart(String value) {
-            String result = value == null ? "" : value.trim();
-            if ((result.startsWith("`") && result.endsWith("`"))
-                    || (result.startsWith("\"") && result.endsWith("\""))) {
-                result = result.substring(1, result.length() - 1);
-            }
-            return result.toLowerCase(Locale.ROOT);
-        }
+    private ColumnKey columnKey(String alias, String column) {
+        return new ColumnKey(normalize(alias), normalize(column));
     }
 
     private final class AliasIndex {

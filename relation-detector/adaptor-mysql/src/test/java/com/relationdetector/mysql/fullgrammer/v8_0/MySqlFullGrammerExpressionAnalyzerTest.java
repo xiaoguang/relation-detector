@@ -81,6 +81,14 @@ class MySqlFullGrammerExpressionAnalyzerTest {
         assertFalse(fingerprints.stream().anyMatch(fingerprint ->
                         fingerprint.contains("product_batches.order_id")),
                 () -> "No source may leak through the product_batches qualifier: " + fingerprints);
+
+        List<String> relations = new TokenEventRelationExtractor().extract(statement, structured).stream()
+                .map(this::relationFingerprint)
+                .toList();
+        assertFalse(relations.stream().anyMatch(relation -> relation.contains(
+                        "product_batches.product_id->purchase_returns.purchase_order_id")),
+                () -> "A scalar subquery locator is not a direct column equality: " + relations
+                        + " events=" + structured.events());
     }
 
     @Test
@@ -263,6 +271,44 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                         "CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id"),
                 () -> "Scalar subquery predicate columns should be CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void scalarCorrelationResolvesThroughShadowedDerivedProjectionAlias() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO jsh_temp_mock_plan (user_id)
+                SELECT rand_tbl.user_id
+                FROM (
+                    SELECT (
+                        SELECT emp.user_id
+                        FROM jsh_orga_user_rel emp
+                        WHERE emp.orga_id = o.org_id
+                          AND emp.delete_flag = '0'
+                        LIMIT 1
+                    ) AS user_id
+                    FROM tmp_sequence seq
+                    CROSS JOIN (
+                        SELECT o.org_id
+                        FROM jsh_temp_org_pdf o
+                        WHERE o.cdf_end >= RAND()
+                        LIMIT 1
+                    ) o
+                ) rand_tbl;
+                """);
+
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor()
+                .extract(statement, structured);
+
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind().name().equals("CONTROL")
+                                && lineage.target().displayName().equals("jsh_temp_mock_plan.user_id")
+                                && lineage.sources().stream().anyMatch(source ->
+                                source.displayName().equals("jsh_temp_org_pdf.org_id"))),
+                () -> "The outer scalar correlation must resolve o.org_id through the derived "
+                        + "projection to jsh_temp_org_pdf.org_id: "
+                        + lineages.stream().map(this::lineageFingerprint).toList()
+                        + " events=" + structured.events());
     }
 
     @Test
@@ -607,7 +653,7 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                                 && lineage.sources().stream().map(source -> source.displayName()).toList()
                                 .equals(expectedSources)),
                 () -> "Missing " + flow + "/" + transform + " " + expectedSources + " -> " + target
-                        + "; actual=" + lineages);
+                        + "; actual=" + lineages.stream().map(this::lineageFingerprint).toList());
     }
 
     private static SqlStatementRecord statement(String sql) {

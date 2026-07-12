@@ -70,7 +70,7 @@ abstract class CommonTokenEventExpressionSupport extends CommonTokenEventVisitor
             return analyze(paren.expression());
         }
         if (expression instanceof CommonRelationSqlParser.BinaryExpressionContext binary) {
-            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
+            LineageTransformType transform = binary.arithmeticOperator().CONCAT() != null
                     ? LineageTransformType.CONCAT_FORMAT
                     : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,

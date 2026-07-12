@@ -76,7 +76,7 @@ abstract class OracleTokenEventExpressionSupport extends OracleTokenEventVisitor
         if (expression instanceof OracleRelationSqlParser.BinaryExpressionContext binary) {
             OracleExpressionAnalysis left = analyze(binary.expression(0));
             OracleExpressionAnalysis right = analyze(binary.expression(1));
-            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
+            LineageTransformType transform = binary.arithmeticOperator().CONCAT() != null
                     ? LineageTransformType.CONCAT_FORMAT : LineageTransformType.ARITHMETIC;
             return OracleExpressionAnalysis.withTransform(transform, LineageFlowKind.VALUE, left, right);
         }

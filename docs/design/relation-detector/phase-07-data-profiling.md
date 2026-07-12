@@ -29,6 +29,21 @@
 - 所有查询必须受候选数量、采样行数、distinct 数量、超时和权限控制。
 - 生产库读权限不足时必须降级为 skip/warning，不影响静态关系抽取。
 
+### 标识符渲染边界
+
+画像查询只能由方言 `IdentifierQuoter` 渲染标识符，不能拼接裸文本或把整个
+`catalog.schema.table.column` 当成一个 identifier quote。`TableId` 的 catalog、schema、
+tableName 必须分别 quote 后以 `.` 连接；`ColumnRef` 先通过 `table(column.table())` 渲染其
+TableId，再对 `column.columnName()` 单独 quote。也就是说，组合列引用等价于：
+
+```text
+quote(catalog).quote(schema).quote(table) + "." + quote(column)
+```
+
+缺失 catalog/schema 的组件不输出，但已有组件的原始大小写和拼写不应被画像层改写。若输入
+已使用本方言的 quote，renderer 保留它；其他方言 quote 会先按单个组件去壳，再用当前方言
+quote，避免把点号、catalog 或 schema 包进同一对 quote。
+
 ## 输入场景
 
 ### 1. 只有 SQL / DDL / 对象定义，没有数据库连接

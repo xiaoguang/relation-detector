@@ -11,6 +11,7 @@
     "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_orders.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_return_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
-    "naming:sales_return_items.return_id->sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:sales_return_items.return_id->sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_returns.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH"
   ]
 }

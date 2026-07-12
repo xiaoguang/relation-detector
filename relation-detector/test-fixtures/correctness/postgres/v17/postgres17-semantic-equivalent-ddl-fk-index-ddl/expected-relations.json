@@ -2,5 +2,5 @@
   "fingerprints": [
     "FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }
