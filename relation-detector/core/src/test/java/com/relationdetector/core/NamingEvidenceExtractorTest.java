@@ -1,6 +1,7 @@
 package com.relationdetector.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -31,6 +32,7 @@ import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.naming.NamingRuleConfigLoader;
 import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.naming.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingEvidenceMerger;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 
@@ -124,6 +126,50 @@ class NamingEvidenceExtractorTest {
         List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
 
         assertEquals(List.of(structuralEvidence), evidence.get(0).rawEvidence());
+    }
+
+    @Test
+    void aggregatesEveryStructuralSqlLocationForOneNamingFact() {
+        RelationshipCandidate scalarSubquery = sqlPredicate(
+                "products", "category_id", "product_categories", "id");
+        scalarSubquery.evidence().clear();
+        scalarSubquery.evidence().add(structuralObservation("routine.sql", "lines:500-540", 518));
+        RelationshipCandidate outerJoin = sqlPredicate(
+                "products", "category_id", "product_categories", "id");
+        outerJoin.evidence().clear();
+        outerJoin.evidence().add(structuralObservation("routine.sql", "lines:500-540", 536));
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(
+                List.of(scalarSubquery, outerJoin));
+
+        assertEquals(1, evidence.size());
+        assertEquals(List.of(518, 536), evidence.get(0).rawEvidence().stream()
+                .map(item -> ((Number) item.attributes().get("sourceLine")).intValue())
+                .sorted()
+                .toList(),
+                "Matching once must not discard later SQL-location observations");
+    }
+
+    @Test
+    void namingSummaryIsConditionalOnlyWhenEveryStructuralLocationIsConditional() {
+        RelationshipCandidate guarded = sqlPredicate("contracts", "customer_id", "customers", "id");
+        guarded.evidence().clear();
+        guarded.evidence().add(conditionalObservation("contracts.sql", 12, "customer"));
+        RelationshipCandidate unguarded = sqlPredicate("contracts", "customer_id", "customers", "id");
+        unguarded.evidence().clear();
+        unguarded.evidence().add(structuralObservation("contracts.sql", "lines:20-22", 21));
+
+        NamingEvidenceCandidate mixed = new NamingEvidenceMerger().merge(
+                extractor.extractFromRelationshipCandidates(List.of(guarded, unguarded))).get(0);
+        assertFalse(Boolean.TRUE.equals(mixed.evidence().attributes().get("conditional")));
+
+        RelationshipCandidate secondGuarded = sqlPredicate("contracts", "customer_id", "customers", "id");
+        secondGuarded.evidence().clear();
+        secondGuarded.evidence().add(conditionalObservation("contracts.sql", 30, "customer"));
+        NamingEvidenceCandidate conditional = new NamingEvidenceMerger().merge(
+                extractor.extractFromRelationshipCandidates(List.of(guarded, secondGuarded))).get(0);
+        assertTrue(Boolean.TRUE.equals(conditional.evidence().attributes().get("conditional")));
+        assertEquals(2, conditional.rawEvidence().size());
     }
 
     @Test
@@ -422,6 +468,35 @@ class NamingEvidenceExtractorTest {
                 "schema.sql",
                 leftTable + "." + leftColumn + " references " + rightTable + "." + rightColumn));
         return candidate;
+    }
+
+    private Evidence structuralObservation(String sourceFile, String statementId, int sourceLine) {
+        return new Evidence(EvidenceType.SQL_LOG_JOIN,
+                java.math.BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                sourceFile,
+                "typed equality",
+                java.util.Map.of(
+                        "sourceFile", sourceFile,
+                        "sourceStatementId", statementId,
+                        "sourceLine", sourceLine));
+    }
+
+    private Evidence conditionalObservation(String sourceFile, int sourceLine, String value) {
+        return new Evidence(EvidenceType.SQL_LOG_JOIN,
+                java.math.BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                sourceFile,
+                "typed guarded equality",
+                java.util.Map.of(
+                        "sourceFile", sourceFile,
+                        "sourceStatementId", "line:" + sourceLine,
+                        "sourceLine", sourceLine,
+                        "conditional", true,
+                        "conditions", List.of(java.util.Map.of(
+                                "discriminator", "contracts.party_type",
+                                "operator", "EQUALS",
+                                "value", value))));
     }
 
     private ColumnRef column(String tableName, String columnName) {

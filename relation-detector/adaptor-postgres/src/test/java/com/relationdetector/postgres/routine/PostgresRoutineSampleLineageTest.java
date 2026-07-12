@@ -443,6 +443,8 @@ class PostgresRoutineSampleLineageTest {
     void allParsersTraceDeepScenarioRoutineWrites() {
         assertForEveryParser("ROUTINE:public.sp_refresh_semantic_dimensions", Set.of(
                 "VALUE:sales_orders.order_date->fiscal_calendar.calendar_date",
+                "VALUE:payment_receipts.receipt_date->fiscal_calendar.calendar_date",
+                "VALUE:sales_returns.return_date->fiscal_calendar.calendar_date",
                 "VALUE:product_categories.id->category_dim.source_category_id"));
         assertForEveryParser("ROUTINE:public.sp_onboard_employee_full", Set.of(
                 "VALUE:departments.id->employees.department_id",
@@ -456,6 +458,124 @@ class PostgresRoutineSampleLineageTest {
         assertForEveryParser("ROUTINE:public.sp_rebuild_sales_fact", Set.of(
                 "VALUE:payments.amount->sales_fact.paid_amount",
                 "VALUE:sales_returns.refund_amount->sales_fact.refund_amount"));
+    }
+
+    @Test
+    void explicitSetProjectionLayoutPreservesEveryPhysicalUnionBranch() {
+        String sql = """
+                INSERT INTO fiscal_calendar (calendar_date)
+                WITH dates(calendar_date) AS (
+                    SELECT so.order_date FROM sales_orders so
+                    UNION ALL
+                    SELECT pr.receipt_date FROM payment_receipts pr
+                    UNION ALL
+                    SELECT sr.return_date FROM sales_returns sr
+                    UNION ALL
+                    SELECT DATE '2026-01-01'
+                )
+                SELECT d.calendar_date FROM dates d;
+                """;
+        assertSqlForEveryParser("postgres-union.sql", StatementSourceType.PLAIN_SQL, sql, Set.of(
+                "VALUE:sales_orders.order_date->fiscal_calendar.calendar_date",
+                "VALUE:payment_receipts.receipt_date->fiscal_calendar.calendar_date",
+                "VALUE:sales_returns.return_date->fiscal_calendar.calendar_date"));
+    }
+
+    @Test
+    void directInsertUnionMapsEveryBranchByOrdinal() {
+        String sql = """
+                INSERT INTO fiscal_calendar (calendar_date)
+                SELECT so.order_date FROM sales_orders so
+                UNION ALL
+                SELECT pr.receipt_date FROM payment_receipts pr
+                UNION ALL
+                SELECT sr.return_date FROM sales_returns sr;
+                """;
+        assertSqlForEveryParser("postgres-direct-union.sql", StatementSourceType.PLAIN_SQL, sql, Set.of(
+                "VALUE:sales_orders.order_date->fiscal_calendar.calendar_date",
+                "VALUE:payment_receipts.receipt_date->fiscal_calendar.calendar_date",
+                "VALUE:sales_returns.return_date->fiscal_calendar.calendar_date"));
+    }
+
+    @Test
+    void nestedUnionMapsEveryLeafBranchWithoutArityDiagnostic() {
+        String sql = """
+                INSERT INTO fiscal_calendar (calendar_date)
+                WITH dates(calendar_date) AS (
+                    SELECT so.order_date FROM sales_orders so
+                    UNION ALL
+                    (SELECT pr.receipt_date FROM payment_receipts pr
+                     UNION ALL
+                     SELECT sr.return_date FROM sales_returns sr)
+                )
+                SELECT d.calendar_date FROM dates d;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
+                "postgres-nested-union.sql", 1, sql.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var actual = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .flatMap(lineage -> lineage.sources().stream().map(source -> lineage.flowKind() + ":"
+                            + source.displayName() + "->" + lineage.target().displayName()))
+                    .collect(java.util.stream.Collectors.toSet());
+            assertTrue(actual.containsAll(Set.of(
+                            "VALUE:sales_orders.order_date->fiscal_calendar.calendar_date",
+                            "VALUE:payment_receipts.receipt_date->fiscal_calendar.calendar_date",
+                            "VALUE:sales_returns.return_date->fiscal_calendar.calendar_date")),
+                    () -> parser.name() + " lost a nested UNION branch: " + actual);
+            assertTrue(structured.warnings().stream().noneMatch(warning ->
+                            "POSTGRES_SET_OPERATION_ARITY_MISMATCH".equals(warning.code())),
+                    () -> parser.name() + " misdiagnosed valid nested UNION arity: "
+                            + structured.warnings());
+        }
+    }
+
+    @Test
+    void wildcardSetBranchHasUnknownArityInsteadOfOneColumn() {
+        String sql = """
+                WITH left_rows(id, name, city) AS (
+                    SELECT c.id, c.name, c.city FROM customers c
+                ), right_rows(id, name, city) AS (
+                    SELECT s.id, s.name, s.city FROM suppliers s
+                ), combined AS (
+                    SELECT * FROM left_rows
+                    UNION ALL
+                    SELECT * FROM right_rows
+                    UNION ALL
+                    (SELECT c.id, c.name, c.city FROM customers c)
+                )
+                SELECT * FROM combined;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
+                "postgres-union-wildcard-arity.sql", 1, sql.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            assertTrue(structured.warnings().stream().noneMatch(warning ->
+                            "POSTGRES_SET_OPERATION_ARITY_MISMATCH".equals(warning.code())),
+                    () -> parser.name() + " treated SELECT * as one projected column: "
+                            + structured.warnings());
+        }
+    }
+
+    @Test
+    void setProjectionArityMismatchIsDiagnosedForEveryParser() {
+        String sql = """
+                WITH mismatched(a) AS (
+                    SELECT so.order_date FROM sales_orders so
+                    UNION ALL
+                    SELECT pr.receipt_date, pr.id FROM payment_receipts pr
+                )
+                SELECT a FROM mismatched;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
+                "postgres-union-arity.sql", 1, sql.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            assertTrue(structured.warnings().stream().anyMatch(warning ->
+                            "POSTGRES_SET_OPERATION_ARITY_MISMATCH".equals(warning.code())),
+                    () -> parser.name() + " did not diagnose set-operation arity: "
+                            + structured.warnings());
+        }
     }
 
     @Test

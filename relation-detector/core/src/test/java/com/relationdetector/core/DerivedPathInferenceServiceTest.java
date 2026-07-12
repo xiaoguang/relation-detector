@@ -111,6 +111,31 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void conditionalRelationshipAndNamingEvidenceDoNotParticipateInDerivedInference() {
+        ScanConfig config = enabledConfig();
+        Endpoint contractPartyId = col("contracts", "party_id");
+        Endpoint customersId = col("customers", "id");
+        Endpoint customersRegionId = col("customers", "region_id");
+        Endpoint regionsId = col("regions", "id");
+
+        RelationshipCandidate conditional = conditionalFk(contractPartyId, customersId);
+        NamingEvidenceCandidate conditionalNaming = conditionalNaming(contractPartyId, customersId);
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(conditional, fk(customersRegionId, regionsId)),
+                List.of(),
+                List.of(conditionalNaming),
+                config);
+
+        assertTrue(result.derivedRelationships().stream().noneMatch(candidate ->
+                        candidate.source().equals(contractPartyId)),
+                "A conditional direct relationship must not seed relationship closure");
+        assertTrue(result.derivedNamingEvidence().stream().noneMatch(candidate ->
+                        candidate.source().equals(contractPartyId)),
+                "Conditional naming evidence must not seed transitive naming closure");
+    }
+
+    @Test
     void relationshipPathMayUseNamingEdgeButMustContainRelationshipEdge() {
         ScanConfig config = enabledConfig();
         Endpoint a = col("a", "r");
@@ -528,6 +553,16 @@ class DerivedPathInferenceServiceTest {
                 true);
     }
 
+    private NamingEvidenceCandidate conditionalNaming(Endpoint source, Endpoint target) {
+        Evidence evidence = new Evidence(EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.NAMING_HEURISTIC,
+                "test",
+                source.displayName() + " conditionally names " + target.displayName(),
+                Map.of("conditional", true));
+        return new NamingEvidenceCandidate(source, target, evidence, "TABLE_ID", true, List.of(evidence));
+    }
+
     private RelationshipCandidate fk(Endpoint source, Endpoint target) {
         RelationshipCandidate candidate = new RelationshipCandidate(source, target,
                 RelationType.FK_LIKE, RelationSubType.INFERRED_JOIN_FK);
@@ -538,6 +573,24 @@ class DerivedPathInferenceServiceTest {
                 "test.sql",
                 source.displayName() + " = " + target.displayName(),
                 Map.of()));
+        return candidate;
+    }
+
+    private RelationshipCandidate conditionalFk(Endpoint source, Endpoint target) {
+        RelationshipCandidate candidate = new RelationshipCandidate(source, target,
+                RelationType.FK_LIKE, RelationSubType.INFERRED_JOIN_FK);
+        candidate.confidence(BigDecimal.valueOf(0.80d));
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "test.sql",
+                source.displayName() + " = " + target.displayName(),
+                Map.of(
+                        "conditional", true,
+                        "polymorphic", true,
+                        "discriminatorEndpoint", "contracts.party_type",
+                        "discriminatorOperator", "EQUALS",
+                        "discriminatorValue", "customer")));
         return candidate;
     }
 

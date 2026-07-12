@@ -53,6 +53,7 @@ public sealed interface StructuredSqlEvent permits RowsetEvent, PredicateEvent,
     default List<ExpressionSource> innerSources() { return List.of(); }
     default List<String> usingColumns() { return List.of(); }
     default boolean verifiedColumnSubquery() { return false; }
+    default List<PredicateGuard> predicateGuards() { return List.of(); }
     default int compositePosition() { return 1; }
     default int compositeSize() { return 1; }
     default ExpressionTrace expression() { return ExpressionTrace.empty(); }

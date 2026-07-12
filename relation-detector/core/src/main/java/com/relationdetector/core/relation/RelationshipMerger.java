@@ -60,9 +60,11 @@ public final class RelationshipMerger {
 
         for (RelationshipCandidate candidate : merged.values()) {
             summarizeRepeatedEvidence(candidate);
+            summarizeConditionalAttributes(candidate);
             candidate.confidence(calculator.calculate(candidate.evidence()));
             candidate.relationSubType(resolveSubtype(candidate));
         }
+        annotatePolymorphicRelationships(merged.values());
 
         List<RelationshipCandidate> output = new ArrayList<>();
         for (RelationshipCandidate candidate : merged.values()) {
@@ -299,8 +301,86 @@ public final class RelationshipMerger {
                 .map(evidence -> normalizeEndpointSide(evidence, source, target))
                 .forEach(copy.rawEvidence()::add);
         copy.warnings().addAll(candidate.warnings());
+        copy.attributes().putAll(candidate.attributes());
         copy.confidence(candidate.confidence());
         return copy;
+    }
+
+    private void summarizeConditionalAttributes(RelationshipCandidate candidate) {
+        List<Evidence> structural = candidate.rawEvidence().stream()
+                .filter(this::isStructuralEndpointEvidence)
+                .toList();
+        candidate.attributes().clear();
+        if (structural.isEmpty()
+                || structural.stream().anyMatch(evidence ->
+                        !Boolean.TRUE.equals(evidence.attributes().get("conditional")))) {
+            return;
+        }
+        List<Map<String, Object>> conditions = structural.stream()
+                .map(this::conditionAttributes)
+                .filter(condition -> !condition.isEmpty())
+                .distinct()
+                .sorted(Comparator.comparing((Map<String, Object> condition) ->
+                                String.valueOf(condition.get("discriminator")))
+                        .thenComparing(condition -> String.valueOf(condition.get("operator")))
+                        .thenComparing(condition -> String.valueOf(condition.get("value"))))
+                .toList();
+        if (conditions.isEmpty()) {
+            return;
+        }
+        candidate.attributes().put("conditional", true);
+        candidate.attributes().put("polymorphic", false);
+        candidate.attributes().put("conditions", conditions);
+    }
+
+    private Map<String, Object> conditionAttributes(Evidence evidence) {
+        Object discriminator = evidence.attributes().get("discriminatorEndpoint");
+        Object operator = evidence.attributes().get("discriminatorOperator");
+        Object value = evidence.attributes().get("discriminatorValue");
+        if (discriminator == null || operator == null || value == null) {
+            return Map.of();
+        }
+        Map<String, Object> condition = new LinkedHashMap<>();
+        condition.put("discriminator", discriminator);
+        condition.put("operator", operator);
+        condition.put("value", value);
+        return Map.copyOf(condition);
+    }
+
+    private void annotatePolymorphicRelationships(java.util.Collection<RelationshipCandidate> candidates) {
+        Map<String, List<RelationshipCandidate>> bySourceAndDiscriminator = new LinkedHashMap<>();
+        for (RelationshipCandidate candidate : candidates) {
+            if (!Boolean.TRUE.equals(candidate.attributes().get("conditional"))) {
+                continue;
+            }
+            for (Map<String, Object> condition : conditions(candidate)) {
+                String key = candidate.source().normalizedKey() + "|" + condition.get("discriminator");
+                bySourceAndDiscriminator.computeIfAbsent(key, ignored -> new ArrayList<>()).add(candidate);
+            }
+        }
+        bySourceAndDiscriminator.values().stream()
+                .filter(group -> group.stream().map(candidate -> candidate.target().normalizedKey()).distinct().count() > 1)
+                .filter(group -> group.stream().flatMap(candidate -> conditions(candidate).stream())
+                        .map(condition -> condition.get("value")).distinct().count() > 1)
+                .flatMap(List::stream)
+                .forEach(candidate -> candidate.attributes().put("polymorphic", true));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> conditions(RelationshipCandidate candidate) {
+        Object value = candidate.attributes().get("conditions");
+        return value instanceof List<?> list
+                ? list.stream().filter(Map.class::isInstance).map(item -> (Map<String, Object>) item).toList()
+                : List.of();
+    }
+
+    private boolean isStructuralEndpointEvidence(Evidence evidence) {
+        return switch (evidence.type()) {
+            case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY,
+                    SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS, SQL_LOG_COLUMN_CO_OCCURRENCE,
+                    VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE -> true;
+            default -> false;
+        };
     }
 
     private Evidence normalizeEndpointSide(Evidence evidence, Endpoint source, Endpoint target) {

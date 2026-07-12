@@ -33,6 +33,7 @@ public interface OracleFullGrammarParseTreeAdapter {
         WHERE_CLAUSE,
         GROUP_BY_ELEMENT,
         HAVING_CLAUSE,
+        LOGICAL_EXPRESSION,
         RELATIONAL_EXPRESSION,
         COMPOUND_EXPRESSION,
         QUANTIFIED_EXPRESSION,
@@ -113,9 +114,25 @@ public interface OracleFullGrammarParseTreeAdapter {
     /** True only for a standalone typed '=' operator, never for <=, >=, !=, or <>. */
     boolean isDirectEquality(ParseTree tree);
 
+    /** True only for a typed logical AND context, never OR. */
+    boolean isConjunction(ParseTree tree);
+
     Optional<String> functionName(ParseTree tree);
 
     OperatorSemantic operatorSemantic(ParseTree tree);
+
+    /** Exact value exposed by a typed literal context. */
+    default Optional<String> literalValue(ParseTree tree) {
+        if (tree == null) return Optional.empty();
+        if (hasRole(tree, Role.QUOTED_STRING)) {
+            String value = tree.getText().strip();
+            if (value.length() >= 2 && value.startsWith("'") && value.endsWith("'"))
+                value = value.substring(1, value.length() - 1).replace("''", "'");
+            return Optional.of(value);
+        }
+        List<ParseTree> children = typedChildren(tree);
+        return children.size() == 1 ? literalValue(children.get(0)) : Optional.empty();
+    }
 
     /** Generated parser-rule children only; terminal text never enters common semantics. */
     default List<ParseTree> typedChildren(ParseTree tree) {

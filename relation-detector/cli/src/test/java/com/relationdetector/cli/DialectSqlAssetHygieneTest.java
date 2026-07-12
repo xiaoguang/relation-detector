@@ -18,6 +18,25 @@ import java.util.stream.Stream;
  * dialect's filesystem scan.
  */
 final class DialectSqlAssetHygieneSupport {
+    private static final Pattern POSTGRES_PROCEDURE_BODY = Pattern.compile(
+            "(?is)\\bCREATE\\s+(?:OR\\s+REPLACE\\s+)?PROCEDURE\\s+([A-Za-z_][A-Za-z0-9_$#]*)"
+                    + ".*?\\bAS\\s+(\\$[A-Za-z_0-9]*\\$)(.*?)\\2\\s*;");
+    private static final Pattern POSTGRES_SET_RETURNING_FUNCTION_BODY = Pattern.compile(
+            "(?is)\\bCREATE\\s+(?:OR\\s+REPLACE\\s+)?FUNCTION\\s+([A-Za-z_][A-Za-z0-9_$#]*)"
+                    + ".*?\\bRETURNS\\s+TABLE\\s*\\(.*?\\)\\s*"
+                    + "\\bLANGUAGE\\s+plpgsql\\s+\\bAS\\s+(\\$[A-Za-z_0-9]*\\$)(.*?)\\2\\s*;");
+    private static final Pattern POSTGRES_RETURN_QUERY = Pattern.compile("(?i)\\bRETURN\\s+QUERY\\b");
+    private static final Pattern POSTGRES_SUBMIT_APPROVAL_CALL = Pattern.compile(
+            "(?is)\\bCALL\\s+sp_submit_approval\\s*\\("
+                    + ".*?\\bv_approval_instance_id\\b\\s*,"
+                    + ".*?\\bv_approval_instance_no\\b\\s*,"
+                    + ".*?\\bv_approval_first_approver_id\\b\\s*,"
+                    + ".*?\\bv_approval_total_nodes\\b\\s*\\)");
+    private static final List<ForbiddenSqlPattern> POSTGRES_OUTPUT_NAME_COLLISIONS = List.of(
+            forbidden("unqualified RETURNS TABLE promotion_type source",
+                    "\\bSELECT\\s+id\\s*,\\s*promotion_type\\b"),
+            forbidden("unqualified RETURNS TABLE product_id source",
+                    "\\bSELECT\\s+product_id\\s*,\\s*SUM\\s*\\(\\s*quantity\\s*\\)"));
     private static final List<ForbiddenSqlPattern> MYSQL_FORBIDDEN = List.of(
             forbidden("PostgreSQL PL/pgSQL language marker", "\\bLANGUAGE\\s+plpgsql\\b"),
             forbidden("PostgreSQL cast operator", "::[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?"),
@@ -156,6 +175,88 @@ final class DialectSqlAssetHygieneSupport {
         assertNoForbiddenDialectResidue("PostgreSQL", List.of(
                 repoRoot().resolve("sample-data/postgres"),
                 repoRoot().resolve("test-fixtures/correctness/postgres")), POSTGRES_FORBIDDEN);
+    }
+
+    static void postgresProceduresDoNotReturnQueryResults() throws IOException {
+        List<String> findings = new ArrayList<>();
+        for (Path root : postgresAssetRoots()) {
+            if (!Files.exists(root)) {
+                continue;
+            }
+            try (Stream<Path> stream = Files.walk(root)) {
+                for (Path path : stream
+                        .filter(Files::isRegularFile)
+                        .filter(candidate -> candidate.toString().endsWith(".sql"))
+                        .sorted()
+                        .toList()) {
+                    String sql = sanitizeSqlForAssetCheck(Files.readString(path));
+                    var routine = POSTGRES_PROCEDURE_BODY.matcher(sql);
+                    while (routine.find()) {
+                        if (POSTGRES_RETURN_QUERY.matcher(routine.group(3)).find()) {
+                            findings.add(repoRoot().relativize(path) + " -> PROCEDURE "
+                                    + routine.group(1) + " contains RETURN QUERY");
+                        }
+                    }
+                }
+            }
+        }
+
+        assertTrue(findings.isEmpty(),
+                "PostgreSQL PROCEDURE assets must use OUT/INOUT assignments instead of RETURN QUERY: "
+                        + findings.stream().limit(100).toList());
+    }
+
+    static void postgresSubmitApprovalCallsPassOutVariables() throws IOException {
+        List<String> findings = new ArrayList<>();
+        for (Path root : postgresAssetRoots()) {
+            if (!Files.exists(root)) {
+                continue;
+            }
+            try (Stream<Path> stream = Files.walk(root)) {
+                for (Path path : stream
+                        .filter(Files::isRegularFile)
+                        .filter(candidate -> candidate.toString().endsWith(".sql"))
+                        .sorted()
+                        .toList()) {
+                    String sql = sanitizeSqlForAssetCheck(Files.readString(path));
+                    if (sql.toLowerCase(java.util.Locale.ROOT).contains("call sp_submit_approval")
+                            && !POSTGRES_SUBMIT_APPROVAL_CALL.matcher(sql).find()) {
+                        findings.add(repoRoot().relativize(path)
+                                + " -> CALL sp_submit_approval must pass four OUT receiving variables");
+                    }
+                }
+            }
+        }
+
+        assertTrue(findings.isEmpty(),
+                "PostgreSQL CALL sites must receive sp_submit_approval OUT parameters: " + findings);
+    }
+
+    static void postgresSetReturningFunctionsQualifyOutputNameCollisions() throws IOException {
+        List<String> findings = new ArrayList<>();
+        for (Path root : postgresAssetRoots()) {
+            if (!Files.exists(root)) {
+                continue;
+            }
+            try (Stream<Path> stream = Files.walk(root)) {
+                for (Path path : stream.filter(Files::isRegularFile)
+                        .filter(candidate -> candidate.toString().endsWith(".sql")).sorted().toList()) {
+                    var function = POSTGRES_SET_RETURNING_FUNCTION_BODY.matcher(
+                            sanitizeSqlForAssetCheck(Files.readString(path)));
+                    while (function.find()) {
+                        for (ForbiddenSqlPattern collision : POSTGRES_OUTPUT_NAME_COLLISIONS) {
+                            if (collision.pattern().matcher(function.group(3)).find()) {
+                                findings.add(repoRoot().relativize(path) + " -> FUNCTION "
+                                        + function.group(1) + " has " + collision.description());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue(findings.isEmpty(),
+                "PostgreSQL RETURNS TABLE bodies must qualify columns that collide with output variables: "
+                        + findings.stream().limit(100).toList());
     }
 
     static void oracleSqlAssetsDoNotContainPostgresOrMysqlDialectResidue() throws IOException {
@@ -475,6 +576,12 @@ final class DialectSqlAssetHygieneSupport {
 
         assertTrue(findings.isEmpty(),
                 message + ". Offenders=" + findings.stream().limit(100).toList());
+    }
+
+    private static List<Path> postgresAssetRoots() {
+        return List.of(
+                repoRoot().resolve("sample-data/postgres"),
+                repoRoot().resolve("test-fixtures/correctness/postgres"));
     }
 
     private static List<String> forbiddenDialectFindings(

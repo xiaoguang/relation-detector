@@ -29,6 +29,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     private final OracleFullGrammarDdlCollector ddlCollector;
     private final OracleFullGrammarEventEmitter emitter;
     private final OracleJoinSemanticSupport joinSemantics;
+    private final OracleConditionalPredicateSupport conditionalPredicates;
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
@@ -43,6 +44,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         this.ddlCollector = new OracleFullGrammarDdlCollector(core, adapter, this::visit);
         this.emitter = new OracleFullGrammarEventEmitter(core, adapter, expressionSupport, this::registerCurrentRowset);
         this.joinSemantics = new OracleJoinSemanticSupport(adapter);
+        this.conditionalPredicates = new OracleConditionalPredicateSupport(core, adapter, expressionSupport);
     }
 
     public List<StructuredSqlEvent> collect(ParseTree root) {
@@ -75,6 +77,8 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
             ddlCollector.emitForeignKey(ctx);
         } else if (hasRole(ctx, Role.CREATE_INDEX)) {
             ddlCollector.visitCreateIndex(ctx);
+        } else if (hasRole(ctx, Role.CASE_EXPRESSION)) {
+            conditionalPredicates.visitCaseExpression(ctx, this::visit, this::visitChildren);
         } else if (hasRole(ctx, Role.QUERY_BLOCK)) {
             visitQueryBlock(ctx);
         } else if (hasRole(ctx, Role.TABLE_REF_AUX)) {
@@ -87,6 +91,10 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
             visitJoinClause(ctx);
         } else if (hasRole(ctx, Role.JOIN_USING)) {
             visitJoinUsingPart(ctx);
+        } else if (hasRole(ctx, Role.JOIN_ON)) {
+            conditionalPredicates.visitGuardedPredicate(ctx, () -> visitChildren(ctx));
+        } else if (hasRole(ctx, Role.LOGICAL_EXPRESSION)) {
+            conditionalPredicates.visitLogicalExpression(ctx, () -> visitChildren(ctx));
         } else if (hasRole(ctx, Role.RELATIONAL_EXPRESSION)) {
             visitRelationalExpression(ctx);
         } else if (hasRole(ctx, Role.COMPOUND_EXPRESSION)) {

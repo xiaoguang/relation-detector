@@ -16,7 +16,9 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
     IN p_shipping_fee DECIMAL(12,2),
     IN p_to_address VARCHAR(300),
     IN p_receiver_name VARCHAR(50),
-    IN p_receiver_phone VARCHAR(20)
+    IN p_receiver_phone VARCHAR(20),
+    OUT shipment_id BIGINT,
+    OUT shipment_no VARCHAR(30)
 )
 LANGUAGE plpgsql
 AS $$
@@ -45,7 +47,8 @@ BEGIN
 
     UPDATE sales_orders SET status = 'delivering' WHERE id = p_order_id;
 
-    RETURN QUERY SELECT v_shipment_id AS shipment_id, v_shipment_no AS shipment_no;
+    shipment_id := v_shipment_id;
+    shipment_no := v_shipment_no;
 END;
 $$;
 
@@ -58,7 +61,8 @@ $$;
 CREATE OR REPLACE PROCEDURE sp_pick_and_pack(
     IN p_shipment_id BIGINT,
     IN p_picker_id BIGINT,
-    IN p_packer_id BIGINT
+    IN p_packer_id BIGINT,
+    OUT success BOOLEAN
 )
 LANGUAGE plpgsql
 AS $$
@@ -74,7 +78,7 @@ BEGIN
     INSERT INTO shipping_tracks (shipment_id, track_time, location, status_desc, operator)
     VALUES (p_shipment_id, NOW(), '仓库', '已打包完成，等待揽收', fn_employee_full_name(p_packer_id));
 
-    RETURN QUERY SELECT (FOUND) AS success;
+    success := FOUND;
 END;
 $$;
 
@@ -90,7 +94,8 @@ $$;
 -- ============================================================
 
 CREATE OR REPLACE PROCEDURE sp_calculate_commission(
-    IN p_period VARCHAR(7)
+    IN p_period VARCHAR(7),
+    OUT result TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -145,8 +150,8 @@ BEGIN
     ) top_sales
     WHERE sc.employee_id = top_sales.employee_id AND sc.period = p_period;
 
-    RETURN QUERY
-    SELECT CONCAT('提成计算完成: ', p_period, ', 共', COUNT(*), '条') AS result
+    SELECT CONCAT('提成计算完成: ', p_period, ', 共', COUNT(*), '条')
+    INTO result
     FROM sales_commissions WHERE period = p_period;
 END;
 $$;
@@ -157,10 +162,18 @@ $$;
 -- 验证促销码是否可用，返回折扣金额
 -- ============================================================
 
-CREATE OR REPLACE PROCEDURE sp_validate_promotion(
+CREATE OR REPLACE FUNCTION sp_validate_promotion(
     IN p_promo_code VARCHAR(30),
     IN p_customer_id BIGINT,
     IN p_order_amount DECIMAL(18,2)
+)
+RETURNS TABLE (
+    promotion_id BIGINT,
+    promo_code VARCHAR(30),
+    promotion_type VARCHAR(20),
+    discount_amount DECIMAL(12,2),
+    after_discount DECIMAL(18,2),
+    validation_result TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -177,12 +190,12 @@ DECLARE
     v_end_date DATE;
     v_discount_amount DECIMAL(12,2) DEFAULT 0.00;
 BEGIN
-    SELECT id, promotion_type, discount_value, min_purchase_amount, max_discount_amount,
-           usage_limit, used_count, status, start_date, end_date
+    SELECT p.id, p.promotion_type, p.discount_value, p.min_purchase_amount, p.max_discount_amount,
+           p.usage_limit, p.used_count, p.status, p.start_date, p.end_date
     INTO v_promo_id, v_type, v_discount_value, v_min_purchase, v_max_discount,
          v_usage_limit, v_used_count, v_status, v_start_date, v_end_date
-    FROM promotions
-    WHERE code = p_promo_code;
+    FROM promotions p
+    WHERE p.code = p_promo_code;
 
     IF v_promo_id IS NULL THEN
         RAISE EXCEPTION '促销码不存在';
@@ -236,7 +249,8 @@ CREATE OR REPLACE PROCEDURE sp_three_way_matching(
     IN p_invoice_id BIGINT,
     IN p_purchase_order_id BIGINT,
     IN p_purchase_receipt_id BIGINT,
-    IN p_matched_by BIGINT
+    IN p_matched_by BIGINT,
+    OUT result TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -308,8 +322,7 @@ BEGIN
 
     COMMIT;
 
-    RETURN QUERY
-    SELECT CASE WHEN v_all_matched THEN '三单匹配成功' ELSE '三单匹配存在差异' END AS result;
+    result := CASE WHEN v_all_matched THEN '三单匹配成功' ELSE '三单匹配存在差异' END;
 END;
 $$;
 
@@ -323,7 +336,8 @@ $$;
 
 CREATE OR REPLACE PROCEDURE sp_depreciate_assets(
     IN p_depreciation_date DATE,
-    IN p_processed_by BIGINT
+    IN p_processed_by BIGINT,
+    OUT result TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -362,8 +376,7 @@ BEGIN
 
     COMMIT;
 
-    RETURN QUERY
-    SELECT CONCAT('折旧计提完成: ', p_depreciation_date) AS result;
+    result := CONCAT('折旧计提完成: ', p_depreciation_date);
 END;
 $$;
 
@@ -376,7 +389,8 @@ $$;
 
 CREATE OR REPLACE PROCEDURE sp_issue_work_order_materials(
     IN p_work_order_id BIGINT,
-    IN p_issued_by BIGINT
+    IN p_issued_by BIGINT,
+    OUT result TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -435,7 +449,7 @@ BEGIN
 
     COMMIT;
 
-    RETURN QUERY SELECT '工单发料完成'::TEXT AS result;
+    result := '工单发料完成';
 END;
 $$;
 
@@ -447,7 +461,8 @@ $$;
 
 CREATE OR REPLACE PROCEDURE sp_assign_service_ticket(
     IN p_ticket_id BIGINT,
-    IN p_assigned_to BIGINT
+    IN p_assigned_to BIGINT,
+    OUT success BOOLEAN
 )
 LANGUAGE plpgsql
 AS $$
@@ -469,7 +484,7 @@ BEGIN
     VALUES ('assign_ticket', 'service_ticket', p_ticket_id, p_assigned_to,
             jsonb_build_object('status', 'processing'));
 
-    RETURN QUERY SELECT (FOUND) AS success;
+    success := FOUND;
 END;
 $$;
 
@@ -480,7 +495,8 @@ $$;
 -- ============================================================
 
 CREATE OR REPLACE PROCEDURE sp_generate_all_business_data(
-    IN p_days INT
+    IN p_days INT,
+    OUT result TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -555,7 +571,6 @@ BEGIN
     CALL sp_generate_sales_data(p_days);
     CALL sp_generate_purchase_data(p_days);
 
-    RETURN QUERY
-    SELECT CONCAT('业务数据生成完成: 考勤(', v_target_month, ') + 销售(', p_days, '天) + 采购(', p_days, '天)') AS result;
+    result := CONCAT('业务数据生成完成: 考勤(', v_target_month, ') + 销售(', p_days, '天) + 采购(', p_days, '天)');
 END;
 $$;

@@ -12,8 +12,10 @@ import com.relationdetector.postgres.routine.PostgresRoutineLanguageDispatcher;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.CreatefunctionstmtContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.A_exprContext;
+import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.A_expr_andContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.A_expr_inContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.C_expr_existsContext;
+import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Case_exprContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.DeletestmtContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Func_asContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Func_alias_clauseContext;
@@ -24,6 +26,9 @@ import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.M
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Merge_update_clauseContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.MergestmtContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Set_clauseContext;
+import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Select_clauseContext;
+import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Select_with_parensContext;
+import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Target_elContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Simple_select_pramaryContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Table_joinContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Table_primaryContext;
@@ -39,15 +44,19 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammarEventFacade sink;
+    private final PostgresMergeEventSupport mergeEvents;
     private final java.util.List<com.relationdetector.contracts.model.WarningMessage> warnings = new java.util.ArrayList<>();
     private int ownedJoinPredicateDepth;
+    private final PostgresSetProjectionSupport setProjections;
 
     PostgresFullGrammarParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
         this.core = new PostgresSqlEventVisitorCore(statement, new PostgresParseTreeAdapter());
         this.sink = core.sink();
+        this.mergeEvents = new PostgresMergeEventSupport(core, sink);
+        this.setProjections = new PostgresSetProjectionSupport(
+                statement, sink, warnings, this::projectedColumnName);
     }
-
     /**
      * 访问 parse tree 并返回该 SQL 的结构事件。
      *
@@ -59,11 +68,9 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
         }
         return core.mergedEvents();
     }
-
     PostgresFullGrammarEventOutcome extractOutcome(ParseTree tree) {
         return new PostgresFullGrammarEventOutcome(extract(tree), warnings);
     }
-
     @Override
     public Void visitCreatefunctionstmt(CreatefunctionstmtContext ctx) {
         var adapter = new RoutineDeclarationAdapter();
@@ -78,7 +85,6 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
         sink.events().addAll(outcome.events());
         return null;
     }
-
     @Override
     public Void visitTable_ref(Table_refContext ctx) {
         if (ctx.table_primary() != null) {
@@ -163,11 +169,15 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
     public Void visitCommon_table_expr(Common_table_exprContext ctx) {
         String name = ctx.name() == null ? "" : ctx.name().getText();
         sink.cte(ctx, name);
+        List<String> explicitColumns = ctx.name_list_() == null ? List.of()
+                : ctx.name_list_().name_list().name().stream().map(ParseTree::getText).toList();
+        setProjections.pushColumnHints(explicitColumns);
         sink.withProjectionOwner(name, () -> {
             if (ctx.preparablestmt() != null) {
                 visit(ctx.preparablestmt());
             }
         });
+        setProjections.popColumnHints();
         return null;
     }
 
@@ -206,6 +216,11 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
             if (insertSelect) core.leaveInsertSelectQuery();
         }
         return null;
+    }
+
+    @Override
+    public Void visitSelect_clause(Select_clauseContext ctx) {
+        return setProjections.visit(ctx, this::visit) ? null : visitChildren(ctx);
     }
 
     @Override
@@ -259,6 +274,26 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
     }
 
     @Override
+    public Void visitCase_expr(Case_exprContext ctx) {
+        ParseTree selector = ctx.case_arg() == null ? null : ctx.case_arg().a_expr();
+        if (selector != null) visit(selector);
+        if (ctx.when_clause_list() != null) {
+            ctx.when_clause_list().when_clause().forEach(clause -> {
+                if (clause.a_expr().size() == 2) {
+                    sink.withCaseBranchGuards(selector, clause.a_expr(0), () -> {
+                        visit(clause.a_expr(0));
+                        visit(clause.a_expr(1));
+                    });
+                }
+            });
+        }
+        if (ctx.case_default() != null && ctx.case_default().a_expr() != null) {
+            visit(ctx.case_default().a_expr());
+        }
+        return null;
+    }
+
+    @Override
     public Void visitA_expr(A_exprContext ctx) {
         if (core.inExists()) {
             sink.existsPredicateEqualities(ctx, ctx);
@@ -266,6 +301,13 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
             sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
         }
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitA_expr_and(A_expr_andContext ctx) {
+        if (ctx.a_expr_between().size() <= 1) return visitChildren(ctx);
+        sink.withPredicateGuards(ctx, () -> visitChildren(ctx));
+        return null;
     }
 
     @Override
@@ -301,6 +343,7 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
         String outputColumn = ctx.bareColLabel() != null
                 ? ctx.bareColLabel().getText()
                 : ctx.colLabel() != null ? ctx.colLabel().getText() : projectedColumnName(ctx.a_expr());
+        outputColumn = setProjections.nextOutputColumn(outputColumn);
         sink.projection(ctx, sink.currentProjectionOwner(), outputColumn, ctx.a_expr());
         return visitChildren(ctx);
     }
@@ -315,62 +358,20 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
 
     @Override
     public Void visitMergestmt(MergestmtContext ctx) {
-        core.mergeTarget(ctx.qualified_name().isEmpty() ? "" : ctx.qualified_name(0).getText());
-        String mergeTarget = core.mergeTarget();
-        String targetAlias = ctx.alias_clause().isEmpty() ? "" : firstAlias(ctx.alias_clause(0));
-        if (targetAlias.isBlank()) {
-            targetAlias = sink.baseName(mergeTarget);
-        }
-        if (!mergeTarget.isBlank()) {
-            sink.rowset(ctx, "MERGE", mergeTarget, targetAlias.equals(sink.baseName(mergeTarget)) ? "" : targetAlias);
-            rememberRowset(targetAlias);
-        }
-        if (ctx.select_with_parens() != null) {
-            core.mergeSource(ctx.alias_clause().size() > 1 ? firstAlias(ctx.alias_clause(1)) : "");
-            String mergeSource = core.mergeSource();
-            if (!mergeSource.isBlank()) {
-                sink.ignoredRowset(ctx, mergeSource, "DERIVED_TABLE");
-                sink.rowset(ctx, "USING", mergeSource, mergeSource);
-                rememberRowset(mergeSource);
-                sink.withProjectionOwner(mergeSource, () -> visit(ctx.select_with_parens()));
-            }
-        } else if (ctx.qualified_name().size() > 1) {
-            core.mergeSource(ctx.qualified_name(1).getText());
-            String mergeSource = core.mergeSource();
-            String sourceAlias = ctx.alias_clause().size() > 1 ? firstAlias(ctx.alias_clause(1)) : "";
-            sink.rowset(ctx, "USING", mergeSource, sourceAlias);
-            rememberRowset(sourceAlias.isBlank() ? sink.baseName(mergeSource) : sourceAlias);
-        } else {
-            core.mergeSource("");
-        }
-        sink.writeTarget(ctx, mergeTarget, targetAlias.equals(sink.baseName(mergeTarget)) ? "" : targetAlias);
-        if (ctx.a_expr() != null) {
-            sink.predicateEqualities(ctx, ctx.a_expr(), "MERGE_OR_USING");
-        }
+        mergeEvents.visitStatement(ctx, this::visit);
         return visitChildren(ctx);
     }
 
     @Override
     public Void visitMerge_update_clause(Merge_update_clauseContext ctx) {
-        sink.withWriteTarget(core.mergeTarget(), () -> visitChildren(ctx));
+        mergeEvents.visitUpdate(() -> visitChildren(ctx));
         return null;
     }
 
     @Override
     public Void visitMerge_insert_clause(Merge_insert_clauseContext ctx) {
-        if (ctx.insert_column_list() != null && ctx.values_clause() != null) {
-            List<String> targets = sink.identifiers(ctx.insert_column_list());
-            List<ParseTree> values = expressionChildren(ctx.values_clause());
-            int count = Math.min(targets.size(), values.size());
-            for (int index = 0; index < count; index++) {
-                sink.mergeInsert(ctx, "", core.mergeTarget(), targets.get(index), values.get(index));
-            }
-        }
+        mergeEvents.visitInsert(ctx);
         return visitChildren(ctx);
-    }
-
-    private List<ParseTree> expressionChildren(ParseTree tree) {
-        return core.expressionChildren(tree);
     }
 
     private String firstAlias(ParseTree tree) {

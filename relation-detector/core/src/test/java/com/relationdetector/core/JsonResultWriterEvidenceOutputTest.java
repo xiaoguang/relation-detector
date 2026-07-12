@@ -91,6 +91,32 @@ class JsonResultWriterEvidenceOutputTest {
     }
 
     @Test
+    void writesConditionalRelationshipAttributesWithoutChangingUnconditionalShape() {
+        RelationshipCandidate conditional = sqlLogJoin("conditional join");
+        conditional.attributes().put("conditional", true);
+        conditional.attributes().put("polymorphic", true);
+        conditional.attributes().put("conditions", List.of(Map.of(
+                "discriminator", "contracts.party_type",
+                "operator", "EQUALS",
+                "value", "customer")));
+        RelationshipCandidate unconditional = sqlLogJoin("plain join");
+        ScanResult result = new ScanResult("postgres", "public");
+        result.relationships().add(conditional);
+        result.relationships().add(unconditional);
+
+        JsonNode relationships = readTree(new JsonResultWriter().write(result, true, true))
+                .path("relationships");
+
+        JsonNode conditionalNode = relationships.get(0);
+        assertTrue(conditionalNode.path("attributes").path("conditional").asBoolean());
+        assertTrue(conditionalNode.path("attributes").path("polymorphic").asBoolean());
+        assertEquals("contracts.party_type",
+                conditionalNode.path("attributes").path("conditions").get(0).path("discriminator").asText());
+        assertTrue(!relationships.get(1).has("attributes"),
+                "Unconditional relationships must retain the existing JSON shape");
+    }
+
+    @Test
     void writesTopLevelDataLineages() {
         ScanResult result = new ScanResult("mysql", "public");
         DataLineageCandidate lineage = new DataLineageCandidate(

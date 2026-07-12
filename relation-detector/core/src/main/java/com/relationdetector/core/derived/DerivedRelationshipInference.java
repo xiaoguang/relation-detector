@@ -46,6 +46,7 @@ final class DerivedRelationshipInference {
             if (relationship.relationType() != RelationType.FK_LIKE
                     || !relationship.source().isColumnLevel()
                     || !relationship.target().isColumnLevel()
+                    || isConditional(relationship)
                     || hasTransitiveEvidence(relationship.evidence())) {
                 continue;
             }
@@ -57,6 +58,7 @@ final class DerivedRelationshipInference {
             namingEvidence.stream()
                     .filter(NamingEvidenceCandidate::directionHint)
                     .filter(candidate -> !naming.isDerived(candidate.evidence()))
+                    .filter(candidate -> !naming.isConditional(candidate.evidence()))
                     .filter(candidate -> candidate.source().isColumnLevel()
                             && candidate.target().isColumnLevel())
                     .map(naming::edge)
@@ -164,6 +166,7 @@ final class DerivedRelationshipInference {
                 .filter(candidate -> candidate.source().isColumnLevel()
                         && candidate.target().isColumnLevel())
                 .filter(candidate -> !naming.isDerived(candidate.evidence()))
+                .filter(candidate -> !naming.isConditional(candidate.evidence()))
                 .filter(candidate -> !DerivedNamingInference.TRANSITIVE_NAMING_RULE.equals(candidate.rule()))
                 .sorted(Comparator.comparing(NamingEvidenceCandidate::id))
                 .forEach(candidate -> refs.computeIfAbsent(
@@ -192,6 +195,16 @@ final class DerivedRelationshipInference {
 
     private boolean hasTransitiveEvidence(List<Evidence> evidence) {
         return evidence.stream().anyMatch(item -> item.type() == EvidenceType.TRANSITIVE_PATH);
+    }
+
+    private boolean isConditional(RelationshipCandidate relationship) {
+        if (Boolean.TRUE.equals(relationship.attributes().get("conditional"))) {
+            return true;
+        }
+        List<Evidence> structural = relationship.evidence().stream()
+                .filter(evidence -> evidence.type() != EvidenceType.NAMING_MATCH)
+                .toList();
+        return !structural.isEmpty() && structural.stream().allMatch(naming::isConditional);
     }
 
     record Result(

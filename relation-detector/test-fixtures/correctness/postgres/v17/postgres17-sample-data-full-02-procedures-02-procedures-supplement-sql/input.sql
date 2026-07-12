@@ -207,9 +207,16 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_check_customer_credit
-CREATE OR REPLACE PROCEDURE sp_check_customer_credit(
+CREATE OR REPLACE FUNCTION sp_check_customer_credit(
     IN p_customer_id BIGINT,
     IN p_order_amount DECIMAL(18,2)
+)
+RETURNS TABLE (
+    credit_limit DECIMAL(18,2),
+    current_balance DECIMAL(18,2),
+    unpaid_total DECIMAL(18,2),
+    available_credit DECIMAL(18,2),
+    credit_status TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -219,9 +226,9 @@ DECLARE
     v_status VARCHAR(20);
     v_unpaid_total DECIMAL(18,2);
 BEGIN
-    SELECT credit_limit, balance, status
+    SELECT c.credit_limit, c.balance, c.status
     INTO v_credit_limit, v_balance, v_status
-    FROM customers WHERE id = p_customer_id;
+    FROM customers c WHERE c.id = p_customer_id;
 
     IF v_status = 'frozen' THEN
         RAISE EXCEPTION '客户已被冻结，无法交易';
@@ -259,10 +266,27 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_evaluate_supplier
-CREATE OR REPLACE PROCEDURE sp_evaluate_supplier(
+CREATE OR REPLACE FUNCTION sp_evaluate_supplier(
     IN p_supplier_id BIGINT,
     IN p_start_date DATE,
     IN p_end_date DATE
+)
+RETURNS TABLE (
+    supplier_id BIGINT,
+    supplier_name TEXT,
+    credit_level TEXT,
+    total_orders BIGINT,
+    total_purchase_amount DECIMAL(18,2),
+    total_paid_amount DECIMAL(18,2),
+    total_unpaid DECIMAL(18,2),
+    avg_order_amount DECIMAL(18,2),
+    avg_delivery_delay_days NUMERIC,
+    delayed_orders BIGINT,
+    delay_rate_pct NUMERIC,
+    total_rejected_qty NUMERIC,
+    total_accepted_qty NUMERIC,
+    reject_rate_pct NUMERIC,
+    evaluated_level TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -325,9 +349,16 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_check_department_budget
-CREATE OR REPLACE PROCEDURE sp_check_department_budget(
+CREATE OR REPLACE FUNCTION sp_check_department_budget(
     IN p_department_id BIGINT,
     IN p_amount DECIMAL(18,2)
+)
+RETURNS TABLE (
+    budget DECIMAL(18,2),
+    spent DECIMAL(18,2),
+    remaining DECIMAL(18,2),
+    usage_pct NUMERIC,
+    budget_status TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -336,7 +367,7 @@ DECLARE
     v_spent DECIMAL(18,2);
     v_remaining DECIMAL(18,2);
 BEGIN
-    SELECT budget INTO v_budget FROM departments WHERE id = p_department_id;
+    SELECT d.budget INTO v_budget FROM departments d WHERE d.id = p_department_id;
 
     -- 已使用预算 = 已审批请购 + 已下单采购
     SELECT COALESCE(SUM(pr.total_amount), 0) INTO v_spent
@@ -368,8 +399,19 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_calculate_monthly_pl
-CREATE OR REPLACE PROCEDURE sp_calculate_monthly_pl(
+CREATE OR REPLACE FUNCTION sp_calculate_monthly_pl(
     IN p_year_month VARCHAR(7)
+)
+RETURNS TABLE (
+    period TEXT,
+    revenue DECIMAL(18,2),
+    cost_of_goods DECIMAL(18,2),
+    gross_profit DECIMAL(18,2),
+    gross_margin_pct NUMERIC,
+    salary_expense DECIMAL(18,2),
+    purchase_expense DECIMAL(18,2),
+    net_profit DECIMAL(18,2),
+    net_margin_pct NUMERIC
 )
 LANGUAGE plpgsql
 AS $$
@@ -434,9 +476,27 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_sales_performance_ranking
-CREATE OR REPLACE PROCEDURE sp_sales_performance_ranking(
+CREATE OR REPLACE FUNCTION sp_sales_performance_ranking(
     IN p_start_date DATE,
     IN p_end_date DATE
+)
+RETURNS TABLE (
+    employee_id BIGINT,
+    salesperson_name TEXT,
+    department_name TEXT,
+    order_count BIGINT,
+    total_sales DECIMAL(18,2),
+    total_collected DECIMAL(18,2),
+    total_outstanding DECIMAL(18,2),
+    avg_order_value DECIMAL(18,2),
+    total_qty_sold NUMERIC,
+    unique_customers BIGINT,
+    collection_rate NUMERIC,
+    sales_rank BIGINT,
+    collection_rank BIGINT,
+    sales_contribution_pct NUMERIC,
+    dept_avg_sales NUMERIC,
+    vs_dept_avg NUMERIC
 )
 LANGUAGE plpgsql
 AS $$
@@ -479,8 +539,25 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_inventory_turnover
-CREATE OR REPLACE PROCEDURE sp_inventory_turnover(
+CREATE OR REPLACE FUNCTION sp_inventory_turnover(
     IN p_year_month VARCHAR(7)
+)
+RETURNS TABLE (
+    product_id BIGINT,
+    sku TEXT,
+    product_name TEXT,
+    category_name TEXT,
+    purchase_price DECIMAL(18,2),
+    retail_price DECIMAL(18,2),
+    beginning_inventory NUMERIC,
+    ending_inventory NUMERIC,
+    monthly_sales_qty NUMERIC,
+    monthly_sales_amount DECIMAL(18,2),
+    monthly_purchase_qty NUMERIC,
+    avg_inventory NUMERIC,
+    turnover_rate NUMERIC,
+    days_sales_of_inventory NUMERIC,
+    gross_profit NUMERIC
 )
 LANGUAGE plpgsql
 AS $$
@@ -519,14 +596,14 @@ BEGIN
     FROM products p
     JOIN product_categories pc ON p.category_id = pc.id
     LEFT JOIN (
-        SELECT product_id, SUM(quantity) AS total_qty
-        FROM inventory
-        GROUP BY product_id
+        SELECT inv.product_id, SUM(inv.quantity) AS total_qty
+        FROM inventory inv
+        GROUP BY inv.product_id
     ) begin_inv ON p.id = begin_inv.product_id
     LEFT JOIN (
-        SELECT product_id, SUM(quantity) AS total_qty
-        FROM inventory
-        GROUP BY product_id
+        SELECT inv.product_id, SUM(inv.quantity) AS total_qty
+        FROM inventory inv
+        GROUP BY inv.product_id
     ) end_inv ON p.id = end_inv.product_id
     LEFT JOIN (
         SELECT soi.product_id, SUM(soi.quantity) AS total_sold, SUM(soi.amount) AS total_sold_amount
@@ -555,7 +632,24 @@ $$;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:public.sp_auto_replenishment_suggestion
-CREATE OR REPLACE PROCEDURE sp_auto_replenishment_suggestion()
+CREATE OR REPLACE FUNCTION sp_auto_replenishment_suggestion()
+RETURNS TABLE (
+    product_id BIGINT,
+    sku TEXT,
+    product_name TEXT,
+    min_stock NUMERIC,
+    max_stock NUMERIC,
+    current_stock NUMERIC,
+    shortage_qty NUMERIC,
+    suggested_order_qty NUMERIC,
+    purchase_price DECIMAL(18,2),
+    estimated_cost NUMERIC,
+    avg_daily_sales NUMERIC,
+    days_of_stock_remaining NUMERIC,
+    preferred_supplier TEXT,
+    lead_time_days INT,
+    priority TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN

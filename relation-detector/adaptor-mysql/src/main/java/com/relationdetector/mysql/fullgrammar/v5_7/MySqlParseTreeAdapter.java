@@ -107,6 +107,22 @@ final class MySqlParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter
     }
 
     @Override
+    public Optional<String> literalValue(ParseTree tree) {
+        ParseTree current = tree;
+        while (current != null && !(current instanceof SimpleExprLiteralContext)
+                && !(current instanceof LiteralContext)) {
+            List<ParseTree> children = typedChildren(current);
+            if (children.size() != 1) return Optional.empty();
+            current = children.get(0);
+        }
+        if (current == null) return Optional.empty();
+        String value = current.getText().strip();
+        if (value.length() >= 2 && value.startsWith("'") && value.endsWith("'"))
+            value = value.substring(1, value.length() - 1).replace("''", "'");
+        return Optional.of(value);
+    }
+
+    @Override
     public List<EqualityOperands> directEqualities(ParseTree tree) {
         if (tree instanceof PrimaryExprCompareContext comparison
                 && comparison.compOp() != null

@@ -1,6 +1,7 @@
 package com.relationdetector.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.nio.file.Files;
@@ -24,6 +25,47 @@ import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
 
 class MySqlSemanticObservationConsistencyTest {
+    @Test
+    void guardedPolymorphicJoinRetainsConditionInTokenAndFull() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT pr.id
+                FROM payment_receipts pr
+                JOIN customers c
+                  ON pr.party_type = 'customer' AND pr.party_id = c.id
+                """, StatementSourceType.PLAIN_SQL, "mysql80-conditional.sql", 1, 4, Map.of());
+        for (StructuredSqlParser parser : List.of(
+                new MySqlTokenEventStructuredSqlParser(),
+                new com.relationdetector.mysql.fullgrammar.v5_7.FullGrammarDialectModule().sqlParser(),
+                new FullGrammarDialectModule().sqlParser())) {
+            var candidates = new StructuredRelationshipExtractor().extract(statement, parser.parseSql(statement, null));
+            assertTrue(candidates.stream().anyMatch(candidate -> candidate.evidence().stream().anyMatch(evidence ->
+                            Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                    && "payment_receipts.party_type".equals(
+                                            evidence.attributes().get("discriminatorEndpoint")))),
+                    () -> "MySQL parser lost the typed discriminator: " + candidates);
+        }
+    }
+
+    @Test
+    void siblingGuardAppliesToInSubqueryAndDirectEqualityInBothModes() {
+        SqlStatementRecord inStatement = new SqlStatementRecord("""
+                SELECT cj.id FROM cashier_journals cj
+                WHERE cj.reference_type = 'sales_order'
+                  AND cj.reference_id IN (SELECT so.id FROM sales_orders so)
+                """, StatementSourceType.PLAIN_SQL, "mysql80-conditional-in.sql", 1, 3, Map.of());
+        SqlStatementRecord equalityStatement = new SqlStatementRecord("""
+                SELECT ir.id FROM inspection_reports ir, purchase_orders po
+                WHERE ir.reference_type = 'purchase_order'
+                  AND ir.reference_id = po.id
+                """, StatementSourceType.PLAIN_SQL, "mysql80-conditional-equality.sql", 1, 3, Map.of());
+
+        for (SqlStatementRecord statement : List.of(inStatement, equalityStatement)) {
+            assertEquals(
+                    semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
+                    semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement));
+        }
+    }
+
     @Test
     void nestedExistsJoinObservationsMatchMysql80FullGrammar() {
         SqlStatementRecord statement = new SqlStatementRecord("""

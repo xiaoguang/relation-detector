@@ -18,7 +18,9 @@
 --           坏账准备 = 逾期金额 * 计提比例
 -- ============================================================
 
-CREATE OR REPLACE PROCEDURE sp_generate_ar_aging()
+CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
+    OUT result TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -39,8 +41,8 @@ BEGIN
     WHERE so.status IN ('confirmed', 'delivering', 'delivered')
       AND so.total_amount > so.paid_amount;
 
-    RETURN QUERY
-    SELECT 'AR账龄生成完成: ' || COUNT(*) || '条' AS result
+    SELECT 'AR账龄生成完成: ' || COUNT(*) || '条'
+    INTO result
     FROM ar_aging_snapshots
     WHERE snapshot_date = CURRENT_DATE;
 END;
@@ -62,7 +64,11 @@ CREATE OR REPLACE PROCEDURE sp_submit_approval(
     IN p_target_type VARCHAR(50),
     IN p_target_id BIGINT,
     IN p_target_summary VARCHAR(500),
-    IN p_submitted_by BIGINT
+    IN p_submitted_by BIGINT,
+    OUT instance_id BIGINT,
+    OUT instance_no VARCHAR(30),
+    OUT first_approver_id BIGINT,
+    OUT total_nodes INT
 )
 LANGUAGE plpgsql
 AS $$
@@ -118,9 +124,10 @@ BEGIN
 
     COMMIT;
 
-    RETURN QUERY
-    SELECT v_instance_id AS instance_id, v_instance_no AS instance_no,
-           v_first_approver_id AS first_approver_id, v_total_nodes AS total_nodes;
+    instance_id := v_instance_id;
+    instance_no := v_instance_no;
+    first_approver_id := v_first_approver_id;
+    total_nodes := v_total_nodes;
 END;
 $$;
 
@@ -209,7 +216,10 @@ $$;
 
 CREATE OR REPLACE PROCEDURE sp_settle_consignment(
     IN p_customer_id BIGINT,
-    IN p_settlement_period VARCHAR(7)
+    IN p_settlement_period VARCHAR(7),
+    OUT order_id BIGINT,
+    OUT order_no VARCHAR(30),
+    OUT total_amount DECIMAL(18,2)
 )
 LANGUAGE plpgsql
 AS $$
@@ -275,8 +285,9 @@ BEGIN
 
     COMMIT;
 
-    RETURN QUERY
-    SELECT v_order_id AS order_id, v_order_no AS order_no, v_total_amount AS total_amount;
+    order_id := v_order_id;
+    order_no := v_order_no;
+    total_amount := v_total_amount;
 END;
 $$;
 
@@ -378,7 +389,12 @@ $$;
 
 CREATE OR REPLACE PROCEDURE sp_file_tax_return(
     IN p_tax_period VARCHAR(7),
-    IN p_prepared_by BIGINT
+    IN p_prepared_by BIGINT,
+    OUT tax_period VARCHAR(7),
+    OUT output_tax DECIMAL(18,2),
+    OUT input_tax DECIMAL(18,2),
+    OUT tax_payable DECIMAL(18,2),
+    OUT filing_deadline DATE
 )
 LANGUAGE plpgsql
 AS $$
@@ -393,18 +409,18 @@ BEGIN
 
     -- 销项税额
     SELECT COALESCE(SUM(tax_amount), 0) INTO v_output_tax
-    FROM tax_invoices
-    WHERE tax_direction = 'output'
-      AND tax_period = p_tax_period
-      AND status IN ('issued', 'verified');
+    FROM tax_invoices ti
+    WHERE ti.tax_direction = 'output'
+      AND ti.tax_period = p_tax_period
+      AND ti.status IN ('issued', 'verified');
 
     -- 进项税额
     SELECT COALESCE(SUM(tax_amount), 0) INTO v_input_tax
-    FROM tax_invoices
-    WHERE tax_direction = 'input'
-      AND tax_period = p_tax_period
-      AND verification_status = 'certified'
-      AND status IN ('issued', 'verified');
+    FROM tax_invoices ti
+    WHERE ti.tax_direction = 'input'
+      AND ti.tax_period = p_tax_period
+      AND ti.verification_status = 'certified'
+      AND ti.status IN ('issued', 'verified');
 
     v_input_transfer := 0;
     v_tax_payable := v_output_tax - v_input_tax + v_input_transfer;
@@ -419,13 +435,11 @@ BEGIN
         tax_payable = EXCLUDED.tax_payable,
         status = 'prepared';
 
-    RETURN QUERY
-    SELECT
-        p_tax_period AS tax_period,
-        v_output_tax AS output_tax,
-        v_input_tax AS input_tax,
-        v_tax_payable AS tax_payable,
-        v_deadline AS filing_deadline;
+    tax_period := p_tax_period;
+    output_tax := v_output_tax;
+    input_tax := v_input_tax;
+    tax_payable := v_tax_payable;
+    filing_deadline := v_deadline;
 END;
 $$;
 
@@ -586,7 +600,20 @@ $$;
 -- 调用关系: 被定时任务调用
 -- ============================================================
 
-CREATE OR REPLACE PROCEDURE sp_contract_expiry_alert()
+CREATE OR REPLACE FUNCTION sp_contract_expiry_alert()
+RETURNS TABLE (
+    contract_no TEXT,
+    contract_type TEXT,
+    subject TEXT,
+    party_name TEXT,
+    start_date DATE,
+    end_date DATE,
+    days_remaining INT,
+    total_amount DECIMAL(18,2),
+    status TEXT,
+    pending_milestones BIGINT,
+    expiry_alert TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN

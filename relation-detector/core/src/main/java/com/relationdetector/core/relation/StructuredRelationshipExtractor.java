@@ -102,6 +102,7 @@ public final class StructuredRelationshipExtractor {
                             event.joinKind(),
                             event.left().alias(),
                             event.right().alias(),
+                            aliases,
                             event,
                             "typed column equality"));
                 }
@@ -120,6 +121,7 @@ public final class StructuredRelationshipExtractor {
                             "EXISTS",
                             event.left().alias(),
                             event.right().alias(),
+                            aliases,
                             event,
                             "typed EXISTS column equality"));
                 }
@@ -140,6 +142,7 @@ public final class StructuredRelationshipExtractor {
                             "USING_JOIN",
                             leftAlias,
                             rightAlias,
+                            aliases,
                             event,
                             "typed JOIN USING column equality"));
                 }
@@ -167,6 +170,7 @@ public final class StructuredRelationshipExtractor {
                             "IN_SUBQUERY",
                             event.left().alias(),
                             event.right().alias(),
+                            aliases,
                             event,
                             "typed IN subquery column co-occurrence"));
                 }
@@ -200,6 +204,7 @@ public final class StructuredRelationshipExtractor {
                                 "TUPLE_IN_SUBQUERY",
                                 outerAliases.get(index),
                                 innerAliases.get(index),
+                                aliases,
                                 event,
                                 "typed tuple IN subquery column co-occurrence position " + (index + 1)));
                     }
@@ -529,6 +534,7 @@ public final class StructuredRelationshipExtractor {
             String joinKind,
             String leftAlias,
             String rightAlias,
+            AliasIndex aliases,
             StructuredSqlEvent event,
             String detail
     ) {
@@ -546,6 +552,7 @@ public final class StructuredRelationshipExtractor {
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("joinKind", canonicalJoinKind(joinKind));
         EvidenceProvenanceMapper.copy(statement, event, attributes);
+        copyPredicateGuardAttributes(event, aliases, attributes);
         if (isExplicitSelfJoinRole(left, right, leftAlias, rightAlias)) {
             attributes.put("selfJoinRole", true);
             attributes.put("leftAlias", clean(leftAlias));
@@ -559,6 +566,33 @@ public final class StructuredRelationshipExtractor {
                 detail,
                 attributes));
         return candidate;
+    }
+
+    private void copyPredicateGuardAttributes(
+            StructuredSqlEvent event,
+            AliasIndex aliases,
+            Map<String, Object> attributes
+    ) {
+        List<RelationshipCondition> conditions = new ArrayList<>();
+        for (com.relationdetector.contracts.parse.PredicateGuard guard : event.predicateGuards()) {
+            ColumnRef discriminator = resolve(
+                    guard.discriminator().alias(), guard.discriminator().column(),
+                    aliases, Map.of(), event.line());
+            if (discriminator == null || guard.operator().isBlank()) {
+                continue;
+            }
+            conditions.add(new RelationshipCondition(
+                    Endpoint.column(discriminator), guard.operator(), guard.literalValue()));
+        }
+        if (conditions.isEmpty()) {
+            return;
+        }
+        Map<String, Object> first = conditions.get(0).attributes();
+        attributes.put("conditional", true);
+        attributes.put("discriminatorEndpoint", first.get("discriminator"));
+        attributes.put("discriminatorOperator", first.get("operator"));
+        attributes.put("discriminatorValue", first.get("value"));
+        attributes.put("conditions", conditions.stream().map(RelationshipCondition::attributes).toList());
     }
 
     private String canonicalJoinKind(String raw) {

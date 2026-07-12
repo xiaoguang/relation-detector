@@ -133,7 +133,7 @@ withClause
     ;
 
 setOperation
-    : (UNION ALL? | INTERSECT | EXCEPT) querySpecification
+    : (UNION ALL? | INTERSECT | EXCEPT) (querySpecification | LPAREN selectStatement RPAREN)
     ;
 
 commonTableExpression

@@ -7,6 +7,8 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
 /** Typed traversal facade for the portable common token-event grammar. */
@@ -118,6 +120,54 @@ public final class CommonTokenEventParseTreeVisitor extends CommonTokenEventWrit
                 left.alias(), left.column(), right.alias(), right.column(),
                 existsDepth > 0 ? "EXISTS" : currentJoinKind());
         return null;
+    }
+
+    @Override
+    public Void visitAndPredicate(CommonRelationSqlParser.AndPredicateContext ctx) {
+        if (ctx.getParent() instanceof CommonRelationSqlParser.AndPredicateContext) return visitChildren(ctx);
+        List<PredicateGuard> guards = predicateGuards(ctx);
+        withPredicateGuards(guards, 0, () -> visitChildren(ctx));
+        return null;
+    }
+
+    private List<PredicateGuard> predicateGuards(CommonRelationSqlParser.PredicateContext predicate) {
+        if (predicate instanceof CommonRelationSqlParser.AndPredicateContext and) {
+            List<PredicateGuard> result = new java.util.ArrayList<>();
+            result.addAll(predicateGuards(and.predicate(0)));
+            result.addAll(predicateGuards(and.predicate(1)));
+            return List.copyOf(result);
+        }
+        if (!(predicate instanceof CommonRelationSqlParser.ComparisonPredicateContext comparison)
+                || comparison.comparisonOperator().EQ() == null) return List.of();
+        ColumnRead left = singleColumn(comparison.expression(0));
+        ColumnRead right = singleColumn(comparison.expression(1));
+        String leftLiteral = literalValue(comparison.expression(0));
+        String rightLiteral = literalValue(comparison.expression(1));
+        if (left != null && rightLiteral != null) return List.of(new PredicateGuard(
+                new ExpressionSource(left.alias(), left.column()), "EQUALS", rightLiteral));
+        if (right != null && leftLiteral != null) return List.of(new PredicateGuard(
+                new ExpressionSource(right.alias(), right.column()), "EQUALS", leftLiteral));
+        return List.of();
+    }
+
+    private String literalValue(CommonRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof CommonRelationSqlParser.LiteralExpressionContext literal)
+            return cleanLiteral(literal.literal().getText());
+        if (expression instanceof CommonRelationSqlParser.ParenExpressionContext paren)
+            return literalValue(paren.expression());
+        return null;
+    }
+
+    private String cleanLiteral(String raw) {
+        String value = raw == null ? "" : raw.strip();
+        return value.length() >= 2 && value.startsWith("'") && value.endsWith("'")
+                ? value.substring(1, value.length() - 1).replace("''", "'") : value;
+    }
+
+    private void withPredicateGuards(List<PredicateGuard> guards, int index, Runnable visitor) {
+        if (index >= guards.size()) { visitor.run(); return; }
+        emitter.withPredicateGuard(guards.get(index),
+                () -> withPredicateGuards(guards, index + 1, visitor));
     }
 
     @Override

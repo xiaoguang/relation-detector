@@ -2,6 +2,7 @@
 """Compare relation-detector facts and semantic observations between result trees."""
 
 import argparse
+from collections import defaultdict
 import hashlib
 import json
 from pathlib import Path
@@ -30,6 +31,22 @@ IMPLEMENTATION_KEYS.add("fullGram" + "merNative")
 IMPLEMENTATION_KEYS.add("fullGram" + "merProfile")
 IMPLEMENTATION_KEYS.add("fullGram" + "merContextSource")
 
+PROVENANCE_NORMALIZATION_ATTRIBUTES = {
+    "sourceObjectType",
+}
+
+RECOVERY_AND_REGRESSION_CLASSIFICATIONS = {
+    "ROUTINE_RELATIONSHIP_OBSERVATION_RECOVERY",
+    "ROUTINE_NAMING_OBSERVATION_RECOVERY",
+    "ROUTINE_LINEAGE_RECOVERY",
+    "ROUTINE_DERIVED_RECOVERY",
+    "NAMING_OBSERVATION_SELECTION_REGRESSION",
+    "CONDITIONAL_RELATIONSHIP_RECOVERY",
+    "CONDITIONAL_DERIVED_REGRESSION",
+    "UNION_LINEAGE_RECOVERY",
+    "SQL_ASSET_CORRECTION",
+}
+
 ALLOWED_CLASSIFICATIONS = {
     "A_TO_B": {
         "IMPLEMENTATION_NAME_ONLY",
@@ -37,7 +54,7 @@ ALLOWED_CLASSIFICATIONS = {
         "STRUCTURE_MIGRATION_REGRESSION",
         "PREVIOUS_GOLDEN_CORRECTION",
         "REVIEW_NEEDED",
-    },
+    } | RECOVERY_AND_REGRESSION_CLASSIFICATIONS,
     "B_TO_C": {
         "DDL_UNIQUENESS_CORRECTION",
         "TRIGGER_FACT_RECOVERY",
@@ -47,6 +64,16 @@ ALLOWED_CLASSIFICATIONS = {
         "FALSE_POSITIVE_REMOVAL",
         "REVIEW_NEEDED",
     },
+    "C_TO_D": {
+        "IMPLEMENTATION_NAME_ONLY",
+        "PROVENANCE_NORMALIZATION_ONLY",
+        "PROVENANCE_CORRECTION",
+        "DDL_UNIQUENESS_CORRECTION",
+        "TRIGGER_FACT_RECOVERY",
+        "SELF_UPDATE_LINEAGE_RECOVERY",
+        "FALSE_POSITIVE_REMOVAL",
+        "REVIEW_NEEDED",
+    } | RECOVERY_AND_REGRESSION_CLASSIFICATIONS,
 }
 
 
@@ -146,6 +173,18 @@ def fact_identity(section, fact):
     return stable_json(value)
 
 
+def observation_fact_identity(section, fact):
+    """Identify the supported fact without aggregate evidence added by other observations."""
+    if section != "relationships":
+        return fact_identity(section, fact)
+    return stable_json({
+        "source": endpoint(fact.get("source")),
+        "target": endpoint(fact.get("target")),
+        "relationType": fact.get("relationType"),
+        "relationSubType": fact.get("relationSubType"),
+    })
+
+
 def parser_name(path):
     name = path.stem
     return name.replace("gram" + "mer", "grammar")
@@ -192,9 +231,10 @@ def load_tree(root):
                     "fact": json.loads(identity),
                     "sqlContexts": fact_contexts(fact),
                 }
+                observation_fact = json.loads(observation_fact_identity(section, fact))
                 for observation in fact.get("rawEvidence") or []:
                     observation_identity = stable_json({
-                        "fact": json.loads(identity),
+                        "fact": observation_fact,
                         "observation": observation,
                     })
                     observation_key = (parser, section, observation_identity)
@@ -203,14 +243,14 @@ def load_tree(root):
 
 
 def change_id(transition, scope, change_type, parser, section, value):
-    encoded = stable_json({
+    encoded = json.dumps({
         "transition": transition,
         "scope": scope,
         "changeType": change_type,
-        "parser": parser,
+        "parserCategory": normalized_string(parser),
         "section": section,
-        "value": value,
-    }).encode("utf-8")
+        "value": canonical(value),
+    }, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -237,7 +277,80 @@ def diff_scope(before, after, transition, scope):
     return changes
 
 
-def apply_classifications(changes, path, transition):
+def provenance_normalization_key(value):
+    """Return a key only when an observation differs in permitted provenance."""
+    observation = value.get("observation")
+    if not isinstance(observation, dict):
+        return None
+    attributes = observation.get("attributes")
+    if not isinstance(attributes, dict):
+        return None
+    normalized = json.loads(stable_json(value))
+    normalized_attributes = normalized["observation"].get("attributes")
+    if not isinstance(normalized_attributes, dict):
+        return None
+    for attribute in PROVENANCE_NORMALIZATION_ATTRIBUTES:
+        normalized_attributes.pop(attribute, None)
+    return stable_json(normalized)
+
+
+def strict_provenance_pair_ids(before, after, transition):
+    """Pair changed observations only when each semantic identity occurs once per side."""
+    before_only = set(before) - set(after)
+    after_only = set(after) - set(before)
+    before_groups = defaultdict(list)
+    after_groups = defaultdict(list)
+    for parser, section, identity in before_only:
+        value = before[(parser, section, identity)]
+        key = provenance_normalization_key(value)
+        if key is not None:
+            before_groups[(parser, section, key)].append(value)
+    for parser, section, identity in after_only:
+        value = after[(parser, section, identity)]
+        key = provenance_normalization_key(value)
+        if key is not None:
+            after_groups[(parser, section, key)].append(value)
+
+    pair_ids = set()
+    for parser, section, key in sorted(set(before_groups) & set(after_groups)):
+        removed = before_groups[(parser, section, key)]
+        added = after_groups[(parser, section, key)]
+        if len(removed) != 1 or len(added) != 1:
+            continue
+        pair_ids.add(change_id(transition, "OBSERVATION", "REMOVED", parser, section, removed[0]))
+        pair_ids.add(change_id(transition, "OBSERVATION", "ADDED", parser, section, added[0]))
+    return pair_ids
+
+
+def observation_context(value):
+    observation = value.get("observation") or {}
+    attributes = observation.get("attributes") or {}
+    source = attributes.get("sourceFile") or observation.get("source")
+    statement = attributes.get("sourceStatementId")
+    line = attributes.get("sourceLine")
+    if not source:
+        return ""
+    context = normalized_string(str(source))
+    if statement:
+        context += "#" + str(statement)
+    if line is not None:
+        context += ":" + str(line)
+    return context
+
+
+def apply_strict_provenance_pairs(changes, pair_ids):
+    for change in changes:
+        if change["id"] not in pair_ids:
+            continue
+        change["classification"] = "PROVENANCE_NORMALIZATION_ONLY"
+        change["rationale"] = (
+            "Strict 1:1 observation pair: the semantic observation and location are unchanged; "
+            "only permitted provenance attributes differ."
+        )
+        change["sqlContext"] = observation_context(change["value"])
+
+
+def apply_classifications(changes, path, transition, provenance_pair_ids):
     if path is None:
         return
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -254,6 +367,16 @@ def apply_classifications(changes, path, transition):
         classification = entry.get("classification")
         if classification not in allowed:
             raise SystemExit("Classification {} is not allowed for {}".format(classification, transition))
+        if classification == "PROVENANCE_NORMALIZATION_ONLY" and change["id"] not in provenance_pair_ids:
+            raise SystemExit(
+                "PROVENANCE_NORMALIZATION_ONLY requires a strict 1:1 observation pair: {}".format(
+                    change["id"]
+                )
+            )
+        if change["id"] in provenance_pair_ids and classification != "PROVENANCE_NORMALIZATION_ONLY":
+            raise SystemExit(
+                "Strict provenance pair must remain PROVENANCE_NORMALIZATION_ONLY: {}".format(change["id"])
+            )
         rationale = str(entry.get("rationale") or "").strip()
         sql_context = str(entry.get("sqlContext") or "").strip()
         if not rationale or not sql_context:
@@ -307,7 +430,21 @@ def main():
     changes = diff_scope(before_facts, after_facts, args.transition, "FACT")
     changes.extend(diff_scope(before_observations, after_observations, args.transition, "OBSERVATION"))
     changes.sort(key=lambda item: (item["parser"], item["section"], item["scope"], item["changeType"], item["id"]))
-    apply_classifications(changes, args.classifications, args.transition)
+    provenance_pair_ids = set()
+    if "PROVENANCE_NORMALIZATION_ONLY" in ALLOWED_CLASSIFICATIONS[args.transition]:
+        provenance_pair_ids = strict_provenance_pair_ids(before_observations, after_observations, args.transition)
+        apply_strict_provenance_pairs(changes, provenance_pair_ids)
+    apply_classifications(changes, args.classifications, args.transition, provenance_pair_ids)
+    change_ids = [change["id"] for change in changes]
+    if len(change_ids) != len(set(change_ids)):
+        raise SystemExit("Semantic change ids must be unique across parser categories")
+    classified_provenance_ids = {
+        change["id"]
+        for change in changes
+        if change["classification"] == "PROVENANCE_NORMALIZATION_ONLY"
+    }
+    if classified_provenance_ids != provenance_pair_ids:
+        raise SystemExit("Provenance-only classifications must exactly equal strict provenance pairs")
 
     review_needed = sum(1 for change in changes if change["classification"] == "REVIEW_NEEDED")
     fact_changes = sum(1 for change in changes if change["scope"] == "FACT")
@@ -321,6 +458,8 @@ def main():
             "observationChanges": observation_changes,
             "classifiedChanges": len(changes) - review_needed,
             "reviewNeeded": review_needed,
+            "provenanceNormalizationPairs": len(provenance_pair_ids) // 2,
+            "provenanceNormalizationObservationChanges": len(provenance_pair_ids),
         },
         "changes": changes,
     }

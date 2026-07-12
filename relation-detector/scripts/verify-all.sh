@@ -72,14 +72,13 @@ cp relation-detector/target/sample-data-parser-cli/observation-parity.tsv \
 cp relation-detector/target/sample-data-parser-cli/batch-report.json "$VERIFY_DIR/batch-report.json"
 cp relation-detector/target/correctness-run-summary.json "$VERIFY_DIR/correctness-run-summary.json"
 
-NO_CACHE_STATUS_ARGS=()
-NO_CACHE_ARTIFACT_ARGS=()
+MANIFEST_OPTIONAL_ARGS=(--artifact "$VERIFY_DIR/environment.json")
 if [[ -n "${VERIFY_NO_CACHE_STATUS:-}" ]]; then
-  NO_CACHE_STATUS_ARGS=(--no-cache-status "$VERIFY_NO_CACHE_STATUS")
+  MANIFEST_OPTIONAL_ARGS+=(--no-cache-status "$VERIFY_NO_CACHE_STATUS")
 fi
 if [[ -n "${VERIFY_NO_CACHE_LOG:-}" && -f "$VERIFY_NO_CACHE_LOG" ]]; then
   cp "$VERIFY_NO_CACHE_LOG" "$VERIFY_DIR/no-cache-acceptance.log"
-  NO_CACHE_ARTIFACT_ARGS=(--artifact "$VERIFY_DIR/no-cache-acceptance.log")
+  MANIFEST_OPTIONAL_ARGS+=(--artifact "$VERIFY_DIR/no-cache-acceptance.log")
 fi
 
 python3 relation-detector/scripts/build-performance-report.py \
@@ -106,9 +105,7 @@ python3 relation-detector/scripts/build-verification-manifest.py \
   --origin-main "$ORIGIN_MAIN" \
   --worktree-clean "$WORKTREE_CLEAN" \
   --maven-status 0 \
-  "${NO_CACHE_STATUS_ARGS[@]}" \
-  "${NO_CACHE_ARTIFACT_ARGS[@]}" \
-  --artifact "$VERIFY_DIR/environment.json" \
+  "${MANIFEST_OPTIONAL_ARGS[@]}" \
   --artifact "$VERIFY_DIR/acceptance.log" \
   --artifact "$VERIFY_DIR/summary.tsv" \
   --artifact "$VERIFY_DIR/summary-with-derived.tsv" \

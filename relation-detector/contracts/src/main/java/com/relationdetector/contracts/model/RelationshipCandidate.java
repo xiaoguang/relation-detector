@@ -2,7 +2,9 @@ package com.relationdetector.contracts.model;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
@@ -26,6 +28,7 @@ public final class RelationshipCandidate {
     private final List<Evidence> evidence = new ArrayList<>();
     private final List<Evidence> rawEvidence = new ArrayList<>();
     private final List<WarningMessage> warnings = new ArrayList<>();
+    private final Map<String, Object> attributes = new LinkedHashMap<>();
 
     public RelationshipCandidate(Endpoint source, Endpoint target, RelationType relationType, RelationSubType relationSubType) {
         if (source == null || target == null) {
@@ -79,5 +82,9 @@ public final class RelationshipCandidate {
 
     public List<WarningMessage> warnings() {
         return warnings;
+    }
+
+    public Map<String, Object> attributes() {
+        return attributes;
     }
 }

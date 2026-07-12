@@ -97,25 +97,36 @@ public final class NamingEvidenceExtractor {
             return List.of();
         }
         List<NamingEvidenceCandidate> result = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
         NamingRuleSet ruleSet = ruleSet(config);
+        Map<String, RelationshipCandidateGroup> groups = new LinkedHashMap<>();
         for (RelationshipCandidate candidate : candidates) {
             if (!isEligibleRelationshipCandidate(candidate)) {
                 continue;
             }
+            groups.computeIfAbsent(endpointPairKey(candidate), ignored -> new RelationshipCandidateGroup(candidate))
+                    .add(candidate);
+        }
+        for (RelationshipCandidateGroup group : groups.values()) {
+            RelationshipCandidate candidate = group.first();
             for (NamingRuleEngine.Match match : namingRuleEngine.match(
                     candidate.source(),
                     candidate.target(),
                     NamingRuleScope.RELATIONSHIP_CANDIDATE,
-                    hasSelfJoinRole(candidate) || isDeclaredSelfReference(candidate),
+                    group.selfReference(),
                     ruleSet)) {
-                add(result, seen, candidate(match,
+                result.add(candidate(match,
                         "naming heuristic",
                         match.source().displayName() + " matches " + match.target().displayName(),
-                        structuralEvidence(candidate)));
+                        group.structuralEvidence()));
             }
         }
         return List.copyOf(result);
+    }
+
+    private String endpointPairKey(RelationshipCandidate candidate) {
+        String source = candidate.source().normalizedKey();
+        String target = candidate.target().normalizedKey();
+        return source.compareTo(target) <= 0 ? source + "|" + target : target + "|" + source;
     }
 
     private List<NamingEvidenceCandidate> extractFromEndpoints(
@@ -361,6 +372,33 @@ public final class NamingEvidenceExtractor {
             case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY -> true;
             default -> false;
         });
+    }
+
+    private final class RelationshipCandidateGroup {
+        private final RelationshipCandidate first;
+        private final List<Evidence> structuralEvidence = new ArrayList<>();
+        private boolean selfReference;
+
+        private RelationshipCandidateGroup(RelationshipCandidate first) {
+            this.first = first;
+        }
+
+        private void add(RelationshipCandidate candidate) {
+            structuralEvidence.addAll(NamingEvidenceExtractor.this.structuralEvidence(candidate));
+            selfReference = selfReference || hasSelfJoinRole(candidate) || isDeclaredSelfReference(candidate);
+        }
+
+        private RelationshipCandidate first() {
+            return first;
+        }
+
+        private List<Evidence> structuralEvidence() {
+            return List.copyOf(structuralEvidence);
+        }
+
+        private boolean selfReference() {
+            return selfReference;
+        }
     }
 
     private String clean(String raw) {

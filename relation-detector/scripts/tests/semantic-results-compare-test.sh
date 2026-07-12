@@ -7,7 +7,8 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 [[ -x "$COMPARE" ]]
-mkdir -p "$TMP_DIR/a" "$TMP_DIR/b" "$TMP_DIR/c"
+mkdir -p "$TMP_DIR/a" "$TMP_DIR/b" "$TMP_DIR/c" "$TMP_DIR/strict-a" "$TMP_DIR/strict-b" \
+  "$TMP_DIR/evidence-a" "$TMP_DIR/evidence-b"
 
 cat >"$TMP_DIR/a/mysql.json" <<'JSON'
 {
@@ -106,5 +107,179 @@ python3 "$COMPARE" --before "$TMP_DIR/b" --after "$TMP_DIR/c" \
   --require-no-review --output "$TMP_DIR/classified.json"
 jq -e '.summary.reviewNeeded == 0 and .summary.classifiedChanges == 6' \
   "$TMP_DIR/classified.json" >/dev/null
+
+python3 - "$TMP_DIR/strict-a/postgres.json" "$TMP_DIR/strict-b/postgres.json" <<'PY'
+import json
+import sys
+
+def observation(object_type, line, evidence="ROUTINE_JOIN"):
+    return {
+        "type": evidence,
+        "source": "ROUTINE:public.sync_orders",
+        "sourceType": "DATABASE_OBJECT",
+        "attributes": {
+            "sourceFile": "relation-detector/sample-data/postgres/16/routines.sql",
+            "sourceObjectName": "sync_orders",
+            "sourceObjectType": object_type,
+            "sourceStatementId": "public.sync_orders",
+            "sourceBlockId": "public.sync_orders",
+            "sourceLine": line,
+            "joinKind": "EQUALITY"
+        }
+    }
+
+def relationship(column, evidence):
+    return {
+        "source": {"table": "orders", "column": column},
+        "target": {"table": "customers", "column": "id"},
+        "relationType": "FK_LIKE",
+        "relationSubType": "SQL_INFERRED_FK",
+        "evidence": [{"type": "ROUTINE_JOIN"}],
+        "rawEvidence": evidence
+    }
+
+def document(relationships):
+    return {
+        "relationships": relationships,
+        "dataLineages": [],
+        "namingEvidence": [],
+        "derivedRelationships": [],
+        "derivedDataLineages": [],
+        "warnings": []
+    }
+
+before = document([
+    relationship("customer_id", [observation("ROUTINE", 11)]),
+    relationship("sales_rep_id", [observation("ROUTINE", 12)]),
+    relationship("approver_id", [observation("ROUTINE", 13), observation("FUNCTION", 13)]),
+    relationship("reviewer_id", [observation("ROUTINE", 14)])
+])
+after = document([
+    relationship("customer_id", [observation("PROCEDURE", 11)]),
+    relationship("sales_rep_id", [observation("PROCEDURE", 12), observation("FUNCTION", 12)]),
+    relationship("approver_id", [observation("PROCEDURE", 13)]),
+    relationship("reviewer_id", [observation("PROCEDURE", 15)])
+])
+
+for path, data in zip(sys.argv[1:], (before, after)):
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(data, handle)
+PY
+
+python3 "$COMPARE" --before "$TMP_DIR/strict-a" --after "$TMP_DIR/strict-b" \
+  --transition A_TO_B --output "$TMP_DIR/strict-unclassified.json"
+
+# The old classifier accepted a wide provenance label for every add/remove. A strict
+# pairing implementation must reject this mapping because only customer_id is 1:1.
+jq '{changes: (.changes | map({key: .id, value: {classification: "PROVENANCE_NORMALIZATION_ONLY", rationale: "wide provenance label", sqlContext: "routines.sql"}}) | from_entries)}' \
+  "$TMP_DIR/strict-unclassified.json" >"$TMP_DIR/wide-provenance.json"
+if python3 "$COMPARE" --before "$TMP_DIR/strict-a" --after "$TMP_DIR/strict-b" \
+  --transition A_TO_B --classifications "$TMP_DIR/wide-provenance.json" \
+  --output "$TMP_DIR/wide-provenance-result.json" 2>"$TMP_DIR/wide-provenance.stderr"; then
+  echo "wide provenance classification unexpectedly accepted" >&2
+  exit 1
+fi
+rg -q 'requires a strict 1:1 observation pair' "$TMP_DIR/wide-provenance.stderr"
+
+jq -e '
+  .summary.provenanceNormalizationPairs == 1 and
+  .summary.provenanceNormalizationObservationChanges == 2 and
+  ([.changes[] | select(.classification == "PROVENANCE_NORMALIZATION_ONLY")] | length) == 2 and
+  ([.changes[] | select(.classification == "REVIEW_NEEDED")] | length) == 8
+' "$TMP_DIR/strict-unclassified.json" >/dev/null
+
+python3 - "$TMP_DIR/evidence-a/postgres.json" "$TMP_DIR/evidence-b/postgres.json" <<'PY'
+import json
+import sys
+
+observation = {
+    "type": "SQL_LOG_JOIN",
+    "source": "query.sql",
+    "sourceType": "PLAIN_SQL",
+    "attributes": {
+        "sourceFile": "relation-detector/sample-data/postgres/16/query.sql",
+        "sourceStatementId": "query.sql:1-2",
+        "sourceLine": 2,
+        "joinKind": "JOIN_ON"
+    }
+}
+
+def document(evidence_types):
+    return {
+        "relationships": [{
+            "source": {"table": "orders", "column": "customer_id"},
+            "target": {"table": "customers", "column": "id"},
+            "relationType": "FK_LIKE",
+            "relationSubType": "DDL_DECLARED_FK",
+            "evidence": [{"type": evidence_type} for evidence_type in evidence_types],
+            "rawEvidence": [observation]
+        }],
+        "dataLineages": [],
+        "namingEvidence": [],
+        "derivedRelationships": [],
+        "derivedDataLineages": [],
+        "warnings": []
+    }
+
+for path, data in zip(sys.argv[1:], (
+        document(["SQL_LOG_JOIN"]),
+        document(["SQL_LOG_JOIN", "TARGET_UNIQUE"]))):
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(data, handle)
+PY
+cp "$TMP_DIR/evidence-a/postgres.json" "$TMP_DIR/evidence-a/postgres-derived-fresh.json"
+cp "$TMP_DIR/evidence-b/postgres.json" "$TMP_DIR/evidence-b/postgres-derived-fresh.json"
+
+python3 "$COMPARE" --before "$TMP_DIR/evidence-a" --after "$TMP_DIR/evidence-b" \
+  --transition A_TO_B --output "$TMP_DIR/evidence-change.json"
+jq -e '
+  .summary.factChanges == 4 and
+  .summary.observationChanges == 0 and
+  .summary.reviewNeeded == 4 and
+  ([.changes[].id] | unique | length) == (.changes | length)
+' "$TMP_DIR/evidence-change.json" >/dev/null
+
+python3 "$COMPARE" --before "$TMP_DIR/strict-a" --after "$TMP_DIR/strict-b" \
+  --transition C_TO_D --output "$TMP_DIR/c-to-d.json"
+jq --argjson classifications '[
+  "ROUTINE_RELATIONSHIP_OBSERVATION_RECOVERY",
+  "ROUTINE_NAMING_OBSERVATION_RECOVERY",
+  "NAMING_OBSERVATION_SELECTION_REGRESSION",
+  "CONDITIONAL_RELATIONSHIP_RECOVERY",
+  "CONDITIONAL_DERIVED_REGRESSION",
+  "UNION_LINEAGE_RECOVERY",
+  "SQL_ASSET_CORRECTION"
+]' '
+  {changes: (
+    [.changes[] | select(.classification == "REVIEW_NEEDED")]
+    | to_entries
+    | map({
+        key: .value.id,
+        value: {
+          classification: $classifications[.key % ($classifications | length)],
+          rationale: "synthetic C-to-D audit classification",
+          sqlContext: "routines.sql"
+        }
+      })
+    | from_entries
+  )}
+' "$TMP_DIR/c-to-d.json" >"$TMP_DIR/c-to-d-classifications.json"
+python3 "$COMPARE" --before "$TMP_DIR/strict-a" --after "$TMP_DIR/strict-b" \
+  --transition C_TO_D --classifications "$TMP_DIR/c-to-d-classifications.json" \
+  --require-no-review --output "$TMP_DIR/c-to-d-classified.json"
+jq -e '
+  .transition == "C_TO_D" and
+  .summary.reviewNeeded == 0 and
+  ([.changes[].classification] | unique | sort) == [
+    "CONDITIONAL_DERIVED_REGRESSION",
+    "CONDITIONAL_RELATIONSHIP_RECOVERY",
+    "NAMING_OBSERVATION_SELECTION_REGRESSION",
+    "PROVENANCE_NORMALIZATION_ONLY",
+    "ROUTINE_NAMING_OBSERVATION_RECOVERY",
+    "ROUTINE_RELATIONSHIP_OBSERVATION_RECOVERY",
+    "SQL_ASSET_CORRECTION",
+    "UNION_LINEAGE_RECOVERY"
+  ]
+' "$TMP_DIR/c-to-d-classified.json" >/dev/null
 
 echo "semantic results compare test passed"

@@ -2,7 +2,6 @@ package com.relationdetector.mysql.fullgrammar.v8_0;
 
 import com.relationdetector.core.fullgrammar.*;
 import java.util.List;
-
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.mysql.fullgrammar.common.MySqlSqlEventVisitorCore;
@@ -16,6 +15,7 @@ import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.Create
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.DeleteStatementContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.DerivedTableContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.EscapedTableReferenceContext;
+import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.ExprAndContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.FunctionParameterContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.InsertStatementContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.JoinedTableContext;
@@ -59,18 +59,12 @@ final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseV
         this.core = new MySqlSqlEventVisitorCore(sink);
     }
 
-    /**
-     * 访问 parse tree 并返回该 SQL 的结构事件。
-     *
-     * <p>EN: Visits the parse tree and returns structured events for the SQL.
-     */
     List<StructuredSqlEvent> extract(ParseTree tree) {
         if (tree != null) {
             visit(tree);
         }
         return core.mergedEvents();
     }
-
     @Override
     public Void visitSingleTable(SingleTableContext ctx) {
         String table = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
@@ -80,7 +74,6 @@ final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseV
         core.rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
         return visitChildren(ctx);
     }
-
     @Override
     public Void visitDerivedTable(DerivedTableContext ctx) {
         String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
@@ -223,6 +216,15 @@ final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseV
     @Override
     public Void visitPredicateExprIn(PredicateExprInContext ctx) {
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitExprAnd(ExprAndContext ctx) {
+        if (ctx.getParent() instanceof ExprAndContext) {
+            return visitChildren(ctx);
+        }
+        sink.withPredicateGuards(ctx, () -> visitChildren(ctx));
+        return null;
     }
 
     @Override

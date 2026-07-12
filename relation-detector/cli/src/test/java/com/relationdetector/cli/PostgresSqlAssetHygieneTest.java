@@ -7,4 +7,19 @@ class PostgresSqlAssetHygieneTest {
     void assetsDoNotContainCrossDialectResidue() throws Exception {
         DialectSqlAssetHygieneSupport.postgresSqlAssetsDoNotContainMysqlOrOracleDialectResidue();
     }
+
+    @Test
+    void proceduresDoNotReturnQueryResults() throws Exception {
+        DialectSqlAssetHygieneSupport.postgresProceduresDoNotReturnQueryResults();
+    }
+
+    @Test
+    void submitApprovalCallsPassOutVariables() throws Exception {
+        DialectSqlAssetHygieneSupport.postgresSubmitApprovalCallsPassOutVariables();
+    }
+
+    @Test
+    void setReturningFunctionsQualifyOutputNameCollisions() throws Exception {
+        DialectSqlAssetHygieneSupport.postgresSetReturningFunctionsQualifyOutputNameCollisions();
+    }
 }

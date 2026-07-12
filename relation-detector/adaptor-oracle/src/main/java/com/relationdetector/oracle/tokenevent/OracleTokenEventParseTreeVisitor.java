@@ -5,6 +5,8 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.PredicateGuard;
 
 /** Typed traversal facade for the Oracle token-event structural grammar. */
 public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWriteDdlSupport {
@@ -139,6 +141,87 @@ public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWrit
                 left.alias(), left.column(), right.alias(), right.column(),
                 existsDepth > 0 ? "EXISTS" : currentJoinKind());
         return null;
+    }
+
+    @Override
+    public Void visitAndPredicate(OracleRelationSqlParser.AndPredicateContext ctx) {
+        if (ctx.getParent() instanceof OracleRelationSqlParser.AndPredicateContext) return visitChildren(ctx);
+        List<PredicateGuard> guards = predicateGuards(ctx);
+        withPredicateGuards(guards, 0, () -> visitChildren(ctx));
+        return null;
+    }
+
+    @Override
+    public Void visitCaseExpression(OracleRelationSqlParser.CaseExpressionContext ctx) {
+        OracleColumnRead selector = ctx.expression().isEmpty() ? null : singleColumn(ctx.expression(0));
+        if (selector != null) visit(ctx.expression(0));
+        for (OracleRelationSqlParser.CaseWhenClauseContext clause : ctx.caseWhenClause()) {
+            List<PredicateGuard> guards = selector == null
+                    ? predicateGuards(clause.predicate())
+                    : literalValue(clause.predicate()) == null ? List.of()
+                            : List.of(new PredicateGuard(
+                                    new ExpressionSource(selector.alias(), selector.column()),
+                                    "EQUALS", literalValue(clause.predicate())));
+            withPredicateGuards(guards, 0, () -> {
+                visit(clause.predicate());
+                visit(clause.expression());
+            });
+        }
+        int outerStart = selector == null ? 0 : 1;
+        for (int index = outerStart; index < ctx.expression().size(); index++) {
+            visit(ctx.expression(index));
+        }
+        return null;
+    }
+
+    private List<PredicateGuard> predicateGuards(OracleRelationSqlParser.PredicateContext predicate) {
+        if (predicate instanceof OracleRelationSqlParser.AndPredicateContext and) {
+            List<PredicateGuard> result = new java.util.ArrayList<>();
+            result.addAll(predicateGuards(and.predicate(0)));
+            result.addAll(predicateGuards(and.predicate(1)));
+            return List.copyOf(result);
+        }
+        if (!(predicate instanceof OracleRelationSqlParser.ComparisonPredicateContext comparison)
+                || comparison.comparisonOperator().EQ() == null) return List.of();
+        OracleColumnRead left = singleColumn(comparison.expression(0));
+        OracleColumnRead right = singleColumn(comparison.expression(1));
+        String leftLiteral = literalValue(comparison.expression(0));
+        String rightLiteral = literalValue(comparison.expression(1));
+        if (left != null && rightLiteral != null) return List.of(new PredicateGuard(
+                new ExpressionSource(left.alias(), left.column()), "EQUALS", rightLiteral));
+        if (right != null && leftLiteral != null) return List.of(new PredicateGuard(
+                new ExpressionSource(right.alias(), right.column()), "EQUALS", leftLiteral));
+        return List.of();
+    }
+
+    private String literalValue(OracleRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof OracleRelationSqlParser.LiteralExpressionContext literal)
+            return cleanLiteral(literal.literal().getText());
+        if (expression instanceof OracleRelationSqlParser.ParenExpressionContext paren)
+            return literalValue(paren.expression());
+        return null;
+    }
+
+    private String literalValue(OracleRelationSqlParser.PredicateContext predicate) {
+        if (predicate instanceof OracleRelationSqlParser.ExpressionPredicateContext expression) {
+            return literalValue(expression.expression());
+        }
+        if (predicate instanceof OracleRelationSqlParser.ParenPredicateContext paren) {
+            return literalValue(paren.predicate());
+        }
+        return null;
+    }
+
+    private String cleanLiteral(String raw) {
+        String value = raw == null ? "" : raw.strip();
+        return value.length() >= 2 && value.startsWith("'") && value.endsWith("'")
+                ? value.substring(1, value.length() - 1).replace("''", "'") : value;
+    }
+
+    private void withPredicateGuards(List<PredicateGuard> guards, int index, Runnable visitor) {
+        if (index >= guards.size()) { visitor.run(); return; }
+        emitter.withPredicateGuard(guards.get(index),
+                () -> withPredicateGuards(guards, index + 1, visitor));
     }
 
     @Override

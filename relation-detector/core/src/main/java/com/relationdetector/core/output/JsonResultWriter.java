@@ -291,6 +291,9 @@ public final class JsonResultWriter {
                 ? evidenceNode(relation.evidence())
                 : JSON.createArrayNode());
         node.set("warnings", warningsNode(relation.warnings()));
+        if (!relation.attributes().isEmpty()) {
+            node.set("attributes", attributesNode(relation.attributes()));
+        }
         return node;
     }
 

@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.PredicateGuard;
 
 /**
  * Thin facade used by typed full-grammar visitors.
@@ -219,6 +220,24 @@ public final class FullGrammarEventFacade {
 
     public void predicateEqualities(ParserRuleContext ctx, ParseTree predicate, String joinKind) {
         predicateEvents.predicateEqualities(ctx, predicate, joinKind);
+    }
+
+    public void withPredicateGuard(PredicateGuard guard, Runnable visitor) {
+        predicateEvents.withPredicateGuard(guard, visitor);
+    }
+
+    public void withPredicateGuards(ParseTree predicate, Runnable visitor) {
+        predicateEvents.withPredicateGuards(predicate, visitor);
+    }
+
+    public Optional<PredicateGuard> equalsLiteralGuard(ParseTree discriminator, ParseTree literal) {
+        return predicateEvents.equalsLiteralGuard(discriminator, literal);
+    }
+
+    public void withCaseBranchGuards(
+            ParseTree selector, ParseTree predicate, Runnable visitor
+    ) {
+        predicateEvents.withCaseBranchGuards(selector, predicate, visitor);
     }
 
     public void predicateEquality(

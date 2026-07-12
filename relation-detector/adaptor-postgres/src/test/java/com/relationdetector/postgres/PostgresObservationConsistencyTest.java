@@ -2,6 +2,7 @@ package com.relationdetector.postgres;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +20,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.provenance.SemanticObservationFingerprint;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
+import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule;
 import com.relationdetector.postgres.script.PostgresScriptFramer;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlLexer;
@@ -110,6 +112,44 @@ class PostgresObservationConsistencyTest {
                 .orElseThrow();
 
         assertConsistent(statement);
+    }
+
+    @Test
+    void simpleCaseScalarSubqueriesCarryTypedDiscriminatorGuards() {
+        String sql = """
+                SELECT CASE c.party_type
+                    WHEN 'customer' THEN (
+                        SELECT cu.name FROM customers cu WHERE cu.id = c.party_id)
+                    WHEN 'supplier' THEN (
+                        SELECT s.name FROM suppliers s WHERE s.id = c.party_id)
+                    ELSE 'other'
+                END
+                FROM contracts c;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(
+                sql, StatementSourceType.PLAIN_SQL, "postgres-conditional.sql",
+                1, sql.lines().count(), Map.of());
+
+        for (StructuredSqlParser parser : List.of(token, full)) {
+            List<RelationshipCandidate> candidates = new StructuredRelationshipExtractor()
+                    .extract(statement, parser.parseSql(statement, null));
+            assertEquals(2, candidates.size());
+            assertTrue(candidates.stream().allMatch(candidate -> candidate.evidence().stream().anyMatch(evidence ->
+                            Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                    && "contracts.party_type".equals(
+                                            evidence.attributes().get("discriminatorEndpoint")))),
+                    () -> "Both CASE branches must retain their typed discriminator: " + candidates);
+        }
+        assertConsistent(statement);
+    }
+
+    @Test
+    void siblingGuardAppliesToInSubqueryInBothModes() {
+        assertConsistent("""
+                SELECT cj.id FROM cashier_journals cj
+                WHERE cj.reference_type = 'sales_order'
+                  AND cj.reference_id IN (SELECT so.id FROM sales_orders so);
+                """);
     }
 
     private void assertConsistent(String sql) {

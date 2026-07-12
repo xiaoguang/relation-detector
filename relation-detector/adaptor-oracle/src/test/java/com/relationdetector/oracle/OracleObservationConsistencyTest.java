@@ -2,6 +2,7 @@ package com.relationdetector.oracle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,62 @@ import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParse
 class OracleObservationConsistencyTest {
     private final StructuredSqlParser token = new OracleTokenEventStructuredSqlParser();
     private final StructuredSqlParser full = new FullGrammarDialectModule().sqlParser();
+
+    @Test
+    void guardedPolymorphicJoinRetainsConditionInTokenAndFull() {
+        SqlStatementRecord statement = statement("""
+                SELECT pr.id
+                FROM payment_receipts pr
+                JOIN customers c
+                  ON pr.party_type = 'customer' AND pr.party_id = c.id
+                """);
+        for (StructuredSqlParser parser : List.of(
+                token,
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                full)) {
+            var candidates = new StructuredRelationshipExtractor().extract(statement, parser.parseSql(statement, null));
+            assertTrue(candidates.stream().anyMatch(candidate -> candidate.evidence().stream().anyMatch(evidence ->
+                            Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                    && "payment_receipts.party_type".equals(
+                                            evidence.attributes().get("discriminatorEndpoint")))),
+                    () -> "Oracle parser lost the typed discriminator: " + candidates);
+        }
+    }
+
+    @Test
+    void simpleCaseAndInSubqueryGuardsMatchAcrossModes() {
+        assertConsistent("""
+                SELECT CASE c.party_type
+                    WHEN 'customer' THEN (SELECT cu.name FROM customers cu WHERE cu.id = c.party_id)
+                    WHEN 'supplier' THEN (SELECT s.name FROM suppliers s WHERE s.id = c.party_id)
+                    ELSE 'other'
+                END
+                FROM contracts c
+                """);
+        assertConsistent("""
+                SELECT cj.id FROM cashier_journals cj
+                WHERE cj.reference_type = 'sales_order'
+                  AND cj.reference_id IN (SELECT so.id FROM sales_orders so)
+                """);
+    }
+
+    @Test
+    void nestedSubqueryFiltersDoNotGuardOuterJoin() {
+        assertConsistent("""
+                SELECT subj.id
+                FROM account_subjects subj
+                LEFT JOIN (
+                    SELECT a.code AS subject_code
+                    FROM vouchers v
+                    JOIN voucher_items vi ON vi.voucher_id = v.id
+                    JOIN accounts a ON a.id = vi.account_id
+                    WHERE v.status = 'posted' AND vi.direction = 'debit'
+                ) usage_by_subject
+                  ON usage_by_subject.subject_code = subj.subject_code
+                """);
+    }
 
     @Test
     void selectIntoJoinHasTheSameSemanticObservations() {

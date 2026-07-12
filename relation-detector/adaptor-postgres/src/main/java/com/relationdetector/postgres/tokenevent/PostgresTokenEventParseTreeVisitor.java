@@ -17,7 +17,11 @@ import com.relationdetector.postgres.routine.UnsupportedRoutineBody;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.postgres.common.PostgresSetProjectionLayout;
 
 /** Typed traversal facade for the PostgreSQL token-event structural grammar. */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEventWriteDdlSupport {
@@ -39,6 +43,43 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
 
     public List<WarningMessage> warnings() {
         return List.copyOf(warnings);
+    }
+
+    @Override
+    public Void visitSelectStatement(PostgresRelationSqlParser.SelectStatementContext ctx) {
+        if (ctx.withClause() != null) visit(ctx.withClause());
+        List<PostgresRelationSqlParser.QuerySpecificationContext> branches = queryBranches(ctx);
+        if (ctx.setOperation().isEmpty() || projectionOwners.isEmpty()) {
+            branches.forEach(this::visit);
+            return null;
+        }
+
+        ProjectionOwner owner = projectionOwners.pop();
+        List<String> firstColumns = branches.get(0).selectList().selectItem().stream()
+                .map(this::outputColumn).toList();
+        PostgresSetProjectionLayout layout = PostgresSetProjectionLayout.resolve(
+                owner.columns(), firstColumns,
+                branches.stream().map(this::setBranchArity).toList());
+        projectionOwners.push(new ProjectionOwner(owner.alias(), layout.columns()));
+        try {
+            if (!layout.arityMatches()) {
+                warnings.add(WarningMessage.warn(WarningType.PARSE_WARNING,
+                        "POSTGRES_SET_OPERATION_ARITY_MISMATCH",
+                        "PostgreSQL set-operation branches do not share one projection arity",
+                        statement.sourceName(), emitter.line(ctx)));
+            }
+            branches.forEach(this::visit);
+        } finally {
+            projectionOwners.pop();
+            projectionOwners.push(owner);
+        }
+        return null;
+    }
+
+    private int setBranchArity(PostgresRelationSqlParser.QuerySpecificationContext branch) {
+        var items = branch.selectList().selectItem();
+        return PostgresSetProjectionLayout.branchArity(
+                items.size(), items.stream().anyMatch(item -> item.STAR() != null));
     }
 
     @Override
@@ -195,6 +236,104 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
         if (ctx.comparisonOperator().EQ() == null) return visitChildren(ctx);
         emitColumnEquality(ctx.expression(0), ctx.expression(1), ctx);
         return null;
+    }
+
+    @Override
+    public Void visitAndPredicate(PostgresRelationSqlParser.AndPredicateContext ctx) {
+        if (ctx.getParent() instanceof PostgresRelationSqlParser.AndPredicateContext) {
+            return visitChildren(ctx);
+        }
+        List<PredicateGuard> guards = predicateGuards(ctx);
+        withPredicateGuards(guards, 0, () -> visitChildren(ctx));
+        return null;
+    }
+
+    @Override
+    public Void visitCaseExpression(PostgresRelationSqlParser.CaseExpressionContext ctx) {
+        ColumnRead selector = ctx.expression().isEmpty() ? null : singleColumn(ctx.expression(0));
+        if (selector != null) {
+            visit(ctx.expression(0));
+        }
+        for (PostgresRelationSqlParser.CaseWhenClauseContext clause : ctx.caseWhenClause()) {
+            List<PredicateGuard> guards = selector == null
+                    ? predicateGuards(clause.predicate())
+                    : literalValue(clause.predicate()) == null ? List.of()
+                            : List.of(new PredicateGuard(
+                                    new ExpressionSource(selector.alias(), selector.column()),
+                                    "EQUALS", literalValue(clause.predicate())));
+            withPredicateGuards(guards, 0, () -> {
+                visit(clause.predicate());
+                visit(clause.expression());
+            });
+        }
+        int outerStart = selector == null ? 0 : 1;
+        for (int index = outerStart; index < ctx.expression().size(); index++) {
+            visit(ctx.expression(index));
+        }
+        return null;
+    }
+
+    private List<PredicateGuard> predicateGuards(PostgresRelationSqlParser.PredicateContext predicate) {
+        if (predicate instanceof PostgresRelationSqlParser.AndPredicateContext and) {
+            List<PredicateGuard> result = new java.util.ArrayList<>();
+            result.addAll(predicateGuards(and.predicate(0)));
+            result.addAll(predicateGuards(and.predicate(1)));
+            return List.copyOf(result);
+        }
+        if (!(predicate instanceof PostgresRelationSqlParser.ComparisonPredicateContext comparison)
+                || comparison.comparisonOperator().EQ() == null) {
+            return List.of();
+        }
+        ColumnRead left = singleColumn(comparison.expression(0));
+        ColumnRead right = singleColumn(comparison.expression(1));
+        String leftLiteral = literalValue(comparison.expression(0));
+        String rightLiteral = literalValue(comparison.expression(1));
+        if (left != null && rightLiteral != null) {
+            return List.of(new PredicateGuard(new ExpressionSource(left.alias(), left.column()),
+                    "EQUALS", rightLiteral));
+        }
+        if (right != null && leftLiteral != null) {
+            return List.of(new PredicateGuard(new ExpressionSource(right.alias(), right.column()),
+                    "EQUALS", leftLiteral));
+        }
+        return List.of();
+    }
+
+    private String literalValue(PostgresRelationSqlParser.PredicateContext predicate) {
+        if (predicate instanceof PostgresRelationSqlParser.ExpressionPredicateContext expression) {
+            return literalValue(expression.expression());
+        }
+        if (predicate instanceof PostgresRelationSqlParser.ParenPredicateContext paren) {
+            return literalValue(paren.predicate());
+        }
+        return null;
+    }
+
+    private String literalValue(PostgresRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof PostgresRelationSqlParser.LiteralExpressionContext literal) {
+            return cleanLiteral(literal.literal().getText());
+        }
+        if (expression instanceof PostgresRelationSqlParser.ParenExpressionContext paren) {
+            return literalValue(paren.expression());
+        }
+        return null;
+    }
+
+    private String cleanLiteral(String raw) {
+        String value = raw == null ? "" : raw.strip();
+        if (value.length() >= 2 && value.startsWith("'") && value.endsWith("'")) {
+            return value.substring(1, value.length() - 1).replace("''", "'");
+        }
+        return value;
+    }
+
+    private void withPredicateGuards(List<PredicateGuard> guards, int index, Runnable visitor) {
+        if (index >= guards.size()) {
+            visitor.run();
+            return;
+        }
+        emitter.withPredicateGuard(guards.get(index),
+                () -> withPredicateGuards(guards, index + 1, visitor));
     }
 
     @Override

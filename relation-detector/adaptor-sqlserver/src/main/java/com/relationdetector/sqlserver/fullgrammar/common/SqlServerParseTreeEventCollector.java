@@ -82,6 +82,8 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
             visitJoinOn(ctx);
         } else if (hasRole(ctx, Role.CROSS_JOIN) || hasRole(ctx, Role.APPLY)) {
             visitChildren(ctx);
+        } else if (hasRole(ctx, Role.SEARCH_CONDITION)) {
+            visitSearchCondition(ctx);
         } else if (hasRole(ctx, Role.PREDICATE)) {
             visitPredicate(ctx);
         } else if (hasRole(ctx, Role.INSERT_STATEMENT)) {
@@ -208,7 +210,12 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
     private void visitJoinOn(ParserRuleContext ctx) {
         firstDirect(ctx, Role.TABLE_SOURCE).ifPresent(this::visit);
         firstDirect(ctx, Role.SEARCH_CONDITION).ifPresent(condition ->
-                emitPredicateColumnEqualities(condition, sqlServerAdapter.joinKind(ctx)));
+                sqlSink.withCaseBranchGuards(null, condition,
+                        () -> emitPredicateColumnEqualities(condition, sqlServerAdapter.joinKind(ctx))));
+    }
+
+    private void visitSearchCondition(ParserRuleContext ctx) {
+        sqlSink.withCaseBranchGuards(null, ctx, () -> visitChildren(ctx));
     }
 
     private void visitPredicate(ParserRuleContext ctx) {
@@ -344,7 +351,6 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
     private Optional<String> aliasForProjection(ParserRuleContext item) {
         return firstDescendant(item, Role.COLUMN_ALIAS).flatMap(this::lastIdText);
     }
-
     private void emitPredicateColumnEqualities(ParseTree tree, String joinKind) {
         if (tree instanceof ParserRuleContext ctx && hasRole(ctx, Role.PREDICATE)) {
             if (isExistsPredicate(ctx)) {
@@ -390,8 +396,5 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
         return Boolean.TRUE.equals(directProjections.get(new SqlServerProjectionKey(owner, endpoint.column())));
     }
 
-    private String normalize(String value) {
-        return clean(value).toLowerCase(Locale.ROOT);
-    }
-
+    private String normalize(String value) { return clean(value).toLowerCase(Locale.ROOT); }
 }

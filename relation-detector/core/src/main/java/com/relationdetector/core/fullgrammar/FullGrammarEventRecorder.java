@@ -14,6 +14,7 @@ import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.parse.ProjectionEvent;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -44,8 +45,16 @@ final class FullGrammarEventRecorder {
             ExpressionSource left, ExpressionSource right, List<ExpressionSource> outer,
             List<ExpressionSource> inner, String innerTable, String joinKind,
             List<String> usingColumns, boolean verified) {
+        predicate(ctx, type, left, right, outer, inner, innerTable, joinKind,
+                usingColumns, verified, List.of());
+    }
+
+    void predicate(ParserRuleContext ctx, StructuredParseEventType type,
+            ExpressionSource left, ExpressionSource right, List<ExpressionSource> outer,
+            List<ExpressionSource> inner, String innerTable, String joinKind,
+            List<String> usingColumns, boolean verified, List<PredicateGuard> predicateGuards) {
         add(new PredicateEvent(type, source.provenance(ctx), left, right, outer, inner,
-                innerTable, joinKind, usingColumns, verified));
+                innerTable, joinKind, usingColumns, verified, predicateGuards));
     }
 
     void projection(ParserRuleContext ctx, StructuredParseEventType type,

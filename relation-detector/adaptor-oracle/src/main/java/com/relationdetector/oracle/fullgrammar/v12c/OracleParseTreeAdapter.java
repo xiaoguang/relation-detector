@@ -40,6 +40,7 @@ final class OracleParseTreeAdapter extends AbstractOracleFullGrammarParseTreeAda
                 role(Role.WHERE_CLAUSE, Where_clauseContext.class),
                 role(Role.GROUP_BY_ELEMENT, Group_by_elementsContext.class),
                 role(Role.HAVING_CLAUSE, Having_clauseContext.class),
+                role(Role.LOGICAL_EXPRESSION, Logical_expressionContext.class),
                 role(Role.RELATIONAL_EXPRESSION, Relational_expressionContext.class),
                 role(Role.COMPOUND_EXPRESSION, Compound_expressionContext.class),
                 role(Role.QUANTIFIED_EXPRESSION, Quantified_expressionContext.class),
@@ -98,5 +99,10 @@ final class OracleParseTreeAdapter extends AbstractOracleFullGrammarParseTreeAda
                 && operator.GREATER_THAN_OP() == null
                 && operator.EXCLAMATION_OPERATOR_PART() == null
                 && operator.CARRET_OPERATOR_PART() == null;
+    }
+
+    @Override
+    public boolean isConjunction(ParseTree tree) {
+        return tree instanceof Logical_expressionContext logical && logical.AND() != null;
     }
 }

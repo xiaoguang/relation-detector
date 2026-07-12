@@ -283,6 +283,10 @@ DECLARE
     v_price NUMERIC(12,2);
     v_before_qty INT;
     v_item JSONB;
+    v_approval_instance_id BIGINT;
+    v_approval_instance_no VARCHAR(30);
+    v_approval_first_approver_id BIGINT;
+    v_approval_total_nodes INT;
 BEGIN
     SELECT supplier_id INTO v_supplier_id FROM purchase_orders WHERE id = p_purchase_order_id;
 
@@ -335,7 +339,9 @@ BEGIN
 
     -- 提交审批
     CALL sp_submit_approval('PURCHASE_APPROVAL', 'purchase_return', p_return_id,
-        '采购退货-' || p_return_reason, p_handler_id);
+        '采购退货-' || p_return_reason, p_handler_id,
+        v_approval_instance_id, v_approval_instance_no,
+        v_approval_first_approver_id, v_approval_total_nodes);
 
     INSERT INTO audit_log (action, target_type, target_id, employee_id, new_value)
     VALUES ('create_purchase_return', 'purchase_return', p_return_id, p_handler_id,

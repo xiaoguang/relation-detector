@@ -25,6 +25,7 @@ final class DerivedNamingInference {
         List<DerivedEdge> edges = namingEvidence.stream()
                 .filter(NamingEvidenceCandidate::directionHint)
                 .filter(candidate -> !isDerived(candidate.evidence()))
+                .filter(candidate -> !isConditional(candidate.evidence()))
                 .map(this::edge)
                 .toList();
         return graphs.enumerate(graphs.build(edges), Set.of(), true).stream()
@@ -48,5 +49,9 @@ final class DerivedNamingInference {
 
     boolean isDerived(Evidence evidence) {
         return Boolean.TRUE.equals(evidence.attributes().get("derived"));
+    }
+
+    boolean isConditional(Evidence evidence) {
+        return Boolean.TRUE.equals(evidence.attributes().get("conditional"));
     }
 }

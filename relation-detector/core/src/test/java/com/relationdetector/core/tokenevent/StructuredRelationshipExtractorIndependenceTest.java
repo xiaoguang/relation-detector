@@ -14,11 +14,13 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.Enums.EvidenceType;
@@ -35,6 +37,28 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
  * rescan or any removed parser.
  */
 class StructuredRelationshipExtractorIndependenceTest {
+
+    @Test
+    void resolvesTypedPredicateGuardIntoConditionalRelationshipEvidence() {
+        List<StructuredSqlEvent> events = List.of(
+                table("FROM", "contracts", "c", 10),
+                table("FROM", "customers", "cu", 11),
+                new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY,
+                        provenance(12), new ExpressionSource("c", "party_id"),
+                        new ExpressionSource("cu", "id"), List.of(), List.of(),
+                        "", "SCALAR_SUBQUERY", List.of(), false,
+                        List.of(new PredicateGuard(
+                                new ExpressionSource("c", "party_type"), "EQUALS", "customer"))));
+
+        RelationshipCandidate candidate = new StructuredRelationshipExtractor()
+                .extract(record("typed conditional query"), structured(events)).get(0);
+
+        Evidence evidence = candidate.evidence().get(0);
+        assertEquals(true, evidence.attributes().get("conditional"));
+        assertEquals("contracts.party_type", evidence.attributes().get("discriminatorEndpoint"));
+        assertEquals("EQUALS", evidence.attributes().get("discriminatorOperator"));
+        assertEquals("customer", evidence.attributes().get("discriminatorValue"));
+    }
     @Test
     void triggerPseudoRowsetAliasInFromClauseKeepsPhysicalBinding() {
         StructuredParseResult structured = structured(List.of(

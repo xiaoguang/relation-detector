@@ -1,6 +1,7 @@
 package com.relationdetector.oracle.fullgrammar.common;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Locale;
 
@@ -13,6 +14,7 @@ import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.parse.ProjectionEvent;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
@@ -24,6 +26,7 @@ import com.relationdetector.contracts.parse.WriteEvent;
 public final class OracleSqlEventVisitorCore {
     private final SqlStatementRecord statement;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
+    private final ArrayDeque<PredicateGuard> predicateGuards = new ArrayDeque<>();
 
     public OracleSqlEventVisitorCore(SqlStatementRecord statement) {
         this.statement = statement;
@@ -46,7 +49,28 @@ public final class OracleSqlEventVisitorCore {
         events.add(new PredicateEvent(type, provenance(ctx),
                 new ExpressionSource(leftAlias, leftColumn),
                 new ExpressionSource(rightAlias, rightColumn),
-                List.of(), List.of(), "", joinKind, List.of(), false));
+                List.of(), List.of(), "", joinKind, List.of(), false, currentPredicateGuards()));
+    }
+
+    public void withPredicateGuards(List<PredicateGuard> guards, Runnable visitor) {
+        withPredicateGuards(guards == null ? List.of() : guards, 0, visitor);
+    }
+
+    private void withPredicateGuards(List<PredicateGuard> guards, int index, Runnable visitor) {
+        if (index >= guards.size()) { visitor.run(); return; }
+        predicateGuards.push(guards.get(index));
+        try {
+            withPredicateGuards(guards, index + 1, visitor);
+        } finally {
+            predicateGuards.pop();
+        }
+    }
+
+    private List<PredicateGuard> currentPredicateGuards() {
+        if (predicateGuards.isEmpty()) return List.of();
+        List<PredicateGuard> result = new ArrayList<>(predicateGuards);
+        java.util.Collections.reverse(result);
+        return List.copyOf(result);
     }
 
     public void joinUsing(ParserRuleContext ctx, List<String> columns) {
@@ -61,7 +85,7 @@ public final class OracleSqlEventVisitorCore {
         ExpressionSource inner = new ExpressionSource(innerAlias, innerColumn);
         events.add(new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
                 provenance(ctx), outer, inner, List.of(outer), List.of(inner), innerTable,
-                "", List.of(), true));
+                "", List.of(), true, currentPredicateGuards()));
     }
 
     public void projection(ParserRuleContext ctx, String outputAlias, String outputColumn,

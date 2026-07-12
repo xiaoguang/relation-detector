@@ -22,6 +22,10 @@ abstract class OracleFullGrammarParseTreeSupport {
         this.adapter = adapter;
     }
 
+    final OracleFullGrammarParseTreeAdapter adapter() {
+        return adapter;
+    }
+
     final String tableFrom(ParserRuleContext ctx) {
         if (ctx == null) {
             return "";

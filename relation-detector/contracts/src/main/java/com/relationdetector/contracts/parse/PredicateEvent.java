@@ -15,8 +15,25 @@ public record PredicateEvent(
         String innerTable,
         String joinKind,
         List<String> usingColumns,
-        boolean verifiedColumnSubquery
+        boolean verifiedColumnSubquery,
+        List<PredicateGuard> predicateGuards
 ) implements StructuredSqlEvent {
+    public PredicateEvent(
+            StructuredParseEventType type,
+            SourceProvenance provenance,
+            ExpressionSource left,
+            ExpressionSource right,
+            List<ExpressionSource> outerSources,
+            List<ExpressionSource> innerSources,
+            String innerTable,
+            String joinKind,
+            List<String> usingColumns,
+            boolean verifiedColumnSubquery
+    ) {
+        this(type, provenance, left, right, outerSources, innerSources, innerTable,
+                joinKind, usingColumns, verifiedColumnSubquery, List.of());
+    }
+
     public PredicateEvent {
         left = left == null ? ExpressionSource.EMPTY : left;
         right = right == null ? ExpressionSource.EMPTY : right;
@@ -25,11 +42,12 @@ public record PredicateEvent(
         innerTable = innerTable == null ? "" : innerTable;
         joinKind = joinKind == null ? "" : joinKind;
         usingColumns = usingColumns == null ? List.of() : List.copyOf(usingColumns);
+        predicateGuards = predicateGuards == null ? List.of() : List.copyOf(predicateGuards);
     }
 
     @Override
     public StructuredSqlEvent withProvenance(SourceProvenance value) {
         return new PredicateEvent(type, value, left, right, outerSources, innerSources,
-                innerTable, joinKind, usingColumns, verifiedColumnSubquery);
+                innerTable, joinKind, usingColumns, verifiedColumnSubquery, predicateGuards);
     }
 }

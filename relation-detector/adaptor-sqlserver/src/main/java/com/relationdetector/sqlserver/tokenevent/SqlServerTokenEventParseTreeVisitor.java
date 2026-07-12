@@ -5,6 +5,8 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.PredicateGuard;
 
 /** Typed traversal facade for the SQL Server token-event structural grammar. */
 public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEventWriteDdlSupport {
@@ -164,5 +166,48 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEve
             return null;
         }
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitSearch_condition(SqlServerRelationSqlParser.Search_conditionContext ctx) {
+        if (!ctx.OR().isEmpty()) return visitChildren(ctx);
+        List<PredicateGuard> guards = new java.util.ArrayList<>();
+        for (SqlServerRelationSqlParser.PredicateContext predicate : ctx.predicate()) {
+            predicateGuard(predicate).ifPresent(guards::add);
+        }
+        withPredicateGuards(guards, 0, () -> visitChildren(ctx));
+        return null;
+    }
+
+    private java.util.Optional<PredicateGuard> predicateGuard(
+            SqlServerRelationSqlParser.PredicateContext predicate
+    ) {
+        if (predicate.comparison_operator() == null || predicate.comparison_operator().EQ() == null
+                || predicate.expression().size() != 2) return java.util.Optional.empty();
+        ColumnRead left = singleColumn(predicate.expression(0));
+        ColumnRead right = singleColumn(predicate.expression(1));
+        String leftLiteral = literalValue(predicate.expression(0));
+        String rightLiteral = literalValue(predicate.expression(1));
+        if (left != null && rightLiteral != null) return java.util.Optional.of(new PredicateGuard(
+                new ExpressionSource(left.alias(), left.column()), "EQUALS", rightLiteral));
+        if (right != null && leftLiteral != null) return java.util.Optional.of(new PredicateGuard(
+                new ExpressionSource(right.alias(), right.column()), "EQUALS", leftLiteral));
+        return java.util.Optional.empty();
+    }
+
+    private String literalValue(SqlServerRelationSqlParser.ExpressionContext expression) {
+        if (expression.expression_atom().size() != 1 || !expression.binary_operator().isEmpty()) return null;
+        SqlServerRelationSqlParser.Expression_atomContext atom = expression.expression_atom(0);
+        String value = atom.STRING() != null ? atom.STRING().getText()
+                : atom.DECIMAL_LITERAL() != null ? atom.DECIMAL_LITERAL().getText() : null;
+        if (value != null && value.length() >= 2 && value.startsWith("'") && value.endsWith("'"))
+            value = value.substring(1, value.length() - 1).replace("''", "'");
+        return value;
+    }
+
+    private void withPredicateGuards(List<PredicateGuard> guards, int index, Runnable visitor) {
+        if (index >= guards.size()) { visitor.run(); return; }
+        emitter.withPredicateGuard(guards.get(index),
+                () -> withPredicateGuards(guards, index + 1, visitor));
     }
 }

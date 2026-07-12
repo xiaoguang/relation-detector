@@ -20,18 +20,32 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
         List<String> targets = ctx.identifierList().identifier().stream()
                 .map(identifier -> clean(identifier.getText())).toList();
         visit(ctx.selectStatement());
-        List<PostgresRelationSqlParser.SelectItemContext> items =
-                ctx.selectStatement().querySpecification().selectList().selectItem();
-        for (int index = 0; index < Math.min(targets.size(), items.size()); index++) {
-            PostgresRelationSqlParser.SelectItemContext item = items.get(index);
-            if (item.expression() != null) {
-                for (ExpressionAnalysis source : writeAnalyses(item)) {
-                    addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "",
-                            targetTable, targets.get(index), source, "INSERT_SELECT");
+        List<PostgresRelationSqlParser.QuerySpecificationContext> branches = queryBranches(ctx.selectStatement());
+        for (PostgresRelationSqlParser.QuerySpecificationContext branch : branches) {
+            List<PostgresRelationSqlParser.SelectItemContext> items = branch.selectList().selectItem();
+            for (int index = 0; index < Math.min(targets.size(), items.size()); index++) {
+                PostgresRelationSqlParser.SelectItemContext item = items.get(index);
+                if (item.expression() != null) {
+                    for (ExpressionAnalysis source : writeAnalyses(item)) {
+                        addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "",
+                                targetTable, targets.get(index), source, "INSERT_SELECT");
+                    }
                 }
             }
         }
         return null;
+    }
+
+    protected final List<PostgresRelationSqlParser.QuerySpecificationContext> queryBranches(
+            PostgresRelationSqlParser.SelectStatementContext select
+    ) {
+        List<PostgresRelationSqlParser.QuerySpecificationContext> branches = new ArrayList<>();
+        if (select.querySpecification() != null) branches.add(select.querySpecification());
+        for (PostgresRelationSqlParser.SetOperationContext operation : select.setOperation()) {
+            if (operation.querySpecification() != null) branches.add(operation.querySpecification());
+            if (operation.selectStatement() != null) branches.addAll(queryBranches(operation.selectStatement()));
+        }
+        return branches;
     }
 
     @Override

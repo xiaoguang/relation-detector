@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +65,27 @@ class RelationshipMergerEvidenceAggregationTest {
         Evidence repeated = evidence(merged, EvidenceType.REPEATED_OBSERVATION);
         assertEquals(3, repeated.attributes().get("count"));
         assertEquals("0.10", repeated.attributes().get("maxScore"));
+    }
+
+    @Test
+    void retainsConditionalAttributesOnlyWhenEveryStructuralObservationIsGuarded() {
+        List<RelationshipCandidate> conditional = merger.merge(List.of(
+                conditionalJoin("customers", "customer"),
+                conditionalJoin("suppliers", "supplier")), 0.0d);
+
+        assertEquals(2, conditional.size());
+        conditional.forEach(candidate -> {
+            assertEquals(true, candidate.attributes().get("conditional"));
+            assertEquals(true, candidate.attributes().get("polymorphic"));
+            assertEquals(1, ((List<?>) candidate.attributes().get("conditions")).size());
+        });
+
+        RelationshipCandidate mixed = merger.merge(List.of(
+                conditionalJoin("customers", "customer"),
+                unguardedContractJoin("customers")), 0.0d).get(0);
+
+        assertTrue(mixed.attributes().isEmpty(),
+                "One unconditional structural observation proves the pair without a guard");
     }
 
     @Test
@@ -331,6 +353,36 @@ class RelationshipMergerEvidenceAggregationTest {
                         "suggestedSourceEndpointKey", "orders.user_id",
                         "suggestedTargetEndpointKey", "users.id",
                         "directionHint", true));
+    }
+
+    private RelationshipCandidate conditionalJoin(String targetTable, String discriminatorValue) {
+        RelationshipCandidate candidate = unguardedContractJoin(targetTable);
+        candidate.evidence().clear();
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "routine.sql",
+                "guarded equality",
+                Map.of(
+                        "conditional", true,
+                        "discriminatorEndpoint", "contracts.party_type",
+                        "discriminatorOperator", "EQUALS",
+                        "discriminatorValue", discriminatorValue)));
+        return candidate;
+    }
+
+    private RelationshipCandidate unguardedContractJoin(String targetTable) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "contracts"), "party_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, targetTable), "id")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN,
+                DefaultEvidenceScores.SQL_LOG_JOIN,
+                EvidenceSourceType.PLAIN_SQL,
+                "routine.sql",
+                "contracts.party_id = " + targetTable + ".id"));
+        return candidate;
     }
 
     private void assertEvidenceCount(RelationshipCandidate relation, EvidenceType type, int count) {

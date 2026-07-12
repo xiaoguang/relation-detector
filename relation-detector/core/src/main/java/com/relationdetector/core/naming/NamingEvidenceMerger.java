@@ -73,6 +73,7 @@ public final class NamingEvidenceMerger {
         private Evidence summaryEvidence() {
             Evidence firstEvidence = first.evidence();
             Map<String, Object> attributes = new LinkedHashMap<>(firstEvidence.attributes());
+            summarizeConditional(attributes);
             attributes.put("count", count);
             if (count > 1) {
                 attributes.put("firstDetail", raw.get(0).detail());
@@ -83,6 +84,44 @@ public final class NamingEvidenceMerger {
             return new Evidence(
                     firstEvidence.type(), firstEvidence.score(), firstEvidence.sourceType(),
                     firstEvidence.source(), firstEvidence.detail(), attributes);
+        }
+
+        private void summarizeConditional(Map<String, Object> attributes) {
+            boolean allConditional = !raw.isEmpty() && raw.stream()
+                    .allMatch(evidence -> Boolean.TRUE.equals(evidence.attributes().get("conditional")));
+            if (!allConditional) {
+                attributes.remove("conditional");
+                attributes.remove("conditions");
+                return;
+            }
+            List<Map<String, Object>> conditions = raw.stream()
+                    .flatMap(evidence -> conditionMaps(evidence).stream())
+                    .distinct()
+                    .sorted(Comparator.comparing((Map<String, Object> condition) ->
+                                    String.valueOf(condition.get("discriminator")))
+                            .thenComparing(condition -> String.valueOf(condition.get("operator")))
+                            .thenComparing(condition -> String.valueOf(condition.get("value"))))
+                    .toList();
+            attributes.put("conditional", true);
+            if (!conditions.isEmpty()) {
+                attributes.put("conditions", conditions);
+            }
+        }
+
+        private List<Map<String, Object>> conditionMaps(Evidence evidence) {
+            Object value = evidence.attributes().get("conditions");
+            if (!(value instanceof List<?> list)) {
+                return List.of();
+            }
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> map) {
+                    Map<String, Object> condition = new LinkedHashMap<>();
+                    map.forEach((key, entry) -> condition.put(String.valueOf(key), entry));
+                    result.add(Map.copyOf(condition));
+                }
+            }
+            return List.copyOf(result);
         }
     }
 

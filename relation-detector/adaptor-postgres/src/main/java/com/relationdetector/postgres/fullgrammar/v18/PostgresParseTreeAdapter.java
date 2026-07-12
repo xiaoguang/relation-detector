@@ -128,6 +128,24 @@ final class PostgresParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter
     }
 
     @Override
+    public Optional<String> literalValue(ParseTree tree) {
+        ParseTree current = tree;
+        while (current != null && !(current instanceof AexprconstContext)) {
+            List<ParseTree> children = typedChildren(current);
+            if (children.size() != 1) return Optional.empty();
+            current = children.get(0);
+        }
+        return current instanceof AexprconstContext literal
+                ? Optional.of(cleanLiteral(literal.getText())) : Optional.empty();
+    }
+
+    private String cleanLiteral(String raw) {
+        String value = raw == null ? "" : raw.strip();
+        return value.length() >= 2 && value.startsWith("'") && value.endsWith("'")
+                ? value.substring(1, value.length() - 1).replace("''", "'") : value;
+    }
+
+    @Override
     public CaseParts caseParts(ParseTree tree) {
         if (!(tree instanceof Case_exprContext expression) || expression.when_clause_list() == null) {
             return CaseParts.NONE;

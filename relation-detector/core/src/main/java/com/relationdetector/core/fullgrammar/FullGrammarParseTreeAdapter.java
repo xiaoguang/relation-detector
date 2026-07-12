@@ -129,6 +129,11 @@ public interface FullGrammarParseTreeAdapter {
         return false;
     }
 
+    /** Exact text value exposed by a typed literal context, if any. */
+    default Optional<String> literalValue(ParseTree tree) {
+        return Optional.empty();
+    }
+
     /** VALUE and CONTROL branches of a typed CASE/IF expression. */
     default CaseParts caseParts(ParseTree tree) {
         return CaseParts.NONE;

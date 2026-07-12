@@ -23,6 +23,39 @@ class CommonTokenEventStructuredSqlParserTest {
     private final CommonTokenEventStructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
 
     @Test
+    void commonGuardedJoinRetainsTypedCondition() {
+        SqlStatementRecord statement = statement("""
+                SELECT pr.id
+                FROM payment_receipts pr
+                JOIN customers c
+                  ON pr.party_type = 'customer' AND pr.party_id = c.id
+                """);
+        var candidates = new StructuredRelationshipExtractor().extract(
+                statement, parser.parseSql(statement, null));
+        assertTrue(candidates.stream().anyMatch(candidate -> candidate.evidence().stream().anyMatch(evidence ->
+                        Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                && "payment_receipts.party_type".equals(
+                                        evidence.attributes().get("discriminatorEndpoint")))),
+                () -> "Common parser lost the typed discriminator: " + candidates);
+    }
+
+    @Test
+    void emptyStringIsStillATypedDiscriminatorValue() {
+        SqlStatementRecord statement = statement("""
+                SELECT pr.id
+                FROM payment_receipts pr
+                JOIN customers c
+                  ON pr.party_type = '' AND pr.party_id = c.id
+                """);
+        var candidates = new StructuredRelationshipExtractor().extract(
+                statement, parser.parseSql(statement, null));
+        assertTrue(candidates.stream().flatMap(candidate -> candidate.evidence().stream()).anyMatch(evidence ->
+                        Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                && "".equals(evidence.attributes().get("discriminatorValue"))),
+                () -> "Empty string literal was mistaken for a missing guard: " + candidates);
+    }
+
+    @Test
     void commonParserUsesPortableGrammarAndEmitsJoinExistsAndInRelations() {
         SqlStatementRecord statement = statement("""
                 WITH active_customers AS (

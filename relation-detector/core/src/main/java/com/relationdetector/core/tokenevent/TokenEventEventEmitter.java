@@ -1,6 +1,7 @@
 package com.relationdetector.core.tokenevent;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -14,6 +15,7 @@ import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.parse.ProjectionEvent;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
@@ -26,6 +28,7 @@ public final class TokenEventEventEmitter {
     private final SqlStatementRecord statement;
     private final Predicate<StructuredParseEventType> typeFilter;
     private final Supplier<String> statementScope;
+    private final ArrayDeque<PredicateGuard> predicateGuards = new ArrayDeque<>();
 
     public TokenEventEventEmitter(SqlStatementRecord statement) {
         this(statement, ignored -> true, () -> "");
@@ -61,7 +64,8 @@ public final class TokenEventEventEmitter {
         add(events, new PredicateEvent(type, provenance(ctx),
                 new ExpressionSource(leftAlias, leftColumn),
                 new ExpressionSource(rightAlias, rightColumn),
-                List.of(), List.of(), "", joinKind, List.of(), false));
+                List.of(), List.of(), "", joinKind, List.of(), false,
+                currentPredicateGuards()));
     }
 
     public void addJoinUsing(List<StructuredSqlEvent> events, ParserRuleContext ctx,
@@ -78,7 +82,21 @@ public final class TokenEventEventEmitter {
         add(events, new PredicateEvent(type, provenance(ctx),
                 sourceAt(outerAliases, outerColumns, 0), sourceAt(innerAliases, innerColumns, 0),
                 sources(outerAliases, outerColumns), sources(innerAliases, innerColumns),
-                innerTable, "", List.of(), true));
+                innerTable, "", List.of(), true, currentPredicateGuards()));
+    }
+
+    public void withPredicateGuard(PredicateGuard guard, Runnable visitor) {
+        if (guard == null || guard.discriminator().column().isBlank()
+                || guard.operator().isBlank()) {
+            visitor.run();
+            return;
+        }
+        predicateGuards.push(guard);
+        try {
+            visitor.run();
+        } finally {
+            predicateGuards.pop();
+        }
     }
 
     public void addProjection(List<StructuredSqlEvent> events, ParserRuleContext ctx,
@@ -187,5 +205,14 @@ public final class TokenEventEventEmitter {
             return ExpressionSource.EMPTY;
         }
         return new ExpressionSource(aliases.get(index), columns.get(index));
+    }
+
+    private List<PredicateGuard> currentPredicateGuards() {
+        if (predicateGuards.isEmpty()) {
+            return List.of();
+        }
+        List<PredicateGuard> result = new ArrayList<>(predicateGuards);
+        java.util.Collections.reverse(result);
+        return List.copyOf(result);
     }
 }

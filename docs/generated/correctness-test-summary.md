@@ -31365,12 +31365,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- relation-detector-fixture-source: ROUTINE:public.sp_generate_ar_aging
-CREATE OR REPLACE PROCEDURE sp_generate_ar_aging()
+CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
+    OUT result TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     -- 清理当天快照
-    DELETE FROM ar_aging_snapshots WHERE snapshot_date = CURRENT_DATE;
 ```
 _Preview truncated; see input file for full content._
 
@@ -31714,7 +31715,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -31792,7 +31793,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -31801,13 +31802,13 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
 
 **Forbidden Tables**
 
@@ -36446,12 +36447,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- relation-detector-fixture-source: ROUTINE:public.sp_generate_ar_aging
-CREATE OR REPLACE PROCEDURE sp_generate_ar_aging()
+CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
+    OUT result TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     -- 清理当天快照
-    DELETE FROM ar_aging_snapshots WHERE snapshot_date = CURRENT_DATE;
 ```
 _Preview truncated; see input file for full content._
 
@@ -36795,7 +36797,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -36873,7 +36875,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -36882,13 +36884,13 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
 
 **Forbidden Tables**
 
@@ -41480,12 +41482,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- relation-detector-fixture-source: ROUTINE:public.sp_generate_ar_aging
-CREATE OR REPLACE PROCEDURE sp_generate_ar_aging()
+CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
+    OUT result TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     -- 清理当天快照
-    DELETE FROM ar_aging_snapshots WHERE snapshot_date = CURRENT_DATE;
 ```
 _Preview truncated; see input file for full content._
 
@@ -41829,7 +41832,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -41907,7 +41910,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -41916,13 +41919,13 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
 
 **Forbidden Tables**
 
@@ -42979,12 +42982,13 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- relation-detector-fixture-source: ROUTINE:public.sp_generate_ar_aging
-CREATE OR REPLACE PROCEDURE sp_generate_ar_aging()
+CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
+    OUT result TEXT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     -- 清理当天快照
-    DELETE FROM ar_aging_snapshots WHERE snapshot_date = CURRENT_DATE;
 ```
 _Preview truncated; see input file for full content._
 
@@ -43328,7 +43332,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -43406,7 +43410,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -43415,13 +43419,13 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
 
 **Forbidden Tables**
 

@@ -57,6 +57,25 @@ class SemanticObservationFingerprintTest {
                 SemanticObservationFingerprint.lineages(control));
     }
 
+    @Test
+    void distinguishesConditionalRelationshipSemantics() {
+        RelationshipCandidate customer = relationship(Map.of(
+                "joinKind", "JOIN",
+                "conditions", List.of(Map.of(
+                        "discriminator", "contracts.party_type",
+                        "operator", "EQUALS",
+                        "value", "customer"))));
+        RelationshipCandidate supplier = relationship(Map.of(
+                "joinKind", "JOIN",
+                "conditions", List.of(Map.of(
+                        "discriminator", "contracts.party_type",
+                        "operator", "EQUALS",
+                        "value", "supplier"))));
+
+        assertNotEquals(SemanticObservationFingerprint.relationships(customer),
+                SemanticObservationFingerprint.relationships(supplier));
+    }
+
     private RelationshipCandidate relationship(Map<String, Object> attributes) {
         RelationshipCandidate candidate = new RelationshipCandidate(
                 endpoint("orders", "customer_id"), endpoint("customers", "id"),

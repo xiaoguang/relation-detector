@@ -11,9 +11,11 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
+import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 class SqlServerTransformConsistencyTest {
@@ -67,6 +69,34 @@ class SqlServerTransformConsistencyTest {
             assertLineage(parser.name(), lineages, "dbo.cogs_entries.cogs_amount",
                     "dbo.projection_results.gross_margin", LineageFlowKind.VALUE,
                     LineageTransformType.ARITHMETIC);
+        }
+    }
+
+    @Test
+    void typedLiteralGuardMarksConditionalRelationshipAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                SELECT pr.[id]
+                FROM [dbo].[payment_receipts] AS pr
+                JOIN [dbo].[customers] AS c
+                  ON pr.[party_type] = 'customer'
+                 AND pr.[party_id] = c.[id];
+                """);
+
+        for (NamedParser parser : parsers()) {
+            List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor()
+                    .extract(statement, parser.parser().parseSql(statement, null));
+            assertTrue(relationships.stream().anyMatch(relationship ->
+                            relationship.evidence().stream().anyMatch(evidence ->
+                                            Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                                    && "dbo.payment_receipts.party_type".equals(
+                                                            evidence.attributes().get("discriminatorEndpoint"))
+                                                    && "customer".equals(
+                                                            evidence.attributes().get("discriminatorValue")))),
+                    () -> parser.name() + " missing typed conditional relationship; actual="
+                            + relationships.stream().map(relationship -> relationship.source().displayName()
+                                    + "->" + relationship.target().displayName() + ":"
+                                    + relationship.evidence().stream().map(evidence -> evidence.attributes()).toList())
+                                    .toList());
         }
     }
 
