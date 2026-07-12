@@ -16,13 +16,13 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.provenance.SemanticObservationFingerprint;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
-import com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
+import com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
 
 class OracleObservationConsistencyTest {
     private final StructuredSqlParser token = new OracleTokenEventStructuredSqlParser();
-    private final StructuredSqlParser full = new OracleFullGrammerDialectModule().sqlParser();
+    private final StructuredSqlParser full = new FullGrammarDialectModule().sqlParser();
 
     @Test
     void selectIntoJoinHasTheSameSemanticObservations() {
@@ -204,7 +204,7 @@ class OracleObservationConsistencyTest {
             StructuredParseResult structured
     ) {
         List<SemanticObservationFingerprint> observations = new ArrayList<>();
-        new TokenEventRelationExtractor().extract(statement, structured).forEach(candidate ->
+        new StructuredRelationshipExtractor().extract(statement, structured).forEach(candidate ->
                 observations.addAll(SemanticObservationFingerprint.relationships(candidate)));
         new StructuredDataLineageExtractor().extract(statement, structured).forEach(candidate ->
                 observations.addAll(SemanticObservationFingerprint.lineages(candidate)));

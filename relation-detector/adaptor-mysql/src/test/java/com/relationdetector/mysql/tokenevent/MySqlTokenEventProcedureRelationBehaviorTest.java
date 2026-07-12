@@ -23,7 +23,7 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.naming.NamingEvidenceExtractor;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 
 class MySqlTokenEventProcedureRelationBehaviorTest {
     @Test
@@ -35,7 +35,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-nested-fallback.sql", 1, 3, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        var relationships = new TokenEventRelationExtractor().extract(statement, structured);
+        var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
 
         assertTrue(relationships.stream().anyMatch(relationship ->
                         Set.of(relationship.source().column().table().tableName(),
@@ -637,7 +637,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
         assertFalse(structured.events().isEmpty(), structured.attributes().toString());
-        List<String> fingerprints = new TokenEventRelationExtractor()
+        List<String> fingerprints = new StructuredRelationshipExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::fingerprint)
@@ -673,7 +673,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<RelationshipCandidate> relations = new TokenEventRelationExtractor()
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
                 .extract(statement, structured)
                 .stream().toList();
         List<String> fingerprints = relations.stream()
@@ -705,7 +705,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-select-list-scalar-subquery.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventRelationExtractor()
+        List<String> fingerprints = new StructuredRelationshipExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::fingerprint)
@@ -717,7 +717,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                                 || fingerprint.equals("CO_OCCURRENCE:sales_returns.id->serial_numbers.return_id:SQL_LOG_JOIN")),
                 () -> "SELECT-list scalar subquery predicate should be visible to token-event relations: "
                         + fingerprints + " events=" + structured.events());
-        List<RelationshipCandidate> relations = new TokenEventRelationExtractor()
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
                 .extract(statement, structured)
                 .stream().toList();
         assertTrue(new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations).stream().anyMatch(candidate ->
@@ -747,7 +747,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-q50-serial-lifecycle.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<RelationshipCandidate> relations = new TokenEventRelationExtractor()
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
                 .extract(statement, structured)
                 .stream().toList();
         List<String> fingerprints = relations.stream()
@@ -878,7 +878,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
             SqlStatementRecord statement = new SqlStatementRecord(sqlStatements.get(index),
                     StatementSourceType.PLAIN_SQL, "mysql-confirmed-gap-" + index + ".sql", 1, 1, Map.of());
             var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-            relations.addAll(new TokenEventRelationExtractor().extract(statement, structured));
+            relations.addAll(new StructuredRelationshipExtractor().extract(statement, structured));
         }
         List<String> fingerprints = relations.stream().map(this::fingerprint).sorted().toList();
 
@@ -921,7 +921,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-recursive-bom.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor().extract(statement, structured);
 
         assertTrue(hasRelationshipPair(relations, "boms.child_product_id", "boms.parent_product_id"),
                 () -> "Recursive CTE predicates should resolve projected CTE columns back to physical BOM columns; "

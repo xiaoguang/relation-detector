@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
@@ -13,7 +13,7 @@ import com.relationdetector.oracle.OracleDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 import com.relationdetector.sqlserver.SqlServerDatabaseAdaptor;
 
-/** Test facade over the same dialect script parser used by production scans. */
+/** Test facade over the same dialect script framer used by production scans. */
 final class ObjectBlockStatementSplitter {
     private ObjectBlockStatementSplitter() {
     }
@@ -34,8 +34,8 @@ final class ObjectBlockStatementSplitter {
             DatabaseType databaseType,
             String objectSourceFilter
     ) {
-        List<SqlStatementRecord> statements = adaptor(databaseType).parsers().scripts()
-                .parse(new ScriptParseRequest(text, sourceFile, sourceType))
+        List<SqlStatementRecord> statements = adaptor(databaseType).parsers().scriptFramer()
+                .frame(new ScriptFrameRequest(text, sourceFile, sourceType))
                 .statements();
         String filter = objectSourceFilter == null ? "" : objectSourceFilter.strip();
         if (filter.isBlank()) {

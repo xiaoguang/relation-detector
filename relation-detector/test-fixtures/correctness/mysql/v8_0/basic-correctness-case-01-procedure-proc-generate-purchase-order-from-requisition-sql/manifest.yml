@@ -1,7 +1,7 @@
 id: mysql80-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql
 databaseType: MYSQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/8.0
 databaseVersion: 8.0
 sourceType: PROCEDURE

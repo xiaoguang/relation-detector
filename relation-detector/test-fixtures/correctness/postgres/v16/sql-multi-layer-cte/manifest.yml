@@ -1,5 +1,5 @@
 id: postgres16-postgres-sql-multi-layer-cte
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/16
 databaseVersion: 16.5
 databaseType: POSTGRESQL

@@ -1,7 +1,7 @@
 id: postgres18-sample-data-enterprise-extension-ddl
 databaseType: POSTGRESQL
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/18
 databaseVersion: 18.1
 sourceType: DDL_FILE

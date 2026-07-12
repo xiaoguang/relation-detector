@@ -40,7 +40,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
  * evidence is attached, RelationshipMerger computes the final confidence.
  */
 class ConfidenceScoringExamplesTest {
-    private final TokenEventSqlRelationParser sqlParser = new TokenEventSqlRelationParser(
+    private final StructuredSqlRelationshipParser sqlParser = new StructuredSqlRelationshipParser(
             new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
     private final TokenEventStructuredDdlParser ddlParser = new TokenEventStructuredDdlParser(SqlDialect.MYSQL);
     private final DdlRelationExtractionVisitor ddlVisitor = new DdlRelationExtractionVisitor();

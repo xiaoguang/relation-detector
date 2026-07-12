@@ -1,5 +1,5 @@
 id: postgres17-official-lateral-nested-join-sql
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 databaseType: POSTGRESQL

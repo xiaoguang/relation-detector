@@ -40,9 +40,9 @@ semantic rejections.
 
 | Fixture | Why it is not truly NOT_APPLICABLE | Recommended follow-up |
 | --- | --- | --- |
-| `mysql-business-financial-asset-wash-procedure-sql` | The equivalent comma-rowset fixture and MySQL `v8_0` full-grammer fixture already have physical lineage from `transaction_ledgers`, `users`, and `account_balances`. The original `UPDATE ... INNER JOIN (WITH ...) AS ... , gcp SET ...` form still produces no candidates. | Fix MySQL token-event for this combined UPDATE JOIN + derived CTE + comma rowset shape, then align golden with `mysql-business-financial-asset-wash-procedure-comma-sql`. |
-| `postgres-pg15-sql` | PostgreSQL v16/v17/v18 full-grammer already extracts MERGE lineage from the same PG15 SQL. Root token-event does not cover the full high-version MERGE/JSON/derived CTE syntax. | Extend PostgreSQL token-event only if root fallback is expected to cover this high-version syntax; otherwise document as token-event coverage backlog. |
-| `postgres-pg17-sql` | PostgreSQL v17/v18 full-grammer already extracts MERGE lineage from the same PG17 SQL. Root token-event does not cover JSON_TABLE/MERGE RETURNING shape. | Same as above; this is high-version PostgreSQL token-event coverage, not a semantic "not applicable" case. |
+| `mysql-business-financial-asset-wash-procedure-sql` | The equivalent comma-rowset fixture and MySQL `v8_0` full-grammar fixture already have physical lineage from `transaction_ledgers`, `users`, and `account_balances`. The original `UPDATE ... INNER JOIN (WITH ...) AS ... , gcp SET ...` form still produces no candidates. | Fix MySQL token-event for this combined UPDATE JOIN + derived CTE + comma rowset shape, then align golden with `mysql-business-financial-asset-wash-procedure-comma-sql`. |
+| `postgres-pg15-sql` | PostgreSQL v16/v17/v18 full-grammar already extracts MERGE lineage from the same PG15 SQL. Root token-event does not cover the full high-version MERGE/JSON/derived CTE syntax. | Extend PostgreSQL token-event only if root fallback is expected to cover this high-version syntax; otherwise document as token-event coverage backlog. |
+| `postgres-pg17-sql` | PostgreSQL v17/v18 full-grammar already extracts MERGE lineage from the same PG17 SQL. Root token-event does not cover JSON_TABLE/MERGE RETURNING shape. | Same as above; this is high-version PostgreSQL token-event coverage, not a semantic "not applicable" case. |
 
 ## Confirmed True NOT_APPLICABLE Categories
 

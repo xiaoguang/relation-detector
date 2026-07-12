@@ -74,7 +74,7 @@ public final class Main {
                       --direct-output <file> Write a direct-only JSON view beside --output.
                       --plugin-dir <dir>    Directory containing external adaptor jars.
                       --min-confidence <n>  Override output.minConfidence.
-                      --parser-mode <mode>   auto, full-grammer, or token-event.
+                      --parser-mode <mode>   auto, full-grammar, or token-event.
                       --grammar-profile <id> Override parser.grammarProfile.
                       --database-version <v> Override parser.databaseVersion.
                       --parallelism <n>       Parse independent file/object/log statements with up to n workers.
@@ -129,9 +129,9 @@ public final class Main {
         private static String normalizeParserMode(String value) {
             String normalized = value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
             return switch (normalized) {
-                case "auto", "full-grammer", "token-event" -> normalized;
+                case "auto", "full-grammar", "token-event" -> normalized;
                 default -> throw new IllegalArgumentException(
-                        "--parser-mode must be one of auto, full-grammer, token-event");
+                        "--parser-mode must be one of auto, full-grammar, token-event");
             };
         }
 

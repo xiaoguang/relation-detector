@@ -1,7 +1,7 @@
 id: sqlserver2025-version-vector-ddl
 databaseType: SQLSERVER
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2025
 databaseVersion: 2025
 sourceType: DDL_FILE

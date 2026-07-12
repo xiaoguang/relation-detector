@@ -10,26 +10,26 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.sqlserver.ddl.SqlServerDatabaseDdlCollector;
 import com.relationdetector.sqlserver.log.SqlServerLogExtractor;
 import com.relationdetector.sqlserver.metadata.SqlServerMetadataCollector;
 import com.relationdetector.sqlserver.objects.SqlServerObjectCollector;
 import com.relationdetector.sqlserver.profile.SqlServerDataProfiler;
-import com.relationdetector.sqlserver.script.SqlServerScriptParser;
+import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public SqlServerDatabaseAdaptor() {
         this(new SqlServerTokenEventStructuredSqlParser(), new SqlServerTokenEventStructuredDdlParser(),
-                new SqlServerScriptParser());
+                new SqlServerScriptFramer());
     }
 
     private SqlServerDatabaseAdaptor(
             SqlServerTokenEventStructuredSqlParser structuredSqlParser,
             SqlServerTokenEventStructuredDdlParser structuredDdlParser,
-            SqlServerScriptParser scriptParser
+            SqlServerScriptFramer scriptFramer
     ) {
         super(
                 "sqlserver",
@@ -47,12 +47,12 @@ public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new SqlServerMetadataCollector(),
                         new SqlServerObjectCollector(),
                         Optional.of(new SqlServerDatabaseDdlCollector()),
-                        new SqlServerLogExtractor(scriptParser)),
+                        new SqlServerLogExtractor(scriptFramer)),
                 new AdaptorParsers(
-                        new TokenEventSqlRelationParser(structuredSqlParser),
+                        new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
                         Optional.of(structuredDdlParser),
-                        scriptParser),
+                        scriptFramer),
                 new AdaptorProfiling(Optional.of(new SqlServerDataProfiler()), (evidence, context) -> evidence));
     }
 

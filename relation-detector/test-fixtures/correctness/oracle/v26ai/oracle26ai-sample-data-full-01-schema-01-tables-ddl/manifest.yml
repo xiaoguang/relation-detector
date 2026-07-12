@@ -1,7 +1,7 @@
 id: oracle26ai-sample-data-full-01-schema-01-tables-ddl
 databaseType: ORACLE
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: oracle/26ai
 databaseVersion: 26
 sourceType: DDL_FILE

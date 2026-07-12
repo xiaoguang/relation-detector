@@ -293,26 +293,26 @@ fi
 queue_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/common-natural"
 
 queue_case mysql-token-event-root MYSQL token-event "" "" "$RELATION_ROOT/sample-data/mysql/8.0"
-queue_case mysql-v5_7-full MYSQL full-grammer mysql/5.7 5.7 "$RELATION_ROOT/sample-data/mysql/5.7"
-queue_case mysql-v8_0-full MYSQL full-grammer mysql/8.0 8.0 "$RELATION_ROOT/sample-data/mysql/8.0"
+queue_case mysql-v5_7-full MYSQL full-grammar mysql/5.7 5.7 "$RELATION_ROOT/sample-data/mysql/5.7"
+queue_case mysql-v8_0-full MYSQL full-grammar mysql/8.0 8.0 "$RELATION_ROOT/sample-data/mysql/8.0"
 
 queue_case postgres-token-event-root POSTGRESQL token-event "" "" "$RELATION_ROOT/sample-data/postgres/18"
-queue_case postgres-v16-full POSTGRESQL full-grammer postgresql/16 16 "$RELATION_ROOT/sample-data/postgres/16"
-queue_case postgres-v17-full POSTGRESQL full-grammer postgresql/17 17 "$RELATION_ROOT/sample-data/postgres/17"
-queue_case postgres-v18-full POSTGRESQL full-grammer postgresql/18 18 "$RELATION_ROOT/sample-data/postgres/18"
+queue_case postgres-v16-full POSTGRESQL full-grammar postgresql/16 16 "$RELATION_ROOT/sample-data/postgres/16"
+queue_case postgres-v17-full POSTGRESQL full-grammar postgresql/17 17 "$RELATION_ROOT/sample-data/postgres/17"
+queue_case postgres-v18-full POSTGRESQL full-grammar postgresql/18 18 "$RELATION_ROOT/sample-data/postgres/18"
 
 queue_case oracle-token-event-root ORACLE token-event "" "" "$RELATION_ROOT/sample-data/oracle/26ai"
-queue_case oracle-v12c-full ORACLE full-grammer oracle/12c 12c "$RELATION_ROOT/sample-data/oracle/12c"
-queue_case oracle-v19c-full ORACLE full-grammer oracle/19c 19c "$RELATION_ROOT/sample-data/oracle/19c"
-queue_case oracle-v21c-full ORACLE full-grammer oracle/21c 21c "$RELATION_ROOT/sample-data/oracle/21c"
-queue_case oracle-v26ai-full ORACLE full-grammer oracle/26ai 26ai "$RELATION_ROOT/sample-data/oracle/26ai"
+queue_case oracle-v12c-full ORACLE full-grammar oracle/12c 12c "$RELATION_ROOT/sample-data/oracle/12c"
+queue_case oracle-v19c-full ORACLE full-grammar oracle/19c 19c "$RELATION_ROOT/sample-data/oracle/19c"
+queue_case oracle-v21c-full ORACLE full-grammar oracle/21c 21c "$RELATION_ROOT/sample-data/oracle/21c"
+queue_case oracle-v26ai-full ORACLE full-grammar oracle/26ai 26ai "$RELATION_ROOT/sample-data/oracle/26ai"
 
 queue_case sqlserver-token-event-root SQLSERVER token-event "" "" "$RELATION_ROOT/sample-data/sqlserver/2025"
-queue_case sqlserver-v2016-full SQLSERVER full-grammer sqlserver/2016 2016 "$RELATION_ROOT/sample-data/sqlserver/2016"
-queue_case sqlserver-v2017-full SQLSERVER full-grammer sqlserver/2017 2017 "$RELATION_ROOT/sample-data/sqlserver/2017"
-queue_case sqlserver-v2019-full SQLSERVER full-grammer sqlserver/2019 2019 "$RELATION_ROOT/sample-data/sqlserver/2019"
-queue_case sqlserver-v2022-full SQLSERVER full-grammer sqlserver/2022 2022 "$RELATION_ROOT/sample-data/sqlserver/2022"
-queue_case sqlserver-v2025-full SQLSERVER full-grammer sqlserver/2025 2025 "$RELATION_ROOT/sample-data/sqlserver/2025"
+queue_case sqlserver-v2016-full SQLSERVER full-grammar sqlserver/2016 2016 "$RELATION_ROOT/sample-data/sqlserver/2016"
+queue_case sqlserver-v2017-full SQLSERVER full-grammar sqlserver/2017 2017 "$RELATION_ROOT/sample-data/sqlserver/2017"
+queue_case sqlserver-v2019-full SQLSERVER full-grammar sqlserver/2019 2019 "$RELATION_ROOT/sample-data/sqlserver/2019"
+queue_case sqlserver-v2022-full SQLSERVER full-grammar sqlserver/2022 2022 "$RELATION_ROOT/sample-data/sqlserver/2022"
+queue_case sqlserver-v2025-full SQLSERVER full-grammar sqlserver/2025 2025 "$RELATION_ROOT/sample-data/sqlserver/2025"
 
 write_batch_manifest
 if ! RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" batch \

@@ -6,7 +6,7 @@
 
 本阶段不实现真实关系探测，只实现空扫描流程和基本配置加载。
 
-当前实现注记：Phase 1 记录的是工程骨架起点；当前仓库根已经收口为 `relation-detector/` 与 `semantic-layer/` 两个同级目录。`relation-detector/` 内包含 `contracts/core/cli/adaptor-mysql/adaptor-postgres/adaptor-oracle/adaptor-sqlserver` 等短目录模块，并实现 token-event / full-grammer parser、relationship、Data Lineage、DDL、naming evidence、confidence、CLI E2E golden 等完整链路。`semantic-layer/` 内包含独立的 KG 构建核心和 semantic CLI，只消费 relation-detector JSON。当前实现细节以 Phase 6、代码实现指南和代码与设计对应审视报告为准。
+当前实现注记：Phase 1 记录的是工程骨架起点；当前仓库根已经收口为 `relation-detector/` 与 `semantic-layer/` 两个同级目录。`relation-detector/` 内包含 `contracts/core/cli/adaptor-mysql/adaptor-postgres/adaptor-oracle/adaptor-sqlserver` 等短目录模块，并实现 token-event / full-grammar parser、relationship、Data Lineage、DDL、naming evidence、confidence、CLI E2E golden 等完整链路。`semantic-layer/` 内包含独立的 KG 构建核心和 semantic CLI，只消费 relation-detector JSON。当前实现细节以 Phase 6、代码实现指南和代码与设计对应审视报告为准。
 
 ## 模块结构
 

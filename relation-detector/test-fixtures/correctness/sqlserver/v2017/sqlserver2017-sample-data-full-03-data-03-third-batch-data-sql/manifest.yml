@@ -1,7 +1,7 @@
 id: sqlserver2017-sample-data-full-03-data-03-third-batch-data-sql
 databaseType: SQLSERVER
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2017
 databaseVersion: 2017
 sourceType: PLAIN_SQL

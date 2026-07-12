@@ -38,7 +38,7 @@ public enum DatabaseType {
 
 - 配置中可以允许小写别名，例如 `mysql`，但内部统一转成 `MYSQL`。
 - `COMMON` 是 portable parser category，不是某个方言的 fallback facade。CLI 配置 `database.type: common` 时由 core 的 `CommonDatabaseAdaptor` 接管，只跑 common token-event SQL/DDL parser、file DDL、object files 和 plain SQL logs；不做 live metadata、database object collection 或 data profiling。
-- 当前 `MYSQL`、`POSTGRESQL` 的工程覆盖和测试资产最完整，但 correctness golden 只证明当前回归基线稳定，不等于官方语法全集或全部 relation/lineage 语义已经无缺口。`ORACLE` 已有初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；`SQLSERVER` 已有 adaptor、token-event fallback 和 SQL Server 2016/2017/2019/2022/2025 versioned full-grammer sample-data golden。
+- 当前 `MYSQL`、`POSTGRESQL` 的工程覆盖和测试资产最完整，但 correctness golden 只证明当前回归基线稳定，不等于官方语法全集或全部 relation/lineage 语义已经无缺口。`ORACLE` 已有初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammar；`SQLSERVER` 已有 adaptor、token-event fallback 和 SQL Server 2016/2017/2019/2022/2025 versioned full-grammar sample-data golden。
 - 用户选择 `SQLSERVER` 时，应由 `adaptor-sqlserver` 接管；如果该模块未在 classpath 中，应返回“adaptor 未找到”错误，不应偷偷降级到其他数据库。用户选择 `ORACLE` 时，应由 `adaptor-oracle` 接管；如果该模块未在 classpath 中，同样应返回 adaptor 未找到。
 
 ## 2. OutputFormat
@@ -430,7 +430,7 @@ public enum DatabaseObjectType {
 
 ## 10.1 StructuredParseEventType
 
-表示 token-event / full-grammer 结构化解析阶段产生的中间事件，不等价于最终 relationship 或 Data Lineage。
+表示 token-event / full-grammar 结构化解析阶段产生的中间事件，不等价于最终 relationship 或 Data Lineage。
 
 ```java
 public enum StructuredParseEventType {
@@ -464,7 +464,7 @@ public enum StructuredParseEventType {
 | `TABLE_REFERENCE` | legacy/bootstrap 表引用事件。当前 semantic extractor 的主输入是归一后的 `ROWSET_REFERENCE`。 |
 | `COLUMN_EQUALITY` | legacy/bootstrap 列等值事件。当前 builder 会归一为 `PREDICATE_EQUALITY`。 |
 | `ROWSET_REFERENCE` | 物理 rowset 或写目标 rowset 引用，包括 table、alias、joinKind、source span 等 attributes。 |
-| `PREDICATE_EQUALITY` | 明确 `alias.column = alias.column` 谓词，供 `TokenEventRelationExtractor` 判断 FK-like 或列级弱共现。 |
+| `PREDICATE_EQUALITY` | 明确 `alias.column = alias.column` 谓词，供 `StructuredRelationshipExtractor` 判断 FK-like 或列级弱共现。 |
 | `JOIN_USING_COLUMNS` | `JOIN ... USING (...)` 的列列表事件，不把列名当作 rowset。 |
 | `EXISTS_PREDICATE` | correlated `EXISTS` 中可解析的相关等值谓词。 |
 | `IN_SUBQUERY_PREDICATE` | scalar `IN (SELECT ...)` 谓词；只有外层是裸列、子查询 SELECT list 是裸列、并带 `verifiedColumnSubquery=true` 时才可被 relationship extractor 消费。 |

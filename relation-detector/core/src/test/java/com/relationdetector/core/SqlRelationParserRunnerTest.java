@@ -287,7 +287,7 @@ class SqlRelationParserRunnerTest {
                     sqlRelationParser,
                     Optional.ofNullable(structuredParser),
                     Optional.empty(),
-                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
 
         @Override

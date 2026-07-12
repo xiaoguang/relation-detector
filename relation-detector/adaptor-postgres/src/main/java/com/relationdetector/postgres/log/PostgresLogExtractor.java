@@ -11,24 +11,24 @@ import java.util.stream.Stream;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.script.ScriptFileExtractor;
-import com.relationdetector.postgres.script.PostgresScriptParser;
+import com.relationdetector.postgres.script.PostgresScriptFramer;
 
 /** Extracts PostgreSQL log record payloads before typed SQL classification. */
 public final class PostgresLogExtractor implements SqlLogExtractor {
-    private final PostgresScriptParser scriptParser;
+    private final PostgresScriptFramer scriptFramer;
 
     public PostgresLogExtractor() {
-        this(new PostgresScriptParser());
+        this(new PostgresScriptFramer());
     }
 
-    public PostgresLogExtractor(PostgresScriptParser scriptParser) {
-        this.scriptParser = scriptParser;
+    public PostgresLogExtractor(PostgresScriptFramer scriptFramer) {
+        this.scriptFramer = scriptFramer;
     }
 
     @Override
@@ -44,7 +44,7 @@ public final class PostgresLogExtractor implements SqlLogExtractor {
     ) {
         if (hint == LogFormatHint.PLAIN_SQL) {
             return new ScriptFileExtractor().extract(
-                    file, StatementSourceType.PLAIN_SQL, scriptParser, warnings);
+                    file, StatementSourceType.PLAIN_SQL, scriptFramer, warnings);
         }
         try {
             List<SqlStatementRecord> records = new ArrayList<>();
@@ -78,7 +78,7 @@ public final class PostgresLogExtractor implements SqlLogExtractor {
             long sourceLine,
             Consumer<WarningMessage> warnings
     ) {
-        var parsed = scriptParser.parse(new ScriptParseRequest(
+        var parsed = scriptFramer.frame(new ScriptFrameRequest(
                 payload, file.toString(), StatementSourceType.NATIVE_LOG));
         parsed.warnings().forEach(warnings);
         return parsed.statements().stream()

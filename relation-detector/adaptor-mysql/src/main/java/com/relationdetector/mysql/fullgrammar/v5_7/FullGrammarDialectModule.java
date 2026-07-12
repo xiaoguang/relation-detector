@@ -1,0 +1,53 @@
+package com.relationdetector.mysql.fullgrammar.v5_7;
+
+import com.relationdetector.core.fullgrammar.*;
+import java.util.Set;
+
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.mysql.fullgrammar.common.MySqlFullGrammarVersionPolicy;
+
+/**
+ * MySQL 5.7 full-grammar module 注册入口。
+ *
+ * <p>CN: 通过 ServiceLoader 暴露 mysql-5.7 profile 及其 SQL/DDL parser。core 只看
+ * FullGrammarDialectModule 接口，不直接依赖本类。
+ *
+ * <p>EN: MySQL 5.7 full-grammar module entry point registered through
+ * ServiceLoader. It exposes the mysql-5.7 profile and SQL/DDL parsers while
+ * core depends only on FullGrammarDialectModule.
+ */
+public final class FullGrammarDialectModule
+        implements com.relationdetector.core.fullgrammar.FullGrammarDialectModule {
+    private static final MySqlFullGrammarVersionPolicy POLICY = new MySqlFullGrammarVersionPolicy(
+            5,
+            7,
+            Set.of("generated_columns", "json_basic", "multi_table_dml", "stored_routines"));
+    private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(
+            POLICY.profileId(),
+            DatabaseType.MYSQL,
+            POLICY.major(),
+            POLICY.minor(),
+            POLICY.capabilities());
+
+    @Override
+    public SqlGrammarProfile profile() {
+        return PROFILE;
+    }
+
+    @Override
+    public String implementationName() {
+        return "MYSQL_FULL_GRAMMAR_PARSE_TREE_VISITOR";
+    }
+
+    @Override
+    public StructuredSqlParser sqlParser() {
+        return new MySqlFullGrammarStructuredSqlParser();
+    }
+
+    @Override
+    public StructuredDdlParser structuredDdlParser() {
+        return new MySqlFullGrammarStructuredDdlParser();
+    }
+}

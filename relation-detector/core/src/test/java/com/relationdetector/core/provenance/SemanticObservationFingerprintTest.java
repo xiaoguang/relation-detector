@@ -33,8 +33,8 @@ class SemanticObservationFingerprintTest {
                 "sourceStatementId", "input.sql:3-5",
                 "sourceLine", 4L));
         RelationshipCandidate full = relationship(Map.of(
-                "fullGrammerNative", true,
-                "fullGrammerContextSource", "typed-context",
+                "fullGrammarNative", true,
+                "fullGrammarContextSource", "typed-context",
                 "joinKind", "JOIN",
                 "sourceFile", "input.sql",
                 "sourceStatementId", "input.sql:3-5",

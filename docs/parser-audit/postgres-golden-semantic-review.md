@@ -1,15 +1,15 @@
 # PostgreSQL Golden Semantic Review
 
-This report records the PostgreSQL correctness audit pass for root token-event and versioned full-grammer fixtures.
+This report records the PostgreSQL correctness audit pass for root token-event and versioned full-grammar fixtures.
 
 ## Scope
 
 | Fixture group | Fixtures | Relations | Lineage | Notes |
 | --- | ---: | ---: | ---: | --- |
 | PostgreSQL root token-event | 111 | 1402 | 332 | Fallback parser golden. |
-| PostgreSQL full-grammer v16 | 111 | 1474 | 351 | Version-strict full-grammer golden. |
-| PostgreSQL full-grammer v17 | 113 | 1478 | 364 | Includes v17-only fixtures. |
-| PostgreSQL full-grammer v18 | 114 | 1477 | 362 | Includes v18-only fixtures. |
+| PostgreSQL full-grammar v16 | 111 | 1474 | 351 | Version-strict full-grammar golden. |
+| PostgreSQL full-grammar v17 | 113 | 1478 | 364 | Includes v17-only fixtures. |
+| PostgreSQL full-grammar v18 | 114 | 1477 | 362 | Includes v18-only fixtures. |
 
 ## Decisions
 
@@ -110,9 +110,9 @@ WHEN NOT MATCHED THEN
 
 **Golden impact.** `sql-merge-using` now records the explicit relation `target_orders.source_order_id -> source_orders.id` and lineage `source_orders.id -> target_orders.source_order_id`.
 
-### Full-Grammer Nested Projection Scope
+### Full-Grammar Nested Projection Scope
 
-**Context.** PostgreSQL full-grammer missed one valid relationship in
+**Context.** PostgreSQL full-grammar missed one valid relationship in
 `sample-data/postgres/18/04-queries/03-complex-queries-batch3.sql`. The
 `latest_performance` CTE projected unqualified columns from a derived table:
 
@@ -136,13 +136,13 @@ The SQL structure is unambiguous: `lp.employee_id` comes from
 `performance_reviews.employee_id`; `lb.employee_id` comes from `employees.id`
 through the `leave_balance` CTE.
 
-**Fix.** `FullGrammerTypedSqlEventSink` now restores rowset scope when leaving
+**Fix.** `FullGrammarEventFacade` now restores rowset scope when leaving
 SELECT and projection-owner scopes. Inner rowsets from a derived table no longer
 pollute the parent CTE's default unqualified-column qualifier. This keeps the
 fix in typed visitor scope management; it does not add regex, token-span
 scanning, or table/column name filtering.
 
-**Golden impact.** PostgreSQL v16/v17/v18 full-grammer sample-data golden each
+**Golden impact.** PostgreSQL v16/v17/v18 full-grammar sample-data golden each
 gained:
 
 ```text
@@ -167,7 +167,7 @@ LEFT JOIN departments d ON e.department_id = d.id
 
 This is a fixture SQL correction, not a parser workaround.
 
-**Golden impact.** PostgreSQL root and v16/v17/v18 full-grammer sample-data
+**Golden impact.** PostgreSQL root and v16/v17/v18 full-grammar sample-data
 golden each gained:
 
 ```text
@@ -177,7 +177,7 @@ FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN
 ### Derived Rowset And Parameter Lineage Guard
 
 **Context.** Tightening projection scope exposed a separate lineage risk in
-MySQL full-grammer cumulative-projection tests: derived aliases such as
+MySQL full-grammar cumulative-projection tests: derived aliases such as
 `rand_tbl` / `h`, and routine parameters such as `p_target_date`, could appear
 as lineage sources before projection resolution reached the physical source
 columns.
@@ -185,7 +185,7 @@ columns.
 **Fix.** `StructuredDataLineageExtractor` now filters ignored rowset tables from
 final lineage sources and prefers projection candidates that resolve to stronger
 physical-source evidence. This is a shared semantic-layer guard used by
-token-event and full-grammer events.
+token-event and full-grammar events.
 
 **Golden impact.** No PostgreSQL golden changed for this guard. Existing MySQL
 golden stayed stable while tests now explicitly assert that derived aliases and
@@ -196,16 +196,16 @@ routine parameters do not become physical lineage sources.
 - No table-name or column-name special filtering was added.
 - SQL structure recognition remains typed grammar / typed visitor based.
 - Parameters, local variables, temporary tables, `NEW` / `OLD`, `EXCLUDED`, literals, and `LIKE` operands remain excluded as physical lineage or relationship endpoints.
-- PostgreSQL versioned full-grammer profiles remain version-strict; no low-version grammar was loosened to accept high-version-only syntax.
+- PostgreSQL versioned full-grammar profiles remain version-strict; no low-version grammar was loosened to accept high-version-only syntax.
 
-## Remaining Root Token-Event vs Full-Grammer Delta
+## Remaining Root Token-Event vs Full-Grammar Delta
 
-Root token-event is still a fallback parser, while versioned full-grammer is the strict primary parser when a PostgreSQL profile is selected. Same-input comparisons still show full-grammer finds more relation/lineage facts in complex lateral, nested CTE, sample-data DDL, and PG-version-specific cases. Those are classified as token-event coverage deltas, not user-review questions.
+Root token-event is still a fallback parser, while versioned full-grammar is the strict primary parser when a PostgreSQL profile is selected. Same-input comparisons still show full-grammar finds more relation/lineage facts in complex lateral, nested CTE, sample-data DDL, and PG-version-specific cases. Those are classified as token-event coverage deltas, not user-review questions.
 
 The current acceptance line is:
 
 - Root token-event golden must contain only facts it can extract from typed structural grammar.
-- Versioned full-grammer golden remains the stronger version-specific correctness target.
+- Versioned full-grammar golden remains the stronger version-specific correctness target.
 - Future root token-event coverage work should continue by expanding typed grammar and visitors, not by restoring scanner/token-span inference.
 
 ## Verification
@@ -219,7 +219,7 @@ mvn -pl cli -am -Dtest=CorrectnessFixtureRunnerTest#allCorrectnessFixturesPassGo
 
 mvn -pl cli -am -Dtest='DataLineageAuditGeneratorTest,CorrectnessSummaryGeneratorTest' -DupdateDataLineageAudit=true -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test
 
-mvn -pl cli -am -Dtest=FullGrammerSqlBehaviorTest#postgresqlCteProjectionThroughDerivedTableUsesSingleRowsetDefaultColumnSource -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl cli -am -Dtest=FullGrammarSqlBehaviorTest#postgresqlCteProjectionThroughDerivedTableUsesSingleRowsetDefaultColumnSource -Dsurefire.failIfNoSpecifiedTests=false test
 
-mvn -pl cli -am -Dtest=FullGrammerSqlBehaviorTest#mysqlPropagatesCumulativeDerivedProjectionToPhysicalSources,FullGrammerSqlBehaviorTest#postgresqlCteProjectionThroughDerivedTableUsesSingleRowsetDefaultColumnSource -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl cli -am -Dtest=FullGrammarSqlBehaviorTest#mysqlPropagatesCumulativeDerivedProjectionToPhysicalSources,FullGrammarSqlBehaviorTest#postgresqlCteProjectionThroughDerivedTableUsesSingleRowsetDefaultColumnSource -Dsurefire.failIfNoSpecifiedTests=false test
 ```

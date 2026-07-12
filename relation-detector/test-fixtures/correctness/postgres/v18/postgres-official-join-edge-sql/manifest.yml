@@ -1,5 +1,5 @@
 id: postgres18-official-join-edge-sql
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/18
 databaseVersion: 18.1
 databaseType: POSTGRESQL

@@ -1,7 +1,7 @@
 id: postgres16-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/16
 databaseVersion: 16.5
 sourceType: PROCEDURE

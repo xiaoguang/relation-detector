@@ -126,7 +126,11 @@
     "VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id",
     "VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id",
     "VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear",
+    "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month",
     "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name",
+    "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter",
+    "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year",
+    "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year",
     "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code",
     "VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start"
   ],

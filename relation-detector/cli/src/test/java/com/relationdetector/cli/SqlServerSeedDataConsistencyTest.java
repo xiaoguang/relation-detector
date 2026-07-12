@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.sqlserver.script.SqlServerScriptParser;
+import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 import com.relationdetector.sqlserver.tokenevent.SqlServerRelationSqlLexer;
 import com.relationdetector.sqlserver.tokenevent.SqlServerRelationSqlParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
@@ -139,9 +139,9 @@ class SqlServerSeedDataConsistencyTest {
         Map<String, Boolean> identityEnabled = new LinkedHashMap<>();
         String[] activeIdentityTable = {null};
         long[] sequence = {0L};
-        SqlServerScriptParser splitter = new SqlServerScriptParser();
+        SqlServerScriptFramer splitter = new SqlServerScriptFramer();
         for (Path file : files) {
-            for (var statement : splitter.parse(new ScriptParseRequest(
+            for (var statement : splitter.frame(new ScriptFrameRequest(
                     Files.readString(file), file.toString(), StatementSourceType.PLAIN_SQL)).statements()) {
                 SqlServerRelationSqlParser.Tsql_fileContext root = parse(statement.sql());
                 for (SqlServerRelationSqlParser.StatementContext context : root.statement()) {

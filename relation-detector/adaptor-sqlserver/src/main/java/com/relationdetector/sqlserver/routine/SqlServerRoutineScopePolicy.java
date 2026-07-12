@@ -1,13 +1,13 @@
 package com.relationdetector.sqlserver.routine;
 
-import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
+import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 
 /** Shared T-SQL routine scope rules. */
 public final class SqlServerRoutineScopePolicy {
     private SqlServerRoutineScopePolicy() {
     }
 
-    public static void markParameterOrVariable(FullGrammerTypedSqlEventSink sink, String identifier) {
+    public static void markParameterOrVariable(FullGrammarEventFacade sink, String identifier) {
         if (identifier == null || identifier.isBlank()) {
             return;
         }

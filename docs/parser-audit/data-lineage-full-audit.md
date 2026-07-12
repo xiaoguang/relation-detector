@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 1198 |
-| EXISTING_GOLD | 405 |
+| EXISTING_GOLD | 411 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 793 |
+| NOT_APPLICABLE | 787 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -3513,8 +3513,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | local temporary table sources are excluded from Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -3523,7 +3523,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id->jsh_temp_mock_plan.user_id`
+- `CONTROL:CASE_WHEN:jsh_temp_hour_pdf.h_cdf,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+- `VALUE:DIRECT:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 
 **Extractor Candidate Fingerprints**
 
@@ -6290,6 +6293,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
@@ -6297,6 +6301,7 @@ SELECT
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -6486,10 +6491,12 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:serial_numbers.status->serial_number_logs.to_status`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 
 **Extractor Candidate Fingerprints**
@@ -9030,6 +9037,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
@@ -9037,6 +9045,7 @@ SELECT
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -9101,8 +9110,8 @@ CREATE PROCEDURE sp_create_department(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -9111,7 +9120,8 @@ CREATE PROCEDURE sp_create_department(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -9218,10 +9228,12 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:serial_numbers.status->serial_number_logs.to_status`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 
 **Extractor Candidate Fingerprints**
@@ -9344,8 +9356,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -9354,7 +9366,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
+- `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary`
+- `VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary`
 
 **Extractor Candidate Fingerprints**
 
@@ -10236,6 +10251,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:employees.id->cashier_journals.counterparty`
 - `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
@@ -10243,6 +10259,7 @@ SELECT
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:employees.name->cashier_journals.counterparty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -10307,8 +10324,8 @@ CREATE PROCEDURE sp_create_department(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -10317,7 +10334,8 @@ CREATE PROCEDURE sp_create_department(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -10391,10 +10409,12 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:serial_numbers.status->serial_number_logs.to_status`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 
 **Extractor Candidate Fingerprints**
@@ -10484,8 +10504,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -10494,7 +10514,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
+- `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `VALUE:CONCAT_FORMAT:damage_reports.report_no->vouchers.summary`
+- `VALUE:CONCAT_FORMAT:sales_returns.return_no->vouchers.summary`
 
 **Extractor Candidate Fingerprints**
 
@@ -12835,7 +12858,7 @@ INSERT INTO sales_fact (
     warehouse_id,
 ```
 
-## `oracle12c-fullgrammer-smoke-sql`
+## `oracle12c-fullgrammar-smoke-sql`
 
 | Field | Value |
 | --- | --- |
@@ -12844,8 +12867,8 @@ INSERT INTO sales_fact (
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-fullgrammer-smoke-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-fullgrammer-smoke-sql/expected-lineage.json` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-fullgrammar-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-fullgrammar-smoke-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
@@ -14214,7 +14237,7 @@ INSERT INTO sales_fact (
     warehouse_id,
 ```
 
-## `oracle19c-fullgrammer-smoke-sql`
+## `oracle19c-fullgrammar-smoke-sql`
 
 | Field | Value |
 | --- | --- |
@@ -14223,8 +14246,8 @@ INSERT INTO sales_fact (
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-fullgrammer-smoke-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-fullgrammer-smoke-sql/expected-lineage.json` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-fullgrammar-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-fullgrammar-smoke-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
@@ -15622,7 +15645,7 @@ CREATE TABLE fast_lookup (
 ) MEMOPTIMIZE FOR READ;
 ```
 
-## `oracle21c-fullgrammer-smoke-sql`
+## `oracle21c-fullgrammar-smoke-sql`
 
 | Field | Value |
 | --- | --- |
@@ -15631,8 +15654,8 @@ CREATE TABLE fast_lookup (
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-fullgrammer-smoke-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-fullgrammer-smoke-sql/expected-lineage.json` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-fullgrammar-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-fullgrammar-smoke-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
@@ -17032,7 +17055,7 @@ BEGIN
 END;
 ```
 
-## `oracle26ai-fullgrammer-smoke-sql`
+## `oracle26ai-fullgrammar-smoke-sql`
 
 | Field | Value |
 | --- | --- |
@@ -17041,8 +17064,8 @@ END;
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-fullgrammer-smoke-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-fullgrammer-smoke-sql/expected-lineage.json` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-fullgrammar-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-fullgrammar-smoke-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
@@ -22488,8 +22511,9 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -22523,8 +22547,9 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -23088,7 +23113,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -23875,8 +23901,8 @@ SELECT *
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -23885,7 +23911,13 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
 
 **Extractor Candidate Fingerprints**
 
@@ -25176,7 +25208,7 @@ DECLARE
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -25881,9 +25913,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
 - `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
-- `VALUE:AGGREGATE:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -27447,6 +27478,7 @@ DECLARE
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
@@ -27479,6 +27511,7 @@ DECLARE
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
 - `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -27517,7 +27550,11 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
@@ -28869,9 +28906,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
 - `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
-- `VALUE:AGGREGATE:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -30892,6 +30928,7 @@ DECLARE
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
@@ -30924,6 +30961,7 @@ DECLARE
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
 - `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -30962,7 +31000,11 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
@@ -32314,9 +32356,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
 - `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
-- `VALUE:AGGREGATE:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -34301,6 +34342,7 @@ DECLARE
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
@@ -34333,6 +34375,7 @@ DECLARE
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
 - `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -34371,7 +34414,11 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
@@ -35237,6 +35284,7 @@ DECLARE
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
@@ -35269,6 +35317,7 @@ DECLARE
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
 - `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -35307,7 +35356,11 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 

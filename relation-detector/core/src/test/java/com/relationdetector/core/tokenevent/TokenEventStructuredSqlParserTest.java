@@ -67,7 +67,7 @@ class TokenEventStructuredSqlParserTest {
 
         StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(statement, null);
-        List<RelationshipCandidate> relationships = new TokenEventRelationExtractor().extract(statement, result);
+        List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor().extract(statement, result);
 
         assertTrue(relationships.stream().anyMatch(relation ->
                         relation.source().displayName().equals("orders.user_id")
@@ -90,7 +90,7 @@ class TokenEventStructuredSqlParserTest {
         SqlStatementRecord statement = record(sql, StatementSourceType.VIEW);
         StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null);
 
-        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, result);
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor().extract(statement, result);
 
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
@@ -122,7 +122,7 @@ class TokenEventStructuredSqlParserTest {
                 List.of(),
                 java.util.Map.of());
 
-        assertTrue(new TokenEventRelationExtractor().extract(statement, result).isEmpty(),
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, result).isEmpty(),
                 "shop.orders projection must not be available through the bare orders key");
     }
 
@@ -141,7 +141,7 @@ class TokenEventStructuredSqlParserTest {
                         new ExpressionSource("shop.customers", "id"),
                         List.of(), List.of(), "", "INNER", List.of(), false)), List.of(), java.util.Map.of());
 
-        List<RelationshipCandidate> relationships = new TokenEventRelationExtractor().extract(statement, result);
+        List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor().extract(statement, result);
 
         assertEquals(1, relationships.size());
         assertTrue(relationships.get(0).source().displayName().startsWith("shop."));
@@ -205,9 +205,9 @@ class TokenEventStructuredSqlParserTest {
         String sql = "SELECT * FROM orders o JOIN users u ON o.user_id = u.id";
         SqlStatementRecord statement = record(sql, StatementSourceType.NATIVE_LOG);
 
-        TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
+        StructuredSqlRelationshipParser parser = new StructuredSqlRelationshipParser(
                 new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
-                new TokenEventRelationExtractor());
+                new StructuredRelationshipExtractor());
 
         List<RelationshipCandidate> relationships = parser.parse(statement, null);
 

@@ -1,7 +1,7 @@
 id: sqlserver2016-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl
 databaseType: SQLSERVER
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2016
 databaseVersion: 2016
 sourceType: DDL_FILE

@@ -32,8 +32,8 @@ These checks prove structural and schema consistency. Parser capability claims s
 Status: `RESOLVED_PARSER_GAP`
 
 - Token-event now has a typed `ALTER TABLE ... ADD ... FOREIGN KEY` path.
-- Full-grammer DDL collection handles the same typed constraint context.
-- `dbo.departments.manager_id -> dbo.employees.id` and DDL column inventory are covered by token-event and all five full-grammer versions.
+- Full-grammar DDL collection handles the same typed constraint context.
+- `dbo.departments.manager_id -> dbo.employees.id` and DDL column inventory are covered by token-event and all five full-grammar versions.
 
 ### 2. SQL Server sample-data schema inconsistency
 
@@ -70,7 +70,7 @@ Status: `RESOLVED_SQL_ASSET_GAP`
 
 Status: `RESOLVED_PARSER_GAP`
 
-Token-event and full-grammer separate scalar-subquery projection sources (`VALUE`) from JOIN/WHERE/correlated locator sources (`CONTROL`). Nested alias scopes do not invent `product_batches.order_id`, and negative arithmetic keeps its actual operand.
+Token-event and full-grammar separate scalar-subquery projection sources (`VALUE`) from JOIN/WHERE/correlated locator sources (`CONTROL`). Nested alias scopes do not invent `product_batches.order_id`, and negative arithmetic keeps its actual operand.
 
 ### 8. CASE/IF/function transform semantics
 
@@ -82,7 +82,7 @@ Status: `RESOLVED_FOR_AUDITED_FAMILIES`
 
 Status: `RESOLVED_PARSER_GAP`
 
-The four confirmed natural relations are covered independently by token-event and full-grammer:
+The four confirmed natural relations are covered independently by token-event and full-grammar:
 
 - `cashier_journals.reference_id -> sales_orders.id`
 - `cashier_journals.reference_id -> purchase_orders.id`
@@ -107,7 +107,7 @@ Status: `RESOLVED_OBSERVABILITY_GAP`
 
 Status: `RESOLVED_SHARED_CORE_GAP`
 
-`DerivedPathInferenceService` indexes direct directional facts from the top-level naming pool. A derived relationship no longer depends on whether a parser happened to attach the direct `NAMING_MATCH` summary to an intermediate relationship. SQL Server token-event and all five full-grammer profiles now produce the same `sales_fact.category_dim_id -> product_categories.id` transitive naming fact, and every derived relationship reference resolves to the top-level naming evidence id.
+`DerivedPathInferenceService` indexes direct directional facts from the top-level naming pool. A derived relationship no longer depends on whether a parser happened to attach the direct `NAMING_MATCH` summary to an intermediate relationship. SQL Server token-event and all five full-grammar profiles now produce the same `sales_fact.category_dim_id -> product_categories.id` transitive naming fact, and every derived relationship reference resolves to the top-level naming evidence id.
 
 ### 13. Derived lineage canonical facts and observations
 

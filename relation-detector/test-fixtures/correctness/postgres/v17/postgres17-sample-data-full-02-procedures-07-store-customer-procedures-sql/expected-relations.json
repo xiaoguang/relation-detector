@@ -4,9 +4,9 @@
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_JOIN",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_JOIN",
     "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH"

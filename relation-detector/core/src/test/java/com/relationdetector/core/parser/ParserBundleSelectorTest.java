@@ -30,13 +30,13 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
-import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
+import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
+import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
 import com.relationdetector.core.scan.ScanConfig;
 
 class ParserBundleSelectorTest {
     @Test
-    void tokenEventModeForcesTokenEventBundleWithoutCallingFullGrammer() {
+    void tokenEventModeForcesTokenEventBundleWithoutCallingFullGrammar() {
         ScanConfig config = config(DatabaseType.MYSQL, "token-event", "mysql/8.0", "8.0.36");
         AtomicInteger fullSqlCalls = new AtomicInteger();
         ParserBundle bundle = new ParserBundleSelector(List.of(module("mysql-8.0", DatabaseType.MYSQL, 8, 0,
@@ -47,43 +47,43 @@ class ParserBundleSelectorTest {
 
         assertEquals("token-sql", parsed.backend());
         assertEquals("token-event", bundle.selection().selectedMode());
-        assertEquals(0, fullSqlCalls.get(), "token-event mode must not instantiate/use full-grammer parser");
+        assertEquals(0, fullSqlCalls.get(), "token-event mode must not instantiate/use full-grammar parser");
     }
 
     @Test
-    void autoModeSelectsFullGrammerWhenVersionProfileExists() {
+    void autoModeSelectsFullGrammarWhenVersionProfileExists() {
         ScanConfig config = config(DatabaseType.POSTGRESQL, "auto", "", "18.1");
         ParserBundle bundle = new ParserBundleSelector(List.of(module("postgresql-18", DatabaseType.POSTGRESQL, 18, 0,
                         "pg18-sql", "pg18-ddl", new AtomicInteger())))
                 .select(new TestAdaptor(DatabaseType.POSTGRESQL), config, context());
 
-        assertEquals("full-grammer", bundle.selection().selectedMode());
+        assertEquals("full-grammar", bundle.selection().selectedMode());
         assertEquals("postgresql-18", bundle.selection().selectedGrammarProfile());
         StructuredParseResult sql = bundle.sqlParser().parseSql(statement(), null);
-        assertEquals("FULL_GRAMMER_PROFILE_PRIMARY", sql.backend());
+        assertEquals("FULL_GRAMMAR_PROFILE_PRIMARY", sql.backend());
         assertEquals("postgresql-18", sql.attributes().get("selectedGrammarProfile"));
         assertEquals("pg18-ddl", bundle.ddlParser().parseDdl("CREATE TABLE t(id int)", "ddl.sql", null).backend());
     }
 
     @Test
-    void autoModeSelectsOracleFullGrammerWhenVersionProfileExists() {
+    void autoModeSelectsOracleFullGrammarWhenVersionProfileExists() {
         ScanConfig config = config(DatabaseType.ORACLE, "auto", "", "26.1");
         ParserBundle bundle = new ParserBundleSelector(List.of(module("oracle-26ai", DatabaseType.ORACLE, 26, 0,
                         "oracle26-sql", "oracle26-ddl", new AtomicInteger())))
                 .select(new TestAdaptor(DatabaseType.ORACLE), config, context());
 
-        assertEquals("full-grammer", bundle.selection().selectedMode());
+        assertEquals("full-grammar", bundle.selection().selectedMode());
         assertEquals("oracle-26ai", bundle.selection().selectedGrammarProfile());
         StructuredParseResult sql = bundle.sqlParser().parseSql(statement(), null);
-        assertEquals("FULL_GRAMMER_PROFILE_PRIMARY", sql.backend());
+        assertEquals("FULL_GRAMMAR_PROFILE_PRIMARY", sql.backend());
         assertEquals("oracle-26ai", sql.attributes().get("selectedGrammarProfile"));
         assertEquals("oracle26-ddl", bundle.ddlParser().parseDdl("CREATE TABLE t(id number)", "ddl.sql", null).backend());
     }
 
     @Test
-    void explicitFullGrammerFallsBackToTokenEventWhenProfileIsUnsupported() {
+    void explicitFullGrammarFallsBackToTokenEventWhenProfileIsUnsupported() {
         List<WarningMessage> warnings = new java.util.ArrayList<>();
-        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammer", "", "20.0");
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "20.0");
         ParserBundle bundle = new ParserBundleSelector(List.of(module("postgresql-18", DatabaseType.POSTGRESQL, 18, 0,
                         "pg18-sql", "pg18-ddl", new AtomicInteger())))
                 .select(new TestAdaptor(DatabaseType.POSTGRESQL), config, context(warnings));
@@ -96,9 +96,9 @@ class ParserBundleSelectorTest {
     }
 
     @Test
-    void selectedFullGrammerHardFailureFallsBackToTokenEventAtRuntime() {
+    void selectedFullGrammarHardFailureFallsBackToTokenEventAtRuntime() {
         List<WarningMessage> warnings = new java.util.ArrayList<>();
-        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammer", "", "18.1");
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
         ParserBundle bundle = new ParserBundleSelector(List.of(failingSqlModule(
                         "postgresql-18", DatabaseType.POSTGRESQL, 18, 0)))
                 .select(new TestAdaptor(DatabaseType.POSTGRESQL), config, context(warnings));
@@ -108,7 +108,7 @@ class ParserBundleSelectorTest {
         assertEquals("token-sql", parsed.backend());
         assertEquals("token-event", parsed.attributes().get("parserModeSelected"));
         assertTrue(String.valueOf(parsed.attributes().get("parserFallbackReason"))
-                .contains("Full-grammer SQL parser failed"));
+                .contains("Full-grammar SQL parser failed"));
         assertTrue(warnings.stream().anyMatch(warning -> warning.code().equals("PARSER_MODE_FALLBACK")));
     }
 
@@ -135,7 +135,7 @@ class ParserBundleSelectorTest {
         return new AdaptorContext(new ScanScope(null, null, List.of(), List.of()), Map.of(), warnings::add);
     }
 
-    private FullGrammerDialectModule module(
+    private FullGrammarDialectModule module(
             String id,
             DatabaseType databaseType,
             int major,
@@ -145,7 +145,7 @@ class ParserBundleSelectorTest {
             AtomicInteger sqlCalls
     ) {
         SqlGrammarProfile profile = new SqlGrammarProfile(id, databaseType, major, minor, Set.of());
-        return new FullGrammerDialectModule() {
+        return new FullGrammarDialectModule() {
             @Override
             public SqlGrammarProfile profile() {
                 return profile;
@@ -173,14 +173,14 @@ class ParserBundleSelectorTest {
         };
     }
 
-    private FullGrammerDialectModule failingSqlModule(
+    private FullGrammarDialectModule failingSqlModule(
             String id,
             DatabaseType databaseType,
             int major,
             int minor
     ) {
         SqlGrammarProfile profile = new SqlGrammarProfile(id, databaseType, major, minor, Set.of());
-        return new FullGrammerDialectModule() {
+        return new FullGrammarDialectModule() {
             @Override
             public SqlGrammarProfile profile() {
                 return profile;
@@ -249,7 +249,7 @@ class ParserBundleSelectorTest {
                             databaseType.name(), statement.sourceName(), List.of(), List.of(), Map.of())),
                     Optional.of((ddl, sourceName, context) -> new StructuredParseResult("token-ddl",
                             databaseType.name(), sourceName, List.of(), List.of(), Map.of())),
-                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
 
         @Override

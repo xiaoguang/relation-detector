@@ -14,30 +14,30 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
-import com.relationdetector.core.fullgrammer.FullGrammerParserBundleFactory;
-import com.relationdetector.core.fullgrammer.FullGrammerProfileRequest;
-import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
+import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
+import com.relationdetector.core.fullgrammar.FullGrammarParserBundleFactory;
+import com.relationdetector.core.fullgrammar.FullGrammarProfileRequest;
+import com.relationdetector.core.fullgrammar.SqlGrammarProfileSelection;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
  * Runtime parser bundle selector.
  *
  * <p>CN: 对外只暴露 parser.mode/profile/version；本类一次性组合 SQL 与 DDL parser，
- * 并把 full-grammer primary 与 token-event fallback 的诊断口径统一起来。
+ * 并把 full-grammar primary 与 token-event fallback 的诊断口径统一起来。
  *
  * <p>EN: Runtime parser bundle selector. It turns the public
  * parser.mode/profile/version configuration into one SQL+DDL parser bundle and
- * centralizes diagnostics for full-grammer primary plus token-event fallback.
+ * centralizes diagnostics for full-grammar primary plus token-event fallback.
  */
 public final class ParserBundleSelector {
-    private final Collection<FullGrammerDialectModule> modules;
+    private final Collection<FullGrammarDialectModule> modules;
 
     public ParserBundleSelector() {
-        this(com.relationdetector.core.fullgrammer.SqlGrammarProfileRegistry.modules());
+        this(com.relationdetector.core.fullgrammar.SqlGrammarProfileRegistry.modules());
     }
 
-    public ParserBundleSelector(Collection<FullGrammerDialectModule> modules) {
+    public ParserBundleSelector(Collection<FullGrammarDialectModule> modules) {
         this.modules = modules == null ? List.of() : List.copyOf(modules);
     }
 
@@ -56,14 +56,14 @@ public final class ParserBundleSelector {
                     selection);
         }
 
-        FullGrammerParserBundleFactory.CreatedBundle created = FullGrammerParserBundleFactory.create(
+        FullGrammarParserBundleFactory.CreatedBundle created = FullGrammarParserBundleFactory.create(
                 profileRequest(config),
                 tokenSql,
                 tokenDdl,
                 modules);
         ParserSelectionResult selection = withRequestedMode(config, requestedMode, created.selection());
         if ("token-event".equals(selection.selectedMode())) {
-            if ("full-grammer".equals(requestedMode)) {
+            if ("full-grammar".equals(requestedMode)) {
                 warn(context, "PARSER_MODE_FALLBACK", selection.fallbackReason(), "", 0);
             }
             return new ParserBundle(
@@ -78,8 +78,8 @@ public final class ParserBundleSelector {
                 selection);
     }
 
-    private static FullGrammerProfileRequest profileRequest(ScanConfig config) {
-        return FullGrammerProfileRequest.builder()
+    private static FullGrammarProfileRequest profileRequest(ScanConfig config) {
+        return FullGrammarProfileRequest.builder()
                 .databaseType(config.databaseType)
                 .configuredProfile(config.grammarProfile)
                 .configuredVersion(config.databaseVersion)
@@ -114,7 +114,7 @@ public final class ParserBundleSelector {
         if ((selectedProfile == null || selectedProfile.isBlank())
                 && profileSelection != null
                 && profileSelection.profile() != null
-                && "full-grammer".equals(selected.selectedMode())) {
+                && "full-grammar".equals(selected.selectedMode())) {
             selectedProfile = profileSelection.profile().id();
         }
         return new ParserSelectionResult(
@@ -133,15 +133,15 @@ public final class ParserBundleSelector {
     }
 
     private static StructuredSqlParser fallbackSqlParser(
-            StructuredSqlParser fullGrammer,
+            StructuredSqlParser fullGrammar,
             StructuredSqlParser tokenEvent,
             ParserSelectionResult fullSelection
     ) {
         return (statement, context) -> {
             try {
-                return withAttributes(fullGrammer.parseSql(statement, context), fullSelection);
+                return withAttributes(fullGrammar.parseSql(statement, context), fullSelection);
             } catch (RuntimeException ex) {
-                String reason = "Full-grammer SQL parser failed; using token-event parser: " + message(ex);
+                String reason = "Full-grammar SQL parser failed; using token-event parser: " + message(ex);
                 ParserSelectionResult fallback = fullSelection.runtimeFallback(reason);
                 warn(context, "PARSER_MODE_FALLBACK", reason, statement.sourceName(), statement.startLine());
                 return withAttributes(tokenEvent.parseSql(statement, context), fallback);
@@ -150,15 +150,15 @@ public final class ParserBundleSelector {
     }
 
     private static StructuredDdlParser fallbackDdlParser(
-            StructuredDdlParser fullGrammer,
+            StructuredDdlParser fullGrammar,
             StructuredDdlParser tokenEvent,
             ParserSelectionResult fullSelection
     ) {
         return (ddl, sourceName, context) -> {
             try {
-                return withAttributes(fullGrammer.parseDdl(ddl, sourceName, context), fullSelection);
+                return withAttributes(fullGrammar.parseDdl(ddl, sourceName, context), fullSelection);
             } catch (RuntimeException ex) {
-                String reason = "Full-grammer DDL parser failed; using token-event parser: " + message(ex);
+                String reason = "Full-grammar DDL parser failed; using token-event parser: " + message(ex);
                 ParserSelectionResult fallback = fullSelection.runtimeFallback(reason);
                 warn(context, "PARSER_MODE_FALLBACK", reason, sourceName, 0);
                 return withAttributes(tokenEvent.parseDdl(ddl, sourceName, context), fallback);

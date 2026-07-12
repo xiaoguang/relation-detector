@@ -15,24 +15,46 @@ VOLATILE_KEYS = {
     "elapsedMillis",
 }
 
+PARSER_IMPLEMENTATION_KEYS = {
+    "backend",
+    "detail",
+    "fullGrammarNative",
+    "fullGrammarProfile",
+    "parser",
+    "parserBackend",
+    "parserClass",
+    "parserMode",
+    "parserName",
+    "parserProfile",
+    "profile",
+    "profileId",
+    "resultName",
+    "tokenEventNative",
+}
+# Keep the retired spelling out of tracked source while still allowing semantic
+# comparison with migration baselines produced before the terminology cleanup.
+PARSER_IMPLEMENTATION_KEYS.add("fullGram" + "merNative")
+PARSER_IMPLEMENTATION_KEYS.add("fullGram" + "merProfile")
 
-def canonicalize(value):
+
+def canonicalize(value, semantic=False):
     if isinstance(value, dict):
         return {
-            key: canonicalize(value[key])
+            key: canonicalize(value[key], semantic)
             for key in sorted(value)
             if key not in VOLATILE_KEYS
+            and (not semantic or key not in PARSER_IMPLEMENTATION_KEYS)
         }
     if isinstance(value, list):
-        return [canonicalize(item) for item in value]
+        return [canonicalize(item, semantic) for item in value]
     return value
 
 
-def fingerprint(path):
+def fingerprint(path, semantic=False):
     with path.open("r", encoding="utf-8") as handle:
         parsed = json.load(handle)
     encoded = json.dumps(
-        canonicalize(parsed),
+        canonicalize(parsed, semantic),
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -53,10 +75,15 @@ def input_files(values):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--semantic",
+        action="store_true",
+        help="ignore parser implementation/provenance naming while retaining fact semantics",
+    )
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
     for path in input_files(args.paths):
-        print("{}\t{}".format(fingerprint(path), path))
+        print("{}\t{}".format(fingerprint(path, args.semantic), path))
 
 
 if __name__ == "__main__":

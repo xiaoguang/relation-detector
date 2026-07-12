@@ -1,7 +1,7 @@
 id: postgres17-sample-data-enterprise-extension-ddl
 databaseType: POSTGRESQL
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: DDL_FILE

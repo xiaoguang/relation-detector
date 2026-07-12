@@ -1,7 +1,7 @@
 id: oracle21c-semantic-equivalent-ddl-fk-index-ddl
 databaseType: ORACLE
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: oracle/21c
 databaseVersion: 21.3
 sourceType: DDL_FILE

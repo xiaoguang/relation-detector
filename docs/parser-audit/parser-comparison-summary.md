@@ -14,30 +14,30 @@ This document separates three questions that used to be mixed together:
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | common token-event sample-data | 9 | 6 / 3 | 321 | 109 | 250 | 0 |
 | MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 331 | 294 | 244 | 0 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 |
+| MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 331 | 294 | 244 | 0 |
+| MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
+| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 366 | 257 | 248 | 0 |
+| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 366 | 257 | 248 | 0 |
+| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
 | Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 |
 | SQL Server token-event root sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
+| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
+| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
+| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
+| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
+| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 |
 
 Interpretation:
 
-- MySQL token-event and MySQL 5.7/8.0 full-grammer now cover the same sample-data surface. Their remaining differences come from natural 5.7/8.0 SQL rewrites, versioned DDL/routine coverage, and parser capability differences. The semantic-equivalent benchmark is the equality check; this table is a broad capability snapshot.
-- PostgreSQL token-event and PostgreSQL full-grammer are close on sample-data lineage. v16/v17 have one extra non-trivial self-update lineage from the version-specific `pg16_generated_margin_demo.sales_amount = target.sales_amount * 1.05` SQL; that is an expected asset/version delta, not a parser false positive.
-- Oracle token-event and the four full-grammer profiles now match on direct `Rel/Lin/Name` counts and on the audited direct relationship set. Token-event supports `OPEN cursor FOR SELECT` and `LISTAGG ... WITHIN GROUP`; full-grammer traverses SELECT-list scalar subqueries and rejects function-to-function expressions as direct column equality.
-- SQL Server natural assets now conform to their DDL contract. Token-event and all five full-grammer profiles produce the same audited direct relationship, lineage fingerprint, and direct naming-id sets on the natural corpus.
+- MySQL token-event and MySQL 5.7/8.0 full-grammar now cover the same sample-data surface. Their remaining differences come from natural 5.7/8.0 SQL rewrites, versioned DDL/routine coverage, and parser capability differences. The semantic-equivalent benchmark is the equality check; this table is a broad capability snapshot.
+- PostgreSQL token-event and PostgreSQL full-grammar are close on sample-data lineage. v16/v17 have one extra non-trivial self-update lineage from the version-specific `pg16_generated_margin_demo.sales_amount = target.sales_amount * 1.05` SQL; that is an expected asset/version delta, not a parser false positive.
+- Oracle token-event and the four full-grammar profiles now match on direct `Rel/Lin/Name` counts and on the audited direct relationship set. Token-event supports `OPEN cursor FOR SELECT` and `LISTAGG ... WITHIN GROUP`; full-grammar traverses SELECT-list scalar subqueries and rejects function-to-function expressions as direct column equality.
+- SQL Server natural assets now conform to their DDL contract. Token-event and all five full-grammar profiles produce the same audited direct relationship, lineage fingerprint, and direct naming-id sets on the natural corpus.
 - `sample-data` counts should not be used as a semantic equality score because each dialect has native syntax and version-specific assets.
 
 ### Derived-enabled Snapshot
@@ -48,23 +48,23 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | common token-event sample-data | 9 | 6 / 3 | 321 | 109 | 250 | 0 | 1349 | 7 | 962 |
 | MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 | 1950 | 64 | 1304 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 331 | 294 | 244 | 0 | 1588 | 75 | 1098 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 | 1950 | 64 | 1304 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 | 2025 | 61 | 1320 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 | 2025 | 61 | 1320 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 362 | 253 | 248 | 0 | 2025 | 61 | 1320 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 362 | 252 | 248 | 0 | 2025 | 61 | 1320 |
+| MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 331 | 294 | 244 | 0 | 1588 | 75 | 1098 |
+| MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 298 | 248 | 0 | 1950 | 64 | 1304 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 366 | 256 | 248 | 0 | 2030 | 61 | 1324 |
+| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 366 | 257 | 248 | 0 | 2030 | 61 | 1324 |
+| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 366 | 257 | 248 | 0 | 2030 | 61 | 1324 |
+| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 366 | 256 | 248 | 0 | 2030 | 61 | 1324 |
 | Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 365 | 247 | 248 | 0 | 2001 | 53 | 1316 |
 | SQL Server token-event root sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
+| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 337 | 310 | 245 | 0 | 1606 | 130 | 1054 |
 
 Derived relationship now uses reverse referenced-by traversal internally and still emits FK-like forward output. The large SQL Server derived relationship inflation caused by earlier forward FK + identity bridge traversal is removed; derived naming evidence is now visible as `TRANSITIVE_NAMING_PATH`.
 
@@ -81,17 +81,17 @@ Derived relationship now uses reverse referenced-by traversal internally and sti
 | `mrp-run` | 2 | 5 | 12 parser categories | `MATCHED` |
 | `picking-task` | 3 | 6 | 12 parser categories | `MATCHED` |
 | `return-refund` | 2 | 6 | 12 parser categories | `MATCHED` |
-| `relation-probe` | 9 | 0 | SQL Server full-grammer v2016/v2017/v2019/v2022/v2025 | `MATCHED` |
+| `relation-probe` | 9 | 0 | SQL Server full-grammar v2016/v2017/v2019/v2022/v2025 | `MATCHED` |
 
 The 12 shared ERP parser categories are:
 
 - common token-event
 - MySQL token-event root
-- MySQL full-grammer v8_0
+- MySQL full-grammar v8_0
 - PostgreSQL token-event root
-- PostgreSQL full-grammer v16 / v17 / v18
+- PostgreSQL full-grammar v16 / v17 / v18
 - Oracle token-event root
-- Oracle full-grammer v12c / v19c / v21c / v26ai
+- Oracle full-grammar v12c / v19c / v21c / v26ai
 
 SQL Server currently has an additional `relation-probe` semantic-equivalent scenario for high-density T-SQL relationship detection across `v2016` through `v2025`. Current conclusion: no confirmed parser gap is exposed by the semantic-equivalent scenarios. If a future scenario has matching business semantics but different fingerprints, that is a parser gap candidate unless the SQL translation itself is not semantically equivalent.
 
@@ -99,10 +99,10 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 
 | Area | Current evidence | Classification | Next action |
 | --- | --- | --- | --- |
-| MySQL token-event vs MySQL full-grammer on broad sample-data | both `361 / 288 / 248` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage fingerprints, and direct naming ids match between root token-event and v8_0 full. |
-| PostgreSQL token-event vs PostgreSQL full-grammer on broad sample-data | root/v18 `356 / 250`; v16/v17 `356 / 251` | `EXPECTED_VERSION_DELTA` | v16/v17 carry one additional non-trivial self-update lineage in version-specific SQL. |
-| Oracle full-grammer vs Oracle token-event on broad sample-data | all profiles `365 / 247 / 248` | `AUDITED_SET_MATCH` | Relationship, lineage flow/transform, and naming id sets match across root and all four full profiles. |
-| SQL Server full-grammer vs token-event on broad sample-data | all profiles `337 / 310 / 245` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage fingerprints, and direct naming ids match across root and all five full profiles. |
+| MySQL token-event vs MySQL full-grammar on broad sample-data | both `361 / 298 / 248` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage fingerprints, and direct naming ids match between root token-event and v8_0 full. |
+| PostgreSQL token-event vs PostgreSQL full-grammar on broad sample-data | root/v18 `366 / 256`; v16/v17 `366 / 257` | `EXPECTED_VERSION_DELTA` | v16/v17 carry one additional non-trivial self-update lineage in version-specific SQL. |
+| Oracle full-grammar vs Oracle token-event on broad sample-data | all profiles `365 / 247 / 248` | `AUDITED_SET_MATCH` | Relationship, lineage flow/transform, and naming id sets match across root and all four full profiles. |
+| SQL Server full-grammar vs token-event on broad sample-data | all profiles `337 / 310 / 245` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage fingerprints, and direct naming ids match across root and all five full profiles. |
 | Cross-dialect semantic-equivalent scenarios | all scenarios are `MATCHED` | `NO_CONFIRMED_GAP` | Use this benchmark as the primary proof that equivalent SQL can converge across parser categories. |
 | Dynamic SQL, parameters, local variables, temporary tables, pseudo rowsets | excluded by design in lineage audit | `EXPECTED_FILTERED_SCOPE` | Do not add these to physical relation / lineage golden unless a future design changes the semantic boundary. |
 

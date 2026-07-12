@@ -2,7 +2,7 @@
 
 ## Summary
 
-This audit records the Oracle sample-data and correctness-golden state after the full-grammer correction. It is intentionally factual: Oracle is wired into relation-detector with an adaptor, an Oracle-owned token-event grammar, sample-data directories, root token-event golden, and generated-parser-backed full-grammer sample-data fixtures. It is not a claim that the Oracle official SQL/PLSQL grammar is fully implemented.
+This audit records the Oracle sample-data and correctness-golden state after the full-grammar correction. It is intentionally factual: Oracle is wired into relation-detector with an adaptor, an Oracle-owned token-event grammar, sample-data directories, root token-event golden, and generated-parser-backed full-grammar sample-data fixtures. It is not a claim that the Oracle official SQL/PLSQL grammar is fully implemented.
 
 ## Scope
 
@@ -27,7 +27,7 @@ Each versioned `sample-data/oracle/<version>` directory still contains the trans
 | `03-data` | 5 | Seed and business data. |
 | `04-queries` | 12 | Business queries, DML examples and version-specific file. |
 
-These files feed both the root Oracle token-event baseline and the four Oracle versioned full-grammer golden directories. The versioned full-grammer path is independent: it uses each version's generated lexer/parser and typed visitor, not the Oracle token-event parser.
+These files feed both the root Oracle token-event baseline and the four Oracle versioned full-grammar golden directories. The versioned full-grammar path is independent: it uses each version's generated lexer/parser and typed visitor, not the Oracle token-event parser.
 
 The source `sample-data/oracle/<version>` directories remain complete ERP sample assets. The correctness directories are now a pruned execution set: they keep fixtures that produce relationship / lineage / diagnostics, plus fixtures needed for DDL parsing, version-only syntax and profile smoke. Pure seed-data, routine/function and metadata-only DDL slices that produce no relation, no lineage, and no diagnostic were removed from correctness to keep runtime manageable.
 
@@ -36,12 +36,12 @@ The source `sample-data/oracle/<version>` directories remain complete ERP sample
 | Golden group | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammar v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammar v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammar v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammar v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
 
-The versioned full-grammer counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
+The versioned full-grammar counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
 
 The sample-data-only cross-parser comparison is:
 
@@ -49,27 +49,27 @@ The sample-data-only cross-parser comparison is:
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | common token-event sample-data | 9 | 6 / 3 | 315 | 109 | 250 | 0 |
 | MySQL token-event root sample-data | 38 | 32 / 6 | 352 | 286 | 248 | 0 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 330 | 280 | 244 | 0 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 279 | 248 | 0 |
+| MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 330 | 280 | 244 | 0 |
+| MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 279 | 248 | 0 |
 | PostgreSQL token-event root sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
+| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
+| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
+| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
 | Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
 | SQL Server token-event root sample-data | 38 | 32 / 6 | 333 | 297 | 245 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
 
-The Oracle full-grammer sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
+The Oracle full-grammar sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 
-Current audit note: Oracle token-event and all four full-grammer profiles align on the audited direct relation/lineage/naming counts. Token-event scalar aggregate updates include their selected aggregate sources and predicate/correlated control sources. Routine `sourceStatementId` / `sourceBlockId` values are canonicalized without the historical trailing `)`.
+Current audit note: Oracle token-event and all four full-grammar profiles align on the audited direct relation/lineage/naming counts. Token-event scalar aggregate updates include their selected aggregate sources and predicate/correlated control sources. Routine `sourceStatementId` / `sourceBlockId` values are canonicalized without the historical trailing `)`.
 
 ## Translation Method
 
@@ -103,7 +103,7 @@ synced into correctness fixtures:
 | PostgreSQL aggregates / row limiting | Rewrote aggregate comments and executable SQL to Oracle `LISTAGG` / `FETCH FIRST ... ROWS ONLY` forms. | Query files. |
 | SQL/JSON access | Rewrote parser-facing JSON loops and field access to Oracle SQL/JSON style (`JSON_TABLE`, `JSON_VALUE`, `JSON_QUERY`) where used by sample routines. | Procedure files. |
 | Fixture source sync | Regenerated Oracle correctness `input.sql` files from `sample-data/oracle/<version>`. | 185 sample-data-backed fixtures. |
-| Full-grammer non-Oracle syntax cleanup | Removed PostgreSQL/MySQL structural grammar from Oracle full-grammer: `LIMIT`, `UNLOGGED`, `CONCURRENTLY`, PostgreSQL casts/arrows, `TABLESAMPLE`, `WITH ORDINALITY`, `DO NOTHING`, and materialized CTE syntax are no longer legal in versioned Oracle full-grammer. | `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai`. |
+| Full-grammar non-Oracle syntax cleanup | Removed PostgreSQL/MySQL structural grammar from Oracle full-grammar: `LIMIT`, `UNLOGGED`, `CONCURRENTLY`, PostgreSQL casts/arrows, `TABLESAMPLE`, `WITH ORDINALITY`, `DO NOTHING`, and materialized CTE syntax are no longer legal in versioned Oracle full-grammar. | `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai`. |
 
 The current Oracle sample-data is still **parser correctness coverage**, not a proven loadable Oracle
 ERP schema. A future runtime-smoke task should load `sample-data/oracle/19c` and
@@ -115,8 +115,8 @@ carry known PostgreSQL/MySQL executable syntax residue.
 
 | Classification | Current status | Explanation |
 | --- | --- | --- |
-| `PARSER_GAP_BACKLOG` | Open | Oracle token-event and full-grammer now cover the sample-data surface, but still need broader PL/SQL, `CONNECT BY`, packages, Oracle `MERGE`, and version-specific SQL coverage beyond the sample set. |
-| `OFFICIAL_GRAMMAR_BACKLOG` | Open | `oracle/12c|19c|21c|26ai` `.g4` files now include official version-boundary rules for selected 19c/21c/26ai syntax, but they are not complete Oracle grammar conversions. Official strict full-grammer still needs broader source-of-truth conversion from Oracle SQL/PLSQL documentation. |
+| `PARSER_GAP_BACKLOG` | Open | Oracle token-event and full-grammar now cover the sample-data surface, but still need broader PL/SQL, `CONNECT BY`, packages, Oracle `MERGE`, and version-specific SQL coverage beyond the sample set. |
+| `OFFICIAL_GRAMMAR_BACKLOG` | Open | `oracle/12c|19c|21c|26ai` `.g4` files now include official version-boundary rules for selected 19c/21c/26ai syntax, but they are not complete Oracle grammar conversions. Official strict full-grammar still needs broader source-of-truth conversion from Oracle SQL/PLSQL documentation. |
 | `RUNTIME_SQL_DIALECT_BACKLOG` | Narrowed | Known PostgreSQL/MySQL executable syntax residues are now blocked by the hygiene test. Real Oracle database loading and deeper PL/SQL/runtime behavior still need external smoke validation. |
 | `RUNTIME_SMOKE_PENDING` | Open | `sample-data/oracle/19c` and `sample-data/oracle/26ai` have not yet been loaded into a real Oracle instance in this environment. |
 | `REVIEW_NEEDED` | Closed | `docs/parser-audit/data-lineage-full-audit.md` now reports `PENDING_REVIEW | 0`. The reviewed Oracle procedure lineage candidates have been promoted into correctness golden after the SQL was rewritten into Oracle syntax. |
@@ -125,7 +125,7 @@ carry known PostgreSQL/MySQL executable syntax residue.
 
 - Do not restore scanner, regex, token-span parsing, or table/column name special cases to improve Oracle output.
 - Oracle token-event should gain capability through typed grammar and visitor only.
-- Oracle full-grammer should become strict by expanding the version-specific generated parser/visitor implementations; it must not delegate to token-event.
+- Oracle full-grammar should become strict by expanding the version-specific generated parser/visitor implementations; it must not delegate to token-event.
 - Low Oracle versions must not silently accept high-version-only syntax once version-specific syntax fixtures are introduced.
 - Dynamic SQL, PL/SQL local variables, parameters, pseudo rowsets and temporary tables must not enter physical relation/lineage golden.
 

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 class DialectGrammarArchitectureTest {
     @Test
-    void coreAntlrDirectoryContainsOnlyCommonGrammar() throws IOException {
+    void coreAntlrDirectoryContainsNoGrammarSources() throws IOException {
         Path root = repoRoot();
         Path coreAntlr = root.resolve("core/src/main/antlr4/com/relationdetector/core/antlr");
 
@@ -28,14 +28,14 @@ class DialectGrammarArchitectureTest {
                     .toList();
         }
 
-        assertTrue(grammars.contains(Path.of("common/CommonRelationSql.g4")),
-                "core must keep the portable common grammar");
+        assertTrue(grammars.isEmpty(),
+                "all grammar sources, including common grammar, belong in grammar modules: " + grammars);
         assertFalse(grammars.stream().anyMatch(path -> startsWithDialect(path, "mysql")),
-                "MySQL token-event grammar belongs in adaptor-mysql, not core");
+                "MySQL token-event grammar belongs in grammar/mysql-token-event, not core");
         assertFalse(grammars.stream().anyMatch(path -> startsWithDialect(path, "postgres")),
-                "PostgreSQL token-event grammar belongs in adaptor-postgres, not core");
+                "PostgreSQL token-event grammar belongs in grammar/postgres-token-event, not core");
         assertFalse(grammars.stream().anyMatch(path -> startsWithDialect(path, "oracle")),
-                "Oracle token-event grammar belongs in adaptor-oracle, not core");
+                "Oracle token-event grammar belongs in grammar/oracle-token-event, not core");
     }
 
     @Test
@@ -55,7 +55,7 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void fullGrammerProductionCodeDoesNotImportDialectTokenEventPackages() throws IOException {
+    void fullGrammarProductionCodeDoesNotImportDialectTokenEventPackages() throws IOException {
         Path root = repoRoot();
         List<String> forbiddenImports = List.of(
                 "com.relationdetector.mysql.tokenevent",
@@ -67,23 +67,23 @@ class DialectGrammarArchitectureTest {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> path.toString().contains("/fullgrammar/"))
                     .filter(path -> containsAny(path, forbiddenImports))
                     .map(root::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "full-grammer modules must not import token-event modules, offenders=" + offenders);
+                    "full-grammar modules must not import token-event modules, offenders=" + offenders);
         }
     }
 
     @Test
-    void routineParsersLiveAtDialectLevelNotFullGrammerLevel() throws IOException {
+    void routineParsersLiveAtDialectLevelNotFullGrammarLevel() throws IOException {
         Path root = repoRoot();
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().contains("/src/main/"))
-                    .filter(path -> path.toString().contains("/fullgrammer/routine"))
+                    .filter(path -> path.toString().contains("/fullgrammar/routine"))
                     .map(root::relativize)
                     .toList();
 
@@ -100,44 +100,45 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void fullGrammerVisitorsAreNotNamedTokenEventVisitors() throws IOException {
+    void fullGrammarVisitorsAreNotNamedTokenEventVisitors() throws IOException {
         Path root = repoRoot();
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> path.toString().contains("/fullgrammar/"))
                     .filter(path -> path.getFileName().toString().contains("TokenEventParseTreeVisitor"))
                     .map(root::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "full-grammer parse-tree visitors should use full-grammer naming, offenders=" + offenders);
+                    "full-grammar parse-tree visitors should use full-grammar naming, offenders=" + offenders);
         }
     }
 
     @Test
-    void fullGrammerStructuredParserWrapperIsNotNamedTokenEvent() throws IOException {
+    void fullGrammarStructuredParserWrapperIsNotNamedTokenEvent() throws IOException {
         Path root = repoRoot();
-        Path fullGrammerRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer");
-        try (Stream<Path> stream = Files.walk(fullGrammerRoot)) {
+        Path fullGrammarRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar");
+        String legacyWrapperName = "FullGrammar" + "TokenEventStructuredSqlParser";
+        try (Stream<Path> stream = Files.walk(fullGrammarRoot)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> path.getFileName().toString().equals("FullGrammerTokenEventStructuredSqlParser.java")
-                            || containsAny(path, List.of("FullGrammerTokenEventStructuredSqlParser",
+                    .filter(path -> path.getFileName().toString().equals(legacyWrapperName + ".java")
+                            || containsAny(path, List.of(legacyWrapperName,
                                     "FULL_GRAMMAR_TOKEN_EVENT_PRIMARY")))
                     .map(root::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "full-grammer profile parser wrapper must not mention token-event, offenders=" + offenders);
+                    "full-grammar profile parser wrapper must not mention token-event, offenders=" + offenders);
         }
     }
 
     @Test
-    void fullGrammerSqlParserFactoryIsNotNamedTokenEvent() throws IOException {
+    void fullGrammarSqlParserFactoryIsNotNamedTokenEvent() throws IOException {
         Path root = repoRoot();
-        String legacyFactoryName = "FullGrammer" + "TokenEventParserFactory";
+        String legacyFactoryName = "FullGrammar" + "TokenEventParserFactory";
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java")
@@ -149,16 +150,16 @@ class DialectGrammarArchitectureTest {
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "full-grammer SQL parser factory must not use legacy token-event naming, offenders="
+                    "full-grammar SQL parser factory must not use legacy token-event naming, offenders="
                             + offenders);
         }
     }
 
     @Test
-    void mysqlFullGrammerVisitorsDoNotCarryPostgresRowsetSentinels() throws IOException {
+    void mysqlFullGrammarVisitorsDoNotCarryPostgresRowsetSentinels() throws IOException {
         Path root = repoRoot();
-        Path mysqlFullGrammer = root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer");
-        try (Stream<Path> stream = Files.walk(mysqlFullGrammer)) {
+        Path mysqlFullGrammar = root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar");
+        try (Stream<Path> stream = Files.walk(mysqlFullGrammar)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> containsAny(path, List.of("PostgresOnly", "isPostgresOnlyRowsetSentinel")))
@@ -166,40 +167,40 @@ class DialectGrammarArchitectureTest {
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "MySQL full-grammer must not hide PostgreSQL-only rowset syntax behind sentinel checks, offenders="
+                    "MySQL full-grammar must not hide PostgreSQL-only rowset syntax behind sentinel checks, offenders="
                             + offenders);
         }
     }
 
     @Test
-    void oracleFullGrammerVersionVisitorsAreThinBridges() throws IOException {
+    void oracleFullGrammarVersionVisitorsAreThinBridges() throws IOException {
         Path root = repoRoot();
-        Path oracleFullGrammer = root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer");
-        try (Stream<Path> stream = Files.walk(oracleFullGrammer)) {
+        Path oracleFullGrammar = root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammar");
+        try (Stream<Path> stream = Files.walk(oracleFullGrammar)) {
             List<Path> offenders = stream
-                    .filter(path -> path.getFileName().toString().equals("OracleFullGrammerParseTreeVisitor.java"))
-                    .filter(path -> path.toString().contains("/fullgrammer/v"))
+                    .filter(path -> path.getFileName().toString().equals("OracleFullGrammarParseTreeVisitor.java"))
+                    .filter(path -> path.toString().contains("/fullgrammar/v"))
                     .filter(path -> !isThinOracleVersionVisitor(path))
                     .map(root::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Oracle version visitors should be thin generated-parser bridges over common full-grammer logic, offenders="
+                    "Oracle version visitors should be thin generated-parser bridges over common full-grammar logic, offenders="
                             + offenders);
         }
     }
 
     @Test
-    void mysqlAndPostgresFullGrammerVersionVisitorsKeepSharedStateInCommon() throws IOException {
+    void mysqlAndPostgresFullGrammarVersionVisitorsKeepSharedStateInCommon() throws IOException {
         Path root = repoRoot();
         List<Path> roots = List.of(
-                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer"),
-                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer"));
-        for (Path fullGrammerRoot : roots) {
-            try (Stream<Path> stream = Files.walk(fullGrammerRoot)) {
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammar"));
+        for (Path fullGrammarRoot : roots) {
+            try (Stream<Path> stream = Files.walk(fullGrammarRoot)) {
                 List<Path> offenders = stream
-                        .filter(path -> path.getFileName().toString().endsWith("FullGrammerParseTreeVisitor.java"))
-                        .filter(path -> path.toString().contains("/fullgrammer/v"))
+                        .filter(path -> path.getFileName().toString().endsWith("FullGrammarParseTreeVisitor.java"))
+                        .filter(path -> path.toString().contains("/fullgrammar/v"))
                         .filter(path -> containsAny(path, List.of(
                                 "existsDepth",
                                 "InsertSelectState",
@@ -209,7 +210,7 @@ class DialectGrammarArchitectureTest {
                         .toList();
 
                 assertTrue(offenders.isEmpty(),
-                        "Version full-grammer visitors should keep reusable state/helpers in fullgrammer/common, offenders="
+                        "Version full-grammar visitors should keep reusable state/helpers in fullgrammar/common, offenders="
                                 + offenders);
             }
         }
@@ -243,8 +244,7 @@ class DialectGrammarArchitectureTest {
     void productionRegexUsageIsAllowlistedAndNonStructural() throws IOException {
         Path root = repoRoot();
         Set<Path> allowed = Set.of(
-                Path.of("core/src/main/java/com/relationdetector/core/fullgrammer/SqlGrammarProfileRegistry.java"),
-                Path.of("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java"),
+                Path.of("core/src/main/java/com/relationdetector/core/fullgrammar/SqlGrammarProfileRegistry.java"),
                 Path.of("cli/src/main/java/com/relationdetector/cli/BatchManifestLoader.java"));
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
@@ -289,11 +289,11 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void coreFullGrammerSemanticsDoNotInspectTerminalText() throws IOException {
+    void coreFullGrammarSemanticsDoNotInspectTerminalText() throws IOException {
         Path root = repoRoot();
-        Path packageRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer");
+        Path packageRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar");
         List<String> semanticFiles = List.of(
-                "FullGrammerExpressionAnalyzer.java",
+                "FullGrammarExpressionAnalyzer.java",
                 "DirectColumnTraceSupport.java",
                 "SubqueryProjectionTraceSupport.java",
                 "PredicateEventSink.java",
@@ -310,25 +310,25 @@ class DialectGrammarArchitectureTest {
                 .toList();
 
         assertTrue(offenders.isEmpty(),
-                "Core full-grammer semantics must consume typed adapter views, not terminal text, offenders="
+                "Core full-grammar semantics must consume typed adapter views, not terminal text, offenders="
                         + offenders);
     }
 
     @Test
-    void fullGrammerCollectorsTraverseOnlyTypedAdapterChildren() throws IOException {
+    void fullGrammarCollectorsTraverseOnlyTypedAdapterChildren() throws IOException {
         Path root = repoRoot();
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> path.toString().contains("/fullgrammar/"))
                     .filter(path -> !path.getFileName().toString().contains("ParseTreeAdapter"))
                     .filter(path -> containsAny(path, List.of(".getChild(", "getChildCount(")))
                     .map(root::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Full-grammer collectors must recurse through adapter.typedChildren(), offenders=" + offenders);
+                    "Full-grammar collectors must recurse through adapter.typedChildren(), offenders=" + offenders);
         }
     }
 
@@ -347,9 +347,7 @@ class DialectGrammarArchitectureTest {
                             ".replaceFirst(\"",
                             ".split(\"\\\\")))
                     .filter(path -> !path.endsWith(Path.of(
-                            "core/fullgrammer/SqlGrammarProfileRegistry.java")))
-                    .filter(path -> !path.endsWith(Path.of(
-                            "postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java")))
+                            "core/fullgrammar/SqlGrammarProfileRegistry.java")))
                     .map(root::relativize)
                     .toList();
 
@@ -359,21 +357,21 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void dialectScriptParsersAreTheOnlySqlFileFramingPath() {
+    void dialectScriptFramersAreTheOnlySqlFileFramingPath() {
         Path root = repoRoot();
         assertFalse(Files.exists(root.resolve(
                         "core/src/main/java/com/relationdetector/core/log/PlainSqlLogExtractor.java")),
-                "Plain SQL framing must go through DialectScriptParser");
+                "Plain SQL framing must go through DialectScriptFramer");
         assertFalse(Files.exists(root.resolve(
                         "core/src/main/java/com/relationdetector/core/log/ObjectSqlFileExtractor.java")),
-                "Object framing must go through DialectScriptParser");
+                "Object framing must go through DialectScriptFramer");
         assertFalse(Files.exists(root.resolve(
-                        "adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/MySqlFullGrammerSqlNormalizer.java")),
-                "MySQL client directives must be removed by the script parser before parser selection");
+                        "adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/MySqlFullGrammarSqlNormalizer.java")),
+                "MySQL client directives must be removed by the script framer before parser selection");
     }
 
     @Test
-    void ddlFilesAreFramedByTheDialectScriptParserBeforeDdlGrammar() throws IOException {
+    void ddlFilesAreFramedByTheDialectScriptFramerBeforeDdlGrammar() throws IOException {
         Path root = repoRoot();
         String pipeline = Files.readString(root.resolve(
                 "core/src/main/java/com/relationdetector/core/scan/SourceCollectorPipeline.java"));
@@ -383,8 +381,8 @@ class DialectGrammarArchitectureTest {
                 "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java"));
 
         assertTrue(pipeline.contains("StatementSourceType.DDL_FILE")
-                        && pipeline.contains("ctx.adaptor.parsers().scripts()"),
-                "DDL files must use the selected adaptor script parser");
+                        && pipeline.contains("ctx.adaptor.parsers().scriptFramer()"),
+                "DDL files must use the selected adaptor script framer");
         assertFalse(pipeline.contains("statementParser.executeDdlFile("),
                 "Production DDL file collection must not bypass dialect script framing");
         assertFalse(ddlRunner.contains("Files.readString") || execution.contains("executeDdlFile("),
@@ -417,7 +415,7 @@ class DialectGrammarArchitectureTest {
                             || text.contains("endswith(\";\")"),
                     extractor + " must extract log payloads and delegate SQL framing/classification to typed parsers");
             assertTrue(text.contains("scriptparser") || text.contains("scriptfileextractor"),
-                    extractor + " must delegate payload framing to the dialect script parser");
+                    extractor + " must delegate payload framing to the dialect script framer");
         }
     }
 
@@ -467,20 +465,20 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void tokenEventAndFullGrammerDoNotDelegateAcrossModes() throws IOException {
+    void tokenEventAndFullGrammarDoNotDelegateAcrossModes() throws IOException {
         Path root = repoRoot();
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
                     .filter(path -> path.toString().contains("/tokenevent/")
-                            || path.toString().contains("/fullgrammer/"))
+                            || path.toString().contains("/fullgrammar/"))
                     .filter(path -> delegatesAcrossParserModes(path))
                     .map(root::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "token-event and full-grammer may share core models, but must not delegate parsers/visitors across modes, offenders="
+                    "token-event and full-grammar may share core models, but must not delegate parsers/visitors across modes, offenders="
                             + offenders);
         }
     }
@@ -609,7 +607,7 @@ class DialectGrammarArchitectureTest {
                 "Correctness executor must not extract lineage outside StatementExecutionService");
         assertFalse(combinedText.contains("new NamingMatchEvidenceEnhancer"),
                 "Correctness executor must not attach NAMING_MATCH outside EvidenceEnhancementService");
-        assertFalse(combinedText.contains("new TokenEventRelationExtractor"),
+        assertFalse(combinedText.contains("new StructuredRelationshipExtractor"),
                 "Correctness executor must not bypass StatementExecutionService for common fixtures");
     }
 
@@ -678,8 +676,8 @@ class DialectGrammarArchitectureTest {
         assertTrue(adaptor.contains("AdaptorProfiling profiling()"));
         String parsers = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorParsers.java"));
-        assertTrue(parsers.contains("DialectScriptParser scripts"),
-                "SPI v3 parser capabilities must include dialect script framing");
+        assertTrue(parsers.contains("DialectScriptFramer scriptFramer"),
+                "SPI v4 parser capabilities must include dialect script framing");
         for (String legacyGetter : List.of(
                 "MetadataCollector metadataCollector()",
                 "ObjectDefinitionCollector objectDefinitionCollector()",
@@ -691,12 +689,12 @@ class DialectGrammarArchitectureTest {
                 "DataProfiler dataProfiler()",
                 "EvidenceWeightAdjuster evidenceWeightAdjuster()")) {
             assertFalse(adaptor.contains(legacyGetter),
-                    "SPI v3 must not restore legacy getter: " + legacyGetter);
+                    "SPI v4 must not restore legacy getter: " + legacyGetter);
         }
 
         String version = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorApiVersion.java"));
-        assertTrue(version.contains("CURRENT = 3"), "adaptor SPI must expose dialect script parsing as v3");
+        assertTrue(version.contains("CURRENT = 4"), "adaptor SPI must expose dialect script framing as v4");
     }
 
     @Test
@@ -736,23 +734,23 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void fullGrammerTypedSinkDelegatesToFocusedHelpers() throws IOException {
+    void fullGrammarTypedSinkDelegatesToFocusedHelpers() throws IOException {
         Path root = repoRoot();
-        Path sink = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer/FullGrammerTypedSqlEventSink.java");
+        Path sink = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar/FullGrammarEventFacade.java");
         String text = Files.readString(sink);
 
         for (String helper : List.of("RowsetScopeSink", "ProjectionEventSink",
                 "PredicateEventSink", "DirectColumnTraceSupport", "SubqueryProjectionTraceSupport",
                 "WriteMappingSink", "SourceLocationSupport")) {
             assertTrue(text.contains(helper),
-                    "FullGrammerTypedSqlEventSink should delegate " + helper + " responsibilities");
+                    "FullGrammarEventFacade should delegate " + helper + " responsibilities");
         }
         assertTrue(Files.readAllLines(sink).size() <= 400,
-                "FullGrammerTypedSqlEventSink must remain a thin facade");
+                "FullGrammarEventFacade must remain a thin facade");
         assertFalse(text.contains("new StructuredSqlEvent"),
-                "StructuredSqlEvent creation belongs in FullGrammerEventRecorder");
+                "StructuredSqlEvent creation belongs in FullGrammarEventRecorder");
         assertFalse(text.contains("eventKeys"),
-                "Event de-duplication belongs in FullGrammerEventRecorder");
+                "Event de-duplication belongs in FullGrammarEventRecorder");
     }
 
     @Test
@@ -762,7 +760,7 @@ class DialectGrammarArchitectureTest {
             List<String> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/fullgrammer/")
+                    .filter(path -> path.toString().contains("/fullgrammar/")
                             || path.toString().contains("/tokenevent/")
                             || path.toString().contains("/routine/"))
                     .filter(path -> path.getFileName().toString().contains("Visitor")
@@ -814,11 +812,11 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void coreFullGrammerDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
+    void coreFullGrammarDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
         Path root = repoRoot();
-        Path fullGrammer = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer");
+        Path fullGrammar = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar");
 
-        try (Stream<Path> stream = Files.walk(fullGrammer)) {
+        try (Stream<Path> stream = Files.walk(fullGrammar)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> containsAny(path, List.of(
@@ -830,7 +828,7 @@ class DialectGrammarArchitectureTest {
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Core full-grammer semantics must come from a dialect context adapter, offenders=" + offenders);
+                    "Core full-grammar semantics must come from a dialect context adapter, offenders=" + offenders);
         }
     }
 
@@ -876,19 +874,19 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void dialectFullGrammerDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
+    void dialectFullGrammarDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
         Path root = repoRoot().getParent();
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> path.toString().contains("/fullgrammar/"))
                     .filter(path -> {
                         String filename = path.getFileName().toString();
                         return filename.contains("ExpressionAnalyzer")
                                 || filename.contains("EventVisitorCore")
                                 || filename.contains("ParseTreeEventCollector")
-                                || filename.equals("FullGrammerTypedSqlEventSink.java");
+                                || filename.equals("FullGrammarEventFacade.java");
                     })
                     .filter(path -> containsAny(path, List.of(
                             "getClass().getSimpleName()",
@@ -897,26 +895,26 @@ class DialectGrammarArchitectureTest {
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Dialect full-grammer semantics must use typed context adapters, offenders=" + offenders);
+                    "Dialect full-grammar semantics must use typed context adapters, offenders=" + offenders);
         }
     }
 
     @Test
-    void fullGrammerDialectsProvideSemanticContextAdapters() throws IOException {
+    void fullGrammarDialectsProvideSemanticContextAdapters() throws IOException {
         Path root = repoRoot();
         List<Path> dialectRoots = List.of(
-                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer"),
-                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer"),
-                root.resolve("adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer"));
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammar"),
+                root.resolve("adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar"));
 
         for (Path dialectRoot : dialectRoots) {
             try (Stream<Path> stream = Files.walk(dialectRoot)) {
                 assertTrue(stream
                                 .filter(path -> path.toString().endsWith(".java"))
                                 .anyMatch(path -> containsAny(path, List.of(
-                                        "implements FullGrammerParseTreeAdapter",
-                                        "extends AbstractFullGrammerParseTreeAdapter"))),
-                        "Dialect full-grammer must provide an explicit semantic context adapter: "
+                                        "implements FullGrammarParseTreeAdapter",
+                                        "extends AbstractFullGrammarParseTreeAdapter"))),
+                        "Dialect full-grammar must provide an explicit semantic context adapter: "
                                 + root.relativize(dialectRoot));
             }
         }
@@ -1119,11 +1117,11 @@ class DialectGrammarArchitectureTest {
         try {
             String text = Files.readString(path);
             boolean inTokenEvent = path.toString().contains("/tokenevent/");
-            boolean inFullGrammer = path.toString().contains("/fullgrammer/");
-            if (inTokenEvent && text.contains(".fullgrammer.")) {
+            boolean inFullGrammar = path.toString().contains("/fullgrammar/");
+            if (inTokenEvent && text.contains(".fullgrammar.")) {
                 return true;
             }
-            return inFullGrammer && text.contains(".tokenevent.");
+            return inFullGrammar && text.contains(".tokenevent.");
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + path, e);
         }
@@ -1137,21 +1135,21 @@ class DialectGrammarArchitectureTest {
                 || value.contains("/core/src/main/java/com/relationdetector/core/derived/")
                 || value.contains("/core/src/main/java/com/relationdetector/core/metadata/")
                 || value.contains("/core/src/main/java/com/relationdetector/core/profile/")
-                || value.contains("/core/src/main/java/com/relationdetector/core/fullgrammer/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/fullgrammar/")
                 || value.contains("/core/src/main/java/com/relationdetector/core/tokenevent/")
-                || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/")
+                || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/")
                 || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/tokenevent/")
                 || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/routine/")
                 || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/ddl/")
-                || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/")
+                || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammar/")
                 || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/tokenevent/")
                 || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/routine/")
                 || value.contains("/adaptor-postgres/src/main/java/com/relationdetector/postgres/ddl/")
-                || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/")
+                || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammar/")
                 || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent/")
                 || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/routine/")
                 || value.contains("/adaptor-oracle/src/main/java/com/relationdetector/oracle/ddl/")
-                || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/")
+                || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/")
                 || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/tokenevent/")
                 || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/routine/")
                 || value.contains("/adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/ddl/");
@@ -1165,7 +1163,7 @@ class DialectGrammarArchitectureTest {
                     .filter(line -> !line.stripLeading().startsWith("*"))
                     .filter(line -> !line.stripLeading().startsWith("//"))
                     .count();
-            return lines <= 90 && text.contains("OracleFullGrammerParseTreeEventCollector");
+            return lines <= 90 && text.contains("OracleFullGrammarParseTreeEventCollector");
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + path, e);
         }

@@ -1,7 +1,7 @@
 id: mysql57-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql
 databaseType: MYSQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/5.7
 databaseVersion: 5.7.44
 sourceType: PROCEDURE

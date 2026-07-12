@@ -1,7 +1,7 @@
 package com.relationdetector.oracle.routine;
 
 /**
- * Oracle routine-scope state shared by token-event and full-grammer visitors.
+ * Oracle routine-scope state shared by token-event and full-grammar visitors.
  *
  * <p>Oracle PL/SQL bodies are parsed by the outer Oracle grammar, unlike
  * PostgreSQL dollar-quoted bodies that need a second body parser. This class

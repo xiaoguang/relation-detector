@@ -76,7 +76,7 @@ final class SourceCollectorPipeline {
             List<ParseTask> tasks = new ArrayList<>();
             for (Path file : sources.ddlFiles()) {
                 List<SqlStatementRecord> statements = scriptFileExtractor.extract(
-                                file, StatementSourceType.DDL_FILE, ctx.adaptor.parsers().scripts(),
+                                file, StatementSourceType.DDL_FILE, ctx.adaptor.parsers().scriptFramer(),
                                 ctx.result.warnings()::add)
                         .toList();
                 StatementDispatchService.DdlFileDispatch dispatch = statementDispatch.dispatchDdlFile(statements);
@@ -102,7 +102,7 @@ final class SourceCollectorPipeline {
             ParserBundle parserBundle = parserBundle(ctx);
             List<ParseTask> tasks = new ArrayList<>();
             for (Path file : sources.objectFiles()) {
-                scriptFileExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.adaptor.parsers().scripts(),
+                scriptFileExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.adaptor.parsers().scriptFramer(),
                                 ctx.result.warnings()::add)
                         .forEach(statement -> tasks.add(new ParseTask(
                                 context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,

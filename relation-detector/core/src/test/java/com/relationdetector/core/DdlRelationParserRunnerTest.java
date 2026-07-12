@@ -32,7 +32,7 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.Collectors.DataProfiler;
@@ -50,7 +50,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
-import com.relationdetector.core.script.CommonScriptParser;
+import com.relationdetector.core.script.CommonScriptFramer;
 
 class DdlRelationParserRunnerTest {
     @TempDir
@@ -280,7 +280,7 @@ class DdlRelationParserRunnerTest {
             Path file,
             AdaptorContext context
     ) throws Exception {
-        var script = adaptor.parsers().scripts().parse(new ScriptParseRequest(
+        var script = adaptor.parsers().scriptFramer().frame(new ScriptFrameRequest(
                 Files.readString(file), file.toString(), StatementSourceType.DDL_FILE));
         return new DdlRelationParserRunner().parseStatementsWithEvidence(
                 adaptor.parsers().structuredDdl().orElseThrow(),
@@ -335,7 +335,7 @@ class DdlRelationParserRunnerTest {
                     (statement, context) -> List.of(),
                     Optional.empty(),
                     Optional.of(structuredDdl),
-                    new CommonScriptParser());
+                    new CommonScriptFramer());
         }
 
         @Override

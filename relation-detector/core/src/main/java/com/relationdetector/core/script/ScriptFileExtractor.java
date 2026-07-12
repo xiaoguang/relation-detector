@@ -8,9 +8,9 @@ import java.util.stream.Stream;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.spi.DialectScriptParser;
+import com.relationdetector.contracts.spi.DialectScriptFramer;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
 /** Reads one file and delegates all client-script framing to the selected adaptor. */
@@ -18,11 +18,11 @@ public final class ScriptFileExtractor {
     public Stream<SqlStatementRecord> extract(
             Path file,
             StatementSourceType sourceType,
-            DialectScriptParser parser,
+            DialectScriptFramer parser,
             Consumer<WarningMessage> warnings
     ) {
         try {
-            var result = parser.parse(new ScriptParseRequest(Files.readString(file), file.toString(), sourceType));
+            var result = parser.frame(new ScriptFrameRequest(Files.readString(file), file.toString(), sourceType));
             result.warnings().forEach(warnings);
             return result.statements().stream();
         } catch (IOException ex) {

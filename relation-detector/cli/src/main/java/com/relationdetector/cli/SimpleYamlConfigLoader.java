@@ -172,19 +172,19 @@ public final class SimpleYamlConfigLoader {
     private void rejectRemovedParserConfig(ScanYamlConfigDto.Parser parser) {
         if (parser.sql != null && parser.sql.mode != null) {
             throw new IllegalArgumentException(
-                    "parser.sql.mode has been removed; use parser.mode with auto, full-grammer, or token-event");
+                    "parser.sql.mode has been removed; use parser.mode with auto, full-grammar, or token-event");
         }
         if (parser.sql != null && parser.sql.fallbackOnFailure != null) {
             throw new IllegalArgumentException(
-                    "parser.sql.fallbackOnFailure has been removed; use parser.mode with auto, full-grammer, or token-event");
+                    "parser.sql.fallbackOnFailure has been removed; use parser.mode with auto, full-grammar, or token-event");
         }
         if (parser.ddl != null && parser.ddl.mode != null) {
             throw new IllegalArgumentException(
-                    "parser.ddl.mode has been removed; use parser.mode with auto, full-grammer, or token-event");
+                    "parser.ddl.mode has been removed; use parser.mode with auto, full-grammar, or token-event");
         }
         if (parser.ddl != null && parser.ddl.fallbackOnFailure != null) {
             throw new IllegalArgumentException(
-                    "parser.ddl.fallbackOnFailure has been removed; use parser.mode with auto, full-grammer, or token-event");
+                    "parser.ddl.fallbackOnFailure has been removed; use parser.mode with auto, full-grammar, or token-event");
         }
     }
 
@@ -313,9 +313,9 @@ public final class SimpleYamlConfigLoader {
     private String normalizeParserMode(String value) {
         String normalized = value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
         return switch (normalized) {
-            case "auto", "full-grammer", "token-event" -> normalized;
+            case "auto", "full-grammar", "token-event" -> normalized;
             default -> throw new IllegalArgumentException(
-                    "parser.mode must be one of auto, full-grammer, token-event");
+                    "parser.mode must be one of auto, full-grammar, token-event");
         };
     }
 

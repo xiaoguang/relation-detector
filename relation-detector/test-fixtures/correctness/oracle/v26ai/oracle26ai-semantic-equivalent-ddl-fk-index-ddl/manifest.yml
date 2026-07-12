@@ -1,7 +1,7 @@
 id: oracle26ai-semantic-equivalent-ddl-fk-index-ddl
 databaseType: ORACLE
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: oracle/26ai
 databaseVersion: 26.1
 sourceType: DDL_FILE

@@ -9,26 +9,26 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.ddl.MySqlDatabaseDdlCollector;
 import com.relationdetector.mysql.log.MySqlLogExtractor;
 import com.relationdetector.mysql.metadata.MySqlMetadataCollector;
 import com.relationdetector.mysql.objects.MySqlObjectCollector;
 import com.relationdetector.mysql.profile.MySqlDataProfiler;
-import com.relationdetector.mysql.script.MySqlScriptParser;
+import com.relationdetector.mysql.script.MySqlScriptFramer;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
 public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public MySqlDatabaseAdaptor() {
-        this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser(), new MySqlScriptParser());
+        this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser(), new MySqlScriptFramer());
     }
 
     private MySqlDatabaseAdaptor(
             MySqlTokenEventStructuredSqlParser structuredSqlParser,
             MySqlTokenEventStructuredDdlParser structuredDdlParser,
-            MySqlScriptParser scriptParser
+            MySqlScriptFramer scriptFramer
     ) {
         super(
                 "mysql",
@@ -46,12 +46,12 @@ public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new MySqlMetadataCollector(),
                         new MySqlObjectCollector(),
                         Optional.of(new MySqlDatabaseDdlCollector()),
-                        new MySqlLogExtractor(scriptParser)),
+                        new MySqlLogExtractor(scriptFramer)),
                 new AdaptorParsers(
-                        new TokenEventSqlRelationParser(structuredSqlParser),
+                        new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
                         Optional.of(structuredDdlParser),
-                        scriptParser),
+                        scriptFramer),
                 new AdaptorProfiling(Optional.of(new MySqlDataProfiler()), (evidence, context) -> evidence));
     }
 

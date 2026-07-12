@@ -147,12 +147,12 @@ class ScanEngineObjectWarningProvenanceTest {
         public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
             TokenEventStructuredSqlParser structured = new TokenEventStructuredSqlParser(SqlDialect.MYSQL);
             return new com.relationdetector.contracts.spi.AdaptorParsers(
-                    new TokenEventSqlRelationParser(
+                    new StructuredSqlRelationshipParser(
                             structured,
-                            new TokenEventRelationExtractor()),
+                            new StructuredRelationshipExtractor()),
                     Optional.of(structured),
                     Optional.empty(),
-                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
 
         @Override

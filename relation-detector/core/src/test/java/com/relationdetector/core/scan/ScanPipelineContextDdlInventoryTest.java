@@ -75,7 +75,7 @@ class ScanPipelineContextDdlInventoryTest {
         @Override public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     (statement, context) -> List.of(), Optional.empty(), Optional.empty(),
-                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
         @Override public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
             return new com.relationdetector.contracts.spi.AdaptorProfiling(

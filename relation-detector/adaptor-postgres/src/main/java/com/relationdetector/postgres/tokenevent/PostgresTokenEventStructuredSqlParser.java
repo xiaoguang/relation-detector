@@ -30,12 +30,19 @@ import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlP
  */
 public final class PostgresTokenEventStructuredSqlParser
         extends TypedDialectTokenEventStructuredSqlParser<PostgresRelationSqlParser.ScriptContext> {
+    private final boolean allowRoutineDispatch;
+
     public PostgresTokenEventStructuredSqlParser() {
+        this(true);
+    }
+
+    PostgresTokenEventStructuredSqlParser(boolean allowRoutineDispatch) {
         super(SqlDialect.POSTGRES,
                 "PostgresRelationSql",
                 PostgresRelationSqlLexer.class.getSimpleName(),
                 PostgresRelationSqlParser.class.getSimpleName(),
                 PostgresTokenEventParseTreeVisitor.class.getSimpleName());
+        this.allowRoutineDispatch = allowRoutineDispatch;
     }
 
     @Override
@@ -62,7 +69,7 @@ public final class PostgresTokenEventStructuredSqlParser
             SqlStatementRecord statement,
             PostgresRelationSqlParser.ScriptContext root
     ) {
-        return new PostgresTokenEventParseTreeVisitor(statement).collect(root);
+        return new PostgresTokenEventParseTreeVisitor(statement, allowRoutineDispatch).collect(root);
     }
 
     @Override
@@ -70,7 +77,8 @@ public final class PostgresTokenEventStructuredSqlParser
             SqlStatementRecord statement,
             PostgresRelationSqlParser.ScriptContext root
     ) {
-        PostgresTokenEventParseTreeVisitor visitor = new PostgresTokenEventParseTreeVisitor(statement);
+        PostgresTokenEventParseTreeVisitor visitor = new PostgresTokenEventParseTreeVisitor(
+                statement, allowRoutineDispatch);
         List<StructuredSqlEvent> events = visitor.collect(root);
         return new TypedEventCollection(events, visitor.warnings());
     }

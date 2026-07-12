@@ -466,7 +466,7 @@ final class DialectSqlAssetHygieneSupport {
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to read " + path, exception);
         }
-        String sqlText = stripSqlStringLiterals(stripSqlComments(text));
+        String sqlText = sanitizeSqlForAssetCheck(text);
         List<String> findings = new ArrayList<>(forbiddenPatterns.stream()
                 .filter(pattern -> pattern.pattern().matcher(sqlText).find())
                 .map(pattern -> repoRoot().relativize(path) + " -> " + pattern.description())
@@ -615,13 +615,109 @@ final class DialectSqlAssetHygieneSupport {
         return !Character.isLetterOrDigit(ch) && ch != '_';
     }
 
-    private static String stripSqlComments(String text) {
-        String withoutBlockComments = Pattern.compile("(?s)/\\*.*?\\*/").matcher(text).replaceAll(" ");
-        return Pattern.compile("(?m)--.*$").matcher(withoutBlockComments).replaceAll(" ");
+    static String sanitizeSqlForAssetCheck(String text) {
+        return stripSqlStringLiterals(stripSqlComments(text));
     }
 
     private static String stripSqlStringLiterals(String text) {
-        return Pattern.compile("'(?:''|[^'])*'").matcher(text).replaceAll("''");
+        StringBuilder sanitized = new StringBuilder(text.length());
+        for (int index = 0; index < text.length(); index++) {
+            char current = text.charAt(index);
+            if (current != '\'') {
+                sanitized.append(current);
+                continue;
+            }
+            sanitized.append("''");
+            index++;
+            while (index < text.length()) {
+                current = text.charAt(index);
+                if (current == '\n' || current == '\r') {
+                    sanitized.append(current);
+                }
+                if (current == '\'' && index + 1 < text.length() && text.charAt(index + 1) == '\'') {
+                    index += 2;
+                    continue;
+                }
+                if (current == '\'') {
+                    break;
+                }
+                index++;
+            }
+        }
+        return sanitized.toString();
+    }
+
+    private static String stripSqlComments(String text) {
+        StringBuilder sanitized = new StringBuilder(text.length());
+        boolean singleQuoted = false;
+        boolean doubleQuoted = false;
+        boolean lineComment = false;
+        int blockDepth = 0;
+        for (int index = 0; index < text.length(); index++) {
+            char current = text.charAt(index);
+            char next = index + 1 < text.length() ? text.charAt(index + 1) : '\0';
+            if (lineComment) {
+                if (current == '\n' || current == '\r') {
+                    lineComment = false;
+                    sanitized.append(current);
+                } else {
+                    sanitized.append(' ');
+                }
+                continue;
+            }
+            if (blockDepth > 0) {
+                if (current == '/' && next == '*') {
+                    blockDepth++;
+                    sanitized.append("  ");
+                    index++;
+                } else if (current == '*' && next == '/') {
+                    blockDepth--;
+                    sanitized.append("  ");
+                    index++;
+                } else {
+                    sanitized.append(current == '\n' || current == '\r' ? current : ' ');
+                }
+                continue;
+            }
+            if (singleQuoted) {
+                sanitized.append(current);
+                if (current == '\'' && next == '\'') {
+                    sanitized.append(next);
+                    index++;
+                } else if (current == '\'') {
+                    singleQuoted = false;
+                }
+                continue;
+            }
+            if (doubleQuoted) {
+                sanitized.append(current);
+                if (current == '"' && next == '"') {
+                    sanitized.append(next);
+                    index++;
+                } else if (current == '"') {
+                    doubleQuoted = false;
+                }
+                continue;
+            }
+            if (current == '\'') {
+                singleQuoted = true;
+                sanitized.append(current);
+            } else if (current == '"') {
+                doubleQuoted = true;
+                sanitized.append(current);
+            } else if (current == '-' && next == '-') {
+                lineComment = true;
+                sanitized.append("  ");
+                index++;
+            } else if (current == '/' && next == '*') {
+                blockDepth = 1;
+                sanitized.append("  ");
+                index++;
+            } else {
+                sanitized.append(current);
+            }
+        }
+        return sanitized.toString();
     }
 
     private static SqlAssetDensity sqlAssetDensity(Path root) throws IOException {

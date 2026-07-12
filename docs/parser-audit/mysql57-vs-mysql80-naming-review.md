@@ -15,7 +15,7 @@ MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 
 
 - `EXPECTED_VERSION_DELTA`：由 MySQL 5.7 / 8.0 官方语法能力差异造成。
 - `EXPECTED_SQL_ASSET_DELTA`：由 5.7 兼容改写或 8.0 自然 SQL 资产差异造成，SQL 结构本身可解释。
-- `MYSQL57_PARSER_GAP`：5.7 SQL 中存在明确结构，但 v5_7 full-grammer 漏识别。
+- `MYSQL57_PARSER_GAP`：5.7 SQL 中存在明确结构，但 v5_7 full-grammar 漏识别。
 - `MYSQL80_FALSE_POSITIVE`：8.0 输出没有 SQL/DDL/metadata/profile 结构证据支撑，应收紧 parser 或 golden。
 - `REVIEW_NEEDED`：仅凭 SQL 结构无法判断，需人工审核。
 
@@ -25,8 +25,8 @@ MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 
 
 | Parser | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL full-grammer v5_7 | 38 | 32 / 6 | 330 | 290 | 971 | 0 | 999 | 74 | 727 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 361 | 288 | 1019 | 0 | 1077 | 63 | 771 |
+| MySQL full-grammar v5_7 | 38 | 32 / 6 | 330 | 290 | 971 | 0 | 999 | 74 | 727 |
+| MySQL full-grammar v8_0 | 38 | 32 / 6 | 361 | 288 | 1019 | 0 | 1077 | 63 | 771 |
 
 集合去重后：
 
@@ -45,12 +45,12 @@ MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 
 CO_OCCURRENCE: positions.id -> sales_order_items.product_id
 ```
 
-SQL 上下文在 `relation-detector/sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql`。同一条业务查询中，CTE 内部使用 `products p`，外层员工绩效查询又使用 `positions p`。full-grammer 事件流被压平成同一 alias map 后，`p.id = soi.product_id` 被错误解析为 `positions.id = sales_order_items.product_id`。
+SQL 上下文在 `relation-detector/sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql`。同一条业务查询中，CTE 内部使用 `products p`，外层员工绩效查询又使用 `positions p`。full-grammar 事件流被压平成同一 alias map 后，`p.id = soi.product_id` 被错误解析为 `positions.id = sales_order_items.product_id`。
 
 修复方式：
 
 - `RowsetScopeSink` 在恢复 rowset scope 时同步恢复 alias index。
-- `TokenEventRelationExtractor` 对同一事件组内指向不同物理表的重复 alias 标记为 ambiguous，并拒绝用该 alias 解析关系。
+- `StructuredRelationshipExtractor` 对同一事件组内指向不同物理表的重复 alias 标记为 ambiguous，并拒绝用该 alias 解析关系。
 
 修复后 `positions.id -> sales_order_items.product_id` 数量为 0；`mysql-v8_0-full` `Diag` 仍为 0。
 
@@ -99,4 +99,4 @@ v8_0-only lineage source-target pair has 45 entries, concentrated in supplier-qu
 
 ## 维护备注
 
-后续 parser 修复不应把 MySQL 5.7 / 8.0 的 sample-data 数量差异当成自动追平目标。例如 token-event scalar aggregate UPDATE 的 source tracing 修复，属于 token-event 覆盖能力补齐；它不改变本审计对 `mysql-v5_7-full` 与 `mysql-v8_0-full` 的判断口径。只有当某一侧 SQL 中存在明确结构而对应 full-grammer 漏识别时，才归类为 `MYSQL57_PARSER_GAP` 或 `MYSQL80_FALSE_POSITIVE` 并进入 parser/golden 修复。
+后续 parser 修复不应把 MySQL 5.7 / 8.0 的 sample-data 数量差异当成自动追平目标。例如 token-event scalar aggregate UPDATE 的 source tracing 修复，属于 token-event 覆盖能力补齐；它不改变本审计对 `mysql-v5_7-full` 与 `mysql-v8_0-full` 的判断口径。只有当某一侧 SQL 中存在明确结构而对应 full-grammar 漏识别时，才归类为 `MYSQL57_PARSER_GAP` 或 `MYSQL80_FALSE_POSITIVE` 并进入 parser/golden 修复。

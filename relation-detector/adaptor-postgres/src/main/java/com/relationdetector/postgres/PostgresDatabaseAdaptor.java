@@ -10,13 +10,13 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.postgres.ddl.PostgresDatabaseDdlCollector;
 import com.relationdetector.postgres.log.PostgresLogExtractor;
 import com.relationdetector.postgres.metadata.PostgresMetadataCollector;
 import com.relationdetector.postgres.objects.PostgresObjectCollector;
 import com.relationdetector.postgres.profile.PostgresDataProfiler;
-import com.relationdetector.postgres.script.PostgresScriptParser;
+import com.relationdetector.postgres.script.PostgresScriptFramer;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
@@ -24,13 +24,13 @@ import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlP
 public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public PostgresDatabaseAdaptor() {
         this(new PostgresTokenEventStructuredSqlParser(), new PostgresTokenEventStructuredDdlParser(),
-                new PostgresScriptParser());
+                new PostgresScriptFramer());
     }
 
     private PostgresDatabaseAdaptor(
             PostgresTokenEventStructuredSqlParser structuredSqlParser,
             PostgresTokenEventStructuredDdlParser structuredDdlParser,
-            PostgresScriptParser scriptParser
+            PostgresScriptFramer scriptFramer
     ) {
         super(
                 "postgresql",
@@ -48,12 +48,12 @@ public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new PostgresMetadataCollector(),
                         new PostgresObjectCollector(),
                         Optional.of(new PostgresDatabaseDdlCollector()),
-                        new PostgresLogExtractor(scriptParser)),
+                        new PostgresLogExtractor(scriptFramer)),
                 new AdaptorParsers(
-                        new TokenEventSqlRelationParser(structuredSqlParser),
+                        new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
                         Optional.of(structuredDdlParser),
-                        scriptParser),
+                        scriptFramer),
                 new AdaptorProfiling(Optional.of(new PostgresDataProfiler()), (evidence, context) -> evidence));
     }
 

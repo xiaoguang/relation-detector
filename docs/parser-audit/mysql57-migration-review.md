@@ -1,8 +1,8 @@
-# MySQL 5.7 Full-Grammer Migration Review
+# MySQL 5.7 Full-Grammar Migration Review
 
 ## 1. Scope
 
-This review records the MySQL 5.7 full-grammer migration. The user-facing `mysql7.0` request is implemented as **MySQL Server 5.7**, not NDB Cluster 7.x.
+This review records the MySQL 5.7 full-grammar migration. The user-facing `mysql7.0` request is implemented as **MySQL Server 5.7**, not NDB Cluster 7.x.
 
 The new strict profile is:
 
@@ -10,7 +10,7 @@ The new strict profile is:
 | --- | --- |
 | User profile | `mysql/5.7` |
 | Internal profile id | `mysql-5.7` |
-| Version package | `com.relationdetector.mysql.fullgrammer.v5_7` |
+| Version package | `com.relationdetector.mysql.fullgrammar.v5_7` |
 | Correctness directory | `test-fixtures/correctness/mysql/v5_7` |
 | Sample data directory | `sample-data/mysql/5.7` |
 
@@ -25,7 +25,7 @@ MySQL 5.7 does not use a separate community `MySQL57Parser.g4` / `MySQL57Lexer.g
 | Version truth | MySQL 5.7 official documentation |
 | Local strategy | Start from the vendored MySQL grammar and tighten 8.0-only constructs in grammar / lexer predicates |
 
-The 5.7 lexer/parser is generated independently from `adaptor-mysql/src/main/antlr4/com/relationdetector/mysql/fullgrammer/v5_7`. It does not delegate to token-event and does not share generated parser classes with `mysql/v8_0`.
+The 5.7 lexer/parser is generated independently by `grammar/mysql-v5_7` in package `com.relationdetector.mysql.fullgrammar.v5_7`. It does not delegate to token-event and does not share generated parser classes with `mysql/v8_0`.
 
 ## 3. Version Boundary Rules
 
@@ -65,8 +65,8 @@ Current golden counts:
 | Golden group | Fixtures | SQL / DDL | Relations | Lineage | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | MySQL root token-event | 83 | 65 / 18 | 652 | 350 | 0 | 252 | 321 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 696 | 414 | 0 | 257 | 327 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 883 | 398 | 0 | 421 | 491 |
+| MySQL full-grammar v5_7 | 89 | 71 / 18 | 696 | 414 | 0 | 257 | 327 |
+| MySQL full-grammar v8_0 | 89 | 71 / 18 | 883 | 398 | 0 | 421 | 491 |
 
 Interpretation:
 
@@ -78,7 +78,7 @@ Interpretation:
 
 | Area | Fix |
 | --- | --- |
-| Profile selection | Added `mysql-5.7` `FullGrammerDialectModule` and registry/profile tests |
+| Profile selection | Added `mysql-5.7` `FullGrammarDialectModule` and registry/profile tests |
 | Grammar version boundary | Added 5.7 grammar/lexer predicates for CTE, window, `JSON_TABLE`, invisible/visible indexes |
 | Correctness profile filter | Added `mysql57`, `mysql5.7`, and `mysql-v5_7` fixture profile aliases |
 | Warning propagation | SQL and DDL parser runners now forward structured parser warnings into correctness diagnostics |
@@ -94,6 +94,6 @@ No `REVIEW_NEEDED` item remains for this migration. The decisions are structural
 
 Remaining backlog is parser coverage, not a business semantic review issue:
 
-- Reduce full-grammer parse warnings in stored routines and DDL by extending typed grammar / visitor coverage.
+- Reduce full-grammar parse warnings in stored routines and DDL by extending typed grammar / visitor coverage.
 - Split mixed boundary fixtures if a future test style requires unsupported statements and compatible statements to live in separate fixture directories.
 - Add future MySQL 8.4 as a separate profile rather than modifying `mysql/v5_7` or `mysql/v8_0`.

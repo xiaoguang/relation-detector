@@ -1,4 +1,4 @@
-# MySQL token-event 与 v8_0 full-grammer sample-data 审计
+# MySQL token-event 与 v8_0 full-grammar sample-data 审计
 
 本文记录 `mysql-token-event-root` 与 `mysql-v8_0-full` 在同一套 MySQL 8.0 natural sample-data 上的最新审计结论。输入来自：
 
@@ -13,7 +13,7 @@
 | Parser | Fixtures | SQL / DDL | Rel | Lin | Direct Name | Diag | DerRel | DerLin | DerName |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | MySQL token-event root | 38 | 32 / 6 | 361 | 288 | 248 | 0 | 1077 | 63 | 771 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 361 | 288 | 248 | 0 | 1077 | 63 | 771 |
+| MySQL full-grammar v8_0 | 38 | 32 / 6 | 361 | 288 | 248 | 0 | 1077 | 63 | 771 |
 
 ## 集合审计
 
@@ -56,4 +56,4 @@
 - `TRANSFORM_GRANULARITY_DELTA`：0（对当前 natural sample-data exact fingerprint 而言）。
 - `REVIEW_NEEDED`：0。
 
-MySQL 5.7 与 8.0 仍不能按数量强行追平，因为两套 SQL 有明确的版本兼容改写；该结论单独记录在 `mysql57-vs-mysql80-naming-review.md`。本文件只证明 MySQL 8.0 同一 SQL 资产在 token-event 与 v8_0 full-grammer 之间已经达到已审计的 exact match。
+MySQL 5.7 与 8.0 仍不能按数量强行追平，因为两套 SQL 有明确的版本兼容改写；该结论单独记录在 `mysql57-vs-mysql80-naming-review.md`。本文件只证明 MySQL 8.0 同一 SQL 资产在 token-event 与 v8_0 full-grammar 之间已经达到已审计的 exact match。

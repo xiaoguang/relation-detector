@@ -1,5 +1,5 @@
 id: postgres16-postgres-business-asset-balances-update-outer-join-sql
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/16
 databaseVersion: 16.5
 databaseType: POSTGRESQL

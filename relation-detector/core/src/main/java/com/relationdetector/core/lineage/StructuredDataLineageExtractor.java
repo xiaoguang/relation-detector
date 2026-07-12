@@ -34,12 +34,12 @@ import com.relationdetector.core.provenance.EvidenceProvenanceMapper;
 /**
  * SQL Data Lineage 语义抽取器。
  *
- * <p>CN: 本类消费 token-event 与 full-grammer 共享的写入/projection 结构事件，输出
+ * <p>CN: 本类消费 token-event 与 full-grammar 共享的写入/projection 结构事件，输出
  * 数据库内部字段血缘。它不做 Parameter Binding，不把参数、literal、JSON path 或局部变量
  * 作为 source。
  *
  * <p>EN: SQL Data Lineage semantic extractor. It consumes write/projection
- * structured events shared by token-event and full-grammer and emits
+ * structured events shared by token-event and full-grammar and emits
  * database-internal field lineage. It does not perform parameter binding and
  * does not treat parameters, literals, JSON paths, or local variables as sources.
  */

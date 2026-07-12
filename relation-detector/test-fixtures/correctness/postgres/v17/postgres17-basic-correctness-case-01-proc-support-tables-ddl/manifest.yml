@@ -1,7 +1,7 @@
 id: postgres17-basic-correctness-case-01-proc-support-tables-ddl
 databaseType: POSTGRESQL
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: DDL_FILE

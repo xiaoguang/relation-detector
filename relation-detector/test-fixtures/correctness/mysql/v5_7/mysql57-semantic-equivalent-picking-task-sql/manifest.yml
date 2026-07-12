@@ -1,7 +1,7 @@
 id: mysql57-semantic-equivalent-picking-task-sql
 databaseType: MYSQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/5.7
 databaseVersion: 5.7.44
 sourceType: PLAIN_SQL

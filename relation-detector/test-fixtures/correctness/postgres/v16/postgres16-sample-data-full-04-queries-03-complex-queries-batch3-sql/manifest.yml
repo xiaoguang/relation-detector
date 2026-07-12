@@ -1,7 +1,7 @@
 id: postgres16sample-data-full-04-queries-03-complex-queries-batch3-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/16
 databaseVersion: 16.5
 sourceType: PLAIN_SQL

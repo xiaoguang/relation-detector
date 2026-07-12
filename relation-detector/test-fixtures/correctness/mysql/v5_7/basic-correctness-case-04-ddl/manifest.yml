@@ -1,7 +1,7 @@
 id: mysql57-mysql-basic-correctness-case-04-ddl
 databaseType: MYSQL
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/5.7
 databaseVersion: 5.7.44
 sourceType: DDL_FILE

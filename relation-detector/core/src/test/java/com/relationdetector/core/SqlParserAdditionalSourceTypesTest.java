@@ -29,7 +29,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
  * for materialized views, rules, events, packages, and migration scripts.
  */
 class SqlParserAdditionalSourceTypesTest {
-    private final TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
+    private final StructuredSqlRelationshipParser parser = new StructuredSqlRelationshipParser(
             new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
 
     @Test

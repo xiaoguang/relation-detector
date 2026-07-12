@@ -235,7 +235,7 @@ class ScanEngineDiagnosticsTest {
                     sqlRelationParser,
                     structuredSqlParser,
                     structuredDdlParser,
-                    new com.relationdetector.core.script.CommonScriptParser());
+                    new com.relationdetector.core.script.CommonScriptFramer());
         }
 
         @Override

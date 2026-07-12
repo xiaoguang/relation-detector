@@ -10,20 +10,20 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 import com.relationdetector.core.script.ScriptFileExtractor;
-import com.relationdetector.oracle.script.OracleScriptParser;
+import com.relationdetector.oracle.script.OracleScriptFramer;
 
 /**
  * Oracle log extractor backed by plain SQL statement splitting.
  */
 public final class OracleLogExtractor implements SqlLogExtractor {
-    private final OracleScriptParser scriptParser;
+    private final OracleScriptFramer scriptFramer;
 
     public OracleLogExtractor() {
-        this(new OracleScriptParser());
+        this(new OracleScriptFramer());
     }
 
-    public OracleLogExtractor(OracleScriptParser scriptParser) {
-        this.scriptParser = scriptParser;
+    public OracleLogExtractor(OracleScriptFramer scriptFramer) {
+        this.scriptFramer = scriptFramer;
     }
 
     @Override
@@ -37,6 +37,6 @@ public final class OracleLogExtractor implements SqlLogExtractor {
             LogFormatHint hint,
             Consumer<WarningMessage> warnings
     ) {
-        return new ScriptFileExtractor().extract(file, StatementSourceType.PLAIN_SQL, scriptParser, warnings);
+        return new ScriptFileExtractor().extract(file, StatementSourceType.PLAIN_SQL, scriptFramer, warnings);
     }
 }

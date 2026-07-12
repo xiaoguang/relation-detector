@@ -3,7 +3,7 @@ package com.relationdetector.core.parser;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
+import com.relationdetector.core.fullgrammar.SqlGrammarProfileSelection;
 
 /**
  * ParserBundle 选择结果。

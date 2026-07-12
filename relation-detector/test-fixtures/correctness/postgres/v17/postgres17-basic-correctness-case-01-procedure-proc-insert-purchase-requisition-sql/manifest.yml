@@ -1,7 +1,7 @@
 id: postgres17-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: PROCEDURE

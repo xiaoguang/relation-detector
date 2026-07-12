@@ -36,7 +36,7 @@ CLI 覆盖参数：
 | `--output <file>` | 输出 JSON 文件路径 | 工具端持久化结果 |
 | `--plugin-dir <dir>` | 外部 adaptor jar 目录 | 仅插件化 adaptor 场景 |
 | `--min-confidence <n>` | 覆盖 `output.minConfidence` | 用户临时调阈值 |
-| `--parser-mode <mode>` | 覆盖 `parser.mode` | 用户强制 token-event 或 full-grammer |
+| `--parser-mode <mode>` | 覆盖 `parser.mode` | 用户强制 token-event 或 full-grammar |
 | `--grammar-profile <id>` | 覆盖 `parser.grammarProfile` | 用户明确数据库版本方言 |
 | `--database-version <v>` | 覆盖 `parser.databaseVersion` | JDBC 无法获取版本或离线文件扫描 |
 
@@ -58,7 +58,7 @@ relationDetectionRequest:
     adaptorId: optional
 
   parser:
-    mode: auto | full-grammer | token-event
+    mode: auto | full-grammar | token-event
     grammarProfile: optional
     databaseVersion: optional
 
@@ -110,10 +110,10 @@ database:
 
 | 类型 | 用途 |
 | --- | --- |
-| `MYSQL` | MySQL token-event / full-grammer |
-| `POSTGRESQL` | PostgreSQL token-event / full-grammer |
-| `ORACLE` | Oracle token-event / full-grammer |
-| `SQLSERVER` | SQL Server token-event / full-grammer |
+| `MYSQL` | MySQL token-event / full-grammar |
+| `POSTGRESQL` | PostgreSQL token-event / full-grammar |
+| `ORACLE` | Oracle token-event / full-grammar |
+| `SQLSERVER` | SQL Server token-event / full-grammar |
 | `COMMON` | portable common token-event benchmark / 通用 SQL 文件扫描 |
 
 环境变量写法 `${NAME}` 由配置加载器解析。缺失环境变量会报配置错误。
@@ -129,8 +129,8 @@ parser:
 
 | 字段 | 含义 |
 | --- | --- |
-| `mode=auto` | 默认。能选中 full-grammer profile 时使用 full-grammer，否则 token-event |
-| `mode=full-grammer` | 优先使用版本化 full-grammer；profile 缺失或 hard failure 时按当前 parser 策略 fallback |
+| `mode=auto` | 默认。能选中 full-grammar profile 时使用 full-grammar，否则 token-event |
+| `mode=full-grammar` | 优先使用版本化 full-grammar；profile 缺失或 hard failure 时按当前 parser 策略 fallback |
 | `mode=token-event` | 强制使用宽松 token-event parser |
 | `grammarProfile` | 明确指定方言版本 grammar |
 | `databaseVersion` | 传入数据库版本，用于 profile 选择 |
@@ -143,7 +143,7 @@ parser:
 | PostgreSQL | `postgresql/16`, `postgresql/17`, `postgresql/18` |
 | Oracle | `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai` |
 | SQL Server | `sqlserver/2016`, `sqlserver/2017`, `sqlserver/2019`, `sqlserver/2022`, `sqlserver/2025` |
-| Common | 无 full-grammer；使用 `mode: token-event` |
+| Common | 无 full-grammar；使用 `mode: token-event` |
 
 工具端应把用户选择的“数据库版本方言”直接映射到 `grammarProfile` 和 `databaseVersion`，不要在工具端自行降级或改写 SQL。
 
@@ -347,7 +347,7 @@ database:
   schema: sample_data
 
 parser:
-  mode: full-grammer
+  mode: full-grammar
   grammarProfile: mysql/8.0
   databaseVersion: "8.0"
 
@@ -633,6 +633,6 @@ CLI 退出码来自 contracts `ErrorCode`：
 - 工具端必须把用户过滤规则、数据库版本方言、命名规则、derived 开关作为结构化配置透传，不要拼到自然语言提示词里。
 - 工具端不要在 relation-detector 输出后自行创造或删除 evidence；如果需要过滤展示，应保留原始 JSON。
 - `schema.table.column` 与 `table.column` 默认不是同一个 endpoint；工具端不要自动合并 schema-qualified 和裸表名。
-- `COMMON` 是可运行 parser category，但没有 full-grammer；它用于 portable SQL，不代表某个真实数据库 adaptor。
-- Oracle full-grammer 当前仍按文档声明为 scoped/versioned coverage，不应在 UI 中宣传为完整官方 Oracle grammar。
+- `COMMON` 是可运行 parser category，但没有 full-grammar；它用于 portable SQL，不代表某个真实数据库 adaptor。
+- Oracle full-grammar 当前仍按文档声明为 scoped/versioned coverage，不应在 UI 中宣传为完整官方 Oracle grammar。
 - SQL Server / Oracle / MySQL / PostgreSQL 的版本差异由 `grammarProfile` 和 `databaseVersion` 表达；用户没有选择版本时优先使用 `parser.mode: auto`。

@@ -30,11 +30,11 @@ import com.relationdetector.core.identity.NamespaceContext;
 /**
  * DDL relationship 语义抽取器。
  *
- * <p>CN: 本类消费 token-event 或 full-grammer DDL parser 输出的 DDL_FOREIGN_KEY /
+ * <p>CN: 本类消费 token-event 或 full-grammar DDL parser 输出的 DDL_FOREIGN_KEY /
  * DDL_INDEX 事件，并转换为 RelationshipCandidate。DDL parser 不直接创建最终关系。
  *
  * <p>EN: DDL relationship semantic extractor. It consumes DDL_FOREIGN_KEY and
- * DDL_INDEX events emitted by token-event or full-grammer DDL parsers and turns
+ * DDL_INDEX events emitted by token-event or full-grammar DDL parsers and turns
  * them into RelationshipCandidate instances. DDL parsers do not create final
  * relationships directly.
  */

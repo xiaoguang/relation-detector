@@ -21,7 +21,7 @@ import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 import com.relationdetector.core.naming.NamingEvidenceExtractor;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.provenance.SourceProvenanceValidator;
 
@@ -34,7 +34,7 @@ public final class StatementExecutionService {
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
     private final StructuredDataLineageExtractor dataLineageExtractor = new StructuredDataLineageExtractor();
     private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
-    private final TokenEventRelationExtractor tokenEventRelationExtractor = new TokenEventRelationExtractor();
+    private final StructuredRelationshipExtractor tokenEventRelationExtractor = new StructuredRelationshipExtractor();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
 
     public StatementExecutionOutcome executeSql(

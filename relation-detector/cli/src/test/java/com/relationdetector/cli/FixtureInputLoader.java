@@ -3,9 +3,9 @@ package com.relationdetector.cli;
 import java.util.List;
 
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.spi.DialectScriptParser;
+import com.relationdetector.contracts.spi.DialectScriptFramer;
 
 final class FixtureInputLoader {
     private final TestAssetCatalog assets;
@@ -31,9 +31,9 @@ final class FixtureInputLoader {
             CorrectnessFixture fixture,
             String input,
             List<WarningMessage> warnings,
-            DialectScriptParser scriptParser
+            DialectScriptFramer scriptFramer
     ) {
-        var parsed = scriptParser.parse(new ScriptParseRequest(
+        var parsed = scriptFramer.frame(new ScriptFrameRequest(
                 input, fixture.inputFile().toString(), fixture.sourceType()));
         warnings.addAll(parsed.warnings());
         String filter = fixture.objectSourceFilter() == null ? "" : fixture.objectSourceFilter().trim();

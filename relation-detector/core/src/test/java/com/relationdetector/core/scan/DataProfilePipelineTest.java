@@ -154,7 +154,7 @@ class DataProfilePipelineTest {
                     (statement, context) -> List.<RelationshipCandidate>of(),
                     Optional.empty(),
                     Optional.empty(),
-                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
 
         @Override

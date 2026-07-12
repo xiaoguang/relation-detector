@@ -19,12 +19,12 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
-import com.relationdetector.sqlserver.script.SqlServerScriptParser;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
+import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 class SqlServerTokenEventParserTest {
@@ -40,7 +40,7 @@ class SqlServerTokenEventParserTest {
 
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
         assertTypedComplete(result);
-        var relationships = new TokenEventRelationExtractor().extract(statement, result);
+        var relationships = new StructuredRelationshipExtractor().extract(statement, result);
 
         assertTrue(relationships.stream().anyMatch(relationship ->
                         Set.of(relationship.source().column().table().tableName(),
@@ -129,7 +129,7 @@ class SqlServerTokenEventParserTest {
 
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
         var lineages = new StructuredDataLineageExtractor().extract(statement, result);
-        var relations = new TokenEventRelationExtractor().extract(statement, result);
+        var relations = new StructuredRelationshipExtractor().extract(statement, result);
 
         assertLineage(lineages, "supplier_products", "supplier_id", "product_batches", "supplier_id");
         assertLineage(lineages, "supplier_products", "supplier_price", "product_batches", "purchase_price");
@@ -159,7 +159,7 @@ class SqlServerTokenEventParserTest {
                 """, StatementSourceType.PLAIN_SQL, "sqlserver-product-batch-apply.sql", 1, 1, Map.of());
 
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
-        var relations = new TokenEventRelationExtractor().extract(statement, result);
+        var relations = new StructuredRelationshipExtractor().extract(statement, result);
         assertTrue(relations.stream().anyMatch(relation -> matchesPair(relation,
                         "product_batches", "product_id", "purchase_order_items", "product_id")),
                 () -> "APPLY product-batch product predicate must be retained: " + relations
@@ -719,8 +719,8 @@ class SqlServerTokenEventParserTest {
     }
 
     private List<SqlStatementRecord> scriptStatements(Path file, StatementSourceType sourceType) {
-        return new SqlServerScriptParser().parse(
-                new ScriptParseRequest(readFixture(file), file.toString(), sourceType)).statements();
+        return new SqlServerScriptFramer().frame(
+                new ScriptFrameRequest(readFixture(file), file.toString(), sourceType)).statements();
     }
 
     private Path repositoryRoot() {

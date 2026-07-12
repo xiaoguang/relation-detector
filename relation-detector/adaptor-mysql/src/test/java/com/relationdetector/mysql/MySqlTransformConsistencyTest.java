@@ -15,8 +15,6 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.mysql.fullgrammer.v5_7.MySql57FullGrammerDialectModule;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerDialectModule;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
 class MySqlTransformConsistencyTest {
@@ -121,8 +119,10 @@ class MySqlTransformConsistencyTest {
     private List<NamedParser> parsers() {
         return List.of(
                 new NamedParser("token-event", new MySqlTokenEventStructuredSqlParser()),
-                new NamedParser("mysql/5.7", new MySql57FullGrammerDialectModule().sqlParser()),
-                new NamedParser("mysql/8.0", new MySqlFullGrammerDialectModule().sqlParser()));
+                new NamedParser("mysql/5.7",
+                        new com.relationdetector.mysql.fullgrammar.v5_7.FullGrammarDialectModule().sqlParser()),
+                new NamedParser("mysql/8.0",
+                        new com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule().sqlParser()));
     }
 
     private List<DataLineageCandidate> extract(StructuredSqlParser parser, SqlStatementRecord statement) {

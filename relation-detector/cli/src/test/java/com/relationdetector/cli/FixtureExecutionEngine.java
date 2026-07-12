@@ -75,7 +75,7 @@ final class FixtureExecutionEngine {
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
         List<SqlStatementRecord> statements = inputLoader.sqlStatements(
-                fixture, input.input(), warnings, adaptor.parsers().scripts());
+                fixture, input.input(), warnings, adaptor.parsers().scriptFramer());
         List<RelationshipCandidate> relationships = new ArrayList<>();
         List<DataLineageCandidate> lineages = new ArrayList<>();
         NamingEvidencePool namingEvidencePool = new NamingEvidencePool();
@@ -100,7 +100,7 @@ final class FixtureExecutionEngine {
         AdaptorContext context = context(fixture, warnings);
         ParserBundle parserBundle = runtime.parserBundle();
         List<SqlStatementRecord> statements = inputLoader.sqlStatements(
-                fixture, input.input(), warnings, adaptor.parsers().scripts());
+                fixture, input.input(), warnings, adaptor.parsers().scriptFramer());
         StatementExecutionOutcome outcome = isCommonTokenEventFixture(fixture)
                 ? statementExecutionServices.get().executeDdlStatements(
                         runtime.commonDdlParser(), statements,

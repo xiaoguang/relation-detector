@@ -16,8 +16,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
-import com.relationdetector.sqlserver.script.SqlServerScriptParser;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
+import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 
 /** Opt-in execution check for a dedicated empty SQL Server database. */
 class SqlServerSampleDataExecutionIT {
@@ -76,8 +76,8 @@ class SqlServerSampleDataExecutionIT {
 
     private List<String> batches(Path file, boolean schema) throws Exception {
         StatementSourceType sourceType = schema ? StatementSourceType.DDL_FILE : StatementSourceType.PLAIN_SQL;
-        return new SqlServerScriptParser().parse(
-                new ScriptParseRequest(Files.readString(file), file.toString(), sourceType))
+        return new SqlServerScriptFramer().frame(
+                new ScriptFrameRequest(Files.readString(file), file.toString(), sourceType))
                 .statements().stream()
                 .map(com.relationdetector.contracts.parse.SqlStatementRecord::sql)
                 .toList();

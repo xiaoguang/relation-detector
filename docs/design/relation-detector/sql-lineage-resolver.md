@@ -14,7 +14,7 @@ core.lineage.ProjectionTraceResolver
 某个 CTE / derived table / projection alias 的输出列，能否安全回溯到物理表字段？
 ```
 
-当前 `token-event` 和 `full-grammer` 都先产生同一组 `StructuredSqlEvent`。`StructuredDataLineageExtractor` 再从这些事件构建 `ProjectionTrace`、`ExpressionSourceSet`、`AssignmentMapping`，最后生成 `DataLineageCandidate`。这个链路不再保留 SQL 文本 regex helper、token span fallback 或旧 `SqlLineageResolver`。
+当前 `token-event` 和 `full-grammar` 都先产生同一组 `StructuredSqlEvent`。`StructuredDataLineageExtractor` 再从这些事件构建 `ProjectionTrace`、`ExpressionSourceSet`、`AssignmentMapping`，最后生成 `DataLineageCandidate`。这个链路不再保留 SQL 文本 regex helper、token span fallback 或旧 `SqlLineageResolver`。
 
 ## 2. 为什么需要它
 
@@ -197,7 +197,7 @@ SELECT a.user_id + 1 AS user_id
 当前正式字段血缘和 relationship 是两条输出模型：
 
 - `ProjectionTraceResolver` 服务 Data Lineage 写入映射。
-- `TokenEventRelationExtractor` 可以消费同一批结构事件中的 rowset、predicate、projection 信息来还原关系端点，但 relationship 的 FK-like 方向、confidence、`NAMING_MATCH` 都在 relationship 语义层处理。
+- `StructuredRelationshipExtractor` 可以消费同一批结构事件中的 rowset、predicate、projection 信息来还原关系端点，但 relationship 的 FK-like 方向、confidence、`NAMING_MATCH` 都在 relationship 语义层处理。
 
 字段来源只证明“这个 projection column 来自哪个物理列”，不证明该列一定是外键。
 

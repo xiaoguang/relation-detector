@@ -67,7 +67,7 @@ class StructuredDataLineageExtractorTest {
                 "INSERT INTO sales_fact(order_id) SELECT o.id FROM sales_orders o",
                 StatementSourceType.PLAIN_SQL, "input.sql", 10, 12,
                 Map.of("sourceFile", "input.sql", "sourceStatementId", "input.sql:10-12"));
-        SourceProvenance full = SourceProvenance.fullGrammer(statement, 11, "", "typed-context");
+        SourceProvenance full = SourceProvenance.fullGrammar(statement, 11, "", "typed-context");
         StructuredParseResult structured = new StructuredParseResult("FULL", "mysql", statement.sourceName(),
                 List.of(
                         new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, full,
@@ -83,7 +83,7 @@ class StructuredDataLineageExtractorTest {
 
         var evidence = new StructuredDataLineageExtractor().extract(statement, structured).get(0).evidence().get(0);
 
-        assertTrue(Boolean.TRUE.equals(evidence.attributes().get("fullGrammerNative")));
+        assertTrue(Boolean.TRUE.equals(evidence.attributes().get("fullGrammarNative")));
         assertFalse(evidence.attributes().containsKey("tokenEventNative"));
         assertEquals("typed SQL write mapping", evidence.detail());
     }

@@ -1,5 +1,5 @@
 id: postgres18-ddl-alter-table-fk
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/18
 databaseVersion: 18.1
 databaseType: POSTGRESQL

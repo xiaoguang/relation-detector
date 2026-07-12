@@ -15,14 +15,14 @@ relationship / lineage fingerprints must match one canonical expectation.
 
 | Scenario | Coverage | Expected relation | Expected lineage | Status |
 |---|---:|---:|---:|---|
-| `sales-fact-rebuild` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 7 | `MATCHED` |
-| `batch-expiry-analysis` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 0 | `MATCHED` |
-| `ddl-fk-index` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 1 | 0 | `MATCHED` |
-| `inventory-posting` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 6 | `MATCHED` |
-| `mrp-run` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 5 | `MATCHED` |
-| `picking-task` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 3 | 6 | `MATCHED` |
-| `return-refund` | common, MySQL token-event, MySQL 8.0 full-grammer, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 6 | `MATCHED` |
-| `relation-probe` | SQL Server v2016/v2017/v2019/v2022/v2025 full-grammer | 9 | 0 | `MATCHED` |
+| `sales-fact-rebuild` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 7 | `MATCHED` |
+| `batch-expiry-analysis` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 0 | `MATCHED` |
+| `ddl-fk-index` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 1 | 0 | `MATCHED` |
+| `inventory-posting` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 6 | `MATCHED` |
+| `mrp-run` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 5 | `MATCHED` |
+| `picking-task` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 3 | 6 | `MATCHED` |
+| `return-refund` | common, MySQL token-event, MySQL 8.0 full-grammar, PostgreSQL root/v16/v17/v18, Oracle root/v12c/v19c/v21c/v26ai | 2 | 6 | `MATCHED` |
+| `relation-probe` | SQL Server v2016/v2017/v2019/v2022/v2025 full-grammar | 9 | 0 | `MATCHED` |
 
 ## Interpretation
 
@@ -33,7 +33,7 @@ relationship / lineage fingerprints must match one canonical expectation.
   tables, temporary tables, and intermediate aliases should not become canonical
   endpoints when the parser can resolve them to physical tables.
 - The shared ERP scenarios did not expose confirmed parser gaps. The SQL Server
-  `relation-probe` scenario also matches across versioned full-grammer profiles
+  `relation-probe` scenario also matches across versioned full-grammar profiles
   and is intentionally limited to high-density T-SQL relation detection for now.
   Future
   scenarios should use the same workflow: add equivalent SQL first, run

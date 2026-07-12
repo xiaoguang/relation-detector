@@ -1,6 +1,6 @@
 # PostgreSQL Versioned Golden Diff
 
-This report compares strict PostgreSQL full-grammer correctness directories:
+This report compares strict PostgreSQL full-grammar correctness directories:
 
 - `test-fixtures/correctness/postgres/v16`
 - `test-fixtures/correctness/postgres/v17`
@@ -22,7 +22,7 @@ baseline and is not treated as a strict version grammar proof.
 
 ## v17-only Fixtures
 
-These are expected to be absent from PostgreSQL 16 strict full-grammer golden.
+These are expected to be absent from PostgreSQL 16 strict full-grammar golden.
 
 | Fixture | Covered syntax | Expected lower-version classification |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ These are expected to be absent from PostgreSQL 16 strict full-grammer golden.
 ## v18-only Fixtures
 
 These are expected to be absent from PostgreSQL 16 and PostgreSQL 17 strict
-full-grammer golden.
+full-grammar golden.
 
 | Fixture | Covered syntax | Expected lower-version classification |
 | --- | --- | --- |

@@ -5,7 +5,7 @@ This audit covers the 12 MySQL `proc_` object blocks from `test-fixtures/mysql/b
 ## Scope
 
 - PostgreSQL root fixtures use `parserMode: token-event`.
-- PostgreSQL `v16`, `v17`, and `v18` fixtures use `parserMode: full-grammer` with the matching `postgresql/<major>` profile.
+- PostgreSQL `v16`, `v17`, and `v18` fixtures use `parserMode: full-grammar` with the matching `postgresql/<major>` profile.
 - Support DDL is translated from the complete MySQL `show-create-tables.sql` into `mysql-proc-support-tables.sql`.
 - Parameters, local variables, local temporary tables, dynamic SQL, and pseudo rowsets are not physical relationship or lineage endpoints.
 

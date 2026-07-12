@@ -1,7 +1,7 @@
 id: oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql
 databaseType: ORACLE
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: oracle/21c
 databaseVersion: 21
 sourceType: PLAIN_SQL

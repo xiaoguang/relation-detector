@@ -78,12 +78,12 @@ final class GoldenAssertion {
     ) throws Exception {
         Map<String, Long> actualCodes = actual.stream()
                 .collect(Collectors.groupingBy(WarningMessage::code, LinkedHashMap::new, Collectors.counting()));
-        if (isStrictFullGrammerFixture(fixture)) {
+        if (isStrictFullGrammarFixture(fixture)) {
             assertFalse(actualCodes.containsKey("PARSER_MODE_FALLBACK"),
-                    () -> fixture.id() + " must not fallback from its declared full-grammer profile");
+                    () -> fixture.id() + " must not fallback from its declared full-grammar profile");
             if (!expected.warningCodes().containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX")) {
                 assertFalse(actualCodes.containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
-                        () -> fixture.id() + " must be accepted by its declared full-grammer profile");
+                        () -> fixture.id() + " must be accepted by its declared full-grammar profile");
             }
         }
         if (Boolean.getBoolean("updateCorrectnessGold") && Files.exists(fixture.inputFile())) {
@@ -172,8 +172,8 @@ final class GoldenAssertion {
                 () -> fixture.id() + " naming evidence fingerprints");
     }
 
-    private boolean isStrictFullGrammerFixture(CorrectnessFixture fixture) {
-        return fixture.parserMode().equals("full-grammer") && !fixture.grammarProfile().isBlank();
+    private boolean isStrictFullGrammarFixture(CorrectnessFixture fixture) {
+        return fixture.parserMode().equals("full-grammar") && !fixture.grammarProfile().isBlank();
     }
 
     private boolean shouldAssertFixtureHash(CorrectnessFixture fixture) {

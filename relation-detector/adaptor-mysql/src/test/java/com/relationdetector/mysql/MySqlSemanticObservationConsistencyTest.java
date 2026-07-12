@@ -17,8 +17,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.provenance.SemanticObservationFingerprint;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerDialectModule;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
+import com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
@@ -41,7 +41,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement),
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement),
                 "MySQL root token-event and v8.0 full grammar must agree on nested EXISTS observations");
     }
 
@@ -60,7 +60,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement),
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement),
                 "A typed window suffix must not suppress the surrounding join observation");
     }
 
@@ -75,7 +75,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement),
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement),
                 "A typed predicate-free CROSS JOIN must not suppress the following join observation");
     }
 
@@ -90,7 +90,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement),
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement),
                 "A typed SELECT INTO clause must not suppress the surrounding join observations");
     }
 
@@ -103,7 +103,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement));
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement));
     }
 
     @Test
@@ -118,7 +118,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement));
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement));
     }
 
     @Test
@@ -128,7 +128,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement),
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement),
                 "The waterfall CTE must preserve every typed join observation");
     }
 
@@ -146,7 +146,7 @@ class MySqlSemanticObservationConsistencyTest {
 
         assertEquals(
                 semanticObservationFingerprints(new MySqlTokenEventStructuredSqlParser(), statement),
-                semanticObservationFingerprints(new MySqlFullGrammerDialectModule().sqlParser(), statement));
+                semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement));
     }
 
     private List<SemanticObservationFingerprint> semanticObservationFingerprints(
@@ -155,7 +155,7 @@ class MySqlSemanticObservationConsistencyTest {
     ) {
         var structured = parser.parseSql(statement, null);
         List<SemanticObservationFingerprint> observations = new ArrayList<>();
-        new TokenEventRelationExtractor().extract(statement, structured).forEach(candidate ->
+        new StructuredRelationshipExtractor().extract(statement, structured).forEach(candidate ->
                 observations.addAll(SemanticObservationFingerprint.relationships(candidate)));
         new StructuredDataLineageExtractor().extract(statement, structured).forEach(candidate ->
                 observations.addAll(SemanticObservationFingerprint.lineages(candidate)));

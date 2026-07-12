@@ -129,7 +129,7 @@ naming:<source-normalized-key>-><target-normalized-key>:<rule>
 
 ### SQL 谓词关系守卫
 
-SQL 关系只来自明确的列-列结构谓词，不来自“同一 predicate 子树里恰好出现了多个字段”。该规则同时约束 token-event 与 full-grammer，因为两者最终都产出同一组 `StructuredSqlEvent` 并交给 `TokenEventRelationExtractor`。
+SQL 关系只来自明确的列-列结构谓词，不来自“同一 predicate 子树里恰好出现了多个字段”。该规则同时约束 token-event 与 full-grammar，因为两者最终都产出同一组 `StructuredSqlEvent` 并交给 `StructuredRelationshipExtractor`。
 
 允许产生 relationship event 的结构：
 

@@ -24,14 +24,13 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
+import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
-import com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 
 class OracleAdaptorParserTest {
     @Test
-    void oracleTokenEventAndFullGrammerSeparateCaseValueAndControlSources() {
+    void oracleTokenEventAndFullGrammarSeparateCaseValueAndControlSources() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO reconciliation_items (credit_amount)
                 SELECT CASE WHEN cj.journal_type = 'credit' THEN cj.amount ELSE 0 END
@@ -39,7 +38,7 @@ class OracleAdaptorParserTest {
                 """);
         List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
                 new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
-                new OracleFullGrammerDialectModule().sqlParser());
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
 
         for (var parser : parsers) {
             Set<String> lineages = lineage(statement, parser.parseSql(statement, null));
@@ -53,7 +52,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleTokenEventAndFullGrammerSeparateScalarAggregateValueAndControls() {
+    void oracleTokenEventAndFullGrammarSeparateScalarAggregateValueAndControls() {
         SqlStatementRecord statement = statement("""
                 UPDATE supplier_products sp
                 SET total_order_qty = (
@@ -66,7 +65,7 @@ class OracleAdaptorParserTest {
                 """);
         List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
                 new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
-                new OracleFullGrammerDialectModule().sqlParser());
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
 
         for (var parser : parsers) {
             Set<String> lineages = lineage(statement, parser.parseSql(statement, null));
@@ -83,7 +82,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleTokenEventAndFullGrammerKeepNestedAggregateCaseRoles() {
+    void oracleTokenEventAndFullGrammarKeepNestedAggregateCaseRoles() {
         SqlStatementRecord statement = statement("""
                 UPDATE supplier_products sp
                 SET total_order_qty = (
@@ -104,7 +103,7 @@ class OracleAdaptorParserTest {
                 """);
         List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
                 new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
-                new OracleFullGrammerDialectModule().sqlParser());
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
 
         for (var parser : parsers) {
             var result = parser.parseSql(statement, null);
@@ -128,7 +127,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleTokenEventAndFullGrammerKeepFunctionAndAggregateTransformsThroughProjection() {
+    void oracleTokenEventAndFullGrammarKeepFunctionAndAggregateTransformsThroughProjection() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO contract_milestones (planned_date)
                 SELECT ADD_MONTHS(c.start_date, 2)
@@ -158,7 +157,7 @@ class OracleAdaptorParserTest {
                 """);
         List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
                 new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
-                new OracleFullGrammerDialectModule().sqlParser());
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
 
         for (var parser : parsers) {
             Set<String> lineages = lineage(statement, parser.parseSql(statement, null));
@@ -223,19 +222,19 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerModuleCarriesVersionProfileAttributes() {
-        FullGrammerDialectModule module = new OracleFullGrammerDialectModule();
+    void oracleFullGrammarModuleCarriesVersionProfileAttributes() {
+        FullGrammarDialectModule module = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule();
         var result = module.sqlParser().parseSql(statement("SELECT c.id FROM customers c"), null);
 
         assertEquals("oracle-26ai", module.profile().id());
-        assertEquals("ORACLE_FULL_GRAMMER_PARSE_TREE", result.backend());
-        assertEquals("oracle-26ai", result.attributes().get("fullGrammerProfile"));
+        assertEquals("ORACLE_FULL_GRAMMAR_PARSE_TREE", result.backend());
+        assertEquals("oracle-26ai", result.attributes().get("fullGrammarProfile"));
         assertEquals("INCOMPLETE_VERSIONED", result.attributes().get("grammarCoverage"));
     }
 
     @Test
-    void oracleFullGrammerParsesProcedureInsertSelectLineageEvents() {
-        FullGrammerDialectModule module = new OracleFullGrammerDialectModule();
+    void oracleFullGrammarParsesProcedureInsertSelectLineageEvents() {
+        FullGrammarDialectModule module = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule();
         var result = module.sqlParser().parseSql(statement("""
                 CREATE OR REPLACE PROCEDURE sp_create_reconciliation
                 AS
@@ -265,8 +264,8 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerDdlParserEmitsForeignKeyEvents() {
-        FullGrammerDialectModule module = new OracleFullGrammerDialectModule();
+    void oracleFullGrammarDdlParserEmitsForeignKeyEvents() {
+        FullGrammarDialectModule module = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule();
         var result = module.structuredDdlParser().parseDdl("""
                 CREATE TABLE customers (
                     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY
@@ -318,8 +317,8 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerDdlParserEmitsColumnInventoryForNamingEvidence() {
-        FullGrammerDialectModule module = new OracleFullGrammerDialectModule();
+    void oracleFullGrammarDdlParserEmitsColumnInventoryForNamingEvidence() {
+        FullGrammarDialectModule module = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule();
         var result = module.structuredDdlParser().parseDdl("""
                 CREATE TABLE orders (
                     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -333,13 +332,13 @@ class OracleAdaptorParserTest {
                         event.type() == StructuredParseEventType.DDL_COLUMN
                                 && "orders".equals(event.table())
                                 && "customer_id".equals(event.column())),
-                () -> "Oracle full-grammer DDL should emit DDL_COLUMN inventory events: "
+                () -> "Oracle full-grammar DDL should emit DDL_COLUMN inventory events: "
                         + result.events());
     }
 
     @Test
-    void oracleFullGrammerDdlParserEmitsGeneratedColumnInventory() {
-        var result = new OracleFullGrammerDialectModule().structuredDdlParser().parseDdl("""
+    void oracleFullGrammarDdlParserEmitsGeneratedColumnInventory() {
+        var result = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().structuredDdlParser().parseDdl("""
                 CREATE TABLE fixed_assets (
                     original_value NUMBER(12,2),
                     residual_value NUMBER(12,2),
@@ -355,7 +354,7 @@ class OracleAdaptorParserTest {
                         event.type() == StructuredParseEventType.DDL_COLUMN
                                 && "fixed_assets".equals(event.table())
                                 && "monthly_depreciation".equals(event.column())),
-                () -> "Oracle full-grammer DDL should inventory generated columns: " + result.events());
+                () -> "Oracle full-grammar DDL should inventory generated columns: " + result.events());
     }
 
     @Test
@@ -373,10 +372,10 @@ class OracleAdaptorParserTest {
                 """;
         List<StructuredDdlParser> parsers = List.of(
                 new OracleDatabaseAdaptor().parsers().structuredDdl().orElseThrow(),
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule().structuredDdlParser(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule().structuredDdlParser(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule().structuredDdlParser(),
-                new OracleFullGrammerDialectModule().structuredDdlParser());
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().structuredDdlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().structuredDdlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().structuredDdlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().structuredDdlParser());
 
         for (StructuredDdlParser parser : parsers) {
             var result = parser.parseDdl(ddl, "oracle-comment-ddl.sql", null);
@@ -679,7 +678,7 @@ class OracleAdaptorParserTest {
 
         var structured = new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow().parseSql(statement, null);
         java.util.List<RelationshipCandidate> relations =
-                new TokenEventSqlRelationParser(new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow())
+                new StructuredSqlRelationshipParser(new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow())
                         .parse(statement);
         java.util.Set<String> fingerprints = relations.stream()
                 .map(relation -> relation.relationType() + ":"
@@ -754,7 +753,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleTokenEventAndFullGrammerCoverConfirmedOracle26aiRelations() {
+    void oracleTokenEventAndFullGrammarCoverConfirmedOracle26aiRelations() {
         SqlStatementRecord statement = statement("""
                 SELECT cj.id
                 FROM cashier_journals cj
@@ -779,7 +778,7 @@ class OracleAdaptorParserTest {
                 """);
         List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
                 new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
-                new OracleFullGrammerDialectModule().sqlParser());
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
         for (var parser : parsers) {
             Set<String> fingerprints = relationFingerprints(statement, parser);
 
@@ -791,7 +790,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerFindsRelationsInsideScalarSubqueryProjections() {
+    void oracleFullGrammarFindsRelationsInsideScalarSubqueryProjections() {
         SqlStatementRecord statement = statement("""
                 SELECT
                     d.id,
@@ -812,7 +811,7 @@ class OracleAdaptorParserTest {
                 FROM customers c
                 """);
 
-        var parser = new OracleFullGrammerDialectModule().sqlParser();
+        var parser = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser();
         var result = parser.parseSql(statement, null);
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE
@@ -826,7 +825,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerDoesNotTreatFunctionEqualityAsDirectColumnEquality() {
+    void oracleFullGrammarDoesNotTreatFunctionEqualityAsDirectColumnEquality() {
         SqlStatementRecord statement = statement("""
                 SELECT so.id
                 FROM sales_orders so
@@ -839,7 +838,7 @@ class OracleAdaptorParserTest {
 
         Set<String> fingerprints = relationFingerprints(
                 statement,
-                new OracleFullGrammerDialectModule().sqlParser());
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
 
         assertTrue(fingerprints.stream().noneMatch(value ->
                         value.contains("salary_payments.salary_month") && value.contains("sales_orders.order_date")),
@@ -887,15 +886,15 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerMergeUpdateEmitsLineageMappingsForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarMergeUpdateEmitsLineageMappingsForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         var statement = statement(oracleMergeUpdateSql());
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             var result = module.sqlParser().parseSql(statement, null);
 
             assertEquals(0, result.attributes().get("syntaxErrors"),
@@ -915,15 +914,15 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerCommissionProcedureBlockEmitsInsertAndMergeLineageForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarCommissionProcedureBlockEmitsInsertAndMergeLineageForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         var statement = statement(oracleCommissionInsertAndMergeSql());
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             var result = module.sqlParser().parseSql(statement, null);
 
             assertEquals(0, result.attributes().get("syntaxErrors"),
@@ -941,12 +940,12 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerOnlyTreatsStandaloneEqualsAsColumnEqualityForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarOnlyTreatsStandaloneEqualsAsColumnEqualityForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         var statement = statement("""
                 SELECT i.product_id
                 FROM inventory i
@@ -955,7 +954,7 @@ class OracleAdaptorParserTest {
                   AND i.available_quantity >= p.max_stock
                 """);
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             Set<String> fingerprints = relationFingerprints(statement, module.sqlParser());
             assertRelation(fingerprints, "inventory.product_id", "products.id", module.profile().id());
             assertTrue(fingerprints.stream().noneMatch(fingerprint ->
@@ -967,19 +966,19 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerClassifiesUnaryMinusAsArithmeticForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarClassifiesUnaryMinusAsArithmeticForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         var statement = statement("""
                 INSERT INTO inventory_transactions (quantity_change)
                 SELECT -rop.quantity
                 FROM repair_order_parts rop
                 """);
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             Set<String> lineages = lineage(statement, module.sqlParser().parseSql(statement, null));
             assertTrue(lineages.contains(
                             "VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change"),
@@ -988,12 +987,12 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerProcedureBlockEmitsArAgingInsertSelectLineageForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarProcedureBlockEmitsArAgingInsertSelectLineageForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         var statement = statement("""
                 CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
                     p_result OUT SYS_REFCURSOR
@@ -1017,7 +1016,7 @@ class OracleAdaptorParserTest {
                 /
                 """);
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             var result = module.sqlParser().parseSql(statement, null);
 
             assertEquals(0, result.attributes().get("syntaxErrors"),
@@ -1038,17 +1037,17 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerThirdBatchProcedureFixtureEmitsArAgingLineageForEveryVersion() throws IOException {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarThirdBatchProcedureFixtureEmitsArAgingLineageForEveryVersion() throws IOException {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         String sql = Files.readString(workspaceRoot().resolve("test-fixtures/correctness/oracle/"
                 + "oracle-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql"));
         java.util.Map<String, String> procedures = oracleProcedureBlocks(sql);
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             Set<String> lineages = procedures.values().stream()
                     .flatMap(procedure -> {
                         var statement = statement(procedure);
@@ -1067,18 +1066,18 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerThirdBatchIndividualProceduresParseForEveryVersion() throws IOException {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarThirdBatchIndividualProceduresParseForEveryVersion() throws IOException {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         String sql = Files.readString(workspaceRoot().resolve("test-fixtures/correctness/oracle/"
                 + "oracle-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql"));
         java.util.Map<String, String> procedures = oracleProcedureBlocks(sql);
         StringBuilder failures = new StringBuilder();
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             for (var entry : procedures.entrySet()) {
                 var result = module.sqlParser().parseSql(statement(entry.getValue()), null);
                 int syntaxErrors = (Integer) result.attributes().get("syntaxErrors");
@@ -1097,12 +1096,12 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerDeepScenarioProceduresEmitConfirmedTokenEventLineageForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarDeepScenarioProceduresEmitConfirmedTokenEventLineageForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         List<String> fixtureObjects = List.of(
                 "ROUTINE:oracle.sp_rebuild_sales_fact",
                 "ROUTINE:oracle.sp_run_mrp_for_plan",
@@ -1110,7 +1109,7 @@ class OracleAdaptorParserTest {
                 "ROUTINE:oracle.sp_calculate_work_order_actual_cost",
                 "ROUTINE:oracle.sp_post_cogs_for_sales_order",
                 "ROUTINE:oracle.sp_issue_repair_order_parts");
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             Set<String> lineages = fixtureObjects.stream()
                     .flatMap(sourceName -> {
                         var statement = statement(oracleFixtureObject(sourceName));
@@ -1160,12 +1159,12 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerResolvesCteProjectionRelationsToPhysicalSources() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarResolvesCteProjectionRelationsToPhysicalSources() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         SqlStatementRecord statement = statement("""
                 WITH cat_sales AS (
                     SELECT p.category_id
@@ -1177,8 +1176,8 @@ class OracleAdaptorParserTest {
                 JOIN cat_sales cs ON pc.id = cs.category_id
                 """);
 
-        for (FullGrammerDialectModule module : modules) {
-            Set<String> fingerprints = new TokenEventSqlRelationParser(module.sqlParser())
+        for (FullGrammarDialectModule module : modules) {
+            Set<String> fingerprints = new StructuredSqlRelationshipParser(module.sqlParser())
                     .parse(statement).stream()
                     .map(relation -> relation.relationType() + ":"
                             + relation.source().displayName() + "->"
@@ -1194,7 +1193,7 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerEnforcesVersionSpecificSyntaxBoundaries() {
+    void oracleFullGrammarEnforcesVersionSpecificSyntaxBoundaries() {
         String memoptimize19c = """
                 CREATE TABLE fast_lookup (
                     id NUMBER PRIMARY KEY,
@@ -1235,49 +1234,49 @@ class OracleAdaptorParserTest {
                 /
                 """;
 
-        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
                 memoptimize19c);
-        assertParses(new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+        assertParses(new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
                 memoptimize19c);
 
-        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
                 sqlMacro21c);
-        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
                 sqlMacro21c);
-        assertParses(new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+        assertParses(new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
                 sqlMacro21c);
 
-        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
                 vector26ai);
-        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
                 vector26ai);
-        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+        assertSyntaxErrors(new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
                 vector26ai);
-        assertParses(new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule(),
+        assertParses(new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule(),
                 vector26ai);
 
-        for (FullGrammerDialectModule lowerVersion : List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule())) {
+        for (FullGrammarDialectModule lowerVersion : List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule())) {
             assertSyntaxErrors(lowerVersion, sqlBoolean26ai);
             assertSyntaxErrors(lowerVersion, multivalueInsert26ai);
             assertSyntaxErrors(lowerVersion, routineWithMultivalueInsert26ai);
         }
-        FullGrammerDialectModule oracle26ai =
-                new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule();
+        FullGrammarDialectModule oracle26ai =
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule();
         assertParses(oracle26ai, sqlBoolean26ai);
         assertParses(oracle26ai, multivalueInsert26ai);
         assertParses(oracle26ai, routineWithMultivalueInsert26ai);
     }
 
     @Test
-    void oracleFullGrammerRejectsEmptyParenthesesOnZeroParameterProcedureAcrossVersions() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarRejectsEmptyParenthesesOnZeroParameterProcedureAcrossVersions() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         var invalid = statement("""
                 CREATE OR REPLACE PROCEDURE sp_invalid_empty_params()
                 AS
@@ -1287,7 +1286,7 @@ class OracleAdaptorParserTest {
                 /
                 """);
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             var result = module.sqlParser().parseSql(invalid, null);
             assertTrue(((Number) result.attributes().get("syntaxErrors")).intValue() > 0,
                     () -> module.profile().id() + " must reject Oracle zero-parameter empty parentheses; "
@@ -1296,12 +1295,12 @@ class OracleAdaptorParserTest {
     }
 
     @Test
-    void oracleFullGrammerRejectsPostgresAndMysqlStructuralSyntaxForEveryVersion() {
-        List<FullGrammerDialectModule> modules = List.of(
-                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
-                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
-                new OracleFullGrammerDialectModule());
+    void oracleFullGrammarRejectsPostgresAndMysqlStructuralSyntaxForEveryVersion() {
+        List<FullGrammarDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule());
         List<String> nonOracleSql = List.of(
                 "CREATE UNLOGGED TABLE audit_buffer (id NUMBER)",
                 "CREATE TABLE IF NOT EXISTS customers_shadow (id NUMBER)",
@@ -1313,7 +1312,7 @@ class OracleAdaptorParserTest {
                 WHEN NOT MATCHED THEN DO NOTHING
                 """);
 
-        for (FullGrammerDialectModule module : modules) {
+        for (FullGrammarDialectModule module : modules) {
             for (String sql : nonOracleSql) {
                 assertSyntaxErrors(module, sql);
             }
@@ -1339,7 +1338,7 @@ class OracleAdaptorParserTest {
             SqlStatementRecord statement,
             com.relationdetector.contracts.spi.Collectors.StructuredSqlParser parser
     ) {
-        return new TokenEventSqlRelationParser(parser)
+        return new StructuredSqlRelationshipParser(parser)
                 .parse(statement).stream()
                 .map(relation -> relation.relationType() + ":"
                         + relation.source().displayName() + "->"
@@ -1553,12 +1552,12 @@ class OracleAdaptorParserTest {
                 && Files.isDirectory(path.resolve("test-fixtures"));
     }
 
-    private void assertParses(FullGrammerDialectModule module, String sql) {
+    private void assertParses(FullGrammarDialectModule module, String sql) {
         var result = module.sqlParser().parseSql(statement(sql), null);
         assertEquals(0, result.attributes().get("syntaxErrors"), module.profile().id() + " should parse " + sql);
     }
 
-    private void assertSyntaxErrors(FullGrammerDialectModule module, String sql) {
+    private void assertSyntaxErrors(FullGrammarDialectModule module, String sql) {
         var result = module.sqlParser().parseSql(statement(sql), null);
         assertTrue((Integer) result.attributes().get("syntaxErrors") > 0,
                 module.profile().id() + " should reject " + sql);

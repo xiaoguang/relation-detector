@@ -1,7 +1,8 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes",
     "VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit",
-    "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,transaction_ledgers.merchant_category->account_balances.compliance_notes",
+    "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes",
     "VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags"
   ],
   "forbiddenSources": [

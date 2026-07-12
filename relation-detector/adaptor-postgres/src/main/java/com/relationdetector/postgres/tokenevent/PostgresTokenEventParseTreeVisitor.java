@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Locale;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
+import com.relationdetector.postgres.plpgsql.tokenevent.TokenEventPlPgSqlBodyParser;
+import com.relationdetector.postgres.routine.PostgresRoutineBodyKind;
+import com.relationdetector.postgres.routine.PostgresRoutineDescriptor;
+import com.relationdetector.postgres.routine.PostgresRoutineLanguageDispatcher;
+import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
@@ -13,7 +16,16 @@ import com.relationdetector.contracts.model.WarningMessage;
 
 /** Typed traversal facade for the PostgreSQL token-event structural grammar. */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEventWriteDdlSupport {
-    public PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement) { super(statement); }
+    private final boolean allowRoutineDispatch;
+
+    public PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement) {
+        this(statement, true);
+    }
+
+    PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement, boolean allowRoutineDispatch) {
+        super(statement);
+        this.allowRoutineDispatch = allowRoutineDispatch;
+    }
 
     public List<StructuredSqlEvent> collect(PostgresRelationSqlParser.ScriptContext root) {
         visit(root);
@@ -25,11 +37,37 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
     }
 
     @Override
-    public Void visitTerminal(TerminalNode node) {
-        if (node.getSymbol() != null
-                && node.getSymbol().getType() == PostgresRelationSqlParser.DOLLAR_QUOTED_STRING) {
-            collectRoutineBody(node.getText(), node.getSymbol().getLine());
-        }
+    public Void visitRoutineDeclarationStatement(PostgresRelationSqlParser.RoutineDeclarationStatementContext ctx) {
+        if (!allowRoutineDispatch) return null;
+        String quotedBody = ctx.routineDeclarationElement().stream()
+                .filter(element -> element.DOLLAR_QUOTED_STRING() != null)
+                .map(element -> element.DOLLAR_QUOTED_STRING().getText())
+                .findFirst().orElse("");
+        String language = ctx.routineDeclarationElement().stream()
+                .filter(element -> element.LANGUAGE() != null && element.identifier() != null)
+                .map(element -> clean(element.identifier().getText()).toLowerCase(Locale.ROOT))
+                .findFirst().orElse("");
+        String body = unquoteDollarBody(quotedBody);
+        if (body.isBlank()) return null;
+        PostgresRoutineBodyKind kind = switch (language) {
+            case "plpgsql" -> PostgresRoutineBodyKind.PLPGSQL;
+            case "sql", "" -> PostgresRoutineBodyKind.SQL_STRING;
+            default -> PostgresRoutineBodyKind.UNSUPPORTED_LANGUAGE;
+        };
+        String objectType = ctx.PROCEDURE() == null ? "FUNCTION" : "PROCEDURE";
+        String objectName = qualifiedName(ctx.qualifiedName());
+        int bodyLine = Math.toIntExact(statement.startLine() + Math.max(0,
+                ctx.routineDeclarationElement().stream()
+                        .filter(element -> element.DOLLAR_QUOTED_STRING() != null)
+                        .mapToInt(element -> element.getStart().getLine()).findFirst().orElse(1) - 1));
+        var outcome = new PostgresRoutineLanguageDispatcher(new TokenEventPlPgSqlBodyParser()).dispatch(
+                new PostgresRoutineDescriptor(kind, language, body, bodyLine, objectType, objectName),
+                PostgresRoutineAttributes.withNonColumnIdentifiers(statement,
+                        ctx.routineParameterList().routineParameter().stream()
+                                .map(parameter -> clean(parameter.identifier().getText())).toList()),
+                null, new PostgresTokenEventStructuredSqlParser(false));
+        events.addAll(outcome.events());
+        warnings.addAll(outcome.warnings());
         return null;
     }
 

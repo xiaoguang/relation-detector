@@ -12,36 +12,26 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
-import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule;
-import com.relationdetector.postgres.script.PostgresScriptParser;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
+import com.relationdetector.postgres.fullgrammar.v16.FullGrammarDialectModule;
+import com.relationdetector.postgres.plpgsql.tokenevent.TokenEventPlPgSqlBodyParser;
+import com.relationdetector.postgres.script.PostgresScriptFramer;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlLexer;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 
 class PostgresRoutineSampleLineageTest {
 
-    @Test
-    void expressionGrammarConsumesPostgresConcat() {
-        PostgresRoutineBodySqlParser parser = new PostgresRoutineBodySqlParser(new CommonTokenStream(
-                new PostgresRoutineBodySqlLexer(CharStreams.fromString(
-                        "'MRP-' || REPLACE(p.plan_month, '-', '') || '-' || p.id"))));
-
-        PostgresRoutineBodySqlParser.ExpressionContext expression = parser.expression();
-
-        assertEquals(Token.EOF, parser.getCurrentToken().getType(), expression.toStringTree(parser));
-        assertTrue(expression.expressionContinuation().CONCAT() != null,
-                expression.toStringTree(parser));
-    }
     @Test
     void legalProceduralStatementsDoNotBecomeUnsupportedDiagnostics() {
         String sql = """
@@ -64,7 +54,7 @@ class PostgresRoutineSampleLineageTest {
                         "sourceObjectType", "ROUTINE",
                         "sourceObjectName", "test_function"));
 
-        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+        PlPgSqlParseOutcome outcome = parseBody(statement);
 
         assertEquals(0, outcome.unsupportedStatementCount(), () -> outcome.warnings().toString());
         assertEquals(List.of(), outcome.warnings());
@@ -85,7 +75,7 @@ class PostgresRoutineSampleLineageTest {
                         "sourceObjectType", "ROUTINE",
                         "sourceObjectName", "test_mixed"));
 
-        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+        PlPgSqlParseOutcome outcome = parseBody(statement);
 
         assertEquals(1, outcome.unsupportedStatementCount());
         assertTrue(outcome.events().stream().anyMatch(event ->
@@ -115,7 +105,7 @@ class PostgresRoutineSampleLineageTest {
         SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
                 "ROUTINE:test_postgres_features", 20, 30, Map.of());
 
-        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+        PlPgSqlParseOutcome outcome = parseBody(statement);
 
         assertEquals(0, outcome.unsupportedStatementCount(), () -> outcome.warnings().toString());
         assertEquals(List.of(), outcome.warnings());
@@ -135,20 +125,16 @@ class PostgresRoutineSampleLineageTest {
         SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
                 "ROUTINE:test_postgres_natural_forms", 40, 48, Map.of());
 
-        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+        PlPgSqlParseOutcome outcome = parseBody(statement);
 
         assertEquals(List.of(), outcome.warnings());
         assertTrue(outcome.events().stream().anyMatch(event ->
-                event.type() == StructuredParseEventType.PREDICATE_EQUALITY));
+                        event.type() == StructuredParseEventType.PREDICATE_EQUALITY),
+                () -> outcome.events().toString());
     }
 
     @Test
     void outerConcatDominatesNestedCoalesceForWriteLineage() {
-        String expressionSql = "cj.journal_type::TEXT || ' - ' || COALESCE(cj.counterparty, '')"
-                + " || ' ' || COALESCE(cj.remark, '')";
-        PostgresRoutineBodySqlParser expressionParser = new PostgresRoutineBodySqlParser(new CommonTokenStream(
-                new PostgresRoutineBodySqlLexer(CharStreams.fromString(expressionSql))));
-        var expression = expressionParser.expression();
         String bodySql = """
                 BEGIN
                   INSERT INTO reconciliation_items (description)
@@ -161,20 +147,6 @@ class PostgresRoutineSampleLineageTest {
                 + bodySql + "$$;";
         SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
                 "ROUTINE:test_concat", 1, sql.lines().count(), Map.of());
-        var analyses = new PostgresRoutineBodyParseTreeVisitor(statement).writeAnalyses(expression);
-        assertTrue(analyses.stream().anyMatch(analysis ->
-                        analysis.transform() == LineageTransformType.CONCAT_FORMAT),
-                () -> "Expression analysis lost the outer concat: " + analyses);
-        PostgresRoutineBodySqlParser scriptParser = new PostgresRoutineBodySqlParser(new CommonTokenStream(
-                new PostgresRoutineBodySqlLexer(CharStreams.fromString(bodySql))));
-        var item = scriptParser.script().statement(1).insertSelectStatement().selectStatement()
-                .querySpecification().selectList().selectItem(0);
-        var itemAnalyses = new PostgresRoutineBodyParseTreeVisitor(statement).selectItemAnalyses(item);
-        assertTrue(itemAnalyses.stream().anyMatch(analysis ->
-                        analysis.transform() == LineageTransformType.CONCAT_FORMAT),
-                () -> "SELECT item analysis lost the outer concat: " + item.toStringTree(scriptParser)
-                        + "; analyses=" + itemAnalyses);
-
         for (ParserCase parser : parsers()) {
             var structured = parser.parser().parseSql(statement, null);
             var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
@@ -188,12 +160,71 @@ class PostgresRoutineSampleLineageTest {
     }
 
     @Test
+    void arithmeticDominatesNestedCoalesceInsideFunctionForEveryParser() {
+        String sql = """
+                CREATE OR REPLACE PROCEDURE test_commission() LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO sales_commissions (commission_amount)
+                  SELECT ROUND(soi.amount * COALESCE(cr.commission_rate, 0.02), 2)
+                  FROM sales_order_items soi
+                  LEFT JOIN commission_rules cr ON soi.amount >= cr.min_amount;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_commission", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .filter(candidate -> "sales_commissions.commission_amount"
+                            .equals(candidate.target().displayName()))
+                    .filter(candidate -> candidate.flowKind()
+                            == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE)
+                    .findFirst().orElseThrow();
+            assertEquals(LineageTransformType.ARITHMETIC, lineage.transformType(),
+                    () -> parser.name() + " allowed nested COALESCE to override arithmetic: "
+                            + structured.events());
+        }
+    }
+
+    @Test
+    void booleanProjectionIsValueFunctionForEveryParser() {
+        String sql = """
+                CREATE OR REPLACE PROCEDURE test_boolean_projection() LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO category_dim (is_womenwear)
+                  SELECT pc.name = '女装' OR parent.name = '女装'
+                  FROM product_categories pc
+                  LEFT JOIN product_categories parent ON parent.id = pc.parent_id;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_boolean_projection", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .filter(candidate -> "category_dim.is_womenwear".equals(candidate.target().displayName()))
+                    .filter(candidate -> candidate.flowKind()
+                            == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE)
+                    .findFirst().orElseThrow();
+            assertEquals(LineageTransformType.FUNCTION_CALL, lineage.transformType(),
+                    () -> parser.name() + " classified a boolean projection as a direct column: "
+                            + structured.events());
+        }
+    }
+
+    @Test
     void cumulativeWindowDominatesOuterArithmeticForWriteLineage() {
         String sql = """
                 CREATE OR REPLACE PROCEDURE test_cumulative() LANGUAGE plpgsql AS $$
                 BEGIN
                   INSERT INTO jsh_temp_mock_plan (mock_timestamp_str)
-                  SELECT hp.hour_val + SUM(hp.weight) OVER (ORDER BY hp.hour_val)
+                  SELECT hp.hour_val + SUM(hp.weight) OVER (
+                    PARTITION BY hp.org_id ORDER BY hp.hour_val
+                  )
                   FROM jsh_temp_hour_pdf hp;
                 END;
                 $$;
@@ -204,11 +235,65 @@ class PostgresRoutineSampleLineageTest {
         for (ParserCase parser : parsers()) {
             var structured = parser.parser().parseSql(statement, null);
             var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
-            assertTrue(lineages.stream().anyMatch(lineage ->
-                            "jsh_temp_mock_plan.mock_timestamp_str".equals(lineage.target().displayName())
-                                    && lineage.transformType() == LineageTransformType.CUMULATIVE),
-                    () -> parser.name() + " did not preserve the cumulative window: "
+            var cumulative = lineages.stream()
+                    .filter(lineage -> "jsh_temp_mock_plan.mock_timestamp_str"
+                            .equals(lineage.target().displayName()))
+                    .filter(lineage -> lineage.transformType() == LineageTransformType.CUMULATIVE)
+                    .findFirst().orElseThrow(() -> new AssertionError(
+                            parser.name() + " did not preserve the cumulative window: "
+                                    + structured.events()));
+            assertEquals(Set.of("jsh_temp_hour_pdf.hour_val", "jsh_temp_hour_pdf.weight"),
+                    cumulative.sources().stream()
+                            .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
+                    () -> parser.name() + " treated the window ORDER BY as a VALUE source: "
                             + structured.events());
+        }
+    }
+
+    @Test
+    void scalarAggregateInCaseConditionIsControlForEveryParser() {
+        String sql = """
+                CREATE OR REPLACE PROCEDURE test_scalar_case() LANGUAGE plpgsql AS $$
+                BEGIN
+                  UPDATE users u
+                  SET total_spent = COALESCE((
+                        SELECT SUM(o.pay_amount)
+                        FROM orders o
+                        WHERE o.user_id = u.id
+                          AND o.order_status = 'PAID'
+                      ), 0.00),
+                      level = CASE
+                        WHEN COALESCE((
+                          SELECT SUM(o.pay_amount)
+                          FROM orders o
+                          WHERE o.user_id = u.id
+                            AND o.order_status = 'PAID'
+                        ), 0.00) >= 10000 THEN 'VIP'
+                        ELSE 'REGULAR'
+                      END;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_scalar_case", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            Set<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured)
+                    .stream()
+                    .map(this::lineageFingerprint)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+            assertTrue(fingerprints.contains(
+                            "VALUE:AGGREGATE:orders.pay_amount->users.total_spent"),
+                    () -> parser.name() + " lost the scalar projection VALUE: " + fingerprints);
+            assertTrue(fingerprints.contains(
+                            "CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level"),
+                    () -> parser.name() + " did not classify the CASE scalar condition as CONTROL: "
+                            + fingerprints);
+            assertTrue(fingerprints.stream().noneMatch(value ->
+                            value.startsWith("VALUE:") && value.endsWith("->users.level")),
+                    () -> parser.name() + " emitted CASE condition sources as VALUE: " + fingerprints);
         }
     }
 
@@ -230,7 +315,7 @@ class PostgresRoutineSampleLineageTest {
         SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
                 "ROUTINE:test_exception", 40, 50, Map.of());
 
-        PostgresRoutineParseOutcome outcome = PostgresRoutineBodyParser.parse(statement);
+        PlPgSqlParseOutcome outcome = parseBody(statement);
 
         assertEquals(0, outcome.unsupportedStatementCount(), () -> outcome.warnings().toString());
         assertEquals(List.of(), outcome.warnings());
@@ -242,11 +327,37 @@ class PostgresRoutineSampleLineageTest {
                 + "SELECT pc.id FROM product_categories pc;";
         SqlStatementRecord statement = new SqlStatementRecord(
                 body, StatementSourceType.PROCEDURE, "ROUTINE:public.test", 1, 1, java.util.Map.of());
-        var events = PostgresRoutineBodyParser.extract(statement);
+        var events = parseBody(statement).events();
 
         assertTrue(events.stream().anyMatch(event -> event.type() == StructuredParseEventType.ROWSET_REFERENCE
                         && "product_categories".equals(event.table())),
                 () -> "Routine INSERT SELECT must preserve rowset scope: " + events);
+    }
+
+    @Test
+    void declaredLocalVariableNeverBecomesPhysicalLineageSource() {
+        String sql = """
+                CREATE OR REPLACE PROCEDURE test_local_source(IN p_order_id BIGINT) LANGUAGE plpgsql AS $$
+                DECLARE
+                  v_recon_id BIGINT;
+                BEGIN
+                  INSERT INTO reconciliation_items (reconciliation_id, source_id)
+                  SELECT v_recon_id, p_order_id FROM cashier_journals cj;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_local_source", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+            assertTrue(lineages.stream().noneMatch(lineage -> lineage.sources().stream().anyMatch(source ->
+                            source.displayName().endsWith(".v_recon_id")
+                                    || source.displayName().endsWith(".p_order_id"))),
+                    () -> parser.name() + " treated a typed PL/pgSQL local/parameter as a physical column: "
+                            + lineages);
+        }
     }
 
     @Test
@@ -269,6 +380,43 @@ class PostgresRoutineSampleLineageTest {
     }
 
     @Test
+    void derivedAggregateDominatesOuterCoalesceForEveryParser() {
+        String sql = fixtureObject("ROUTINE:public.sp_refresh_budget_usage");
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:public.sp_refresh_budget_usage", 1, sql.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .filter(candidate -> "budget_items.used_amount".equals(candidate.target().displayName()))
+                    .filter(candidate -> candidate.flowKind()
+                            == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE)
+                    .findFirst().orElseThrow();
+            assertEquals(LineageTransformType.AGGREGATE, lineage.transformType(),
+                    () -> parser.name() + " lost the derived aggregate through COALESCE: "
+                            + structured.events());
+        }
+    }
+
+    @Test
+    void allParsersTraceNaturalReconciliationProcedure() {
+        String sql = sqlObject(
+                "sample-data/postgres/18/02-procedures/01-procedures.sql",
+                "CREATE OR REPLACE PROCEDURE sp_create_reconciliation",
+                "$$;");
+        var outerParser = new PostgresRelationSqlParser(new CommonTokenStream(
+                new PostgresRelationSqlLexer(CharStreams.fromString(sql))));
+        var outerRoot = outerParser.script();
+        assertTrue(outerRoot.statement().stream().anyMatch(statement ->
+                        statement.routineDeclarationStatement() != null),
+                () -> outerRoot.toStringTree(outerParser));
+        assertSqlForEveryParser("ROUTINE:public.sp_create_reconciliation",
+                StatementSourceType.PROCEDURE, sql, Set.of(
+                        "VALUE:cashier_journals.id->reconciliation_items.journal_id",
+                        "VALUE:cashier_journals.journal_date->reconciliation_items.transaction_date",
+                        "VALUE:cashier_journals.amount->reconciliation_items.debit_amount"));
+    }
+
+    @Test
     void allParsersTraceSupplierMetricRoutine() {
         String sql = sqlObject(
                 "sample-data/postgres/18/02-procedures/10-supplier-geo-procedures.sql",
@@ -279,7 +427,33 @@ class PostgresRoutineSampleLineageTest {
                         "VALUE:purchase_return_items.return_qty->supplier_products.return_rate",
                         "CONTROL:purchase_orders.supplier_id->supplier_products.return_rate",
                         "CONTROL:inspection_reports.inspection_result->supplier_products.quality_score",
+                        "VALUE:purchase_orders.id->supplier_products.total_order_count",
                         "VALUE:purchase_order_items.received_qty->supplier_products.total_order_qty"));
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:public.sp_update_supplier_metrics", 1, sql.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var returnRate = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .filter(lineage -> "supplier_products.return_rate".equals(lineage.target().displayName()))
+                    .filter(lineage -> lineage.flowKind()
+                            == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE)
+                    .findFirst().orElseThrow();
+            assertEquals(Set.of("purchase_return_items.return_qty", "purchase_order_items.received_qty"),
+                    returnRate.sources().stream()
+                            .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
+                    () -> parser.name() + " mixed scalar-subquery predicate columns into VALUE; events="
+                            + structured.events());
+            assertTrue(new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                            .filter(lineage -> "supplier_products.quality_score"
+                                    .equals(lineage.target().displayName()))
+                            .filter(lineage -> lineage.flowKind()
+                                    == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE)
+                            .noneMatch(lineage -> lineage.sources().stream().anyMatch(source ->
+                                    "inspection_reports.inspection_result".equals(source.displayName()))),
+                    () -> parser.name() + " treated CASE predicate as metric VALUE; events="
+                            + structured.events());
+        }
     }
 
     @Test
@@ -301,13 +475,29 @@ class PostgresRoutineSampleLineageTest {
                         "VALUE:sales_order_items.product_id->inventory_transactions.product_id",
                         "VALUE:sales_order_items.quantity->inventory_transactions.quantity_change",
                         "VALUE:inventory.quantity->inventory_transactions.before_qty"));
+        SqlStatementRecord statement = new SqlStatementRecord(salesTrigger, StatementSourceType.TRIGGER,
+                "TRIGGER:public.trg_sales_order_delivered", 1, salesTrigger.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+            assertLineageSources(parser.name(), lineages, "inventory_transactions.before_qty",
+                    com.relationdetector.contracts.Enums.LineageFlowKind.VALUE,
+                    Set.of("inventory.quantity"));
+            assertLineageSources(parser.name(), lineages, "inventory_transactions.before_qty",
+                    com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                    Set.of("inventory.product_id", "sales_order_items.product_id",
+                            "inventory.warehouse_id", "inventory.batch_id", "sales_order_items.batch_id"));
+            assertLineageSources(parser.name(), lineages, "inventory_transactions.after_qty",
+                    com.relationdetector.contracts.Enums.LineageFlowKind.VALUE,
+                    Set.of("inventory.quantity", "sales_order_items.quantity"));
+        }
     }
 
     @Test
     void naturalRoutineFileKeepsContractMilestoneJoin() throws IOException {
         Path path = workspaceRoot().resolve(
                 "sample-data/postgres/18/02-procedures/06-third-batch-functions.sql");
-        var script = new PostgresScriptParser().parse(new ScriptParseRequest(
+        var script = new PostgresScriptFramer().frame(new ScriptFrameRequest(
                 Files.readString(path), path.toString(), StatementSourceType.PROCEDURE));
         SqlStatementRecord statement = script.statements().stream()
                 .filter(candidate -> "fn_get_project_completion_pct".equals(
@@ -321,7 +511,7 @@ class PostgresRoutineSampleLineageTest {
         SqlStatementRecord bodyStatement = new SqlStatementRecord(
                 statement.sql().substring(bodyStart, bodyEnd), statement.sourceType(),
                 statement.sourceName(), statement.startLine(), statement.endLine(), statement.attributes());
-        var bodyOutcome = PostgresRoutineBodyParser.parse(bodyStatement);
+        var bodyOutcome = parseBody(bodyStatement);
         assertTrue(bodyOutcome.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.PREDICATE_EQUALITY
                                 && "cm".equals(event.left().alias())
@@ -333,12 +523,105 @@ class PostgresRoutineSampleLineageTest {
 
         for (ParserCase parser : parsers()) {
             var structured = parser.parser().parseSql(statement, null);
-            var relationships = new TokenEventRelationExtractor().extract(statement, structured);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
             assertTrue(relationships.stream().anyMatch(candidate ->
                             "contract_milestones.contract_id".equals(candidate.source().displayName())
                                     && "contracts.id".equals(candidate.target().displayName())),
                     () -> parser.name() + " silently dropped the routine; warnings="
                             + structured.warnings() + "; attributes=" + structured.attributes()
+                            + "; events=" + structured.events());
+        }
+    }
+
+    @Test
+    void allParsersKeepNullSafeEqualityInsideRoutineUpdate() {
+        String sql = """
+                CREATE OR REPLACE PROCEDURE test_null_safe_update() LANGUAGE plpgsql AS $$
+                DECLARE
+                  v_task_id BIGINT;
+                BEGIN
+                  UPDATE inventory_location_balances ilb
+                  SET locked_quantity = ilb.locked_quantity + pti.required_qty
+                  FROM picking_task_items pti
+                  JOIN picking_tasks pt ON pt.id = pti.picking_task_id
+                  WHERE pti.location_id = ilb.location_id
+                    AND pti.product_id = ilb.product_id
+                    AND pti.batch_id IS NOT DISTINCT FROM ilb.batch_id
+                    AND pt.id = v_task_id;
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:test_null_safe_update", 1, sql.lines().count(), Map.of());
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
+            assertTrue(relationships.stream().anyMatch(candidate ->
+                            "inventory_location_balances.batch_id".equals(candidate.source().displayName())
+                                    && "picking_task_items.batch_id".equals(candidate.target().displayName())
+                            || "picking_task_items.batch_id".equals(candidate.source().displayName())
+                                    && "inventory_location_balances.batch_id".equals(candidate.target().displayName())),
+                    () -> parser.name() + " lost routine null-safe equality; events=" + structured.events());
+        }
+    }
+
+    @Test
+    void naturalPickingRoutineKeepsNullSafeEqualityForEveryParser() {
+        String sql = sqlObject(
+                "sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql",
+                "CREATE OR REPLACE PROCEDURE sp_generate_picking_task_for_order",
+                "$$;");
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:public.sp_generate_picking_task_for_order", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
+            assertTrue(relationships.stream().anyMatch(candidate ->
+                            "inventory_location_balances.batch_id".equals(candidate.source().displayName())
+                                    && "picking_task_items.batch_id".equals(candidate.target().displayName())
+                            || "picking_task_items.batch_id".equals(candidate.source().displayName())
+                                    && "inventory_location_balances.batch_id"
+                                    .equals(candidate.target().displayName())),
+                    () -> parser.name() + " lost the natural routine null-safe equality; warnings="
+                            + structured.warnings() + "; relationships=" + relationships.stream()
+                            .map(candidate -> candidate.source().displayName() + "->"
+                                    + candidate.target().displayName())
+                            .toList());
+        }
+    }
+
+    @Test
+    void naturalForecastRoutineKeepsDerivedCteJoinObservationForEveryParser() {
+        String sql = sqlObject(
+                "sample-data/postgres/18/02-procedures/07-store-customer-procedures.sql",
+                "CREATE OR REPLACE FUNCTION sp_store_sales_forecast",
+                "$$;");
+        String marker = "JOIN warehouses w ON lm.warehouse_id = w.id";
+        int markerOffset = sql.indexOf(marker);
+        assertTrue(markerOffset >= 0);
+        long expectedLine = sql.substring(0, markerOffset).lines().count();
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.FUNCTION,
+                "ROUTINE:sp_store_sales_forecast", 1, sql.lines().count(), Map.of());
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var relationships = new StructuredRelationshipExtractor().extract(statement, structured);
+            assertTrue(relationships.stream().anyMatch(candidate ->
+                            "sales_orders.warehouse_id".equals(candidate.source().displayName())
+                                    && "warehouses.id".equals(candidate.target().displayName())
+                                    && candidate.evidence().stream().anyMatch(evidence ->
+                                    Long.valueOf(expectedLine).equals(asLong(
+                                            evidence.attributes().get("sourceLine"))))),
+                    () -> parser.name() + " lost the derived CTE join at line " + expectedLine
+                            + "; relationships=" + relationships.stream()
+                            .map(candidate -> candidate.source().displayName() + "->"
+                                    + candidate.target().displayName() + "@"
+                                    + candidate.evidence().stream()
+                                    .map(evidence -> evidence.attributes().get("sourceLine"))
+                                    .toList())
+                            .toList()
+                            + "; warnings=" + structured.warnings()
                             + "; events=" + structured.events());
         }
     }
@@ -364,7 +647,7 @@ class PostgresRoutineSampleLineageTest {
                             + endpoint(source.displayName()) + "->" + endpoint(lineage.target().displayName()))));
             assertTrue(actual.containsAll(expected), () -> parser.name() + " missing "
                     + difference(expected, actual) + " for " + sourceObject + "; actual=" + actual
-                    + "; events=" + structured.events());
+                    + "; warnings=" + structured.warnings() + "; events=" + structured.events());
         }
     }
 
@@ -389,11 +672,16 @@ class PostgresRoutineSampleLineageTest {
     private List<ParserCase> parsers() {
         return List.of(
                 new ParserCase("token-event", new PostgresTokenEventStructuredSqlParser()),
-                new ParserCase("v16-full", new PostgresFullGrammerDialectModule().sqlParser()),
+                new ParserCase("v16-full", new FullGrammarDialectModule().sqlParser()),
                 new ParserCase("v17-full",
-                        new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule().sqlParser()),
+                        new com.relationdetector.postgres.fullgrammar.v17.FullGrammarDialectModule().sqlParser()),
                 new ParserCase("v18-full",
-                        new com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule().sqlParser()));
+                        new com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule().sqlParser()));
+    }
+
+    private PlPgSqlParseOutcome parseBody(SqlStatementRecord statement) {
+        return new TokenEventPlPgSqlBodyParser().parse(
+                statement, null, new PostgresTokenEventStructuredSqlParser());
     }
 
     private String fixtureObject(String sourceObject) {
@@ -429,6 +717,36 @@ class PostgresRoutineSampleLineageTest {
 
     private String endpoint(String displayName) {
         return displayName.startsWith("public.") ? displayName.substring("public.".length()) : displayName;
+    }
+
+    private void assertLineageSources(
+            String parser,
+            List<com.relationdetector.contracts.model.DataLineageCandidate> lineages,
+            String target,
+            com.relationdetector.contracts.Enums.LineageFlowKind flowKind,
+            Set<String> expected
+    ) {
+        var lineage = lineages.stream()
+                .filter(candidate -> target.equals(candidate.target().displayName()))
+                .filter(candidate -> candidate.flowKind() == flowKind)
+                .findFirst().orElseThrow(() -> new AssertionError(
+                        parser + " missing " + flowKind + " lineage for " + target + ": " + lineages));
+        assertEquals(expected, lineage.sources().stream()
+                        .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                        .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
+                () -> parser + " resolved the wrong scalar-subquery scope for " + target + ": " + lineages);
+    }
+
+    private Long asLong(Object value) {
+        return value instanceof Number number ? number.longValue() : null;
+    }
+
+    private String lineageFingerprint(com.relationdetector.contracts.model.DataLineageCandidate lineage) {
+        return lineage.flowKind().name() + ":" + lineage.transformType().name() + ":"
+                + lineage.sources().stream()
+                        .map(source -> endpoint(source.displayName()))
+                        .collect(java.util.stream.Collectors.joining(","))
+                + "->" + endpoint(lineage.target().displayName());
     }
 
     private Set<String> difference(Set<String> expected, Set<String> actual) {

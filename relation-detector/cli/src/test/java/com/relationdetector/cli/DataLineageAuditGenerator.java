@@ -193,7 +193,7 @@ final class DataLineageAuditGenerator {
         }
         if (versionBoundaryUnsupported) {
             return new Decision(Classification.NOT_APPLICABLE,
-                    "negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden");
+                    "negative full-grammar version-boundary fixture; unsupported SQL is not lineage golden");
         }
         if (!parserTarget.equals("SQL")) {
             return new Decision(Classification.NOT_APPLICABLE,

@@ -25,7 +25,7 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
         for (int index = 0; index < Math.min(targets.size(), items.size()); index++) {
             PostgresRelationSqlParser.SelectItemContext item = items.get(index);
             if (item.expression() != null) {
-                for (ExpressionAnalysis source : writeAnalyses(item.expression())) {
+                for (ExpressionAnalysis source : writeAnalyses(item)) {
                     addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "",
                             targetTable, targets.get(index), source, "INSERT_SELECT");
                 }
@@ -185,7 +185,7 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
             if (item.expression() == null) continue;
             String column = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
             if (column.isBlank()) continue;
-            for (ExpressionAnalysis source : writeAnalyses(item.expression())) {
+            for (ExpressionAnalysis source : writeAnalyses(item)) {
                 if (!source.sources().isEmpty()) emitter.addProjection(events, item,
                         StructuredParseEventType.PROJECTION_ITEM, owner.alias(), column,
                         source.aliases(), source.columns(), source.transform(), source.flowKind());

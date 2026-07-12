@@ -1,7 +1,7 @@
 id: postgres18sample-data-full-02-procedures-07-store-customer-procedures-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/18
 databaseVersion: 18.1
 sourceType: PROCEDURE

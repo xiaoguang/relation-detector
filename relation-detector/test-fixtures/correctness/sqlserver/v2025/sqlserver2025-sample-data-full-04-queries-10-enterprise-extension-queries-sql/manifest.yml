@@ -1,7 +1,7 @@
 id: sqlserver2025-sample-data-full-04-queries-10-enterprise-extension-queries-sql
 databaseType: SQLSERVER
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2025
 databaseVersion: 2025
 sourceType: PLAIN_SQL

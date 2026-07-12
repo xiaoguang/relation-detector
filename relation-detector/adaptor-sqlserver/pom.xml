@@ -13,6 +13,16 @@
   <dependencies>
     <dependency>
       <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-token-event</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-script</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
       <artifactId>relation-detector-grammar-sqlserver-v2016</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -49,24 +59,4 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.antlr</groupId>
-        <artifactId>antlr4-maven-plugin</artifactId>
-        <version>4.13.2</version>
-        <configuration>
-          <visitor>true</visitor>
-          <listener>true</listener>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>antlr4</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

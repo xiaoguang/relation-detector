@@ -2,21 +2,21 @@
 
 ## Summary
 
-SQL Server full-grammer uses a pinned `antlr/grammars-v4/sql/tsql`
+SQL Server full-grammar uses a pinned `antlr/grammars-v4/sql/tsql`
 snapshot as its engineering base, then applies project-maintained version
 cuts from Microsoft documentation. The token-event grammar remains one broad,
-compact fallback grammar and is not used as a source of full-grammer version
+compact fallback grammar and is not used as a source of full-grammar version
 truth.
 
 The supported profiles map to SQL Server compatibility levels:
 
 | Profile | SQL Server release | Compatibility level | Local package |
 | --- | --- | ---: | --- |
-| `sqlserver/2016` | SQL Server 2016 | 130 | `sqlserver.fullgrammer.v2016` |
-| `sqlserver/2017` | SQL Server 2017 | 140 | `sqlserver.fullgrammer.v2017` |
-| `sqlserver/2019` | SQL Server 2019 | 150 | `sqlserver.fullgrammer.v2019` |
-| `sqlserver/2022` | SQL Server 2022 | 160 | `sqlserver.fullgrammer.v2022` |
-| `sqlserver/2025` | SQL Server 2025 | 170 | `sqlserver.fullgrammer.v2025` |
+| `sqlserver/2016` | SQL Server 2016 | 130 | `sqlserver.fullgrammar.v2016` |
+| `sqlserver/2017` | SQL Server 2017 | 140 | `sqlserver.fullgrammar.v2017` |
+| `sqlserver/2019` | SQL Server 2019 | 150 | `sqlserver.fullgrammar.v2019` |
+| `sqlserver/2022` | SQL Server 2022 | 160 | `sqlserver.fullgrammar.v2022` |
+| `sqlserver/2025` | SQL Server 2025 | 170 | `sqlserver.fullgrammar.v2025` |
 
 ## Official Sources
 

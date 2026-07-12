@@ -8,7 +8,7 @@
  *
  * <p>EN: Token-event event-source layer. It builds unified StructuredSqlEvent
  * records from typed structural ANTLR grammar contexts and is the official
- * fallback when no full-grammer profile is selected. It owns structure extraction, not
+ * fallback when no full-grammar profile is selected. It owns structure extraction, not
  * FK-like direction, co-occurrence, lineage transform, or confidence semantics.
  */
 package com.relationdetector.core.tokenevent;

@@ -7,7 +7,7 @@
 - SQL/DML token-event 生产路径不再调用 `TokenEventSqlEventBuilder`、`MySqlTokenEventSqlEventBuilder`、`PostgresTokenEventSqlEventBuilder`。
 - DDL token-event 生产路径不再调用 `DdlStructuredEventVisitor`、`DdlTokenCursor`、`DdlStatementView`、`DdlIndexPartParser`。
 - root `common/mysql/postgres` correctness golden 已刷新为 typed token-event baseline。
-- MySQL `v8_0` full-grammer 和 PostgreSQL `v16/v17/v18` full-grammer versioned golden 未因本次 token-event 重构刷新。
+- MySQL `v8_0` full-grammar 和 PostgreSQL `v16/v17/v18` full-grammar versioned golden 未因本次 token-event 重构刷新。
 - 当前没有 `REVIEW_NEEDED` 项；后续需要补的是 typed token-event 的覆盖能力，而不是恢复 legacy scanner。
 
 ## 为什么 root golden 变化较大
@@ -16,7 +16,7 @@
 
 - common token-event 只覆盖 portable SQL typed grammar。
 - MySQL/PostgreSQL token-event 只覆盖各自 fallback grammar 中已 typed 化的结构。
-- full-grammer 是配置明确时的 primary，token-event 是 fallback。
+- full-grammar 是配置明确时的 primary，token-event 是 fallback。
 - procedure-local temporary table、routine parameter、局部变量、literal、LIKE、函数行集、pseudo rowset 不作为物理 relation / lineage endpoint。
 
 因此 root token-event golden 删除了部分旧 scanner 产物，尤其是复杂 procedure、嵌套 CTE、MERGE、方言扩展 DML 中尚未 typed 化的关系/血缘。
@@ -31,7 +31,7 @@
 | routine parameter / 局部变量来源删除 | 参数和局部变量不是数据库内部 `table.column` source | 接受删除 |
 | DDL typed 解析形状变化 | MySQL DDL 现在由 MySQL typed grammar 生成 FK/index event | 接受，已保留明确 FK/index |
 | 复杂 MySQL procedure lineage 下降 | 旧 scanner 能识别部分复杂 body；typed token-event 目前未覆盖完整 MySQL routine grammar | 接受为 fallback 能力差异，后续按 typed visitor 补 |
-| PostgreSQL root token-event 复杂 SQL 下降 | root token-event 不再使用 scanner 补 CTE/MERGE/复杂子查询关系 | 接受为 fallback 能力差异；versioned full-grammer 仍保留严格 golden |
+| PostgreSQL root token-event 复杂 SQL 下降 | root token-event 不再使用 scanner 补 CTE/MERGE/复杂子查询关系 | 接受为 fallback 能力差异；versioned full-grammar 仍保留严格 golden |
 | portable sample-data 新增 | 新增 common portable ERP slice golden | 接受新增 |
 
 ## 已验证边界
@@ -40,7 +40,7 @@
 - PostgreSQL adaptor token-event SQL/DDL tests 通过。
 - common token-event parser / semantic extractor / confidence tests 通过。
 - `CorrectnessFixtureRunnerTest` 在刷新后的 typed token-event baseline 下通过。
-- Cross-parser full-grammer shadow/parity tests have been retired. Complex MySQL routine body parse-warning fixtures are validated by their owning token-event or versioned full-grammer golden instead of by token-event comparison.
+- Cross-parser full-grammar shadow/parity tests have been retired. Complex MySQL routine body parse-warning fixtures are validated by their owning token-event or versioned full-grammar golden instead of by token-event comparison.
 
 ## 后续建议
 

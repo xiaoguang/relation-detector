@@ -17,7 +17,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 
 class CommonTokenEventStructuredSqlParserTest {
     private final CommonTokenEventStructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
@@ -168,7 +168,7 @@ class CommonTokenEventStructuredSqlParserTest {
     }
 
     private Set<String> relationships(SqlStatementRecord statement, StructuredParseResult structured) {
-        return new TokenEventRelationExtractor().extract(statement, structured).stream()
+        return new StructuredRelationshipExtractor().extract(statement, structured).stream()
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
     }

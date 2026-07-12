@@ -13,7 +13,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 
 /**
@@ -111,7 +111,7 @@ class MySqlTokenEventDialectBoundaryTest {
                 java.util.Map.of());
 
         java.util.List<RelationshipCandidate> relationships =
-                new TokenEventSqlRelationParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
+                new StructuredSqlRelationshipParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
 
         assertHasRelation(relationships, "orders.user_id", "users.id",
                 "Token-event should keep typed parse-tree events that ANTLR recovers after an unsupported fragment");
@@ -120,7 +120,7 @@ class MySqlTokenEventDialectBoundaryTest {
     @Test
     void mysqlAdaptorSqlParserUsesTokenEventRelationParser() {
         SqlRelationParser parser = new MySqlDatabaseAdaptor().parsers().sqlRelations();
-        assertTrue(parser instanceof TokenEventSqlRelationParser);
+        assertTrue(parser instanceof StructuredSqlRelationshipParser);
 
         java.util.List<RelationshipCandidate> relationships = parser.parse(new SqlStatementRecord(
                 "SELECT * FROM `orders` o JOIN `users` u ON o.`user_id` = u.`id`",
@@ -145,7 +145,7 @@ class MySqlTokenEventDialectBoundaryTest {
                 1,
                 java.util.Map.of());
         java.util.List<RelationshipCandidate> relations =
-                new TokenEventSqlRelationParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
+                new StructuredSqlRelationshipParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
 
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
@@ -357,7 +357,7 @@ class MySqlTokenEventDialectBoundaryTest {
     private java.util.List<RelationshipCandidate> mysqlRelations(String sql) {
         SqlStatementRecord statement = new SqlStatementRecord(
                 sql, StatementSourceType.PLAIN_SQL, "mysql-dialect-boundary.sql", 1, 1, java.util.Map.of());
-        return new TokenEventSqlRelationParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
+        return new StructuredSqlRelationshipParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
     }
 
     private void assertHasRelation(

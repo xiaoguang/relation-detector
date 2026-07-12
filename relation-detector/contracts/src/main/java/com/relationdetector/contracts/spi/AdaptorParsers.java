@@ -9,16 +9,16 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 /**
  * Grouped parser capabilities exposed by a database adaptor.
  *
- * <p>This is the only parser entry point in adaptor SPI v3.
+ * <p>This is the only parser entry point in adaptor SPI v4.
  */
 public record AdaptorParsers(
         SqlRelationParser sqlRelations,
         Optional<StructuredSqlParser> structuredSql,
         Optional<StructuredDdlParser> structuredDdl,
-        DialectScriptParser scripts
+        DialectScriptFramer scriptFramer
 ) {
     public AdaptorParsers {
-        if (sqlRelations == null || structuredSql == null || structuredDdl == null || scripts == null) {
+        if (sqlRelations == null || structuredSql == null || structuredDdl == null || scriptFramer == null) {
             throw new IllegalArgumentException("Adaptor parser capabilities must not be null");
         }
     }

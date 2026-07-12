@@ -10,13 +10,13 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 import com.relationdetector.oracle.log.OracleLogExtractor;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
 import com.relationdetector.oracle.profile.OracleDataProfiler;
-import com.relationdetector.oracle.script.OracleScriptParser;
+import com.relationdetector.oracle.script.OracleScriptFramer;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredDdlParser;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
 
@@ -34,13 +34,13 @@ import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParse
 public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public OracleDatabaseAdaptor() {
         this(new OracleTokenEventStructuredSqlParser(), new OracleTokenEventStructuredDdlParser(),
-                new OracleScriptParser());
+                new OracleScriptFramer());
     }
 
     private OracleDatabaseAdaptor(
             OracleTokenEventStructuredSqlParser structuredSqlParser,
             OracleTokenEventStructuredDdlParser structuredDdlParser,
-            OracleScriptParser scriptParser
+            OracleScriptFramer scriptFramer
     ) {
         super(
                 "oracle",
@@ -58,12 +58,12 @@ public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         new OracleMetadataCollector(),
                         new OracleObjectCollector(),
                         Optional.of(new OracleDatabaseDdlCollector()),
-                        new OracleLogExtractor(scriptParser)),
+                        new OracleLogExtractor(scriptFramer)),
                 new AdaptorParsers(
-                        new TokenEventSqlRelationParser(structuredSqlParser),
+                        new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),
                         Optional.of(structuredDdlParser),
-                        scriptParser),
+                        scriptFramer),
                 new AdaptorProfiling(Optional.of(new OracleDataProfiler()), (evidence, context) -> evidence));
     }
 

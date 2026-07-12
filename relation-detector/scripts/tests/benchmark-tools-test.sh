@@ -16,6 +16,22 @@ first_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" "$T
 second_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" "$TMP_DIR/two.json" | cut -f1)"
 [[ "$first_hash" == "$second_hash" ]]
 
+cat >"$TMP_DIR/token.json" <<'JSON'
+{"relationships":[{"source":"orders.customer_id","target":"customers.id","evidence":[{"type":"SQL_LOG_JOIN","attributes":{"tokenEventNative":true,"sourceFile":"query.sql","sourceStatementId":"query.sql:2-2","sourceLine":2}}]}],"dataLineages":[{"source":"orders.amount","target":"sales_fact.amount","flowKind":"VALUE","transformType":"DIRECT"}],"parserProfile":"token-event"}
+JSON
+cat >"$TMP_DIR/full.json" <<'JSON'
+{"relationships":[{"source":"orders.customer_id","target":"customers.id","evidence":[{"type":"SQL_LOG_JOIN","attributes":{"fullGrammarNative":true,"sourceFile":"query.sql","sourceStatementId":"query.sql:2-2","sourceLine":2}}]}],"dataLineages":[{"source":"orders.amount","target":"sales_fact.amount","flowKind":"VALUE","transformType":"DIRECT"}],"parserProfile":"full-grammar"}
+JSON
+cat >"$TMP_DIR/semantic-change.json" <<'JSON'
+{"relationships":[{"source":"orders.customer_id","target":"customers.id","evidence":[{"type":"SQL_LOG_JOIN","attributes":{"fullGrammarNative":true,"sourceFile":"query.sql","sourceStatementId":"query.sql:3-3","sourceLine":3}}]}],"dataLineages":[{"source":"orders.amount","target":"sales_fact.amount","flowKind":"CONTROL","transformType":"DIRECT"}],"parserProfile":"full-grammar"}
+JSON
+
+token_semantic_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" --semantic "$TMP_DIR/token.json" | cut -f1)"
+full_semantic_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" --semantic "$TMP_DIR/full.json" | cut -f1)"
+changed_semantic_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" --semantic "$TMP_DIR/semantic-change.json" | cut -f1)"
+[[ "$token_semantic_hash" == "$full_semantic_hash" ]]
+[[ "$token_semantic_hash" != "$changed_semantic_hash" ]]
+
 mkdir -p "$TMP_DIR/reports" "$TMP_DIR/logs"
 cat >"$TMP_DIR/reports/TEST-fast.xml" <<'XML'
 <testsuite name="FastTest" tests="2" failures="0" errors="0" skipped="0" time="1.25"/>
@@ -46,6 +62,10 @@ cat >"$TMP_DIR/fingerprints.tsv" <<'TSV'
 abc123	/repo/results/mysql-v8_0-full.json
 def456	/repo/results/mysql-v8_0-full-derived-fresh.json
 TSV
+cat >"$TMP_DIR/semantic-fingerprints.tsv" <<'TSV'
+semantic123	/repo/results/mysql-v8_0-full.json
+semantic456	/repo/results/mysql-v8_0-full-derived-fresh.json
+TSV
 
 python3 "$RELATION_ROOT/scripts/build-performance-report.py" \
   --session-start 0 \
@@ -54,6 +74,7 @@ python3 "$RELATION_ROOT/scripts/build-performance-report.py" \
   --cli-report "$TMP_DIR/batch-report.json" \
   --correctness-summary "$TMP_DIR/correctness-summary.json" \
   --fingerprints "$TMP_DIR/fingerprints.tsv" \
+  --semantic-fingerprints "$TMP_DIR/semantic-fingerprints.tsv" \
   --maven-log "$TMP_DIR/maven.log" \
   --output "$TMP_DIR/report.json"
 
@@ -67,6 +88,8 @@ jq -e '.fixtures.slowest[0].elapsedMillis == 4321' "$TMP_DIR/report.json" >/dev/
 jq -e '.maven.modules[0].name == "relation-detector-core"' "$TMP_DIR/report.json" >/dev/null
 jq -e '.correctness.executed == 1198 and .correctness.failed == 0' "$TMP_DIR/report.json" >/dev/null
 jq -e '.canonicalFingerprints.count == 2 and .canonicalFingerprints.items[0].name == "mysql-v8_0-full-derived-fresh.json"' \
+  "$TMP_DIR/report.json" >/dev/null
+jq -e '.semanticFingerprints.count == 2 and .semanticFingerprints.items[0].sha256 == "semantic456"' \
   "$TMP_DIR/report.json" >/dev/null
 
 mkdir -p "$TMP_DIR/results"

@@ -1,0 +1,12 @@
+id: oracle19c-fullgrammar-smoke-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammar
+grammarProfile: oracle/19c
+databaseVersion: 19.22
+sourceType: PLAIN_SQL
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

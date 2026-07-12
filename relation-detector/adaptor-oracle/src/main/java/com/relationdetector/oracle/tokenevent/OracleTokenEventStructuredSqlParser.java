@@ -17,7 +17,7 @@ import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlP
  * Oracle token-event SQL parser.
  *
  * <p>CN: Oracle token-event 运行 Oracle 自己的 typed structural grammar，
- * 作为无版本 profile 或 full-grammer hard failure 时的保守 fallback。Oracle-only
+ * 作为无版本 profile 或 full-grammar hard failure 时的保守 fallback。Oracle-only
  * PL/SQL 与版本特性必须通过 grammar context 和 visitor 扩展，不由 scanner 猜测。
  *
  * <p>EN: Oracle token-event SQL parser backed by OracleRelationSql.g4. Oracle

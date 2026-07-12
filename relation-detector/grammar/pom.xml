@@ -12,16 +12,29 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>common-token-event</module>
+    <module>common-script</module>
+    <module>mysql-token-event</module>
+    <module>mysql-script</module>
     <module>mysql-v5_7</module>
     <module>mysql-v8_0</module>
+    <module>postgres-token-event</module>
+    <module>postgres-script</module>
     <module>postgres-v16</module>
     <module>postgres-v17</module>
     <module>postgres-v18</module>
-    <module>postgres-routine</module>
+    <module>postgres-plpgsql-token-event</module>
+    <module>plpgsql-v16</module>
+    <module>plpgsql-v17</module>
+    <module>plpgsql-v18</module>
+    <module>oracle-token-event</module>
+    <module>oracle-script</module>
     <module>oracle-v12c</module>
     <module>oracle-v19c</module>
     <module>oracle-v21c</module>
     <module>oracle-v26ai</module>
+    <module>sqlserver-token-event</module>
+    <module>sqlserver-script</module>
     <module>sqlserver-v2016</module>
     <module>sqlserver-v2017</module>
     <module>sqlserver-v2019</module>

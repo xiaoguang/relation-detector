@@ -14,20 +14,20 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.provenance.SemanticObservationFingerprint;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
-import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule;
-import com.relationdetector.postgres.script.PostgresScriptParser;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
+import com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule;
+import com.relationdetector.postgres.script.PostgresScriptFramer;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlLexer;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 class PostgresObservationConsistencyTest {
     private final StructuredSqlParser token = new PostgresTokenEventStructuredSqlParser();
-    private final StructuredSqlParser full = new PostgresFullGrammerDialectModule().sqlParser();
+    private final StructuredSqlParser full = new FullGrammarDialectModule().sqlParser();
 
     @Test
     void joinNestedExistsAndInHaveTheSameSemanticObservations() {
@@ -102,7 +102,7 @@ class PostgresObservationConsistencyTest {
         Path path = Path.of("..", "sample-data", "postgres", "18", "04-queries",
                 "09-real-world-scenarios.sql");
         String sql = Files.readString(path);
-        SqlStatementRecord statement = new PostgresScriptParser().parse(new ScriptParseRequest(
+        SqlStatementRecord statement = new PostgresScriptFramer().frame(new ScriptFrameRequest(
                         sql, path.toString(), StatementSourceType.PLAIN_SQL))
                 .statements().stream()
                 .filter(candidate -> candidate.startLine() == 765)
@@ -134,7 +134,7 @@ class PostgresObservationConsistencyTest {
             SqlStatementRecord statement
     ) {
         var structured = parser.parseSql(statement, null);
-        return new TokenEventRelationExtractor().extract(statement, structured).stream()
+        return new StructuredRelationshipExtractor().extract(statement, structured).stream()
                 .flatMap(candidate -> SemanticObservationFingerprint.relationships(candidate).stream())
                 .sorted()
                 .toList();

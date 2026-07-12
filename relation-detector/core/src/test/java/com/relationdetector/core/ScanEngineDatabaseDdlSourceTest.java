@@ -163,7 +163,7 @@ class ScanEngineDatabaseDdlSourceTest {
                     (statement, context) -> List.of(),
                     Optional.empty(),
                     Optional.of(new TokenEventStructuredDdlParser(SqlDialect.MYSQL)),
-                    request -> com.relationdetector.contracts.parse.ScriptParseResult.empty());
+                    request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
 
         @Override

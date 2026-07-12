@@ -29,6 +29,8 @@
 - [Phase 8：输出和用户体验](relation-detector/phase-08-output-ux.md)
 - [Phase 9：Oracle adaptor](relation-detector/phase-09-oracle-adaptor.md)
 - [Phase 10：SQL Server adaptor](relation-detector/phase-10-sqlserver-adaptor.md)
+- [Grammar、Script Framing 与 Routine Parser 架构迁移设计](relation-detector/grammar-parser-architecture-migration.md)
+- [PostgreSQL PL/pgSQL 版本与双路径审计](../parser-audit/postgres-plpgsql-version-review.md)
 - [ENUM 详细说明](relation-detector/enum-reference.md)
 - [设计一致性检查报告](relation-detector/design-validation-report.md)
 
@@ -62,10 +64,10 @@
 ## 全局约束
 
 - Java 17 + Maven 多模块工程；仓库根下 `relation-detector/` 与 `semantic-layer/` 为同级目录，根 `pom.xml` 统一聚合二者。
-- MySQL 和 PostgreSQL 是当前覆盖最完整的方言，但仍有已审计的 typed visitor/provenance 缺口，不能解释为官方语法全覆盖。Oracle 已有 token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer；SQL Server 已有 token-event、`sqlserver/2016|2017|2019|2022|2025` full-grammer sample-data golden，以及首批 grammar-level 官方版本边界。更多 Oracle / SQL Server 官方语法 family、真实版本资产修正和 runtime smoke 仍在后续扩展。
+- MySQL 和 PostgreSQL 是当前覆盖最完整的方言，但仍有已审计的 typed visitor/provenance 缺口，不能解释为官方语法全覆盖。Oracle 已有 token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammar；SQL Server 已有 token-event、`sqlserver/2016|2017|2019|2022|2025` full-grammar sample-data golden，以及首批 grammar-level 官方版本边界。更多 Oracle / SQL Server 官方语法 family、真实版本资产修正和 runtime smoke 仍在后续扩展。
 - core 统一负责候选关系归并、最终评分、输出模型。
-- adaptor 可以提供采集、token-event parser、versioned full-grammer module、证据生成、权重修正等数据库特定能力。
-- SQL/DDL parser 运行模式统一为 `parser.mode=auto|full-grammer|token-event`。无方言或无合理版本信息时使用 `token-event`；能选中版本化 grammar profile 时可使用 `full-grammer`。
+- adaptor 可以提供采集、token-event parser、versioned full-grammar module、证据生成、权重修正等数据库特定能力。
+- SQL/DDL parser 运行模式统一为 `parser.mode=auto|full-grammar|token-event`。无方言或无合理版本信息时使用 `token-event`；能选中版本化 grammar profile 时可使用 `full-grammar`。
 - Relationship 与 Data Lineage 是独立输出模型；Data Lineage 不参与 relationship confidence。
 - relation-detector 是更大语义层系统中的事实采集与证据生成子系统；业务语义、同义词、指标候选、自然语言问答和 SQL draft 由 Evidence-Grounded Semantic Layer 在事实层之上完成。
 - 数据画像默认关闭，只在用户显式开启时读取业务数据。

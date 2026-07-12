@@ -1,7 +1,7 @@
 id: mysql80-mysql-sql-system-log-noise
 databaseType: MYSQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/8.0
 databaseVersion: 8.0
 sourceType: NATIVE_LOG

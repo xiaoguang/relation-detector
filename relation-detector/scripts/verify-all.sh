@@ -23,6 +23,9 @@ python3 relation-detector/scripts/validate-sample-data-results.py \
 python3 relation-detector/scripts/canonical-json-fingerprint.py \
   relation-detector/target/sample-data-parser-cli/results >"$VERIFY_DIR/fingerprints.tsv"
 
+python3 relation-detector/scripts/canonical-json-fingerprint.py --semantic \
+  relation-detector/target/sample-data-parser-cli/results >"$VERIFY_DIR/semantic-fingerprints.tsv"
+
 python3 relation-detector/scripts/build-performance-report.py \
   --session-start "$SESSION_START" \
   --surefire-root "$ROOT" \
@@ -30,11 +33,13 @@ python3 relation-detector/scripts/build-performance-report.py \
   --cli-report "$ROOT/relation-detector/target/sample-data-parser-cli/batch-report.json" \
   --correctness-summary "$ROOT/relation-detector/target/correctness-run-summary.json" \
   --fingerprints "$VERIFY_DIR/fingerprints.tsv" \
+  --semantic-fingerprints "$VERIFY_DIR/semantic-fingerprints.tsv" \
   --maven-log "$MAVEN_LOG" \
   --output "$VERIFY_DIR/performance-report.json"
 
 echo "Verification report: $VERIFY_DIR/performance-report.json"
 echo "Canonical fingerprints: $VERIFY_DIR/fingerprints.tsv"
+echo "Semantic fingerprints: $VERIFY_DIR/semantic-fingerprints.tsv"
 
 if [[ "${VERIFY_SAMPLE_DATA_CONCURRENCY:-false}" == "true" ]]; then
   bash relation-detector/scripts/verify-sample-data-parser-concurrency.sh

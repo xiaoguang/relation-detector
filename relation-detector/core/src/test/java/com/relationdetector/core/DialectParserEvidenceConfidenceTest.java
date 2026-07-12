@@ -42,7 +42,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
  * shared semantic layer explanation surface and confidence calculation.
  */
 class DialectParserEvidenceConfidenceTest {
-    private final TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
+    private final StructuredSqlRelationshipParser parser = new StructuredSqlRelationshipParser(
             new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
     private final RelationshipMerger merger = new RelationshipMerger();
 
@@ -123,7 +123,7 @@ class DialectParserEvidenceConfidenceTest {
                 "SELECT * FROM orders o JOIN users u ON o.user_id = u.id",
                 StatementSourceType.PLAIN_SQL, "input.sql", 5, 5,
                 Map.of("sourceFile", "input.sql", "sourceStatementId", "input.sql:5-5"));
-        SourceProvenance full = SourceProvenance.fullGrammer(statement, 5, "", "typed-context");
+        SourceProvenance full = SourceProvenance.fullGrammar(statement, 5, "", "typed-context");
         StructuredParseResult structured = new StructuredParseResult("FULL", "mysql", statement.sourceName(),
                 List.of(
                         new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, full,
@@ -135,9 +135,9 @@ class DialectParserEvidenceConfidenceTest {
                                 List.of(), List.of(), "", "JOIN_ON", List.of(), false)),
                 List.of(), Map.of());
 
-        Evidence evidence = new TokenEventRelationExtractor().extract(statement, structured).get(0).evidence().get(0);
+        Evidence evidence = new StructuredRelationshipExtractor().extract(statement, structured).get(0).evidence().get(0);
 
-        assertTrue(Boolean.TRUE.equals(evidence.attributes().get("fullGrammerNative")));
+        assertTrue(Boolean.TRUE.equals(evidence.attributes().get("fullGrammarNative")));
         assertTrue(!evidence.attributes().containsKey("tokenEventNative"));
         assertEquals("typed column equality", evidence.detail());
     }

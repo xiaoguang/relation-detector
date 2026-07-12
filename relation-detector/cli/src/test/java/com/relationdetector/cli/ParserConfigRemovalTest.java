@@ -194,7 +194,7 @@ class ParserConfigRemovalTest {
     }
 
     @Test
-    void yamlConfigCanSetFullGrammerProfileHints() throws Exception {
+    void yamlConfigCanSetFullGrammarProfileHints() throws Exception {
         Path file = Files.createTempFile("relation-detector-grammar-profile", ".yml");
         Files.writeString(file, """
                 database:
@@ -209,15 +209,35 @@ class ParserConfigRemovalTest {
                 parser:
                   grammarProfile: postgresql/16
                   databaseVersion: 16.5
-                  mode: full-grammer
+                  mode: full-grammar
                 """);
 
         ScanConfig config = new SimpleYamlConfigLoader().load(file);
 
-        assertEquals("full-grammer", config.parserMode);
+        assertEquals("full-grammar", config.parserMode);
         assertEquals("postgresql/16", config.grammarProfile);
         assertEquals("16.5", config.databaseVersion);
         assertEquals("CONFIG", config.databaseVersionSource);
+    }
+
+    @Test
+    void yamlConfigRejectsFormerFullGrammarSpellingWithoutCompatibilityAlias() throws Exception {
+        Path file = Files.createTempFile("relation-detector-former-grammar-mode", ".yml");
+        String formerValue = "full-" + "gram" + "mer";
+        Files.writeString(file, """
+                database:
+                  type: postgresql
+                sources:
+                  metadata:
+                    enabled: false
+                parser:
+                  mode: %s
+                """.formatted(formerValue));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> new SimpleYamlConfigLoader().load(file));
+
+        assertTrue(error.getMessage().contains("parser.mode must be one of"));
     }
 
     @Test
@@ -545,12 +565,12 @@ class ParserConfigRemovalTest {
     void cliAcceptsParserModeAndGrammarOverrides() {
         Main.CliArguments args = Main.CliArguments.parse(new String[] {
                 "scan", "--config", "config.yml",
-                "--parser-mode", "full-grammer",
+                "--parser-mode", "full-grammar",
                 "--grammar-profile", "postgresql/16",
                 "--database-version", "16.5"
         });
 
-        assertEquals("full-grammer", args.parserMode);
+        assertEquals("full-grammar", args.parserMode);
         assertEquals("postgresql/16", args.grammarProfile);
         assertEquals("16.5", args.databaseVersion);
     }

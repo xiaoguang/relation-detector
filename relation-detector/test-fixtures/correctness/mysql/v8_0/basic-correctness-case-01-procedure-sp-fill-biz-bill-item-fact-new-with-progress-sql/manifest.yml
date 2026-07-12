@@ -1,7 +1,7 @@
 id: mysql80-basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql
 databaseType: MYSQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/8.0
 databaseVersion: 8.0
 sourceType: PROCEDURE

@@ -1,7 +1,7 @@
 id: postgres18sample-data-full-04-queries-02-complex-queries-batch2-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/18
 databaseVersion: 18.1
 sourceType: PLAIN_SQL

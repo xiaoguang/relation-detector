@@ -637,7 +637,7 @@ Phase 1 Scope 必备字段建议：
   "scanRunId": "scan-2026-06-23-001",
   "scanVersion": "relation-detector-result-phase-1",
   "detectorVersion": "0.1.0-SNAPSHOT",
-  "parserMode": "full-grammer",
+  "parserMode": "full-grammar",
   "grammarProfile": "postgresql/18",
   "sourceName": "postgres-pg12-sql/input.sql",
   "sourceHash": "sha256:example-source-hash",
@@ -2001,6 +2001,6 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 - DDL / DML / procedure / trigger evidence。
 - source location。
 - SQL comment / object comment 采集。
-- full-grammer versioned grammar correctness。
+- full-grammar versioned grammar correctness。
 
 Semantic Layer 依赖这些事实，但不应该把事实探测和业务语义解释混在同一层。这样系统才可审计、可迭代、可人工纠偏。

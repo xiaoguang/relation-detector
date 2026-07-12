@@ -3,13 +3,13 @@
 This directory contains runnable CLI examples for scanning `sample-data` with every user-facing parser family:
 
 - MySQL root `token-event`
-- MySQL `full-grammer` profiles `mysql/5.7` and `mysql/8.0`
+- MySQL `full-grammar` profiles `mysql/5.7` and `mysql/8.0`
 - PostgreSQL root `token-event`
-- PostgreSQL `full-grammer` profiles `postgresql/16`, `postgresql/17`, `postgresql/18`
+- PostgreSQL `full-grammar` profiles `postgresql/16`, `postgresql/17`, `postgresql/18`
 - Oracle root `token-event`
-- Oracle `full-grammer` profiles `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai`
+- Oracle `full-grammar` profiles `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai`
 - SQL Server root `token-event`
-- SQL Server `full-grammer` profiles `sqlserver/2016`, `sqlserver/2017`, `sqlserver/2019`, `sqlserver/2022`, `sqlserver/2025`
+- SQL Server `full-grammar` profiles `sqlserver/2016`, `sqlserver/2017`, `sqlserver/2019`, `sqlserver/2022`, `sqlserver/2025`
 - Common portable SQL `token-event`
 
 `common token-event` is a first-class portable parser category. The script runs the real CLI with `database.type: COMMON` against `sample-data/common-natural`, so the output goes through the same `ScanEngine`, naming evidence, lineage, derived path, and JSON writer path as dialect scans. It is still a portable benchmark, not a database-specific adaptor and not a substitute for natural MySQL/PostgreSQL/Oracle/SQL Server sample-data. Parser/correctness-only portable bodies live under `sample-data/common-parser-coverage` and remain covered by correctness fixtures; they are intentionally excluded from natural sample-data CLI statistics.
@@ -66,7 +66,7 @@ The compact summary columns mean `Rel` = direct relationships, `Lin` = direct li
 `Name` = direct naming evidence, and `Der*` = the corresponding derived counts.
 
 When both sides of a same-asset parser pair are requested, the runner also compares
-token-event and full-grammer semantic observations. The comparison includes fact
+token-event and full-grammar semantic observations. The comparison includes fact
 endpoints, relationship/flow/transform semantics, source object or file, statement,
 block, line, and join/write mapping kind; parser implementation flags are ignored.
 Any difference fails the run and is written to `observation-diffs/`.

@@ -1,7 +1,7 @@
 id: mysql80sample-data-full-01-schema-04-supplementary-tables-ddl
 databaseType: MYSQL
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/8.0
 databaseVersion: 8.0.36
 sourceType: DDL_FILE

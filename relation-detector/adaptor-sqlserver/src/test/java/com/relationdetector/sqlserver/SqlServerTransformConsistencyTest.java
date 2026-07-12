@@ -14,11 +14,6 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.sqlserver.fullgrammer.v2016.SqlServer2016FullGrammerDialectModule;
-import com.relationdetector.sqlserver.fullgrammer.v2017.SqlServer2017FullGrammerDialectModule;
-import com.relationdetector.sqlserver.fullgrammer.v2019.SqlServer2019FullGrammerDialectModule;
-import com.relationdetector.sqlserver.fullgrammer.v2022.SqlServer2022FullGrammerDialectModule;
-import com.relationdetector.sqlserver.fullgrammer.v2025.SqlServer2025FullGrammerDialectModule;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 class SqlServerTransformConsistencyTest {
@@ -78,11 +73,16 @@ class SqlServerTransformConsistencyTest {
     private List<NamedParser> parsers() {
         return List.of(
                 new NamedParser("token-event", new SqlServerTokenEventStructuredSqlParser()),
-                new NamedParser("sqlserver/2016", new SqlServer2016FullGrammerDialectModule().sqlParser()),
-                new NamedParser("sqlserver/2017", new SqlServer2017FullGrammerDialectModule().sqlParser()),
-                new NamedParser("sqlserver/2019", new SqlServer2019FullGrammerDialectModule().sqlParser()),
-                new NamedParser("sqlserver/2022", new SqlServer2022FullGrammerDialectModule().sqlParser()),
-                new NamedParser("sqlserver/2025", new SqlServer2025FullGrammerDialectModule().sqlParser()));
+                new NamedParser("sqlserver/2016",
+                        new com.relationdetector.sqlserver.fullgrammar.v2016.FullGrammarDialectModule().sqlParser()),
+                new NamedParser("sqlserver/2017",
+                        new com.relationdetector.sqlserver.fullgrammar.v2017.FullGrammarDialectModule().sqlParser()),
+                new NamedParser("sqlserver/2019",
+                        new com.relationdetector.sqlserver.fullgrammar.v2019.FullGrammarDialectModule().sqlParser()),
+                new NamedParser("sqlserver/2022",
+                        new com.relationdetector.sqlserver.fullgrammar.v2022.FullGrammarDialectModule().sqlParser()),
+                new NamedParser("sqlserver/2025",
+                        new com.relationdetector.sqlserver.fullgrammar.v2025.FullGrammarDialectModule().sqlParser()));
     }
 
     private List<DataLineageCandidate> extract(StructuredSqlParser parser, SqlStatementRecord statement) {

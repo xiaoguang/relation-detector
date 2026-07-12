@@ -1,7 +1,7 @@
 id: sqlserver2022-sample-data-full-03-data-05-massive-data-generator-sql
 databaseType: SQLSERVER
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2022
 databaseVersion: 2022
 sourceType: PROCEDURE

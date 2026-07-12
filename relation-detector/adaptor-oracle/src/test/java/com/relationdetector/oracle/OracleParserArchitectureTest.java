@@ -88,9 +88,9 @@ class OracleParserArchitectureTest {
     }
 
     @Test
-    void oracleFullGrammerProductionCodeDoesNotDelegateToTokenEventParser() throws IOException {
-        Path fullGrammerSource = repoRoot().resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer");
-        try (Stream<Path> stream = Files.walk(fullGrammerSource)) {
+    void oracleFullGrammarProductionCodeDoesNotDelegateToTokenEventParser() throws IOException {
+        Path fullGrammarSource = repoRoot().resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammar");
+        try (Stream<Path> stream = Files.walk(fullGrammarSource)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> contains(path, "OracleTokenEventStructuredSqlParser")
@@ -99,29 +99,29 @@ class OracleParserArchitectureTest {
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Oracle full-grammer must be generated-parser-backed and cannot delegate to token-event, offenders="
+                    "Oracle full-grammar must be generated-parser-backed and cannot delegate to token-event, offenders="
                             + offenders);
         }
     }
 
     @Test
-    void oracleTokenEventProductionCodeDoesNotImportFullGrammerImplementation() throws IOException {
+    void oracleTokenEventProductionCodeDoesNotImportFullGrammarImplementation() throws IOException {
         Path tokenEventSource = repoRoot().resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent");
         try (Stream<Path> stream = Files.walk(tokenEventSource)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> contains(path, "com.relationdetector.oracle.fullgrammer"))
+                    .filter(path -> contains(path, "com.relationdetector.oracle.fullgrammar"))
                     .map(repoRoot()::relativize)
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Oracle token-event must not import full-grammer implementation packages, offenders="
+                    "Oracle token-event must not import full-grammar implementation packages, offenders="
                             + offenders);
         }
     }
 
     @Test
-    void oracleTokenEventAndFullGrammerVisitorsUseDialectRoutineScope() throws IOException {
+    void oracleTokenEventAndFullGrammarVisitorsUseDialectRoutineScope() throws IOException {
         Path mainSource = repoRoot().resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle");
         Path routineScope = mainSource.resolve("routine/OracleRoutineScope.java");
         assertTrue(Files.exists(routineScope), "Oracle routine package must contain a real routine scope helper");
@@ -140,50 +140,50 @@ class OracleParserArchitectureTest {
                     .collect(java.util.stream.Collectors.joining("\n"));
         }
         Path fullCollector = mainSource.resolve(
-                "fullgrammer/common/OracleFullGrammerParseTreeEventCollector.java");
+                "fullgrammar/common/OracleFullGrammarParseTreeEventCollector.java");
         boolean tokenEventUsesScope = tokenEventSources.contains(
                 "com.relationdetector.oracle.routine.OracleRoutineScope")
                 && tokenEventSources.contains("routineScope.enterRoutine()")
                 && tokenEventSources.contains("routineScope.leaveRoutineEnd(");
-        boolean fullGrammerUsesScope = contains(fullCollector,
+        boolean fullGrammarUsesScope = contains(fullCollector,
                 "com.relationdetector.oracle.routine.OracleRoutineScope")
                 && contains(fullCollector, "routineScope.enterRoutine()")
                 && contains(fullCollector, "routineScope.leaveRoutineEnd(");
-        assertTrue(tokenEventUsesScope && fullGrammerUsesScope,
-                "Oracle token-event visitor and full-grammer common collector must use the dialect-level routine scope, offenders="
+        assertTrue(tokenEventUsesScope && fullGrammarUsesScope,
+                "Oracle token-event visitor and full-grammar common collector must use the dialect-level routine scope, offenders="
                         + (tokenEventUsesScope ? List.of() : List.of(repoRoot().relativize(tokenEventPackage)))
-                        + (fullGrammerUsesScope ? List.of() : List.of(repoRoot().relativize(fullCollector))));
+                        + (fullGrammarUsesScope ? List.of() : List.of(repoRoot().relativize(fullCollector))));
     }
 
     @Test
     void oracleVersionFullGrammarsAreSplitLexerAndParserFiles() throws IOException {
         for (String version : List.of("v12c", "v19c", "v21c", "v26ai")) {
             Path versionRoot = oracleGrammarRoot(version);
-            Path combinedGrammar = versionRoot.resolve("OracleFullGrammer.g4");
-            Path lexerGrammar = versionRoot.resolve("OracleFullGrammerLexer.g4");
-            Path parserGrammar = versionRoot.resolve("OracleFullGrammerParser.g4");
+            Path combinedGrammar = versionRoot.resolve("OracleFullGrammar.g4");
+            Path lexerGrammar = versionRoot.resolve("OracleFullGrammarLexer.g4");
+            Path parserGrammar = versionRoot.resolve("OracleFullGrammarParser.g4");
 
             assertFalse(Files.exists(combinedGrammar),
-                    version + " full-grammer must split lexer/parser grammar files");
+                    version + " full-grammar must split lexer/parser grammar files");
             assertTrue(Files.exists(lexerGrammar),
-                    version + " full-grammer must provide a lexer grammar");
+                    version + " full-grammar must provide a lexer grammar");
             assertTrue(Files.exists(parserGrammar),
-                    version + " full-grammer must provide a parser grammar");
+                    version + " full-grammar must provide a parser grammar");
 
             String lexerText = Files.readString(lexerGrammar);
             String parserText = Files.readString(parserGrammar);
-            assertTrue(lexerText.contains("lexer grammar OracleFullGrammerLexer;"),
-                    version + " lexer grammar must declare OracleFullGrammerLexer");
-            assertTrue(parserText.contains("parser grammar OracleFullGrammerParser;"),
-                    version + " parser grammar must declare OracleFullGrammerParser");
-            assertTrue(parserText.contains("tokenVocab = OracleFullGrammerLexer"),
+            assertTrue(lexerText.contains("lexer grammar OracleFullGrammarLexer;"),
+                    version + " lexer grammar must declare OracleFullGrammarLexer");
+            assertTrue(parserText.contains("parser grammar OracleFullGrammarParser;"),
+                    version + " parser grammar must declare OracleFullGrammarParser");
+            assertTrue(parserText.contains("tokenVocab = OracleFullGrammarLexer"),
                     version + " parser grammar must consume the version lexer tokens");
             assertFalse(parserText.contains("script\n    : token* EOF"),
                     version + " grammar must not accept arbitrary token streams");
             assertFalse(parserText.contains("unknownStatement"),
-                    version + " full-grammer must not keep statement-level unknownStatement fallback");
+                    version + " full-grammar must not keep statement-level unknownStatement fallback");
             assertFalse(parserText.contains(": sqlToken+"),
-                    version + " full-grammer must not accept arbitrary sqlToken sequences as a statement");
+                    version + " full-grammar must not accept arbitrary sqlToken sequences as a statement");
             assertFalse(lexerText.contains("OTHER\n    : ."),
                     version + " grammar must not use catch-all token sink as the full grammar");
         }
@@ -202,7 +202,7 @@ class OracleParserArchitectureTest {
     }
 
     @Test
-    void oracleFullGrammerDoesNotDeclareNonOracleDialectTokens() throws IOException {
+    void oracleFullGrammarDoesNotDeclareNonOracleDialectTokens() throws IOException {
         List<String> forbiddenFragments = List.of(
                 "LIMIT:",
                 "UNLOGGED:",
@@ -223,18 +223,18 @@ class OracleParserArchitectureTest {
                     .filter(text::contains)
                     .toList();
             assertTrue(offenders.isEmpty(),
-                    version + " full-grammer must not expose PostgreSQL/MySQL syntax fragments: " + offenders);
+                    version + " full-grammar must not expose PostgreSQL/MySQL syntax fragments: " + offenders);
         }
     }
 
     @Test
-    void oracleFullGrammerSmokeReportsGeneratedParserSource() {
-        var module = new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule();
+    void oracleFullGrammarSmokeReportsGeneratedParserSource() {
+        var module = new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule();
         var result = module.sqlParser().parseSql(statement("SELECT c.id FROM customers c"), null);
 
-        assertEquals("oracle-26ai", result.attributes().get("fullGrammerProfile"));
-        assertEquals("OracleFullGrammerParser", result.attributes().get("parser"));
-        assertEquals("OracleFullGrammerLexer", result.attributes().get("lexer"));
+        assertEquals("oracle-26ai", result.attributes().get("fullGrammarProfile"));
+        assertEquals("OracleFullGrammarParser", result.attributes().get("parser"));
+        assertEquals("OracleFullGrammarLexer", result.attributes().get("lexer"));
         assertEquals("INCOMPLETE_VERSIONED", result.attributes().get("grammarCoverage"));
     }
 
@@ -247,7 +247,7 @@ class OracleParserArchitectureTest {
     }
 
     @Test
-    void oracleVersionedFullGrammerFixturesUsePrunedRootSampleDataSurface() throws IOException {
+    void oracleVersionedFullGrammarFixturesUsePrunedRootSampleDataSurface() throws IOException {
         Path correctnessRoot = repoRoot().resolve("test-fixtures/correctness/oracle");
         Set<String> rootSampleFixtures;
         try (Stream<Path> stream = Files.list(correctnessRoot)) {
@@ -271,9 +271,9 @@ class OracleParserArchitectureTest {
                         .collect(java.util.stream.Collectors.toSet());
             }
             assertFalse(versionSampleFixtures.isEmpty(),
-                    version + " full-grammer must keep sample-data correctness coverage");
+                    version + " full-grammar must keep sample-data correctness coverage");
             assertTrue(rootSampleFixtures.containsAll(versionSampleFixtures),
-                    version + " full-grammer sample-data fixture surface must stay within the pruned Oracle root surface");
+                    version + " full-grammar sample-data fixture surface must stay within the pruned Oracle root surface");
         }
     }
 
@@ -452,14 +452,14 @@ class OracleParserArchitectureTest {
 
     private static Path oracleGrammarRoot(String version) {
         return repoRoot().resolve("grammar/oracle-" + version)
-                .resolve("src/main/antlr4/com/relationdetector/oracle/fullgrammer")
+                .resolve("src/main/antlr4/com/relationdetector/oracle/fullgrammar")
                 .resolve(version);
     }
 
     private static String oracleGrammarText(String version) throws IOException {
         Path root = oracleGrammarRoot(version);
-        return Files.readString(root.resolve("OracleFullGrammerParser.g4"))
-                + Files.readString(root.resolve("OracleFullGrammerLexer.g4"));
+        return Files.readString(root.resolve("OracleFullGrammarParser.g4"))
+                + Files.readString(root.resolve("OracleFullGrammarLexer.g4"));
     }
 
     private static Path repoRoot() {

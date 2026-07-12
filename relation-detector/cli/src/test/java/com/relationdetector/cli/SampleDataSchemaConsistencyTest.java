@@ -23,7 +23,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
@@ -35,7 +35,7 @@ import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
 import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.oracle.OracleDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
@@ -263,7 +263,7 @@ final class SampleDataSchemaConsistencySupport {
                         || value.endsWith("->payments.id")),
                 () -> "Generated surrogate ids must not be write targets: " + lineage);
 
-        Set<Set<String>> relationshipPairs = new TokenEventRelationExtractor().extract(routine, structured).stream()
+        Set<Set<String>> relationshipPairs = new StructuredRelationshipExtractor().extract(routine, structured).stream()
                 .map(candidate -> Set.of(candidate.source().displayName(), candidate.target().displayName()))
                 .collect(java.util.stream.Collectors.toSet());
         assertTrue(relationshipPairs.contains(Set.of(
@@ -525,8 +525,8 @@ final class SampleDataSchemaConsistencySupport {
             StatementSourceType sourceType,
             List<WarningMessage> warnings
     ) throws Exception {
-        var result = adaptor.parsers().scripts().parse(
-                new ScriptParseRequest(Files.readString(file), file.toString(), sourceType));
+        var result = adaptor.parsers().scriptFramer().frame(
+                new ScriptFrameRequest(Files.readString(file), file.toString(), sourceType));
         warnings.addAll(result.warnings());
         return result.statements();
     }
@@ -653,10 +653,10 @@ final class SampleDataSchemaConsistencySupport {
             return config(profile);
         }
         ProfileKey strictProfile = switch (profile.databaseType()) {
-            case MYSQL -> new ProfileKey(DatabaseType.MYSQL, "full-grammer", "mysql/8.0", "8.0.36");
-            case POSTGRESQL -> new ProfileKey(DatabaseType.POSTGRESQL, "full-grammer", "postgresql/18", "18.1");
-            case ORACLE -> new ProfileKey(DatabaseType.ORACLE, "full-grammer", "oracle/26ai", "26");
-            case SQLSERVER -> new ProfileKey(DatabaseType.SQLSERVER, "full-grammer", "sqlserver/2025", "2025");
+            case MYSQL -> new ProfileKey(DatabaseType.MYSQL, "full-grammar", "mysql/8.0", "8.0.36");
+            case POSTGRESQL -> new ProfileKey(DatabaseType.POSTGRESQL, "full-grammar", "postgresql/18", "18.1");
+            case ORACLE -> new ProfileKey(DatabaseType.ORACLE, "full-grammar", "oracle/26ai", "26");
+            case SQLSERVER -> new ProfileKey(DatabaseType.SQLSERVER, "full-grammar", "sqlserver/2025", "2025");
             case COMMON -> profile;
         };
         return config(strictProfile);

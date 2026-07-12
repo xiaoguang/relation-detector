@@ -11,24 +11,24 @@ import java.util.stream.Stream;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.script.ScriptFileExtractor;
-import com.relationdetector.mysql.script.MySqlScriptParser;
+import com.relationdetector.mysql.script.MySqlScriptFramer;
 
 /** Extracts MySQL log record payloads without classifying SQL by raw text. */
 public final class MySqlLogExtractor implements SqlLogExtractor {
-    private final MySqlScriptParser scriptParser;
+    private final MySqlScriptFramer scriptFramer;
 
     public MySqlLogExtractor() {
-        this(new MySqlScriptParser());
+        this(new MySqlScriptFramer());
     }
 
-    public MySqlLogExtractor(MySqlScriptParser scriptParser) {
-        this.scriptParser = scriptParser;
+    public MySqlLogExtractor(MySqlScriptFramer scriptFramer) {
+        this.scriptFramer = scriptFramer;
     }
 
     @Override
@@ -44,7 +44,7 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
     ) {
         if (hint == LogFormatHint.PLAIN_SQL) {
             return new ScriptFileExtractor().extract(
-                    file, StatementSourceType.PLAIN_SQL, scriptParser, warnings);
+                    file, StatementSourceType.PLAIN_SQL, scriptFramer, warnings);
         }
         try {
             List<String> lines = Files.readAllLines(file);
@@ -90,7 +90,7 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
                 serverSql.append(line).append('\n');
             }
         }
-        var parsed = scriptParser.parse(new ScriptParseRequest(
+        var parsed = scriptFramer.frame(new ScriptFrameRequest(
                 serverSql.toString(), file.toString(), StatementSourceType.NATIVE_LOG));
         parsed.warnings().forEach(warnings);
         return parsed.statements();
@@ -102,7 +102,7 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
             long sourceLine,
             Consumer<WarningMessage> warnings
     ) {
-        var parsed = scriptParser.parse(new ScriptParseRequest(
+        var parsed = scriptFramer.frame(new ScriptFrameRequest(
                 payload, file.toString(), StatementSourceType.NATIVE_LOG));
         parsed.warnings().forEach(warnings);
         return parsed.statements().stream()

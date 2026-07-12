@@ -1,7 +1,7 @@
 id: postgres17sample-data-full-04-queries-08-common-system-queries-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: PLAIN_SQL

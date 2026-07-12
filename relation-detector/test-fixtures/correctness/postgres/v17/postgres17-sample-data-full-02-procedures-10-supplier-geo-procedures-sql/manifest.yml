@@ -1,7 +1,7 @@
 id: postgres17sample-data-full-02-procedures-10-supplier-geo-procedures-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: PROCEDURE

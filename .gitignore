@@ -2,6 +2,7 @@ target/
 */target/
 .DS_Store
 **/.mvn/build-cache/
+.vscode/settings.json
 test-fixtures/local/
 亿问/
 mysql80-sample-data-provenance.ttl

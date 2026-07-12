@@ -46,23 +46,23 @@ class SampleDataParserComparisonDocumentationTest {
         Map<String, String> result = new LinkedHashMap<>();
         result.put("common-token-event-sample-data", "common token-event sample-data");
         result.put("mysql-token-event-root", "MySQL token-event root sample-data");
-        result.put("mysql-v5_7-full", "MySQL full-grammer v5_7 sample-data");
-        result.put("mysql-v8_0-full", "MySQL full-grammer v8_0 sample-data");
+        result.put("mysql-v5_7-full", "MySQL full-grammar v5_7 sample-data");
+        result.put("mysql-v8_0-full", "MySQL full-grammar v8_0 sample-data");
         result.put("postgres-token-event-root", "PostgreSQL token-event root sample-data");
-        result.put("postgres-v16-full", "PostgreSQL full-grammer v16 sample-data");
-        result.put("postgres-v17-full", "PostgreSQL full-grammer v17 sample-data");
-        result.put("postgres-v18-full", "PostgreSQL full-grammer v18 sample-data");
+        result.put("postgres-v16-full", "PostgreSQL full-grammar v16 sample-data");
+        result.put("postgres-v17-full", "PostgreSQL full-grammar v17 sample-data");
+        result.put("postgres-v18-full", "PostgreSQL full-grammar v18 sample-data");
         result.put("oracle-token-event-root", "Oracle token-event root sample-data");
-        result.put("oracle-v12c-full", "Oracle full-grammer v12c sample-data");
-        result.put("oracle-v19c-full", "Oracle full-grammer v19c sample-data");
-        result.put("oracle-v21c-full", "Oracle full-grammer v21c sample-data");
-        result.put("oracle-v26ai-full", "Oracle full-grammer v26ai sample-data");
+        result.put("oracle-v12c-full", "Oracle full-grammar v12c sample-data");
+        result.put("oracle-v19c-full", "Oracle full-grammar v19c sample-data");
+        result.put("oracle-v21c-full", "Oracle full-grammar v21c sample-data");
+        result.put("oracle-v26ai-full", "Oracle full-grammar v26ai sample-data");
         result.put("sqlserver-token-event-root", "SQL Server token-event root sample-data");
-        result.put("sqlserver-v2016-full", "SQL Server full-grammer v2016 sample-data");
-        result.put("sqlserver-v2017-full", "SQL Server full-grammer v2017 sample-data");
-        result.put("sqlserver-v2019-full", "SQL Server full-grammer v2019 sample-data");
-        result.put("sqlserver-v2022-full", "SQL Server full-grammer v2022 sample-data");
-        result.put("sqlserver-v2025-full", "SQL Server full-grammer v2025 sample-data");
+        result.put("sqlserver-v2016-full", "SQL Server full-grammar v2016 sample-data");
+        result.put("sqlserver-v2017-full", "SQL Server full-grammar v2017 sample-data");
+        result.put("sqlserver-v2019-full", "SQL Server full-grammar v2019 sample-data");
+        result.put("sqlserver-v2022-full", "SQL Server full-grammar v2022 sample-data");
+        result.put("sqlserver-v2025-full", "SQL Server full-grammar v2025 sample-data");
         return Map.copyOf(result);
     }
 }

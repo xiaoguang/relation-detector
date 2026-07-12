@@ -14,7 +14,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
-import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
+import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
 
 /** Per-parse state, provenance and identifier helpers for PostgreSQL token-event traversal. */
 abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVisitor<Void> {
@@ -23,6 +23,8 @@ abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVis
     protected final List<StructuredSqlEvent> events = new ArrayList<>();
     protected final List<WarningMessage> warnings = new ArrayList<>();
     protected final Set<String> cteNames = new LinkedHashSet<>();
+    protected final Set<String> nonColumnIdentifiers;
+    protected final boolean routineSql;
     protected final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     protected final ArrayDeque<String> joinKinds = new ArrayDeque<>();
     protected final ArrayDeque<String> ddlTables = new ArrayDeque<>();
@@ -32,24 +34,15 @@ abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVis
     PostgresTokenEventVisitorState(SqlStatementRecord statement) {
         this.statement = statement;
         emitter = new TokenEventEventEmitter(statement);
+        nonColumnIdentifiers = PostgresRoutineAttributes.nonColumnIdentifiers(statement.attributes());
+        routineSql = PostgresRoutineAttributes.isRoutineSql(statement);
     }
 
-    protected void collectRoutineBody(String quotedBody, int tokenLine) {
-        String body = unquoteDollarBody(quotedBody);
-        if (body.isBlank()) {
-            return;
-        }
-        SqlStatementRecord nested = new SqlStatementRecord(body,
-                statement.sourceType(), statement.sourceName(),
-                statement.startLine() + Math.max(0, tokenLine - 1),
-                statement.startLine() + Math.max(0, tokenLine - 1) + body.lines().count(),
-                statement.attributes());
-        var outcome = PostgresRoutineBodyParser.parse(nested);
-        events.addAll(outcome.events());
-        warnings.addAll(outcome.warnings());
+    protected boolean isNonColumnIdentifier(String identifier) {
+        return identifier != null && nonColumnIdentifiers.contains(normalize(identifier));
     }
 
-    private String unquoteDollarBody(String raw) {
+    protected String unquoteDollarBody(String raw) {
         if (raw == null || raw.length() < 4 || raw.charAt(0) != '$') {
             return "";
         }

@@ -27,24 +27,24 @@ import com.relationdetector.core.provenance.SourceProvenanceValidator;
  * 运行选中的 DDL relationship 抽取链路。
  *
  * <p>CN: adaptor 提供方言 token-event DDL parser；当 parser.mode/profile 选中
- * full-grammer 时，runner 使用对应 full-grammer DDL parser。两种 parser 都输出同一
+ * full-grammar 时，runner 使用对应 full-grammar DDL parser。两种 parser 都输出同一
  * DDL 结构事件，再交给 DdlRelationExtractionVisitor。
  *
  * <p>EN: Runs the selected DDL relation extraction pipeline. The adaptor
  * supplies the dialect token-event DDL parser. When
- * {@code parser.mode} and a versioned grammar profile select full-grammer, the
- * runner uses the corresponding full-grammer DDL parser instead. In both cases
+ * {@code parser.mode} and a versioned grammar profile select full-grammar, the
+ * runner uses the corresponding full-grammar DDL parser instead. In both cases
  * this runner converts structured DDL events into relationship candidates:
  *
  * <pre>{@code
- * DialectScriptParser.parse(...)
+ * DialectScriptFramer.frame(...)
  *   -> SqlStatementRecord
  *   -> DdlRelationParserRunner
  *      -> StructuredDdlParser.parseDdl(...)
  *      -> DdlRelationExtractionVisitor.extract(...)
  * }</pre>
  *
- * <p>File input must be framed by the dialect script parser before it reaches
+ * <p>File input must be framed by the dialect script framer before it reaches
  * this runner. Direct catalog DDL such as {@code SHOW CREATE TABLE} may call
  * {@link #parseTextWithEvidence(DatabaseAdaptor, ScanConfig, String, String,
  * EvidenceSourceType, AdaptorContext)} because it is already one server-side

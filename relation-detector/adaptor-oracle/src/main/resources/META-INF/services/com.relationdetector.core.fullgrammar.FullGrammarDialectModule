@@ -1,0 +1,4 @@
+com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule
+com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule
+com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule
+com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule

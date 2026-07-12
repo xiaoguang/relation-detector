@@ -4,7 +4,7 @@
 
 本指南用于后续开发者和自动化 LLM 选择最小测试范围，并在逻辑批次结束后完成全量验收。性能优化不得通过少跑 fixture、缓存测试结果或刷新 golden 获得。
 
-- token-event 与 full-grammer 互不 delegate。
+- token-event 与 full-grammar 互不 delegate。
 - parser/visitor/state 每次 parse 独立创建，不共享可变状态。
 - `namingEvidence` 是 `NAMING_MATCH` 唯一来源。
 - 结构重构不更新 correctness golden。

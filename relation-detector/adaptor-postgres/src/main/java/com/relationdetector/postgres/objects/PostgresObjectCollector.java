@@ -49,7 +49,7 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 

@@ -11,23 +11,18 @@ if [[ "${RELATION_DETECTOR_SKIP_PACKAGE:-false}" != "true" ]]; then
   "$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
 fi
 
+grammar_modules=(
+  common-token-event common-script
+  mysql-token-event mysql-script mysql-v5_7 mysql-v8_0
+  postgres-token-event postgres-script postgres-v16 postgres-v17 postgres-v18
+  postgres-plpgsql-token-event plpgsql-v16 plpgsql-v17 plpgsql-v18
+  oracle-token-event oracle-script oracle-v12c oracle-v19c oracle-v21c oracle-v26ai
+  sqlserver-token-event sqlserver-script
+  sqlserver-v2016 sqlserver-v2017 sqlserver-v2019 sqlserver-v2022 sqlserver-v2025
+)
+
 required_jars=(
   "$RELATION_ROOT/contracts/target/relation-detector-contracts-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/mysql-v5_7/target/relation-detector-grammar-mysql-v5_7-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/mysql-v8_0/target/relation-detector-grammar-mysql-v8_0-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/postgres-v16/target/relation-detector-grammar-postgres-v16-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/postgres-v17/target/relation-detector-grammar-postgres-v17-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/postgres-v18/target/relation-detector-grammar-postgres-v18-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/postgres-routine/target/relation-detector-grammar-postgres-routine-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/oracle-v12c/target/relation-detector-grammar-oracle-v12c-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/oracle-v19c/target/relation-detector-grammar-oracle-v19c-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/oracle-v21c/target/relation-detector-grammar-oracle-v21c-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/oracle-v26ai/target/relation-detector-grammar-oracle-v26ai-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/sqlserver-v2016/target/relation-detector-grammar-sqlserver-v2016-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/sqlserver-v2017/target/relation-detector-grammar-sqlserver-v2017-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/sqlserver-v2019/target/relation-detector-grammar-sqlserver-v2019-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/sqlserver-v2022/target/relation-detector-grammar-sqlserver-v2022-0.1.0-SNAPSHOT.jar"
-  "$RELATION_ROOT/grammar/sqlserver-v2025/target/relation-detector-grammar-sqlserver-v2025-0.1.0-SNAPSHOT.jar"
   "$RELATION_ROOT/core/target/relation-detector-core-0.1.0-SNAPSHOT.jar"
   "$RELATION_ROOT/adaptor-mysql/target/relation-detector-adaptor-mysql-0.1.0-SNAPSHOT.jar"
   "$RELATION_ROOT/adaptor-postgres/target/relation-detector-adaptor-postgres-0.1.0-SNAPSHOT.jar"
@@ -43,6 +38,12 @@ required_jars=(
   "$HOME/.m2/repository/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar"
   "$HOME/.m2/repository/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar"
 )
+
+for module in "${grammar_modules[@]}"; do
+  required_jars+=(
+    "$RELATION_ROOT/grammar/$module/target/relation-detector-grammar-$module-0.1.0-SNAPSHOT.jar"
+  )
+done
 
 for jar in "${required_jars[@]}"; do
   if [[ ! -f "$jar" ]]; then

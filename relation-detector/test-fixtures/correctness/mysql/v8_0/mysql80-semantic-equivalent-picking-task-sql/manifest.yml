@@ -1,7 +1,7 @@
 id: mysql80-semantic-equivalent-picking-task-sql
 databaseType: MYSQL
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: mysql/8.0
 databaseVersion: 8.0
 sourceType: PLAIN_SQL

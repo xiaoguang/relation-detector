@@ -1,7 +1,7 @@
 id: oracle19c-sample-data-full-01-schema-05-third-batch-tables-ddl
 databaseType: ORACLE
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: oracle/19c
 databaseVersion: 19
 sourceType: DDL_FILE

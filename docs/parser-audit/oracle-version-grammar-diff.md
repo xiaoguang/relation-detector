@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document records the Oracle full-grammer version boundary. The repository
+This document records the Oracle full-grammar version boundary. The repository
 now vendors `antlr/grammars-v4/sql/plsql` at a fixed commit and then applies
 project-maintained version cuts for `oracle/12c`, `oracle/19c`, `oracle/21c`,
 and `oracle/26ai`. It is still not a complete Oracle manual conversion; it is a
@@ -11,7 +11,7 @@ tests.
 
 `OracleRelationSql.g4` remains a single broad token-event fallback grammar.
 Version strictness belongs only to `oracle/12c`, `oracle/19c`, `oracle/21c`,
-and `oracle/26ai` full-grammer profiles.
+and `oracle/26ai` full-grammar profiles.
 
 ## Official Sources
 
@@ -51,23 +51,23 @@ sql/plsql/Java/PlSqlParserBase.java
 Local rename:
 
 ```text
-PlSqlLexer.g4       -> OracleFullGrammerLexer.g4
-PlSqlParser.g4      -> OracleFullGrammerParser.g4
-PlSqlLexerBase.java -> OracleFullGrammerLexerBase.java
-PlSqlParserBase.java -> OracleFullGrammerParserBase.java
+PlSqlLexer.g4       -> OracleFullGrammarLexer.g4
+PlSqlParser.g4      -> OracleFullGrammarParser.g4
+PlSqlLexerBase.java -> OracleFullGrammarLexerBase.java
+PlSqlParserBase.java -> OracleFullGrammarParserBase.java
 ```
 
 The upstream Apache-2.0 license headers are retained in the vendored grammar
 and base class files. Bytebase remains an engineering reference only; it is not
 used as the source of truth for version boundaries.
 
-The applied full-grammer upgrade path is:
+The applied full-grammar upgrade path is:
 
 1. Pin an exact `antlr/grammars-v4` commit before vendoring anything into this
    repository. Do not depend on floating `master`.
 2. Vendor the PL/SQL lexer/parser grammar and the required Java base classes
-   into `adaptor-oracle/fullgrammer/<version>` packages with local names such as
-   `OracleFullGrammerLexer` and `OracleFullGrammerParser`.
+   into `adaptor-oracle/fullgrammar/<version>` packages with local names such as
+   `OracleFullGrammarLexer` and `OracleFullGrammarParser`.
 3. Make `oracle/12c` the first generated-parser baseline, then derive
    `oracle/19c`, `oracle/21c`, and `oracle/26ai` by removing or adding rules
    according to the official Oracle version documents listed above.
@@ -77,7 +77,7 @@ The applied full-grammer upgrade path is:
    version must fail to parse a higher-version-only grammar production by its
    own grammar, not by Java profile blacklist logic.
 
-The checked-in Oracle full-grammer is therefore stronger than the earlier
+The checked-in Oracle full-grammar is therefore stronger than the earlier
 scoped grammar and no longer resembles token-event, but it remains
 `INCOMPLETE_VERSIONED`: it proves grammars-v4-backed generated parser wiring,
 sample-data coverage, DDL/SQL/PLSQL extraction for current fixtures, and the
@@ -105,7 +105,7 @@ This prevents high-version syntax from being accepted as a generic identifier.
 | `oracle/21c` | `INCOMPLETE_VERSIONED` projection | Accepts `SQL_MACRO` and inherited 19c feature; rejects 26ai `VECTOR`. |
 | `oracle/26ai` | `INCOMPLETE_VERSIONED` projection | Accepts `VECTOR` and inherited 19c/21c feature syntax. |
 
-Current versioned full-grammer correctness totals after the grammars-v4
+Current versioned full-grammar correctness totals after the grammars-v4
 migration:
 
 | Profile | Fixtures | Relationship fingerprints | Lineage fingerprints |
@@ -124,7 +124,7 @@ analytic SQL, and full Oracle DDL options.
 ## Statement Family Coverage Matrix
 
 The table below is the current source-backed coverage claim. `Covered for
-fixtures` means the checked-in full-grammer can parse and emit the relationship
+fixtures` means the checked-in full-grammar can parse and emit the relationship
 / lineage / DDL events needed by current Oracle correctness fixtures. It does
 not mean every clause in the official manual family is fully converted.
 
@@ -145,13 +145,13 @@ Upgrade gate to `OFFICIAL_VERSION_SCOPED`:
    grammar-level rejection in lower versions.
 3. The audit must contain no confirmed parser gap for the declared family.
 4. Token-event must remain independent fallback and cannot be used as proof of
-   full-grammer coverage.
+   full-grammar coverage.
 
 These gates are not all satisfied yet, so the runtime attribute remains
 `grammarCoverage=INCOMPLETE_VERSIONED`.
 
-The current versioned full-grammer no longer accepts known non-Oracle structural
-syntax by grammar fallback. The Oracle full-grammer lexer/parser files do not
+The current versioned full-grammar no longer accepts known non-Oracle structural
+syntax by grammar fallback. The Oracle full-grammar lexer/parser files do not
 declare PostgreSQL/MySQL constructs such as `LIMIT`, `UNLOGGED`, `CONCURRENTLY`,
 PostgreSQL `::` casts, JSON arrow operators, `TABLESAMPLE`, `WITH ORDINALITY`,
 `DO NOTHING`, or PostgreSQL materialized CTE modifiers. Scoped flexible tokens
@@ -169,7 +169,7 @@ fixture when it produces no relationship, lineage, or diagnostic output.
 
 - Token-event may parse broadly and must not be used as proof of version
   support.
-- Versioned full-grammer fixtures must not silently fallback to token-event.
+- Versioned full-grammar fixtures must not silently fallback to token-event.
 - Low versions must reject high-version-only syntax by grammar parse failure or
   explicit unsupported syntax diagnostics.
 - New version-only syntax must be backed by an official source entry in this

@@ -1,7 +1,7 @@
 id: postgres16sample-data-full-01-schema-01-tables-ddl
 databaseType: POSTGRESQL
 parserTarget: DDL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/16
 databaseVersion: 16.5
 sourceType: DDL_FILE

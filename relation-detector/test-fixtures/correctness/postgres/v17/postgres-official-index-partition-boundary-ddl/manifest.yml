@@ -1,5 +1,5 @@
 id: postgres17-official-index-partition-boundary-ddl
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/17
 databaseVersion: 17.5
 databaseType: POSTGRESQL

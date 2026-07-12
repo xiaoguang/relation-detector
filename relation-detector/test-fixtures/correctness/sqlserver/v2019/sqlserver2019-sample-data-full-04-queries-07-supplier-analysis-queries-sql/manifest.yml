@@ -1,7 +1,7 @@
 id: sqlserver2019-sample-data-full-04-queries-07-supplier-analysis-queries-sql
 databaseType: SQLSERVER
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2019
 databaseVersion: 2019
 sourceType: PLAIN_SQL

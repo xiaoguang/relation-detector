@@ -1,7 +1,7 @@
 id: oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql
 databaseType: ORACLE
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: oracle/19c
 databaseVersion: 19
 sourceType: PLAIN_SQL

@@ -27,10 +27,10 @@ public final class EvidenceProvenanceMapper {
         if (provenance.tokenEventNative()) {
             attributes.put("tokenEventNative", true);
         }
-        if (provenance.fullGrammerNative()) {
-            attributes.put("fullGrammerNative", true);
+        if (provenance.fullGrammarNative()) {
+            attributes.put("fullGrammarNative", true);
         }
-        put(attributes, "fullGrammerContextSource", provenance.fullGrammerContextSource());
+        put(attributes, "fullGrammarContextSource", provenance.fullGrammarContextSource());
     }
 
     private static void copyStatement(SqlStatementRecord statement, Map<String, Object> attributes) {

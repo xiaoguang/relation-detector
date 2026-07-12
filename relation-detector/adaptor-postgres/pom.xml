@@ -13,6 +13,16 @@
   <dependencies>
     <dependency>
       <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-postgres-token-event</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-postgres-script</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
       <artifactId>relation-detector-grammar-postgres-v16</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -28,7 +38,22 @@
     </dependency>
     <dependency>
       <groupId>com.relationdetector</groupId>
-      <artifactId>relation-detector-grammar-postgres-routine</artifactId>
+      <artifactId>relation-detector-grammar-postgres-plpgsql-token-event</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-plpgsql-v16</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-plpgsql-v17</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-plpgsql-v18</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -50,54 +75,4 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.antlr</groupId>
-        <artifactId>antlr4-maven-plugin</artifactId>
-        <version>4.13.2</version>
-        <configuration>
-          <visitor>true</visitor>
-          <listener>true</listener>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>antlr4</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <profiles>
-    <profile>
-      <id>clean-generated-antlr</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-clean-plugin</artifactId>
-            <version>3.2.0</version>
-            <executions>
-              <execution>
-                <id>clear-generated-antlr-before-regeneration</id>
-                <phase>generate-sources</phase>
-                <configuration>
-                  <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                  <filesets>
-                    <fileset>
-                      <directory>${project.build.directory}/generated-sources/antlr4</directory>
-                    </fileset>
-                  </filesets>
-                </configuration>
-                <goals>
-                  <goal>clean</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

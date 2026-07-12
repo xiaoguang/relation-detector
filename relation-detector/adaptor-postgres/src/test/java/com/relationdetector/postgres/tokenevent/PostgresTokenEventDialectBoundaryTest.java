@@ -12,14 +12,14 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.parse.ScriptParseRequest;
+import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
-import com.relationdetector.postgres.script.PostgresScriptParser;
+import com.relationdetector.postgres.script.PostgresScriptFramer;
 
 /**
  * Verifies that PostgreSQL owns PostgreSQL-flavored token-event parser selection.
@@ -306,8 +306,33 @@ class PostgresTokenEventDialectBoundaryTest {
         assertTrue(fingerprints.contains("VALUE:AGGREGATE:orders.pay_amount->users.total_spent"),
                 () -> "Scalar aggregate subquery should flow into UPDATE target: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
-        assertTrue(fingerprints.contains("CONTROL:CASE_WHEN:orders.pay_amount->users.level"),
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id->users.level"),
                 () -> "CASE over scalar aggregate subquery should control UPDATE target: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+    }
+
+    @Test
+    void postgresTokenEventKeepsRowsetScopeForInsertSelectOnConflict() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO category_dim (source_category_id, category_code)
+                SELECT pc.id, pc.code
+                FROM product_categories pc
+                ON CONFLICT (source_category_id) DO UPDATE
+                SET category_code = EXCLUDED.category_code;
+                """, StatementSourceType.PLAIN_SQL, "postgres-on-conflict.sql", 1, 6, java.util.Map.of());
+
+        var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement, result)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:DIRECT:product_categories.id->category_dim.source_category_id"),
+                () -> "INSERT SELECT rowset scope was lost: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
     }
 
@@ -334,7 +359,7 @@ class PostgresTokenEventDialectBoundaryTest {
         assertTrue(fingerprints.contains("VALUE:DIRECT:source_orders.id->target_orders.source_order_id"),
                 () -> "MERGE INSERT value expression should flow into target column: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
-        var relationships = new com.relationdetector.core.relation.TokenEventRelationExtractor()
+        var relationships = new com.relationdetector.core.relation.StructuredRelationshipExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::relationFingerprint)
@@ -527,7 +552,7 @@ class PostgresTokenEventDialectBoundaryTest {
     @Test
     void postgresAdaptorSqlParserUsesTokenEventRelationParser() {
         SqlRelationParser parser = new PostgresDatabaseAdaptor().parsers().sqlRelations();
-        assertTrue(parser instanceof TokenEventSqlRelationParser);
+        assertTrue(parser instanceof StructuredSqlRelationshipParser);
 
         java.util.List<RelationshipCandidate> relationships = parser.parse(new SqlStatementRecord(
                 "SELECT * FROM \"orders\" o JOIN \"users\" u ON o.\"user_id\" = u.\"id\"",
@@ -726,7 +751,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-cte-window.sql", 1, 1, java.util.Map.of());
         var structured = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
         java.util.List<RelationshipCandidate> relations =
-                new TokenEventSqlRelationParser(new PostgresTokenEventStructuredSqlParser()).parse(statement);
+                new StructuredSqlRelationshipParser(new PostgresTokenEventStructuredSqlParser()).parse(statement);
 
         java.util.Set<String> fingerprints = relations.stream()
                 .map(relation -> relation.relationType() + ":"
@@ -750,11 +775,11 @@ class PostgresTokenEventDialectBoundaryTest {
     void postgresTokenEventFindsCteJoinPredicatesInSampleDataComplexQueryFile() throws Exception {
         java.nio.file.Path input = workspaceRoot().resolve(
                 "sample-data/postgres/18/04-queries/01-complex-queries.sql");
-        java.util.List<RelationshipCandidate> relations = new PostgresScriptParser()
-                .parse(new ScriptParseRequest(java.nio.file.Files.readString(input), input.toString(),
+        java.util.List<RelationshipCandidate> relations = new PostgresScriptFramer()
+                .frame(new ScriptFrameRequest(java.nio.file.Files.readString(input), input.toString(),
                         StatementSourceType.PLAIN_SQL))
                 .statements().stream()
-                .flatMap(statement -> new TokenEventSqlRelationParser(new PostgresTokenEventStructuredSqlParser())
+                .flatMap(statement -> new StructuredSqlRelationshipParser(new PostgresTokenEventStructuredSqlParser())
                         .parse(statement).stream())
                 .toList();
 
@@ -897,7 +922,7 @@ class PostgresTokenEventDialectBoundaryTest {
     private java.util.List<RelationshipCandidate> postgresRelations(String sql) {
         SqlStatementRecord statement = new SqlStatementRecord(
                 sql, StatementSourceType.PLAIN_SQL, "postgres-dialect-boundary.sql", 1, 1, java.util.Map.of());
-        return new TokenEventSqlRelationParser(new PostgresTokenEventStructuredSqlParser()).parse(statement);
+        return new StructuredSqlRelationshipParser(new PostgresTokenEventStructuredSqlParser()).parse(statement);
     }
 
     private java.util.Set<String> relationFingerprints(java.util.List<RelationshipCandidate> relations) {

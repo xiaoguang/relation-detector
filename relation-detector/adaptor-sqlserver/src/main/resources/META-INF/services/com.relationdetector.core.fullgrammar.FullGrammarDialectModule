@@ -1,0 +1,5 @@
+com.relationdetector.sqlserver.fullgrammar.v2016.FullGrammarDialectModule
+com.relationdetector.sqlserver.fullgrammar.v2017.FullGrammarDialectModule
+com.relationdetector.sqlserver.fullgrammar.v2019.FullGrammarDialectModule
+com.relationdetector.sqlserver.fullgrammar.v2022.FullGrammarDialectModule
+com.relationdetector.sqlserver.fullgrammar.v2025.FullGrammarDialectModule

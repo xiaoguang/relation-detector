@@ -1,5 +1,5 @@
 id: postgres18-official-alter-index-boundary-ddl
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: postgresql/18
 databaseVersion: 18.1
 databaseType: POSTGRESQL

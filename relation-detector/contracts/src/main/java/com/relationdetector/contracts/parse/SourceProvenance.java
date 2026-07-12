@@ -11,8 +11,8 @@ public record SourceProvenance(
         String sourceObjectType,
         String sourceObjectName,
         boolean tokenEventNative,
-        boolean fullGrammerNative,
-        String fullGrammerContextSource
+        boolean fullGrammarNative,
+        String fullGrammarContextSource
 ) {
     public SourceProvenance {
         sourceName = clean(sourceName);
@@ -23,14 +23,14 @@ public record SourceProvenance(
         sourceBlockId = clean(sourceBlockId);
         sourceObjectType = clean(sourceObjectType);
         sourceObjectName = clean(sourceObjectName);
-        fullGrammerContextSource = clean(fullGrammerContextSource);
+        fullGrammarContextSource = clean(fullGrammarContextSource);
     }
 
     public static SourceProvenance tokenEvent(SqlStatementRecord statement, long line, String statementScope) {
         return from(statement, line, statementScope, true, false, "");
     }
 
-    public static SourceProvenance fullGrammer(
+    public static SourceProvenance fullGrammar(
             SqlStatementRecord statement,
             long line,
             String statementScope,
@@ -44,7 +44,7 @@ public record SourceProvenance(
                 false, false, "");
     }
 
-    public SourceProvenance asFullGrammer(String sourceName, String contextSource) {
+    public SourceProvenance asFullGrammar(String sourceName, String contextSource) {
         return new SourceProvenance(sourceName, line, statementScope, sourceFile,
                 sourceStatementId, sourceBlockId, sourceObjectType, sourceObjectName,
                 false, true, contextSource);
@@ -63,8 +63,8 @@ public record SourceProvenance(
                 textOr(statement, "sourceObjectType", sourceObjectType),
                 textOr(statement, "sourceObjectName", sourceObjectName),
                 tokenEventNative,
-                fullGrammerNative,
-                fullGrammerContextSource);
+                fullGrammarNative,
+                fullGrammarContextSource);
     }
 
     private static SourceProvenance from(
@@ -72,7 +72,7 @@ public record SourceProvenance(
             long line,
             String statementScope,
             boolean tokenEventNative,
-            boolean fullGrammerNative,
+            boolean fullGrammarNative,
             String contextSource
     ) {
         return new SourceProvenance(
@@ -85,7 +85,7 @@ public record SourceProvenance(
                 text(statement, "sourceObjectType"),
                 text(statement, "sourceObjectName"),
                 tokenEventNative,
-                fullGrammerNative,
+                fullGrammarNative,
                 contextSource);
     }
 

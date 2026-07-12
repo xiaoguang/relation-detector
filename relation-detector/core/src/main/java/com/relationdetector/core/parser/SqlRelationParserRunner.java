@@ -13,7 +13,7 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.log.TypedLogNoiseClassifier;
-import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.provenance.SourceProvenanceValidator;
 
@@ -21,16 +21,16 @@ import com.relationdetector.core.provenance.SourceProvenanceValidator;
  * SQL parser mode 选择与运行入口。
  *
  * <p>CN: runner 负责 SQL log noise 过滤、parser policy attributes 注入、
- * full-grammer/profile 选择和 token-event fallback。它不直接抽取关系；关系抽取由
- * TokenEventSqlRelationParser / TokenEventRelationExtractor 完成。
+ * full-grammar/profile 选择和 token-event fallback。它不直接抽取关系；关系抽取由
+ * StructuredSqlRelationshipParser / StructuredRelationshipExtractor 完成。
  *
  * <p>EN: SQL parser-mode selection and execution entry point. The runner owns
- * SQL log noise filtering, parser policy attributes, full-grammer/profile
+ * SQL log noise filtering, parser policy attributes, full-grammar/profile
  * selection, and token-event fallback. It does not extract relationships directly.
  */
 public final class SqlRelationParserRunner {
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
-    private final TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
+    private final StructuredRelationshipExtractor relationExtractor = new StructuredRelationshipExtractor();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
 
     /**
@@ -119,7 +119,7 @@ public final class SqlRelationParserRunner {
         if (TypedLogNoiseClassifier.shouldSkip(config, effective, structured)) {
             return ParsedSqlRelations.empty();
         }
-        return parsed(effective, structured, new TokenEventRelationExtractor(identifierRules, namespace));
+        return parsed(effective, structured, new StructuredRelationshipExtractor(identifierRules, namespace));
     }
 
     public ParsedSqlRelations parseStructuredAndRelations(
@@ -151,7 +151,7 @@ public final class SqlRelationParserRunner {
     private ParsedSqlRelations parsed(
             SqlStatementRecord statement,
             StructuredParseResult structured,
-            TokenEventRelationExtractor extractor
+            StructuredRelationshipExtractor extractor
     ) {
         List<RelationshipCandidate> relationships = extractor.extract(statement, structured);
         return new ParsedSqlRelations(

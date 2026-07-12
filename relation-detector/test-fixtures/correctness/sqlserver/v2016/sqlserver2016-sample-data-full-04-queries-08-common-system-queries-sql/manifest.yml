@@ -1,7 +1,7 @@
 id: sqlserver2016-sample-data-full-04-queries-08-common-system-queries-sql
 databaseType: SQLSERVER
 parserTarget: SQL
-parserMode: full-grammer
+parserMode: full-grammar
 grammarProfile: sqlserver/2016
 databaseVersion: 2016
 sourceType: PLAIN_SQL

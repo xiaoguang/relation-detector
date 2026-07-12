@@ -251,8 +251,8 @@ public final class NamingEvidenceExtractor {
         if (event.provenance().tokenEventNative()) {
             attributes.put("tokenEventNative", true);
         }
-        if (event.provenance().fullGrammerNative()) {
-            attributes.put("fullGrammerNative", true);
+        if (event.provenance().fullGrammarNative()) {
+            attributes.put("fullGrammarNative", true);
         }
         if (!event.statementScope().isBlank()) {
             attributes.put("statementScope", event.statementScope());

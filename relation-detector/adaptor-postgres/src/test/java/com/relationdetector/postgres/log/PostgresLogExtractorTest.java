@@ -17,7 +17,7 @@ class PostgresLogExtractorTest {
     Path tempDir;
 
     @Test
-    void statementLogKeepsWritePayloadsAndUsesDialectScriptParser() throws Exception {
+    void statementLogKeepsWritePayloadsAndUsesDialectScriptFramer() throws Exception {
         Path log = tempDir.resolve("postgres.log");
         Files.writeString(log, """
                 2026-07-11 LOG: statement: UPDATE orders SET status = 'PAID' WHERE id = 1;

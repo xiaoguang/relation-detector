@@ -9,11 +9,11 @@ import com.relationdetector.contracts.model.WarningMessage;
 /**
  * parser frontend 的结构化输出。
  *
- * <p>CN: token-event 和 full-grammer 都返回该对象。最终 JSON relationship 仍基于
+ * <p>CN: token-event 和 full-grammar 都返回该对象。最终 JSON relationship 仍基于
  * RelationshipCandidate；这里是事件、warning 和 parser provenance 的桥接层。
  *
  * <p>EN: Structured output from parser frontends. Both token-event and
- * full-grammer return this object. Final JSON relationships still use
+ * full-grammar return this object. Final JSON relationships still use
  * RelationshipCandidate; this result bridges events, warnings, and parser provenance.
  */
 public record StructuredParseResult(

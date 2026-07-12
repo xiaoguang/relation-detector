@@ -4,7 +4,7 @@
 
 构建一个 Java 17 + Maven 的 CLI 命令行工具，用于自动探测数据库中的表关系，并为每条关系输出置信度、证据来源和解释信息。
 
-v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；SQL Server 已接入 adaptor、token-event baseline、2016/2017/2019/2022/2025 versioned full-grammer sample-data golden，以及首批 grammar-level 官方版本边界。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar、更多 SQL Server 官方逐版本 T-SQL family 和真实数据库 runtime smoke。
+v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammar；SQL Server 已接入 adaptor、token-event baseline、2016/2017/2019/2022/2025 versioned full-grammar sample-data golden，以及首批 grammar-level 官方版本边界。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar、更多 SQL Server 官方逐版本 T-SQL family 和真实数据库 runtime smoke。
 
 本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。当前语义层代码已独立在 `semantic-layer/semantic-core` 和 `semantic-layer/semantic-cli` 中落地到离线 evidence graph / KG JSON 构建阶段；semantic catalog store、semantic search、question plan、SQL draft validation 和在线问答仍是后续阶段。语义层不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
 
@@ -35,11 +35,11 @@ orders -> users
 - CLI 框架：当前为轻量手写 CLI；后续可替换为 picocli。
 - 配置文件：`SimpleYamlConfigLoader` 保留历史类名，内部使用 Jackson `YAMLMapper`，并保持当前 YAML 配置语义。
 - JSON 序列化：`JsonResultWriter` 使用 Jackson `ObjectMapper`，必须保持输出 schema 兼容。
-- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL/Oracle/SQL Server adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
+- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammar|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammar` 使用 MySQL/PostgreSQL/Oracle/SQL Server adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
 - 插件发现：Java SPI / `ServiceLoader`。
 - 测试：
   - JUnit 5。
-  - correctness fixture golden、CLI E2E golden、versioned full-grammer golden、confidence/merger/lineage/DDL 语义单测。
+  - correctness fixture golden、CLI E2E golden、versioned full-grammar golden、confidence/merger/lineage/DDL 语义单测。
   - AssertJ / Testcontainers 是后续增强方向，用于更强断言和真实数据库集成测试。
 
 上层语义层建议使用 PostgreSQL + JSONB + pgvector 保存 SemanticTable、SemanticColumn、SemanticEntity、SemanticMetric、SemanticJoinPath、EvidenceRef、Lexicon、Embedding 和 QuestionTrace。第一版可以先使用 JSON 文件落地 semantic catalog，再逐步迁移到数据库存储。
@@ -80,7 +80,7 @@ repo-root/
   - 证据合并。
   - 最终置信度计算。
   - 输出模型。
-  - parser 选择、token-event 事件模型、full-grammer profile registry、relationship/Data Lineage/DDL semantic extractor。
+  - parser 选择、token-event 事件模型、full-grammar profile registry、relationship/Data Lineage/DDL semantic extractor。
 
 - `relation-detector/cli`
   - 当前轻量手写命令行入口；后续可替换为 picocli。
@@ -94,7 +94,7 @@ repo-root/
   - MySQL general/slow log 解析。
   - MySQL 方言规则。
   - MySQL token-event parser。
-  - MySQL 8.0 full-grammer module。
+  - MySQL 8.0 full-grammar module。
 
 - `relation-detector/adaptor-postgres`
   - PostgreSQL 元数据采集。
@@ -102,18 +102,18 @@ repo-root/
   - PostgreSQL statement log 解析。
   - PostgreSQL 方言规则。
   - PostgreSQL token-event parser。
-  - PostgreSQL 16/17/18 full-grammer modules，公共实现位于 adaptor 内 `fullgrammer/common`。
+  - PostgreSQL 16/17/18 full-grammar modules，公共实现位于 adaptor 内 `fullgrammar/common`。
 
 - `relation-detector/adaptor-oracle`
   - Oracle 初始 adaptor。
-  - Oracle token-event fallback，使用 adaptor-local `OracleRelationSql.g4` typed grammar。
-  - Oracle 12c/19c/21c/26ai `INCOMPLETE_VERSIONED` full-grammer profile，当前覆盖对应版本 sample-data golden、profile smoke 和首批 version-only golden，并使用各自 generated parser。
+  - Oracle token-event fallback，使用 `grammar/oracle-token-event` 中的 `OracleRelationSql.g4` typed grammar。
+  - Oracle 12c/19c/21c/26ai `INCOMPLETE_VERSIONED` full-grammar profile，当前覆盖对应版本 sample-data golden、profile smoke 和首批 version-only golden，并使用各自 generated parser。
   - 当前 metadata/object collector 保守返回空；更广泛的 Oracle 官方语法覆盖和真实 Oracle runtime smoke 属于后续补强。
 
 - `relation-detector/adaptor-sqlserver`
   - SQL Server adaptor。
-  - SQL Server token-event fallback，使用 adaptor-local compact `SqlServerRelationSql.g4` typed grammar。
-  - SQL Server 2016/2017/2019/2022/2025 full-grammer profile，当前覆盖对应版本 sample-data golden，并使用各自 generated parser。
+  - SQL Server token-event fallback，使用 `grammar/sqlserver-token-event` 中的 compact `SqlServerRelationSql.g4` typed grammar。
+  - SQL Server 2016/2017/2019/2022/2025 full-grammar profile，当前覆盖对应版本 sample-data golden，并使用各自 generated parser。
   - 当前 sample-data 使用 SQL Server 2016-compatible 保守 T-SQL 子集；2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES`、2025 `VECTOR(...)` 已作为 version-only fixture 和 grammar-level boundary 验收。更多 Microsoft 官方逐版本 T-SQL family 和真实 SQL Server runtime smoke 属于后续补强。
 
 - `relation-detector/test-fixtures`
@@ -150,33 +150,33 @@ relation-detector 输出事实，语义层消费事实。两者边界如下：
 当前 parser 用户可见模式只有三种：
 
 ```text
-auto | full-grammer | token-event
+auto | full-grammar | token-event
 ```
 
-- `token-event`：宽松兼容链路。无方言时使用 core portable typed grammar；MySQL/PostgreSQL/Oracle/SQL Server 使用各自 adaptor-local typed structural grammar。它适合作为未知版本、无 profile、unsupported version 或 full-grammer failure 的 fallback，最终 relationship / lineage / DDL 语义仍由 Java semantic extractor 处理。
-- `full-grammer`：严格版本链路。它由数据库 adaptor 注册 `FullGrammerDialectModule`，使用对应大版本 vendored grammar 和 typed parse-tree visitor 生成同一组 `StructuredSqlEvent` / DDL events。
-- `auto`：默认模式。能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选中 full-grammer profile 时优先使用 full-grammer，否则使用 token-event。
+- `token-event`：宽松兼容链路。无方言时使用 `grammar/common-token-event`；MySQL/PostgreSQL/Oracle/SQL Server 使用 `grammar/*-token-event` 中各自的 typed structural grammar。adaptor 只持有 visitor 和装配。它适合作为未知版本、无 profile、unsupported version 或 full-grammar failure 的 fallback，最终 relationship / lineage / DDL 语义仍由 Java semantic extractor 处理。
+- `full-grammar`：严格版本链路。它由数据库 adaptor 注册 `FullGrammarDialectModule`，使用对应大版本 vendored grammar 和 typed parse-tree visitor 生成同一组 `StructuredSqlEvent` / DDL events。
+- `auto`：默认模式。能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选中 full-grammar profile 时优先使用 full-grammar，否则使用 token-event。
 
-当前内置 full-grammer profile：
+当前内置 full-grammar profile：
 
 | 数据库 | Profile | 归属 | correctness golden |
 | --- | --- | --- | --- |
-| MySQL | `mysql/5.7` | `relation-detector/adaptor-mysql/fullgrammer/v5_7` | `relation-detector/test-fixtures/correctness/mysql/v5_7` |
-| MySQL | `mysql/8.0` | `relation-detector/adaptor-mysql/fullgrammer/v8_0` | `relation-detector/test-fixtures/correctness/mysql/v8_0` |
-| PostgreSQL | `postgresql/16` | `relation-detector/adaptor-postgres/fullgrammer/v16` | `relation-detector/test-fixtures/correctness/postgres/v16` |
-| PostgreSQL | `postgresql/17` | `relation-detector/adaptor-postgres/fullgrammer/v17` | `relation-detector/test-fixtures/correctness/postgres/v17` |
-| PostgreSQL | `postgresql/18` | `relation-detector/adaptor-postgres/fullgrammer/v18` | `relation-detector/test-fixtures/correctness/postgres/v18` |
-| Oracle | `oracle/12c` | `relation-detector/adaptor-oracle/fullgrammer/v12c` | `relation-detector/test-fixtures/correctness/oracle/v12c` |
-| Oracle | `oracle/19c` | `relation-detector/adaptor-oracle/fullgrammer/v19c` | `relation-detector/test-fixtures/correctness/oracle/v19c` |
-| Oracle | `oracle/21c` | `relation-detector/adaptor-oracle/fullgrammer/v21c` | `relation-detector/test-fixtures/correctness/oracle/v21c` |
-| Oracle | `oracle/26ai` | `relation-detector/adaptor-oracle/fullgrammer/v26ai` | `relation-detector/test-fixtures/correctness/oracle/v26ai` |
-| SQL Server | `sqlserver/2016` | `relation-detector/adaptor-sqlserver/fullgrammer/v2016` | `relation-detector/test-fixtures/correctness/sqlserver/v2016` |
-| SQL Server | `sqlserver/2017` | `relation-detector/adaptor-sqlserver/fullgrammer/v2017` | `relation-detector/test-fixtures/correctness/sqlserver/v2017` |
-| SQL Server | `sqlserver/2019` | `relation-detector/adaptor-sqlserver/fullgrammer/v2019` | `relation-detector/test-fixtures/correctness/sqlserver/v2019` |
-| SQL Server | `sqlserver/2022` | `relation-detector/adaptor-sqlserver/fullgrammer/v2022` | `relation-detector/test-fixtures/correctness/sqlserver/v2022` |
-| SQL Server | `sqlserver/2025` | `relation-detector/adaptor-sqlserver/fullgrammer/v2025` | `relation-detector/test-fixtures/correctness/sqlserver/v2025` |
+| MySQL | `mysql/5.7` | `relation-detector/adaptor-mysql/fullgrammar/v5_7` | `relation-detector/test-fixtures/correctness/mysql/v5_7` |
+| MySQL | `mysql/8.0` | `relation-detector/adaptor-mysql/fullgrammar/v8_0` | `relation-detector/test-fixtures/correctness/mysql/v8_0` |
+| PostgreSQL | `postgresql/16` | `relation-detector/adaptor-postgres/fullgrammar/v16` | `relation-detector/test-fixtures/correctness/postgres/v16` |
+| PostgreSQL | `postgresql/17` | `relation-detector/adaptor-postgres/fullgrammar/v17` | `relation-detector/test-fixtures/correctness/postgres/v17` |
+| PostgreSQL | `postgresql/18` | `relation-detector/adaptor-postgres/fullgrammar/v18` | `relation-detector/test-fixtures/correctness/postgres/v18` |
+| Oracle | `oracle/12c` | `relation-detector/adaptor-oracle/fullgrammar/v12c` | `relation-detector/test-fixtures/correctness/oracle/v12c` |
+| Oracle | `oracle/19c` | `relation-detector/adaptor-oracle/fullgrammar/v19c` | `relation-detector/test-fixtures/correctness/oracle/v19c` |
+| Oracle | `oracle/21c` | `relation-detector/adaptor-oracle/fullgrammar/v21c` | `relation-detector/test-fixtures/correctness/oracle/v21c` |
+| Oracle | `oracle/26ai` | `relation-detector/adaptor-oracle/fullgrammar/v26ai` | `relation-detector/test-fixtures/correctness/oracle/v26ai` |
+| SQL Server | `sqlserver/2016` | `relation-detector/adaptor-sqlserver/fullgrammar/v2016` | `relation-detector/test-fixtures/correctness/sqlserver/v2016` |
+| SQL Server | `sqlserver/2017` | `relation-detector/adaptor-sqlserver/fullgrammar/v2017` | `relation-detector/test-fixtures/correctness/sqlserver/v2017` |
+| SQL Server | `sqlserver/2019` | `relation-detector/adaptor-sqlserver/fullgrammar/v2019` | `relation-detector/test-fixtures/correctness/sqlserver/v2019` |
+| SQL Server | `sqlserver/2022` | `relation-detector/adaptor-sqlserver/fullgrammar/v2022` | `relation-detector/test-fixtures/correctness/sqlserver/v2022` |
+| SQL Server | `sqlserver/2025` | `relation-detector/adaptor-sqlserver/fullgrammar/v2025` | `relation-detector/test-fixtures/correctness/sqlserver/v2025` |
 
-root `relation-detector/test-fixtures/correctness/mysql`、root `relation-detector/test-fixtures/correctness/postgres`、root `relation-detector/test-fixtures/correctness/oracle` 与 root `relation-detector/test-fixtures/correctness/sqlserver` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammer 版本证明分别位于 `mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`、`sqlserver/v2016`、`sqlserver/v2017`、`sqlserver/v2019`、`sqlserver/v2022`、`sqlserver/v2025`。Oracle 当前 versioned golden 是 `INCOMPLETE_VERSIONED` generated parser golden；SQL Server 已有首批官方版本边界，更多 T-SQL family 仍是后续工作。
+root `relation-detector/test-fixtures/correctness/mysql`、root `relation-detector/test-fixtures/correctness/postgres`、root `relation-detector/test-fixtures/correctness/oracle` 与 root `relation-detector/test-fixtures/correctness/sqlserver` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammar 版本证明分别位于 `mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`、`sqlserver/v2016`、`sqlserver/v2017`、`sqlserver/v2019`、`sqlserver/v2022`、`sqlserver/v2025`。Oracle 当前 versioned golden 是 `INCOMPLETE_VERSIONED` generated parser golden；SQL Server 已有首批官方版本边界，更多 T-SQL family 仍是后续工作。
 
 ### 4.1 表和列
 
@@ -689,7 +689,7 @@ confidence = 1 - product(1 - evidenceScore)
 - 数据库对象定义采集器。
 - 原生日志解析器。
 - SQL structured parser。
-- full-grammer dialect module，可按数据库大版本独立注册。
+- full-grammar dialect module，可按数据库大版本独立注册。
 - 数据画像能力。
 - evidence 权重修正能力。
 
@@ -780,7 +780,7 @@ sources:
     timeoutSeconds: 30
 
 parser:
-  mode: auto              # auto | full-grammer | token-event
+  mode: auto              # auto | full-grammar | token-event
   grammarProfile: ""      # 可选，例如 postgresql/16、mysql/5.7 或 mysql/8.0
   databaseVersion: ""     # 可选，例如 16.5；缺失时可由 JDBC metadata 补充
 
@@ -974,7 +974,7 @@ Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relat
 ### Phase 6：SQL/DDL/对象解析增强
 
 - 建立 token-event SQL/DDL structured parser。
-- 建立版本化 full-grammer profile 与 adaptor module 注入。
+- 建立版本化 full-grammar profile 与 adaptor module 注入。
 - 支持 JOIN 条件、表别名、schema 限定名、CTE、derived table、`EXISTS`、scalar/tuple `IN`、DML rowset、对象 SQL。
 - 支持 Data Lineage v1：数据库内部字段到字段的 UPDATE / INSERT SELECT / MERGE 写入血缘。
 - 支持 DDL FK / index 结构事件与 DDL relationship extraction。
@@ -984,7 +984,7 @@ Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relat
 
 - fixture SQL/DDL 覆盖常见 JOIN、子查询、视图、触发器、DML 写入、DDL index/FK。
 - 单条 SQL 失败不影响整体扫描。
-- versioned full-grammer golden 直接证明对应 profile 的 SQL/DDL 行为；运行时选中 profile 后 full-grammer 是 primary parser，token-event 只做 fallback。
+- versioned full-grammar golden 直接证明对应 profile 的 SQL/DDL 行为；运行时选中 profile 后 full-grammar 是 primary parser，token-event 只做 fallback。
 
 ### Phase 7：可选数据画像
 
@@ -1053,7 +1053,7 @@ Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relat
 - SQL 日志 `IN` 子查询。
 - SQL 日志共现。
 - UPDATE / INSERT SELECT / MERGE Data Lineage。
-- full-grammer profile selection 与 token-event fallback。
+- full-grammar profile selection 与 token-event fallback。
 - 数据画像值域包含。
 
 ### CLI 测试
@@ -1076,7 +1076,7 @@ v1 完成时应满足：
 - 可以通过 JDBC 读取元数据。
 - 可以读取 DDL 文件替代 JDBC 结构信息。
 - 可以读取过程、视图、触发器定义。
-- 可以解析 MySQL/PostgreSQL 原生日志和纯 SQL 文本；Oracle 当前支持 file/object/sample SQL 的 token-event correctness，并通过各版本 sample-data full-grammer golden 验证 generated parser 链路。
+- 可以解析 MySQL/PostgreSQL 原生日志和纯 SQL 文本；Oracle 当前支持 file/object/sample SQL 的 token-event correctness，并通过各版本 sample-data full-grammar golden 验证 generated parser 链路。
 - 可以输出列级 FK-like 关系。
 - 可以输出数据库内部字段 Data Lineage。
 - 无法确定列时可以输出低置信度表级共现关系。
@@ -1088,7 +1088,7 @@ v1 完成时应满足：
 ## 14. 暂不纳入 v1 的范围
 
 - SQL Server 完整实现。
-- Oracle Oracle official complete full-grammer、真实 Oracle runtime smoke 和元数据/对象采集完整实现。
+- Oracle Oracle official complete full-grammar、真实 Oracle runtime smoke 和元数据/对象采集完整实现。
 - 图形化界面。
 - Graphviz/Mermaid 图输出。
 - 分布式日志采集。

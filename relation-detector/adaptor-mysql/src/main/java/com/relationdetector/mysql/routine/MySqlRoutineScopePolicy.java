@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.routine;
 
-import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
+import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import java.util.Locale;
 import java.util.Set;
 
@@ -17,7 +17,7 @@ public final class MySqlRoutineScopePolicy {
     private MySqlRoutineScopePolicy() {
     }
 
-    public static void markNonColumnIdentifier(FullGrammerTypedSqlEventSink sink, String identifier) {
+    public static void markNonColumnIdentifier(FullGrammarEventFacade sink, String identifier) {
         if (sink != null && identifier != null && !identifier.isBlank()) {
             sink.nonColumnIdentifier(identifier);
         }

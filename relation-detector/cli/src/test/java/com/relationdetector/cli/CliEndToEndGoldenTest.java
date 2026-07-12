@@ -32,10 +32,10 @@ class CliEndToEndGoldenTest {
     }
 
     @Test
-    void postgresFullGrammerDdlMatchesExistingRelationshipGolden() throws Exception {
+    void postgresFullGrammarDdlMatchesExistingRelationshipGolden() throws Exception {
         assertCliGolden(
                 fixture("postgres/v16/ddl-alter-table-fk"),
-                "full-grammer",
+                "full-grammar",
                 "postgresql/16",
                 "16.5",
                 SourceKind.DDL,
@@ -56,10 +56,10 @@ class CliEndToEndGoldenTest {
     }
 
     @Test
-    void postgresFullGrammerSqlMatchesExistingRelationshipAndLineageGolden() throws Exception {
+    void postgresFullGrammarSqlMatchesExistingRelationshipAndLineageGolden() throws Exception {
         assertCliGolden(
                 fixture("postgres/v16/sql-merge-using"),
-                "full-grammer",
+                "full-grammar",
                 "",
                 "16.5",
                 SourceKind.LOGS,
@@ -68,10 +68,10 @@ class CliEndToEndGoldenTest {
     }
 
     @Test
-    void unsupportedFullGrammerVersionFallsBackAndStillMatchesTokenEventGolden() throws Exception {
+    void unsupportedFullGrammarVersionFallsBackAndStillMatchesTokenEventGolden() throws Exception {
         assertCliGolden(
                 fixture("postgres/sql-merge-using"),
-                "full-grammer",
+                "full-grammar",
                 "",
                 "20.0",
                 SourceKind.LOGS,

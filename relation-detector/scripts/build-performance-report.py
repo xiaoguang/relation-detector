@@ -143,6 +143,7 @@ def main():
     parser.add_argument("--cli-report", type=Path)
     parser.add_argument("--correctness-summary", type=Path)
     parser.add_argument("--fingerprints", type=Path)
+    parser.add_argument("--semantic-fingerprints", type=Path)
     parser.add_argument("--maven-log", action="append", default=[], type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -155,6 +156,7 @@ def main():
         "cliBatch": cli_batch(args.cli_report),
         "correctness": json_document(args.correctness_summary),
         "canonicalFingerprints": canonical_fingerprints(args.fingerprints),
+        "semanticFingerprints": canonical_fingerprints(args.semantic_fingerprints),
         "maven": maven_summary(maven_logs),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
