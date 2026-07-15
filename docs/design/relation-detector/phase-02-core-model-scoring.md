@@ -175,21 +175,26 @@ public final class DataLineageCandidate {
 - `flowKind=VALUE` 表示源字段值参与目标字段写入；`flowKind=CONTROL` 表示源字段控制写入结果，例如 `CASE WHEN source.col ... THEN ...`。
 - `DataLineageCandidate.confidence` 只表示血缘可信度，不参与 `RelationshipCandidate.confidence` 计算。
 - `RelationshipMerger` 不处理字段血缘；字段血缘由 `DataLineageMerger` 按 `sources + target + flowKind + transformType` 去重。
+- `sources` 在事实身份中是集合语义，不是 parser 遍历顺序语义。归并 key 必须先按
+  canonical endpoint key 排序并去重；同一组 source 仅因 visitor 发射顺序不同，不能形成两条
+  Data Lineage fact。原始发射顺序如需审计，应只保留在 observation/provenance 中。
 
 默认血缘置信度：
 
 | TransformType | VALUE 默认分 | CONTROL 默认分 | 说明 |
 | --- | ---: | ---: | --- |
-| `DIRECT` | 0.90 | 不适用 | `SET a.x = b.y`。 |
-| `AGGREGATE` | 0.80 | 不适用 | `SUM(o.pay_amount) AS total` 后写入目标列。 |
-| `CUMULATIVE` | 0.80 | 不适用 | running sum、running total、CDF 这类累计聚合衍生值写入目标列。 |
-| `COALESCE` | 0.75 | 不适用 | 多个字段兜底选择。 |
-| `ARITHMETIC` | 0.75 | 不适用 | 加减乘除等数值表达式。 |
-| `CONCAT_FORMAT` | 0.70 | 不适用 | `CONCAT`、`FORMAT`、`||`、字符串聚合等格式化。 |
-| `FUNCTION_CALL` | 0.65 | 不适用 | 其它函数调用，能抽到物理字段参数。 |
-| `CASE_WHEN` | 0.65 | 0.55 | THEN/ELSE 字段是 VALUE；WHEN 条件字段是 CONTROL。v1 当前优先输出控制血缘。 |
-| `WINDOW_DERIVED` | 0.50 | 不适用 | 窗口函数派生字段，通常需要人工审核。 |
-| `UNKNOWN_EXPRESSION` | 0.35 | 不适用 | 能抽到来源字段但表达式形态不可精确分类。 |
+| `DIRECT` | 0.90 | 0.55 | VALUE 表示 `SET a.x = b.y`；CONTROL 表示 JOIN / WHERE / correlated locator。 |
+| `AGGREGATE` | 0.80 | 0.55 | VALUE 表示聚合输入；CONTROL 表示 GROUP BY 或聚合定位列。 |
+| `CUMULATIVE` | 0.80 | 0.55 | running sum、running total、CDF 这类累计聚合衍生值写入目标列。 |
+| `COALESCE` | 0.75 | 0.55 | 多个字段兜底选择。 |
+| `ARITHMETIC` | 0.75 | 0.55 | 加减乘除等数值表达式。 |
+| `CONCAT_FORMAT` | 0.70 | 0.55 | `CONCAT`、`FORMAT`、`||`、字符串聚合等格式化。 |
+| `FUNCTION_CALL` | 0.65 | 0.55 | 其它函数调用，能抽到物理字段参数。 |
+| `CASE_WHEN` | 0.65 | 0.55 | THEN/ELSE 字段是 VALUE；WHEN 条件字段是 CONTROL。 |
+| `WINDOW_DERIVED` | 0.50 | 0.55 | VALUE 表示窗口派生值；CONTROL 表示 PARTITION / ORDER 依赖。 |
+| `UNKNOWN_EXPRESSION` | 0.35 | 0.55 | 能抽到来源字段但表达式形态不可精确分类。 |
+
+CONTROL 候选的 confidence 固定为 `0.55`；`transformType` 表达依赖角色，不改变该默认分。当前正式角色为 CASE predicate=`CASE_WHEN`、JOIN/WHERE/correlated locator=`DIRECT`、GROUP BY/aggregate locator=`AGGREGATE`、window PARTITION/ORDER=`WINDOW_DERIVED`。CONTROL 不参与 derived lineage。
 
 例子：
 

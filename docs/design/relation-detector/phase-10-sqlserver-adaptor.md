@@ -138,7 +138,7 @@ flowchart TD
 - 预期 relationship：DDL FK/index 关系，以及 SQL predicate join / subquery relation。
 - 预期 lineage：明确字段写入、聚合写入、`UPDATE ... FROM` 与 `MERGE` 更新映射；参数、局部变量、临时表和动态 SQL 不作为物理 source。
 
-SQL Server root token-event 与 versioned full-grammar 在 correctness golden 中分别验证自己的输出。当前 natural sample-data CLI 中，token-event 与五个 full-grammar profile 均为 `342 Rel / 320 Lin / 246 direct Name`，semantic observation diff 为 0。该 parity 只证明当前同一套 natural SQL 资产的一致性；版本差异仍由 version-only fixture 和 `SqlServerParserArchitectureTest` 单独验证。
+SQL Server root token-event 与 versioned full-grammar 在 correctness golden 中分别验证自己的输出。当前 natural sample-data CLI 中，token-event 与五个 full-grammar profile 均为 `342 Rel / 774 Lin / 246 direct Name`，semantic observation diff 为 0。`Lin` 包含 typed write scope 下的 direct VALUE 与 CONTROL lineage。该 parity 只证明当前同一套 natural SQL 资产的一致性；版本差异仍由 version-only fixture 和 `SqlServerParserArchitectureTest` 单独验证。
 
 ## 后续收口
 

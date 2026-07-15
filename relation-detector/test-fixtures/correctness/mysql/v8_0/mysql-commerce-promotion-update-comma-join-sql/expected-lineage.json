@@ -1,11 +1,14 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale",
+    "CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price",
+    "CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at",
     "VALUE:ARITHMETIC:products.original_price->products.promo_price"
   ],
   "forbiddenSources": [
     "NOW",
     "CURRENT_TIMESTAMP"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

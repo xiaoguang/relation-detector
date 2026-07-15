@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 1198 |
-| EXISTING_GOLD | 439 |
+| EXISTING_GOLD | 446 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 759 |
+| NOT_APPLICABLE | 752 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -3354,6 +3354,10 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -3386,6 +3390,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -3442,6 +3452,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -3526,8 +3540,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id->jsh_temp_mock_plan.user_id`
-- `CONTROL:CASE_WHEN:jsh_temp_hour_pdf.h_cdf,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `CONTROL:DIRECT:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id->jsh_temp_mock_plan.user_id`
+- `CONTROL:DIRECT:jsh_temp_hour_pdf.h_cdf,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `CONTROL:DIRECT:jsh_temp_mock_plan.execute_status,jsh_temp_mock_plan.bill_no_str->jsh_temp_mock_plan.bill_no_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 - `VALUE:DIRECT:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 
@@ -3627,6 +3642,11 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
 - `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
@@ -3695,6 +3715,9 @@ CREATE PROCEDURE sp_financial_asset_wash_update(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -3728,6 +3751,9 @@ WHERE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale`
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price`
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -4187,6 +4213,18 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -4607,8 +4645,13 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:supplier_manifests.supplier_id,supplier_manifests.product_id->order_items.estimated_cost`
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `CONTROL:CASE_WHEN:warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->order_items.fulfillment_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
+- `CONTROL:DIRECT:warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id->order_items.estimated_cost`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -4644,6 +4687,10 @@ UPDATE warehouse_inventory wi,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->order_items.fulfillment_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -4679,6 +4726,8 @@ INNER JOIN (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -4713,6 +4762,8 @@ SET
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -4746,6 +4797,10 @@ SET
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -4778,6 +4833,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -4834,6 +4895,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -4918,7 +4983,8 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:DIRECT:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -4953,8 +5019,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id`
-- `CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `CONTROL:DIRECT:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id`
+- `CONTROL:DIRECT:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `CONTROL:DIRECT:jsh_temp_mock_plan.execute_status,jsh_temp_mock_plan.bill_no_str->jsh_temp_mock_plan.bill_no_str`
 - `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
@@ -5081,6 +5148,9 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status`
+- `CONTROL:DIRECT:reconciliations.reference_id,sales_orders.id,reconciliation_input_items.input_order_id,reconciliation_input_items.cleaned_sku,master_skus.sku_ref,sales_orders.status->reconciliations.difference`
+- `CONTROL:DIRECT:reconciliations.reference_id,sales_orders.id,reconciliation_input_items.input_order_id,reconciliation_input_items.cleaned_sku,master_skus.sku_ref,sales_orders.status->reconciliations.remark`
+- `CONTROL:DIRECT:reconciliations.reference_id,sales_orders.id,reconciliation_input_items.input_order_id,reconciliation_input_items.cleaned_sku,master_skus.sku_ref,sales_orders.status->reconciliations.status`
 - `VALUE:ARITHMETIC:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
 - `VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark`
 
@@ -5116,6 +5186,9 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status`
+- `CONTROL:DIRECT:sales_orders.status->reconciliations.difference`
+- `CONTROL:DIRECT:sales_orders.status->reconciliations.remark`
+- `CONTROL:DIRECT:sales_orders.status->reconciliations.status`
 - `VALUE:ARITHMETIC:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
 - `VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark`
 
@@ -5150,6 +5223,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.last_evaluated_at`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
@@ -5184,6 +5260,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.compliance_notes`
+- `CONTROL:DIRECT:global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.last_evaluated_at`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
@@ -5218,6 +5297,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -5251,6 +5333,9 @@ WHERE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale`
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price`
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -5800,6 +5885,10 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,warehouse_inventory.is_active,order_items.fulfillment_status->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,warehouse_inventory.is_active,order_items.fulfillment_status->order_items.fulfillment_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -5835,6 +5924,10 @@ UPDATE warehouse_inventory wi, bin_locations bl, order_items oi,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->order_items.fulfillment_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -5870,6 +5963,8 @@ INNER JOIN (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -5904,6 +5999,8 @@ SET
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -5970,6 +6067,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -6300,10 +6409,19 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory_transactions.product_id,inventory.warehouse_id,inventory_transactions.warehouse_id,inventory.batch_id,inventory_transactions.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id,inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_order_items.order_id,sales_orders.id->inventory.quantity`
+- `CONTROL:DIRECT:sales_orders.id,sales_returns.order_id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
@@ -6366,6 +6484,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -6409,6 +6558,7 @@ CREATE PROCEDURE sp_create_department(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.warehouse_id->inventory.locked_quantity`
 - `VALUE:AGGREGATE:inventory.locked_quantity,sales_order_items.quantity->inventory.locked_quantity`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
@@ -6483,6 +6633,20 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -6527,7 +6691,23 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_number_logs.to_status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -6775,6 +6955,18 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -6825,6 +7017,21 @@ BEGIN
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -6984,16 +7191,16 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location`
-- `CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_name`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_phone`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.to_address`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipping_tracks.location`
+- `CONTROL:DIRECT:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
@@ -7062,9 +7269,9 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id`
-- `CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id`
-- `CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price`
+- `CONTROL:DIRECT:product_batches.product_id,products.id->serial_numbers.batch_id`
+- `CONTROL:DIRECT:product_batches.product_id->consignment_inventory.batch_id`
+- `CONTROL:DIRECT:products.id->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
 - `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
@@ -7124,9 +7331,9 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id`
-- `CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost`
-- `CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:product_batches.product_id->damage_report_items.batch_id`
+- `CONTROL:DIRECT:products.id->damage_report_items.unit_cost`
+- `CONTROL:DIRECT:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:AGGREGATE:product_batches.id->purchase_return_items.batch_id`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
@@ -7171,6 +7378,14 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.tax_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:supplier_products.product_id->supplier_products.is_preferred`
+- `CONTROL:DIRECT:warehouses.id->warehouses.manager_id`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
@@ -7525,6 +7740,10 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -7557,6 +7776,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -7613,6 +7838,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status`
+- `CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -7697,7 +7926,8 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:DIRECT:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -7732,8 +7962,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id`
-- `CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `CONTROL:DIRECT:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id`
+- `CONTROL:DIRECT:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `CONTROL:DIRECT:jsh_temp_mock_plan.execute_status,jsh_temp_mock_plan.bill_no_str->jsh_temp_mock_plan.bill_no_str`
 - `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
@@ -7925,10 +8156,14 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -7961,10 +8196,14 @@ CREATE PROCEDURE sp_financial_asset_wash_update_comma(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -7997,6 +8236,9 @@ CREATE PROCEDURE sp_financial_asset_wash_update(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,products.category_id,discount_policies.category_id,merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -8030,6 +8272,9 @@ WHERE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale`
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price`
+- `CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -8579,8 +8824,13 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:supplier_manifests.supplier_id,supplier_manifests.product_id->order_items.estimated_cost`
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `CONTROL:CASE_WHEN:warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->order_items.fulfillment_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,bin_locations.zone_type,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
+- `CONTROL:DIRECT:warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id->order_items.estimated_cost`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -8616,6 +8866,10 @@ UPDATE warehouse_inventory wi,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->order_items.estimated_cost`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->order_items.fulfillment_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -8651,6 +8905,8 @@ INNER JOIN (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -8685,6 +8941,8 @@ SET
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -8751,6 +9009,18 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -9081,10 +9351,19 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory_transactions.product_id,inventory.warehouse_id,inventory_transactions.warehouse_id,inventory.batch_id,inventory_transactions.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id,inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_order_items.order_id,sales_orders.id->inventory.quantity`
+- `CONTROL:DIRECT:sales_orders.id,sales_returns.order_id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
@@ -9147,6 +9426,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -9190,7 +9500,16 @@ CREATE PROCEDURE sp_create_department(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:products.id->product_batches.expiry_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 - `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
@@ -9259,6 +9578,20 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -9303,7 +9636,23 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_number_logs.to_status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -9442,8 +9791,29 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
-- `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:damage_reports.id->vouchers.summary`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:sales_returns.id->vouchers.summary`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -9484,11 +9854,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:DIRECT:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -9558,6 +9929,18 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -9608,6 +9991,21 @@ BEGIN
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -9767,16 +10165,16 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location`
-- `CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_name`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_phone`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.to_address`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipping_tracks.location`
+- `CONTROL:DIRECT:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
@@ -9845,9 +10243,9 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id`
-- `CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id`
-- `CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price`
+- `CONTROL:DIRECT:product_batches.product_id,products.id->serial_numbers.batch_id`
+- `CONTROL:DIRECT:product_batches.product_id->consignment_inventory.batch_id`
+- `CONTROL:DIRECT:products.id->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
 - `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
@@ -9907,12 +10305,12 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id`
-- `CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id`
-- `CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price`
-- `CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id`
+- `CONTROL:DIRECT:product_batches.product_id->damage_report_items.batch_id`
+- `CONTROL:DIRECT:products.id->damage_report_items.unit_cost`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price`
+- `CONTROL:DIRECT:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
 - `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
@@ -9957,6 +10355,14 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.tax_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:supplier_products.product_id->supplier_products.is_preferred`
+- `CONTROL:DIRECT:warehouses.id->warehouses.manager_id`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
@@ -10338,10 +10744,19 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:employees.id,salary_payments.employee_id->cashier_journals.counterparty`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory_transactions.product_id,inventory.warehouse_id,inventory_transactions.warehouse_id,inventory.batch_id,inventory_transactions.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,sales_orders.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id,inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_order_items.order_id,sales_orders.id->inventory.quantity`
+- `CONTROL:DIRECT:sales_orders.id,sales_returns.order_id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance,purchase_orders.total_amount,purchase_orders.paid_amount->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance,sales_orders.total_amount,sales_orders.paid_amount->customers.balance`
@@ -10404,6 +10819,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -10447,7 +10893,16 @@ CREATE PROCEDURE sp_create_department(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:products.id->product_batches.expiry_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:products.id->product_batches.expiry_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 - `VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date`
@@ -10483,6 +10938,20 @@ CREATE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -10527,7 +10996,23 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:serial_numbers.id->serial_number_logs.to_status`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_number_logs.to_status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
@@ -10633,8 +11118,29 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:damage_reports.id->vouchers.summary`
-- `CONTROL:CASE_WHEN:sales_returns.id->vouchers.summary`
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:damage_reports.id->vouchers.summary`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:sales_returns.id->vouchers.summary`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -10675,11 +11181,12 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:DIRECT:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -10749,6 +11256,18 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -10799,6 +11318,21 @@ BEGIN
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -10958,16 +11492,16 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address`
-- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location`
-- `CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_name`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_phone`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.to_address`
+- `CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipping_tracks.location`
+- `CONTROL:DIRECT:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
@@ -11036,9 +11570,9 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id`
-- `CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id`
-- `CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price`
+- `CONTROL:DIRECT:product_batches.product_id,products.id->serial_numbers.batch_id`
+- `CONTROL:DIRECT:product_batches.product_id->consignment_inventory.batch_id`
+- `CONTROL:DIRECT:products.id->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
 - `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
@@ -11098,12 +11632,12 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id`
-- `CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id`
-- `CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price`
-- `CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id`
+- `CONTROL:DIRECT:product_batches.product_id->damage_report_items.batch_id`
+- `CONTROL:DIRECT:products.id->damage_report_items.unit_cost`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price`
+- `CONTROL:DIRECT:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
 - `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
@@ -11148,6 +11682,14 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.tax_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:supplier_products.product_id->supplier_products.is_preferred`
+- `CONTROL:DIRECT:warehouses.id->warehouses.manager_id`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
 - `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
@@ -13002,6 +13544,7 @@ INSERT INTO sales_fact (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:customers.id->sales_summary.total_amount`
 - `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
 - `VALUE:DIRECT:customers.id->sales_summary.customer_id`
 
@@ -13072,6 +13615,15 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -13106,6 +13658,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
@@ -13147,6 +13701,22 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -13241,8 +13811,8 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -13251,7 +13821,33 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -13317,6 +13913,10 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
@@ -13368,6 +13968,21 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,vouchers.voucher_date,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -14097,6 +14712,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:oracle_12c_identity_demo.sku->oracle_12c_identity_demo.sales_amount`
 - `VALUE:ARITHMETIC:oracle_12c_identity_demo.sales_amount->oracle_12c_identity_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
@@ -14385,6 +15001,7 @@ INSERT INTO sales_fact (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:customers.id->sales_summary.total_amount`
 - `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
 - `VALUE:DIRECT:customers.id->sales_summary.customer_id`
 
@@ -14455,6 +15072,15 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -14489,6 +15115,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
@@ -14530,6 +15158,22 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -14624,8 +15268,8 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -14634,7 +15278,33 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -14700,6 +15370,10 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
@@ -14751,6 +15425,21 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,vouchers.voucher_date,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -15797,6 +16486,7 @@ CREATE TABLE fast_lookup (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:customers.id->sales_summary.total_amount`
 - `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
 - `VALUE:DIRECT:customers.id->sales_summary.customer_id`
 
@@ -15867,6 +16557,15 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -15901,6 +16600,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
@@ -15942,6 +16643,22 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -16036,8 +16753,8 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -16046,7 +16763,33 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
+- `VALUE:ARITHMETIC:customers.balance->customers.balance`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
+- `VALUE:ARITHMETIC:sales_order_items.returned_qty->sales_order_items.returned_qty`
+- `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
+- `VALUE:CONCAT_FORMAT:sales_returns.remark->sales_returns.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -16112,6 +16855,10 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
@@ -16163,6 +16910,21 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,vouchers.voucher_date,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -17211,6 +17973,7 @@ END;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:customers.id->sales_summary.total_amount`
 - `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
 - `VALUE:DIRECT:customers.id->sales_summary.customer_id`
 
@@ -17281,6 +18044,15 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -17315,6 +18087,8 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
@@ -17356,6 +18130,22 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -17460,6 +18250,27 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -17531,6 +18342,10 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
@@ -17582,6 +18397,21 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,vouchers.voucher_date,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -18699,6 +19529,15 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -18733,6 +19572,8 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
 - `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
@@ -18774,6 +19615,22 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -18878,6 +19735,27 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -18949,6 +19827,10 @@ ALTER SESSION SET CURRENT_SCHEMA = erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
 - `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
@@ -19000,6 +19882,21 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,vouchers.voucher_date,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_id,customers.id->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -22396,6 +23293,7 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -22429,6 +23327,10 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -22486,6 +23388,8 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -22574,6 +23478,8 @@ DECLARE
 
 - `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:DIRECT:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
+- `CONTROL:WINDOW_DERIVED:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -22609,6 +23515,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:WINDOW_DERIVED:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
@@ -22671,9 +23578,13 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -22707,9 +23618,13 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -22744,6 +23659,9 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.computed_balance`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.last_checked_by`
 - `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
@@ -22973,7 +23891,10 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -23006,7 +23927,10 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -23105,6 +24029,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -23139,6 +24065,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -23173,6 +24101,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -23206,6 +24136,8 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -23240,6 +24172,8 @@ WHERE p.shop_id = s.id
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -23273,8 +24207,11 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -23309,6 +24246,8 @@ SET total_spent = COALESCE((
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -23343,6 +24282,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -23508,6 +24449,9 @@ WHERE uc.coupon_id = c.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:orders.customer_id,customers.id->orders.customer_country`
+- `CONTROL:DIRECT:orders.customer_id,customers.id->orders.risk_note`
+- `CONTROL:DIRECT:orders.customer_id,customers.id->orders.total_amount`
 - `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
 - `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
 - `VALUE:DIRECT:customers.country_code->orders.customer_country`
@@ -23939,6 +24883,8 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.balance`
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.metadata`
 - `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
 - `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
@@ -24210,6 +25156,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -24252,6 +25210,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg18_generated_margin_demo.sku->pg18_generated_margin_demo.sales_amount`
 - `VALUE:ARITHMETIC:pg18_generated_margin_demo.sales_amount->pg18_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
@@ -24747,17 +25706,17 @@ JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/sql-update-from-aliases/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/sql-update-from-aliases/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:orders.user_id,users.id->orders.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -24786,6 +25745,7 @@ WHERE o.user_id = u.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -24819,6 +25779,10 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -24876,6 +25840,8 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -24964,6 +25930,8 @@ DECLARE
 
 - `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:DIRECT:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
+- `CONTROL:WINDOW_DERIVED:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -24999,6 +25967,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:WINDOW_DERIVED:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
@@ -25099,6 +26068,9 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.customer_country`
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.risk_note`
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.total_amount`
 - `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
 - `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
 - `VALUE:DIRECT:customers.country_code->orders.customer_country`
@@ -25167,6 +26139,8 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.balance`
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.metadata`
 - `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
 - `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
@@ -25475,9 +26449,13 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -25511,9 +26489,13 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -25548,6 +26530,9 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.computed_balance`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.last_checked_by`
 - `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
@@ -25777,7 +26762,10 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -25810,7 +26798,10 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -25909,6 +26900,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -25943,6 +26936,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -25977,6 +26972,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -26010,6 +27007,8 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -26044,6 +27043,8 @@ WHERE p.shop_id = s.id
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -26077,8 +27078,11 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -26113,6 +27117,8 @@ SET total_spent = COALESCE((
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -26147,6 +27153,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -26345,6 +27353,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounts.user_id,orders.user_id->accounts.touched_at`
 - `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
 - `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
@@ -26817,17 +27826,17 @@ JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/v16/sql-update-from-aliases/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/sql-update-from-aliases/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:orders.user_id,users.id->orders.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -26889,6 +27898,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -26931,6 +27952,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg16_generated_margin_demo.sku->pg16_generated_margin_demo.sales_amount`
 - `VALUE:ARITHMETIC:pg16_generated_margin_demo.sales_amount->pg16_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
@@ -27253,9 +28275,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.batch_id,sales_order_items.batch_id,inventory.warehouse_id,sales_order_items.order_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
@@ -27299,6 +28330,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -27341,6 +28403,15 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -27375,6 +28446,22 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -27419,6 +28506,22 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -27490,6 +28593,27 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -27528,11 +28652,12 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:DIRECT:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -27569,6 +28694,18 @@ RETURNS NUMERIC(10,2)
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -27620,6 +28757,21 @@ DECLARE
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id,picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id,repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -27644,6 +28796,7 @@ DECLARE
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
@@ -27653,7 +28806,6 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -27696,6 +28848,7 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
@@ -27731,7 +28884,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -27739,7 +28891,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
@@ -27747,6 +28898,7 @@ DECLARE
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 
 **Extractor Candidate Fingerprints**
 
@@ -28219,6 +29371,7 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -28252,6 +29405,10 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -28309,6 +29466,8 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -28397,6 +29556,8 @@ DECLARE
 
 - `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:DIRECT:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
+- `CONTROL:WINDOW_DERIVED:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -28432,6 +29593,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:WINDOW_DERIVED:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
@@ -28494,9 +29656,13 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -28530,9 +29696,13 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -28567,6 +29737,9 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.computed_balance`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.last_checked_by`
 - `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
@@ -28796,7 +29969,10 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -28829,7 +30005,10 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -28928,6 +30107,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -28962,6 +30143,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -28996,6 +30179,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -29029,6 +30214,8 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -29063,6 +30250,8 @@ WHERE p.shop_id = s.id
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -29096,8 +30285,11 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -29132,6 +30324,8 @@ SET total_spent = COALESCE((
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -29166,6 +30360,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -29331,6 +30527,9 @@ WHERE uc.coupon_id = c.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.customer_country`
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.risk_note`
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.total_amount`
 - `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
 - `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
 - `VALUE:DIRECT:customers.country_code->orders.customer_country`
@@ -29532,6 +30731,7 @@ WHEN NOT MATCHED BY SOURCE THEN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounts.user_id,orders.user_id->accounts.touched_at`
 - `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
 - `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
@@ -29831,6 +31031,8 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.balance`
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.metadata`
 - `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
 - `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
@@ -30121,6 +31323,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -30163,6 +31377,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg17_generated_margin_demo.sku->pg17_generated_margin_demo.sales_amount`
 - `VALUE:ARITHMETIC:pg17_generated_margin_demo.sales_amount->pg17_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
@@ -30658,17 +31873,17 @@ JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/v17/sql-update-from-aliases/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/sql-update-from-aliases/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:orders.user_id,users.id->orders.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -30730,9 +31945,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.batch_id,sales_order_items.batch_id,inventory.warehouse_id,sales_order_items.order_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
@@ -30776,6 +32000,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -30818,6 +32073,15 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -30852,6 +32116,22 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -30896,6 +32176,22 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -30967,6 +32263,27 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -31005,11 +32322,12 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:DIRECT:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -31046,6 +32364,18 @@ RETURNS NUMERIC(10,2)
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -31097,6 +32427,21 @@ DECLARE
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id,picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id,repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -31121,6 +32466,7 @@ DECLARE
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
@@ -31130,7 +32476,6 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -31173,6 +32518,7 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
@@ -31208,7 +32554,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -31216,7 +32561,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
@@ -31224,6 +32568,7 @@ DECLARE
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 
 **Extractor Candidate Fingerprints**
 
@@ -31696,6 +33041,7 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
 
 **Extractor Candidate Fingerprints**
@@ -31729,6 +33075,10 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.change_amount`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
+- `CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
@@ -31786,6 +33136,8 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.discount_last_money`
+- `CONTROL:DIRECT:jsh_depot_head.id,jsh_depot_item.header_id->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
 - `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
@@ -31874,6 +33226,8 @@ DECLARE
 
 - `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:DIRECT:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
+- `CONTROL:WINDOW_DERIVED:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -31909,6 +33263,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:WINDOW_DERIVED:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
@@ -31971,9 +33326,13 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -32007,9 +33366,13 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at`
+- `CONTROL:DIRECT:account_balances.user_id,users.id,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags`
+- `CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -32044,6 +33407,9 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.computed_balance`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.discrepancy_flag`
+- `CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.last_checked_by`
 - `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
@@ -32273,7 +33639,10 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -32306,7 +33675,10 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.ledger_status`
+- `CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.amount,orders.user_id,order_ledgers.reconciliation_status->order_ledgers.remarks`
+- `CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -32405,6 +33777,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,inventory.supplier_id,suppliers.id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -32439,6 +33813,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.last_ordered_from`
+- `CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.stock_reserved`
 - `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
 - `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
@@ -32473,6 +33849,8 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -32506,6 +33884,8 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.is_on_sale`
+- `CONTROL:DIRECT:products.shop_id,shops.id,merchants.status,shops.rating->products.promo_price`
 - `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
@@ -32540,6 +33920,8 @@ WHERE p.shop_id = s.id
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.level`
+- `CONTROL:DIRECT:users.id,orders.user_id,users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -32573,8 +33955,11 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:DIRECT:users.is_active->users.level`
+- `CONTROL:DIRECT:users.is_active->users.total_spent`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -32609,6 +33994,8 @@ SET total_spent = COALESCE((
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -32643,6 +34030,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status`
+- `CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -32808,6 +34197,9 @@ WHERE uc.coupon_id = c.id
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.customer_country`
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.risk_note`
+- `CONTROL:DIRECT:orders.customer_id,customers.id,payments.order_id,orders.id->orders.total_amount`
 - `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
 - `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
 - `VALUE:DIRECT:customers.country_code->orders.customer_country`
@@ -32942,6 +34334,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounts.user_id,orders.user_id->accounts.touched_at`
 - `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
 - `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
@@ -33241,6 +34634,8 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.balance`
+- `CONTROL:DIRECT:pg10_accounts.account_id->pg10_accounts.metadata`
 - `VALUE:ARITHMETIC:pg10_accounts.balance->pg10_accounts.balance`
 - `VALUE:CONCAT_FORMAT:pg10_accounts.metadata->pg10_accounts.metadata`
 
@@ -33498,6 +34893,7 @@ SELECT *
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id->account_balances.balance`
 - `VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance`
 
 **Extractor Candidate Fingerprints**
@@ -33562,6 +34958,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -33604,6 +35012,7 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:pg18_generated_margin_demo.sku->pg18_generated_margin_demo.sales_amount`
 - `VALUE:ARITHMETIC:pg18_generated_margin_demo.sales_amount->pg18_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
@@ -34099,17 +35508,17 @@ JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/v18/sql-update-from-aliases/input.sql` |
-| Expected lineage | None |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/sql-update-from-aliases/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:DIRECT:orders.user_id,users.id->orders.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -34171,9 +35580,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.batch_id,sales_order_items.batch_id,inventory.warehouse_id,sales_order_items.order_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
@@ -34217,6 +35635,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -34259,6 +35708,15 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -34293,6 +35751,22 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -34337,6 +35811,22 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -34408,6 +35898,27 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -34446,11 +35957,12 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:DIRECT:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -34487,6 +35999,18 @@ RETURNS NUMERIC(10,2)
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -34538,6 +36062,21 @@ DECLARE
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id,picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id,repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -34562,6 +36101,7 @@ DECLARE
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
@@ -34571,7 +36111,6 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -34614,6 +36153,7 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
@@ -34649,7 +36189,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -34657,7 +36196,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
@@ -34665,6 +36203,7 @@ DECLARE
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 
 **Extractor Candidate Fingerprints**
 
@@ -35137,9 +36676,18 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
-- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:accounts.code->accounts.current_balance`
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:customers.id->customers.status`
+- `CONTROL:DIRECT:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:DIRECT:inventory.id,inventory.last_stocktake_date->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.updated_at`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.batch_id,sales_order_items.batch_id,inventory.warehouse_id,sales_order_items.order_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:DIRECT:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
@@ -35183,6 +36731,37 @@ BEGIN
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:accounts.id->accounts.current_balance`
+- `CONTROL:DIRECT:departments.id->departments.manager_id`
+- `CONTROL:DIRECT:departments.manager_id->departments.manager_id`
+- `CONTROL:DIRECT:employees.id->employees.housing_fund_base`
+- `CONTROL:DIRECT:employees.id->employees.position_id`
+- `CONTROL:DIRECT:employees.id->employees.resignation_date`
+- `CONTROL:DIRECT:employees.id->employees.resignation_reason`
+- `CONTROL:DIRECT:employees.id->employees.salary`
+- `CONTROL:DIRECT:employees.id->employees.social_security_base`
+- `CONTROL:DIRECT:employees.id->employees.status`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_order_items.id->purchase_order_items.received_qty`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.actual_delivery_date`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_amount`
+- `CONTROL:DIRECT:purchase_receipts.id->purchase_receipts.total_qty`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.remark`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.status`
+- `CONTROL:DIRECT:purchase_requisitions.id->purchase_requisitions.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.total_amount`
+- `CONTROL:DIRECT:settlements.id->settlements.total_amount`
+- `CONTROL:DIRECT:vouchers.id->vouchers.posted_by`
+- `CONTROL:DIRECT:vouchers.id->vouchers.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:accounts.current_balance->accounts.current_balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -35225,6 +36804,15 @@ $$ LANGUAGE plpgsql;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:product_batches.id->product_batches.status`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount`
+- `CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
 
@@ -35259,6 +36847,22 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:DIRECT:fixed_assets.id->fixed_assets.last_depreciation_date`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id->inventory.quantity`
+- `CONTROL:DIRECT:invoices.id->invoices.status`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.bonus`
+- `CONTROL:DIRECT:sales_commissions.employee_id,sales_commissions.period->sales_commissions.commission_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.assigned_to`
+- `CONTROL:DIRECT:service_tickets.id->service_tickets.status`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.packer_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.picker_id`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.shipped_at`
+- `CONTROL:DIRECT:shipments.id,shipments.status->shipments.status`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.issued_qty`
+- `CONTROL:DIRECT:work_order_materials.id->work_order_materials.status`
+- `CONTROL:DIRECT:work_orders.id->work_orders.status`
 - `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
@@ -35303,6 +36907,22 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.completed_at`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.current_node_level`
+- `CONTROL:DIRECT:approval_instances.id->approval_instances.status`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.confirmed_by_customer`
+- `CONTROL:DIRECT:consignment_consumptions.consignment_id,consignment_consumptions.confirmed_by_customer->consignment_consumptions.sales_order_id`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.consumed_qty`
+- `CONTROL:DIRECT:consignment_inventory.id->consignment_inventory.last_consumed_date`
+- `CONTROL:DIRECT:products.id->products.purchase_price`
+- `CONTROL:DIRECT:products.id->products.retail_price`
+- `CONTROL:DIRECT:products.id->products.wholesale_price`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.purchase_receipt_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.return_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.sales_order_id`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.status`
+- `CONTROL:DIRECT:serial_numbers.id->serial_numbers.warehouse_id`
 - `VALUE:ARITHMETIC:consignment_inventory.consumed_qty->consignment_inventory.consumed_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
@@ -35374,6 +36994,27 @@ RETURNS TABLE(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:customers.id->customers.balance`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_at`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.executed_by`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.status`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.total_quantity`
+- `CONTROL:DIRECT:damage_reports.id->damage_reports.voucher_id`
+- `CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity`
+- `CONTROL:DIRECT:product_batches.id->product_batches.current_qty`
+- `CONTROL:DIRECT:purchase_returns.id->purchase_returns.total_amount`
+- `CONTROL:DIRECT:sales_order_items.id->sales_order_items.returned_qty`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.status`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_at`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.approved_by`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_amount`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.refund_voucher_id`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.remark`
+- `CONTROL:DIRECT:sales_returns.id->sales_returns.status`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_credit`
+- `CONTROL:DIRECT:vouchers.id->vouchers.total_debit`
 - `VALUE:ARITHMETIC:customers.balance->customers.balance`
 - `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty`
@@ -35412,11 +37053,12 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:DIRECT:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -35453,6 +37095,18 @@ RETURNS NUMERIC(10,2)
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by`
+- `CONTROL:DIRECT:accounting_periods.id->accounting_periods.status`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.last_stocktake_date`
+- `CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.batch_id,stocktake_items.batch_id,inventory.warehouse_id,stocktakes.warehouse_id,stocktake_items.stocktake_id->inventory.quantity`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at`
+- `CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at`
+- `CONTROL:DIRECT:stocktakes.id->stocktakes.status`
 - `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
 - `VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message`
 - `VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at`
@@ -35504,6 +37158,21 @@ DECLARE
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
+- `CONTROL:DIRECT:account_subjects.id,budget_items.subject_id,budget_items.period_code->budget_items.used_amount`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_at`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.approved_by`
+- `CONTROL:DIRECT:master_data_change_requests.id,master_data_change_requests.master_type,master_data_change_requests.status->master_data_change_requests.status`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.address`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.contact_person`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.email`
+- `CONTROL:DIRECT:master_data_change_requests.master_type,master_data_change_requests.master_id,customers.id,master_data_change_requests.id,master_data_change_requests.status->customers.phone`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.completed_at`
+- `CONTROL:DIRECT:mrp_runs.id->mrp_runs.status`
+- `CONTROL:DIRECT:picking_task_items.location_id,inventory_location_balances.location_id,picking_task_items.product_id,inventory_location_balances.product_id,picking_task_items.batch_id,inventory_location_balances.batch_id,picking_tasks.id->inventory_location_balances.locked_quantity`
+- `CONTROL:DIRECT:repair_order_parts.product_id,inventory.product_id,repair_order_parts.issued_from_warehouse_id,inventory.warehouse_id,repair_order_parts.batch_id,inventory.batch_id,repair_order_parts.repair_order_id->inventory.quantity`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.actual_cost`
+- `CONTROL:DIRECT:repair_order_parts.repair_order_id,repair_orders.id->repair_orders.status`
+- `CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -35528,6 +37197,7 @@ DECLARE
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
@@ -35537,7 +37207,6 @@ DECLARE
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:ARITHMETIC:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_end`
 - `VALUE:ARITHMETIC:sales_orders.paid_amount->sales_orders.paid_amount`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
@@ -35580,6 +37249,7 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
@@ -35615,7 +37285,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -35623,7 +37292,6 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_month_name`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.fiscal_quarter`
@@ -35631,6 +37299,7 @@ DECLARE
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:payment_receipts.receipt_date,sales_orders.order_date,sales_returns.return_date->fiscal_calendar.period_start`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
 
 **Extractor Candidate Fingerprints**
 
@@ -37285,6 +38954,18 @@ CREATE TABLE dbo.product_embeddings (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty`
 - `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
 - `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
@@ -37328,6 +39009,18 @@ ON [dbo].[employees]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
 - `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
 - `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
@@ -37366,6 +39059,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
 - `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
@@ -37437,6 +39136,17 @@ RETURNS TABLE
 
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.base_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.bonus`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.calculated_at`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_rate`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.employee_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.period`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.status`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.total_commission`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
@@ -37478,6 +39188,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at`
 - `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
 - `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
@@ -37548,6 +39268,13 @@ RETURNS TABLE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.updated_at`
 - `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
@@ -37584,6 +39311,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.current_qty->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
@@ -37625,6 +39365,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status`
 - `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
 - `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
@@ -37668,6 +39423,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 
 - `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
 - `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -37702,6 +39460,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
 - `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
@@ -37741,6 +39506,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
 - `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
@@ -37784,6 +39564,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_supplier_id`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
@@ -37796,6 +39582,158 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
 - `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.employee_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.shift_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.status`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.work_date`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.address`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.contact_person`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.email`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.phone`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.paid_amount`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.status`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.component_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.gross_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.net_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.parent_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.reserved_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.run_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_supplier_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.sales_region`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.location_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picked_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picking_task_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.required_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.assigned_to`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.task_no`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.wave_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.calculated_at`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.finished_qty`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.material_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
@@ -38054,6 +39992,8 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_loss_amount`
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
@@ -38061,6 +40001,47 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.product_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.reason`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.report_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.unit_cost`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.approved_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.approved_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.created_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.description`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.report_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.report_no`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.report_type`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.reported_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.inventory.quantity,dbo.product_batches.expiry_date->dbo.damage_reports.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.amount`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.batch_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.product_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.reason`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_qty`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.unit_price`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.approved_at`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.approved_by`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.created_at`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.handler_id`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.refund_received`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.return_date`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.return_no`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.return_reason`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.return_type`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.supplier_id`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.total_amount`
+- `CONTROL:DIRECT:dbo.purchase_receipts.order_id,dbo.purchase_orders.id,dbo.purchase_orders.status->dbo.purchase_returns.warehouse_id`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
@@ -38126,6 +40107,37 @@ INSERT INTO [dbo].[purchase_returns] (
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.locked_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.shelf_location`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.warehouses.status,dbo.products.id,dbo.product_batches.product_id,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.batch_no`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.created_at`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.initial_qty`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.product_id`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.production_date`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.products.status,dbo.product_batches.product_id,dbo.product_batches.batch_no,dbo.products.sku->dbo.product_batches.supplier_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
@@ -38211,6 +40223,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
@@ -38224,6 +40239,122 @@ BEGIN
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.accounting_period_id`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.calendar_date`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month_name`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_quarter`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_code`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_end`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_start`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.difference_reason`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.matched_item_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.allocated_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.receipt_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_type`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_to`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.failure_reason`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.receipt_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.account_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.confirmed_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.handled_by`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.remark`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.status`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.sales_region`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
 - `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
@@ -38715,6 +40846,18 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty`
 - `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
 - `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
@@ -38758,6 +40901,18 @@ ON [dbo].[employees]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
 - `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
 - `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
@@ -38796,6 +40951,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
 - `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
@@ -38867,6 +41028,17 @@ RETURNS TABLE
 
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.base_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.bonus`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.calculated_at`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_rate`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.employee_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.period`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.status`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.total_commission`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
@@ -38908,6 +41080,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at`
 - `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
 - `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
@@ -38978,6 +41160,13 @@ RETURNS TABLE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.updated_at`
 - `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
@@ -39014,6 +41203,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.current_qty->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
@@ -39055,6 +41257,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status`
 - `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
 - `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
@@ -39098,6 +41315,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 
 - `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
 - `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -39132,6 +41352,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
 - `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
@@ -39171,6 +41398,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
 - `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
@@ -39214,6 +41456,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_supplier_id`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
@@ -39226,6 +41474,158 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
 - `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.employee_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.shift_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.status`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.work_date`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.address`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.contact_person`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.email`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.phone`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.paid_amount`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.status`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.component_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.gross_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.net_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.parent_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.reserved_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.run_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_supplier_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.sales_region`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.location_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picked_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picking_task_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.required_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.assigned_to`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.task_no`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.wave_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.calculated_at`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.finished_qty`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.material_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
@@ -39484,6 +41884,8 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_loss_amount`
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
@@ -39491,6 +41893,47 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.product_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.reason`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.report_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.unit_cost`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.created_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.description`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_no`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_type`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.reported_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.amount`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.batch_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.product_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.reason`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_qty`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.unit_price`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_by`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.handler_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.refund_received`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_reason`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_type`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.supplier_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.total_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.warehouse_id`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
@@ -39556,6 +41999,37 @@ INSERT INTO [dbo].[purchase_returns] (
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.locked_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.shelf_location`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.batch_no`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.created_at`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.initial_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.product_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.production_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.purchase_price`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.supplier_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
@@ -39641,6 +42115,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
@@ -39654,6 +42131,122 @@ BEGIN
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.accounting_period_id`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.calendar_date`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month_name`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_quarter`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_code`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_end`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_start`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.difference_reason`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.matched_item_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.allocated_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.receipt_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_type`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_to`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.failure_reason`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.receipt_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.account_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.confirmed_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.handled_by`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.remark`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.status`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.sales_region`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
 - `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
@@ -40178,6 +42771,18 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty`
 - `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
 - `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
@@ -40221,6 +42826,18 @@ ON [dbo].[employees]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
 - `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
 - `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
@@ -40259,6 +42876,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
 - `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
@@ -40330,6 +42953,17 @@ RETURNS TABLE
 
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.base_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.bonus`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.calculated_at`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_rate`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.employee_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.period`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.status`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.total_commission`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
@@ -40371,6 +43005,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at`
 - `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
 - `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
@@ -40441,6 +43085,13 @@ RETURNS TABLE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.updated_at`
 - `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
@@ -40477,6 +43128,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.current_qty->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
@@ -40518,6 +43182,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status`
 - `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
 - `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
@@ -40561,6 +43240,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 
 - `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
 - `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -40595,6 +43277,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
 - `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
@@ -40634,6 +43323,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
 - `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
@@ -40677,6 +43381,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_supplier_id`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
@@ -40689,6 +43399,158 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
 - `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.employee_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.shift_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.status`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.work_date`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.address`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.contact_person`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.email`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.phone`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.paid_amount`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.status`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.component_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.gross_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.net_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.parent_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.reserved_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.run_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_supplier_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.sales_region`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.location_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picked_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picking_task_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.required_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.assigned_to`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.task_no`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.wave_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.calculated_at`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.finished_qty`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.material_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
@@ -40947,6 +43809,8 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_loss_amount`
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
@@ -40954,6 +43818,47 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.product_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.reason`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.report_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.unit_cost`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.created_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.description`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_no`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_type`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.reported_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.amount`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.batch_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.product_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.reason`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_qty`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.unit_price`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_by`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.handler_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.refund_received`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_reason`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_type`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.supplier_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.total_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.warehouse_id`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
@@ -41019,6 +43924,37 @@ INSERT INTO [dbo].[purchase_returns] (
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.locked_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.shelf_location`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.batch_no`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.created_at`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.initial_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.product_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.production_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.purchase_price`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.supplier_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
@@ -41104,6 +44040,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
@@ -41117,6 +44056,122 @@ BEGIN
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.accounting_period_id`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.calendar_date`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month_name`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_quarter`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_code`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_end`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_start`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.difference_reason`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.matched_item_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.allocated_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.receipt_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_type`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_to`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.failure_reason`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.receipt_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.account_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.confirmed_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.handled_by`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.remark`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.status`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.sales_region`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
 - `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
@@ -41674,6 +44729,18 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty`
 - `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
 - `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
@@ -41717,6 +44784,18 @@ ON [dbo].[employees]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
 - `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
 - `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
@@ -41755,6 +44834,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
 - `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
@@ -41826,6 +44911,17 @@ RETURNS TABLE
 
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.base_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.bonus`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.calculated_at`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_rate`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.employee_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.period`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.status`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.total_commission`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
@@ -41867,6 +44963,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at`
 - `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
 - `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
@@ -41937,6 +45043,13 @@ RETURNS TABLE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.updated_at`
 - `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
@@ -41973,6 +45086,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.current_qty->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
@@ -42014,6 +45140,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status`
 - `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
 - `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
@@ -42057,6 +45198,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 
 - `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
 - `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -42091,6 +45235,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
 - `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
@@ -42130,6 +45281,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
 - `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
@@ -42173,6 +45339,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_supplier_id`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
@@ -42185,6 +45357,158 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
 - `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.employee_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.shift_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.status`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.work_date`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.address`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.contact_person`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.email`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.phone`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.paid_amount`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.status`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.component_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.gross_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.net_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.parent_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.reserved_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.run_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_supplier_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.sales_region`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.location_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picked_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picking_task_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.required_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.assigned_to`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.task_no`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.wave_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.calculated_at`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.finished_qty`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.material_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
@@ -42443,6 +45767,8 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_loss_amount`
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
@@ -42450,6 +45776,47 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.product_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.reason`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.report_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.unit_cost`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.created_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.description`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_no`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_type`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.reported_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.amount`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.batch_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.product_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.reason`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_qty`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.unit_price`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_by`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.handler_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.refund_received`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_reason`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_type`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.supplier_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.total_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.warehouse_id`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
@@ -42515,6 +45882,37 @@ INSERT INTO [dbo].[purchase_returns] (
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.locked_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.shelf_location`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.batch_no`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.created_at`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.initial_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.product_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.production_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.purchase_price`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.supplier_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
@@ -42600,6 +45998,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
@@ -42613,6 +46014,122 @@ BEGIN
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.accounting_period_id`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.calendar_date`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month_name`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_quarter`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_code`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_end`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_start`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.difference_reason`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.matched_item_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.allocated_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.receipt_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_type`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_to`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.failure_reason`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.receipt_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.account_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.confirmed_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.handled_by`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.remark`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.status`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.sales_region`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
 - `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
@@ -43137,6 +46654,18 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty`
 - `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
 - `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
@@ -43180,6 +46709,18 @@ ON [dbo].[employees]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
 - `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
 - `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
@@ -43218,6 +46759,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
 - `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
@@ -43289,6 +46836,17 @@ RETURNS TABLE
 
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.base_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.bonus`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.calculated_at`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_rate`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.employee_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.period`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.status`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.total_commission`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
@@ -43330,6 +46888,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at`
 - `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
 - `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
@@ -43400,6 +46968,13 @@ RETURNS TABLE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.updated_at`
 - `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
@@ -43436,6 +47011,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.current_qty->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
@@ -43477,6 +47065,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status`
 - `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
 - `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
@@ -43520,6 +47123,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 
 - `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
 - `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -43554,6 +47160,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
 - `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
@@ -43593,6 +47206,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
 - `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
@@ -43636,6 +47264,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_supplier_id`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
@@ -43648,6 +47282,158 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
 - `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.employee_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.shift_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.status`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.work_date`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.address`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.contact_person`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.email`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.phone`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.paid_amount`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.status`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.component_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.gross_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.net_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.parent_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.reserved_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.run_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_supplier_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.sales_region`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.location_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picked_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picking_task_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.required_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.assigned_to`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.task_no`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.wave_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.calculated_at`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.finished_qty`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.material_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
@@ -43906,6 +47692,8 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_loss_amount`
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
@@ -43913,6 +47701,47 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.product_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.reason`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.report_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.unit_cost`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.created_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.description`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_no`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_type`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.reported_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.amount`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.batch_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.product_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.reason`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_qty`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.unit_price`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_by`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.handler_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.refund_received`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_reason`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_type`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.supplier_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.total_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.warehouse_id`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
@@ -43978,6 +47807,37 @@ INSERT INTO [dbo].[purchase_returns] (
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.locked_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.shelf_location`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.batch_no`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.created_at`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.initial_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.product_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.production_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.purchase_price`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.supplier_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
@@ -44063,6 +47923,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
@@ -44076,6 +47939,122 @@ BEGIN
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.accounting_period_id`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.calendar_date`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month_name`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_quarter`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_code`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_end`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_start`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.difference_reason`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.matched_item_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.allocated_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.receipt_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_type`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_to`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.failure_reason`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.receipt_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.account_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.confirmed_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.handled_by`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.remark`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.status`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.sales_region`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
 - `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
@@ -44633,6 +48612,18 @@ CROSS APPLY GENERATE_SERIES(1, 12) AS gs
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty`
 - `VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty`
 - `VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value`
@@ -44676,6 +48667,18 @@ ON [dbo].[employees]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
 - `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
 - `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
@@ -44714,6 +48717,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price`
+- `CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
 - `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
@@ -44785,6 +48794,17 @@ RETURNS TABLE
 
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.base_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.bonus`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.calculated_at`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_amount`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.commission_rate`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.employee_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.period`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.status`
+- `CONTROL:DIRECT:dbo.sales_commissions.order_item_id,dbo.sales_order_items.id->dbo.sales_commissions.total_commission`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
@@ -44826,6 +48846,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit`
+- `CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status`
+- `CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at`
 - `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
 - `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
@@ -44896,6 +48926,13 @@ RETURNS TABLE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.customers.balance,dbo.customers.credit_limit->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.balance`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id->dbo.customers.updated_at`
 - `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
 - `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
 - `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
@@ -44932,6 +48969,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.current_qty->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.product_batches.id,dbo.inventory.batch_id,dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.product_batches.status->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
@@ -44973,6 +49023,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at`
+- `CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status`
 - `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
 - `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
@@ -45016,6 +49081,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 
 - `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
 - `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level`
+- `CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -45050,6 +49118,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
 - `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
 - `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
@@ -45089,6 +49164,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
 - `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
 - `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
@@ -45132,6 +49222,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:AGGREGATE:dbo.mrp_runs.id,dbo.mrp_runs.run_date,dbo.boms.parent_product_id,dbo.boms.child_product_id,dbo.boms.quantity,dbo.production_plans.planned_production_qty->dbo.mrp_run_items.suggested_supplier_id`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
 - `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
@@ -45144,6 +49240,158 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
 - `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.category_dim.source_category_id,dbo.product_categories.id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.status->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.employee_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.shift_id`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.status`
+- `CONTROL:DIRECT:dbo.employees.status->dbo.employee_shift_assignments.work_date`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.inventory.product_id,dbo.finished_goods_receipts.product_id,dbo.inventory.batch_id,dbo.finished_goods_receipts.batch_id,dbo.inventory.warehouse_id,dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.action`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.created_at`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.employee_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.new_value`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_id`
+- `CONTROL:DIRECT:dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.audit_log.target_type`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.address`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.contact_person`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.email`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.phone`
+- `CONTROL:DIRECT:dbo.master_data_change_requests.master_id,dbo.customers.id,dbo.master_data_change_requests.master_type,dbo.master_data_change_items.request_id,dbo.master_data_change_requests.id,dbo.master_data_change_requests.status->dbo.customers.updated_at`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.paid_amount`
+- `CONTROL:DIRECT:dbo.payments.order_id,dbo.sales_orders.id->dbo.sales_orders.status`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.component_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.gross_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.net_requirement`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.on_hand_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.parent_product_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.planned_receipt_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.reserved_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.run_id`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_due_date`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:DIRECT:dbo.production_plans.id,dbo.mrp_runs.plan_id,dbo.boms.parent_product_id,dbo.production_plans.product_id,dbo.inventory.product_id,dbo.boms.child_product_id,dbo.purchase_order_items.product_id,dbo.supplier_products.product_id,dbo.supplier_products.is_preferred->dbo.mrp_run_items.suggested_supplier_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.inventory.batch_id,dbo.inventory_cost_layers.warehouse_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.region_dim.district,dbo.warehouses.district->dbo.region_dim.sales_region`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.repair_order_parts.product_id,dbo.inventory.product_id,dbo.repair_order_parts.batch_id,dbo.inventory.batch_id,dbo.repair_order_parts.issued_from_warehouse_id,dbo.inventory.warehouse_id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.repair_orders.id,dbo.repair_order_parts.repair_order_id,dbo.inventory.product_id,dbo.repair_order_parts.product_id,dbo.inventory.batch_id,dbo.repair_order_parts.batch_id,dbo.inventory.warehouse_id,dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by`
+- `CONTROL:DIRECT:dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.location_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picked_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.picking_task_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.required_qty`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.picking_tasks.sales_order_id,dbo.inventory_location_balances.product_id,dbo.sales_order_items.product_id,dbo.inventory_location_balances.batch_id,dbo.sales_order_items.batch_id->dbo.picking_task_items.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.inventory_cost_layers.product_id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.sales_orders.status->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_order_items.order_id,dbo.sales_orders.id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.cashier_journals.reference_id,dbo.cashier_journals.reference_type,dbo.cashier_journals.journal_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.assigned_to`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.status`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.task_no`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.status->dbo.picking_tasks.wave_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.suppliers.id,dbo.purchase_orders.supplier_id,dbo.purchase_orders.status->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.calculated_at`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.finished_qty`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.material_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.unit_cost`
+- `CONTROL:DIRECT:dbo.work_order_costs.work_order_id,dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
@@ -45402,6 +49650,8 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_loss_amount`
+- `CONTROL:AGGREGATE:dbo.warehouses.id,dbo.warehouses.code,dbo.warehouses.manager_id->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
 - `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
@@ -45409,6 +49659,47 @@ INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [o
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
 - `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.batch_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.product_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.reason`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.report_id`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.damage_reports.warehouse_id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.damage_reports.report_type,dbo.product_batches.expiry_date,dbo.damage_reports.report_date->dbo.damage_report_items.unit_cost`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.approved_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.created_at`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.description`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_date`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_no`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.report_type`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.reported_by`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.status`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_loss_amount`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.warehouses.id,dbo.products.id,dbo.inventory.product_id,dbo.product_batches.id,dbo.inventory.batch_id,dbo.product_batches.expiry_date,dbo.inventory.quantity->dbo.damage_reports.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.amount`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.batch_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.product_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.reason`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_id`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.return_qty`
+- `CONTROL:DIRECT:dbo.purchase_order_items.order_id,dbo.purchase_returns.purchase_order_id,dbo.product_batches.product_id,dbo.purchase_order_items.product_id,dbo.product_batches.supplier_id,dbo.purchase_returns.supplier_id->dbo.purchase_return_items.unit_price`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.approved_by`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.created_at`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.handler_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.purchase_receipt_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.refund_received`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_reason`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.return_type`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.supplier_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.total_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.status,dbo.purchase_receipts.order_id,dbo.purchase_orders.id->dbo.purchase_returns.warehouse_id`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
@@ -45474,6 +49765,37 @@ INSERT INTO [dbo].[purchase_returns] (
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.available_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.batch_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.last_stocktake_date`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.locked_quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.product_id`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.quantity`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.shelf_location`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.updated_at`
+- `CONTROL:DIRECT:dbo.product_batches.batch_no,dbo.products.sku,dbo.products.id,dbo.product_batches.product_id,dbo.warehouses.status,dbo.inventory.product_id,dbo.inventory.batch_id,dbo.product_batches.id,dbo.inventory.warehouse_id,dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.batch_no`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.created_at`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.current_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.expiry_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.initial_qty`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.product_id`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.production_date`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.purchase_price`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.status`
+- `CONTROL:DIRECT:dbo.products.status,dbo.product_batches.product_id,dbo.products.id,dbo.product_batches.batch_no,dbo.products.sku,dbo.supplier_products.product_id->dbo.product_batches.supplier_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.after_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.batch_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.before_qty`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.created_at`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.operator_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.product_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.quantity_change`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_id`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.reference_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.remark`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.transaction_type`
+- `CONTROL:DIRECT:dbo.warehouses.id,dbo.inventory.warehouse_id,dbo.inventory.shelf_location,dbo.warehouses.code,dbo.inventory_transactions.reference_type,dbo.inventory_transactions.reference_id,dbo.inventory.id,dbo.inventory_transactions.transaction_type->dbo.inventory_transactions.warehouse_id`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
@@ -45559,6 +49881,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:AGGREGATE:dbo.inventory.product_id,dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.unit_cost`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
 - `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
@@ -45572,6 +49897,122 @@ BEGIN
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
 - `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
 - `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.account_subjects.id,dbo.budget_items.subject_id,dbo.accounts.code,dbo.account_subjects.subject_code,dbo.vouchers.voucher_date,dbo.budget_items.period_code,dbo.voucher_items.voucher_id,dbo.vouchers.id,dbo.accounts.id,dbo.voucher_items.account_id,dbo.vouchers.status->dbo.budget_items.used_amount`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.accounting_period_id`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.calendar_date`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_month_name`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_quarter`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_code`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_end`
+- `CONTROL:DIRECT:dbo.accounting_periods.period_code,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.fiscal_calendar.period_start`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.difference_reason`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.matched_item_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id`
+- `CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.ar_no`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.customer_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.due_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.status`
+- `CONTROL:DIRECT:dbo.customers.id,dbo.sales_orders.customer_id,dbo.sales_orders.id->dbo.ar_invoices.writeoff_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.allocated_amount`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.receipt_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `CONTROL:DIRECT:dbo.payment_receipts.party_id,dbo.sales_orders.customer_id,dbo.payment_receipts.receipt_date,dbo.sales_orders.order_date,dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_type`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.category_code`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_from`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.effective_to`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.is_womenwear`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.leaf_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level1_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.level2_name`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.source_category_id`
+- `CONTROL:DIRECT:dbo.product_categories.id,dbo.product_categories.parent_id->dbo.category_dim.status`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.inventory_value`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.quantity`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.snapshot_date`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.unit_cost`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.valuation_method`
+- `CONTROL:DIRECT:dbo.products.id,dbo.inventory.product_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.ap_no`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.due_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.invoice_date`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.paid_amount`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.status`
+- `CONTROL:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.supplier_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.failure_reason`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.journal_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_date`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_method`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_no`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.payment_status`
+- `CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.payment_receipts.party_id,dbo.cashier_journals.reference_id,dbo.sales_orders.id,dbo.cashier_journals.reference_type->dbo.payments.receipt_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.category_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.created_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.customer_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.fiscal_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.gross_margin_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.net_sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.order_status`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.paid_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.payment_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.quantity_sold`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.refund_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.region_dim_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.sales_channel`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.category_dim.source_category_id,dbo.products.category_id,dbo.warehouses.id,dbo.sales_orders.warehouse_id,dbo.region_dim.province,dbo.warehouses.province,dbo.region_dim.city,dbo.warehouses.city,dbo.payments.order_id,dbo.sales_returns.order_id,dbo.cogs_entries.sales_order_item_id,dbo.sales_order_items.id->dbo.sales_fact.warehouse_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.batch_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.cogs_amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.posted_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.product_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.quantity`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.unit_cost`
+- `CONTROL:DIRECT:dbo.sales_orders.id,dbo.sales_order_items.order_id,dbo.products.id,dbo.sales_order_items.product_id,dbo.inventory_cost_layers.product_id,dbo.inventory_cost_layers.batch_id,dbo.sales_order_items.batch_id,dbo.vouchers.reference_id,dbo.vouchers.reference_type,dbo.sales_order_items.id->dbo.cogs_entries.voucher_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.account_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.amount`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.confirmed_at`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.currency`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.handled_by`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_id`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.party_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_date`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_no`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.receipt_type`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.remark`
+- `CONTROL:DIRECT:dbo.sales_orders.id->dbo.payment_receipts.status`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.city`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.district`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.is_active`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.province`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_code`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_level`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.region_name`
+- `CONTROL:DIRECT:dbo.warehouses.id->dbo.region_dim.sales_region`
 - `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
 - `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`

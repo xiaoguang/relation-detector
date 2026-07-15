@@ -98,12 +98,13 @@ public final class NamingEvidenceExtractor {
         }
         List<NamingEvidenceCandidate> result = new ArrayList<>();
         NamingRuleSet ruleSet = ruleSet(config);
-        Map<String, RelationshipCandidateGroup> groups = new LinkedHashMap<>();
+        Map<DirectionalEndpointPairKey, RelationshipCandidateGroup> groups = new LinkedHashMap<>();
         for (RelationshipCandidate candidate : candidates) {
             if (!isEligibleRelationshipCandidate(candidate)) {
                 continue;
             }
-            groups.computeIfAbsent(endpointPairKey(candidate), ignored -> new RelationshipCandidateGroup(candidate))
+            groups.computeIfAbsent(DirectionalEndpointPairKey.of(candidate),
+                            ignored -> new RelationshipCandidateGroup(candidate))
                     .add(candidate);
         }
         for (RelationshipCandidateGroup group : groups.values()) {
@@ -121,12 +122,6 @@ public final class NamingEvidenceExtractor {
             }
         }
         return List.copyOf(result);
-    }
-
-    private String endpointPairKey(RelationshipCandidate candidate) {
-        String source = candidate.source().normalizedKey();
-        String target = candidate.target().normalizedKey();
-        return source.compareTo(target) <= 0 ? source + "|" + target : target + "|" + source;
     }
 
     private List<NamingEvidenceCandidate> extractFromEndpoints(

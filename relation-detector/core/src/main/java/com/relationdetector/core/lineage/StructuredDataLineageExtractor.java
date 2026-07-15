@@ -129,7 +129,8 @@ public final class StructuredDataLineageExtractor {
                 }
                 LineageTransformType transform = ProjectionTraceResolver.effectiveTransform(
                         event.expression().transformType().name(),
-                        sourceResolution.transforms(), sourceResolution.flowKind());
+                        sourceResolution.transforms(), sourceResolution.flowKind(),
+                        event.expression().flowKind());
                 LineageFlowKind flowKind = sourceResolution.flowKind();
                 AssignmentMapping mapping = assignmentMapping(event, target, sources, transform);
                 DataLineageCandidate candidate = new DataLineageCandidate(

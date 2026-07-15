@@ -38,15 +38,18 @@ public final class LineageTransformClassifier {
     }
 
     /**
-     * Applies the common transform priority to value flow while keeping predicate
-     * and locator flow explicitly classified as CASE_WHEN.
+     * Applies common transform priority to value flow. Control callers provide
+     * the dependency-role transform first so child value expressions cannot
+     * overwrite CASE, locator, grouping, or window semantics.
      */
     public static LineageTransformType dominantForFlow(
             LineageFlowKind flowKind,
-            LineageTransformType... transforms
+        LineageTransformType... transforms
     ) {
         if (flowKind == LineageFlowKind.CONTROL) {
-            return LineageTransformType.CASE_WHEN;
+            return transforms.length > 0 && transforms[0] != null
+                    ? transforms[0]
+                    : LineageTransformType.CASE_WHEN;
         }
         return dominant(transforms);
     }

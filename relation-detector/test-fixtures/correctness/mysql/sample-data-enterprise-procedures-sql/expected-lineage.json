@@ -1,5 +1,17 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:accounting_periods.id,accounting_periods.status->accounting_periods.status",
+    "CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_at",
+    "CONTROL:DIRECT:accounting_periods.id->accounting_periods.closed_by",
+    "CONTROL:DIRECT:accounting_periods.id->accounting_periods.status",
+    "CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.finished_at",
+    "CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.message",
+    "CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.started_at",
+    "CONTROL:DIRECT:period_close_jobs.period_id,period_close_jobs.status->period_close_jobs.status",
+    "CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.last_stocktake_date",
+    "CONTROL:DIRECT:stocktake_items.stocktake_id->inventory.quantity",
+    "CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at",
+    "CONTROL:DIRECT:stocktakes.id->stocktakes.status",
     "VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change",
     "VALUE:COALESCE:period_close_jobs.message->period_close_jobs.message",
     "VALUE:COALESCE:period_close_jobs.started_at->period_close_jobs.started_at",

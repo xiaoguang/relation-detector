@@ -333,7 +333,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测；当前 relationship/lineage 基本遵守该口径，但 metadata/DDL naming inventory 会先按 endpoint 去重，只保留同 endpoint 的首个 inventory observation。该例外是实现缺口，不能把当前 observation count 解释为完整出现次数。
+- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测。当前 naming inventory 会先按 canonical endpoint 分组，但会把该 endpoint 的全部不同 file/object/statement/block/line observation 交给 `NamingEvidenceMerger`；完全相同的 observation 才折叠为 `occurrenceCount`。Data Lineage 的 source-set fact identity 仍有顺序敏感缺口，见 `design-validation-report.md`。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
 - top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 重复观测不会把同一个基础分无限叠加；摘要 evidence 记录 `count` 和样本 detail，并额外使用 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。

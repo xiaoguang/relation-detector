@@ -1,5 +1,20 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.account_id",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.amount",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.cashier_id",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.counterparty",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.created_at",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_date",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_no",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.journal_type",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_id",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.reference_type",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.remark",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.status",
+    "CONTROL:DIRECT:dbo.customers.id,dbo.sales_returns.customer_id,dbo.accounts.is_cash,dbo.sales_returns.refund_amount->dbo.cashier_journals.voucher_id",
+    "CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.approved_at",
+    "CONTROL:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.sales_returns.status",
     "VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no",
     "VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id",
     "VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty",
@@ -10,7 +25,7 @@
     "VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date",
     "VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

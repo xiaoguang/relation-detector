@@ -8,6 +8,7 @@ import com.relationdetector.mysql.fullgrammar.common.MySqlSqlEventVisitorCore;
 import com.relationdetector.mysql.fullgrammar.common.MySqlSqlEventVisitorCore.ColumnParts;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter.ProjectionItem;
+import com.relationdetector.mysql.fullgrammar.common.MySqlUpdateControlSupport;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.CommonTableExpressionContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.CaseValueExpressionContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.CreateTableContext;
@@ -29,24 +30,14 @@ import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.Simple
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.SingleTableContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.TableFunctionContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.TableReferenceContext;
-import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.UpdateElementContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.UpdateStatementContext;
+import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.UpdateElementContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParser.VariableDeclarationContext;
 import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParserBaseVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/**
- * MySQL 8.0 full-grammar SQL parse-tree visitor。
- *
- * <p>CN: visitor 从具体 MySQL grammar context 生成 StructuredSqlEvent。token helper
- * 仅用于 source text/location 和 identifier 读取；relationship / lineage 语义仍在 core。
- *
- * <p>EN: MySQL 8.0 full-grammar SQL parse-tree visitor. It emits
- * StructuredSqlEvent records from concrete MySQL grammar contexts. Token helpers
- * are limited to source text/location and identifier reading; relationship and
- * lineage semantics remain in core.
- */
+/** MySQL 8.0 typed parse-tree traversal; shared fact semantics remain in core. */
 final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseVisitor<Void> {
     private final FullGrammarEventFacade sink;
     private final MySqlSqlEventVisitorCore core;
@@ -252,6 +243,10 @@ final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseV
         String target = adapter.firstTableName(ctx.tableReferenceList());
         sink.writeTarget(ctx, target, "");
         sink.withWriteTarget(target, () -> visitChildren(ctx));
+        MySqlUpdateControlSupport.emit(ctx.whereClause(),
+                ctx.whereClause() == null ? null : ctx.whereClause().expr(), target,
+                ctx.updateList().updateElement(),
+                update -> update.columnRef() == null ? "" : update.columnRef().getText(), sink, core);
         return null;
     }
 

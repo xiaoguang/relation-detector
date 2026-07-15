@@ -477,7 +477,10 @@ public final class StructuredScriptFramer {
         }
         attributes.put("sourceFile", normalizedFile);
         attributes.put("sourceFileLineCount", lines.lineCount());
-        attributes.put("sourceObjectType", semanticObjectType(sourceType));
+        String sourceObjectType = semanticObjectType(sourceType);
+        if (!sourceObjectType.isBlank()) {
+            attributes.put("sourceObjectType", sourceObjectType);
+        }
         if (descriptor.routineReturnsTrigger()) {
             attributes.put("sourceObjectType", "FUNCTION");
             attributes.put("routineReturnsTrigger", true);
@@ -678,7 +681,7 @@ public final class StructuredScriptFramer {
             case VIEW, MATERIALIZED_VIEW -> "QUERY";
             case DDL_FILE -> "DDL";
             case RULE -> "RULE";
-            case NATIVE_LOG, PLAIN_SQL, MIGRATION -> "SQL_WRITE";
+            case NATIVE_LOG, PLAIN_SQL, MIGRATION -> "";
         };
     }
 

@@ -1,11 +1,14 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.is_on_sale",
+    "CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.promo_price",
+    "CONTROL:DIRECT:merchants.status,shops.rating,discount_policies.policy_type,products.stock_quantity->products.updated_at",
     "VALUE:ARITHMETIC:products.original_price->products.promo_price"
   ],
   "forbiddenSources": [
     "0.90",
     "NOW"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

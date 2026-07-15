@@ -19,6 +19,7 @@ statement
     | blockStartStatement SEMI?
     | blockEndStatement SEMI?
     | declarationStatement SEMI?
+    | forSelectLoopStatement
     | controlStartStatement
     | openCursorSelectStatement SEMI?
     | selectStatement SEMI?
@@ -45,7 +46,25 @@ unknownStatement
     ;
 
 routineStartStatement
-    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION) routineHeaderToken* BEGIN
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION) qualifiedName routineParameterList? routineHeaderToken* BEGIN
+    ;
+
+routineParameterList
+    : LPAREN routineParameter (COMMA routineParameter)* RPAREN
+    ;
+
+routineParameter
+    : identifier routineParameterToken*
+    ;
+
+routineParameterToken
+    : LPAREN routineParameterInnerToken* RPAREN
+    | ~(COMMA | RPAREN)
+    ;
+
+routineParameterInnerToken
+    : LPAREN routineParameterInnerToken* RPAREN
+    | ~RPAREN
     ;
 
 createTriggerStatement
@@ -61,8 +80,18 @@ triggerAfterOnToken
     ;
 
 routineHeaderToken
-    : cursorDeclaration
+    : routineLocalDeclaration
+    | cursorDeclaration
     | ~(BEGIN | CURSOR)
+    ;
+
+routineLocalDeclaration
+    : identifier routineDeclarationToken* SEMI
+    ;
+
+routineDeclarationToken
+    : LPAREN functionCallOptionToken* RPAREN
+    | ~(LPAREN | SEMI)
     ;
 
 cursorDeclaration
@@ -74,22 +103,28 @@ blockStartStatement
     ;
 
 blockEndStatement
-    : END (IF | LOOP | WHILE | REPEAT)?
+    : END (IF | LOOP | WHILE | REPEAT | CASE)?
     ;
 
 declarationStatement
-    : DECLARE ~SEMI+
+    : DECLARE routineLocalDeclaration+
     ;
 
 controlStartStatement
     : IF ~THEN* THEN
-    | ELSEIF ~THEN* THEN
+    | (ELSIF | ELSEIF) ~THEN* THEN
     | ELSE
+    | CASE expression?
+    | WHEN predicate THEN
     | WHILE ~LOOP* LOOP
     | FOR ~LOOP* LOOP
     | identifier OTHER LOOP
     | LOOP
     | REPEAT
+    ;
+
+forSelectLoopStatement
+    : FOR identifier IN LPAREN selectStatement RPAREN LOOP
     ;
 
 openCursorSelectStatement
@@ -518,7 +553,11 @@ withinGroupClause
     ;
 
 windowClause
-    : OVER LPAREN functionCallOptionToken* RPAREN
+    : OVER LPAREN windowPartitionClause? orderByClause? functionCallOptionToken* RPAREN
+    ;
+
+windowPartitionClause
+    : PARTITION BY expressionList
     ;
 
 functionCallOption
@@ -580,11 +619,11 @@ sqlToken
     | USING | GROUP | WITHIN | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING | CURSOR
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | CAST | TRUE | FALSE
-    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
+    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSIF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER | PARTITION
     | DATE | CURRENT_DATE | CURRENT_TIMESTAMP | SYSTIMESTAMP | INTERVAL
     | UNION | ALL | INTERSECT | EXCEPT | FETCH | FIRST | ASC | DESC | NULLS | LAST
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
@@ -653,6 +692,7 @@ UNLOGGED: U N L O G G E D;
 BEGIN: B E G I N;
 IF: I F;
 ELSEIF: E L S E I F;
+ELSIF: E L S I F;
 WHILE: W H I L E;
 LOOP: L O O P;
 REPEAT: R E P E A T;
@@ -682,6 +722,7 @@ TABLESAMPLE: T A B L E S A M P L E;
 LATERAL: L A T E R A L;
 ORDINALITY: O R D I N A L I T Y;
 OVER: O V E R;
+PARTITION: P A R T I T I O N;
 CASE: C A S E;
 WHEN: W H E N;
 THEN: T H E N;

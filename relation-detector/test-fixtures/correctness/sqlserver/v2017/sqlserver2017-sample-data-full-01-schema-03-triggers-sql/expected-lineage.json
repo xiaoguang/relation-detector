@@ -1,5 +1,17 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:dbo.inventory.batch_id,dbo.product_batches.id->dbo.product_batches.current_qty",
+    "CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.quantity",
+    "CONTROL:DIRECT:dbo.inventory.product_id,dbo.inventory_transactions.product_id,dbo.inventory.warehouse_id,dbo.inventory_transactions.warehouse_id,dbo.inventory.batch_id,dbo.inventory_transactions.batch_id->dbo.inventory.updated_at",
+    "CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.action",
+    "CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.created_at",
+    "CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.employee_id",
+    "CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.new_value",
+    "CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_id",
+    "CONTROL:DIRECT:dbo.purchase_orders.status->dbo.audit_log.target_type",
+    "CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.balance",
+    "CONTROL:DIRECT:dbo.sales_orders.customer_id,dbo.customers.id,dbo.sales_orders.status->dbo.customers.updated_at",
+    "CONTROL:DIRECT:dbo.sales_return_items.order_item_id,dbo.sales_order_items.id,dbo.sales_returns.id,dbo.sales_return_items.return_id,dbo.sales_returns.status->dbo.sales_order_items.returned_qty",
     "VALUE:ARITHMETIC:dbo.customers.balance,dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance",
     "VALUE:ARITHMETIC:dbo.sales_order_items.returned_qty,dbo.sales_return_items.return_qty->dbo.sales_order_items.returned_qty",
     "VALUE:DIRECT:dbo.employees.employee_no->dbo.audit_log.new_value",

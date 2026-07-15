@@ -102,8 +102,7 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
                 }
             }
             if (function.windowClause() != null && args.sources().isEmpty()) {
-                args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args,
-                        analyzeWindowClause(function.windowClause()));
+                args = analyzeWindowClause(function.windowClause());
             }
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName()))
                     .toLowerCase(Locale.ROOT);
@@ -118,8 +117,7 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
                 default -> LineageTransformType.FUNCTION_CALL;
             };
             LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
-            return new ExpressionAnalysis(args.sources(), dominant,
-                    dominant == LineageTransformType.CASE_WHEN ? LineageFlowKind.CONTROL : LineageFlowKind.VALUE);
+            return new ExpressionAnalysis(args.sources(), dominant, args.flowKind());
         }
         if (expression instanceof PostgresRelationSqlParser.ExtractExpressionContext value) {
             ExpressionAnalysis source = analyze(value.expression());
@@ -161,28 +159,46 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
         }
         if (!(expression instanceof PostgresRelationSqlParser.CaseExpressionContext value)) {
             ExpressionAnalysis analysis = analyze(expression);
+            if (analysis.flowKind() == LineageFlowKind.CONTROL) {
+                return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+            }
             ExpressionAnalysis control = nestedControlSources(expression);
+            ExpressionAnalysis directControl = nestedScalarControlSources(expression);
+            ExpressionAnalysis windowControl = nestedWindowControlSources(expression);
             LinkedHashSet<ColumnRead> explicitCaseValues = nestedCaseValueSources(expression);
             List<ColumnRead> valueSources = analysis.sources().stream()
                     .filter(source -> !control.sources().contains(source) || explicitCaseValues.contains(source))
                     .toList();
-            List<ExpressionAnalysis> result = new ArrayList<>(2);
+            List<ColumnRead> caseControlSources = control.sources().stream()
+                    .filter(source -> !directControl.sources().contains(source))
+                    .toList();
+            List<ExpressionAnalysis> result = new ArrayList<>(4);
             if (!valueSources.isEmpty()) {
                 result.add(new ExpressionAnalysis(valueSources, analysis.transform(), LineageFlowKind.VALUE));
             }
-            if (!control.sources().isEmpty()) {
-                result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+            if (!directControl.sources().isEmpty()) {
+                result.add(new ExpressionAnalysis(directControl.sources(), LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL));
+            }
+            if (!caseControlSources.isEmpty()) {
+                result.add(new ExpressionAnalysis(caseControlSources, LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL));
+            }
+            if (!windowControl.sources().isEmpty()) {
+                result.add(new ExpressionAnalysis(windowControl.sources(), LineageTransformType.WINDOW_DERIVED,
                         LineageFlowKind.CONTROL));
             }
             return List.copyOf(result);
         }
         ExpressionAnalysis selected = ExpressionAnalysis.empty();
         ExpressionAnalysis control = ExpressionAnalysis.empty();
+        ExpressionAnalysis directControl = ExpressionAnalysis.empty();
         for (PostgresRelationSqlParser.CaseWhenClauseContext clause : value.caseWhenClause()) {
             selected = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.VALUE, selected, analyze(clause.expression()));
             control = controls(control, analyze(clause.predicate()));
             control = controls(control, nestedControlSources(clause.predicate()));
+            directControl = directControls(directControl, nestedScalarControlSources(clause.predicate()));
         }
         List<PostgresRelationSqlParser.ExpressionContext> outer = value.expression();
         int selectorCount = outer.size() - (value.ELSE() == null ? 0 : 1);
@@ -191,10 +207,16 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
             selected = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE,
                     selected, analyze(outer.get(outer.size() - 1)));
         }
-        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        List<ColumnRead> directControlSources = directControl.sources();
+        List<ColumnRead> caseControlSources = control.sources().stream()
+                .filter(source -> !directControlSources.contains(source))
+                .toList();
+        List<ExpressionAnalysis> result = new ArrayList<>(3);
         if (!selected.sources().isEmpty()) result.add(new ExpressionAnalysis(selected.sources(),
                 LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE));
-        if (!control.sources().isEmpty()) result.add(new ExpressionAnalysis(control.sources(),
+        if (!directControlSources.isEmpty()) result.add(new ExpressionAnalysis(directControlSources,
+                LineageTransformType.DIRECT, LineageFlowKind.CONTROL));
+        if (!caseControlSources.isEmpty()) result.add(new ExpressionAnalysis(caseControlSources,
                 LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL));
         return List.copyOf(result);
     }
@@ -239,6 +261,29 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
         return control;
     }
 
+    private ExpressionAnalysis nestedScalarControlSources(ParseTree tree) {
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (tree instanceof PostgresRelationSqlParser.ScalarSubqueryExpressionContext scalar) {
+            control = directControls(control, scalarSubqueryContext(scalar.selectStatement()));
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            control = directControls(control, nestedScalarControlSources(tree.getChild(index)));
+        }
+        return control;
+    }
+
+    private ExpressionAnalysis nestedWindowControlSources(ParseTree tree) {
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (tree instanceof PostgresRelationSqlParser.FunctionExpressionContext function
+                && function.windowClause() != null) {
+            control = directControls(control, analyzeWindowClause(function.windowClause()));
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            control = directControls(control, nestedWindowControlSources(tree.getChild(index)));
+        }
+        return control;
+    }
+
     private LinkedHashSet<ColumnRead> nestedCaseValueSources(ParseTree tree) {
         LinkedHashSet<ColumnRead> sources = new LinkedHashSet<>();
         if (tree instanceof PostgresRelationSqlParser.CaseExpressionContext value) {
@@ -259,11 +304,14 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
             PostgresRelationSqlParser.SelectStatementContext select) {
         ExpressionAnalysis value = analyzeScalarSubquery(select);
         ExpressionAnalysis control = scalarSubqueryContext(select);
-        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        ExpressionAnalysis grouping = scalarSubqueryGrouping(select);
+        List<ExpressionAnalysis> result = new ArrayList<>(3);
         if (!value.sources().isEmpty()) result.add(new ExpressionAnalysis(value.sources(), value.transform(),
                 LineageFlowKind.VALUE));
         if (!control.sources().isEmpty()) result.add(new ExpressionAnalysis(control.sources(),
-                LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL));
+                LineageTransformType.DIRECT, LineageFlowKind.CONTROL));
+        if (!grouping.sources().isEmpty()) result.add(new ExpressionAnalysis(grouping.sources(),
+                LineageTransformType.AGGREGATE, LineageFlowKind.CONTROL));
         return List.copyOf(result);
     }
 
@@ -280,14 +328,25 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
                 }
             }
             if (query.whereClause() != null) control = controls(control, analyze(query.whereClause().predicate()));
-            if (query.groupByClause() != null) {
-                for (PostgresRelationSqlParser.ExpressionContext grouping
-                        : query.groupByClause().expressionList().expression()) {
-                    control = controls(control, analyze(grouping));
-                }
-            }
             if (query.havingClause() != null) control = controls(control, analyze(query.havingClause().predicate()));
             return control;
+        } finally {
+            queryScopes.pop();
+        }
+    }
+
+    private ExpressionAnalysis scalarSubqueryGrouping(PostgresRelationSqlParser.SelectStatementContext select) {
+        PostgresRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        queryScopes.push(scopeFor(query));
+        try {
+            ExpressionAnalysis grouping = ExpressionAnalysis.empty();
+            if (query.groupByClause() != null) {
+                for (PostgresRelationSqlParser.ExpressionContext expression
+                        : query.groupByClause().expressionList().expression()) {
+                    grouping = controls(grouping, analyze(expression));
+                }
+            }
+            return grouping;
         } finally {
             queryScopes.pop();
         }
@@ -299,19 +358,19 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
             for (PostgresRelationSqlParser.ExpressionContext expression
                     : windowClause.windowPartitionClause().expressionList().expression()) {
                 analysis = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
-                        LineageFlowKind.VALUE, analysis, analyze(expression));
+                        LineageFlowKind.CONTROL, analysis, analyze(expression));
             }
         }
         if (windowClause.orderByClause() != null) {
             for (PostgresRelationSqlParser.OrderByItemContext item
                     : windowClause.orderByClause().orderByItem()) {
                 analysis = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
-                        LineageFlowKind.VALUE, analysis, analyze(item.expression()));
+                        LineageFlowKind.CONTROL, analysis, analyze(item.expression()));
             }
         }
         return analysis.sources().isEmpty() ? ExpressionAnalysis.empty()
                 : new ExpressionAnalysis(analysis.sources().stream().distinct().toList(),
-                        LineageTransformType.WINDOW_DERIVED, LineageFlowKind.VALUE);
+                        LineageTransformType.WINDOW_DERIVED, LineageFlowKind.CONTROL);
     }
 
     private ExpressionAnalysis analyzeScalarSubquery(PostgresRelationSqlParser.SelectStatementContext select) {
@@ -344,6 +403,8 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
             return value.expression().size() > 2 ? controls(result, analyze(value.expression(2))) : result;
         }
         if (predicate instanceof PostgresRelationSqlParser.IsNullPredicateContext value) return analyze(value.expression());
+        if (predicate instanceof PostgresRelationSqlParser.IsNotDistinctPredicateContext value)
+            return controls(analyze(value.expression(0)), analyze(value.expression(1)));
         if (predicate instanceof PostgresRelationSqlParser.LiteralInPredicateContext value) {
             ExpressionAnalysis result = analyze(value.expression());
             for (PostgresRelationSqlParser.ExpressionContext item : value.expressionList().expression())
@@ -361,6 +422,25 @@ abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVis
         if (predicate instanceof PostgresRelationSqlParser.ExpressionPredicateContext value)
             return analyze(value.expression());
         return ExpressionAnalysis.empty();
+    }
+
+    protected ExpressionAnalysis analyze(
+            PostgresRelationSqlParser.PredicateContext predicate,
+            String defaultQualifier) {
+        QueryScope scope = new QueryScope();
+        if (defaultQualifier != null && !defaultQualifier.isBlank()) {
+            scope.rowsetAliases().add(defaultQualifier);
+        }
+        queryScopes.push(scope);
+        try {
+            return analyze(predicate);
+        } finally {
+            queryScopes.pop();
+        }
+    }
+
+    private ExpressionAnalysis directControls(ExpressionAnalysis left, ExpressionAnalysis right) {
+        return ExpressionAnalysis.combine(LineageTransformType.DIRECT, LineageFlowKind.CONTROL, left, right);
     }
 
     private ExpressionAnalysis controls(ExpressionAnalysis left, ExpressionAnalysis right) {

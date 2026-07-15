@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:oracle_12c_identity_demo.sku->oracle_12c_identity_demo.sales_amount",
     "VALUE:ARITHMETIC:oracle_12c_identity_demo.sales_amount->oracle_12c_identity_demo.sales_amount"
   ],
   "forbiddenSources": [ ],

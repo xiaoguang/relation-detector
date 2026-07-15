@@ -1,9 +1,12 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level",
-    "CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km"
+    "CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km",
+    "CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.credit_level",
+    "CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.suppliers.id->dbo.suppliers.updated_at",
+    "CONTROL:DIRECT:dbo.suppliers.id,dbo.supplier_products.supplier_id,dbo.inventory.product_id,dbo.supplier_products.product_id,dbo.warehouses.id,dbo.inventory.warehouse_id->dbo.supplier_products.shipping_cost_per_km"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

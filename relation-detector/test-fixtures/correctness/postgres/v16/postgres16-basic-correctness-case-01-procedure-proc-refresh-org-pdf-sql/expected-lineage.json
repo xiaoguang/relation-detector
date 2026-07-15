@@ -2,6 +2,8 @@
   "fingerprints": [
     "CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight",
     "CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight",
+    "CONTROL:DIRECT:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end",
+    "CONTROL:WINDOW_DERIVED:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.cdf_end",
     "VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end",
     "VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id",
     "VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark"

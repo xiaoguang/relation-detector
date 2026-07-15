@@ -75,7 +75,7 @@ class MySqlFullGrammarExpressionAnalyzerTest {
         assertTrue(fingerprints.contains("VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id"),
                 () -> "Scalar projection should be VALUE lineage: " + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id"),
+                        "CONTROL:DIRECT:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id"),
                 () -> "Nested scalar predicates and correlation should be CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertFalse(fingerprints.stream().anyMatch(fingerprint ->
@@ -268,7 +268,7 @@ class MySqlFullGrammarExpressionAnalyzerTest {
                 () -> "Scalar subquery selected column should be VALUE lineage: "
                         + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id"),
+                        "CONTROL:DIRECT:product_batches.product_id,products.id->serial_numbers.batch_id"),
                 () -> "Scalar subquery predicate columns should be CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
     }
@@ -346,8 +346,8 @@ class MySqlFullGrammarExpressionAnalyzerTest {
                 () -> "The CASE predicate must remain CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
-                () -> "CASE and locator sources should form one canonical CONTROL lineage observation: "
+                        "CONTROL:DIRECT:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
+                () -> "JOIN and correlated locator sources should form a separate DIRECT CONTROL observation: "
                         + fingerprints + " events=" + structured.events());
     }
 

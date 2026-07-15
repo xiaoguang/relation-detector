@@ -31,7 +31,9 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.SourceProvenance;
+import com.relationdetector.contracts.parse.WriteEvent;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.Collectors.DataProfiler;
@@ -209,6 +211,80 @@ class SqlRelationParserRunnerTest {
         assertTrue(outcome.relationships().isEmpty(), "PostgreSQL catalog-only native log SQL should be filtered");
         assertTrue(outcome.structured().isEmpty(), "filtered typed outcome should not enter fact extraction");
         assertEquals(1, structuredCalls.get(), "native log filtering must run after structured parsing");
+    }
+
+    @Test
+    void queryOnlyStructuredResultNormalizesPlainSqlProvenanceToQuery() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT o.id FROM orders o",
+                StatementSourceType.PLAIN_SQL,
+                "query.sql",
+                7,
+                7,
+                Map.of("sourceObjectType", "SQL_WRITE"));
+
+        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+                        (record, context) -> parsedWithRowsets(record, "orders")),
+                        config,
+                        statement,
+                        context(new ArrayList<>()));
+
+        assertEquals("QUERY", outcome.structured().orElseThrow().events().get(0)
+                .provenance().sourceObjectType());
+    }
+
+    @Test
+    void writeEventNormalizesPlainSqlProvenanceToSqlWrite() {
+        ScanConfig config = new ScanConfig();
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "UPDATE orders SET status = 'paid'",
+                StatementSourceType.PLAIN_SQL,
+                "write.sql",
+                3,
+                3,
+                Map.of());
+
+        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+                        (record, context) -> new StructuredParseResult(
+                                "token-event", "test", record.sourceName(),
+                                List.of(new WriteEvent(
+                                        StructuredParseEventType.WRITE_TARGET,
+                                        SourceProvenance.tokenEvent(record, record.startLine(), ""),
+                                        "orders", "orders", "", "", "orders", "", "UPDATE",
+                                        ExpressionTrace.empty())),
+                                List.of(), Map.of())),
+                        config,
+                        statement,
+                        context(new ArrayList<>()));
+
+        assertEquals("SQL_WRITE", outcome.structured().orElseThrow().events().get(0)
+                .provenance().sourceObjectType());
+    }
+
+    @Test
+    void explicitViewProvenanceIsNotOverwrittenByQueryClassification() {
+        ScanConfig config = new ScanConfig();
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "CREATE VIEW order_view AS SELECT o.id FROM orders o",
+                StatementSourceType.VIEW,
+                "order_view.sql",
+                1,
+                1,
+                Map.of("sourceObjectType", "QUERY", "sourceObjectName", "order_view"));
+
+        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+                        (record, context) -> parsedWithRowsets(record, "orders")),
+                        config,
+                        statement,
+                        context(new ArrayList<>()));
+
+        assertEquals("QUERY", outcome.structured().orElseThrow().events().get(0)
+                .provenance().sourceObjectType());
     }
 
     private StructuredParseResult parsedWithRowsets(SqlStatementRecord statement, String... rowsets) {

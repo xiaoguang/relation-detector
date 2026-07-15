@@ -51,6 +51,8 @@ public interface FullGrammarParseTreeAdapter {
         EXPRESSION,
         ROOT_EXPRESSION,
         CONTROL_SCOPE,
+        GROUPING_SCOPE,
+        WINDOW_CONTROL_SCOPE,
         SQL_CLAUSE,
         COMMON_TABLE_EXPRESSION,
         QUERY_SPECIFICATION,

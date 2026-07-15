@@ -61,6 +61,16 @@ class CommonScriptFramerTest {
     }
 
     @Test
+    void plainSqlFramingDoesNotPreclassifyStatementAsWrite() {
+        var result = new CommonScriptFramer().frame(new ScriptFrameRequest(
+                "SELECT o.id FROM orders o;",
+                "queries.sql",
+                StatementSourceType.PLAIN_SQL));
+
+        assertFalse(result.statements().get(0).attributes().containsKey("sourceObjectType"));
+    }
+
+    @Test
     void keepsPortableCompoundRoutineTogetherIncludingCaseExpressions() {
         String script = """
                 CREATE PROCEDURE record_payment()

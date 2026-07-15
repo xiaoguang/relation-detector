@@ -1,5 +1,20 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.available_quantity",
+    "CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.last_stocktake_date",
+    "CONTROL:DIRECT:dbo.inventory.warehouse_id,dbo.stocktakes.warehouse_id,dbo.inventory.product_id,dbo.stocktake_items.product_id,dbo.inventory.batch_id,dbo.stocktake_items.batch_id->dbo.inventory.quantity",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.after_qty",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.batch_id",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.before_qty",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.created_at",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.operator_id",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.product_id",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_id",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.reference_type",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.remark",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.transaction_type",
+    "CONTROL:DIRECT:dbo.stocktake_items.stocktake_id,dbo.stocktakes.id,dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.warehouse_id",
     "VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity",
     "VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity",
     "VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id",
@@ -12,7 +27,7 @@
     "VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id",
     "VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

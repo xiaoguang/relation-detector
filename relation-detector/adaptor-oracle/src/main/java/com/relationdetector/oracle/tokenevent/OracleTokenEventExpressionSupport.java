@@ -57,6 +57,9 @@ abstract class OracleTokenEventExpressionSupport extends OracleTokenEventVisitor
         if (expression instanceof OracleRelationSqlParser.ColumnExpressionContext columnExpression) {
             List<String> nameParts = parts(columnExpression.qualifiedName());
             if (nameParts.size() == 1) {
+                if (routineScope.isSymbol(nameParts.get(0))) {
+                    return null;
+                }
                 return new OracleColumnRead(defaultColumnAlias(), nameParts.get(0));
             }
             return new OracleColumnRead(nameParts.get(nameParts.size() - 2), nameParts.get(nameParts.size() - 1));

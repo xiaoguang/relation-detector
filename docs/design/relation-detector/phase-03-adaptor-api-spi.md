@@ -41,7 +41,7 @@ public interface DatabaseAdaptor {
 - `supportedDatabaseTypes()` 用于匹配 YAML 中的 `database.type`。
 - `capabilities()` 声明该 adaptor 支持哪些来源和功能。
 - `spiVersion()` 是二进制 API 版本。内置 adaptor 显式返回
-  `AdaptorApiVersion.CURRENT`（当前为 3）；为了让旧二进制类可被加载并获得可读错误，
+  `AdaptorApiVersion.CURRENT`（当前为 4）；为了让旧二进制类可被加载并获得可读错误，
   接口 default 返回 1。
 - `collectors()` 聚合 metadata、object definition、database DDL 和 SQL log extractor。
 - `parsers()` 聚合 SQL relationship parser、structured SQL parser、structured DDL parser 和必需的 dialect script parser。
@@ -370,7 +370,8 @@ relation-detector scan --config mock.yml --plugin-dir target/mock-plugins
 - 外部 mock adaptor jar 可以通过 `--plugin-dir` 被发现。
 - `database.type` 可以匹配到唯一 adaptor。
 - adaptor id 冲突时 CLI 给出明确错误。
-- adaptor capabilities 可以用于校验配置。
+- adaptor capabilities 最终必须用于连接数据库前的配置预检；当前 core/CLI 尚未实现统一
+  preflight，因此该项状态为 `PARTIAL`，不能仅凭 capability 声明认定 live collector 可用。
 - adaptor 提供的 evidence 仍由 core 完成最终归并和评分。
 
 ## 测试设计

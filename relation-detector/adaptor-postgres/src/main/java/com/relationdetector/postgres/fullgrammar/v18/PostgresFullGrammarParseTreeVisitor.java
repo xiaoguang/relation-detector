@@ -2,7 +2,6 @@ package com.relationdetector.postgres.fullgrammar.v18;
 
 import com.relationdetector.core.fullgrammar.*;
 import java.util.List;
-
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.postgres.fullgrammar.common.PostgresSqlEventVisitorCore;
@@ -57,11 +56,7 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
         this.setProjections = new PostgresSetProjectionSupport(
                 statement, sink, warnings, this::projectedColumnName);
     }
-    /**
-     * 访问 parse tree 并返回该 SQL 的结构事件。
-     *
-     * <p>EN: Visits the parse tree and returns structured events for the SQL.
-     */
+    /** Visits the parse tree and returns structured SQL events. */
     List<StructuredSqlEvent> extract(ParseTree tree) {
         if (tree != null) {
             visit(tree);
@@ -227,10 +222,14 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
     public Void visitUpdatestmt(UpdatestmtContext ctx) {
         String table = ctx.relation_expr_opt_alias() == null ? "" : firstIdentifier(ctx.relation_expr_opt_alias());
         String alias = ctx.relation_expr_opt_alias() == null ? "" : lastIdentifier(ctx.relation_expr_opt_alias());
+        String targetAlias = alias.equals(table) ? "" : alias;
         sink.rowset(ctx, "UPDATE", table, alias.equals(table) ? "" : alias);
         rememberRowset(alias.equals(table) ? table : alias);
-        sink.writeTarget(ctx, table, alias.equals(table) ? "" : alias);
-        sink.withWriteTarget(table, () -> visitChildren(ctx));
+        sink.writeTarget(ctx, table, targetAlias);
+        sink.withWriteTarget(table, () -> {
+            visitChildren(ctx);
+            PostgresUpdateControlEmitter.emit(ctx, targetAlias, table, sink);
+        });
         return null;
     }
 

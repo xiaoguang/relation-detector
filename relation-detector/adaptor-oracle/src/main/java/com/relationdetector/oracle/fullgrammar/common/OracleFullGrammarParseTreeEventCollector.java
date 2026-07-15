@@ -5,24 +5,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Symbol;
-
-/**
- * Shared Oracle full-grammar parse-tree event collector.
- *
- * <p>CN: Oracle 四个版本使用独立 generated parser class。本类只消费 ANTLR
- * parse-tree 的 typed context 和 child accessors，不委托 token-event，也不做 SQL 文本
- * 正则结构判断。
- */
+/** Shared typed Oracle collector; versioned parsers remain independent. */
 public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGrammarParseTreeSupport {
     private final OracleRoutineScope routineScope = new OracleRoutineScope();
     private final OracleFullGrammarExpressionSupport expressionSupport;
@@ -30,6 +21,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     private final OracleFullGrammarEventEmitter emitter;
     private final OracleJoinSemanticSupport joinSemantics;
     private final OracleConditionalPredicateSupport conditionalPredicates;
+    private final OracleRoutineSymbolCollector routineSymbols;
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
@@ -40,11 +32,13 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
             OracleFullGrammarParseTreeAdapter adapter
     ) {
         super(new OracleSqlEventVisitorCore(statement), adapter);
-        this.expressionSupport = new OracleFullGrammarExpressionSupport(core, adapter, this::defaultColumnAlias);
+        this.expressionSupport = new OracleFullGrammarExpressionSupport(
+                core, adapter, this::defaultColumnAlias, routineScope);
         this.ddlCollector = new OracleFullGrammarDdlCollector(core, adapter, this::visit);
         this.emitter = new OracleFullGrammarEventEmitter(core, adapter, expressionSupport, this::registerCurrentRowset);
         this.joinSemantics = new OracleJoinSemanticSupport(adapter);
         this.conditionalPredicates = new OracleConditionalPredicateSupport(core, adapter, expressionSupport);
+        this.routineSymbols = new OracleRoutineSymbolCollector(core, adapter);
     }
 
     public List<StructuredSqlEvent> collect(ParseTree root) {
@@ -57,6 +51,9 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
             return;
         }
         if (!(tree instanceof ParserRuleContext ctx)) {
+            return;
+        }
+        if (routineSymbols.declareIfPresent(ctx, routineScope)) {
             return;
         }
         if (hasRole(ctx, Role.CREATE_TRIGGER)) {
@@ -297,6 +294,8 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
             queryScopes.push(new QueryScope());
             try {
                 registerCurrentRowset(alias);
+                OracleExpressionAnalysis control = expressionSupport.directControlAnalysis(where);
+                emitter.emitUpdateLocatorMappings(ctx, control);
                 visit(where);
             } finally {
                 queryScopes.pop();
@@ -326,15 +325,15 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         List<String> targetColumns = columnNamesFromParenColumnList(child(insert, Role.PAREN_COLUMN_LIST));
         visit(select);
         List<ParserRuleContext> selectItems = expressionSupport.selectItems(select);
+        OracleExpressionAnalysis grouping = expressionSupport.groupingControlAnalysis(select);
         int count = Math.min(targetColumns.size(), selectItems.size());
         for (int index = 0; index < count; index++) {
             ParserRuleContext expression = child(selectItems.get(index), Role.EXPRESSION);
             if (expression == null) {
                 continue;
             }
-            emitter.emitExpressionMappings(StructuredParseEventType.INSERT_SELECT_MAPPING,
-                    selectItems.get(index), "", targetTable, targetColumns.get(index),
-                    expression, "INSERT_SELECT");
+            emitter.emitInsertSelectMappings(selectItems.get(index), targetTable,
+                    targetColumns.get(index), expression, grouping);
         }
     }
 
@@ -349,12 +348,14 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         emitter.beginWriteTarget(tableviews.get(0), targetAlias, targetTable);
         visit(tableviews.get(0));
         visit(tableviews.get(1));
-        visit(child(ctx, Role.CONDITION));
+        ParserRuleContext condition = child(ctx, Role.CONDITION);
+        visit(condition);
+        OracleExpressionAnalysis mergeControl = expressionSupport.directControlAnalysis(condition);
         ParserRuleContext update = child(ctx, Role.MERGE_UPDATE_CLAUSE);
         if (update != null) {
             for (ParserRuleContext element : children(update, Role.MERGE_ELEMENT)) {
-                emitter.emitAssignment(element, name(child(element, Role.COLUMN_NAME)), child(element, Role.EXPRESSION),
-                        StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
+                emitter.emitMergeAssignment(element, name(child(element, Role.COLUMN_NAME)),
+                        child(element, Role.EXPRESSION), mergeControl);
             }
         }
         emitter.endWriteTarget();

@@ -151,6 +151,28 @@ class NamingEvidenceExtractorTest {
     }
 
     @Test
+    void reciprocalRelationshipDirectionsExecuteRulesIndependentlyBeforeMerge() {
+        RelationshipCandidate forward = sqlPredicate("orders", "customer_id", "customers", "id");
+        forward.evidence().clear();
+        forward.evidence().add(structuralObservation("forward.sql", "line:10", 10));
+        RelationshipCandidate reverse = sqlPredicate("customers", "id", "orders", "customer_id");
+        reverse.evidence().clear();
+        reverse.evidence().add(structuralObservation("reverse.sql", "line:20", 20));
+
+        List<NamingEvidenceCandidate> extracted = extractor.extractFromRelationshipCandidates(
+                List.of(forward, reverse));
+
+        assertEquals(2, extracted.size(),
+                "Reciprocal candidates must remain directional until after rule execution");
+        List<NamingEvidenceCandidate> merged = new NamingEvidenceMerger().merge(extracted);
+        assertEquals(1, merged.size());
+        assertEquals(List.of(10, 20), merged.get(0).rawEvidence().stream()
+                .map(item -> ((Number) item.attributes().get("sourceLine")).intValue())
+                .sorted()
+                .toList());
+    }
+
+    @Test
     void namingSummaryIsConditionalOnlyWhenEveryStructuralLocationIsConditional() {
         RelationshipCandidate guarded = sqlPredicate("contracts", "customer_id", "customers", "id");
         guarded.evidence().clear();

@@ -118,13 +118,31 @@ class ProjectionTraceResolverTest {
     }
 
     @Test
-    void fixesEveryControlTraceAtCaseWhenRegardlessOfNestedValueTransform() {
+    void preservesTheTypedControlDependencyTransform() {
+        assertEquals(LineageTransformType.DIRECT,
+                ProjectionTraceResolver.effectiveTransform(
+                        "DIRECT", List.of(LineageTransformType.AGGREGATE), LineageFlowKind.CONTROL));
         assertEquals(LineageTransformType.CASE_WHEN,
                 ProjectionTraceResolver.effectiveTransform(
-                        "AGGREGATE", List.of(LineageTransformType.AGGREGATE), LineageFlowKind.CONTROL));
+                        "CASE_WHEN", List.of(LineageTransformType.ARITHMETIC), LineageFlowKind.CONTROL));
+        assertEquals(LineageTransformType.AGGREGATE,
+                ProjectionTraceResolver.effectiveTransform(
+                        "AGGREGATE", List.of(LineageTransformType.DIRECT), LineageFlowKind.CONTROL));
+        assertEquals(LineageTransformType.WINDOW_DERIVED,
+                ProjectionTraceResolver.effectiveTransform(
+                        "WINDOW_DERIVED", List.of(LineageTransformType.DIRECT), LineageFlowKind.CONTROL));
+    }
+
+    @Test
+    void projectedControlTransformSurvivesAnOuterValueExpression() {
         assertEquals(LineageTransformType.CASE_WHEN,
                 ProjectionTraceResolver.effectiveTransform(
-                        "ARITHMETIC", List.of(LineageTransformType.ARITHMETIC), LineageFlowKind.CONTROL));
+                        "COALESCE", List.of(LineageTransformType.CASE_WHEN),
+                        LineageFlowKind.CONTROL, LineageFlowKind.VALUE));
+        assertEquals(LineageTransformType.AGGREGATE,
+                ProjectionTraceResolver.effectiveTransform(
+                        "DIRECT", List.of(LineageTransformType.AGGREGATE),
+                        LineageFlowKind.CONTROL, LineageFlowKind.VALUE));
     }
 
     @Test

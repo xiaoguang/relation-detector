@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "CONTROL:DIRECT:orders.user_id,users.id->orders.status"
+  ],
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
+}

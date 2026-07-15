@@ -1,5 +1,8 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.adjusted_limit",
+    "CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.compliance_notes",
+    "CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id,account_balances.region_code,global_compliance_policies.region_code,global_compliance_policies.policy_status,transaction_ledgers.created_at->account_balances.last_evaluated_at",
     "VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit",
     "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.merchant_category->account_balances.compliance_notes"
   ],
@@ -8,6 +11,6 @@
     "p_max_limit_cap",
     "CURRENT_TIMESTAMP"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

@@ -46,7 +46,7 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
     p_approved IN NUMBER,
     p_approver_id IN NUMBER,
     p_approval_comment IN VARCHAR2,
-    OUT p_result CLOB
+    p_result OUT CLOB
 )
 AS
     v_old_status VARCHAR2(20);
@@ -108,7 +108,7 @@ CREATE OR REPLACE PROCEDURE sp_process_sales_return_refund(
     p_inspection_result IN CLOB,
     p_actual_refund IN NUMBER,
     p_items_json IN CLOB,
-    OUT p_result CLOB
+    p_result OUT CLOB
 )
 AS
     v_status VARCHAR2(20);
@@ -262,9 +262,9 @@ CREATE OR REPLACE PROCEDURE sp_create_purchase_return(
     p_return_type IN CLOB,
     p_return_reason IN VARCHAR2,
     p_items_json IN CLOB,
-    OUT p_return_id NUMBER,
-    OUT p_return_no CLOB,
-    OUT p_total_amount NUMBER
+    p_return_id OUT NUMBER,
+    p_return_no OUT CLOB,
+    p_total_amount OUT NUMBER
 )
 AS
     v_supplier_id NUMBER(19);
@@ -355,9 +355,9 @@ CREATE OR REPLACE PROCEDURE sp_create_damage_report(
     p_reported_by IN NUMBER,
     p_description IN CLOB,
     p_items_json IN CLOB,
-    OUT p_report_id NUMBER,
-    OUT p_report_no CLOB,
-    OUT p_total_loss_amount NUMBER
+    p_report_id OUT NUMBER,
+    p_report_no OUT CLOB,
+    p_total_loss_amount OUT NUMBER
 )
 AS
     v_total_qty NUMBER(10) DEFAULT 0;
@@ -412,7 +412,7 @@ END;
 CREATE OR REPLACE PROCEDURE sp_execute_damage_report(
     p_report_id IN NUMBER,
     p_executed_by IN NUMBER,
-    OUT p_result CLOB
+    p_result OUT CLOB
 )
 AS
     v_status VARCHAR2(20);
@@ -428,8 +428,9 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20000, '只能执行已审批的报损单');
     END IF;
 
-    FOR rec IN
+    FOR rec IN (
         SELECT product_id, batch_id, quantity FROM damage_report_items WHERE report_id = p_report_id
+    )
     LOOP
         SELECT COALESCE(quantity, 0) INTO v_before_qty
         FROM inventory

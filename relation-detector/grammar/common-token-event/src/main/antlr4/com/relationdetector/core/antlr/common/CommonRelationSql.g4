@@ -392,7 +392,23 @@ caseWhenClause
     ;
 
 functionCall
-    : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN
+    : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN windowClause?
+    ;
+
+windowClause
+    : OVER LPAREN partitionByClause? windowOrderByClause? RPAREN
+    ;
+
+partitionByClause
+    : PARTITION BY expressionList
+    ;
+
+windowOrderByClause
+    : ORDER BY windowOrderItem (COMMA windowOrderItem)*
+    ;
+
+windowOrderItem
+    : expression (ASC | DESC)?
     ;
 
 functionCallOption
@@ -443,7 +459,7 @@ literal
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | USING | GROUP | BY | HAVING | ORDER | OVER | PARTITION | ASC | DESC | LIMIT | INSERT | INTO | UPDATE
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | ATOMIC
     | IF | ELSEIF | WHILE | DO | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION
@@ -479,6 +495,10 @@ GROUP: G R O U P;
 BY: B Y;
 HAVING: H A V I N G;
 ORDER: O R D E R;
+OVER: O V E R;
+PARTITION: P A R T I T I O N;
+ASC: A S C;
+DESC: D E S C;
 LIMIT: L I M I T;
 INSERT: I N S E R T;
 INTO: I N T O;

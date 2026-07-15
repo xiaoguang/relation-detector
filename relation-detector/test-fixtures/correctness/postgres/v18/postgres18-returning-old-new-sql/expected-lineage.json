@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:account_balances.user_id,transaction_ledgers.user_id->account_balances.balance",
     "VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance"
   ],
   "forbiddenSources": [ ],

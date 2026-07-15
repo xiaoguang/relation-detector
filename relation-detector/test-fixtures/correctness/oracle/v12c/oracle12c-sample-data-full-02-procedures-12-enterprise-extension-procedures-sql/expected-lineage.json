@@ -1,5 +1,9 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.last_stocktake_date",
+    "CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id,inventory.warehouse_id,stocktakes.warehouse_id,inventory.batch_id,stocktake_items.batch_id->inventory.quantity",
+    "CONTROL:DIRECT:stocktakes.id->stocktakes.posted_at",
+    "CONTROL:DIRECT:stocktakes.id->stocktakes.status",
     "VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change",
     "VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark",
     "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty",
@@ -9,7 +13,7 @@
     "VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id",
     "VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

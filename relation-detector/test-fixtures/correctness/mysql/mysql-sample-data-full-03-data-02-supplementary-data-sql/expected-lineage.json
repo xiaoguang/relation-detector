@@ -1,15 +1,15 @@
 {
   "fingerprints": [
-    "CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name",
-    "CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone",
-    "CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address",
-    "CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location",
-    "CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation",
     "CONTROL:CASE_WHEN:purchase_orders.status->invoices.status",
     "CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date",
     "CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at",
     "CONTROL:CASE_WHEN:sales_orders.status->shipments.status",
     "CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status",
+    "CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_name",
+    "CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.receiver_phone",
+    "CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipments.to_address",
+    "CONTROL:DIRECT:customers.id,sales_orders.customer_id->shipping_tracks.location",
+    "CONTROL:DIRECT:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation",
     "VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation",
     "VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed",
     "VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty",
@@ -47,7 +47,7 @@
     "VALUE:FUNCTION_CALL:sales_orders.order_date->shipments.estimated_delivery_date",
     "VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

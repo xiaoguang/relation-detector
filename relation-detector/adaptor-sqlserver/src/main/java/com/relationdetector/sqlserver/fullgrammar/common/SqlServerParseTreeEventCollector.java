@@ -8,29 +8,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
-
-/**
- * Shared SQL Server parse-tree collector.
- *
- * <p>CN: 这个 collector 只消费 ANTLR parse-tree rule context，不按 token span、
- * regex 或名字白名单判断 SQL 结构。五个 full-grammar 版本共用这层语义映射，
- * token-event 仍由自己的 grammar/visitor 独立产生事件。</p>
- */
+/** Shared typed SQL Server collector; token-event remains independent. */
 public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSupport {
     private final SqlServerExpressionAnalyzer expressionAnalyzer;
     private final AbstractSqlServerParseTreeAdapter sqlServerAdapter;
     private final FullGrammarEventFacade sqlSink;
     private final SqlServerDdlEventCollector ddlCollector;
+    private final SqlServerWriteControlSupport writeControls;
     private final boolean ddlOnly;
     private final Map<String, String> rowsetOwners = new LinkedHashMap<>();
     private final Set<String> projectionOwners = new LinkedHashSet<>();
@@ -50,9 +42,9 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
         this.expressionAnalyzer = new SqlServerExpressionAnalyzer(parseTreeAdapter);
         this.sqlSink = new FullGrammarEventFacade(statement, expressionAnalyzer);
         this.ddlCollector = new SqlServerDdlEventCollector(parseTreeAdapter, statement.sourceName(), this::visit);
+        this.writeControls = new SqlServerWriteControlSupport(parseTreeAdapter, sqlSink, expressionAnalyzer);
         this.ddlOnly = ddlOnly;
     }
-
     public List<StructuredSqlEvent> collect(ParserRuleContext root) {
         visit(root);
         List<StructuredSqlEvent> events = new ArrayList<>();
@@ -258,6 +250,7 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
         }
         Optional<ParserRuleContext> value = firstDirect(ctx, Role.INSERT_VALUE);
         Optional<ParserRuleContext> selectList = value.flatMap(v -> firstDescendant(v, Role.SELECT_LIST));
+        Optional<ParserRuleContext> query = value.flatMap(v -> firstDescendant(v, Role.QUERY_SPECIFICATION));
         if (selectList.isEmpty()) {
             visitChildren(ctx);
             return;
@@ -271,7 +264,7 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
             String column = columns.get(i);
             String target = qualifiedTable(targetTable);
             firstDescendant(item, Role.EXPRESSION).ifPresent(expression ->
-                    sqlSink.insertSelect(item, "", target, column, expression));
+                    writeControls.emitInsertSelect(item, target, column, expression, query.orElse(null)));
         }
     }
 
@@ -289,9 +282,13 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
         sqlSink.writeTarget(ctx, qualifiedTarget, "");
         sqlSink.withWriteTarget(qualifiedTarget, () -> {
             tableSources.ifPresent(this::visit);
-            firstDirect(ctx, Role.SEARCH_CONDITION).ifPresent(this::visit);
+            Optional<ParserRuleContext> condition = firstDirect(ctx, Role.SEARCH_CONDITION);
+            condition.ifPresent(this::visit);
+            List<ParserRuleContext> locators = writeControls.updateLocators(
+                    tableSources.orElse(null), condition.orElse(null));
             for (ParserRuleContext element : directChildren(ctx, Role.UPDATE_ELEMENT)) {
                 emitUpdateElement(element, qualifiedTarget, false);
+                writeControls.emitUpdate(element, qualifiedTarget, locators, false);
             }
         });
     }
@@ -303,10 +300,11 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
             sqlSink.writeTarget(ctx, qualifiedTable(targetTable), targetAlias);
         }
         firstDirect(ctx, Role.TABLE_SOURCES).ifPresent(this::visit);
-        firstDirect(ctx, Role.SEARCH_CONDITION).ifPresent(condition ->
-                emitPredicateColumnEqualities(condition, "MERGE_ON"));
+        Optional<ParserRuleContext> condition = firstDirect(ctx, Role.SEARCH_CONDITION);
+        condition.ifPresent(locator -> emitPredicateColumnEqualities(locator, "MERGE_ON"));
         for (ParserRuleContext element : descendants(ctx, Role.MERGE_UPDATE_ELEMENT)) {
             emitUpdateElement(element, targetTable, true);
+            writeControls.emitUpdate(element, targetTable, condition.stream().toList(), true);
         }
         for (ParserRuleContext notMatched : descendants(ctx, Role.MERGE_NOT_MATCHED)) {
             List<String> columns = firstDirect(notMatched, Role.COLUMN_LIST).map(this::identifierList).orElse(List.of());
@@ -316,6 +314,8 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
             int count = Math.min(columns.size(), values.size());
             for (int i = 0; i < count; i++) {
                 sqlSink.mergeInsert(values.get(i), targetAlias, qualifiedTable(targetTable), columns.get(i), values.get(i));
+                writeControls.emitMergeInsert(values.get(i), targetAlias,
+                        targetTable, columns.get(i), condition.orElse(null));
             }
         }
         visitChildren(ctx);

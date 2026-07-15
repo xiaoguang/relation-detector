@@ -118,6 +118,8 @@ final class DialectSqlAssetHygieneSupport {
             forbidden("non-Oracle stored generated column", "\\bGENERATED\\s+ALWAYS\\s+AS\\s*\\([^;]+\\)\\s+STORED\\b"),
             forbidden("Oracle zero-parameter routine definition with empty parentheses",
                     "\\bCREATE\\s+OR\\s+REPLACE\\s+(?:PROCEDURE|FUNCTION)\\s+[A-Za-z0-9_.$#]+\\s*\\(\\s*\\)"),
+            forbidden("Oracle OUT parameter name must precede the mode",
+                    "^\\s*OUT\\s+[A-Za-z_$#][A-Za-z0-9_$#]*\\s+"),
             forbidden("Oracle boolean comparison used directly as a generated expression",
                     "\\bGENERATED\\s+ALWAYS\\s+AS\\s*\\(\\s*[A-Za-z0-9_.$#]+\\s*=\\s*[A-Za-z0-9_.$#]+"),
             forbidden("Mechanical migration produced postfix numeric cast artifact",
@@ -132,7 +134,9 @@ final class DialectSqlAssetHygieneSupport {
                     "\\b[A-Za-z_][A-Za-z0-9_]*\\s*\\.\\s*VARCHAR2\\s*\\("),
             forbidden("Mechanical migration produced VARCHAR2 pseudo expression",
                     "\\bVARCHAR2\\s*\\([^)]*\\)\\s*(?:=|IN\\b)"),
-            forbidden("Mechanical migration produced VARCHAR2 pseudo DDL/variable name", "^\\s*VARCHAR2\\s*\\("));
+            forbidden("Mechanical migration produced VARCHAR2 pseudo DDL/variable name", "^\\s*VARCHAR2\\s*\\("),
+            forbidden("Oracle cursor FOR query must be parenthesized",
+                    "\\bFOR\\s+[A-Za-z_][A-Za-z0-9_$#]*\\s+IN\\s+(?:SELECT|WITH)\\b"));
 
     private static final List<ForbiddenSqlPattern> SQLSERVER_FORBIDDEN = List.of(
             forbidden("PostgreSQL PL/pgSQL language marker", "\\bLANGUAGE\\s+plpgsql\\b"),

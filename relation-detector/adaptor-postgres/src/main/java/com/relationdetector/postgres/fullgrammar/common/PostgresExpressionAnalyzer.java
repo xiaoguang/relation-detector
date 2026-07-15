@@ -66,9 +66,16 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         } else {
             append(sourceAliases, sourceColumns, sourceKeys, analysis);
         }
-        FullGrammarExpressionAnalysis control = nestedControls(expression, defaultQualifier);
-        Set<String> controlKeys = keys(control);
+        FullGrammarExpressionAnalysis scalarControl = nestedScalarControls(expression, defaultQualifier);
+        FullGrammarExpressionAnalysis caseControl = nestedCaseControls(expression, defaultQualifier);
+        FullGrammarExpressionAnalysis groupingControl = nestedGroupingControls(expression, defaultQualifier);
+        FullGrammarExpressionAnalysis windowControl = nestedWindowControls(expression, defaultQualifier);
+        Set<String> controlKeys = new LinkedHashSet<>(keys(scalarControl));
+        controlKeys.addAll(keys(caseControl));
+        controlKeys.addAll(keys(groupingControl));
+        controlKeys.addAll(keys(windowControl));
         Set<String> explicitValueKeys = nestedCaseValueKeys(expression, defaultQualifier);
+        explicitValueKeys.addAll(nonControlValueKeys(expression, defaultQualifier));
         FullGrammarExpressionAnalysis scalarValues = nestedScalarProjectionValues(
                 expression, defaultQualifier);
         Set<String> scalarValueKeys = keys(scalarValues);
@@ -103,8 +110,17 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             result.add(new FullGrammarExpressionAnalysis(
                     valueAliases, valueColumns, valueTransform, "VALUE"));
         }
-        if (control.hasSources()) {
-            result.add(control.withTransform("CASE_WHEN", "CONTROL"));
+        if (scalarControl.hasSources()) {
+            result.add(scalarControl.withTransform("DIRECT", "CONTROL"));
+        }
+        if (caseControl.hasSources()) {
+            result.add(caseControl.withTransform("CASE_WHEN", "CONTROL"));
+        }
+        if (groupingControl.hasSources()) {
+            result.add(groupingControl.withTransform("AGGREGATE", "CONTROL"));
+        }
+        if (windowControl.hasSources()) {
+            result.add(windowControl.withTransform("WINDOW_DERIVED", "CONTROL"));
         }
         return List.copyOf(result);
     }
@@ -254,7 +270,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         for (ParseTree control : controls) {
             append(aliases, columns, seen, analyze(control, qualifier));
         }
-        return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
+        return new FullGrammarExpressionAnalysis(aliases, columns, "DIRECT", "CONTROL");
     }
 
     private String scalarQualifier(ParseTree scalar, String defaultQualifier) {
@@ -277,15 +293,15 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         return false;
     }
 
-    private FullGrammarExpressionAnalysis nestedControls(ParseTree tree, String defaultQualifier) {
+    private FullGrammarExpressionAnalysis nestedScalarControls(ParseTree tree, String defaultQualifier) {
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        collectNestedControls(tree, defaultQualifier, aliases, columns, seen);
-        return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
+        collectNestedScalarControls(tree, defaultQualifier, aliases, columns, seen);
+        return new FullGrammarExpressionAnalysis(aliases, columns, "DIRECT", "CONTROL");
     }
 
-    private void collectNestedControls(
+    private void collectNestedScalarControls(
             ParseTree tree,
             String defaultQualifier,
             List<String> aliases,
@@ -296,6 +312,27 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         if (isScalarBoundary(tree)) {
             append(aliases, columns, seen, scalarControl(tree, defaultQualifier));
         }
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectNestedScalarControls(child, defaultQualifier, aliases, columns, seen);
+        }
+    }
+
+    private FullGrammarExpressionAnalysis nestedCaseControls(ParseTree tree, String defaultQualifier) {
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        collectNestedCaseControls(tree, defaultQualifier, aliases, columns, seen);
+        return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
+    }
+
+    private void collectNestedCaseControls(
+            ParseTree tree,
+            String defaultQualifier,
+            List<String> aliases,
+            List<String> columns,
+            Set<String> seen
+    ) {
+        if (tree == null) return;
         var caseParts = parseTreeAdapter().caseParts(tree);
         if (caseParts.conditional()) {
             for (ParseTree control : caseParts.controls()) {
@@ -304,7 +341,66 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             }
         }
         for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            collectNestedControls(child, defaultQualifier, aliases, columns, seen);
+            collectNestedCaseControls(child, defaultQualifier, aliases, columns, seen);
+        }
+    }
+
+    private FullGrammarExpressionAnalysis nestedGroupingControls(ParseTree tree, String defaultQualifier) {
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        collectNestedGroupingControls(tree, defaultQualifier, aliases, columns, seen);
+        return new FullGrammarExpressionAnalysis(aliases, columns, "AGGREGATE", "CONTROL");
+    }
+
+    private void collectNestedGroupingControls(
+            ParseTree tree,
+            String defaultQualifier,
+            List<String> aliases,
+            List<String> columns,
+            Set<String> seen
+    ) {
+        if (tree == null) return;
+        if (isScalarBoundary(tree)) {
+            String qualifier = scalarQualifier(tree, defaultQualifier);
+            List<ParseTree> groupings = new ArrayList<>();
+            collectDirectRoleContexts(tree, tree,
+                    com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE,
+                    groupings);
+            for (ParseTree grouping : groupings) {
+                append(aliases, columns, seen, analyze(grouping, qualifier));
+            }
+        }
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectNestedGroupingControls(child, defaultQualifier, aliases, columns, seen);
+        }
+    }
+
+    private FullGrammarExpressionAnalysis nestedWindowControls(ParseTree tree, String defaultQualifier) {
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        collectRoleAnalyses(tree, defaultQualifier,
+                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE,
+                aliases, columns, seen);
+        return new FullGrammarExpressionAnalysis(aliases, columns, "WINDOW_DERIVED", "CONTROL");
+    }
+
+    private void collectRoleAnalyses(
+            ParseTree tree,
+            String defaultQualifier,
+            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            List<String> aliases,
+            List<String> columns,
+            Set<String> seen
+    ) {
+        if (tree == null) return;
+        if (parseTreeAdapter().hasRole(tree, role)) {
+            append(aliases, columns, seen, analyze(tree, defaultQualifier));
+            return;
+        }
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectRoleAnalyses(child, defaultQualifier, role, aliases, columns, seen);
         }
     }
 
@@ -312,6 +408,38 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         Set<String> result = new LinkedHashSet<>();
         collectNestedCaseValueKeys(tree, defaultQualifier, result);
         return result;
+    }
+
+    private Set<String> nonControlValueKeys(ParseTree tree, String defaultQualifier) {
+        Set<String> result = new LinkedHashSet<>();
+        collectNonControlValueKeys(tree, defaultQualifier, result);
+        return result;
+    }
+
+    private void collectNonControlValueKeys(ParseTree tree, String defaultQualifier, Set<String> result) {
+        if (tree == null || isScalarBoundary(tree)
+                || parseTreeAdapter().hasRole(
+                        tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)
+                || parseTreeAdapter().hasRole(
+                        tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE)
+                || parseTreeAdapter().hasRole(
+                        tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE)) {
+            return;
+        }
+        var caseParts = parseTreeAdapter().caseParts(tree);
+        if (caseParts.conditional()) {
+            for (ParseTree value : caseParts.values()) {
+                collectNonControlValueKeys(value, defaultQualifier, result);
+            }
+            return;
+        }
+        if (parseTreeAdapter().directColumn(tree).isPresent()) {
+            result.addAll(keys(analyze(tree, defaultQualifier)));
+            return;
+        }
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectNonControlValueKeys(child, defaultQualifier, result);
+        }
     }
 
     private FullGrammarExpressionAnalysis nestedScalarProjectionValues(
@@ -385,19 +513,28 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             ParseTree tree,
             List<ParseTree> result
     ) {
+        collectDirectRoleContexts(root, tree,
+                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE, result);
+    }
+
+    private void collectDirectRoleContexts(
+            ParseTree root,
+            ParseTree tree,
+            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            List<ParseTree> result
+    ) {
         if (tree == null) {
             return;
         }
         if (tree != root && isScalarBoundary(tree)) {
             return;
         }
-        if (parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)) {
+        if (parseTreeAdapter().hasRole(tree, role)) {
             result.add(tree);
             return;
         }
         for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            collectDirectScopeContexts(root, child, result);
+            collectDirectRoleContexts(root, child, role, result);
         }
     }
 

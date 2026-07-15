@@ -41,11 +41,21 @@ abstract class MySqlTokenEventControlSupport extends MySqlTokenEventExpressionSu
             if (!value.sources().isEmpty()) {
                 result.add(value);
             }
-            ExpressionAnalysis control = controls(
-                    conditionalControl(expression, defaultQualifier),
-                    scalarSubqueryControl(expression, defaultQualifier));
-            if (!control.sources().isEmpty()) {
-                result.add(control);
+            ExpressionAnalysis conditional = conditionalControl(expression, defaultQualifier);
+            if (!conditional.sources().isEmpty()) {
+                result.add(conditional);
+            }
+            ExpressionAnalysis locator = scalarSubqueryControl(expression, defaultQualifier);
+            if (!locator.sources().isEmpty()) {
+                result.add(asLocatorControl(locator));
+            }
+            ExpressionAnalysis grouping = scalarSubqueryGroupingControl(expression, defaultQualifier);
+            if (!grouping.sources().isEmpty()) {
+                result.add(grouping);
+            }
+            ExpressionAnalysis window = windowControl(expression, defaultQualifier);
+            if (!window.sources().isEmpty()) {
+                result.add(window);
             }
             return List.copyOf(result);
         }
@@ -58,9 +68,76 @@ abstract class MySqlTokenEventControlSupport extends MySqlTokenEventExpressionSu
         }
         ExpressionAnalysis control = scalarSubqueryControl(expression, defaultQualifier);
         if (!control.sources().isEmpty()) {
-            result.add(control);
+            result.add(asLocatorControl(control));
+        }
+        ExpressionAnalysis grouping = scalarSubqueryGroupingControl(expression, defaultQualifier);
+        if (!grouping.sources().isEmpty()) {
+            result.add(grouping);
+        }
+        ExpressionAnalysis window = windowControl(expression, defaultQualifier);
+        if (!window.sources().isEmpty()) {
+            result.add(window);
         }
         return List.copyOf(result);
+    }
+
+    private ExpressionAnalysis windowControl(ParseTree tree, String defaultQualifier) {
+        if (tree instanceof MySqlRelationSqlParser.FunctionExpressionContext function
+                && function.windowSpecification() != null) {
+            MySqlRelationSqlParser.WindowSpecificationContext window = function.windowSpecification();
+            ExpressionAnalysis control = ExpressionAnalysis.emptyControl();
+            if (window.windowPartitionByClause() != null) {
+                for (MySqlRelationSqlParser.ExpressionContext expression
+                        : window.windowPartitionByClause().expressionList().expression()) {
+                    control = controls(control, asWindowControl(analyze(expression, defaultQualifier)));
+                }
+            }
+            if (window.windowOrderByClause() != null) {
+                for (MySqlRelationSqlParser.OrderByItemContext item
+                        : window.windowOrderByClause().orderByItem()) {
+                    control = controls(control, asWindowControl(analyze(item.expression(), defaultQualifier)));
+                }
+            }
+            return asWindowControl(control);
+        }
+        ExpressionAnalysis control = ExpressionAnalysis.emptyControl();
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            control = controls(control, windowControl(tree.getChild(index), defaultQualifier));
+        }
+        return asWindowControl(control);
+    }
+
+    private ExpressionAnalysis asWindowControl(ExpressionAnalysis analysis) {
+        return new ExpressionAnalysis(
+                analysis.sources(), LineageTransformType.WINDOW_DERIVED, LineageFlowKind.CONTROL);
+    }
+
+    private ExpressionAnalysis scalarSubqueryGroupingControl(ParseTree tree, String defaultQualifier) {
+        if (tree instanceof MySqlRelationSqlParser.ScalarSubqueryExpressionContext scalar) {
+            MySqlRelationSqlParser.QuerySpecificationContext query =
+                    scalar.selectStatement().querySpecification();
+            if (query.groupByClause() == null) {
+                return ExpressionAnalysis.emptyControl();
+            }
+            String qualifier = singleProjectionQualifier(query.fromClause());
+            if (qualifier.isBlank()) {
+                qualifier = defaultQualifier;
+            }
+            ExpressionAnalysis grouping = ExpressionAnalysis.emptyControl();
+            for (MySqlRelationSqlParser.ExpressionContext expression
+                    : query.groupByClause().expressionList().expression()) {
+                grouping = controls(grouping, controlExpression(expression, qualifier));
+            }
+            return new ExpressionAnalysis(
+                    grouping.sources(), LineageTransformType.AGGREGATE, LineageFlowKind.CONTROL);
+        }
+        ExpressionAnalysis grouping = ExpressionAnalysis.emptyControl();
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            grouping = controls(grouping,
+                    scalarSubqueryGroupingControl(tree.getChild(index), defaultQualifier));
+        }
+        return new ExpressionAnalysis(
+                grouping.sources(), LineageTransformType.AGGREGATE, LineageFlowKind.CONTROL);
     }
 
     private ExpressionAnalysis controlExpression(ParseTree tree, String defaultQualifier) {
@@ -81,19 +158,25 @@ abstract class MySqlTokenEventControlSupport extends MySqlTokenEventExpressionSu
     private ExpressionAnalysis scalarSubqueryControl(ParseTree expression, String defaultQualifier) {
         if (expression instanceof MySqlRelationSqlParser.ScalarSubqueryExpressionContext scalar) {
             MySqlRelationSqlParser.SelectStatementContext select = scalar.selectStatement();
-            ExpressionAnalysis context = scalarSubqueryContext(select, defaultQualifier);
-            List<MySqlRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
-            if (items.size() == 1 && items.get(0).expression() != null) {
-                context = controls(context, conditionalControl(items.get(0).expression(),
-                        singleProjectionQualifier(select.querySpecification().fromClause())));
-            }
-            return context;
+            return scalarSubqueryContext(select, defaultQualifier);
         }
         ExpressionAnalysis context = ExpressionAnalysis.emptyControl();
         for (int index = 0; index < expression.getChildCount(); index++) {
             context = controls(context, scalarSubqueryControl(expression.getChild(index), defaultQualifier));
         }
-        return context;
+        return asLocatorControl(context);
+    }
+
+    private ExpressionAnalysis asLocatorControl(ExpressionAnalysis analysis) {
+        return new ExpressionAnalysis(
+                analysis.sources(), LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
+    }
+
+    protected ExpressionAnalysis locatorControl(
+            MySqlRelationSqlParser.PredicateContext predicate,
+            String defaultQualifier
+    ) {
+        return asLocatorControl(analyze(predicate, defaultQualifier));
     }
 
     private ExpressionAnalysis conditionalControl(ParseTree tree, String defaultQualifier) {
@@ -204,12 +287,6 @@ abstract class MySqlTokenEventControlSupport extends MySqlTokenEventExpressionSu
         }
         if (query.whereClause() != null) {
             context = controls(context, analyze(query.whereClause().predicate(), scalarQualifier));
-        }
-        if (query.groupByClause() != null) {
-            for (MySqlRelationSqlParser.ExpressionContext grouping
-                    : query.groupByClause().expressionList().expression()) {
-                context = controls(context, controlExpression(grouping, scalarQualifier));
-            }
         }
         if (query.havingClause() != null) {
             context = controls(context, analyze(query.havingClause().predicate(), scalarQualifier));

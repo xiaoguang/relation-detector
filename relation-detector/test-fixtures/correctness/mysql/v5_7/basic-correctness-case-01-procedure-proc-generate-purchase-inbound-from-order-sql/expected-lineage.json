@@ -1,5 +1,11 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.change_amount",
+    "CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.discount_last_money",
+    "CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.status",
+    "CONTROL:DIRECT:jsh_depot_head.id->jsh_depot_head.total_price",
+    "CONTROL:DIRECT:jsh_depot_head.status,jsh_depot_head.sub_type,jsh_depot_head.tenant_id,jsh_depot_head.delete_flag->jsh_depot_head.status",
+    "CONTROL:DIRECT:jsh_depot_item.header_id->jsh_material_current_stock.current_number",
     "VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount",
     "VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price",
     "VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money",
@@ -35,6 +41,6 @@
     "CURRENT_TIMESTAMP",
     "NOW"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

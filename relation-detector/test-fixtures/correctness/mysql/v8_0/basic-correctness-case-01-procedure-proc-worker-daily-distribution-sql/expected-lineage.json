@@ -1,7 +1,8 @@
 {
   "fingerprints": [
-    "CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id",
-    "CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str",
+    "CONTROL:DIRECT:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id",
+    "CONTROL:DIRECT:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str",
+    "CONTROL:DIRECT:jsh_temp_mock_plan.execute_status,jsh_temp_mock_plan.bill_no_str->jsh_temp_mock_plan.bill_no_str",
     "VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str",
     "VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id"
   ],
@@ -11,6 +12,6 @@
     "CURRENT_TIMESTAMP",
     "NOW"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

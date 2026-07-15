@@ -27,7 +27,9 @@
 - 数据画像可以增强关系，也可以反证关系，但反证不能直接删除关系。
 - 不输出真实业务值，不输出采样值，也不输出可逆 hash；只输出统计量、阈值、样本规模和跳过原因。
 - 所有查询必须受候选数量、采样行数、distinct 数量、超时和权限控制。
-- 生产库读权限不足时必须降级为 skip/warning，不影响静态关系抽取。
+- 生产库读权限不足时，设计要求降级为 skip/warning，不影响静态关系抽取。当前
+  `JdbcDataProfilerTemplate` 会静默返回空 evidence，`DataProfiler` SPI 也没有 diagnostic
+  consumer，因此 warning 部分尚未实现，状态为 `PARTIAL`。
 
 ### 标识符渲染边界
 
@@ -189,7 +191,10 @@ sources:
 
 - source column 与 target PK/UNIQUE column 类型兼容。
 - top-level `namingEvidence` 给出唯一方向，例如 `orders.customer_id -> customers.id`。
-- target 端有 `TARGET_UNIQUE`，source 端有 `SOURCE_INDEX` 或同表/同 schema 业务上下文。
+- target 端有单列 `TARGET_UNIQUE`，source 端有单列 `SOURCE_INDEX` 或同表/同 schema 业务上下文。
+  组合 PK/UNIQUE/index 是列组事实：`UNIQUE(a,b)` 不能证明 `a` 或 `b` 单列唯一，组合索引的
+  任一成员也不能单独满足 single-endpoint index gate。只有 `columns.size()==1` 的 metadata
+  index fact，或未来能按完整列组建模的候选，才可通过这些 gate。
 - DDL column inventory 或 metadata 显示两端都存在，且不属于临时表、pseudo rowset、参数或局部变量。
 
 B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINMENT_HIGH`，并且 target unique / type compatible 等结构 evidence 同时存在时，才可生成 `PROFILE_SUPPORTED_FK` 候选。
@@ -454,8 +459,11 @@ subtype 规则：
 
 - 如果连接不可用：skip。
 - 如果 catalog 可读但数据不可读：skip profile，保留 metadata。
-- 如果部分表可读：只 profile 可读候选，其它候选输出 skip reason。
-- 如果查询超时：该候选输出 warning，不影响整体 scan。
+- 如果部分表可读：目标行为是只 profile 可读候选，并为其它候选输出安全的 skip reason。
+- 如果查询超时：目标行为是为该候选输出 warning，不影响整体 scan。
+- 当前实现只满足“不影响整体 scan”：`JdbcDataProfilerTemplate` 捕获异常后返回空 evidence，
+  尚不能区分 permission、timeout 或其它执行失败，也不会输出 warning/skip reason。这是明确的
+  diagnostic backlog，不应在验收中描述为已完成。
 
 ## 性能控制
 
@@ -574,6 +582,7 @@ default List<ProfileResult> profileBatch(Connection connection, List<ProfileRequ
 - 有 live data 权限时，高值域包含率能产生 `VALUE_CONTAINMENT_HIGH`。
 - 明显值不匹配且满足负向 gate 时能产生 `NEGATIVE_VALUE_MISMATCH`。
 - DDL/migration 中的 insert sample 只有在 typed literal insert sample event 补齐后才可以产生保守正向 evidence；默认不产生负向 evidence。
-- 权限不足、超时、样本不足都不会中断整体 scan。
+- 权限不足、超时、样本不足都不会中断整体 scan；其中权限/超时 diagnostic 尚未实现，
+  当前只能验证它们不产生误导 evidence。
 - 输出不包含真实业务值。
 - correctness/golden 暂不覆盖 live DB profiling；profiler 用独立单测验收。offline sample correctness 等 typed literal insert sample event 补齐后再加入。

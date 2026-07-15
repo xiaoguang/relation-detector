@@ -136,7 +136,7 @@ class PostgresFullGrammarExpressionAnalyzerTest {
         assertTrue(fingerprints.contains(
                         "VALUE:AGGREGATE:purchase_order_items.quantity->supplier_products.total_order_qty"),
                 () -> fingerprints + " events=" + structured.events());
-        assertTrue(fingerprints.stream().anyMatch(value -> value.startsWith("CONTROL:CASE_WHEN:")
+        assertTrue(fingerprints.stream().anyMatch(value -> value.startsWith("CONTROL:DIRECT:")
                         && value.contains("purchase_order_items.order_id")
                         && value.contains("purchase_orders.id")
                         && value.contains("supplier_products.product_id")

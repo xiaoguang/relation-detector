@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
@@ -77,6 +78,28 @@ final class OracleFullGrammarEventEmitter extends OracleFullGrammarParseTreeSupp
         }
     }
 
+    void emitAssignmentControl(
+            ParserRuleContext ctx,
+            String targetColumn,
+            OracleExpressionAnalysis control,
+            String mappingKind
+    ) {
+        emitAssignmentControl(StructuredParseEventType.UPDATE_ASSIGNMENT, ctx,
+                targetColumn, control, mappingKind);
+    }
+
+    void emitAssignmentControl(
+            StructuredParseEventType type,
+            ParserRuleContext ctx,
+            String targetColumn,
+            OracleExpressionAnalysis control,
+            String mappingKind
+    ) {
+        emitWriteMapping(type, ctx,
+                writeTargetAliases.peek(), writeTargetTables.peek(), lastPart(targetColumn),
+                control, mappingKind);
+    }
+
     void emitExpressionMappings(
             StructuredParseEventType type,
             ParserRuleContext context,
@@ -89,6 +112,61 @@ final class OracleFullGrammarEventEmitter extends OracleFullGrammarParseTreeSupp
         for (OracleExpressionAnalysis source : expressions.writeAnalyses(expression)) {
             emitWriteMapping(type, context, targetAlias, targetTable, targetColumn, source, mappingKind);
         }
+    }
+
+    void emitExpressionControlMapping(
+            StructuredParseEventType type,
+            ParserRuleContext context,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            OracleExpressionAnalysis control,
+            String mappingKind
+    ) {
+        emitWriteMapping(type, context, targetAlias, targetTable, targetColumn, control, mappingKind);
+    }
+
+    void emitUpdateLocatorMappings(ParseTree tree, OracleExpressionAnalysis control) {
+        if (tree == null || control.sources().isEmpty()) {
+            return;
+        }
+        if (hasRole(tree, Role.UPDATE_SET_CLAUSE) && tree instanceof ParserRuleContext assignment) {
+            ParserRuleContext column = child(assignment, Role.COLUMN_NAME);
+            if (column != null) {
+                emitAssignmentControl(assignment, name(column), control, "UPDATE_WHERE");
+            }
+            return;
+        }
+        for (ParseTree child : typedChildren(tree)) {
+            emitUpdateLocatorMappings(child, control);
+        }
+    }
+
+    void emitInsertSelectMappings(
+            ParserRuleContext item,
+            String targetTable,
+            String targetColumn,
+            ParserRuleContext expression,
+            OracleExpressionAnalysis grouping
+    ) {
+        emitExpressionMappings(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                item, "", targetTable, targetColumn, expression, "INSERT_SELECT");
+        if (expressions.isAggregateExpression(expression)) {
+            emitExpressionControlMapping(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                    item, "", targetTable, targetColumn, grouping, "INSERT_GROUP_BY");
+        }
+    }
+
+    void emitMergeAssignment(
+            ParserRuleContext element,
+            String targetColumn,
+            ParserRuleContext expression,
+            OracleExpressionAnalysis control
+    ) {
+        emitAssignment(element, targetColumn, expression,
+                StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
+        emitAssignmentControl(StructuredParseEventType.MERGE_WRITE_MAPPING,
+                element, targetColumn, control, "MERGE_ON");
     }
 
     void emitProjectionItems(

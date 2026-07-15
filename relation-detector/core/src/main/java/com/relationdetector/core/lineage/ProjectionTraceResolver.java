@@ -88,7 +88,8 @@ final class ProjectionTraceResolver {
                                     resolution.sources().stream().distinct().toList(),
                                     effectiveTransform(
                                             event.expression().transformType().name(),
-                                            resolution.transforms(), resolution.flowKind()),
+                                            resolution.transforms(), resolution.flowKind(),
+                                            event.expression().flowKind()),
                                     resolution.flowKind()),
                             ignoredRowsets,
                             aliases);
@@ -399,11 +400,23 @@ final class ProjectionTraceResolver {
             List<LineageTransformType> sourceTransforms,
             LineageFlowKind flowKind
     ) {
-        if (flowKind == LineageFlowKind.CONTROL) {
-            return LineageTransformType.CASE_WHEN;
+        return effectiveTransform(eventTransform, sourceTransforms, flowKind, flowKind);
+    }
+
+    static LineageTransformType effectiveTransform(
+            String eventTransform,
+            List<LineageTransformType> sourceTransforms,
+            LineageFlowKind resolvedFlowKind,
+            LineageFlowKind eventFlowKind
+    ) {
+        if (resolvedFlowKind == LineageFlowKind.CONTROL) {
+            if (eventFlowKind != LineageFlowKind.CONTROL && !sourceTransforms.isEmpty()) {
+                return LineageTransformClassifier.dominant(
+                        sourceTransforms.toArray(LineageTransformType[]::new));
+            }
+            return transform(eventTransform);
         }
-        LineageTransformType effective = effectiveTransform(eventTransform, sourceTransforms);
-        return effective;
+        return effectiveTransform(eventTransform, sourceTransforms);
     }
 
     private static String clean(String value) {

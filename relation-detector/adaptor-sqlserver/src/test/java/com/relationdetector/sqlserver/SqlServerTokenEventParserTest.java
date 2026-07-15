@@ -191,11 +191,29 @@ class SqlServerTokenEventParserTest {
                     LineageFlowKind.CONTROL);
             assertLineage(lineages, "sales_orders", "total_amount", "sales_commissions", target,
                     LineageFlowKind.CONTROL);
+            assertLineage(lineages, "sales_order_items", "order_id", "sales_commissions", target,
+                    LineageFlowKind.CONTROL);
+            assertLineage(lineages, "sales_orders", "id", "sales_commissions", target,
+                    LineageFlowKind.CONTROL);
             assertTrue(lineages.stream().filter(lineage ->
                             lineage.flowKind() == LineageFlowKind.CONTROL
-                                    && target.equals(lineage.target().column().columnName()))
+                                    && target.equals(lineage.target().column().columnName())
+                                    && lineage.sources().stream().anyMatch(source ->
+                                            "sales_orders".equals(source.table().tableName())
+                                                    && ("paid_amount".equals(source.column().columnName())
+                                                    || "total_amount".equals(source.column().columnName()))))
                             .allMatch(lineage -> lineage.transformType() == LineageTransformType.CASE_WHEN),
                     () -> "CASE controls must use CASE_WHEN for " + target + ": " + lineages);
+            assertTrue(lineages.stream().filter(lineage ->
+                            lineage.flowKind() == LineageFlowKind.CONTROL
+                                    && target.equals(lineage.target().column().columnName())
+                                    && lineage.sources().stream().anyMatch(source ->
+                                            "sales_order_items".equals(source.table().tableName())
+                                                    && "order_id".equals(source.column().columnName())
+                                                    || "sales_orders".equals(source.table().tableName())
+                                                    && "id".equals(source.column().columnName())))
+                            .allMatch(lineage -> lineage.transformType() == LineageTransformType.DIRECT),
+                    () -> "JOIN locator controls must use DIRECT for " + target + ": " + lineages);
             assertTrue(lineages.stream().noneMatch(lineage ->
                             lineage.flowKind() == LineageFlowKind.VALUE
                                     && target.equals(lineage.target().column().columnName())

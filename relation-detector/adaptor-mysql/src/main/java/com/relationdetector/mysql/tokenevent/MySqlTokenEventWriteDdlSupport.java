@@ -72,20 +72,30 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
                 StructuredParseEventType.WRITE_TARGET, baseName(targetTable), targetTable,
                 targetAlias, "", "", "", "", List.of(), List.of(),
                 LineageTransformType.UNKNOWN_EXPRESSION, LineageFlowKind.VALUE);
+        List<UpdateTarget> targets = new ArrayList<>();
         for (MySqlRelationSqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1
                     ? targetParts.get(targetParts.size() - 2) : targetAlias;
+            targets.add(new UpdateTarget(targetColumn, assignmentAlias));
             for (ExpressionAnalysis source : writeAnalyses(assignment.expression(), "")) {
                 emitWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, assignmentAlias,
                         targetTable, targetColumn, source, "UPDATE_SET");
             }
         }
         if (ctx.whereClause() != null) {
+            ExpressionAnalysis locator = locatorControl(ctx.whereClause().predicate(), targetAlias);
+            for (UpdateTarget target : targets) {
+                emitWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, ctx.whereClause(), target.alias(),
+                        targetTable, target.column(), locator, "UPDATE_LOCATOR");
+            }
             visit(ctx.whereClause());
         }
         return null;
+    }
+
+    private record UpdateTarget(String column, String alias) {
     }
 
     @Override

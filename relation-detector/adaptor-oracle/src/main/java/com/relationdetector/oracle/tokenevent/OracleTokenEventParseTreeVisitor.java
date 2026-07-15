@@ -22,7 +22,23 @@ public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWrit
     @Override
     public Void visitRoutineStartStatement(OracleRelationSqlParser.RoutineStartStatementContext ctx) {
         routineScope.enterRoutine();
+        if (ctx.routineParameterList() != null) {
+            ctx.routineParameterList().routineParameter().forEach(parameter ->
+                    routineScope.declare(clean(parameter.identifier().getText())));
+        }
+        ctx.routineHeaderToken().stream()
+                .map(OracleRelationSqlParser.RoutineHeaderTokenContext::routineLocalDeclaration)
+                .filter(java.util.Objects::nonNull)
+                .forEach(declaration -> routineScope.declare(clean(declaration.identifier().getText())));
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitDeclarationStatement(OracleRelationSqlParser.DeclarationStatementContext ctx) {
+        routineScope.enterBlock();
+        ctx.routineLocalDeclaration().forEach(declaration ->
+                routineScope.declare(clean(declaration.identifier().getText())));
+        return null;
     }
 
     @Override

@@ -150,7 +150,64 @@ class CommonTokenEventStructuredSqlParserTest {
                 "VALUE:AGGREGATE:order_items.amount->order_rollup.total_amount"),
                 () -> fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                "CONTROL:CASE_WHEN:order_items.order_id,orders.id->order_rollup.total_amount"),
+                "CONTROL:DIRECT:order_items.order_id,orders.id->order_rollup.total_amount"),
+                () -> fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void commonParserScopesUpdateLocatorControlsToTheWrittenColumn() {
+        SqlStatementRecord statement = statement("""
+                UPDATE order_rollup r
+                SET total_amount = r.total_amount + 1
+                WHERE r.status = 'open'
+                  AND r.customer_id = 42
+                """);
+
+        var structured = parser.parseSql(statement, null);
+        Set<String> fingerprints = lineage(statement, structured);
+
+        assertTrue(fingerprints.contains(
+                "CONTROL:DIRECT:order_rollup.status,order_rollup.customer_id->order_rollup.total_amount"),
+                () -> fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void commonParserClassifiesScalarSubqueryGroupingAsAggregateControl() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO order_rollup (order_id, total_amount)
+                SELECT o.id,
+                       (SELECT SUM(oi.amount)
+                        FROM order_items oi
+                        WHERE oi.order_id = o.id
+                        GROUP BY oi.order_id)
+                FROM orders o
+                """);
+
+        var structured = parser.parseSql(statement, null);
+        Set<String> fingerprints = lineage(statement, structured);
+
+        assertTrue(fingerprints.contains(
+                "CONTROL:AGGREGATE:order_items.order_id->order_rollup.total_amount"),
+                () -> fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void commonParserClassifiesWindowPartitionAndOrderAsWindowControls() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO customer_rank (customer_id, rank_no)
+                SELECT o.customer_id,
+                       ROW_NUMBER() OVER (
+                         PARTITION BY o.region_id
+                         ORDER BY o.total_amount DESC
+                       )
+                FROM orders o
+                """);
+
+        var structured = parser.parseSql(statement, null);
+        Set<String> fingerprints = lineage(statement, structured);
+
+        assertTrue(fingerprints.contains(
+                "CONTROL:WINDOW_DERIVED:orders.region_id,orders.total_amount->customer_rank.rank_no"),
                 () -> fingerprints + " events=" + structured.events());
     }
 

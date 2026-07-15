@@ -19,6 +19,19 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
     }
 
     protected List<OracleExpressionAnalysis> writeAnalyses(OracleRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof OracleRelationSqlParser.FunctionExpressionContext function
+                && function.windowClause() != null) {
+            OracleExpressionAnalysis value = valueOnlyAnalysis(expression);
+            OracleExpressionAnalysis control = windowControl(function.windowClause());
+            List<OracleExpressionAnalysis> result = new ArrayList<>(2);
+            if (!value.sources().isEmpty()) {
+                result.add(value);
+            }
+            if (!control.sources().isEmpty()) {
+                result.add(control);
+            }
+            return List.copyOf(result);
+        }
         if (!containsRoleBoundary(expression)) {
             OracleExpressionAnalysis analysis = analyze(expression);
             return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
@@ -30,10 +43,29 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
             result.add(new OracleExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE));
         }
         if (!control.sources().isEmpty()) {
-            result.add(new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+            result.add(new OracleExpressionAnalysis(control.sources(), control.transform(),
                     LineageFlowKind.CONTROL));
         }
         return List.copyOf(result);
+    }
+
+    private OracleExpressionAnalysis windowControl(OracleRelationSqlParser.WindowClauseContext window) {
+        OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
+        if (window.windowPartitionClause() != null) {
+            for (OracleRelationSqlParser.ExpressionContext expression
+                    : window.windowPartitionClause().expressionList().expression()) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.CONTROL, control, analyze(expression));
+            }
+        }
+        if (window.orderByClause() != null) {
+            for (OracleRelationSqlParser.OrderByItemContext item : window.orderByClause().orderByItem()) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.CONTROL, control, analyze(item.expression()));
+            }
+        }
+        return new OracleExpressionAnalysis(control.sources(), LineageTransformType.WINDOW_DERIVED,
+                LineageFlowKind.CONTROL);
     }
 
     protected OracleExpressionAnalysis valueOnlyAnalysis(OracleRelationSqlParser.ExpressionContext expression) {
@@ -93,10 +125,15 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
             List<OracleRelationSqlParser.SelectItemContext> items =
                     scalarSubquery.selectStatement().querySpecification().selectList().selectItem();
             if (items.size() == 1 && items.get(0).expression() != null) {
-                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, controlOnlyAnalysis(items.get(0).expression()));
+                OracleExpressionAnalysis projectionControl = controlOnlyAnalysis(items.get(0).expression());
+                if (!projectionControl.sources().isEmpty()) {
+                    control = OracleExpressionAnalysis.combine(
+                            LineageTransformClassifier.dominant(
+                                    control.transform(), projectionControl.transform()),
+                            LineageFlowKind.CONTROL, control, projectionControl);
+                }
             }
-            return new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+            return new OracleExpressionAnalysis(control.sources(), control.transform(),
                     LineageFlowKind.CONTROL);
         }
         if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
@@ -121,8 +158,10 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
         }
         OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
         for (OracleRelationSqlParser.ExpressionContext child : childExpressions(expression)) {
-            control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL, control, controlOnlyAnalysis(child));
+            OracleExpressionAnalysis childControl = controlOnlyAnalysis(child);
+            control = OracleExpressionAnalysis.combine(
+                    LineageTransformClassifier.dominant(control.transform(), childControl.transform()),
+                    LineageFlowKind.CONTROL, control, childControl);
         }
         return control;
     }
@@ -196,7 +235,7 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
                 selectedExpression.flowKind());
     }
 
-    private boolean containsAggregateFunction(ParseTree tree) {
+    protected boolean containsAggregateFunction(ParseTree tree) {
         if (tree instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName()))
                     .toLowerCase(Locale.ROOT);
@@ -213,6 +252,27 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
         return false;
     }
 
+    protected OracleExpressionAnalysis groupingControl(
+            OracleRelationSqlParser.SelectStatementContext select) {
+        OracleRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        if (query == null || query.groupByClause() == null) {
+            return OracleExpressionAnalysis.empty();
+        }
+        queryScopes.push(scopeFor(query));
+        try {
+            OracleExpressionAnalysis grouping = OracleExpressionAnalysis.empty();
+            for (OracleRelationSqlParser.ExpressionContext expression
+                    : query.groupByClause().expressionList().expression()) {
+                grouping = OracleExpressionAnalysis.combine(LineageTransformType.AGGREGATE,
+                        LineageFlowKind.CONTROL, grouping, analyze(expression));
+            }
+            return new OracleExpressionAnalysis(grouping.sources(), LineageTransformType.AGGREGATE,
+                    LineageFlowKind.CONTROL);
+        } finally {
+            queryScopes.pop();
+        }
+    }
+
     private OracleExpressionAnalysis scalarSubqueryContext(OracleRelationSqlParser.SelectStatementContext select) {
         OracleRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
         queryScopes.push(scopeFor(query));
@@ -222,14 +282,14 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
                 for (OracleRelationSqlParser.TableReferenceContext reference : query.fromClause().tableReference()) {
                     for (OracleRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
                         if (join.predicate() != null) {
-                            context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                            context = OracleExpressionAnalysis.combine(LineageTransformType.DIRECT,
                                     LineageFlowKind.CONTROL, context, analyze(join.predicate()));
                         }
                     }
                 }
             }
             if (query.whereClause() != null) {
-                context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                context = OracleExpressionAnalysis.combine(LineageTransformType.DIRECT,
                         LineageFlowKind.CONTROL, context, analyze(query.whereClause().predicate()));
             }
             if (query.groupByClause() != null) {
@@ -243,7 +303,8 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
                 context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL, context, analyze(query.havingClause().predicate()));
             }
-            return context;
+            return new OracleExpressionAnalysis(context.sources(), LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL);
         } finally {
             queryScopes.pop();
         }

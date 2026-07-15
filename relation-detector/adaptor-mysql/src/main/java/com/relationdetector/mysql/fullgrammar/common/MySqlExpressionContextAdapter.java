@@ -31,6 +31,14 @@ public interface MySqlExpressionContextAdapter extends FullGrammarParseTreeAdapt
 
     List<ProjectionItem> topLevelProjectionItems(ParseTree tree);
 
+    default boolean isWindowControlContainer(ParseTree tree) {
+        return false;
+    }
+
+    default List<ParseTree> windowControlExpressions(ParseTree tree) {
+        return List.of();
+    }
+
     /** Resolves only transparent wrappers around one typed direct-column projection. */
     default Optional<FullGrammarColumnReference> directProjectionColumn(ParseTree tree) {
         ParseTree current = tree;

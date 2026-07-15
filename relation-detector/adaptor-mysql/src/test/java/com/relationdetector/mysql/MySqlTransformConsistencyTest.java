@@ -135,11 +135,165 @@ class MySqlTransformConsistencyTest {
         }
     }
 
+    @Test
+    void scalarAggregateSeparatesProjectionValueFromDirectLocatorControlForEveryMysqlParser() {
+        SqlStatementRecord statement = statement("""
+                UPDATE supplier_products sp
+                SET total_order_qty = (
+                    SELECT SUM(poi.quantity)
+                    FROM purchase_order_items poi
+                    WHERE poi.product_id = sp.product_id
+                );
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:DIRECT:[purchase_order_items.product_id, supplier_products.product_id]",
+                "VALUE:AGGREGATE:[purchase_order_items.quantity]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "supplier_products.total_order_qty"),
+                    () -> parser.name() + " scalar aggregate VALUE/CONTROL roles differ");
+        }
+    }
+
+    @Test
+    void updateWhereLocatorControlsOnlyTheWrittenColumnForEveryMysqlParser() {
+        SqlStatementRecord statement = statement("""
+                UPDATE supplier_products sp
+                SET quality_score = sp.quality_score + 1
+                WHERE sp.status = 'active'
+                  AND sp.product_id = 42;
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:DIRECT:[supplier_products.product_id, supplier_products.status]",
+                "VALUE:ARITHMETIC:[supplier_products.quality_score]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "supplier_products.quality_score"),
+                    () -> parser.name() + " update locator scope differs");
+        }
+    }
+
+    @Test
+    void unqualifiedUpdateLocatorResolvesToCurrentWriteTargetForEveryMysqlParser() {
+        SqlStatementRecord statement = statement("""
+                UPDATE jsh_depot_head
+                SET status = '1', total_price = 10
+                WHERE id = 42;
+                """);
+
+        for (NamedParser parser : parsers()) {
+            List<DataLineageCandidate> lineages = extract(parser.parser(), statement);
+            assertLineage(parser.name(), lineages, "jsh_depot_head.id", "jsh_depot_head.status",
+                    LineageFlowKind.CONTROL, LineageTransformType.DIRECT);
+            assertLineage(parser.name(), lineages, "jsh_depot_head.id", "jsh_depot_head.total_price",
+                    LineageFlowKind.CONTROL, LineageTransformType.DIRECT);
+        }
+    }
+
+    @Test
+    void proceduralCaseUpdateLocatorMatchesAcrossMysql80Parsers() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                CREATE PROCEDURE sp_change_product_price(
+                    IN p_product_id BIGINT,
+                    IN p_price_type VARCHAR(20),
+                    IN p_new_price DECIMAL(12,2)
+                )
+                BEGIN
+                    DECLARE v_old_price DECIMAL(12,2);
+
+                    CASE p_price_type
+                        WHEN 'purchase' THEN SELECT purchase_price INTO v_old_price
+                            FROM products WHERE id = p_product_id;
+                        WHEN 'wholesale' THEN SELECT wholesale_price INTO v_old_price
+                            FROM products WHERE id = p_product_id;
+                        WHEN 'retail' THEN
+                            SELECT retail_price INTO v_old_price FROM products WHERE id = p_product_id;
+                    END CASE;
+
+                    START TRANSACTION;
+
+                    CASE p_price_type
+                        WHEN 'purchase' THEN UPDATE products SET purchase_price = p_new_price
+                            WHERE id = p_product_id;
+                        WHEN 'wholesale' THEN UPDATE products SET wholesale_price = p_new_price
+                            WHERE id = p_product_id;
+                        WHEN 'retail' THEN UPDATE products SET retail_price = p_new_price
+                            WHERE id = p_product_id;
+                    END CASE;
+
+                    COMMIT;
+                END;
+                """, StatementSourceType.PROCEDURE, "ROUTINE:sp_change_product_price", 1, 31,
+                Map.of("sourceObjectType", "ROUTINE", "sourceObjectName", "sp_change_product_price"));
+
+        for (NamedParser parser : mysql80Parsers()) {
+            assertLineage(parser.name(), extract(parser.parser(), statement),
+                    "products.id", "products.retail_price",
+                    LineageFlowKind.CONTROL, LineageTransformType.DIRECT);
+        }
+    }
+
+    @Test
+    void scalarGroupingIsSeparateAggregateControlForEveryMysqlParser() {
+        SqlStatementRecord statement = statement("""
+                UPDATE supplier_products sp
+                SET total_order_qty = (
+                    SELECT SUM(poi.quantity)
+                    FROM purchase_order_items poi
+                    WHERE poi.product_id = sp.product_id
+                    GROUP BY poi.product_id
+                );
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:AGGREGATE:[purchase_order_items.product_id]",
+                "CONTROL:DIRECT:[purchase_order_items.product_id, supplier_products.product_id]",
+                "VALUE:AGGREGATE:[purchase_order_items.quantity]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "supplier_products.total_order_qty"),
+                    () -> parser.name() + " scalar grouping role differs");
+        }
+    }
+
+    @Test
+    void windowPartitionAndOrderAreScopedWindowControlsForMysql80Parsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO customer_rank (rank_no)
+                SELECT ROW_NUMBER() OVER (
+                    PARTITION BY o.region_id
+                    ORDER BY o.total_amount DESC
+                )
+                FROM sales_orders o;
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:WINDOW_DERIVED:[sales_orders.region_id, sales_orders.total_amount]");
+        for (NamedParser parser : mysql80Parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "customer_rank.rank_no"),
+                    () -> parser.name() + " window CONTROL role differs");
+        }
+    }
+
     private List<NamedParser> parsers() {
         return List.of(
                 new NamedParser("token-event", new MySqlTokenEventStructuredSqlParser()),
                 new NamedParser("mysql/5.7",
                         new com.relationdetector.mysql.fullgrammar.v5_7.FullGrammarDialectModule().sqlParser()),
+                new NamedParser("mysql/8.0",
+                        new com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule().sqlParser()));
+    }
+
+    private List<NamedParser> mysql80Parsers() {
+        return List.of(
+                new NamedParser("token-event", new MySqlTokenEventStructuredSqlParser()),
                 new NamedParser("mysql/8.0",
                         new com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule().sqlParser()));
     }

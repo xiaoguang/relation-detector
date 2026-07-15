@@ -1,5 +1,6 @@
 package com.relationdetector.sqlserver.tokenevent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -25,11 +26,12 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
         SqlServerRelationSqlParser.Select_listContext selectList = query == null ? null : query.select_list();
         if (selectList == null) return null;
         List<SqlServerRelationSqlParser.Select_list_elemContext> items = selectList.select_list_elem();
+        ExpressionAnalysis grouping = groupingControl(query);
+        ExpressionAnalysis locator = insertLocatorControl(query);
         for (int index = 0; index < Math.min(targetColumns.size(), items.size()); index++) {
             SqlServerRelationSqlParser.ExpressionContext expression = items.get(index).expression();
             if (expression == null) continue;
             ExpressionAnalysis source = analyze(expression);
-            if (!source.hasSources()) continue;
             if (!source.sources().isEmpty()) {
                 emitter.addWrite(events, items.get(index), StructuredParseEventType.INSERT_SELECT_MAPPING,
                         "", "", "", "", targetTable, targetColumns.get(index), "INSERT_SELECT",
@@ -37,6 +39,18 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
             }
             emitControlMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, items.get(index),
                     targetTable, targetColumns.get(index), source, "INSERT_SELECT");
+            if (containsAggregate(expression) && !grouping.sources().isEmpty()) {
+                emitter.addWrite(events, items.get(index), StructuredParseEventType.INSERT_SELECT_MAPPING,
+                        "", "", "", "", targetTable, targetColumns.get(index), "INSERT_CONTROL",
+                        grouping.aliases(), grouping.columns(), LineageTransformType.AGGREGATE,
+                        LineageFlowKind.CONTROL);
+            }
+            if (!locator.sources().isEmpty()) {
+                emitter.addWrite(events, items.get(index), StructuredParseEventType.INSERT_SELECT_MAPPING,
+                        "", "", "", "", targetTable, targetColumns.get(index), "INSERT_CONTROL",
+                        locator.aliases(), locator.columns(), LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL);
+            }
         }
         return null;
     }
@@ -58,7 +72,18 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
         for (SqlServerRelationSqlParser.Update_elemContext elem : ctx.update_elem()) {
             emitUpdateMapping(elem, targetTable, false);
         }
-        if (ctx.search_condition_clause() != null) visit(ctx.search_condition_clause());
+        ExpressionAnalysis locator = updateLocatorControl(ctx, targetAlias);
+        if (!locator.sources().isEmpty()) {
+            ExpressionAnalysis control = new ExpressionAnalysis(locator.sources(),
+                    LineageTransformType.DIRECT, LineageFlowKind.CONTROL,
+                    List.of(), LineageTransformType.DIRECT);
+            for (SqlServerRelationSqlParser.Update_elemContext elem : ctx.update_elem()) {
+                emitUpdateControl(elem, targetTable, control, false);
+            }
+        }
+        if (ctx.search_condition_clause() != null) {
+            visit(ctx.search_condition_clause());
+        }
         return null;
     }
 
@@ -74,11 +99,19 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
         joinKinds.push("MERGE_ON");
         visit(ctx.search_condition());
         joinKinds.pop();
+        ExpressionAnalysis locator = locatorControl(
+                analyzeSearchCondition(ctx.search_condition(), targetAlias));
+        ExpressionAnalysis mergeControl = new ExpressionAnalysis(locator.sources(),
+                LineageTransformType.DIRECT, LineageFlowKind.CONTROL,
+                List.of(), LineageTransformType.DIRECT);
         for (SqlServerRelationSqlParser.Merge_when_clauseContext clause : ctx.merge_when_clause()) {
             for (SqlServerRelationSqlParser.Update_elem_mergeContext elem : clause.update_elem_merge()) {
                 emitMergeUpdateMapping(elem, targetTable);
+                emitMergeUpdateControl(elem, targetTable, mergeControl);
             }
-            if (clause.merge_not_matched() != null) emitMergeInsertMappings(clause.merge_not_matched(), targetTable);
+            if (clause.merge_not_matched() != null) {
+                emitMergeInsertMappings(clause.merge_not_matched(), targetTable, mergeControl);
+            }
         }
         return null;
     }
@@ -228,15 +261,41 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
                 elem, targetTable, targetColumn, source, "MERGE_UPDATE");
     }
 
+    private void emitUpdateControl(
+            SqlServerRelationSqlParser.Update_elemContext elem,
+            String targetTable,
+            ExpressionAnalysis control,
+            boolean merge) {
+        String targetColumn = elem.full_column_name() == null
+                ? clean(elem.id_().getText()) : lastPart(elem.full_column_name().getText());
+        StructuredParseEventType type = merge ? StructuredParseEventType.MERGE_WRITE_MAPPING
+                : StructuredParseEventType.UPDATE_ASSIGNMENT;
+        emitter.addWrite(events, elem, type, "", "", "", "", targetTable, targetColumn,
+                merge ? "MERGE_ON" : "UPDATE_LOCATOR", control.aliases(), control.columns(),
+                LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
+    }
+
+    private void emitMergeUpdateControl(
+            SqlServerRelationSqlParser.Update_elem_mergeContext elem,
+            String targetTable,
+            ExpressionAnalysis control) {
+        String targetColumn = elem.full_column_name() == null
+                ? clean(elem.id_().getText()) : lastPart(elem.full_column_name().getText());
+        emitter.addWrite(events, elem, StructuredParseEventType.MERGE_WRITE_MAPPING,
+                "", "", "", "", targetTable, targetColumn, "MERGE_ON",
+                control.aliases(), control.columns(), LineageTransformType.DIRECT,
+                LineageFlowKind.CONTROL);
+    }
+
     private void emitMergeInsertMappings(
             SqlServerRelationSqlParser.Merge_not_matchedContext ctx,
-            String targetTable) {
+            String targetTable,
+            ExpressionAnalysis locator) {
         List<String> columns = identifiers(ctx.column_name_list());
         List<SqlServerRelationSqlParser.ExpressionContext> values =
                 ctx.values_clause().expression_list_().expression();
         for (int index = 0; index < Math.min(columns.size(), values.size()); index++) {
             ExpressionAnalysis source = analyze(values.get(index));
-            if (!source.hasSources()) continue;
             if (!source.sources().isEmpty()) {
                 emitter.addWrite(events, values.get(index), StructuredParseEventType.MERGE_WRITE_MAPPING,
                         "", "", "", "", targetTable, columns.get(index), "MERGE_INSERT",
@@ -244,6 +303,12 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
             }
             emitControlMapping(StructuredParseEventType.MERGE_WRITE_MAPPING,
                     values.get(index), targetTable, columns.get(index), source, "MERGE_INSERT");
+            if (!locator.sources().isEmpty()) {
+                emitter.addWrite(events, values.get(index), StructuredParseEventType.MERGE_WRITE_MAPPING,
+                        "", "", "", "", targetTable, columns.get(index), "MERGE_ON",
+                        locator.aliases(), locator.columns(), LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL);
+            }
         }
     }
 
@@ -254,6 +319,108 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
                     targetColumn, mappingKind, source.controlAliases(), source.controlColumns(),
                     source.controlTransform(), LineageFlowKind.CONTROL);
         }
+    }
+
+    private ExpressionAnalysis groupingControl(
+            SqlServerRelationSqlParser.Query_specificationContext query) {
+        if (query == null || query.group_by_clause() == null) {
+            return ExpressionAnalysis.empty();
+        }
+        String qualifier = singleProjectionQualifier(query.table_sources());
+        ExpressionAnalysis grouping = ExpressionAnalysis.empty();
+        for (SqlServerRelationSqlParser.ExpressionContext expression
+                : query.group_by_clause().expression_list_().expression()) {
+            grouping = ExpressionAnalysis.combine(LineageTransformType.AGGREGATE,
+                    LineageFlowKind.CONTROL, grouping, analyze(expression, qualifier));
+        }
+        return new ExpressionAnalysis(grouping.sources(), LineageTransformType.AGGREGATE,
+                LineageFlowKind.CONTROL, List.of(), LineageTransformType.AGGREGATE);
+    }
+
+    private ExpressionAnalysis insertLocatorControl(
+            SqlServerRelationSqlParser.Query_specificationContext query) {
+        if (query == null) {
+            return ExpressionAnalysis.empty();
+        }
+        String qualifier = singleProjectionQualifier(query.table_sources());
+        ExpressionAnalysis locator = tableSourceLocatorControl(query.table_sources(), qualifier);
+        if (query.search_condition_clause() != null) {
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator,
+                    analyzeSearchCondition(query.search_condition_clause().search_condition(), qualifier));
+        }
+        if (query.having_clause() != null) {
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator,
+                    analyzeSearchCondition(query.having_clause().search_condition(), qualifier));
+        }
+        return locatorControl(locator);
+    }
+
+    private ExpressionAnalysis updateLocatorControl(
+            SqlServerRelationSqlParser.Update_statementContext update,
+            String qualifier) {
+        ExpressionAnalysis locator = tableSourceLocatorControl(update.table_sources(), qualifier);
+        if (update.search_condition_clause() != null) {
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator,
+                    analyzeSearchCondition(update.search_condition_clause().search_condition(), qualifier));
+        }
+        return locatorControl(locator);
+    }
+
+    private ExpressionAnalysis tableSourceLocatorControl(
+            SqlServerRelationSqlParser.Table_sourcesContext tableSources,
+            String qualifier) {
+        ExpressionAnalysis locator = ExpressionAnalysis.empty();
+        if (tableSources == null) {
+            return locator;
+        }
+        for (SqlServerRelationSqlParser.Table_sourceContext table : tableSources.table_source()) {
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator,
+                    tableSourceLocatorControl(table, qualifier));
+        }
+        return locator;
+    }
+
+    private ExpressionAnalysis tableSourceLocatorControl(
+            SqlServerRelationSqlParser.Table_sourceContext table,
+            String qualifier) {
+        ExpressionAnalysis locator = ExpressionAnalysis.empty();
+        if (table.table_source_item().derived_table() != null) {
+            SqlServerRelationSqlParser.Query_specificationContext nested = firstQuerySpecification(
+                    table.table_source_item().derived_table().select_statement());
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator, insertLocatorControl(nested));
+        }
+        for (SqlServerRelationSqlParser.Table_source_suffixContext suffix : table.table_source_suffix()) {
+            if (suffix.join_on() != null) {
+                locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL, locator,
+                        analyzeSearchCondition(suffix.join_on().search_condition(), qualifier));
+                locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL, locator,
+                        tableSourceLocatorControl(suffix.join_on().table_source(), qualifier));
+            } else if (suffix.cross_join() != null) {
+                locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL, locator,
+                        tableSourceLocatorControl(suffix.cross_join().table_source(), qualifier));
+            } else if (suffix.apply_() != null) {
+                locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL, locator,
+                        tableSourceLocatorControl(suffix.apply_().table_source(), qualifier));
+            }
+        }
+        return locator;
+    }
+
+    private ExpressionAnalysis locatorControl(ExpressionAnalysis analysis) {
+        List<ColumnRead> sources = new ArrayList<>(analysis.sources());
+        sources.addAll(analysis.controlSources());
+        return new ExpressionAnalysis(sources.stream().distinct().toList(),
+                LineageTransformType.DIRECT, LineageFlowKind.CONTROL,
+                List.of(), LineageTransformType.DIRECT);
     }
 
     private void emitTriggerPseudoRowset(ParserRuleContext ctx, String name, String targetTable) {

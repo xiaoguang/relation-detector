@@ -66,6 +66,12 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
                 addWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, alias,
                         targetTable, column, source, "UPDATE_SET");
             }
+            if (ctx.whereClause() != null) {
+                ExpressionAnalysis locator = analyze(ctx.whereClause().predicate(), rowsetAlias(ctx.tablePrimary()));
+                addWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, ctx.whereClause(), alias,
+                        targetTable, column, new ExpressionAnalysis(locator.sources(),
+                                LineageTransformType.DIRECT, LineageFlowKind.CONTROL), "UPDATE_LOCATOR");
+            }
         }
         if (ctx.whereClause() != null) visit(ctx.whereClause());
         return null;

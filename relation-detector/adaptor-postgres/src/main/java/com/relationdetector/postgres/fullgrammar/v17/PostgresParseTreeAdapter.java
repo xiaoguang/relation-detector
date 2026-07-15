@@ -32,7 +32,9 @@ final class PostgresParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter
                         Func_exprContext.class, ColumnrefContext.class, Subquery_OpContext.class),
                 role(Role.ROOT_EXPRESSION, A_exprContext.class),
                 role(Role.CONTROL_SCOPE, Join_qualContext.class, Where_clauseContext.class,
-                        Having_clauseContext.class, Group_clauseContext.class));
+                        Having_clauseContext.class),
+                role(Role.GROUPING_SCOPE, Group_clauseContext.class),
+                role(Role.WINDOW_CONTROL_SCOPE, Over_clauseContext.class));
     }
 
     @Override

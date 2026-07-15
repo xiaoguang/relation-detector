@@ -813,8 +813,9 @@ BEGIN
 
     v_payment_date := CURRENT_DATE;
 
-    FOR v_emp_record IN
+    FOR v_emp_record IN (
         SELECT id, salary FROM employees WHERE status IN ('active', 'probation')
+    )
     LOOP
         -- 计算加班费
         SELECT COALESCE(SUM(overtime_hours), 0) INTO v_overtime_hours
@@ -1145,8 +1146,9 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20000, '只能过账已审核或草稿状态的凭证');
     END IF;
 
-    FOR v_rec IN
+    FOR v_rec IN (
         SELECT account_id, direction, amount FROM voucher_items WHERE voucher_id = p_voucher_id
+    )
     LOOP
         IF v_rec.direction = 'debit' THEN
             UPDATE accounts SET current_balance = current_balance + v_rec.amount WHERE id = v_rec.account_id;
@@ -1188,8 +1190,9 @@ BEGIN
     v_month_start := TO_DATE(p_year_month || '-01', 'YYYY-MM-DD');
     v_days_in_month := TO_NUMBER(TO_CHAR(LAST_DAY(v_month_start), 'DD'));
 
-    FOR v_emp_record IN
+    FOR v_emp_record IN (
         SELECT id FROM employees WHERE status IN ('active', 'probation')
+    )
     LOOP
         v_day := 1;
         WHILE v_day <= v_days_in_month LOOP

@@ -163,6 +163,30 @@ public final class FullGrammarEventFacade {
         writeMappings.updateAssignment(ctx, targetAlias, targetTable, targetColumn, expression);
     }
 
+    public void updateControl(
+            ParserRuleContext ctx, String targetAlias, String targetTable,
+            String targetColumn, ParseTree expression
+    ) {
+        writeMappings.updateControl(ctx, targetAlias, targetTable, targetColumn, expression);
+    }
+
+    public void updateControl(
+            ParserRuleContext ctx, String targetAlias, String targetTable,
+            String targetColumn, List<? extends ParseTree> expressions
+    ) {
+        writeMappings.updateControl(ctx, targetAlias, targetTable, targetColumn, expressions);
+    }
+
+    public void mergeControl(
+            ParserRuleContext ctx,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            ParseTree expression
+    ) {
+        writeMappings.mergeControl(ctx, targetAlias, targetTable, targetColumn, expression);
+    }
+
     public void mergeUpdate(
             ParserRuleContext ctx, String targetAlias, String targetTable,
             String targetColumn, ParseTree expression
@@ -182,6 +206,30 @@ public final class FullGrammarEventFacade {
             String targetColumn, ParseTree expression
     ) {
         writeMappings.insertSelect(ctx, targetAlias, targetTable, targetColumn, expression);
+    }
+
+    public void insertSelectControl(
+            ParserRuleContext ctx,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            ParseTree expression,
+            String transformType
+    ) {
+        writeMappings.insertSelectControl(
+                ctx, targetAlias, targetTable, targetColumn, expression, transformType);
+    }
+
+    public void insertSelectControl(
+            ParserRuleContext ctx,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            List<? extends ParseTree> expressions,
+            String transformType
+    ) {
+        writeMappings.insertSelectControl(
+                ctx, targetAlias, targetTable, targetColumn, expressions, transformType);
     }
 
     public void insertValues(

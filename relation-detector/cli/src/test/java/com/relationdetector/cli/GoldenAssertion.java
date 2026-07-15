@@ -116,11 +116,15 @@ final class GoldenAssertion {
         List<DataLineageCandidate> merged = new DataLineageMerger().merge(actual);
         List<String> actualFingerprints = merged.stream()
                 .map(this::lineageFingerprint)
+                .map(LineageFingerprintNormalizer::normalize)
                 .toList();
         if (Boolean.getBoolean("updateCorrectnessGold")
                 && (expected.exists() || !actualFingerprints.isEmpty())) {
             TreeSet<String> actualFingerprintSet = new TreeSet<>(actualFingerprints);
-            if (!expected.exists() || !new TreeSet<>(expected.fingerprints()).equals(actualFingerprintSet)) {
+            TreeSet<String> normalizedExpected = expected.fingerprints().stream()
+                    .map(LineageFingerprintNormalizer::normalize)
+                    .collect(Collectors.toCollection(TreeSet::new));
+            if (!expected.exists() || !normalizedExpected.equals(actualFingerprintSet)) {
                 writer.writeLineage(
                         fixture,
                         actualFingerprintSet.stream().toList(),
@@ -133,7 +137,9 @@ final class GoldenAssertion {
         if (!expected.exists()) {
             return;
         }
-        TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
+        TreeSet<String> expectedFingerprints = expected.fingerprints().stream()
+                .map(LineageFingerprintNormalizer::normalize)
+                .collect(Collectors.toCollection(TreeSet::new));
         TreeSet<String> actualFingerprintSet = new TreeSet<>(actualFingerprints);
         assertEquals(expectedFingerprints, actualFingerprintSet,
                 () -> fixture.id() + " data lineage fingerprints. Missing="

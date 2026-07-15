@@ -15,6 +15,8 @@ final class SqlServerParseTreeAdapter extends AbstractSqlServerParseTreeAdapter 
                 role(Role.AGGREGATE_FUNCTION, Aggregate_windowed_functionContext.class),
                 role(Role.FUNCTION_CALL, Function_callContext.class),
                 role(Role.WINDOW_FUNCTION, Aggregate_windowed_functionContext.class),
+                role(Role.GROUPING_SCOPE, Group_by_itemContext.class),
+                role(Role.WINDOW_CONTROL_SCOPE, Over_clauseContext.class),
                 role(Role.QUERY_BOUNDARY, SubqueryContext.class, Query_specificationContext.class),
                 role(Role.SCALAR_SUBQUERY, SubqueryContext.class),
                 role(Role.SELECT_TARGET_LIST, Select_listContext.class),

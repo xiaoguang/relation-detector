@@ -5,7 +5,6 @@ import java.util.Set;
 
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
-import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -20,22 +19,24 @@ import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
-import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.provenance.SourceProvenanceValidator;
+import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 
 /**
  * Executes one SQL or DDL statement through the same structured parser,
- * relationship, lineage, and naming-evidence path used by production scans.
+ * relationship, and lineage path used by production scans. SQL naming rules run
+ * once later in the scan-level evidence enhancement stage.
  */
 public final class StatementExecutionService {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
     private final StructuredDataLineageExtractor dataLineageExtractor = new StructuredDataLineageExtractor();
-    private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
-    private final StructuredRelationshipExtractor tokenEventRelationExtractor = new StructuredRelationshipExtractor();
+    private final StructuredRelationshipExtractor relationshipExtractor = new StructuredRelationshipExtractor();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
+    private final StructuredParseProvenanceNormalizer provenanceNormalizer =
+            new StructuredParseProvenanceNormalizer();
 
     public StatementExecutionOutcome executeSql(
             DatabaseAdaptor adaptor,
@@ -65,9 +66,7 @@ public final class StatementExecutionService {
                         adaptor.identifierRules(), namespace(context))
                         .extract(statement, structured, knownPhysicalTables))
                 .orElseGet(List::of);
-        List<NamingEvidenceCandidate> namingEvidence =
-                namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships(), config);
-        return new StatementExecutionOutcome(parsed.relationships(), lineages, namingEvidence, List.of());
+        return new StatementExecutionOutcome(parsed.relationships(), lineages, List.of(), List.of());
     }
 
     public StatementExecutionOutcome executeSql(
@@ -86,14 +85,13 @@ public final class StatementExecutionService {
             Set<TableId> knownPhysicalTables,
             ScanConfig config
     ) {
-        StructuredParseResult structured = parser.parseSql(statement, context);
-        List<RelationshipCandidate> relationships = tokenEventRelationExtractor.extract(statement, structured);
+        StructuredParseResult structured = provenanceNormalizer.normalize(
+                statement, parser.parseSql(statement, context));
+        List<RelationshipCandidate> relationships = relationshipExtractor.extract(statement, structured);
         List<DataLineageCandidate> lineages =
                 dataLineageExtractor.extract(statement, structured, knownPhysicalTables);
-        List<NamingEvidenceCandidate> namingEvidence =
-                namingEvidenceExtractor.extractFromRelationshipCandidates(relationships, config);
         return new StatementExecutionOutcome(
-                relationships, lineages, namingEvidence, provenanceValidator.validate(statement, structured));
+                relationships, lineages, List.of(), provenanceValidator.validate(statement, structured));
     }
 
     public StatementExecutionOutcome executeDdlText(

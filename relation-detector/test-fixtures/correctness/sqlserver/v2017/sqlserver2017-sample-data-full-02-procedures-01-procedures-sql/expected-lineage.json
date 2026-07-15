@@ -1,6 +1,18 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status",
+    "CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.action",
+    "CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.created_at",
+    "CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id",
+    "CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.new_value",
+    "CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_id",
+    "CONTROL:DIRECT:dbo.departments.manager_id->dbo.audit_log.target_type",
+    "CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.status",
+    "CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.employees.status->dbo.departments.updated_at",
+    "CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.employee_id",
+    "CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_at",
+    "CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.granted_by",
+    "CONTROL:DIRECT:dbo.employees.department_id,dbo.departments.id,dbo.roles.code,dbo.employee_roles.employee_id,dbo.employees.id,dbo.employee_roles.role_id,dbo.roles.id,dbo.employee_roles.id->dbo.employee_roles.role_id",
     "VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value",
     "VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id",
     "VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id",
@@ -8,7 +20,7 @@
     "VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id",
     "VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

@@ -1,6 +1,7 @@
 package com.relationdetector.sqlserver;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Map;
@@ -73,6 +74,248 @@ class SqlServerTransformConsistencyTest {
     }
 
     @Test
+    void scalarAggregateSeparatesProjectionValueFromDirectLocatorControlAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                UPDATE sp
+                SET [total_order_qty] = (
+                    SELECT SUM(poi.[quantity])
+                    FROM [dbo].[purchase_order_items] AS poi
+                    JOIN [dbo].[purchase_orders] AS po ON poi.[order_id] = po.[id]
+                    WHERE poi.[product_id] = sp.[product_id]
+                      AND po.[supplier_id] = sp.[supplier_id]
+                )
+                FROM [dbo].[supplier_products] AS sp;
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:DIRECT:[dbo.purchase_order_items.order_id, dbo.purchase_order_items.product_id, dbo.purchase_orders.id, dbo.purchase_orders.supplier_id, dbo.supplier_products.product_id, dbo.supplier_products.supplier_id]",
+                "VALUE:AGGREGATE:[dbo.purchase_order_items.quantity]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.supplier_products.total_order_qty"),
+                    () -> parser.name() + " scalar VALUE/CONTROL roles differ");
+        }
+    }
+
+    @Test
+    void updateAndMergeLocatorsControlOnlyTheirWriteScopeAcrossParsers() {
+        SqlStatementRecord update = statement("""
+                UPDATE sp
+                SET [total_order_qty] = sp.[total_order_qty] + u.[delta_qty]
+                FROM [dbo].[supplier_products] AS sp
+                JOIN [dbo].[supplier_updates] AS u
+                  ON u.[product_id] = sp.[product_id]
+                 AND (u.[batch_id] = sp.[batch_id]
+                      OR (u.[batch_id] IS NULL AND sp.[batch_id] IS NULL))
+                WHERE sp.[supplier_id] = 7;
+                """);
+        SqlStatementRecord merge = statement("""
+                MERGE INTO [dbo].[supplier_products] AS sp
+                USING [dbo].[supplier_price_updates] AS u
+                ON sp.[product_id] = u.[product_id]
+                   AND sp.[supplier_id] = u.[supplier_id]
+                WHEN MATCHED THEN
+                  UPDATE SET sp.[purchase_price] = u.[new_price]
+                WHEN NOT MATCHED THEN
+                  INSERT ([product_id], [supplier_id], [last_changed_by])
+                  VALUES (u.[product_id], u.[supplier_id], u.[changed_by]);
+                """);
+
+        for (NamedParser parser : parsers()) {
+            assertEquals(List.of(
+                            "CONTROL:DIRECT:[dbo.supplier_products.batch_id, dbo.supplier_products.product_id, dbo.supplier_products.supplier_id, dbo.supplier_updates.batch_id, dbo.supplier_updates.product_id]",
+                            "VALUE:ARITHMETIC:[dbo.supplier_products.total_order_qty, dbo.supplier_updates.delta_qty]"),
+                    targetFingerprints(extract(parser.parser(), update),
+                            "dbo.supplier_products.total_order_qty"),
+                    () -> parser.name() + " UPDATE locator roles differ");
+            assertEquals(List.of(
+                            "CONTROL:DIRECT:[dbo.supplier_price_updates.product_id, dbo.supplier_price_updates.supplier_id, dbo.supplier_products.product_id, dbo.supplier_products.supplier_id]",
+                            "VALUE:DIRECT:[dbo.supplier_price_updates.new_price]"),
+                    targetFingerprints(extract(parser.parser(), merge),
+                            "dbo.supplier_products.purchase_price"),
+                    () -> parser.name() + " MERGE locator roles differ");
+            assertEquals(List.of(
+                            "CONTROL:DIRECT:[dbo.supplier_price_updates.product_id, dbo.supplier_price_updates.supplier_id, dbo.supplier_products.product_id, dbo.supplier_products.supplier_id]",
+                            "VALUE:DIRECT:[dbo.supplier_price_updates.supplier_id]"),
+                    targetFingerprints(extract(parser.parser(), merge),
+                            "dbo.supplier_products.supplier_id"),
+                    () -> parser.name() + " MERGE INSERT locator roles differ");
+        }
+    }
+
+    @Test
+    void derivedProjectionLocatorDoesNotPullUnrelatedValueSourcesAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                UPDATE p
+                SET [purchase_price] = supplier_cost.[preferred_price]
+                FROM [dbo].[products] AS p
+                INNER JOIN (
+                    SELECT sp.[product_id], MIN(sp.[supplier_price]) AS [preferred_price]
+                    FROM [dbo].[supplier_products] AS sp
+                    WHERE sp.[is_preferred] = 1
+                    GROUP BY sp.[product_id]
+                ) AS supplier_cost ON supplier_cost.[product_id] = p.[id];
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:DIRECT:[dbo.products.id, dbo.supplier_products.is_preferred, dbo.supplier_products.product_id]",
+                "VALUE:AGGREGATE:[dbo.supplier_products.supplier_price]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.products.purchase_price"),
+                    () -> parser.name() + " derived projection locator roles differ");
+        }
+    }
+
+    @Test
+    void insertSelectJoinAndFilterLocatorsControlOnlyItsMappedTargetsAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO [dbo].[paid_order_audit] ([customer_id], [order_id], [action])
+                SELECT c.[id], o.[id], 'paid_order'
+                FROM [dbo].[customers] AS c
+                JOIN [dbo].[sales_orders] AS o ON o.[customer_id] = c.[id]
+                WHERE o.[status] = 'paid';
+                """);
+
+        for (NamedParser parser : parsers()) {
+            assertEquals(List.of(
+                            "CONTROL:DIRECT:[dbo.customers.id, dbo.sales_orders.customer_id, dbo.sales_orders.status]",
+                            "VALUE:DIRECT:[dbo.customers.id]"),
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.paid_order_audit.customer_id"),
+                    () -> parser.name() + " first INSERT locator roles differ");
+            assertEquals(List.of(
+                            "CONTROL:DIRECT:[dbo.customers.id, dbo.sales_orders.customer_id, dbo.sales_orders.status]",
+                            "VALUE:DIRECT:[dbo.sales_orders.id]"),
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.paid_order_audit.order_id"),
+                    () -> parser.name() + " second INSERT locator roles differ");
+            assertEquals(List.of(
+                            "CONTROL:DIRECT:[dbo.customers.id, dbo.sales_orders.customer_id, dbo.sales_orders.status]"),
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.paid_order_audit.action"),
+                    () -> parser.name() + " literal INSERT locator roles differ");
+        }
+    }
+
+    @Test
+    void nestedScalarAndExistsLocatorsMatchAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO [dbo].[inventory_opening] ([batch_id])
+                SELECT pb.[id]
+                FROM [dbo].[product_batches] AS pb
+                WHERE pb.[batch_no] = (
+                    SELECT p.[sku]
+                    FROM [dbo].[products] AS p
+                    WHERE p.[id] = pb.[product_id]
+                )
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM [dbo].[inventory] AS i
+                    WHERE i.[batch_id] = pb.[id]
+                );
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:DIRECT:[dbo.inventory.batch_id, dbo.product_batches.batch_no, dbo.product_batches.id, dbo.product_batches.product_id, dbo.products.id, dbo.products.sku]",
+                "VALUE:DIRECT:[dbo.product_batches.id]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.inventory_opening.batch_id"),
+                    () -> parser.name() + " nested locator roles differ");
+        }
+    }
+
+    @Test
+    void groupByControlsOnlyItsAggregateWriteProjectionAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO [dbo].[supplier_quantity_summary] ([total_order_qty])
+                SELECT SUM(poi.[quantity])
+                FROM [dbo].[purchase_order_items] AS poi
+                GROUP BY poi.[product_id], poi.[order_id];
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:AGGREGATE:[dbo.purchase_order_items.order_id, dbo.purchase_order_items.product_id]",
+                "VALUE:AGGREGATE:[dbo.purchase_order_items.quantity]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.supplier_quantity_summary.total_order_qty"),
+                    () -> parser.name() + " GROUP BY roles differ");
+        }
+    }
+
+    @Test
+    void groupByControlsCaseProjectionContainingAggregateAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO [dbo].[supplier_quantity_summary] ([total_order_qty])
+                SELECT CASE WHEN SUM(poi.[quantity]) > 0
+                            THEN SUM(poi.[quantity]) ELSE 0 END
+                FROM [dbo].[purchase_order_items] AS poi
+                GROUP BY poi.[product_id], poi.[order_id];
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:AGGREGATE:[dbo.purchase_order_items.order_id, dbo.purchase_order_items.product_id]",
+                "CONTROL:CASE_WHEN:[dbo.purchase_order_items.quantity]",
+                "VALUE:CASE_WHEN:[dbo.purchase_order_items.quantity]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.supplier_quantity_summary.total_order_qty"),
+                    () -> parser.name() + " aggregate CASE GROUP BY roles differ");
+        }
+    }
+
+    @Test
+    void insertControlMappingKindMatchesAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO [dbo].[supplier_quantity_summary] ([total_order_qty])
+                SELECT SUM(poi.[quantity])
+                FROM [dbo].[purchase_order_items] AS poi
+                WHERE poi.[quantity] > 0
+                GROUP BY poi.[product_id];
+                """);
+
+        for (NamedParser parser : parsers()) {
+            List<String> mappingKinds = extract(parser.parser(), statement).stream()
+                    .filter(lineage -> lineage.flowKind() == LineageFlowKind.CONTROL)
+                    .map(lineage -> String.valueOf(lineage.attributes().get("mappingKind")))
+                    .distinct()
+                    .sorted()
+                    .toList();
+            assertEquals(List.of("INSERT_CONTROL"), mappingKinds,
+                    () -> parser.name() + " INSERT CONTROL mapping kind differs");
+        }
+    }
+
+    @Test
+    void windowPartitionAndOrderControlOnlyTheirRankingProjectionAcrossParsers() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO [dbo].[supplier_rankings] ([supplier_id], [price_rank])
+                SELECT sp.[supplier_id],
+                       ROW_NUMBER() OVER (
+                           PARTITION BY sp.[product_id]
+                           ORDER BY sp.[purchase_price]
+                       )
+                FROM [dbo].[supplier_products] AS sp;
+                """);
+
+        List<String> expected = List.of(
+                "CONTROL:WINDOW_DERIVED:[dbo.supplier_products.product_id, dbo.supplier_products.purchase_price]");
+        for (NamedParser parser : parsers()) {
+            assertEquals(expected,
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "dbo.supplier_rankings.price_rank"),
+                    () -> parser.name() + " window roles differ");
+        }
+    }
+
+    @Test
     void typedLiteralGuardMarksConditionalRelationshipAcrossParsers() {
         SqlStatementRecord statement = statement("""
                 SELECT pr.[id]
@@ -139,6 +382,15 @@ class SqlServerTransformConsistencyTest {
         return lineages.stream().map(lineage -> lineage.flowKind() + "/" + lineage.transformType() + ":"
                 + lineage.sources().stream().map(endpoint -> endpoint.displayName()).toList()
                 + "->" + lineage.target().displayName()).toList();
+    }
+
+    private List<String> targetFingerprints(List<DataLineageCandidate> lineages, String target) {
+        return lineages.stream()
+                .filter(lineage -> lineage.target().displayName().equals(target))
+                .map(lineage -> lineage.flowKind() + ":" + lineage.transformType() + ":"
+                        + lineage.sources().stream().map(endpoint -> endpoint.displayName()).sorted().toList())
+                .sorted()
+                .toList();
     }
 
     private SqlStatementRecord statement(String sql) {

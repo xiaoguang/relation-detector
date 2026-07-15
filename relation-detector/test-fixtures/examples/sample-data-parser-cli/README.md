@@ -51,17 +51,28 @@ Set `SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED=false` to run only the direct parser
 
 When derived output is enabled, each parser case is scanned once. The CLI writes the
 direct-only view with `--direct-output` and the derived view with `--output`, so the
-second JSON does not repeat parsing or source collection. The default runner uses up to
-three independent parser cases at once and up to two independent statement/file tasks
-inside each scan. Override those bounded settings when the host has less capacity:
+second JSON does not repeat parsing or source collection.
+
+The public runner packages the CLI once, then starts nine isolated JVM groups in order:
+`common`, `mysql`, `postgres`, Oracle root/v12c/v19c/v21c/v26ai, and `sqlserver`.
+Only the current group can run parser cases concurrently. Each JVM exits before the
+next group starts, preventing all versioned ANTLR prediction states from accumulating
+in one long-lived batch process. The default heap limit is `6g`, case parallelism is 4,
+scan parallelism is 2, and the total scan-worker budget is 8. Override the bounded
+settings when the host has less capacity:
 
 ```bash
 SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM=2 \
 SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM=1 \
+SAMPLE_DATA_PARSER_CLI_HEAP=4g \
   bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh
 ```
 
-Case logs are retained under `relation-detector/target/sample-data-parser-cli/logs/`.
+Group logs and reports are retained under
+`relation-detector/target/sample-data-parser-cli/isolated/<session>/`. The aggregate
+batch report and all public output paths remain under
+`relation-detector/target/sample-data-parser-cli/`, so downstream validation does not
+depend on the process layout.
 The compact summary columns mean `Rel` = direct relationships, `Lin` = direct lineage,
 `Name` = direct naming evidence, and `Der*` = the corresponding derived counts.
 

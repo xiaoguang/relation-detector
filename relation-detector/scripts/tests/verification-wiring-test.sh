@@ -4,11 +4,20 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 VERIFY="$ROOT/relation-detector/scripts/verify-all.sh"
 RUNNER="$ROOT/relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh"
+CORRECTNESS_RUNNER="$ROOT/relation-detector/scripts/run-correctness-isolated.sh"
+SAMPLE_DATA_ISOLATED_RUNNER="$ROOT/relation-detector/scripts/run-sample-data-isolated.sh"
 
 grep -q '<id>matrix-smoke</id>' "$ROOT/pom.xml"
 grep -q '<id>acceptance</id>' "$ROOT/pom.xml"
 [[ "$(grep -Ec '^[[:space:]]*mvn([[:space:]]|$)' "$VERIFY")" -eq 1 ]]
 grep -q -- '-Pacceptance' "$VERIFY"
+grep -q -- '-DcorrectnessFixtureProfile=smoke' "$VERIFY"
+grep -q 'run-correctness-isolated.sh' "$VERIFY"
+[[ -x "$CORRECTNESS_RUNNER" ]]
+[[ -x "$SAMPLE_DATA_ISOLATED_RUNNER" ]]
+grep -q 'run-sample-data-isolated.sh' "$RUNNER"
+grep -q 'SAMPLE_DATA_PARSER_CLI_HEAP:-6g' "$SAMPLE_DATA_ISOLATED_RUNNER"
+grep -q 'oracle-v12c oracle-v19c oracle-v21c oracle-v26ai' "$SAMPLE_DATA_ISOLATED_RUNNER"
 grep -q 'validate-sample-data-results.py' "$VERIFY"
 grep -q 'build-performance-report.py' "$VERIFY"
 grep -q 'canonical-json-fingerprint.py' "$VERIFY"

@@ -25,7 +25,7 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("| Total correctness fixtures | 1198 |"));
         assertTrue(markdown.contains("| SQL fixtures | 984 |"));
         assertTrue(markdown.contains("| DDL fixtures | 214 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 439 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 446 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 261 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
         assertTrue(markdown.contains("| Oracle directory fixtures | 213 |"));
@@ -46,10 +46,11 @@ class CorrectnessSummaryGeneratorTest {
                 + "->account_balances.adjusted_limit"));
         assertTrue(markdown.contains(
                 "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,"
-                        + "transaction_ledgers.amount,transaction_ledgers.merchant_category"
+                        + "transaction_ledgers.merchant_category"
                         + "->account_balances.compliance_notes"));
         assertTrue(markdown.contains(
-                "CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes"));
+                "CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,"
+                        + "users.country_code->account_balances.compliance_notes"));
         assertTrue(markdown.contains("UPDATE products p"));
         assertTrue(markdown.contains("Preview truncated; see input file for full content."));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/postgres-business-risk-ledger-update-cte-comma-sql/input.sql"));

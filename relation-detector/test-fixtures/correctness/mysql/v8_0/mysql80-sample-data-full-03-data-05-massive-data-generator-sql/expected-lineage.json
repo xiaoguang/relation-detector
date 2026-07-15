@@ -1,5 +1,13 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:accounts.code->accounts.current_balance",
+    "CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount",
+    "CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount",
+    "CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount",
+    "CONTROL:DIRECT:sales_orders.id->sales_orders.tax_amount",
+    "CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount",
+    "CONTROL:DIRECT:supplier_products.product_id->supplier_products.is_preferred",
+    "CONTROL:DIRECT:warehouses.id->warehouses.manager_id",
     "VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company",
     "VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal",
     "VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax",
@@ -27,7 +35,7 @@
     "VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date",
     "VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

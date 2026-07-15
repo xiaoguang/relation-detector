@@ -1,6 +1,9 @@
 {
   "fingerprints": [
-    "VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks"
+    "CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.ledger_status",
+    "CONTROL:DIRECT:order_ledgers.order_id,orders.id,orders.user_id,users.id,orders.amount,order_ledgers.reconciliation_status->order_ledgers.remarks",
+    "CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks",
+    "VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks"
   ],
   "forbiddenSources": [
     "p_input_ledger_json",

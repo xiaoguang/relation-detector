@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:pg17_generated_margin_demo.sku->pg17_generated_margin_demo.sales_amount",
     "VALUE:ARITHMETIC:pg17_generated_margin_demo.sales_amount->pg17_generated_margin_demo.sales_amount"
   ],
   "forbiddenSources": [ ],

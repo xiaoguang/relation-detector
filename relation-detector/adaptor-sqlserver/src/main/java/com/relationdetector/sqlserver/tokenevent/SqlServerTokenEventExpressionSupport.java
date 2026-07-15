@@ -81,6 +81,49 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
         return result;
     }
 
+    protected boolean containsAggregate(SqlServerRelationSqlParser.ExpressionContext expression) {
+        return expression != null && expression.expression_atom().stream().anyMatch(this::containsAggregate);
+    }
+
+    private boolean containsAggregate(SqlServerRelationSqlParser.Expression_atomContext atom) {
+        if (atom.function_call() != null) {
+            String name = baseName(atom.function_call().function_name().getText()).toLowerCase(Locale.ROOT);
+            if (LineageTransformClassifier.classifyFunction(name, false, functionExtensions)
+                    == LineageTransformType.AGGREGATE) {
+                return true;
+            }
+            return atom.function_call().expression_list_() != null
+                    && atom.function_call().expression_list_().expression().stream()
+                            .anyMatch(this::containsAggregate);
+        }
+        if (atom.case_expression() != null) {
+            SqlServerRelationSqlParser.Case_expressionContext expression = atom.case_expression();
+            if (containsAggregate(expression.expression())) {
+                return true;
+            }
+            if (expression.searched_case_when().stream().anyMatch(when ->
+                    containsAggregate(when.search_condition()) || containsAggregate(when.expression()))) {
+                return true;
+            }
+            if (expression.simple_case_when().stream().anyMatch(when ->
+                    when.expression().stream().anyMatch(this::containsAggregate))) {
+                return true;
+            }
+            return expression.case_else() != null
+                    && containsAggregate(expression.case_else().expression());
+        }
+        if (atom.expression_atom() != null) {
+            return containsAggregate(atom.expression_atom());
+        }
+        return atom.expression() != null && containsAggregate(atom.expression());
+    }
+
+    private boolean containsAggregate(SqlServerRelationSqlParser.Search_conditionContext condition) {
+        return condition != null && condition.predicate().stream().anyMatch(predicate ->
+                containsAggregate(predicate.search_condition())
+                        || predicate.expression().stream().anyMatch(this::containsAggregate));
+    }
+
     private ExpressionAnalysis analyze(
             SqlServerRelationSqlParser.Expression_atomContext atom,
             String defaultQualifier) {
@@ -103,9 +146,15 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
             String name = baseName(atom.function_call().function_name().getText()).toLowerCase(Locale.ROOT);
             LineageTransformType transform = LineageTransformClassifier.classifyFunction(
                     name, false, functionExtensions);
+            ExpressionAnalysis window = analyzeWindowControl(
+                    atom.function_call().over_clause(), defaultQualifier);
+            List<ColumnRead> controls = new ArrayList<>(args.controlSources());
+            controls.addAll(window.sources());
             return new ExpressionAnalysis(args.sources(),
                     LineageTransformClassifier.dominant(transform, args.transform()),
-                    LineageFlowKind.VALUE, args.controlSources(), args.controlTransform());
+                    LineageFlowKind.VALUE, controls.stream().distinct().toList(),
+                    window.sources().isEmpty() ? args.controlTransform()
+                            : LineageTransformType.WINDOW_DERIVED);
         }
         if (atom.case_expression() != null) return analyzeCase(atom.case_expression(), defaultQualifier);
         if (atom.expression_atom() != null) {
@@ -120,7 +169,15 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
     }
 
     private ExpressionAnalysis analyzeScalarSubquery(SqlServerRelationSqlParser.Select_statementContext select) {
-        visit(select);
+        return analyzeScalarSubquery(select, true);
+    }
+
+    private ExpressionAnalysis analyzeScalarSubquery(
+            SqlServerRelationSqlParser.Select_statementContext select,
+            boolean emitNestedEvents) {
+        if (emitNestedEvents) {
+            visit(select);
+        }
         SqlServerRelationSqlParser.Query_specificationContext query = firstQuerySpecification(select);
         if (query == null || query.select_list().select_list_elem().size() != 1
                 || query.select_list().select_list_elem(0).expression() == null) return ExpressionAnalysis.empty();
@@ -131,7 +188,7 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
             for (SqlServerRelationSqlParser.Table_sourceContext table : query.table_sources().table_source()) {
                 for (SqlServerRelationSqlParser.Table_source_suffixContext suffix : table.table_source_suffix()) {
                     if (suffix.join_on() != null) {
-                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        control = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
                                 LineageFlowKind.CONTROL, control,
                                 analyzeSearchCondition(suffix.join_on().search_condition(), qualifier));
                     }
@@ -139,7 +196,7 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
             }
         }
         if (query.search_condition_clause() != null) {
-            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+            control = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
                     LineageFlowKind.CONTROL, control,
                     analyzeSearchCondition(query.search_condition_clause().search_condition(), qualifier));
         }
@@ -151,12 +208,12 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
             }
         }
         if (query.having_clause() != null) {
-            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+            control = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
                     LineageFlowKind.CONTROL, control,
                     analyzeSearchCondition(query.having_clause().search_condition(), qualifier));
         }
         return new ExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE,
-                control.sources(), LineageTransformType.CASE_WHEN);
+                control.sources(), LineageTransformType.DIRECT);
     }
 
     private ExpressionAnalysis analyzeCase(
@@ -183,6 +240,31 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
                 LineageFlowKind.VALUE, controls.stream().distinct().toList(), LineageTransformType.CASE_WHEN);
     }
 
+    private ExpressionAnalysis analyzeWindowControl(
+            SqlServerRelationSqlParser.Over_clauseContext window,
+            String defaultQualifier) {
+        if (window == null) {
+            return ExpressionAnalysis.empty();
+        }
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (window.expression_list_() != null) {
+            for (SqlServerRelationSqlParser.ExpressionContext expression
+                    : window.expression_list_().expression()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.CONTROL, control, analyze(expression, defaultQualifier));
+            }
+        }
+        if (window.order_by_clause() != null) {
+            for (SqlServerRelationSqlParser.Order_by_expressionContext order
+                    : window.order_by_clause().order_by_expression()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.CONTROL, control, analyze(order.expression(), defaultQualifier));
+            }
+        }
+        return new ExpressionAnalysis(control.sources(), LineageTransformType.WINDOW_DERIVED,
+                LineageFlowKind.CONTROL, List.of(), LineageTransformType.WINDOW_DERIVED);
+    }
+
     private ExpressionAnalysis conditionalValue(ExpressionAnalysis left, ExpressionAnalysis right) {
         List<ColumnRead> sources = new ArrayList<>();
         sources.addAll(left.sources());
@@ -205,11 +287,21 @@ abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventV
                 LineageFlowKind.CONTROL, left, normalized);
     }
 
-    private ExpressionAnalysis analyzeSearchCondition(
+    protected ExpressionAnalysis analyzeSearchCondition(
             SqlServerRelationSqlParser.Search_conditionContext ctx,
             String defaultQualifier) {
         ExpressionAnalysis result = ExpressionAnalysis.empty();
         for (SqlServerRelationSqlParser.PredicateContext predicate : ctx.predicate()) {
+            if (predicate.search_condition() != null) {
+                result = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL, result,
+                        analyzeSearchCondition(predicate.search_condition(), defaultQualifier));
+            }
+            if (predicate.subquery() != null) {
+                result = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                        LineageFlowKind.CONTROL, result,
+                        analyzeScalarSubquery(predicate.subquery().select_statement(), false));
+            }
             for (SqlServerRelationSqlParser.ExpressionContext expression : predicate.expression()) {
                 result = ExpressionAnalysis.combine(result.transform(), LineageFlowKind.CONTROL,
                         result, analyze(expression, defaultQualifier));

@@ -327,6 +327,18 @@ class PostgresRoutineSampleLineageTest {
                             .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
                     () -> parser.name() + " treated the window ORDER BY as a VALUE source: "
                             + structured.events());
+            var windowControl = lineages.stream()
+                    .filter(lineage -> "jsh_temp_mock_plan.mock_timestamp_str"
+                            .equals(lineage.target().displayName()))
+                    .filter(lineage -> lineage.flowKind()
+                            == com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL)
+                    .filter(lineage -> lineage.transformType() == LineageTransformType.WINDOW_DERIVED)
+                    .findFirst().orElseThrow();
+            assertEquals(Set.of("jsh_temp_hour_pdf.org_id", "jsh_temp_hour_pdf.hour_val"),
+                    windowControl.sources().stream()
+                            .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)),
+                    () -> parser.name() + " lost window controls: " + structured.events());
         }
     }
 
@@ -367,8 +379,12 @@ class PostgresRoutineSampleLineageTest {
                             "VALUE:AGGREGATE:orders.pay_amount->users.total_spent"),
                     () -> parser.name() + " lost the scalar projection VALUE: " + fingerprints);
             assertTrue(fingerprints.contains(
-                            "CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level"),
+                            "CONTROL:CASE_WHEN:orders.pay_amount->users.level"),
                     () -> parser.name() + " did not classify the CASE scalar condition as CONTROL: "
+                            + fingerprints);
+            assertTrue(fingerprints.contains(
+                            "CONTROL:DIRECT:orders.user_id,users.id,orders.order_status->users.level"),
+                    () -> parser.name() + " did not preserve scalar-subquery locators as CONTROL: "
                             + fingerprints);
             assertTrue(fingerprints.stream().noneMatch(value ->
                             value.startsWith("VALUE:") && value.endsWith("->users.level")),

@@ -41,7 +41,9 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
 
     @Override
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
-        return scalarSubquery(expression) != null || containsCase(expression);
+        return scalarSubquery(expression) != null || containsCase(expression)
+                || containsRole(expression,
+                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE);
     }
 
     @Override
@@ -55,13 +57,14 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
                 result.add(value.withTransform(value.transformType(), "VALUE"));
             }
             if (control.hasSources()) {
-                result.add(control.withTransform("CASE_WHEN", "CONTROL"));
+                result.add(control.withTransform("DIRECT", "CONTROL"));
             }
-            return List.copyOf(result);
+            return withWindowControl(expression, defaultQualifier, result);
         }
 
         if (!containsCase(expression)) {
-            return super.writeAnalyses(expression, defaultQualifier);
+            return withWindowControl(expression, defaultQualifier,
+                    super.writeAnalyses(expression, defaultQualifier));
         }
 
         CaseAccumulator cases = new CaseAccumulator();
@@ -77,7 +80,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         if (cases.hasControls()) {
             result.add(cases.control());
         }
-        return List.copyOf(result);
+        return withWindowControl(expression, defaultQualifier, result);
     }
 
     @Override
@@ -116,6 +119,99 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
             }
         }
         return false;
+    }
+
+    private boolean containsRole(
+            ParseTree tree,
+            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role) {
+        if (tree == null) {
+            return false;
+        }
+        if (parseTreeAdapter().hasRole(tree, role)) {
+            return true;
+        }
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            if (containsRole(child, role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<FullGrammarExpressionAnalysis> withWindowControl(
+            ParseTree expression,
+            String defaultQualifier,
+            List<FullGrammarExpressionAnalysis> analyses) {
+        FullGrammarExpressionAnalysis window = roleAnalysis(expression, defaultQualifier,
+                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE,
+                "WINDOW_DERIVED");
+        if (!window.hasSources()) {
+            return List.copyOf(analyses);
+        }
+        Set<String> windowKeys = keys(window);
+        List<FullGrammarExpressionAnalysis> result = new ArrayList<>(analyses.size() + 1);
+        for (FullGrammarExpressionAnalysis analysis : analyses) {
+            if (!"VALUE".equals(analysis.flowKind())) {
+                result.add(analysis);
+                continue;
+            }
+            List<String> aliases = new ArrayList<>();
+            List<String> columns = new ArrayList<>();
+            int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
+            for (int index = 0; index < count; index++) {
+                String key = analysis.sourceAliases().get(index) + "\u0000" + analysis.sourceColumns().get(index);
+                if (!windowKeys.contains(key)) {
+                    aliases.add(analysis.sourceAliases().get(index));
+                    columns.add(analysis.sourceColumns().get(index));
+                }
+            }
+            if (!columns.isEmpty()) {
+                result.add(new FullGrammarExpressionAnalysis(
+                        aliases, columns, analysis.transformType(), analysis.flowKind()));
+            }
+        }
+        result.add(window);
+        return List.copyOf(result);
+    }
+
+    private FullGrammarExpressionAnalysis roleAnalysis(
+            ParseTree tree,
+            String defaultQualifier,
+            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            String transform) {
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        collectRoleAnalysis(tree, defaultQualifier, role, aliases, columns, seen);
+        return new FullGrammarExpressionAnalysis(aliases, columns, transform, "CONTROL");
+    }
+
+    private void collectRoleAnalysis(
+            ParseTree tree,
+            String defaultQualifier,
+            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            List<String> aliases,
+            List<String> columns,
+            Set<String> seen) {
+        if (tree == null) {
+            return;
+        }
+        if (parseTreeAdapter().hasRole(tree, role)) {
+            append(aliases, columns, seen, super.analyze(tree, defaultQualifier));
+            return;
+        }
+        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
+            collectRoleAnalysis(child, defaultQualifier, role, aliases, columns, seen);
+        }
+    }
+
+    private Set<String> keys(FullGrammarExpressionAnalysis analysis) {
+        Set<String> result = new LinkedHashSet<>();
+        int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
+        for (int index = 0; index < count; index++) {
+            result.add(analysis.sourceAliases().get(index) + "\u0000" + analysis.sourceColumns().get(index));
+        }
+        return result;
     }
 
     private void collectExpressionCases(ParseTree tree, String defaultQualifier, CaseAccumulator result) {
@@ -240,7 +336,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         for (ParseTree control : controls) {
             append(aliases, columns, seen, analyze(control, defaultQualifier));
         }
-        return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
+        return new FullGrammarExpressionAnalysis(aliases, columns, "DIRECT", "CONTROL");
     }
 
     private void collectDirectScopeContexts(

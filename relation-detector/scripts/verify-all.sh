@@ -47,7 +47,16 @@ with open(output, "w", encoding="utf-8") as handle:
     handle.write("\n")
 PY
 
-mvn -T 2 -Pacceptance verify 2>&1 | tee "$MAVEN_LOG"
+# The comparison test must not consume a summary left by an older or subset CLI run.
+# The complete sample-data phase below recreates this file before final validation.
+rm -f relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv
+
+mvn -T 2 -Pacceptance \
+  -DcorrectnessFixtureProfile=smoke \
+  -DcorrectnessFixtureParallelism=6 \
+  verify 2>&1 | tee "$MAVEN_LOG"
+
+bash relation-detector/scripts/run-correctness-isolated.sh
 
 SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE=true \
 SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-3}" \

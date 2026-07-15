@@ -49,6 +49,8 @@ PY
 set +e
 mvn -T 2 -Pacceptance \
   -Dmaven.build.cache.enabled=false \
+  -DcorrectnessFixtureProfile=smoke \
+  -DcorrectnessFixtureParallelism=6 \
   clean verify 2>&1 | tee "$NO_CACHE_LOG"
 NO_CACHE_STATUS="${PIPESTATUS[0]}"
 set -e

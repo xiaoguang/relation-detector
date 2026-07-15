@@ -24,12 +24,17 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
         visit(ctx.selectStatement());
         List<OracleRelationSqlParser.SelectItemContext> items =
                 ctx.selectStatement().querySpecification().selectList().selectItem();
+        OracleExpressionAnalysis grouping = groupingControl(ctx.selectStatement());
         for (int index = 0; index < Math.min(targetColumns.size(), items.size()); index++) {
             OracleRelationSqlParser.SelectItemContext item = items.get(index);
             if (item.expression() == null) continue;
             for (OracleExpressionAnalysis source : writeAnalyses(item.expression())) {
                 addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
                         targetColumns.get(index), resolveCurrentScope(source), "INSERT_SELECT");
+            }
+            if (containsAggregateFunction(item.expression())) {
+                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
+                        targetColumns.get(index), grouping, "INSERT_GROUP_BY");
             }
         }
         return null;
@@ -49,6 +54,13 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
             queryScopes.push(new QueryScope());
             try {
                 registerCurrentRowset(targetAlias, targetTable);
+                OracleExpressionAnalysis locator = resolveCurrentScope(analyze(ctx.whereClause().predicate()));
+                OracleExpressionAnalysis control = new OracleExpressionAnalysis(
+                        locator.sources(), LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
+                for (OracleRelationSqlParser.AssignmentContext assignment
+                        : ctx.assignmentList().assignment()) {
+                    emitAssignmentControl(assignment, targetAlias, targetTable, control);
+                }
                 visit(ctx.whereClause());
             } finally {
                 queryScopes.pop();
@@ -67,12 +79,27 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
         String targetTable = targetTable(target);
         emitWriteTarget(target, targetAlias, targetTable);
         visit(ctx.predicate());
+        String sourceAlias = targetAlias(source);
+        String sourceTable = targetTable(source);
+        queryScopes.push(new QueryScope());
+        OracleExpressionAnalysis mergeControl;
+        try {
+            registerCurrentRowset(targetAlias, targetTable);
+            registerCurrentRowset(sourceAlias, sourceTable);
+            OracleExpressionAnalysis locator = resolveCurrentScope(analyze(ctx.predicate()));
+            mergeControl = new OracleExpressionAnalysis(
+                    locator.sources(), LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
+        } finally {
+            queryScopes.pop();
+        }
         for (OracleRelationSqlParser.MergeWhenClauseContext clause : ctx.mergeWhenClause()) {
             if (clause.mergeAction() instanceof OracleRelationSqlParser.MergeUpdateActionContext updateAction) {
                 for (OracleRelationSqlParser.AssignmentContext assignment
                         : updateAction.assignmentList().assignment()) {
                     emitAssignmentMapping(assignment, targetAlias, targetTable,
                             StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
+                    emitAssignmentControl(assignment, targetAlias, targetTable, mergeControl,
+                            StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_ON");
                 }
             }
         }
@@ -198,6 +225,30 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
             addWriteMapping(eventType, assignment, assignmentAlias, targetTable, targetColumn,
                     resolveCurrentScope(source), mappingKind);
         }
+    }
+
+    private void emitAssignmentControl(
+            OracleRelationSqlParser.AssignmentContext assignment,
+            String targetAlias,
+            String targetTable,
+            OracleExpressionAnalysis control) {
+        emitAssignmentControl(assignment, targetAlias, targetTable, control,
+                StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_WHERE");
+    }
+
+    private void emitAssignmentControl(
+            OracleRelationSqlParser.AssignmentContext assignment,
+            String targetAlias,
+            String targetTable,
+            OracleExpressionAnalysis control,
+            StructuredParseEventType eventType,
+            String mappingKind) {
+        List<String> targetParts = parts(assignment.qualifiedName());
+        String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
+        String assignmentAlias = targetParts.size() > 1
+                ? targetParts.get(targetParts.size() - 2) : targetAlias;
+        addWriteMapping(eventType, assignment,
+                assignmentAlias, targetTable, targetColumn, control, mappingKind);
     }
 
     private void addWriteMapping(

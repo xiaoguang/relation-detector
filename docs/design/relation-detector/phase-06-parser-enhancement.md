@@ -162,7 +162,7 @@ adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammar/common
   OracleFullGrammarParseTreeEventCollector
   OracleFullGrammarParseTreeSupport
   OracleFullGrammarExpressionSupport / OracleExpressionTransformSupport
-  OracleFullGrammarDdlCollector / OracleFullGrammarEventEmitter
+  OracleFullGrammarDdlCollector / OracleFullGrammarEventEmitter / OracleRoutineSymbolCollector
 
 adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/tokenevent
   SqlServerTokenEventStructuredSqlParser
@@ -174,7 +174,7 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/commo
   SqlServerParseTreeEventCollector
   SqlServerParseTreeSupport
   SqlServerDdlEventCollector
-  SqlServerExpressionAnalyzer
+  SqlServerExpressionAnalyzer / SqlServerWriteControlSupport
 
 adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016|v2017|v2019|v2022|v2025
   FullGrammarBinding
@@ -342,7 +342,7 @@ flowchart TD
   namingEnhancer --> relMerge["RelationshipMerger"]
 ```
 
-当前 `ScanEngine.scan(...)` 只保留对外编排入口；source collection 进入 `SourceCollectorPipeline`，单条 SQL/DDL 进入 `StatementParsePipeline`，再由 `StatementExecutionService` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)` 或 DDL runner。SQL 语句只做一次结构化解析，同时得到 relationship candidates、可供 Data Lineage 使用的 `StructuredParseResult` 和 naming evidence。这样 SQL/DML 的 parser mode、profile selection、fallback warning 和 diagnostics 在同一条语句内保持一致。
+当前 `ScanEngine.scan(...)` 只保留对外编排入口；source collection 进入 `SourceCollectorPipeline`，单条 SQL/DDL 进入 `StatementParsePipeline`，再由 `StatementExecutionService` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)` 或 DDL runner。SQL 语句只做一次结构化解析，同时得到 relationship candidates 和可供 Data Lineage 使用的 `StructuredParseResult`。SQL naming rule 在 statement 层不执行，只在 scan-level relationship merge 后由 `EvidenceEnhancementService` 统一生成 top-level naming evidence。这样 SQL/DML 的 parser mode、profile selection、fallback warning 和 diagnostics 在同一条语句内保持一致。
 
 ## 详细函数级调用结构
 
@@ -570,7 +570,9 @@ CorrectnessFixtureExecutor
   -> GoldenWriter             // only writes expected JSON when updateCorrectnessGold=true
 ```
 
-SQL correctness fixture 通过 `StatementExecutionService` 执行，与生产 scan 使用同一 structured parser、relationship、lineage 和 naming evidence 抽取入口；随后通过 `EvidenceEnhancementService` 消费 `NamingEvidencePool`。DDL fixture 也通过 `StatementExecutionService` 执行，但保持 parser-outcome 验收语义，不额外引入 scan-level metadata/naming enhancement。
+SQL correctness fixture 通过 `StatementExecutionService` 执行，与生产 scan 使用同一 structured parser、relationship 和 lineage 抽取入口。SQL naming rule 不在 statement 层提前执行；correctness 与正式 scan 都在合并 relationship candidates 后，由 scan-level `EvidenceEnhancementService` 调用 `NamingEvidenceExtractor` 一次生成 `NamingEvidencePool`。DDL fixture 仍通过 `StatementExecutionService` 执行，保持 parser-outcome 验收语义，其 typed DDL inventory 可产生 DDL naming observation，但不额外引入 scan-level metadata enhancement。
+
+structured parse 完成后统一执行 `StructuredParseProvenanceNormalizer`：显式 routine/trigger/rule/DDL/view 对象类型保持不变；有 typed write event 的普通 statement 是 `SQL_WRITE`；只有 rowset/projection/predicate 的普通 statement 是 `QUERY`；无 typed 证据时为 `UNKNOWN`。Script Framer 只负责 statement/object framing，不把 `PLAIN_SQL` / `NATIVE_LOG` / `MIGRATION` 预设为写入。
 
 ## Parser mode 和 profile 选择
 
@@ -584,7 +586,10 @@ SQL correctness fixture 通过 `StatementExecutionService` 执行，与生产 sc
 
 1. CLI `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
 2. YAML `parser.mode`、`parser.grammarProfile`、`parser.databaseVersion`。
-3. JDBC `DatabaseMetaData.getDatabaseMajorVersion/getDatabaseMinorVersion`，写入 `ScanConfig.databaseVersion`，`databaseVersionSource=JDBC`。
+3. JDBC `DatabaseMetaData.getDatabaseMajorVersion/getDatabaseMinorVersion`，通过
+   `ResolvedScanConfig.withJdbcDatabaseVersion(...)` 生成新的 immutable runtime snapshot，
+   `databaseVersionSource=JDBC`；不得修改调用方传入的 `ScanConfig`。当前尚未迁移的 parser API
+   只接收由该 snapshot 创建的 per-scan compatibility copy。
 4. 无方言或版本信息时不启用 full-grammar，使用 token-event。
 
 版本规则：
@@ -774,7 +779,7 @@ root token-event 与对应 full-grammar 数量不要求完全一致：token-even
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammar 已能确认的结构。
 - `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
 
-当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
+当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。这里不表示全部工程契约已经 `MATCHED`：live capability、composite metadata index、lineage source-set identity、profiler diagnostics 和 catalog preservation 仍是明确实现缺口，记录在 `design-validation-report.md`。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -851,6 +856,8 @@ FK-like 方向规则仍优先。无法可靠判断方向时才进入 column co-o
 `correlated EXISTS` 是跨方言公共关系语义。公共 extractor 可以处理 EXISTS 外壳和相关谓词；EXISTS 内部如果出现 MySQL/PostgreSQL 专属 rowset/function/hint/`ONLY`/`JSON_TABLE` 等语法，必须由对应方言 event builder 或 full-grammar visitor 负责识别和过滤。
 
 当前 typed SQL parser 不再把 `EXISTS` / `IN` / 普通 equality 直接定向为 FK-like，但必须保留真实语法 evidence：JOIN / comma join 输出 `SQL_LOG_JOIN`，correlated `EXISTS` 输出 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 输出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 证明“SQL 中存在明确列级谓词”，不单独证明 FK-like 方向。FK-like 方向可以由 DDL、metadata、data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或“SQL 谓词 + top-level `namingEvidence` 中的唯一方向提示”推出；否则输出 `CO_OCCURRENCE`。`NAMING_MATCH` 不解析 SQL，也不凭表名/列名创建关系；`NamingEvidenceExtractor` 先通过 `NamingRuleEngine` 执行合并后的 `NamingRuleSet` 生成完整命名证据池，系统默认规则来自 `naming-rules/system-default.yml`，客户规则来自 YAML `namingMatch.ruleFiles` / inline `namingMatch.rules`。`NamingMatchEvidenceEnhancer` 只消费该证据池并在 relationship evidence 中写入 `evidenceRef`，不能本地重算命名规则。
+
+Naming rule 执行前的 endpoint pair identity 必须有向：`source -> target` 与 `target -> source` 分别进入 `DirectionalEndpointPairKey`。同一方向的 candidates 只执行一次 `NamingRuleEngine`，但保留所有不同 file/object/statement/block/line observation；反向 candidate 必须独立匹配，只有生成同一稳定 naming fact 后才允许 merger 合并 provenance。
 
 `SQL_LOG_COLUMN_CO_OCCURRENCE` 和 `SQL_LOG_TABLE_CO_OCCURRENCE` 仍保留 enum、score 和 merger 兼容逻辑，但当前生产 parser / extractor 不主动产出。列级谓词共现由更具体的 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN` 代替；纯表级共现没有等价现役替代，默认不生成正式 relationship。
 
@@ -929,6 +936,20 @@ SET u.total_spent = SUM(o.pay_amount)
 CASE WHEN c.risk_score > 80 THEN ...
   -> CONTROL:CASE_WHEN:customer_profiles.risk_score->target.status
 
+INSERT INTO summary(total_amount)
+SELECT SUM(o.amount) FROM orders o GROUP BY o.customer_id
+  -> VALUE:AGGREGATE:orders.amount->summary.total_amount
+  -> CONTROL:AGGREGATE:orders.customer_id->summary.total_amount
+
+UPDATE customer_totals t
+SET total_amount = s.amount
+FROM source_totals s
+WHERE s.customer_id = t.customer_id
+  -> CONTROL:DIRECT:source_totals.customer_id,customer_totals.customer_id->customer_totals.total_amount
+
+ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.order_date)
+  -> CONTROL:WINDOW_DERIVED:orders.customer_id,orders.order_date->target.rank_no
+
 COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
   -> VALUE:AGGREGATE / ARITHMETIC / COALESCE according to reviewed fixture semantics
 ```
@@ -952,6 +973,8 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 Endpoint identity 在 derived graph 中保持 schema 保真：parser 只保留 SQL/DDL 显式写出的 schema，不自动补默认 schema，也不丢弃 schema。`schema.table.column` 与 `table.column` 默认不是同一个 graph key。表内 identity bridge 只允许在同一个 canonical table key 内连接，例如 `orders.id -> orders.customer_id` 或 `dbo.orders.id -> dbo.orders.customer_id`；`orders.id -> dbo.orders.customer_id` 这类 schema-qualified / bare endpoint 混合路径不能被自动桥接。
 
 `StructuredDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标、表达式来源和 transform，输出 `DataLineageCandidate`。
+
+CONTROL 传播按 typed write/projection scope 限定：CASE selector/WHEN 为 `CASE_WHEN`；scalar subquery 的 JOIN/WHERE/HAVING/correlation 为 `DIRECT`；GROUP BY 和聚合定位列为 `AGGREGATE`；window PARTITION/ORDER 为 `WINDOW_DERIVED`；UPDATE/INSERT/MERGE 的 JOIN/WHERE/ON locator 只控制同一 write scope 内的目标列，包括常量投影目标。CONTROL 只表示写入是否发生或结果如何被分组/排序，不表示字段值被复制，也不参与 derived lineage。
 
 二者职责不同：
 
@@ -1129,7 +1152,42 @@ mvn -pl relation-detector/cli -am -Dtest=CorrectnessFixtureRunnerTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
-可选 profile 包括 `common`、`mysql`、`postgres`、`oracle`、`sqlserver`、`mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`、`sqlserver/v2016`、`sqlserver/v2017`、`sqlserver/v2019`、`sqlserver/v2022`、`sqlserver/v2025` 和 `full`。合并前使用 `-DcorrectnessFixtureProfile=full` 跑全量。runner 在非更新模式下按 fixture 并行执行，可用 `-DcorrectnessFixtureParallelism=N` 调整；`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 写入稳定。
+可选 profile 包括 `common`、`mysql`、`postgres`、`oracle`、`sqlserver`、`mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`、`sqlserver/v2016`、`sqlserver/v2017`、`sqlserver/v2019`、`sqlserver/v2022`、`sqlserver/v2025` 和 `full`。单个 profile 的 runner 在非更新模式下按 fixture 并行执行，可用 `-DcorrectnessFixtureParallelism=N` 调整；`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 写入稳定。
+
+发布级 full correctness 不再把全部 parser category 放进同一个 Surefire JVM。不同 versioned grammar
+会保留各自的 ANTLR prediction state；在一个 JVM 中同时并发多个 parser category 会放大 Old Gen
+峰值，并可能使 G1 长时间停留在 Full GC。正式入口改为：
+
+```bash
+bash relation-detector/scripts/run-correctness-isolated.sh
+```
+
+执行器按 `common`、`mysql`、`postgres`、Oracle root/v12c/v19c/v21c/v26ai、`sqlserver`
+九组顺序启动独立 JVM；并发只发生在当前组自己的 fixture 中。默认每组 `-Xmx6g`、并发 6，
+并发配置只允许 4–8。每组结束后 JVM 必须退出，下一组才能启动。聚合器校验：
+
+- 所有组报告相同的 discovered fixture 总数。
+- selected、executed、passed 相等且 failed 为 0。
+- 19 个 parser category 无重复、无遗漏。
+- 各组 selected 之和等于 discovered 总数。
+
+2026-07-14 在当前 1198 个 fixture 上的独立复验结果为 `1198/1198`、19 个 parser category、
+0 failure；九组 Maven 墙钟时间合计约 5 分 35 秒。`verify-all.sh` 和 `verify-release.sh` 的 reactor
+阶段只跑 smoke correctness，随后调用上述隔离执行器生成 full 聚合 summary。直接使用单 JVM
+`-DcorrectnessFixtureProfile=full` 仍可用于诊断，但不是发布验收路径。
+
+sample-data CLI 同样不能把 19 个 parser case 放入一个长生命周期 batch JVM。正式入口仍是：
+
+```bash
+bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh
+```
+
+该入口先编译一次，再由 `run-sample-data-isolated.sh` 按与 correctness 相同的九组顺序启动
+独立 CLI JVM。默认每组 `-Xmx6g`，case 并发 4、scan 并发 2、scan worker 总预算 8；同一时间
+只能存在一个组。每组退出后才启动下一组，Oracle root 和四个 versioned profile 分别隔离。
+最终聚合器要求请求的 case 全部成功且无重复、每个报告引用的 direct/derived 输出真实存在，
+然后在原位置生成统一 `batch-report.json`、summary、observation parity 和 38 份全量 JSON。
+进程布局是验收实现细节，不改变 CLI JSON 或报告契约。
 
 生成报告：
 

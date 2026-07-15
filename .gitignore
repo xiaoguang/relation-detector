@@ -5,6 +5,7 @@ target/
 .vscode/settings.json
 /AGENTS.md
 /relation-detector/AGENTS.md
+/relation-detector/demo/
 /.mvn/
 test-fixtures/local/
 亿问/

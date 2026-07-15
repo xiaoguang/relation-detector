@@ -2,6 +2,13 @@
   "fingerprints": [
     "CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount",
     "CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.credit_amount",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.debit_amount",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.description",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.is_matched",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.journal_id",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.reconciliation_id",
+    "CONTROL:DIRECT:dbo.cashier_journals.account_id,dbo.reconciliations.account_id,dbo.cashier_journals.journal_date,dbo.reconciliations.period_start,dbo.reconciliations.period_end->dbo.reconciliation_items.transaction_date",
     "VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance",
     "VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount",
     "VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount",
@@ -10,7 +17,7 @@
     "VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description",
     "VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

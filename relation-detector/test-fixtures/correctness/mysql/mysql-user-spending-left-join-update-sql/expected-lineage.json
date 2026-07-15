@@ -1,12 +1,14 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:orders.pay_amount->users.level",
+    "CONTROL:DIRECT:users.is_active->users.level",
+    "CONTROL:DIRECT:users.is_active->users.total_spent",
     "VALUE:AGGREGATE:orders.pay_amount->users.total_spent"
   ],
   "forbiddenSources": [
     "o_summary.actual_total",
     "0.00"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

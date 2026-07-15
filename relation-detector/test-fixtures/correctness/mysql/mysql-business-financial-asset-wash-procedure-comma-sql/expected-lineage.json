@@ -1,5 +1,10 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.adjusted_limit",
+    "CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.compliance_notes",
+    "CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.last_evaluated_at",
+    "CONTROL:DIRECT:account_balances.user_id,users.id,account_balances.region_code,global_compliance_policies.region_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.direction,users.country_code,global_compliance_policies.policy_status,account_balances.risk_flags->account_balances.risk_flags",
+    "CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,transaction_ledgers.direction,users.country_code->account_balances.compliance_notes",
     "VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit",
     "VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags",
     "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes"
@@ -9,6 +14,6 @@
     "p_max_limit_cap",
     "CURRENT_TIMESTAMP"
   ],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

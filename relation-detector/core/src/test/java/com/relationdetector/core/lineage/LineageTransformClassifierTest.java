@@ -42,9 +42,21 @@ class LineageTransformClassifierTest {
                         LineageTransformClassifier.dominant(DIRECT, FUNCTION_CALL)),
                 () -> assertEquals(CASE_WHEN,
                         LineageTransformClassifier.dominant(DIRECT, CASE_WHEN)),
-                () -> assertEquals(CASE_WHEN,
+                () -> assertEquals(ARITHMETIC,
                         LineageTransformClassifier.dominantForFlow(
                                 LineageFlowKind.CONTROL, ARITHMETIC, CASE_WHEN)),
+                () -> assertEquals(CASE_WHEN,
+                        LineageTransformClassifier.dominantForFlow(
+                                LineageFlowKind.CONTROL, CASE_WHEN, ARITHMETIC)),
+                () -> assertEquals(DIRECT,
+                        LineageTransformClassifier.dominantForFlow(
+                                LineageFlowKind.CONTROL, DIRECT, CASE_WHEN)),
+                () -> assertEquals(AGGREGATE,
+                        LineageTransformClassifier.dominantForFlow(
+                                LineageFlowKind.CONTROL, AGGREGATE, DIRECT)),
+                () -> assertEquals(WINDOW_DERIVED,
+                        LineageTransformClassifier.dominantForFlow(
+                                LineageFlowKind.CONTROL, WINDOW_DERIVED, DIRECT)),
                 () -> assertEquals(ARITHMETIC,
                         LineageTransformClassifier.dominantForFlow(
                                 LineageFlowKind.VALUE, ARITHMETIC, CASE_WHEN)),

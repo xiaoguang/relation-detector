@@ -182,8 +182,14 @@ class CliEndToEndGoldenTest {
                 new TreeSet<>(relationshipFingerprints(json)),
                 fixtureDir + " relationship fingerprints from CLI JSON");
         if (compareLineage && Files.exists(fixtureDir.resolve("expected-lineage.json"))) {
-            assertEquals(new TreeSet<>(expectedFingerprints(fixtureDir.resolve("expected-lineage.json"))),
-                    new TreeSet<>(lineageFingerprints(json)),
+            Set<String> expectedLineage = expectedFingerprints(
+                    fixtureDir.resolve("expected-lineage.json")).stream()
+                    .map(LineageFingerprintNormalizer::normalize)
+                    .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+            Set<String> actualLineage = lineageFingerprints(json).stream()
+                    .map(LineageFingerprintNormalizer::normalize)
+                    .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+            assertEquals(expectedLineage, actualLineage,
                     fixtureDir + " lineage fingerprints from CLI JSON");
         }
         Set<String> warningCodes = new TreeSet<>(warningCodes(json));

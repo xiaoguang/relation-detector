@@ -1,6 +1,8 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status",
+    "CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.last_audit_status",
+    "CONTROL:DIRECT:warehouse_inventory.bin_id,bin_locations.id,warehouse_inventory.product_id,order_items.product_id,order_items.order_id,orders.id,orders.created_at,orders.customer_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,bin_locations.zone_type,warehouse_inventory.is_active,order_items.fulfillment_status->warehouse_inventory.stock_reserved",
     "VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved"
   ],
   "forbiddenSources": [

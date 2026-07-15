@@ -12,6 +12,7 @@ MANIFEST_BUILDER="$ROOT/relation-detector/scripts/build-verification-manifest.py
 [[ -x "$MANIFEST_BUILDER" ]]
 grep -q 'NO_CACHE_STATUS' "$VERIFY_RELEASE"
 grep -q 'no-cache acceptance failed' "$VERIFY_RELEASE"
+grep -q -- '-DcorrectnessFixtureProfile=smoke' "$VERIFY_RELEASE"
 
 no_cache_line="$(grep -n 'maven.build.cache.enabled=false' "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"
 verify_all_line="$(grep -n 'verify-all.sh' "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"

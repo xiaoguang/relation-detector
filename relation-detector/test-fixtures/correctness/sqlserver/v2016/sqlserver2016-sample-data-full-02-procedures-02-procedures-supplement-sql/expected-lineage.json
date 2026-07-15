@@ -1,11 +1,17 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.purchase_price",
+    "CONTROL:DIRECT:dbo.supplier_products.product_id,dbo.products.id,dbo.supplier_products.is_preferred->dbo.products.updated_at",
+    "CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.last_order_date",
+    "CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.supplier_price",
+    "CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_count",
+    "CONTROL:DIRECT:dbo.supplier_products.supplier_id,dbo.purchase_orders.supplier_id,dbo.supplier_products.product_id,dbo.purchase_order_items.product_id->dbo.supplier_products.total_order_qty",
     "VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty",
     "VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price",
     "VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date",
     "VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

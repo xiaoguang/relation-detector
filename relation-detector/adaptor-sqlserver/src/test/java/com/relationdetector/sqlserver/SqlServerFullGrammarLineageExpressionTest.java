@@ -28,6 +28,31 @@ import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDd
 
 class SqlServerFullGrammarLineageExpressionTest {
     @Test
+    void tokenAndEveryFullProfileExcludeBuiltinsAndLocalVariablesFromPhysicalLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                DECLARE @actor_id BIGINT = 7;
+                INSERT INTO dbo.order_audit (order_id, occurred_at, actor_id)
+                SELECT o.id, CURRENT_TIMESTAMP, @actor_id
+                FROM dbo.orders AS o;
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-non-physical-values.sql", 1, 4, Map.of());
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = new java.util.ArrayList<>();
+        parsers.add(new SqlServerTokenEventStructuredSqlParser());
+        fullProfiles().forEach(profile -> parsers.add(profile.sqlParser()));
+
+        for (var parser : parsers) {
+            StructuredParseResult result = parser.parseSql(statement, null);
+            var lineages = new StructuredDataLineageExtractor().extract(statement, result);
+
+            assertLineage(lineages, "orders", "id", "order_audit", "order_id", LineageFlowKind.VALUE);
+            assertTrue(lineages.stream().flatMap(lineage -> lineage.sources().stream())
+                            .noneMatch(source -> Set.of("current_timestamp", "@actor_id")
+                                    .contains(source.column().columnName().toLowerCase())),
+                    () -> parser.getClass().getSimpleName()
+                            + " emitted builtin or local variable as physical lineage: " + lineages);
+        }
+    }
+
+    @Test
     void tokenAndEveryFullProfileTraverseSetBasedTriggerPseudoRows() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 CREATE OR ALTER TRIGGER [dbo].[tr_inventory_update_batch]

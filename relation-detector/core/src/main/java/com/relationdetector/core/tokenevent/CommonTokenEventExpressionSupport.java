@@ -126,6 +126,10 @@ abstract class CommonTokenEventExpressionSupport extends CommonTokenEventVisitor
         if (expression instanceof CommonRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
             return scalarSubqueryWriteAnalyses(scalarSubquery.selectStatement());
         }
+        if (expression instanceof CommonRelationSqlParser.FunctionExpressionContext function
+                && function.functionCall().windowClause() != null) {
+            return windowFunctionWriteAnalyses(function.functionCall());
+        }
         if (!(expression instanceof CommonRelationSqlParser.CaseExpressionContext caseExpression)) {
             ExpressionAnalysis analysis = analyze(expression);
             return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
@@ -151,6 +155,61 @@ abstract class CommonTokenEventExpressionSupport extends CommonTokenEventVisitor
         return roleAnalyses(value, control);
     }
 
+    private List<ExpressionAnalysis> windowFunctionWriteAnalyses(
+            CommonRelationSqlParser.FunctionCallContext function
+    ) {
+        ExpressionAnalysis value = analyzeFunctionArguments(function);
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        CommonRelationSqlParser.WindowClauseContext window = function.windowClause();
+        if (window.partitionByClause() != null) {
+            for (CommonRelationSqlParser.ExpressionContext expression
+                    : window.partitionByClause().expressionList().expression()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.CONTROL, control, analyze(expression));
+            }
+        }
+        if (window.windowOrderByClause() != null) {
+            for (CommonRelationSqlParser.WindowOrderItemContext item
+                    : window.windowOrderByClause().windowOrderItem()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.WINDOW_DERIVED,
+                        LineageFlowKind.CONTROL, control, analyze(item.expression()));
+            }
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            result.add(value);
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.WINDOW_DERIVED,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private ExpressionAnalysis analyzeFunctionArguments(CommonRelationSqlParser.FunctionCallContext function) {
+        ExpressionAnalysis args = ExpressionAnalysis.empty();
+        if (function.expressionList() != null) {
+            for (CommonRelationSqlParser.ExpressionContext argument : function.expressionList().expression()) {
+                args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
+            }
+        }
+        String functionName = baseName(qualifiedName(function.qualifiedName())).toLowerCase(Locale.ROOT);
+        LineageTransformType transform = switch (functionName) {
+            case "sum", "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
+            case "coalesce" -> LineageTransformType.COALESCE;
+            case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
+            default -> LineageTransformType.WINDOW_DERIVED;
+        };
+        return new ExpressionAnalysis(args.sources(),
+                LineageTransformClassifier.dominant(transform, args.transform()), LineageFlowKind.VALUE);
+    }
+
+    protected ExpressionAnalysis locatorControl(CommonRelationSqlParser.PredicateContext predicate) {
+        ExpressionAnalysis analysis = analyze(predicate);
+        return new ExpressionAnalysis(
+                analysis.sources(), LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
+    }
+
     private List<ExpressionAnalysis> scalarSubqueryWriteAnalyses(
             CommonRelationSqlParser.SelectStatementContext select
     ) {
@@ -161,38 +220,43 @@ abstract class CommonTokenEventExpressionSupport extends CommonTokenEventVisitor
             return List.of();
         }
         ExpressionAnalysis value = analyze(items.get(0).expression());
-        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        ExpressionAnalysis locator = ExpressionAnalysis.empty();
+        ExpressionAnalysis groupingControl = ExpressionAnalysis.empty();
         if (query.fromClause() != null) {
             for (CommonRelationSqlParser.TableReferenceContext table : query.fromClause().tableReference()) {
                 for (CommonRelationSqlParser.JoinClauseContext join : table.joinClause()) {
                     if (join.predicate() != null) {
-                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                                LineageFlowKind.CONTROL, control, analyze(join.predicate()));
+                        locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                                LineageFlowKind.CONTROL, locator, analyze(join.predicate()));
                     }
                 }
             }
         }
         if (query.whereClause() != null) {
-            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL, control, analyze(query.whereClause().predicate()));
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator, analyze(query.whereClause().predicate()));
         }
         if (query.groupByClause() != null) {
             for (CommonRelationSqlParser.ExpressionContext grouping
                     : query.groupByClause().expressionList().expression()) {
-                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, analyze(grouping));
+                groupingControl = ExpressionAnalysis.combine(LineageTransformType.AGGREGATE,
+                        LineageFlowKind.CONTROL, groupingControl, analyze(grouping));
             }
         }
         if (query.havingClause() != null) {
-            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL, control, analyze(query.havingClause().predicate()));
+            locator = ExpressionAnalysis.combine(LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL, locator, analyze(query.havingClause().predicate()));
         }
         List<ExpressionAnalysis> result = new ArrayList<>(2);
         if (!value.sources().isEmpty()) {
             result.add(new ExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE));
         }
-        if (!control.sources().isEmpty()) {
-            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+        if (!locator.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(locator.sources(), LineageTransformType.DIRECT,
+                    LineageFlowKind.CONTROL));
+        }
+        if (!groupingControl.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(groupingControl.sources(), LineageTransformType.AGGREGATE,
                     LineageFlowKind.CONTROL));
         }
         return List.copyOf(result);

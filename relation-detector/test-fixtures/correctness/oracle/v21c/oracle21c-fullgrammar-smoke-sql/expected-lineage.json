@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:AGGREGATE:customers.id->sales_summary.total_amount",
     "VALUE:AGGREGATE:orders.amount->sales_summary.total_amount",
     "VALUE:DIRECT:customers.id->sales_summary.customer_id"
   ],

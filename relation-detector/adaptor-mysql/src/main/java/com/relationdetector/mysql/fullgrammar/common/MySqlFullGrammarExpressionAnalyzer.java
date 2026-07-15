@@ -72,22 +72,33 @@ public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAna
         }
         List<FullGrammarExpressionAnalysis> controls = new ArrayList<>(
                 nestedConditionalControlAnalyses(expression, defaultQualifier));
-        FullGrammarExpressionAnalysis scalarControl =
-                scalarSubqueryControlAnalysis(expression, defaultQualifier);
-        if (scalarControl.hasSources()) {
-            controls.add(scalarControl);
-        }
         FullGrammarExpressionAnalysis mergedControl = MySqlTransformSemantics.mergeSameRole(
                 controls, "CASE_WHEN", "CONTROL");
         if (mergedControl.hasSources()) {
             result.add(mergedControl);
+        }
+        FullGrammarExpressionAnalysis scalarControl =
+                scalarSubqueryControlAnalysis(expression, defaultQualifier);
+        if (scalarControl.hasSources()) {
+            result.add(scalarControl.withTransform("DIRECT", "CONTROL"));
+        }
+        FullGrammarExpressionAnalysis groupingControl =
+                scalarSubqueryGroupingControlAnalysis(expression, defaultQualifier);
+        if (groupingControl.hasSources()) {
+            result.add(groupingControl);
+        }
+        FullGrammarExpressionAnalysis windowControl = windowControlAnalysis(expression, defaultQualifier);
+        if (windowControl.hasSources()) {
+            result.add(windowControl);
         }
         return result;
     }
 
     @Override
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
-        return containsScalarSubquery(expression) || containsConditionalExpression(expression);
+        return containsScalarSubquery(expression)
+                || containsConditionalExpression(expression)
+                || containsWindowControl(expression);
     }
 
     private boolean containsArithmeticExpression(ParseTree tree) {
@@ -116,6 +127,9 @@ public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAna
         if (isScalarSubqueryBoundary(unwrapped)) {
             return scalarSubquerySelectedAnalysis(unwrapped, defaultQualifier);
         }
+        if (containsWindowControl(tree)) {
+            return valueWithoutWindowControl(tree, defaultQualifier);
+        }
         if (!containsScalarSubquery(tree) && !containsConditionalExpression(tree)) {
             return analyze(tree, defaultQualifier);
         }
@@ -131,6 +145,73 @@ public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAna
                 ? "AGGREGATE"
                 : full.transformType();
         return new FullGrammarExpressionAnalysis(aliases, columns, transform, "VALUE");
+    }
+
+    private FullGrammarExpressionAnalysis valueWithoutWindowControl(
+            ParseTree tree, String defaultQualifier
+    ) {
+        if (tree == null || contexts.isWindowControlContainer(tree)) {
+            return empty("VALUE");
+        }
+        if (!containsWindowControl(tree)) {
+            return valueOnlyAnalysis(tree, defaultQualifier);
+        }
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            appendSources(aliases, columns, seen,
+                    valueWithoutWindowControl(child, defaultQualifier));
+        }
+        FullGrammarExpressionAnalysis full = analyze(tree, defaultQualifier);
+        String transform = "WINDOW_DERIVED".equals(full.transformType())
+                ? (containsAggregateFunction(tree) ? "AGGREGATE" : "FUNCTION_CALL")
+                : full.transformType();
+        return new FullGrammarExpressionAnalysis(aliases, columns, transform, "VALUE");
+    }
+
+    private FullGrammarExpressionAnalysis windowControlAnalysis(
+            ParseTree tree, String defaultQualifier
+    ) {
+        if (tree == null) {
+            return empty("CONTROL");
+        }
+        List<ParseTree> controls = contexts.windowControlExpressions(tree);
+        if (!controls.isEmpty()) {
+            List<String> aliases = new ArrayList<>();
+            List<String> columns = new ArrayList<>();
+            Set<String> seen = new LinkedHashSet<>();
+            for (ParseTree control : controls) {
+                appendSources(aliases, columns, seen, analyze(control, defaultQualifier));
+            }
+            return new FullGrammarExpressionAnalysis(
+                    aliases, columns, "WINDOW_DERIVED", "CONTROL");
+        }
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            appendSources(aliases, columns, seen,
+                    windowControlAnalysis(child, defaultQualifier));
+        }
+        return new FullGrammarExpressionAnalysis(
+                aliases, columns, "WINDOW_DERIVED", "CONTROL");
+    }
+
+    private boolean containsWindowControl(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        if (contexts.isWindowControlContainer(tree)
+                || !contexts.windowControlExpressions(tree).isEmpty()) {
+            return true;
+        }
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            if (containsWindowControl(child)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private FullGrammarExpressionAnalysis conditionalValueOnlyAnalysis(
@@ -207,7 +288,7 @@ public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAna
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         collectConditionalControlSources(tree, defaultQualifier, aliases, columns, seen);
-        return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
+        return new FullGrammarExpressionAnalysis(aliases, columns, "DIRECT", "CONTROL");
     }
 
     private void collectConditionalControlSources(
@@ -389,7 +470,32 @@ public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAna
             appendSources(aliases, columns, seen,
                     scalarSubqueryControlAnalysis(child, defaultQualifier));
         }
-        return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
+        return new FullGrammarExpressionAnalysis(aliases, columns, "DIRECT", "CONTROL");
+    }
+
+    private FullGrammarExpressionAnalysis scalarSubqueryGroupingControlAnalysis(
+            ParseTree tree, String defaultQualifier
+    ) {
+        if (tree == null) {
+            return empty("CONTROL");
+        }
+        ParseTree unwrapped = unwrapSingleChildContexts(tree);
+        if (isScalarSubqueryBoundary(unwrapped)) {
+            QueryParts query = contexts.firstQuery(unwrapped);
+            if (query == null || query.groupBy() == null) {
+                return empty("CONTROL");
+            }
+            String qualifier = contexts.singleProjectionQualifier(query.fromClause(), defaultQualifier);
+            return controlSources(query.groupBy(), qualifier).withTransform("AGGREGATE", "CONTROL");
+        }
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (ParseTree child : contexts.typedChildren(tree)) {
+            appendSources(aliases, columns, seen,
+                    scalarSubqueryGroupingControlAnalysis(child, defaultQualifier));
+        }
+        return new FullGrammarExpressionAnalysis(aliases, columns, "AGGREGATE", "CONTROL");
     }
 
     private FullGrammarExpressionAnalysis scalarSubqueryContextAnalysis(
@@ -407,7 +513,6 @@ public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAna
             appendSources(aliases, columns, seen, controlSources(joinPredicate, scalarQualifier));
         }
         appendControlSource(aliases, columns, seen, query.wherePredicate(), scalarQualifier);
-        appendControlSource(aliases, columns, seen, query.groupBy(), scalarQualifier);
         appendControlSource(aliases, columns, seen, query.havingPredicate(), scalarQualifier);
         return new FullGrammarExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
     }

@@ -227,8 +227,9 @@ AS
     v_match_status VARCHAR2(30);
     v_all_matched NUMBER(1) DEFAULT 1;
 BEGIN
-    FOR rec IN
+    FOR rec IN (
         SELECT product_id, quantity, unit_price FROM purchase_order_items WHERE order_id = p_purchase_order_id
+    )
     LOOP
         -- 获取入库数量
         SELECT COALESCE(SUM(accepted_qty), 0), COALESCE(AVG(unit_price), 0)
@@ -303,11 +304,12 @@ AS
     v_before_acc NUMBER(18,2);
     v_before_net NUMBER(18,2);
 BEGIN
-    FOR rec IN
+    FOR rec IN (
         SELECT id, monthly_depreciation, accumulated_depreciation, net_book_value
         FROM fixed_assets
         WHERE status IN ('in_use', 'idle')
           AND (last_depreciation_date IS NULL OR last_depreciation_date < p_depreciation_date)
+    )
     LOOP
         v_amount := rec.monthly_depreciation;
         v_before_acc := rec.accumulated_depreciation;
@@ -353,10 +355,11 @@ AS
 BEGIN
     SELECT warehouse_id INTO v_warehouse_id FROM work_orders WHERE id = p_work_order_id;
 
-    FOR rec IN
+    FOR rec IN (
         SELECT id, product_id, batch_id, required_qty, issued_qty
         FROM work_order_materials
         WHERE work_order_id = p_work_order_id AND status IN ('pending', 'partial')
+    )
     LOOP
         v_issue_qty := rec.required_qty - rec.issued_qty;
 
@@ -456,8 +459,9 @@ BEGIN
     v_target_month := TO_CHAR(CURRENT_DATE - INTERVAL '1' MONTH, 'YYYY-MM');
     v_days_in_month := TO_NUMBER(TO_CHAR(LAST_DAY(TO_DATE(v_target_month || '-01', 'YYYY-MM-DD')), 'DD'));
 
-    FOR emp_rec IN
+    FOR emp_rec IN (
         SELECT id FROM employees WHERE status IN ('active', 'probation')
+    )
     LOOP
         v_day := 1;
         WHILE v_day <= v_days_in_month LOOP

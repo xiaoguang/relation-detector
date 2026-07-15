@@ -2,6 +2,7 @@
   "fingerprints": [
     "CO_OCCURRENCE:employees.id->sales_orders.salesperson_id:SQL_LOG_JOIN",
     "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_JOIN",
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
@@ -13,5 +14,5 @@
     "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [ ]
 }

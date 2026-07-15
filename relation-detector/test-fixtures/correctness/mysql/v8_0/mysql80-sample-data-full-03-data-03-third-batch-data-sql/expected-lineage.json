@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id",
-    "CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id",
-    "CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price",
+    "CONTROL:DIRECT:product_batches.product_id,products.id->serial_numbers.batch_id",
+    "CONTROL:DIRECT:product_batches.product_id->consignment_inventory.batch_id",
+    "CONTROL:DIRECT:products.id->consignment_inventory.unit_price",
     "VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date",
     "VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount",
     "VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price",
@@ -31,7 +31,7 @@
     "VALUE:FUNCTION_CALL:purchase_orders.order_date->ap_aging_snapshots.due_date",
     "VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

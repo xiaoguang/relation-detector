@@ -86,6 +86,62 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleRoutineParametersAndLocalsDoNotBecomePhysicalEndpoints() {
+        SqlStatementRecord statement = statement("""
+                CREATE OR REPLACE PROCEDURE sp_apply_payment(
+                    p_order_id IN NUMBER,
+                    p_amount IN NUMBER
+                ) AS
+                    v_multiplier NUMBER := 2;
+                BEGIN
+                    DECLARE
+                        l_adjustment NUMBER := 1;
+                    BEGIN
+                        UPDATE sales_orders so
+                        SET paid_amount = so.paid_amount + p_amount * v_multiplier + l_adjustment
+                        WHERE so.id = p_order_id;
+                    END;
+                    INSERT INTO payment_audit (order_id, amount, adjusted_amount)
+                    SELECT so.id, p_amount, v_multiplier
+                    FROM sales_orders so
+                    WHERE so.id = p_order_id;
+                END;
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
+        Set<String> routineSymbols = Set.of("p_order_id", "p_amount", "v_multiplier", "l_adjustment");
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            List<RelationshipCandidate> relationships = new StructuredSqlRelationshipParser(parser)
+                    .parse(statement, null);
+
+            assertLineageSource(lineages, "sales_orders", "paid_amount",
+                    "sales_orders", "paid_amount",
+                    LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC, result);
+            assertLineageSource(lineages, "sales_orders", "id",
+                    "payment_audit", "order_id",
+                    LineageFlowKind.VALUE, LineageTransformType.DIRECT, result);
+            assertTrue(lineages.stream().flatMap(lineage -> lineage.sources().stream())
+                            .noneMatch(source -> routineSymbols.contains(source.column().columnName())),
+                    () -> parser.getClass().getSimpleName()
+                            + " emitted routine symbols as lineage endpoints: " + lineages);
+            assertTrue(relationships.stream().noneMatch(relationship ->
+                            relationship.source().isColumnLevel()
+                                    && routineSymbols.contains(relationship.source().column().columnName())
+                                    || relationship.target().isColumnLevel()
+                                    && routineSymbols.contains(relationship.target().column().columnName())),
+                    () -> parser.getClass().getSimpleName()
+                            + " emitted routine symbols as relationship endpoints: " + relationships);
+        }
+    }
+
+    @Test
     void oracleTokenAndAllFullProfilesKeepOuterArithmeticAroundCaseSelfUpdate() {
         SqlStatementRecord statement = statement("""
                 UPDATE sales_orders
@@ -178,7 +234,7 @@ class OracleAdaptorParserTest {
                             "VALUE:AGGREGATE:purchase_order_items.quantity->supplier_products.total_order_qty"),
                     () -> parser.getClass().getSimpleName() + " " + lineages);
             assertTrue(lineages.contains(
-                            "CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,"
+                            "CONTROL:DIRECT:purchase_order_items.order_id,purchase_orders.id,"
                                     + "purchase_order_items.product_id,supplier_products.product_id,"
                                     + "purchase_orders.supplier_id,supplier_products.supplier_id"
                                     + "->supplier_products.total_order_qty"),
@@ -600,17 +656,17 @@ class OracleAdaptorParserTest {
         assertLineageSource(lineages, "purchase_orders", "id", "supplier_products", "total_order_count",
                 LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
         assertLineageSource(lineages, "purchase_order_items", "order_id", "supplier_products", "total_order_count",
-                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
+                LineageFlowKind.CONTROL, LineageTransformType.DIRECT, result);
         assertLineageSource(lineages, "purchase_order_items", "received_qty", "supplier_products", "total_order_qty",
                 LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
         assertLineageSource(lineages, "purchase_order_items", "product_id", "supplier_products", "total_order_qty",
-                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
+                LineageFlowKind.CONTROL, LineageTransformType.DIRECT, result);
         assertLineageSource(lineages, "purchase_orders", "supplier_id", "supplier_products", "total_order_qty",
-                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
+                LineageFlowKind.CONTROL, LineageTransformType.DIRECT, result);
         assertLineageSource(lineages, "supplier_products", "product_id", "supplier_products", "total_order_qty",
-                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
+                LineageFlowKind.CONTROL, LineageTransformType.DIRECT, result);
         assertLineageSource(lineages, "supplier_products", "supplier_id", "supplier_products", "total_order_qty",
-                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
+                LineageFlowKind.CONTROL, LineageTransformType.DIRECT, result);
         assertLineageSource(lineages, "purchase_orders", "order_date", "supplier_products", "last_order_date",
                 LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
     }
@@ -1667,4 +1723,5 @@ class OracleAdaptorParserTest {
         assertTrue((Integer) result.attributes().get("syntaxErrors") > 0,
                 module.profile().id() + " should reject " + sql);
     }
+
 }

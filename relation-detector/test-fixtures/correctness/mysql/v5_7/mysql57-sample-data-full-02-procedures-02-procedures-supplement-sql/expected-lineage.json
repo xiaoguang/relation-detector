@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:inventory.warehouse_id->inventory.locked_quantity",
     "VALUE:AGGREGATE:inventory.locked_quantity,sales_order_items.quantity->inventory.locked_quantity",
     "VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount",
     "VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus",
@@ -10,7 +11,7 @@
     "VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id",
     "VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.period"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

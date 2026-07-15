@@ -3,6 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 RELATION_ROOT="$ROOT/relation-detector"
+
+if [[ "${SAMPLE_DATA_PARSER_CLI_GROUP_WORKER:-false}" != "true" ]]; then
+  exec "$RELATION_ROOT/scripts/run-sample-data-isolated.sh" "$@"
+fi
+
 OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-cli}"
 CONFIG_DIR="$OUT_DIR/configs"
 RESULT_DIR="$OUT_DIR/results"
@@ -11,8 +16,37 @@ CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-4}"
 SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}"
 MAX_WORKER_THREADS="${SAMPLE_DATA_PARSER_CLI_MAX_WORKER_THREADS:-8}"
 LOG_DIR="$OUT_DIR/logs"
-BATCH_MANIFEST="$OUT_DIR/batch.yml"
-BATCH_REPORT="$OUT_DIR/batch-report.json"
+BATCH_MANIFEST="${SAMPLE_DATA_PARSER_CLI_BATCH_MANIFEST:-$OUT_DIR/batch.yml}"
+BATCH_REPORT="${SAMPLE_DATA_PARSER_CLI_BATCH_REPORT:-$OUT_DIR/batch-report.json}"
+BATCH_LOG="${SAMPLE_DATA_PARSER_CLI_BATCH_LOG:-$LOG_DIR/batch.log}"
+RUN_LOCK_DIR="${SAMPLE_DATA_PARSER_CLI_LOCK_DIR:-$RELATION_ROOT/target/.sample-data-parser-cli.lock}"
+RUN_LOCK_HELD=false
+
+release_run_lock() {
+  if [[ "$RUN_LOCK_HELD" != "true" ]]; then
+    return
+  fi
+  rm -f "$RUN_LOCK_DIR/pid"
+  rmdir "$RUN_LOCK_DIR" 2>/dev/null || true
+  RUN_LOCK_HELD=false
+}
+
+acquire_run_lock() {
+  mkdir -p "$(dirname "$RUN_LOCK_DIR")"
+  if ! mkdir "$RUN_LOCK_DIR" 2>/dev/null; then
+    local owner="unknown"
+    if [[ -r "$RUN_LOCK_DIR/pid" ]]; then
+      owner="$(cat "$RUN_LOCK_DIR/pid")"
+    fi
+    echo "sample-data parser CLI is already running or requires cleanup (pid=$owner, lock=$RUN_LOCK_DIR)" >&2
+    exit 73
+  fi
+  printf '%s\n' "$$" >"$RUN_LOCK_DIR/pid"
+  RUN_LOCK_HELD=true
+}
+
+trap release_run_lock EXIT
+acquire_run_lock
 
 if ! [[ "$CASE_PARALLELISM" =~ ^[1-9][0-9]*$ ]]; then
   echo "SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM must be a positive integer" >&2
@@ -288,7 +322,9 @@ write_batch_manifest() {
 if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE:-false}" != "true" ]]; then
   mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
 fi
-"$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
+if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_JLS_CHECK:-false}" != "true" ]]; then
+  "$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
+fi
 
 queue_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/common-natural"
 
@@ -315,10 +351,12 @@ queue_case sqlserver-v2022-full SQLSERVER full-grammar sqlserver/2022 2022 "$REL
 queue_case sqlserver-v2025-full SQLSERVER full-grammar sqlserver/2025 2025 "$RELATION_ROOT/sample-data/sqlserver/2025"
 
 write_batch_manifest
-if ! RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" batch \
-  --manifest "$BATCH_MANIFEST" >"$LOG_DIR/batch.log" 2>&1; then
-  cat "$LOG_DIR/batch.log" >&2
-  exit 1
+if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_BATCH:-false}" != "true" ]]; then
+  if ! RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" batch \
+    --manifest "$BATCH_MANIFEST" >"$BATCH_LOG" 2>&1; then
+    cat "$BATCH_LOG" >&2
+    exit 1
+  fi
 fi
 
 REQUESTED_CASES_CSV=""

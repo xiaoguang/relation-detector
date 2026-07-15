@@ -96,7 +96,7 @@ oracle / oracle.tokenevent / oracle.fullgrammar.common / oracle.fullgrammar.v12c
 
 ### 2. SQL relationship 与 Data Lineage 共享 structured result
 
-`ScanEngine.scan(...)` 当前通过 `SourceCollectorPipeline` 和 `StatementParsePipeline` 进入 `StatementExecutionService`。单条 SQL 由 `StatementExecutionService.executeSql(...)` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后同时生成 relationship candidates、naming evidence candidates，并把同一个 `StructuredParseResult` 交给 Data Lineage extractor。
+`ScanEngine.scan(...)` 当前通过 `SourceCollectorPipeline` 和 `StatementParsePipeline` 进入 `StatementExecutionService`。单条 SQL 由 `StatementExecutionService.executeSql(...)` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后生成 relationship candidates，并把同一个 `StructuredParseResult` 交给 Data Lineage extractor。SQL naming rule 不在 statement 层执行；它随后由 scan-level `EvidenceEnhancementService` 对合并后的 relationship candidates 执行一次。
 
 这是当前实现事实，不改变 relationship / Data Lineage JSON schema，也不改变 semantic extractor 的职责边界。
 
@@ -138,12 +138,14 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ### Data Lineage 模型
 
-结果：结构契约通过；部分 parser 的 transform/source-role 与 provenance 仍有已确认缺口。
+结果：结构契约通过；事实身份仍有一个已确认缺口。
 
 - `ScanResult` 已有独立 `dataLineages`。
 - Data Lineage confidence 不参与 relationship confidence。
 - v1 只输出数据库内部 `table.column -> table.column`，不做 Parameter Binding。
 - `CUMULATIVE` 已作为累计/运行聚合 transform 与普通 `AGGREGATE` 区分。
+- 设计把 `sources` 视为 set-valued identity；当前 `DataLineageMerger` 仍按输入 list 顺序构造
+  key，同一 source 集合若发射顺序不同，可能被保留为重复 fact。
 
 ### Parser 模式
 
@@ -220,6 +222,12 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 1. **SQL Server/Oracle capability 声明与 collector 实现不完全一致。** 两个 adaptor 都声明 `METADATA` 与 `DATABASE_OBJECTS`，但对应 collector 当前返回空 snapshot/list；DDL collector 和 profiler 已实现。capability 应表达真实可用能力，或增加“placeholder/partial”状态，避免配置预检误判。
 2. **`AdaptorCapability` 尚未成为 core/CLI preflight gate。** SPI 暴露 capability set，但生产扫描路径没有基于它拒绝不支持的 source/profile 配置；Phase 3 的 capability 验收仍未完全落地。
+3. **metadata/profile 仍把组合索引成员当成单列方向证据。** `MetadataEvidenceEnhancer`、`DataProfileCandidateGenerator` 使用 `columns().anyMatch(...)`；它们需要像 DDL inventory 一样区分单列与组合列组。
+4. **Data Lineage source-set 身份仍依赖发射顺序。** `DataLineageMerger` 没有在 fact key 前 canonical sort/dedupe sources。
+5. **live profiler 失败缺少 diagnostic。** `JdbcDataProfilerTemplate` 对 permission、timeout 和 SQL exception 都静默返回空 evidence，只满足“不打断 scan”，不满足 Phase 7 的 warning/skip reason 要求。
+6. **metadata/naming 的 endpoint 构造尚未完整保留 catalog。** metadata table/column/index/constraint fact records 本身没有 catalog 字段；naming 的同表判断只比较 `TableId.normalizedName()`，三段式 raw table id helper 也只保留最后两段。这与显式 catalog/schema 不降级的设计边界不一致。
+7. **少量生产 Javadoc 仍停留在迁移前。** `AdaptorCollectors` 仍写 SPI v2，`DatabaseAdaptor` 仍把 Oracle/SQL Server 描述为 future adaptor，`OracleDatabaseAdaptor` 还把已经实现的 profiler 描述为空实现；这些注释不能继续作为实现状态依据。
+8. **部分 evidence 在正式 merger 前按 type 过早去重。** `MetadataEvidenceEnhancer.addIfAbsent(...)` 只比较 `EvidenceType`，会丢失同类型但来自不同 catalog/DDL source 或不同 endpoint side 的 observation；`DdlRelationExtractionVisitor.DdlState` 对同一 endpoint pair 也只保留每种 type 的第一条 DDL observation。这不改变 fact endpoint，但破坏 raw evidence 的多位置可审计性。
 
 上述差异的优先级高于继续扩大数量统计。修复时应先增加具体 SQL/graph/provenance 测试，再调整实现；只有确认旧 golden 错误时才更新 golden。
 

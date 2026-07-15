@@ -251,18 +251,28 @@ public final class CommonTokenEventParseTreeVisitor extends CommonTokenEventWrit
         emitter.addWrite(events, ctx.tablePrimary(), StructuredParseEventType.WRITE_TARGET,
                 baseName(targetTable), targetTable, targetAlias, "", "", "", "",
                 List.of(), List.of(), LineageTransformType.UNKNOWN_EXPRESSION, LineageFlowKind.VALUE);
+        List<UpdateTarget> targets = new java.util.ArrayList<>();
         for (CommonRelationSqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
+            targets.add(new UpdateTarget(targetColumn, assignmentAlias));
             for (ExpressionAnalysis source : writeAnalyses(assignment.expression())) {
                 addWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, targetTable,
                         targetColumn, assignmentAlias, source, "UPDATE_SET");
             }
         }
         if (ctx.whereClause() != null) {
+            ExpressionAnalysis locator = locatorControl(ctx.whereClause().predicate());
+            for (UpdateTarget target : targets) {
+                addWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, ctx.whereClause(), targetTable,
+                        target.column(), target.alias(), locator, "UPDATE_LOCATOR");
+            }
             visit(ctx.whereClause());
         }
         return null;
+    }
+
+    private record UpdateTarget(String column, String alias) {
     }
 }

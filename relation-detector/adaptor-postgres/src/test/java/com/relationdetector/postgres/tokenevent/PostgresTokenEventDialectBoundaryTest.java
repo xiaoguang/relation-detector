@@ -47,7 +47,7 @@ class PostgresTokenEventDialectBoundaryTest {
         assertTrue(fingerprints.contains(
                         "VALUE:AGGREGATE:purchase_order_items.quantity->supplier_products.total_order_qty"),
                 () -> fingerprints + " events=" + structured.events());
-        assertTrue(fingerprints.stream().anyMatch(value -> value.startsWith("CONTROL:CASE_WHEN:")
+        assertTrue(fingerprints.stream().anyMatch(value -> value.startsWith("CONTROL:DIRECT:")
                         && value.contains("purchase_order_items.order_id")
                         && value.contains("purchase_orders.id")
                         && value.contains("supplier_products.product_id")
@@ -84,6 +84,8 @@ class PostgresTokenEventDialectBoundaryTest {
                 .toList();
 
         assertEquals(java.util.List.of(
+                "CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id->inventory.last_stocktake_date",
+                "CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id->inventory.quantity",
                 "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty",
                 "VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity",
                 "VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty",
@@ -213,8 +215,12 @@ class PostgresTokenEventDialectBoundaryTest {
                 .toList();
 
         assertTrue(fingerprints.contains(
-                "VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks"),
+                "VALUE:CONCAT_FORMAT:users.risk_level->order_ledgers.remarks"),
                 () -> "CTE UPDATE FROM concat should resolve projection lineage through typed grammar: "
+                        + fingerprints + " events=" + result.events() + " attrs=" + result.attributes());
+        assertTrue(fingerprints.contains(
+                "CONTROL:WINDOW_DERIVED:orders.amount,orders.user_id->order_ledgers.remarks"),
+                () -> "CTE window dependencies should control, not value, the UPDATE target: "
                         + fingerprints + " events=" + result.events() + " attrs=" + result.attributes());
     }
 
@@ -271,8 +277,12 @@ class PostgresTokenEventDialectBoundaryTest {
                 () -> "Function self-source should be preserved: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
         assertTrue(fingerprints.contains(
-                "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes"),
+                "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes"),
                 () -> "Nested CTE function/cast expression should resolve to physical sources: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+        assertTrue(fingerprints.contains(
+                "CONTROL:WINDOW_DERIVED:transaction_ledgers.amount,users.country_code->account_balances.compliance_notes"),
+                () -> "Nested CTE window dependencies should remain CONTROL: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
     }
 
@@ -307,8 +317,12 @@ class PostgresTokenEventDialectBoundaryTest {
                 () -> "Scalar aggregate subquery should flow into UPDATE target: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id->users.level"),
+                        "CONTROL:CASE_WHEN:orders.pay_amount->users.level"),
                 () -> "CASE over scalar aggregate subquery should control UPDATE target: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:DIRECT:orders.user_id,users.id->users.level"),
+                () -> "Scalar-subquery locators should remain direct controls: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
     }
 
@@ -388,6 +402,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 .toList();
 
         assertEquals(java.util.List.of(
+                "CONTROL:WINDOW_DERIVED:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str",
                 "VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str"),
                 fingerprints,
                 () -> "PostgreSQL window aggregate should remain a typed cumulative expression: "

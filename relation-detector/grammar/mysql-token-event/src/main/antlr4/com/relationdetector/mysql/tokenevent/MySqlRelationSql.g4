@@ -79,7 +79,7 @@ blockStartStatement
     ;
 
 blockEndStatement
-    : END (IF | LOOP | WHILE | REPEAT)?
+    : END (IF | LOOP | WHILE | REPEAT | CASE)?
     ;
 
 declarationStatement
@@ -98,6 +98,8 @@ controlStartStatement
     : IF ~THEN* THEN
     | ELSEIF ~THEN* THEN
     | ELSE
+    | CASE expression?
+    | WHEN expression THEN
     | WHILE ~DO* DO
     | FOR ~LOOP* LOOP
     | identifier OTHER LOOP
@@ -556,11 +558,19 @@ functionSeparator
     ;
 
 windowSpecification
-    : OVER LPAREN windowSpecificationToken* RPAREN
+    : OVER LPAREN windowPartitionByClause? windowOrderByClause? windowFrameToken* RPAREN
     ;
 
-windowSpecificationToken
-    : LPAREN windowSpecificationToken* RPAREN
+windowPartitionByClause
+    : PARTITION BY expressionList
+    ;
+
+windowOrderByClause
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+windowFrameToken
+    : LPAREN windowFrameToken* RPAREN
     | ~RPAREN
     ;
 

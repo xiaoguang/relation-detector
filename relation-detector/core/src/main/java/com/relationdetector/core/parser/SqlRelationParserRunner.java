@@ -16,6 +16,7 @@ import com.relationdetector.core.log.TypedLogNoiseClassifier;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.provenance.SourceProvenanceValidator;
+import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 
 /**
  * SQL parser mode 选择与运行入口。
@@ -32,6 +33,8 @@ public final class SqlRelationParserRunner {
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
     private final StructuredRelationshipExtractor relationExtractor = new StructuredRelationshipExtractor();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
+    private final StructuredParseProvenanceNormalizer provenanceNormalizer =
+            new StructuredParseProvenanceNormalizer();
 
     /**
      * 解析一条 SQL statement 并返回 relationship 候选。
@@ -138,6 +141,7 @@ public final class SqlRelationParserRunner {
     }
 
     private StructuredParseResult validated(SqlStatementRecord statement, StructuredParseResult structured) {
+        structured = provenanceNormalizer.normalize(statement, structured);
         List<WarningMessage> violations = provenanceValidator.validate(statement, structured);
         if (violations.isEmpty()) {
             return structured;

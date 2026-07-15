@@ -1,13 +1,23 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.actual_consumed",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.issued_qty",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.product_id",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.required_qty",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.returned_qty",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.status",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.unit",
+    "CONTROL:DIRECT:dbo.boms.parent_product_id,dbo.work_orders.product_id,dbo.work_orders.status->dbo.work_order_materials.work_order_id",
+    "CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.status",
+    "CONTROL:DIRECT:dbo.work_order_materials.work_order_id,dbo.work_orders.id->dbo.work_orders.updated_at",
     "VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty",
     "VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status",
     "VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id",
     "VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit",
     "VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

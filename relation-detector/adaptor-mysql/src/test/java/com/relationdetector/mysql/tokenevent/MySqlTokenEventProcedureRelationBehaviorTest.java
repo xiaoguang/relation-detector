@@ -103,7 +103,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
         assertTrue(fingerprints.contains("VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id"),
                 () -> "Scalar projection should be VALUE lineage: " + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id"),
+                        "CONTROL:DIRECT:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id"),
                 () -> "Nested scalar predicates and correlation should be CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertFalse(fingerprints.stream().anyMatch(fingerprint ->
@@ -393,7 +393,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 () -> "Scalar aggregate selected expression should stay VALUE, without predicate keys: "
                         + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:supplier_manifests.product_id,warehouse_inventory.product_id->order_items.estimated_cost"),
+                        "CONTROL:DIRECT:supplier_manifests.product_id,warehouse_inventory.product_id->order_items.estimated_cost"),
                 () -> "Scalar aggregate locator predicate should be CONTROL, not VALUE: "
                         + fingerprints + " events=" + structured.events());
     }
@@ -444,23 +444,23 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 LineageTransformType.AGGREGATE, () -> "MAX(po.order_date) is valid aggregate lineage: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "purchase_order_items", "order_id", "supplier_products", "total_order_count",
-                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                LineageTransformType.DIRECT, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "JOIN predicate column poi.order_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "purchase_order_items", "product_id", "supplier_products", "total_order_qty",
-                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                LineageTransformType.DIRECT, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "Correlated filter column poi.product_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "purchase_orders", "supplier_id", "supplier_products", "total_order_qty",
-                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                LineageTransformType.DIRECT, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "Correlated filter column po.supplier_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "supplier_products", "product_id", "supplier_products", "total_order_qty",
-                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                LineageTransformType.DIRECT, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "Outer correlated target column sp.product_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "supplier_products", "supplier_id", "supplier_products", "total_order_qty",
-                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                LineageTransformType.DIRECT, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "Outer correlated target column sp.supplier_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
     }
@@ -545,17 +545,17 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 () -> "The aggregate CASE predicate must remain CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "inspection_reports", "batch_id",
-                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                "supplier_products", "quality_score", LineageTransformType.DIRECT,
                 com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "JOIN predicate source should remain attached to aggregate CASE control lineage: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "product_batches", "id",
-                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                "supplier_products", "quality_score", LineageTransformType.DIRECT,
                 com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "JOIN target source should remain attached to aggregate CASE control lineage: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "supplier_products", "supplier_id",
-                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                "supplier_products", "quality_score", LineageTransformType.DIRECT,
                 com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
                 () -> "Correlated supplier source should remain attached to aggregate CASE control lineage: "
                         + fingerprints + " events=" + structured.events());

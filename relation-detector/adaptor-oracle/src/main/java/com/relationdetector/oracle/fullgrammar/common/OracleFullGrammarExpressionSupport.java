@@ -14,20 +14,24 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
+import com.relationdetector.oracle.routine.OracleRoutineScope;
 
 /** Per-parse Oracle VALUE/CONTROL and scalar-subquery expression analysis. */
 final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTreeSupport {
     private final OracleExpressionTransformSupport transforms;
     private final Supplier<String> defaultAlias;
+    private final OracleRoutineScope routineScope;
 
     OracleFullGrammarExpressionSupport(
             OracleSqlEventVisitorCore core,
             OracleFullGrammarParseTreeAdapter adapter,
-            Supplier<String> defaultAlias
+            Supplier<String> defaultAlias,
+            OracleRoutineScope routineScope
     ) {
         super(core, adapter);
         this.transforms = new OracleExpressionTransformSupport(core, adapter);
         this.defaultAlias = defaultAlias;
+        this.routineScope = routineScope;
     }
 
     OracleColumnRead singleSelectColumn(ParserRuleContext subquery) {
@@ -79,12 +83,32 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
                 }
             }
             if (!control.sources().isEmpty()) {
-                result.add(new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                result.add(new OracleExpressionAnalysis(control.sources(), control.transform(),
                         LineageFlowKind.CONTROL));
             }
             return List.copyOf(result);
         }
         return expressionAnalyses(expression, columnReads(expression));
+    }
+
+    OracleExpressionAnalysis directControlAnalysis(ParseTree expression) {
+        return new OracleExpressionAnalysis(columnReads(expression), LineageTransformType.DIRECT,
+                LineageFlowKind.CONTROL);
+    }
+
+    OracleExpressionAnalysis groupingControlAnalysis(ParseTree query) {
+        ParserRuleContext queryBlock = first(query, Role.QUERY_BLOCK);
+        if (queryBlock == null) {
+            return OracleExpressionAnalysis.empty();
+        }
+        Map<String, OracleColumnRead> reads = new LinkedHashMap<>();
+        collectDirectScopeColumns(queryBlock, Role.GROUP_BY_ELEMENT, reads);
+        return new OracleExpressionAnalysis(new ArrayList<>(reads.values()), LineageTransformType.AGGREGATE,
+                LineageFlowKind.CONTROL);
+    }
+
+    boolean isAggregateExpression(ParseTree expression) {
+        return transforms.transformFor(expression) == LineageTransformType.AGGREGATE;
     }
 
     private void collectPhysicalRowsetAliases(ParseTree root, ParseTree tree, Set<String> aliases) {
@@ -147,11 +171,20 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             ParseTree expression,
             List<OracleColumnRead> projectionSources
     ) {
+        Set<OracleColumnRead> windowControls = windowControlSources(expression);
+        List<OracleColumnRead> effectiveProjectionSources = projectionSources.stream()
+                .filter(source -> !windowControls.contains(source))
+                .toList();
         ParserRuleContext caseExpression = first(expression, Role.CASE_EXPRESSION);
         if (caseExpression == null) {
             OracleExpressionAnalysis analysis = new OracleExpressionAnalysis(
-                    projectionSources, transforms.transformFor(expression), LineageFlowKind.VALUE);
-            return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+                    effectiveProjectionSources, transforms.transformFor(expression), LineageFlowKind.VALUE);
+            List<OracleExpressionAnalysis> result = new ArrayList<>(2);
+            if (!analysis.sources().isEmpty()) {
+                result.add(analysis);
+            }
+            addWindowControl(result, windowControls);
+            return List.copyOf(result);
         }
         List<OracleExpressionAnalysis> caseRoles = caseRoleAnalyses(caseExpression);
         Set<OracleColumnRead> caseValues = new LinkedHashSet<>();
@@ -163,7 +196,7 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
                 caseControls.addAll(role.sources());
             }
         }
-        List<OracleColumnRead> values = projectionSources.stream()
+        List<OracleColumnRead> values = effectiveProjectionSources.stream()
                 .filter(source -> !caseControls.contains(source) || caseValues.contains(source))
                 .distinct().toList();
         List<OracleExpressionAnalysis> result = new ArrayList<>(2);
@@ -181,7 +214,23 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             result.add(new OracleExpressionAnalysis(List.copyOf(caseControls), LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL));
         }
+        addWindowControl(result, windowControls);
         return List.copyOf(result);
+    }
+
+    private Set<OracleColumnRead> windowControlSources(ParseTree expression) {
+        ParserRuleContext window = first(expression, Role.WINDOW_CLAUSE);
+        return window == null ? Set.of() : new LinkedHashSet<>(columnReads(window));
+    }
+
+    private void addWindowControl(
+            List<OracleExpressionAnalysis> result,
+            Set<OracleColumnRead> windowControls
+    ) {
+        if (!windowControls.isEmpty()) {
+            result.add(new OracleExpressionAnalysis(List.copyOf(windowControls),
+                    LineageTransformType.WINDOW_DERIVED, LineageFlowKind.CONTROL));
+        }
     }
 
     private boolean isTopLevelCaseExpression(ParseTree tree) {
@@ -282,7 +331,7 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
                 }
             }
         }
-        return new OracleExpressionAnalysis(new ArrayList<>(reads.values()), LineageTransformType.CASE_WHEN,
+        return new OracleExpressionAnalysis(new ArrayList<>(reads.values()), LineageTransformType.DIRECT,
                 LineageFlowKind.CONTROL);
     }
 
@@ -394,7 +443,7 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
         if (dot < 0) {
             String alias = defaultAlias.get();
             String column = core.clean(value);
-            if (!column.isBlank()) {
+            if (!column.isBlank() && !routineScope.isSymbol(column)) {
                 reads.putIfAbsent(alias + "." + column, new OracleColumnRead(alias, column));
             }
             return;

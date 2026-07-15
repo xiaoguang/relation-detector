@@ -316,6 +316,9 @@ class FullGrammarSqlBehaviorTest {
                     .toList();
 
             assertEquals(List.of(
+                    "CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id"
+                            + "->inventory.last_stocktake_date",
+                    "CONTROL:DIRECT:inventory.product_id,stocktake_items.product_id->inventory.quantity",
                     "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty",
                     "VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity",
                     "VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty",
@@ -647,7 +650,7 @@ class FullGrammarSqlBehaviorTest {
 
         assertTrue(lineages.contains("VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val"
                 + "->jsh_temp_mock_plan.mock_timestamp_str"), () -> lineages.toString());
-        assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight"
+        assertTrue(lineages.contains("CONTROL:DIRECT:jsh_temp_hour_pdf.weight"
                 + "->jsh_temp_mock_plan.mock_timestamp_str"), () -> lineages.toString());
         assertFalse(lineages.stream().anyMatch(lineage -> lineage.contains("rand_tbl.")
                         || lineage.contains("h.")
@@ -701,7 +704,10 @@ class FullGrammarSqlBehaviorTest {
                 .collect(Collectors.toSet());
 
         assertTrue(lineages.contains(
-                "CONTROL:CASE_WHEN:jsh_organization.id,jsh_organization.org_abr,jsh_organization.org_no,"
+                "CONTROL:CASE_WHEN:jsh_organization.org_abr,jsh_organization.org_no"
+                        + "->jsh_temp_org_pdf.weight"), () -> "Actual lineage: " + lineages);
+        assertTrue(lineages.contains(
+                "CONTROL:DIRECT:jsh_organization.id,jsh_organization.org_no,"
                         + "jsh_organization.p_tenant_id,jsh_organization.parent_id,jsh_organization.tenant_id"
                         + "->jsh_temp_org_pdf.weight"), () -> "Actual lineage: " + lineages);
         assertEquals(1, lineages.stream()

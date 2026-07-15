@@ -1,6 +1,15 @@
 {
   "fingerprints": [
-    "CONTROL:CASE_WHEN:products.id->product_batches.expiry_date",
+    "CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date",
+    "CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity",
+    "CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity",
+    "CONTROL:DIRECT:product_batches.id->product_batches.current_qty",
+    "CONTROL:DIRECT:product_batches.id->product_batches.status",
+    "CONTROL:DIRECT:products.id->product_batches.expiry_date",
+    "CONTROL:DIRECT:purchase_orders.id->purchase_orders.paid_amount",
+    "CONTROL:DIRECT:purchase_orders.id->purchase_orders.total_amount",
+    "CONTROL:DIRECT:sales_orders.id->sales_orders.paid_amount",
+    "CONTROL:DIRECT:sales_orders.id->sales_orders.total_amount",
     "VALUE:ARITHMETIC:inventory.quantity->inventory.quantity",
     "VALUE:ARITHMETIC:product_batches.current_qty->product_batches.current_qty",
     "VALUE:FUNCTION_CALL:products.shelf_life_days->product_batches.expiry_date"

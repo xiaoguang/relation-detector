@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:jsh_depot_item.material_id,jsh_material_current_stock.material_id,jsh_depot_item.depot_id,jsh_material_current_stock.depot_id,jsh_depot_item.header_id->jsh_material_current_stock.current_number",
     "VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number"
   ],
   "forbiddenSources": [ ],

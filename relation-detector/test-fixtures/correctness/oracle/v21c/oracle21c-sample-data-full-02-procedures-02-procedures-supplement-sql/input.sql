@@ -158,13 +158,14 @@ CREATE OR REPLACE PROCEDURE sp_process_expired_batches(
 AS
     v_before_qty NUMBER(10);
 BEGIN
-    FOR rec IN
+    FOR rec IN (
         SELECT pb.id AS batch_id, pb.product_id, pb.current_qty, i.warehouse_id
         FROM product_batches pb
         JOIN inventory i ON pb.id = i.batch_id
         WHERE pb.expiry_date <= CURRENT_DATE
           AND pb.status = 'active'
           AND pb.current_qty > 0
+    )
     LOOP
         SELECT quantity INTO v_before_qty
         FROM inventory

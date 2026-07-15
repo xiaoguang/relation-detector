@@ -1,5 +1,7 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.last_ordered_from",
+    "CONTROL:DIRECT:inventory.product_id,order_items.product_id,order_items.status->inventory.stock_reserved",
     "VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved",
     "VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from"
   ],

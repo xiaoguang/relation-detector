@@ -298,6 +298,35 @@ final class MySqlParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter
                 .toList();
     }
 
+    @Override
+    public boolean isWindowControlContainer(ParseTree tree) {
+        return tree instanceof WindowingClauseContext;
+    }
+
+    @Override
+    public List<ParseTree> windowControlExpressions(ParseTree tree) {
+        if (!(tree instanceof WindowingClauseContext window)
+                || window.windowSpec() == null
+                || window.windowSpec().windowSpecDetails() == null) {
+            return List.of();
+        }
+        WindowSpecDetailsContext details = window.windowSpec().windowSpecDetails();
+        List<ParseTree> controls = new ArrayList<>();
+        if (details.orderList() != null) {
+            details.orderList().orderExpression().stream()
+                    .map(OrderExpressionContext::expr)
+                    .filter(java.util.Objects::nonNull)
+                    .forEach(controls::add);
+        }
+        if (details.orderClause() != null && details.orderClause().orderList() != null) {
+            details.orderClause().orderList().orderExpression().stream()
+                    .map(OrderExpressionContext::expr)
+                    .filter(java.util.Objects::nonNull)
+                    .forEach(controls::add);
+        }
+        return List.copyOf(controls);
+    }
+
     private void collectProjectionItems(ParseTree tree, List<ProjectionItem> result) {
         if (tree == null) return;
         if (tree instanceof SelectItemContext item) {

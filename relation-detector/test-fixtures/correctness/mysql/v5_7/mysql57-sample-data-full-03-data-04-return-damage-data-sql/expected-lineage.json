@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id",
-    "CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost",
-    "CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id",
+    "CONTROL:DIRECT:product_batches.product_id->damage_report_items.batch_id",
+    "CONTROL:DIRECT:products.id->damage_report_items.unit_cost",
+    "CONTROL:DIRECT:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id",
     "VALUE:AGGREGATE:product_batches.id->purchase_return_items.batch_id",
     "VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received",
     "VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount",
@@ -16,7 +16,7 @@
     "VALUE:DIRECT:purchase_receipts.id->purchase_returns.purchase_receipt_id",
     "VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id"
   ],
-  "forbiddenSources": [],
-  "forbiddenTargets": [],
-  "warningCodes": {}
+  "forbiddenSources": [ ],
+  "forbiddenTargets": [ ],
+  "warningCodes": { }
 }

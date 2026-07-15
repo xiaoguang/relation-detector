@@ -1,6 +1,9 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag",
+    "CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.computed_balance",
+    "CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.discrepancy_flag",
+    "CONTROL:DIRECT:asset_balances.account_id,ledger_system_a.account_id,ledger_system_b.account_id,account_extensions.audit_frozen->asset_balances.last_checked_by",
     "VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance",
     "VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by"
   ],

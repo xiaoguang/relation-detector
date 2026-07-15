@@ -1,5 +1,7 @@
 {
   "fingerprints": [
+    "CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.is_on_sale",
+    "CONTROL:DIRECT:products.shop_id,shops.id,shops.merchant_id,merchants.id,merchants.status,shops.rating->products.promo_price",
     "VALUE:ARITHMETIC:products.original_price->products.promo_price"
   ],
   "forbiddenSources": [
