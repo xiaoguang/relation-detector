@@ -11,6 +11,7 @@ import java.util.List;
  * index type, visibility, columns, expressions, and prefix parts for evidence enhancement.
  */
 public record MetadataIndexFact(
+        String catalog,
         String schema,
         String tableName,
         String indexName,

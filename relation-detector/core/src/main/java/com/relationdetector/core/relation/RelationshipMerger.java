@@ -35,6 +35,9 @@ public final class RelationshipMerger {
     private final EvidenceObservationAggregator<Evidence> observations =
             new EvidenceObservationAggregator<>();
     private final RelationshipObservationPolicy observationPolicy = new RelationshipObservationPolicy();
+    private final RelationshipConditionalSummarizer conditionalSummarizer =
+            new RelationshipConditionalSummarizer();
+    private final RelationshipSubtypeResolver subtypeResolver = new RelationshipSubtypeResolver();
 
     /**
      * 合并候选并按 minConfidence 过滤输出。
@@ -51,7 +54,8 @@ public final class RelationshipMerger {
             } else {
                 existing.evidence().addAll(candidate.evidence());
                 existing.warnings().addAll(candidate.warnings());
-                existing.relationSubType(dominant(existing.relationSubType(), candidate.relationSubType()));
+                existing.relationSubType(
+                        subtypeResolver.dominant(existing.relationSubType(), candidate.relationSubType()));
             }
         }
         foldColumnCoOccurrencesIntoDirectionalEvidence(merged);
@@ -60,11 +64,11 @@ public final class RelationshipMerger {
 
         for (RelationshipCandidate candidate : merged.values()) {
             summarizeRepeatedEvidence(candidate);
-            summarizeConditionalAttributes(candidate);
+            conditionalSummarizer.summarize(candidate);
             candidate.confidence(calculator.calculate(candidate.evidence()));
-            candidate.relationSubType(resolveSubtype(candidate));
+            candidate.relationSubType(subtypeResolver.resolve(candidate));
         }
-        annotatePolymorphicRelationships(merged.values());
+        conditionalSummarizer.annotatePolymorphic(merged.values());
 
         List<RelationshipCandidate> output = new ArrayList<>();
         for (RelationshipCandidate candidate : merged.values()) {
@@ -295,119 +299,15 @@ public final class RelationshipMerger {
     ) {
         RelationshipCandidate copy = new RelationshipCandidate(source, target, type, subType);
         candidate.evidence().stream()
-                .map(evidence -> normalizeEndpointSide(evidence, source, target))
+                .map(evidence -> RelationshipEndpointEvidence.normalizeSide(evidence, source, target))
                 .forEach(copy.evidence()::add);
         candidate.rawEvidence().stream()
-                .map(evidence -> normalizeEndpointSide(evidence, source, target))
+                .map(evidence -> RelationshipEndpointEvidence.normalizeSide(evidence, source, target))
                 .forEach(copy.rawEvidence()::add);
         copy.warnings().addAll(candidate.warnings());
         copy.attributes().putAll(candidate.attributes());
         copy.confidence(candidate.confidence());
         return copy;
-    }
-
-    private void summarizeConditionalAttributes(RelationshipCandidate candidate) {
-        List<Evidence> structural = candidate.rawEvidence().stream()
-                .filter(this::isStructuralEndpointEvidence)
-                .toList();
-        candidate.attributes().clear();
-        if (structural.isEmpty()
-                || structural.stream().anyMatch(evidence ->
-                        !Boolean.TRUE.equals(evidence.attributes().get("conditional")))) {
-            return;
-        }
-        List<Map<String, Object>> conditions = structural.stream()
-                .map(this::conditionAttributes)
-                .filter(condition -> !condition.isEmpty())
-                .distinct()
-                .sorted(Comparator.comparing((Map<String, Object> condition) ->
-                                String.valueOf(condition.get("discriminator")))
-                        .thenComparing(condition -> String.valueOf(condition.get("operator")))
-                        .thenComparing(condition -> String.valueOf(condition.get("value"))))
-                .toList();
-        if (conditions.isEmpty()) {
-            return;
-        }
-        candidate.attributes().put("conditional", true);
-        candidate.attributes().put("polymorphic", false);
-        candidate.attributes().put("conditions", conditions);
-    }
-
-    private Map<String, Object> conditionAttributes(Evidence evidence) {
-        Object discriminator = evidence.attributes().get("discriminatorEndpoint");
-        Object operator = evidence.attributes().get("discriminatorOperator");
-        Object value = evidence.attributes().get("discriminatorValue");
-        if (discriminator == null || operator == null || value == null) {
-            return Map.of();
-        }
-        Map<String, Object> condition = new LinkedHashMap<>();
-        condition.put("discriminator", discriminator);
-        condition.put("operator", operator);
-        condition.put("value", value);
-        return Map.copyOf(condition);
-    }
-
-    private void annotatePolymorphicRelationships(java.util.Collection<RelationshipCandidate> candidates) {
-        Map<String, List<RelationshipCandidate>> bySourceAndDiscriminator = new LinkedHashMap<>();
-        for (RelationshipCandidate candidate : candidates) {
-            if (!Boolean.TRUE.equals(candidate.attributes().get("conditional"))) {
-                continue;
-            }
-            for (Map<String, Object> condition : conditions(candidate)) {
-                String key = candidate.source().normalizedKey() + "|" + condition.get("discriminator");
-                bySourceAndDiscriminator.computeIfAbsent(key, ignored -> new ArrayList<>()).add(candidate);
-            }
-        }
-        bySourceAndDiscriminator.values().stream()
-                .filter(group -> group.stream().map(candidate -> candidate.target().normalizedKey()).distinct().count() > 1)
-                .filter(group -> group.stream().flatMap(candidate -> conditions(candidate).stream())
-                        .map(condition -> condition.get("value")).distinct().count() > 1)
-                .flatMap(List::stream)
-                .forEach(candidate -> candidate.attributes().put("polymorphic", true));
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> conditions(RelationshipCandidate candidate) {
-        Object value = candidate.attributes().get("conditions");
-        return value instanceof List<?> list
-                ? list.stream().filter(Map.class::isInstance).map(item -> (Map<String, Object>) item).toList()
-                : List.of();
-    }
-
-    private boolean isStructuralEndpointEvidence(Evidence evidence) {
-        return switch (evidence.type()) {
-            case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY,
-                    SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS, SQL_LOG_COLUMN_CO_OCCURRENCE,
-                    VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE -> true;
-            default -> false;
-        };
-    }
-
-    private Evidence normalizeEndpointSide(Evidence evidence, Endpoint source, Endpoint target) {
-        Map<String, Object> attributes = new LinkedHashMap<>(evidence.attributes());
-        String explicitEndpoint = explicitEndpoint(attributes);
-        if (explicitEndpoint.isBlank()) {
-            return evidence;
-        }
-        if (explicitEndpoint.equals(source.normalizedKey())) {
-            attributes.put("endpointSide", "source");
-        } else if (explicitEndpoint.equals(target.normalizedKey())) {
-            attributes.put("endpointSide", "target");
-        } else {
-            attributes.remove("endpointSide");
-        }
-        return new Evidence(evidence.type(), evidence.score(), evidence.sourceType(),
-                evidence.source(), evidence.detail(), attributes);
-    }
-
-    private String explicitEndpoint(Map<String, Object> attributes) {
-        for (String key : List.of("uniqueEndpoint", "indexEndpoint", "indexedEndpoint")) {
-            Object value = attributes.get(key);
-            if (value != null && !String.valueOf(value).isBlank()) {
-                return normalizeEndpoint(String.valueOf(value));
-            }
-        }
-        return "";
     }
 
     private void putOrMerge(Map<String, RelationshipCandidate> merged, RelationshipCandidate candidate) {
@@ -420,7 +320,8 @@ public final class RelationshipMerger {
         existing.evidence().addAll(candidate.evidence());
         existing.rawEvidence().addAll(candidate.rawEvidence());
         existing.warnings().addAll(candidate.warnings());
-        existing.relationSubType(dominant(existing.relationSubType(), candidate.relationSubType()));
+        existing.relationSubType(
+                subtypeResolver.dominant(existing.relationSubType(), candidate.relationSubType()));
     }
 
     private String unorderedColumnEndpointKey(RelationshipCandidate candidate) {
@@ -454,13 +355,14 @@ public final class RelationshipMerger {
      */
     private void summarizeRepeatedEvidence(RelationshipCandidate candidate) {
         List<Evidence> raw = deduplicateNamingReferences(candidate.evidence());
-        var aggregation = observations.aggregate(raw, observationPolicy, false);
+        var aggregation = observations.aggregate(raw, observationPolicy, true);
         candidate.rawEvidence().clear();
         candidate.rawEvidence().addAll(aggregation.rawObservations());
         candidate.evidence().clear();
         for (SummaryGroup<Evidence> group : aggregation.groups()) {
             candidate.evidence().add(groupedEvidence(group));
-            if (group.count() > 1 && repeatedObservationEligible(group.first().type())) {
+            if (group.count() > 1
+                    && RelationshipObservationPolicy.repeatedObservationEligible(group.first().type())) {
                 candidate.evidence().add(repeatedObservationEvidence(group));
             }
         }
@@ -513,21 +415,12 @@ public final class RelationshipMerger {
         return deduplicated;
     }
 
-    private boolean repeatedObservationEligible(EvidenceType type) {
-        return switch (type) {
-            case VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE,
-                    SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS,
-                    SQL_LOG_COLUMN_CO_OCCURRENCE, SQL_LOG_TABLE_CO_OCCURRENCE -> true;
-            default -> false;
-        };
-    }
-
     private String key(RelationshipCandidate candidate) {
         if (candidate.relationType() == RelationType.CO_OCCURRENCE
                 && !candidate.source().isColumnLevel()
                 && !candidate.target().isColumnLevel()) {
-            String a = candidate.source().table().normalizedName();
-            String b = candidate.target().table().normalizedName();
+            String a = candidate.source().normalizedKey();
+            String b = candidate.target().normalizedKey();
             return a.compareTo(b) <= 0
                     ? "CO:" + a + ":" + b
                     : "CO:" + b + ":" + a;
@@ -535,91 +428,6 @@ public final class RelationshipMerger {
         return candidate.relationType() + ":"
                 + candidate.source().normalizedKey() + "->"
                 + candidate.target().normalizedKey();
-    }
-
-    private RelationSubType resolveSubtype(RelationshipCandidate candidate) {
-        if (candidate.relationType() == RelationType.CO_OCCURRENCE) {
-            return candidate.source().isColumnLevel() && candidate.target().isColumnLevel()
-                    ? RelationSubType.COLUMN_CO_OCCURRENCE
-                    : RelationSubType.TABLE_CO_OCCURRENCE;
-        }
-        RelationSubType current = candidate.relationSubType();
-        for (var evidence : candidate.evidence()) {
-            current = dominant(current, subtypeFromEvidence(evidence.type()));
-        }
-        return current;
-    }
-
-    private RelationSubType subtypeFromEvidence(com.relationdetector.contracts.Enums.EvidenceType type) {
-        return switch (type) {
-            case METADATA_FOREIGN_KEY -> RelationSubType.DECLARED_FK;
-            case DDL_FOREIGN_KEY -> RelationSubType.DDL_DECLARED_FK;
-            case VALUE_CONTAINMENT_HIGH, VALUE_OVERLAP_HIGH -> RelationSubType.PROFILE_SUPPORTED_FK;
-            case VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE, SQL_LOG_JOIN -> RelationSubType.INFERRED_JOIN_FK;
-            case SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS -> RelationSubType.SUBQUERY_INFERRED_FK;
-            case NAMING_MATCH -> RelationSubType.NAMING_SUPPORTED_FK;
-            case SQL_LOG_COLUMN_CO_OCCURRENCE -> RelationSubType.COLUMN_CO_OCCURRENCE;
-            case SQL_LOG_TABLE_CO_OCCURRENCE -> RelationSubType.TABLE_CO_OCCURRENCE;
-            case REPEATED_OBSERVATION -> null;
-            default -> null;
-        };
-    }
-
-    private RelationSubType dominant(RelationSubType left, RelationSubType right) {
-        if (right == null) {
-            return left;
-        }
-        if (left == null) {
-            return right;
-        }
-        return priority(right) < priority(left) ? right : left;
-    }
-
-    private int priority(RelationSubType type) {
-        return switch (type) {
-            case DECLARED_FK -> 1;
-            case DDL_DECLARED_FK -> 2;
-            case PROFILE_SUPPORTED_FK -> 3;
-            case INFERRED_JOIN_FK -> 4;
-            case SUBQUERY_INFERRED_FK -> 5;
-            case NAMING_SUPPORTED_FK -> 6;
-            case COLUMN_CO_OCCURRENCE -> 7;
-            case TABLE_CO_OCCURRENCE -> 8;
-        };
-    }
-
-    private static final class RelationshipObservationPolicy
-            implements EvidenceObservationAggregator.ObservationPolicy<Evidence> {
-        @Override
-        public Object exactKey(Evidence evidence) {
-            return summaryKey(evidence) + "|" + evidence.detail() + "|" + evidence.attributes();
-        }
-
-        @Override
-        public Object summaryKey(Evidence evidence) {
-            return evidence.type() + "|" + evidence.sourceType() + "|"
-                    + evidence.source() + "|" + evidence.score();
-        }
-
-        @Override
-        public int occurrenceCount(Evidence evidence) {
-            return 1;
-        }
-
-        @Override
-        public Map<String, Object> observationAttributes(Evidence evidence) {
-            return evidence.attributes();
-        }
-
-        @Override
-        public String detail(Evidence evidence) {
-            return evidence.detail();
-        }
-
-        @Override
-        public Evidence withOccurrenceCount(Evidence evidence, int count) {
-            return evidence;
-        }
     }
 
     private record DirectionHint(Endpoint source, Endpoint target) {

@@ -62,6 +62,7 @@ import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
+import com.relationdetector.mysql.MySqlCatalogScope;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
 
@@ -75,12 +76,13 @@ public final class MySqlMetadataCollector implements MetadataCollector {
          * DDL, object definitions, SQL logs, naming, and profiling have all had
          * a chance to contribute evidence.
          */
+        ScanScope canonicalScope = MySqlCatalogScope.canonicalize(scope);
         MetadataSnapshot snapshot = new MetadataSnapshot();
-        collectTables(connection, scope, snapshot);
-        collectColumns(connection, scope, snapshot);
-        collectForeignKeys(connection, scope, snapshot);
-        collectConstraints(connection, scope, snapshot);
-        collectIndexes(connection, scope, snapshot);
+        collectTables(connection, canonicalScope, snapshot);
+        collectColumns(connection, canonicalScope, snapshot);
+        collectForeignKeys(connection, canonicalScope, snapshot);
+        collectConstraints(connection, canonicalScope, snapshot);
+        collectIndexes(connection, canonicalScope, snapshot);
         return snapshot;
     }
 
@@ -91,7 +93,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 WHERE TABLE_SCHEMA = ?
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String tableName = rs.getString("TABLE_NAME");
@@ -100,11 +102,13 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                     }
                     snapshot.tableFacts().add(new MetadataTableFact(
                             rs.getString("TABLE_SCHEMA"),
+                            null,
                             tableName,
                             rs.getString("TABLE_TYPE"),
                             rs.getString("ENGINE"),
                             rs.getString("TABLE_COMMENT")));
-                    snapshot.tables().add(TableId.of(rs.getString("TABLE_SCHEMA"), tableName));
+                    String catalog = rs.getString("TABLE_SCHEMA");
+                    snapshot.tables().add(mysqlTable(catalog, tableName));
                 }
             }
         } catch (Exception ex) {
@@ -122,7 +126,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String tableName = rs.getString("TABLE_NAME");
@@ -132,6 +136,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                     boolean nullable = "YES".equalsIgnoreCase(rs.getString("IS_NULLABLE"));
                     MetadataColumnFact fact = new MetadataColumnFact(
                             rs.getString("TABLE_SCHEMA"),
+                            null,
                             tableName,
                             rs.getString("COLUMN_NAME"),
                             rs.getString("DATA_TYPE"),
@@ -143,7 +148,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                             rs.getInt("ORDINAL_POSITION"));
                     snapshot.columnFacts().add(fact);
                     snapshot.columns().add(new ColumnRef(
-                            TableId.of(fact.schema(), fact.tableName()),
+                            mysqlTable(fact.catalog(), fact.tableName()),
                             fact.columnName(),
                             fact.columnName(),
                             fact.dataType(),
@@ -209,7 +214,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             // Scope is schema-level for now. Table-level filters can be added here
             // later without changing the MetadataCollector SPI contract.
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     /*
@@ -219,11 +224,13 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                      * is the child/reference-holding side, while
                      * REFERENCED_* is the parent/referenced side.
                      */
-                    TableId sourceTable = TableId.of(rs.getString("TABLE_SCHEMA"), rs.getString("TABLE_NAME"));
+                    TableId sourceTable = mysqlTable(
+                            rs.getString("TABLE_SCHEMA"), rs.getString("TABLE_NAME"));
                     if (!inScope(scope, sourceTable.tableName())) {
                         continue;
                     }
-                    TableId targetTable = TableId.of(rs.getString("REFERENCED_TABLE_SCHEMA"), rs.getString("REFERENCED_TABLE_NAME"));
+                    TableId targetTable = mysqlTable(
+                            rs.getString("REFERENCED_TABLE_SCHEMA"), rs.getString("REFERENCED_TABLE_NAME"));
                     if (!inScope(scope, targetTable.tableName())) {
                         continue;
                     }
@@ -273,7 +280,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
         try {
             Map<String, ConstraintBuilder> builders = new LinkedHashMap<>();
             try (PreparedStatement ps = connection.prepareStatement(constraintsSql)) {
-                ps.setString(1, scope.schema());
+                ps.setString(1, scope.catalog());
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         String tableName = rs.getString("TABLE_NAME");
@@ -287,7 +294,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 }
             }
             try (PreparedStatement ps = connection.prepareStatement(keyUsageSql)) {
-                ps.setString(1, scope.schema());
+                ps.setString(1, scope.catalog());
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         String tableName = rs.getString("TABLE_NAME");
@@ -306,7 +313,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 }
             }
             try (PreparedStatement ps = connection.prepareStatement(refsSql)) {
-                ps.setString(1, scope.schema());
+                ps.setString(1, scope.catalog());
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         for (ConstraintBuilder builder : builders.values()) {
@@ -335,7 +342,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             Map<String, IndexBuilder> indexes = new LinkedHashMap<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -365,6 +372,10 @@ public final class MySqlMetadataCollector implements MetadataCollector {
     private ConstraintBuilder builder(Map<String, ConstraintBuilder> builders, String schema, String table, String name) {
         return builders.computeIfAbsent(schema + "|" + table + "|" + name,
                 ignored -> new ConstraintBuilder(schema, table, name));
+    }
+
+    private TableId mysqlTable(String catalog, String tableName) {
+        return new TableId(catalog, null, tableName, tableName);
     }
 
     private boolean inScope(ScanScope scope, String tableName) {
@@ -406,8 +417,8 @@ public final class MySqlMetadataCollector implements MetadataCollector {
         }
 
         private MetadataConstraintFact toFact() {
-            return new MetadataConstraintFact(schema, table, name, type, columns,
-                    referencedSchema, referencedTable, referencedColumns, updateRule, deleteRule);
+            return new MetadataConstraintFact(schema, null, table, name, type, columns,
+                    referencedSchema, null, referencedTable, referencedColumns, updateRule, deleteRule);
         }
     }
 
@@ -433,7 +444,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
 
         private MetadataIndexFact toFact() {
             entries.sort(Comparator.comparingInt(IndexEntry::seq));
-            return new MetadataIndexFact(schema, table, name, unique, primary, type, visible,
+            return new MetadataIndexFact(schema, null, table, name, unique, primary, type, visible,
                     entries.stream().map(IndexEntry::column).filter(value -> value != null && !value.isBlank()).toList(),
                     entries.stream().map(IndexEntry::expression).filter(value -> value != null && !value.isBlank()).toList(),
                     entries.stream().map(entry -> entry.subPart() == null ? "" : entry.subPart()).toList(),

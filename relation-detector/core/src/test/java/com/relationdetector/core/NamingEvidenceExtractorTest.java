@@ -230,9 +230,9 @@ class NamingEvidenceExtractorTest {
     @Test
     void retainsCatalogColumnIdentityForMetadataNamingRawObservations() {
         MetadataSnapshot metadata = new MetadataSnapshot();
-        metadata.columnFacts().add(new MetadataColumnFact("sales", "orders", "customer_id",
+        metadata.columnFacts().add(new MetadataColumnFact(null, "sales", "orders", "customer_id",
                 "bigint", "bigint", false, null, "", null, 3));
-        metadata.columnFacts().add(new MetadataColumnFact("crm", "customers", "id",
+        metadata.columnFacts().add(new MetadataColumnFact(null, "crm", "customers", "id",
                 "bigint", "bigint", false, null, "", null, 1));
 
         List<NamingEvidenceCandidate> evidence = extractor.extractFromMetadata(metadata);
@@ -362,6 +362,24 @@ class NamingEvidenceExtractorTest {
         assertEquals("SELF_ROLE_ID", evidence.get(0).rule());
         assertEndpoint("employees", "manager_id", evidence.get(0).source());
         assertEndpoint("employees", "id", evidence.get(0).target());
+    }
+
+    @Test
+    void differentCatalogsWithSameSchemaAndTableAreNotDeclaredSelfReferences() {
+        TableId sourceTable = new TableId("catalog_a", "hr", "employees", "hr.employees");
+        TableId targetTable = new TableId("catalog_b", "hr", "employees", "hr.employees");
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(sourceTable, "manager_id")),
+                Endpoint.column(ColumnRef.of(targetTable, "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.DDL_DECLARED_FK);
+        candidate.evidence().add(Evidence.of(EvidenceType.DDL_FOREIGN_KEY,
+                DefaultEvidenceScores.DDL_FOREIGN_KEY, EvidenceSourceType.DDL_FILE,
+                "cross-catalog.sql", "typed foreign key"));
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertTrue(evidence.stream().noneMatch(item -> "SELF_ROLE_ID".equals(item.rule())));
     }
 
     @Test

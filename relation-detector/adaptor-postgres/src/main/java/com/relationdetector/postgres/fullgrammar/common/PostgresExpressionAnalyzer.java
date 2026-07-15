@@ -24,6 +24,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalyzer;
  */
 public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     private final boolean routineSql;
+    private final PostgresTransformSupport transforms;
+    private final PostgresExpressionTreeSupport treeSupport;
 
     public PostgresExpressionAnalyzer(com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter adapter) {
         this(adapter, false);
@@ -43,19 +45,21 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     ) {
         super(adapter);
         this.routineSql = routineSql;
+        this.transforms = new PostgresTransformSupport(adapter, functionRegistry());
+        this.treeSupport = new PostgresExpressionTreeSupport(adapter);
     }
 
     @Override
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
-        return scalarSubquery(expression) != null
-                || containsAggregateFunction(expression)
-                || containsRole(expression,
+        return treeSupport.scalarSubquery(expression) != null
+                || transforms.containsAggregateFunction(expression)
+                || transforms.containsRole(expression,
                 com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION);
     }
 
     @Override
     public List<FullGrammarExpressionAnalysis> writeAnalyses(ParseTree expression, String defaultQualifier) {
-        FullGrammarExpressionAnalysis analysis = routineTransform(
+        FullGrammarExpressionAnalysis analysis = transforms.applyRoutineTransform(
                 expression, analyze(expression, defaultQualifier));
         List<String> sourceAliases = new ArrayList<>();
         List<String> sourceColumns = new ArrayList<>();
@@ -93,8 +97,8 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         List<FullGrammarExpressionAnalysis> result = new ArrayList<>(2);
         if (!valueColumns.isEmpty()) {
             String valueTransform = analysis.transformType();
-            if (containsAggregateFunction(expression)) {
-                valueTransform = containsRole(expression,
+            if (transforms.containsAggregateFunction(expression)) {
+                valueTransform = transforms.containsRole(expression,
                         com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)
                         ? "CUMULATIVE" : "AGGREGATE";
             }
@@ -125,96 +129,6 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         return List.copyOf(result);
     }
 
-    private boolean containsAggregateFunction(ParseTree tree) {
-        if (tree == null) return false;
-        if (parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
-            return true;
-        }
-        if (parseTreeAdapter().functionName(tree)
-                .map(functionRegistry()::classify)
-                .filter(com.relationdetector.contracts.Enums.LineageTransformType.AGGREGATE::equals)
-                .isPresent()) {
-            return true;
-        }
-        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            if (containsAggregateFunction(child)) return true;
-        }
-        return false;
-    }
-
-    private FullGrammarExpressionAnalysis routineTransform(
-            ParseTree expression,
-            FullGrammarExpressionAnalysis analysis
-    ) {
-        if ("AGGREGATE".equals(analysis.transformType())
-                && containsRole(expression,
-                        com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)) {
-            analysis = analysis.withTransform("CUMULATIVE", analysis.flowKind());
-        }
-        var operator = topLevelOperator(expression);
-        if (operator == com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic
-                .CONCAT_FORMAT) {
-            return analysis.withTransform("CONCAT_FORMAT", analysis.flowKind());
-        }
-        if (operator == com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic
-                .ARITHMETIC
-                || containsOperatorOutsideCase(expression,
-                        com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic
-                                .ARITHMETIC)) {
-            var dominant = com.relationdetector.core.lineage.LineageTransformClassifier.dominant(
-                    com.relationdetector.contracts.Enums.LineageTransformType.ARITHMETIC,
-                    com.relationdetector.contracts.Enums.LineageTransformType.valueOf(
-                            analysis.transformType()));
-            return analysis.withTransform(dominant.name(), analysis.flowKind());
-        }
-        return analysis;
-    }
-
-    private boolean containsOperatorOutsideCase(
-            ParseTree tree,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic expected
-    ) {
-        if (tree == null) return false;
-        if (parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION)) {
-            return false;
-        }
-        if (parseTreeAdapter().operatorSemantic(tree) == expected) return true;
-        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            if (containsOperatorOutsideCase(child, expected)) return true;
-        }
-        return false;
-    }
-
-    private boolean containsRole(
-            ParseTree tree,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role
-    ) {
-        if (tree == null) return false;
-        if (parseTreeAdapter().hasRole(tree, role)) return true;
-        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            if (containsRole(child, role)) return true;
-        }
-        return false;
-    }
-
-    private com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic topLevelOperator(
-            ParseTree tree
-    ) {
-        ParseTree current = tree;
-        while (current != null) {
-            var operator = parseTreeAdapter().operatorSemantic(current);
-            if (operator != com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic.NONE) {
-                return operator;
-            }
-            List<ParseTree> children = parseTreeAdapter().typedChildren(current);
-            if (children.size() != 1) break;
-            current = children.get(0);
-        }
-        return com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic.NONE;
-    }
-
     private void collectValueSourcesReplacingScalars(
             ParseTree tree,
             String defaultQualifier,
@@ -223,7 +137,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             Set<String> seen
     ) {
         if (tree == null) return;
-        if (isScalarBoundary(tree)) {
+        if (treeSupport.isScalarBoundary(tree)) {
             append(aliases, columns, seen, scalarProjection(tree, defaultQualifier));
             return;
         }
@@ -265,7 +179,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         List<ParseTree> controls = new ArrayList<>();
-        collectDirectScopeContexts(scalar, scalar, controls);
+        treeSupport.collectDirectScopeContexts(scalar, scalar, controls);
         String qualifier = scalarQualifier(scalar, defaultQualifier);
         for (ParseTree control : controls) {
             append(aliases, columns, seen, analyze(control, qualifier));
@@ -286,7 +200,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
 
     private boolean containsScalarBoundary(ParseTree tree) {
         if (tree == null) return false;
-        if (isScalarBoundary(tree)) return true;
+        if (treeSupport.isScalarBoundary(tree)) return true;
         for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
             if (containsScalarBoundary(child)) return true;
         }
@@ -309,7 +223,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             Set<String> seen
     ) {
         if (tree == null) return;
-        if (isScalarBoundary(tree)) {
+        if (treeSupport.isScalarBoundary(tree)) {
             append(aliases, columns, seen, scalarControl(tree, defaultQualifier));
         }
         for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
@@ -361,10 +275,10 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             Set<String> seen
     ) {
         if (tree == null) return;
-        if (isScalarBoundary(tree)) {
+        if (treeSupport.isScalarBoundary(tree)) {
             String qualifier = scalarQualifier(tree, defaultQualifier);
             List<ParseTree> groupings = new ArrayList<>();
-            collectDirectRoleContexts(tree, tree,
+            treeSupport.collectDirectRoleContexts(tree, tree,
                     com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE,
                     groupings);
             for (ParseTree grouping : groupings) {
@@ -417,7 +331,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     }
 
     private void collectNonControlValueKeys(ParseTree tree, String defaultQualifier, Set<String> result) {
-        if (tree == null || isScalarBoundary(tree)
+        if (tree == null || treeSupport.isScalarBoundary(tree)
                 || parseTreeAdapter().hasRole(
                         tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)
                 || parseTreeAdapter().hasRole(
@@ -469,7 +383,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             List<FullGrammarExpressionAnalysis> result
     ) {
         if (tree == null) return;
-        if (isScalarBoundary(tree)) {
+        if (treeSupport.isScalarBoundary(tree)) {
             result.add(scalarProjection(tree, defaultQualifier));
             return;
         }
@@ -506,57 +420,6 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             result.add(analysis.sourceAliases().get(index) + "\u0000" + analysis.sourceColumns().get(index));
         }
         return result;
-    }
-
-    private void collectDirectScopeContexts(
-            ParseTree root,
-            ParseTree tree,
-            List<ParseTree> result
-    ) {
-        collectDirectRoleContexts(root, tree,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE, result);
-    }
-
-    private void collectDirectRoleContexts(
-            ParseTree root,
-            ParseTree tree,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
-            List<ParseTree> result
-    ) {
-        if (tree == null) {
-            return;
-        }
-        if (tree != root && isScalarBoundary(tree)) {
-            return;
-        }
-        if (parseTreeAdapter().hasRole(tree, role)) {
-            result.add(tree);
-            return;
-        }
-        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            collectDirectRoleContexts(root, child, role, result);
-        }
-    }
-
-    private ParseTree scalarSubquery(ParseTree tree) {
-        if (tree == null) {
-            return null;
-        }
-        if (isScalarBoundary(tree)) {
-            return tree;
-        }
-        for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
-            ParseTree found = scalarSubquery(child);
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
-    }
-
-    private boolean isScalarBoundary(ParseTree tree) {
-        return parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.SCALAR_SUBQUERY);
     }
 
     private void append(

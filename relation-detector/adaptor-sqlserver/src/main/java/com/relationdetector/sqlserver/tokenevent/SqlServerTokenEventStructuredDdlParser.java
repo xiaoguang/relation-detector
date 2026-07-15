@@ -15,6 +15,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 
@@ -26,11 +27,8 @@ public final class SqlServerTokenEventStructuredDdlParser implements StructuredD
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        SqlServerRelationSqlParser parser = new SqlServerRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        SqlServerRelationSqlParser.Tsql_fileContext root = parser.tsql_file();
-        tokens.fill();
+        SqlServerRelationSqlParser.Tsql_fileContext root = AntlrSllParseSupport.parse(
+                tokens, SqlServerRelationSqlParser::new, SqlServerRelationSqlParser::tsql_file, errors).root();
         SqlStatementRecord statement = new SqlStatementRecord(ddl, StatementSourceType.DDL_FILE, sourceName, 1, 1, Map.of());
         List<StructuredSqlEvent> events = errors.count() == 0
                 ? new SqlServerTokenEventParseTreeVisitor(statement, true).collect(root)

@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.CaseParts;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic;
 
 /**
  * Shared full-grammar expression semantics over dialect-owned typed context views.
@@ -72,7 +71,7 @@ public abstract class FullGrammarExpressionAnalyzer {
             ParseTree expression,
             String defaultQualifier
     ) {
-        if (hasRelationExpressionDisqualifier(expression)) {
+        if (transformClassifier().disqualifiesDirectRelationship(expression)) {
             return emptyAnalysis();
         }
         FullGrammarExpressionAnalysis analysis = analyze(expression, defaultQualifier);
@@ -385,94 +384,15 @@ public abstract class FullGrammarExpressionAnalyzer {
     }
 
     private String transform(ParseTree expression) {
-        TransformFlags flags = new TransformFlags();
-        visitTransform(expression, flags);
-        if (flags.caseExpression) return "CASE_WHEN";
-        if (flags.cumulative) return "CUMULATIVE";
-        if (flags.aggregate) return "AGGREGATE";
-        if (flags.window) return "WINDOW_DERIVED";
-        if (flags.coalesce) return "COALESCE";
-        if (flags.concatFormat) return "CONCAT_FORMAT";
-        if (flags.arithmetic) return "ARITHMETIC";
-        if (flags.functionCall) return "FUNCTION_CALL";
-        return "DIRECT";
+        return transformClassifier().classify(expression);
     }
 
-    private void visitTransform(ParseTree tree, TransformFlags flags) {
-        if (tree == null) {
-            return;
-        }
-        if (parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION)) {
-            flags.caseExpression = true;
-        }
-        if (parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
-            flags.aggregate = true;
-            flags.functionCall = true;
-        }
-        if (parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)) {
-            flags.window = true;
-            flags.functionCall = true;
-        }
-        if (parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.CONCAT_EXPRESSION)) {
-            flags.concatFormat = true;
-            flags.functionCall = true;
-        }
-        parseTreeAdapter.functionName(tree).ifPresent(name -> classifyFunctionName(name, flags));
-        OperatorSemantic operator = parseTreeAdapter.operatorSemantic(tree);
-        if (operator == OperatorSemantic.ARITHMETIC) flags.arithmetic = true;
-        if (operator == OperatorSemantic.CONCAT_FORMAT) flags.concatFormat = true;
-        if (operator == OperatorSemantic.CUMULATIVE) flags.cumulative = true;
-        if (operator == OperatorSemantic.BOOLEAN_EXPRESSION) flags.functionCall = true;
-        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
-            visitTransform(child, flags);
-        }
-    }
-
-    private void classifyFunctionName(String name, TransformFlags flags) {
-        flags.functionCall = true;
-        LineageTransformType transform = isCoalesceFunction(name)
-                ? LineageTransformType.COALESCE
-                : functionRegistry().classify(name);
-        if (transform == LineageTransformType.AGGREGATE) flags.aggregate = true;
-        if (transform == LineageTransformType.WINDOW_DERIVED) flags.window = true;
-        if (transform == LineageTransformType.COALESCE) flags.coalesce = true;
-        if (transform == LineageTransformType.CONCAT_FORMAT) flags.concatFormat = true;
-    }
-
-    private boolean hasRelationExpressionDisqualifier(ParseTree tree) {
-        if (tree == null) {
-            return false;
-        }
-        if (parseTreeAdapter.isNonColumnValue(tree)
-                || parseTreeAdapter.operatorSemantic(tree) != OperatorSemantic.NONE
-                || parseTreeAdapter.functionName(tree).isPresent()
-                || parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.FUNCTION_CALL)
-                || parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION)
-                || parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.AGGREGATE_FUNCTION)
-                || parseTreeAdapter.hasRole(tree, FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)) {
-            return true;
-        }
-        for (ParseTree child : parseTreeAdapter.typedChildren(tree)) {
-            if (hasRelationExpressionDisqualifier(child)) {
-                return true;
-            }
-        }
-        return false;
+    private FullGrammarTransformClassifier transformClassifier() {
+        return new FullGrammarTransformClassifier(parseTreeAdapter, functionRegistry(), this::isCoalesceFunction);
     }
 
     private FullGrammarExpressionAnalysis emptyAnalysis() {
         return new FullGrammarExpressionAnalysis(List.of(), List.of(), "UNKNOWN_EXPRESSION", "VALUE");
-    }
-
-    private static final class TransformFlags {
-        private boolean caseExpression;
-        private boolean aggregate;
-        private boolean window;
-        private boolean coalesce;
-        private boolean concatFormat;
-        private boolean arithmetic;
-        private boolean functionCall;
-        private boolean cumulative;
     }
 
     private record ExpressionColumn(String qualifier, String column) {

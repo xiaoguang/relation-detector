@@ -62,6 +62,7 @@ import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
+import com.relationdetector.mysql.MySqlCatalogScope;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
 
@@ -78,11 +79,12 @@ public final class MySqlObjectCollector implements ObjectDefinitionCollector {
             ScanScope scope,
             Consumer<WarningMessage> warnings
     ) {
+        ScanScope canonicalScope = MySqlCatalogScope.canonicalize(scope);
         List<DatabaseObjectDefinition> definitions = new ArrayList<>();
-        collectRoutines(connection, scope, definitions, warnings);
-        collectViews(connection, scope, definitions, warnings);
-        collectTriggers(connection, scope, definitions, warnings);
-        collectEvents(connection, scope, definitions, warnings);
+        collectRoutines(connection, canonicalScope, definitions, warnings);
+        collectViews(connection, canonicalScope, definitions, warnings);
+        collectTriggers(connection, canonicalScope, definitions, warnings);
+        collectEvents(connection, canonicalScope, definitions, warnings);
         return definitions;
     }
 
@@ -98,13 +100,13 @@ public final class MySqlObjectCollector implements ObjectDefinitionCollector {
                 WHERE ROUTINE_SCHEMA = ?
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     DatabaseObjectType type = "FUNCTION".equalsIgnoreCase(rs.getString("ROUTINE_TYPE"))
                             ? DatabaseObjectType.FUNCTION
                             : DatabaseObjectType.PROCEDURE;
-                    definitions.add(new DatabaseObjectDefinition(type, rs.getString("ROUTINE_SCHEMA"),
+                    definitions.add(new DatabaseObjectDefinition(type, rs.getString("ROUTINE_SCHEMA"), null,
                             rs.getString("ROUTINE_NAME"), rs.getString("ROUTINE_DEFINITION"), "information_schema.ROUTINES"));
                 }
             }
@@ -124,10 +126,11 @@ public final class MySqlObjectCollector implements ObjectDefinitionCollector {
     ) {
         String sql = "SELECT TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.VIEW, rs.getString("TABLE_SCHEMA"),
+                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.VIEW,
+                            rs.getString("TABLE_SCHEMA"), null,
                             rs.getString("TABLE_NAME"), rs.getString("VIEW_DEFINITION"), "information_schema.VIEWS"));
                 }
             }
@@ -145,10 +148,11 @@ public final class MySqlObjectCollector implements ObjectDefinitionCollector {
     ) {
         String sql = "SELECT TRIGGER_SCHEMA, TRIGGER_NAME, ACTION_STATEMENT FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.TRIGGER, rs.getString("TRIGGER_SCHEMA"),
+                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.TRIGGER,
+                            rs.getString("TRIGGER_SCHEMA"), null,
                             rs.getString("TRIGGER_NAME"), rs.getString("ACTION_STATEMENT"), "information_schema.TRIGGERS"));
                 }
             }
@@ -177,10 +181,11 @@ public final class MySqlObjectCollector implements ObjectDefinitionCollector {
          */
         String sql = "SELECT EVENT_SCHEMA, EVENT_NAME, EVENT_DEFINITION FROM information_schema.EVENTS WHERE EVENT_SCHEMA = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.EVENT, rs.getString("EVENT_SCHEMA"),
+                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.EVENT,
+                            rs.getString("EVENT_SCHEMA"), null,
                             rs.getString("EVENT_NAME"), rs.getString("EVENT_DEFINITION"), "information_schema.EVENTS"));
                 }
             }

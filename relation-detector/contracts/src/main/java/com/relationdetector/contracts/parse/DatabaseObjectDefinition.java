@@ -13,6 +13,7 @@ import com.relationdetector.contracts.Enums.DatabaseObjectType;
  */
 public record DatabaseObjectDefinition(
         DatabaseObjectType type,
+        String catalog,
         String schema,
         String name,
         String sql,

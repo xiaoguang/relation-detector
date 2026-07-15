@@ -9,6 +9,7 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
+import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.ddl.MySqlDatabaseDdlCollector;
 import com.relationdetector.mysql.log.MySqlLogExtractor;
@@ -23,6 +24,11 @@ import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public MySqlDatabaseAdaptor() {
         this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser(), new MySqlScriptFramer());
+    }
+
+    @Override
+    public ScanScope canonicalizeScope(ScanScope scope) {
+        return MySqlCatalogScope.canonicalize(scope);
     }
 
     private MySqlDatabaseAdaptor(
@@ -43,10 +49,10 @@ public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
                 MySqlDatabaseAdaptor::normalizeIdentifier,
                 new AdaptorCollectors(
-                        new MySqlMetadataCollector(),
-                        new MySqlObjectCollector(),
+                        Optional.of(new MySqlMetadataCollector()),
+                        Optional.of(new MySqlObjectCollector()),
                         Optional.of(new MySqlDatabaseDdlCollector()),
-                        new MySqlLogExtractor(scriptFramer)),
+                        Optional.of(new MySqlLogExtractor(scriptFramer))),
                 new AdaptorParsers(
                         new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),

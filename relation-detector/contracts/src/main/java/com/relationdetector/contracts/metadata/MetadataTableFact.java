@@ -9,6 +9,7 @@ package com.relationdetector.contracts.metadata;
  * engine, and comment for known-physical-table and audit context.
  */
 public record MetadataTableFact(
+        String catalog,
         String schema,
         String tableName,
         String tableType,

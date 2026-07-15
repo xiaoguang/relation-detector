@@ -180,7 +180,7 @@ class DialectParserEvidenceConfidenceTest {
     }
 
     @Test
-    void repeatedComplexSqlObservationsKeepRawEvidenceAndAddCappedBonus() {
+    void exactComplexSqlDuplicatesKeepOccurrenceCountWithoutAddingConfidenceBonus() {
         String sql = """
                 SELECT *
                 FROM orders o
@@ -194,11 +194,12 @@ class DialectParserEvidenceConfidenceTest {
 
         RelationshipCandidate merged = merger.merge(repeated, 0.0d).get(0);
 
-        assertEquals(3, merged.rawEvidence().size());
-        assertEquals(3, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("count"));
-        Evidence repeatedObservation = evidence(merged, EvidenceType.REPEATED_OBSERVATION);
-        assertEquals("SQL_LOG_JOIN", repeatedObservation.attributes().get("baseEvidenceType"));
-        assertEquals("0.06666666666666668", repeatedObservation.score().toPlainString());
+        assertEquals(1, merged.rawEvidence().size());
+        assertEquals(3, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
+        assertEquals(1, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("count"));
+        assertEquals(new BigDecimal("0.5500"), merged.confidence());
+        assertTrue(merged.evidence().stream()
+                .noneMatch(evidence -> evidence.type() == EvidenceType.REPEATED_OBSERVATION));
     }
 
     private RelationshipCandidate parseAndFind(

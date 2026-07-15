@@ -34,13 +34,19 @@ public final class DataLineageMerger {
 
     private String key(DataLineageCandidate candidate) {
         return candidate.flowKind() + "|" + candidate.transformType() + "|"
-                + candidate.sources().stream().map(source -> source.normalizedKey())
+                + canonicalSources(candidate).stream().map(source -> source.normalizedKey())
                 .collect(Collectors.joining(",")) + "|" + candidate.target().normalizedKey();
+    }
+
+    private List<com.relationdetector.contracts.model.Endpoint> canonicalSources(DataLineageCandidate candidate) {
+        Map<String, com.relationdetector.contracts.model.Endpoint> byKey = new java.util.TreeMap<>();
+        candidate.sources().forEach(source -> byKey.putIfAbsent(source.normalizedKey(), source));
+        return List.copyOf(byKey.values());
     }
 
     private DataLineageCandidate copyWithoutEvidence(DataLineageCandidate candidate) {
         DataLineageCandidate copy = new DataLineageCandidate(
-                List.copyOf(candidate.sources()), candidate.target(),
+                canonicalSources(candidate), candidate.target(),
                 candidate.flowKind(), candidate.transformType());
         copy.confidence(candidate.confidence());
         return copy;

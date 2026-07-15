@@ -72,6 +72,12 @@ public final class AliasSymbolTable {
         return resolver.normalize(identifier);
     }
 
+    public boolean sameTable(TableId left, TableId right) {
+        return left != null
+                && right != null
+                && resolvedIdentity(left).equals(resolvedIdentity(right));
+    }
+
     private String resolvedIdentity(TableId table) {
         return resolver.tableKey(table, namespace);
     }

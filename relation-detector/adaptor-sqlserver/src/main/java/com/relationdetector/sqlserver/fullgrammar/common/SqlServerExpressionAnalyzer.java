@@ -67,7 +67,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
                     super.writeAnalyses(expression, defaultQualifier));
         }
 
-        CaseAccumulator cases = new CaseAccumulator();
+        SqlServerCaseAccumulator cases = new SqlServerCaseAccumulator();
         collectExpressionCases(expression, defaultQualifier, cases);
         List<FullGrammarExpressionAnalysis> result = new ArrayList<>(2);
         LineageTransformType enclosing = enclosingValueTransformOutsideCases(expression);
@@ -214,7 +214,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         return result;
     }
 
-    private void collectExpressionCases(ParseTree tree, String defaultQualifier, CaseAccumulator result) {
+    private void collectExpressionCases(ParseTree tree, String defaultQualifier, SqlServerCaseAccumulator result) {
         if (tree == null) {
             return;
         }
@@ -231,7 +231,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         }
     }
 
-    private void collectCase(ParseTree caseTree, String defaultQualifier, CaseAccumulator result) {
+    private void collectCase(ParseTree caseTree, String defaultQualifier, SqlServerCaseAccumulator result) {
         CaseParts parts = parseTreeAdapter().caseParts(caseTree);
         for (ParseTree control : parts.controls()) {
             result.addControl(super.analyze(control, defaultQualifier));
@@ -247,7 +247,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     }
 
     private LineageTransformType enclosingValueTransform(ParseTree tree) {
-        TransformState state = new TransformState();
+        SqlServerTransformState state = new SqlServerTransformState();
         collectTransforms(tree, state);
         if (state.aggregate) {
             return LineageTransformType.AGGREGATE;
@@ -268,7 +268,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     }
 
     private LineageTransformType enclosingValueTransformOutsideCases(ParseTree tree) {
-        TransformState state = new TransformState();
+        SqlServerTransformState state = new SqlServerTransformState();
         collectTransformsOutsideCases(tree, state);
         if (state.aggregate) {
             return LineageTransformType.AGGREGATE;
@@ -288,7 +288,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         return LineageTransformType.DIRECT;
     }
 
-    private void collectTransformsOutsideCases(ParseTree tree, TransformState state) {
+    private void collectTransformsOutsideCases(ParseTree tree, SqlServerTransformState state) {
         if (tree == null || isCaseContext(tree)) {
             return;
         }
@@ -298,7 +298,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         }
     }
 
-    private void collectTransforms(ParseTree tree, TransformState state) {
+    private void collectTransforms(ParseTree tree, SqlServerTransformState state) {
         if (tree == null) {
             return;
         }
@@ -308,7 +308,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         }
     }
 
-    private void collectCurrentTransform(ParseTree tree, TransformState state) {
+    private void collectCurrentTransform(ParseTree tree, SqlServerTransformState state) {
         parseTreeAdapter().functionName(tree).ifPresent(name -> {
             LineageTransformType classified = LineageTransformClassifier.classifyFunction(
                     name, false, FUNCTION_EXTENSIONS);
@@ -402,66 +402,4 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         return new FullGrammarExpressionAnalysis(List.of(), List.of(), "UNKNOWN_EXPRESSION", flowKind);
     }
 
-    private static final class TransformState {
-        private boolean aggregate;
-        private boolean arithmetic;
-        private boolean coalesce;
-        private boolean concatFormat;
-        private boolean function;
-    }
-
-    private static final class CaseAccumulator {
-        private final List<String> valueAliases = new ArrayList<>();
-        private final List<String> valueColumns = new ArrayList<>();
-        private final Set<String> valueKeys = new LinkedHashSet<>();
-        private final List<String> controlAliases = new ArrayList<>();
-        private final List<String> controlColumns = new ArrayList<>();
-        private final Set<String> controlKeys = new LinkedHashSet<>();
-
-        private void addValue(FullGrammarExpressionAnalysis analysis) {
-            append(valueAliases, valueColumns, valueKeys, analysis);
-        }
-
-        private void addControl(FullGrammarExpressionAnalysis analysis) {
-            append(controlAliases, controlColumns, controlKeys, analysis);
-        }
-
-        private boolean hasValues() {
-            return !valueColumns.isEmpty();
-        }
-
-        private boolean hasControls() {
-            return !controlColumns.isEmpty();
-        }
-
-        private FullGrammarExpressionAnalysis value(LineageTransformType transform) {
-            return new FullGrammarExpressionAnalysis(
-                    valueAliases, valueColumns, transform.name(), "VALUE");
-        }
-
-        private FullGrammarExpressionAnalysis control() {
-            return new FullGrammarExpressionAnalysis(
-                    controlAliases, controlColumns, "CASE_WHEN", "CONTROL");
-        }
-
-        private static void append(
-                List<String> aliases,
-                List<String> columns,
-                Set<String> seen,
-                FullGrammarExpressionAnalysis analysis
-        ) {
-            if (analysis == null) {
-                return;
-            }
-            int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
-            for (int index = 0; index < count; index++) {
-                String alias = analysis.sourceAliases().get(index);
-                String column = analysis.sourceColumns().get(index);
-                if (seen.add(alias + "\u0000" + column)) {
-                    aliases.add(alias);
-                    columns.add(column);
-                }
-            }
-        }
-    }
 }

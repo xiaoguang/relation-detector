@@ -20,6 +20,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 
 /**
  * token-event DDL parser 基类。
@@ -52,11 +53,8 @@ public class TokenEventStructuredDdlParser implements StructuredDdlParser {
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        CommonRelationSqlParser parser = new CommonRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        CommonRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
+        CommonRelationSqlParser.ScriptContext root = AntlrSllParseSupport.parse(
+                tokens, CommonRelationSqlParser::new, CommonRelationSqlParser::script, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

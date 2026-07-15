@@ -34,7 +34,8 @@ final class SourceCollectorPipeline {
         SourceConfig sources = ctx.config.sources();
         if (sources.metadataEnabled() && connection != null) {
             ctx.result.sources().add("metadata");
-            ctx.metadataSnapshot = ctx.adaptor.collectors().metadata().collect(connection, ctx.scope);
+            ctx.metadataSnapshot = ctx.adaptor.collectors().metadata().orElseThrow()
+                    .collect(connection, ctx.scope);
             ctx.relationshipCandidates.addAll(ctx.metadataSnapshot.relationships());
             ctx.result.warnings().addAll(ctx.metadataSnapshot.warnings());
         }
@@ -173,7 +174,7 @@ final class SourceCollectorPipeline {
 
     private Stream<SqlStatementRecord> extractLog(Path file, ScanPipelineContext ctx) {
         try {
-            return ctx.adaptor.collectors().logs().extract(file, ctx.config.sources().logFormatHint(),
+            return ctx.adaptor.collectors().logs().orElseThrow().extract(file, ctx.config.sources().logFormatHint(),
                     ctx.result.warnings()::add);
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.logExtractFailed(file, ex));
@@ -183,7 +184,8 @@ final class SourceCollectorPipeline {
 
     private List<DatabaseObjectDefinition> collectDatabaseObjects(Connection connection, ScanPipelineContext ctx) {
         try {
-            return ctx.adaptor.collectors().objects().collect(connection, ctx.scope, ctx.result.warnings()::add);
+            return ctx.adaptor.collectors().objects().orElseThrow()
+                    .collect(connection, ctx.scope, ctx.result.warnings()::add);
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.objectCollectFailed(
                     "OBJECT_DEFINITION_COLLECT_FAILED", "database-objects", ex));
@@ -230,6 +232,10 @@ final class SourceCollectorPipeline {
 
     private java.util.Map<String, Object> objectAttributes(DatabaseObjectDefinition definition) {
         java.util.Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+        if (definition.catalog() != null && !definition.catalog().isBlank()) {
+            attributes.put("objectCatalog", definition.catalog());
+            attributes.put("sourceCatalog", definition.catalog());
+        }
         attributes.put("objectSchema", definition.schema());
         attributes.put("objectName", definition.name());
         attributes.put("objectType", definition.type().name());
@@ -255,10 +261,10 @@ final class SourceCollectorPipeline {
     }
 
     private String objectSourceName(DatabaseObjectDefinition definition) {
-        if (definition.schema() == null || definition.schema().isBlank()) {
-            return definition.name();
-        }
-        return definition.schema() + "." + definition.name();
+        String schemaName = definition.schema() == null || definition.schema().isBlank()
+                ? definition.name() : definition.schema() + "." + definition.name();
+        return definition.catalog() == null || definition.catalog().isBlank()
+                ? schemaName : definition.catalog() + "." + schemaName;
     }
 
     @FunctionalInterface

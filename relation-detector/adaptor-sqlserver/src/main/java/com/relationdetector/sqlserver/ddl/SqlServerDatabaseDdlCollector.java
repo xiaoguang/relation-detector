@@ -35,7 +35,7 @@ public final class SqlServerDatabaseDdlCollector implements DatabaseDdlCollector
         List<DatabaseDdlDefinition> definitions = new ArrayList<>();
         for (String tableName : tableNames(connection, scope, schema, warnings)) {
             try {
-                definitions.add(new DatabaseDdlDefinition(
+                definitions.add(new DatabaseDdlDefinition(scope.catalog(),
                         schema,
                         tableName,
                         buildCreateTable(connection, schema, tableName),

@@ -263,14 +263,7 @@ public final class DdlRelationExtractionVisitor {
                 return;
             }
             for (Evidence evidence : candidate.evidence()) {
-                addEvidenceIfMissing(existing, evidence);
-            }
-        }
-
-        private void addEvidenceIfMissing(RelationshipCandidate candidate, Evidence evidence) {
-            boolean exists = candidate.evidence().stream().anyMatch(existing -> existing.type() == evidence.type());
-            if (!exists) {
-                candidate.evidence().add(evidence);
+                existing.evidence().add(evidence);
             }
         }
     }

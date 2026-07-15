@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
@@ -31,8 +32,10 @@ final class DataProfilePipeline {
                     new NamespaceContext(ctx.scope.catalog(), ctx.scope.schema(), List.of()));
             for (RelationshipCandidate candidate : selected) {
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
-                List<Evidence> evidence = profiler.profile(connection,
+                ProfileOutcome outcome = profiler.profile(connection,
                         new ProfileRequest(candidate, evidenceConfig.dataProfileOptions()));
+                ctx.result.warnings().addAll(outcome.warnings());
+                List<Evidence> evidence = outcome.evidence();
                 if (evidence.isEmpty()) {
                     continue;
                 }

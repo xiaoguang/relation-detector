@@ -20,6 +20,10 @@ import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
+/**
+ * SQL Server adaptor backed by typed T-SQL parsers, sys catalog metadata and
+ * object readers, reconstructed live DDL, native logs, and bounded profiling.
+ */
 public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public SqlServerDatabaseAdaptor() {
         this(new SqlServerTokenEventStructuredSqlParser(), new SqlServerTokenEventStructuredDdlParser(),
@@ -44,10 +48,10 @@ public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
                 SqlServerDatabaseAdaptor::normalizeIdentifier,
                 new AdaptorCollectors(
-                        new SqlServerMetadataCollector(),
-                        new SqlServerObjectCollector(),
+                        Optional.of(new SqlServerMetadataCollector()),
+                        Optional.of(new SqlServerObjectCollector()),
                         Optional.of(new SqlServerDatabaseDdlCollector()),
-                        new SqlServerLogExtractor(scriptFramer)),
+                        Optional.of(new SqlServerLogExtractor(scriptFramer))),
                 new AdaptorParsers(
                         new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),

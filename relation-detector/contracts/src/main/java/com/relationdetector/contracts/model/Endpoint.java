@@ -13,7 +13,7 @@ public record Endpoint(TableId table, ColumnRef column) {
         if (table == null) {
             throw new IllegalArgumentException("table is required");
         }
-        if (column != null && !column.table().normalizedName().equals(table.normalizedName())) {
+        if (column != null && !column.table().sameIdentity(table)) {
             throw new IllegalArgumentException("column table must match endpoint table");
         }
     }

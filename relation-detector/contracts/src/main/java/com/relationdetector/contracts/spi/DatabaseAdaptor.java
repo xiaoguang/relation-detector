@@ -8,12 +8,14 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * Java SPI 加载的数据库 adaptor 公共契约。
  *
  * <p>CN: adaptor 负责数据库特有采集和 parser 入口；core 仍负责最终 relationship
- * 合并、lineage 合并、confidence 和输出。接口保留 SQL Server/Oracle 扩展空间。
+ * 合并、lineage 合并、confidence 和输出。MySQL、PostgreSQL、Oracle 和 SQL Server
+ * 均通过同一 grouped capability 契约提供可用的 live/file 实现。
  *
  * <p>EN: Public database adaptor contract loaded through Java SPI. Adaptors own
  * database-specific collection and parser entry points; core owns final merging,
- * confidence, lineage merging, and output. The contract leaves room for future
- * SQL Server/Oracle adaptors.
+ * confidence, lineage merging, and output. MySQL, PostgreSQL, Oracle, and SQL
+ * Server expose their live and file implementations through the same grouped
+ * capability contract.
  */
 public interface DatabaseAdaptor {
     /**
@@ -34,6 +36,14 @@ public interface DatabaseAdaptor {
     Set<AdaptorCapability> capabilities();
 
     IdentifierRules identifierRules();
+
+    /**
+     * Maps user-facing catalog/schema scope onto the dialect's canonical
+     * namespace axes before any live collector or parser receives it.
+     */
+    default ScanScope canonicalizeScope(ScanScope scope) {
+        return scope;
+    }
 
     AdaptorCollectors collectors();
 

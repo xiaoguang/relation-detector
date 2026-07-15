@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.TableId;
@@ -64,6 +65,17 @@ class CanonicalIdentifierResolverTest {
                         Endpoint.column(ColumnRef.of(table, "customer_id")),
                         upperCaseResolver,
                         NamespaceContext.empty()));
+    }
+
+    @Test
+    void metadataCatalogParticipatesInCanonicalEndpointIdentity() {
+        MetadataColumnFact column = new MetadataColumnFact(
+                "erp", "sales", "orders", "customer_id",
+                "bigint", "bigint", false, null, "", null, 1);
+
+        assertEquals(
+                new CanonicalEndpointKey("erp", "sales", "orders", "customer_id"),
+                CanonicalEndpointKey.from(column, resolver, NamespaceContext.empty()));
     }
 
     @Test

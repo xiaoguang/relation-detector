@@ -47,7 +47,7 @@ database:
   jdbcUrl: jdbc:mysql://localhost:3306/shop
   username: readonly
   password: ${DB_PASSWORD}
-  schema: shop
+  catalog: shop
 
 filters:
   includeTables:
@@ -156,6 +156,12 @@ derivedPaths:
 - 启用 JDBC source 时 jdbcUrl、username、password 必须可解析。
 - `sampleRows`、`timeoutSeconds` 必须为正数。
 
+MySQL namespace兼容说明：live collector内部把database统一规范到catalog轴；旧
+`database.schema`只作为输入兼容回退。当前顶层JSON的`database`对象为保持既有schema仍只包含
+`type/schema`，尚无`catalog`字段，因此catalog-only配置的顶层`database.schema`为空；完整catalog
+身份保存在relationship/lineage/naming endpoint的`table`显示值中。不得用顶层`schema`反推MySQL
+canonical database。
+
 ## JSON 输出
 
 顶层：
@@ -164,7 +170,7 @@ derivedPaths:
 {
   "database": {
     "type": "mysql",
-    "schema": "shop"
+    "schema": ""
   },
   "generatedAt": "2026-06-14T00:00:00Z",
   "summary": {
@@ -333,10 +339,12 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测。当前 naming inventory 会先按 canonical endpoint 分组，但会把该 endpoint 的全部不同 file/object/statement/block/line observation 交给 `NamingEvidenceMerger`；完全相同的 observation 才折叠为 `occurrenceCount`。Data Lineage 的 source-set fact identity 仍有顺序敏感缺口，见 `design-validation-report.md`。
+- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测。当前 naming inventory 会先按 canonical endpoint 分组，但会把该 endpoint 的全部不同 file/object/statement/block/line observation 交给 `NamingEvidenceMerger`；完全相同的 observation 才折叠为 `occurrenceCount`。Data Lineage 在 fact identity 前 canonical dedupe/sort source set，因此同一 source 集合不再因发射顺序产生重复 fact。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
 - top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
-- 重复观测不会把同一个基础分无限叠加；摘要 evidence 记录 `count` 和样本 detail，并额外使用 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。
+- 重复观测不会把同一个基础分无限叠加。不同 SQL/DDL/metadata 位置形成可区分 observation，
+  才可通过 `REPEATED_OBSERVATION` 获得最多 0.10 的递减增益；同一位置的完全相同 parser
+  重复事件只折叠为 `occurrenceCount`，不得提高 confidence。
 - JSON 输出由 Jackson `ObjectMapper` 生成；输出字段保持稳定，后续新增字段应向后兼容。
 
 当前实现备注：
@@ -439,6 +447,11 @@ warning 字段：
 - “没有识别出关系”不一定是解析失败。例如一条纯过滤 SQL 没有 JOIN/IN/EXISTS 关系时，可以没有 warning。
 - warning 不产生 evidence，也不参与 confidence 计算；它只告诉运维人员哪些输入没有被完整消费。
 - `rawStatement` 可能很长，适合用于审计和排错；后续如果输出体积成为问题，可以新增截断策略，但默认必须优先保留可诊断性。
+- 上述 parser warning 的 `rawStatement` 是显式审计选择，不能推广到 JDBC/live collector warning。当前
+  data profiler 已使用固定安全消息并去除 rendered SQL/driver message；但 `ScanEngine` 的连接失败以及
+  部分 metadata/object/database-DDL collector 仍直接携带 `SQLException.getMessage()`，连接失败的
+  `source` 还使用原始 JDBC URL。因而“所有 live warning 已统一脱敏”尚未完成，部署时不得在 JDBC URL
+  中嵌入密码，后续应由统一 live-diagnostic sanitizer 收口。
 
 严重程度：
 

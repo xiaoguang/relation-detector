@@ -9,7 +9,7 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 /**
  * Grouped parser capabilities exposed by a database adaptor.
  *
- * <p>This is the only parser entry point in adaptor SPI v4.
+ * <p>This is the only parser entry point in adaptor SPI v5.
  */
 public record AdaptorParsers(
         SqlRelationParser sqlRelations,

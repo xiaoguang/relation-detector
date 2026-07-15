@@ -54,10 +54,10 @@ public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
                 Set.of(AdaptorCapability.DDL_PARSING, AdaptorCapability.NATIVE_LOGS),
                 CommonDatabaseAdaptor::normalizeIdentifier,
                 new AdaptorCollectors(
-                        (connection, scope) -> new MetadataSnapshot(),
-                        CommonDatabaseAdaptor::emptyObjects,
                         Optional.empty(),
-                        new CommonScriptLogExtractor(scriptFramer)),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new CommonScriptLogExtractor(scriptFramer))),
                 new AdaptorParsers(
                         new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),

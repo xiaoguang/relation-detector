@@ -52,7 +52,7 @@ Current limitations:
 | --- | --- |
 | Version strictness | The five version grammars start from the same pinned T-SQL grammar snapshot, but the first Microsoft-documented version boundaries are now encoded in `.g4`: 2017 `STRING_AGG`, 2022 `DATETRUNC` / `GENERATE_SERIES`, and 2025 `VECTOR(...)`. Broader official T-SQL family coverage remains incremental backlog. |
 | Runtime validation | Correctness proves parser output, not live SQL Server execution. Runtime smoke against SQL Server instances remains future work. |
-| JDBC collectors | metadata / object / profiling collectors are conservative placeholders. |
+| JDBC collectors | Metadata, object, database-DDL, and bounded profiling collectors are implemented and capability-gated. Contract tests prove callable/partial-success behavior, not live-server completeness. Database-DDL still needs connection-catalog propagation and ordinal-safe composite-FK reconstruction; runtime permission/version smoke remains pending. |
 
 ## 4. Full Sample-Data Migration
 
@@ -108,12 +108,12 @@ Current merged SQL Server sample-data CLI comparison; the complete cross-dialect
 
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
-| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
-| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
-| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
-| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
-| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 342 | 320 | 246 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
+| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
+| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
+| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
+| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
+| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
 
 The earlier low-count SQL Server surface was a sample-data asset gap: the directories had 38 files but only a thin subset of the ERP semantics. The current SQL Server sample-data now carries full schema, FK, procedure, trigger, natural query, data-generation and analytic coverage. Remaining cross-dialect count differences are parser coverage and dialect expression differences, not missing SQL Server ERP sample-data coverage.
 

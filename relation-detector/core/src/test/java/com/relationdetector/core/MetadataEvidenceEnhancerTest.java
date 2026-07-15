@@ -85,11 +85,34 @@ class MetadataEvidenceEnhancerTest {
     }
 
     @Test
+    void doesNotAttachMetadataFromAnotherCatalogWithTheSameSchemaTableAndColumns() {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columnFacts().add(new MetadataColumnFact("archive", "shop", "users", "id",
+                "bigint", "bigint", false, null, "", "", 1));
+        metadata.indexFacts().add(new MetadataIndexFact("archive", "shop", "users", "PRIMARY",
+                true, true, "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
+        TableId sourceTable = new TableId("live", "shop", "orders", "shop.orders");
+        TableId targetTable = new TableId("live", "shop", "users", "shop.users");
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(sourceTable, "user_id")),
+                Endpoint.column(ColumnRef.of(targetTable, "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.INFERRED_JOIN_FK);
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55),
+                EvidenceSourceType.PLAIN_SQL, "unit-test.sql", "typed equality", Map.of()));
+
+        new MetadataEvidenceEnhancer().enhance(List.of(candidate), metadata);
+
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                candidate.evidence().stream().map(Evidence::type).toList());
+    }
+
+    @Test
     void honorsCaseSensitiveIdentifierRulesInsteadOfLowercasingKeys() {
         MetadataSnapshot metadata = new MetadataSnapshot();
-        metadata.columnFacts().add(new MetadataColumnFact("shop", "orders", "customerid",
+        metadata.columnFacts().add(new MetadataColumnFact(null, "shop", "orders", "customerid",
                 "bigint", "bigint", false, null, "", "", 1));
-        metadata.indexFacts().add(new MetadataIndexFact("shop", "orders", "PRIMARY",
+        metadata.indexFacts().add(new MetadataIndexFact(null, "shop", "orders", "PRIMARY",
                 true, true, "BTREE", true, List.of("customerid"), List.of(), List.of(), List.of(1)));
         TableId table = new TableId(null, "Shop", "Orders", "Shop.Orders");
         ColumnRef column = new ColumnRef(table, "CustomerId", "CustomerId", null, false);
@@ -127,15 +150,43 @@ class MetadataEvidenceEnhancerTest {
         assertEquals("users.id", candidate.target().displayName());
     }
 
+    @Test
+    void compositeUniqueDoesNotProveEitherMemberColumnUnique() {
+        MetadataSnapshot metadata = metadataFacts();
+        metadata.indexFacts().removeIf(MetadataIndexFact::primary);
+        metadata.indexFacts().add(new MetadataIndexFact(null, "shop", "users", "uq_users_tenant_id",
+                true, false, "BTREE", true, List.of("tenant_id", "id"), List.of(), List.of(), List.of(1, 2)));
+        RelationshipCandidate candidate = joinCandidate("orders", "user_id", "users", "id");
+
+        new MetadataEvidenceEnhancer().enhance(List.of(candidate), metadata);
+
+        assertTrue(candidate.evidence().stream().noneMatch(e -> e.type() == EvidenceType.TARGET_UNIQUE));
+    }
+
+    @Test
+    void onlyLeadingColumnOfCompositeOrdinaryIndexSupportsSourceIndex() {
+        MetadataSnapshot metadata = metadataFacts();
+        metadata.indexFacts().removeIf(index -> index.tableName().equals("orders"));
+        metadata.indexFacts().add(new MetadataIndexFact(null, "shop", "orders", "idx_orders_tenant_user",
+                false, false, "BTREE", true, List.of("tenant_id", "user_id"), List.of(), List.of(), List.of(1, 2)));
+        RelationshipCandidate secondColumn = joinCandidate("orders", "user_id", "users", "id");
+        RelationshipCandidate leadingColumn = joinCandidate("orders", "tenant_id", "users", "id");
+
+        new MetadataEvidenceEnhancer().enhance(List.of(secondColumn, leadingColumn), metadata);
+
+        assertTrue(secondColumn.evidence().stream().noneMatch(e -> e.type() == EvidenceType.SOURCE_INDEX));
+        assertHasEvidence(leadingColumn, EvidenceType.SOURCE_INDEX);
+    }
+
     private MetadataSnapshot metadataFacts() {
         MetadataSnapshot snapshot = new MetadataSnapshot();
-        snapshot.columnFacts().add(new MetadataColumnFact("shop", "orders", "user_id",
+        snapshot.columnFacts().add(new MetadataColumnFact(null, "shop", "orders", "user_id",
                 "bigint", "bigint", false, null, "", "", 2));
-        snapshot.columnFacts().add(new MetadataColumnFact("shop", "users", "id",
+        snapshot.columnFacts().add(new MetadataColumnFact(null, "shop", "users", "id",
                 "bigint", "bigint", false, null, "auto_increment", "", 1));
-        snapshot.indexFacts().add(new MetadataIndexFact("shop", "orders", "idx_orders_user_id",
+        snapshot.indexFacts().add(new MetadataIndexFact(null, "shop", "orders", "idx_orders_user_id",
                 false, false, "BTREE", true, List.of("user_id"), List.of(), List.of(), List.of(1)));
-        snapshot.indexFacts().add(new MetadataIndexFact("shop", "users", "PRIMARY",
+        snapshot.indexFacts().add(new MetadataIndexFact(null, "shop", "users", "PRIMARY",
                 true, true, "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
         return snapshot;
     }

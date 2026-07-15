@@ -155,7 +155,7 @@ public final class Collectors {
     }
 
     public interface DataProfiler {
-        List<Evidence> profile(Connection connection, ProfileRequest request);
+        ProfileOutcome profile(Connection connection, ProfileRequest request);
     }
 
     public interface EvidenceWeightAdjuster {

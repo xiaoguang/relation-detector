@@ -23,12 +23,14 @@ import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.core.identity.CanonicalEndpointKey;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.metadata.IndexEvidencePolicy;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
  * Selects bounded data-profile candidates without scanning arbitrary columns.
  */
 public final class DataProfileCandidateGenerator {
+    private final IndexEvidencePolicy indexPolicy = new IndexEvidencePolicy();
     private static final Set<EvidenceType> STRUCTURAL_PROFILE_EVIDENCE = Set.of(
             EvidenceType.SQL_LOG_JOIN,
             EvidenceType.SQL_LOG_EXISTS,
@@ -138,9 +140,9 @@ public final class DataProfileCandidateGenerator {
             return false;
         }
         return metadata.indexFacts().stream().anyMatch(index ->
-                (index.unique() || index.primary())
-                        && index.columns().stream().anyMatch(indexColumn ->
-                        CanonicalEndpointKey.from(index, indexColumn, resolver, namespace).equals(key)));
+                index.columns().size() == 1
+                        && indexPolicy.provesSingleColumnUnique(index, index.columns().get(0))
+                        && CanonicalEndpointKey.from(index, index.columns().get(0), resolver, namespace).equals(key));
     }
 
     private boolean targetIndexed(MetadataSnapshot metadata, CanonicalEndpointKey key,
@@ -149,9 +151,9 @@ public final class DataProfileCandidateGenerator {
             return false;
         }
         return metadata.indexFacts().stream().anyMatch(index ->
-                index.visible()
-                        && index.columns().stream().anyMatch(indexColumn ->
-                        CanonicalEndpointKey.from(index, indexColumn, resolver, namespace).equals(key)));
+                !index.columns().isEmpty()
+                        && indexPolicy.supportsLeadingColumnLookup(index, index.columns().get(0))
+                        && CanonicalEndpointKey.from(index, index.columns().get(0), resolver, namespace).equals(key));
     }
 
     private boolean metadataHasIndexFacts(MetadataSnapshot metadata) {

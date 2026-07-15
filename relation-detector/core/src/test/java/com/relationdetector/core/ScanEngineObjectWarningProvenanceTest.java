@@ -125,9 +125,10 @@ class ScanEngineObjectWarningProvenanceTest {
         @Override
         public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
             return new com.relationdetector.contracts.spi.AdaptorCollectors(
-                    (connection, scope) -> new MetadataSnapshot(),
-                    (connection, scope) -> List.of(new DatabaseObjectDefinition(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of(new DatabaseObjectDefinition(
                             DatabaseObjectType.PROCEDURE,
+                            null,
                             "shop",
                             "rebuild_orders",
                             """
@@ -138,9 +139,9 @@ class ScanEngineObjectWarningProvenanceTest {
                                       EXECUTE stmt;
                                     END
                                     """,
-                            "information_schema.ROUTINES")),
+                            "information_schema.ROUTINES"))),
                     Optional.empty(),
-                    (file, hint) -> Stream.empty());
+                    Optional.of((file, hint) -> Stream.empty()));
         }
 
         @Override

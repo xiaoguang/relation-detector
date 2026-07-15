@@ -212,7 +212,12 @@ class ScanEngineDiagnosticsTest {
 
         @Override
         public Set<AdaptorCapability> capabilities() {
-            return Set.of();
+            java.util.Set<AdaptorCapability> capabilities = new java.util.LinkedHashSet<>();
+            capabilities.add(AdaptorCapability.NATIVE_LOGS);
+            if (structuredDdlParser.isPresent()) {
+                capabilities.add(AdaptorCapability.DDL_PARSING);
+            }
+            return Set.copyOf(capabilities);
         }
 
         @Override
@@ -223,10 +228,10 @@ class ScanEngineDiagnosticsTest {
         @Override
         public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
             return new com.relationdetector.contracts.spi.AdaptorCollectors(
-                    (connection, scope) -> new MetadataSnapshot(),
-                    (connection, scope) -> List.of(),
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of()),
                     Optional.empty(),
-                    new MySqlLikeLogExtractor());
+                    Optional.of(new MySqlLikeLogExtractor()));
         }
 
         @Override

@@ -27,6 +27,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.core.identity.NamespaceContext;
 
 /**
  * Guards the most important token-event extraction boundary.
@@ -290,6 +291,47 @@ class StructuredRelationshipExtractorIndependenceTest {
                         relation.source().displayName().equals("positions.id")
                                 && relation.target().displayName().equals("sales_order_items.product_id")),
                 () -> "Alias p must not leak from the outer query into the CTE predicate: " + relations);
+    }
+
+    @Test
+    void resolvesEquivalentQualifiedAndUnqualifiedBindingsWithinNamespace() {
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "orders", "o", 1),
+                table("FROM", "catalog_a.sales.orders", "o", 1),
+                table("JOIN", "customers", "c", 1),
+                equality("o", "customer_id", "c", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("catalog_a", "sales", List.of()))
+                .extract(record("SELECT 1"), structured);
+
+        assertEquals(1, relations.size(),
+                () -> "Equivalent bindings must be deduplicated by canonical namespace identity: " + relations);
+        assertEquals(List.of(
+                        "customers.id",
+                        "orders.customer_id"),
+                List.of(relations.get(0).source().displayName(), relations.get(0).target().displayName()));
+    }
+
+    @Test
+    void treatsSameAliasAcrossCatalogsAsAmbiguous() {
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "catalog_a.sales.orders", "o", 1),
+                table("FROM", "catalog_b.sales.orders", "o", 1),
+                table("JOIN", "catalog_a.sales.customers", "c", 1),
+                equality("o", "customer_id", "c", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                NamespaceContext.empty())
+                .extract(record("SELECT 1"), structured);
+
+        assertTrue(relations.isEmpty(),
+                () -> "A reused alias cannot select one of two same-named tables from different catalogs: "
+                        + relations);
     }
 
     @Test

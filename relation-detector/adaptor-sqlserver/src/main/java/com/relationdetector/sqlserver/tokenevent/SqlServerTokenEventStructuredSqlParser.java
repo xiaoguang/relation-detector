@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlParser;
@@ -29,11 +30,8 @@ public final class SqlServerTokenEventStructuredSqlParser
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        SqlServerRelationSqlParser parser = new SqlServerRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        SqlServerRelationSqlParser.Tsql_fileContext root = parser.tsql_file();
-        tokens.fill();
+        SqlServerRelationSqlParser.Tsql_fileContext root = AntlrSllParseSupport.parse(
+                tokens, SqlServerRelationSqlParser::new, SqlServerRelationSqlParser::tsql_file, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

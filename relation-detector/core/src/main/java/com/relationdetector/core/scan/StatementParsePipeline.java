@@ -17,6 +17,7 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
 import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 
 final class StatementParsePipeline {
     private final StatementExecutionService statementExecutionService = new StatementExecutionService();
@@ -40,7 +41,7 @@ final class StatementParsePipeline {
     ) {
         return statementExecutionService.executeDdlStatements(
                 parserBundle, statements, EvidenceSourceType.DDL_FILE, context, config,
-                adaptor.identifierRules(), namespace(context, null));
+                adaptor.identifierRules(), namespace(context));
     }
 
     StatementExecutionOutcome executeDatabaseDdl(
@@ -50,11 +51,13 @@ final class StatementParsePipeline {
             DatabaseDdlDefinition definition,
             AdaptorContext context
     ) {
+        NamespaceContext definitionNamespace = databaseDdlNamespace(context, definition);
         StatementExecutionOutcome outcome = statementExecutionService.executeDdlText(
                 parserBundle, definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context, config,
-                adaptor.identifierRules(), namespace(context, definition.schema()));
+                adaptor.identifierRules(), definitionNamespace);
         return new StatementExecutionOutcome(
-                qualifyDatabaseDdlCandidates(outcome.relationshipCandidates(), definition.schema()),
+                qualifyDatabaseDdlCandidates(
+                        outcome.relationshipCandidates(), adaptor, definitionNamespace),
                 outcome.lineageCandidates(),
                 outcome.namingEvidence(),
                 outcome.warnings(),
@@ -91,27 +94,36 @@ final class StatementParsePipeline {
         }
         Set<TableId> tables = new java.util.LinkedHashSet<>(metadataSnapshot.tables());
         for (MetadataTableFact fact : metadataSnapshot.tableFacts()) {
-            tables.add(TableId.of(fact.schema(), fact.tableName()));
+            String normalizedName = fact.schema() == null || fact.schema().isBlank()
+                    ? fact.tableName()
+                    : fact.schema() + "." + fact.tableName();
+            tables.add(new TableId(fact.catalog(), fact.schema(), fact.tableName(), normalizedName));
         }
         return tables;
     }
 
     private List<RelationshipCandidate> qualifyDatabaseDdlCandidates(
             List<RelationshipCandidate> candidates,
-            String schema
+            DatabaseAdaptor adaptor,
+            NamespaceContext namespace
     ) {
-        if (schema == null || schema.isBlank()) {
+        if (namespace.catalog().isBlank() && namespace.currentSchema().isBlank()) {
             return candidates;
         }
+        CanonicalIdentifierResolver identifiers = new CanonicalIdentifierResolver(adaptor.identifierRules());
         return candidates.stream()
-                .map(candidate -> qualifyDatabaseDdlCandidate(candidate, schema))
+                .map(candidate -> qualifyDatabaseDdlCandidate(candidate, identifiers, namespace))
                 .toList();
     }
 
-    private RelationshipCandidate qualifyDatabaseDdlCandidate(RelationshipCandidate candidate, String schema) {
+    private RelationshipCandidate qualifyDatabaseDdlCandidate(
+            RelationshipCandidate candidate,
+            CanonicalIdentifierResolver identifiers,
+            NamespaceContext namespace
+    ) {
         RelationshipCandidate qualified = new RelationshipCandidate(
-                qualifyEndpoint(candidate.source(), schema),
-                qualifyEndpoint(candidate.target(), schema),
+                qualifyEndpoint(candidate.source(), identifiers, namespace),
+                qualifyEndpoint(candidate.target(), identifiers, namespace),
                 candidate.relationType(),
                 candidate.relationSubType());
         qualified.confidence(candidate.confidence());
@@ -121,11 +133,12 @@ final class StatementParsePipeline {
         return qualified;
     }
 
-    private Endpoint qualifyEndpoint(Endpoint endpoint, String schema) {
-        if (endpoint.table().schema() != null && !endpoint.table().schema().isBlank()) {
-            return endpoint;
-        }
-        TableId table = TableId.of(schema, endpoint.table().tableName());
+    private Endpoint qualifyEndpoint(
+            Endpoint endpoint,
+            CanonicalIdentifierResolver identifiers,
+            NamespaceContext namespace
+    ) {
+        TableId table = identifiers.resolve(endpoint.table(), namespace);
         if (!endpoint.isColumnLevel()) {
             return Endpoint.table(table);
         }
@@ -134,10 +147,20 @@ final class StatementParsePipeline {
                 column.dataType(), column.nullable()));
     }
 
-    private NamespaceContext namespace(AdaptorContext context, String schemaOverride) {
+    private NamespaceContext databaseDdlNamespace(
+            AdaptorContext context,
+            DatabaseDdlDefinition definition
+    ) {
+        if ((definition.catalog() != null && !definition.catalog().isBlank())
+                || (definition.schema() != null && !definition.schema().isBlank())) {
+            return new NamespaceContext(definition.catalog(), definition.schema(), List.of());
+        }
+        return namespace(context);
+    }
+
+    private NamespaceContext namespace(AdaptorContext context) {
         String catalog = context == null || context.scope() == null ? "" : context.scope().catalog();
         String scopeSchema = context == null || context.scope() == null ? "" : context.scope().schema();
-        String schema = schemaOverride == null || schemaOverride.isBlank() ? scopeSchema : schemaOverride;
-        return new NamespaceContext(catalog, schema, List.of());
+        return new NamespaceContext(catalog, scopeSchema, List.of());
     }
 }

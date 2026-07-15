@@ -137,6 +137,9 @@ public final class PostgresMetadataCollector implements MetadataCollector {
                   AND ns.nspname = ?
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            String catalog = scope.catalog() == null || scope.catalog().isBlank()
+                    ? connection.getCatalog()
+                    : scope.catalog();
             // PostgreSQL deployments often rely on "public"; use it as the
             // adaptor-level default when the CLI config does not specify schema.
             ps.setString(1, scope.schema() == null ? "public" : scope.schema());
@@ -149,8 +152,12 @@ public final class PostgresMetadataCollector implements MetadataCollector {
                      * inferred from naming; it comes directly from
                      * pg_constraint.conrelid (source) and confrelid (target).
                      */
-                    TableId sourceTable = TableId.of(rs.getString("source_schema"), rs.getString("source_table"));
-                    TableId targetTable = TableId.of(rs.getString("target_schema"), rs.getString("target_table"));
+                    String sourceSchema = rs.getString("source_schema");
+                    String targetSchema = rs.getString("target_schema");
+                    TableId sourceTable = new TableId(catalog, sourceSchema, rs.getString("source_table"),
+                            sourceSchema + "." + rs.getString("source_table"));
+                    TableId targetTable = new TableId(catalog, targetSchema, rs.getString("target_table"),
+                            targetSchema + "." + rs.getString("target_table"));
                     RelationshipCandidate candidate = new RelationshipCandidate(
                             Endpoint.column(ColumnRef.of(sourceTable, rs.getString("source_column"))),
                             Endpoint.column(ColumnRef.of(targetTable, rs.getString("target_column"))),

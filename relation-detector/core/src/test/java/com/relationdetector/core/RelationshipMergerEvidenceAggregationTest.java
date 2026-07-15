@@ -68,6 +68,19 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void foldsExactParserDuplicatesWithoutAddingConfidenceBonus() {
+        RelationshipCandidate first = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
+        RelationshipCandidate duplicate = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
+
+        RelationshipCandidate merged = merger.merge(List.of(first, duplicate), 0.0d).get(0);
+
+        assertEquals(1, merged.rawEvidence().size());
+        assertEquals(2, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
+        assertEquals(new BigDecimal("0.5500"), merged.confidence());
+        assertTrue(merged.evidence().stream().noneMatch(e -> e.type() == EvidenceType.REPEATED_OBSERVATION));
+    }
+
+    @Test
     void retainsConditionalAttributesOnlyWhenEveryStructuralObservationIsGuarded() {
         List<RelationshipCandidate> conditional = merger.merge(List.of(
                 conditionalJoin("customers", "customer"),
@@ -226,6 +239,17 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void doesNotMergeTableCoOccurrenceAcrossCatalogs() {
+        RelationshipCandidate catalogA = tableCoOccurrence("catalog_a", "orders", "customers");
+        RelationshipCandidate catalogB = tableCoOccurrence("catalog_b", "orders", "customers");
+
+        List<RelationshipCandidate> merged = merger.merge(List.of(catalogA, catalogB), 0.0d);
+
+        assertEquals(2, merged.size(),
+                "Table co-occurrence identity must preserve catalog boundaries");
+    }
+
+    @Test
     void uniqueEndpointAndSqlJoinInferFkDirection() {
         RelationshipCandidate sql = sqlLogJoinCoOccurrence("app.log", "line 10: o.user_id = u.id");
         sql.evidence().add(new Evidence(EvidenceType.TARGET_UNIQUE,
@@ -337,6 +361,20 @@ class RelationshipMergerEvidenceAggregationTest {
                 Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "id")),
                 RelationType.FK_LIKE,
                 RelationSubType.INFERRED_JOIN_FK);
+    }
+
+    private RelationshipCandidate tableCoOccurrence(String catalog, String sourceTable, String targetTable) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.table(new TableId(catalog, "sales", sourceTable, "sales." + sourceTable)),
+                Endpoint.table(new TableId(catalog, "sales", targetTable, "sales." + targetTable)),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.TABLE_CO_OCCURRENCE);
+        candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_TABLE_CO_OCCURRENCE,
+                DefaultEvidenceScores.SQL_LOG_TABLE_CO_OCCURRENCE,
+                EvidenceSourceType.PLAIN_SQL,
+                "query.sql",
+                sourceTable + " and " + targetTable));
+        return candidate;
     }
 
     private Evidence namingReference(String evidenceRef) {

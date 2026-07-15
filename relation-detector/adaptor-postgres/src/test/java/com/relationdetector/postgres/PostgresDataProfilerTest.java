@@ -30,7 +30,7 @@ class PostgresDataProfilerTest {
                 new ProfileRequest(candidate(), DataProfileOptions.defaults()
                         .withMaxDistinctValues(40)
                         .withMinRowsForNegative(50)
-                        .withMaxMismatchRatio(0.50d)));
+                        .withMaxMismatchRatio(0.50d))).evidence();
 
         assertTrue(sql.toString().contains("LIMIT 40"));
         assertEquals(EvidenceType.NEGATIVE_VALUE_MISMATCH, evidence.get(0).type());

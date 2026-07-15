@@ -2,6 +2,8 @@ package com.relationdetector.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -20,21 +22,66 @@ import com.relationdetector.contracts.spi.ScanScope;
 
 class MySqlMetadataCollectorFactsTest {
     @Test
+    void canonicalizesMysqlDatabaseOntoCatalogAxis() {
+        MySqlDatabaseAdaptor adaptor = new MySqlDatabaseAdaptor();
+
+        ScanScope catalogScope = adaptor.canonicalizeScope(
+                new ScanScope("shop", null, List.of("orders"), List.of("audit_logs")));
+        ScanScope legacySchemaScope = adaptor.canonicalizeScope(
+                new ScanScope(null, "shop", List.of("orders"), List.of("audit_logs")));
+
+        assertEquals(catalogScope, legacySchemaScope);
+        assertEquals("shop", catalogScope.catalog());
+        assertNull(catalogScope.schema());
+        assertEquals(List.of("orders"), catalogScope.includeTables());
+        assertEquals(List.of("audit_logs"), catalogScope.excludeTables());
+    }
+
+    @Test
+    void rejectsConflictingMysqlCatalogAndLegacySchema() {
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> new MySqlDatabaseAdaptor().canonicalizeScope(
+                        new ScanScope("shop_a", "shop_b", List.of(), List.of())));
+
+        assertTrue(failure.getMessage().contains("catalog"));
+        assertTrue(failure.getMessage().contains("schema"));
+    }
+
+    @Test
+    void rejectsConflictingScopeBeforeCallingJdbc() {
+        Connection connection = (Connection) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] {Connection.class},
+                (proxy, method, args) -> {
+                    throw new AssertionError("JDBC must not be called for an invalid MySQL namespace");
+                });
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
+                        connection,
+                        new ScanScope("shop_a", "shop_b", List.of(), List.of())));
+    }
+
+    @Test
     void collectsCatalogFactsAndKeepsDeclaredForeignKeyRelationshipsWithinScope() {
-        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().collect(
+        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
                 catalogConnection(),
                 new ScanScope(null, "shop", List.of("orders", "users"), List.of("audit_logs")));
 
         assertEquals(2, snapshot.tableFacts().size(), "include/exclude scope should filter metadata tables");
         assertTrue(snapshot.tableFacts().stream().anyMatch(table ->
-                table.schema().equals("shop")
+                table.catalog().equals("shop")
                         && table.tableName().equals("orders")
                         && table.engine().equals("InnoDB")
                         && table.comment().equals("sales orders")));
         assertFalse(snapshot.tableFacts().stream().anyMatch(table -> table.tableName().equals("audit_logs")));
+        assertTrue(snapshot.tables().stream().anyMatch(table ->
+                "shop".equals(table.catalog())
+                        && table.schema() == null
+                        && table.tableName().equals("orders")
+                        && table.normalizedName().equals("orders")));
 
         assertTrue(snapshot.columnFacts().stream().anyMatch(column ->
-                column.schema().equals("shop")
+                column.catalog().equals("shop")
                         && column.tableName().equals("orders")
                         && column.columnName().equals("user_id")
                         && column.dataType().equals("bigint")
@@ -43,7 +90,7 @@ class MySqlMetadataCollectorFactsTest {
                         && column.ordinalPosition() == 2));
 
         assertTrue(snapshot.indexFacts().stream().anyMatch(index ->
-                index.schema().equals("shop")
+                index.catalog().equals("shop")
                         && index.tableName().equals("orders")
                         && index.indexName().equals("idx_orders_user_id")
                         && !index.unique()
@@ -51,7 +98,7 @@ class MySqlMetadataCollectorFactsTest {
                         && index.columns().equals(List.of("user_id"))),
                 () -> "Actual indexes=" + snapshot.indexFacts() + ", warnings=" + snapshot.warnings());
         assertTrue(snapshot.indexFacts().stream().anyMatch(index ->
-                index.schema().equals("shop")
+                index.catalog().equals("shop")
                         && index.tableName().equals("users")
                         && index.indexName().equals("PRIMARY")
                         && index.unique()
@@ -59,12 +106,12 @@ class MySqlMetadataCollectorFactsTest {
                         && index.columns().equals(List.of("id"))));
 
         assertTrue(snapshot.constraintFacts().stream().anyMatch(constraint ->
-                constraint.schema().equals("shop")
+                constraint.catalog().equals("shop")
                         && constraint.tableName().equals("orders")
                         && constraint.constraintName().equals("fk_orders_users")
                         && constraint.constraintType().equals("FOREIGN KEY")
                         && constraint.columns().equals(List.of("user_id"))
-                        && constraint.referencedSchema().equals("shop")
+                        && constraint.referencedCatalog().equals("shop")
                         && constraint.referencedTable().equals("users")
                         && constraint.referencedColumns().equals(List.of("id"))
                         && constraint.updateRule().equals("CASCADE")
@@ -73,6 +120,12 @@ class MySqlMetadataCollectorFactsTest {
         assertEquals(1, snapshot.relationships().size(), "declared FK relationship output must stay compatible");
         assertEquals("shop.orders.user_id", snapshot.relationships().get(0).source().displayName());
         assertEquals("shop.users.id", snapshot.relationships().get(0).target().displayName());
+        assertEquals("shop", snapshot.relationships().get(0).source().table().catalog());
+        assertNull(snapshot.relationships().get(0).source().table().schema());
+        assertEquals("orders", snapshot.relationships().get(0).source().table().normalizedName());
+        assertEquals("shop", snapshot.relationships().get(0).target().table().catalog());
+        assertNull(snapshot.relationships().get(0).target().table().schema());
+        assertEquals("users", snapshot.relationships().get(0).target().table().normalizedName());
     }
 
     private Connection catalogConnection() {

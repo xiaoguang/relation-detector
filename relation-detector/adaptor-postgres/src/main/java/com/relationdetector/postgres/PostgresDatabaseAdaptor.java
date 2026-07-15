@@ -45,10 +45,10 @@ public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
                 PostgresDatabaseAdaptor::normalizeIdentifier,
                 new AdaptorCollectors(
-                        new PostgresMetadataCollector(),
-                        new PostgresObjectCollector(),
+                        Optional.of(new PostgresMetadataCollector()),
+                        Optional.of(new PostgresObjectCollector()),
                         Optional.of(new PostgresDatabaseDdlCollector()),
-                        new PostgresLogExtractor(scriptFramer)),
+                        Optional.of(new PostgresLogExtractor(scriptFramer))),
                 new AdaptorParsers(
                         new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),

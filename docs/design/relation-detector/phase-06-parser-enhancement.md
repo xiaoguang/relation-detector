@@ -183,7 +183,7 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016
 
 版本由 package 表达，例如 `postgres.fullgrammar.v16`、`mysql.fullgrammar.v8_0`、`oracle.fullgrammar.v19c`、`sqlserver.fullgrammar.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammarDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar 实现。version package 不再持有 `.g4` 或 generated Java；它们依赖 `grammar/*` 中对应的独立 artifact，只保留 binding、profile/version policy 和少量 typed context adapter。
 
-Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，防止职责再度回流到单一巨型类。
+Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade 设置 450 行上限；generated Java、top-level record DTO 与 `package-info` 排除，不设永久 allowlist。`StructuredScriptFramer` 仅保留编排，五种 dialect slice 算法已分别进入独立 planner，并由额外的 200/250 行职责门禁保护。
 
 ## 代码结构注释索引
 
@@ -218,11 +218,11 @@ Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typ
 | `cli` | YAML/CLI 参数、adaptor 发现、ScanEngine 调用和输出。 |
 | `mysql` / `postgres` / `oracle` / `sqlserver` | adaptor 装配：metadata、object/log/DDL collector、token-event parser、full-grammar module。 |
 | `mysql.tokenevent` / `postgres.tokenevent` / `oracle.tokenevent` / `sqlserver.tokenevent` | 方言 token-event parser 入口。各自依赖独立 `grammar/*-token-event` artifact，不 import full-grammar parser。 |
-| `mysql.routine` / `postgres.routine` / `oracle.routine` / `sqlserver.routine` | 方言 routine scope policy 或 routine body parser；供 token-event 和 full-grammar 调用，不放在 core，也不挂在 full-grammar 专属目录下。 |
+| `mysql.routine` / `postgres.routine` / `oracle.routine` | 方言 routine scope policy、body descriptor 或 dispatcher；供 token-event 和 full-grammar 调用，不放在 core，也不挂在 full-grammar 专属目录下。SQL Server 没有独立 `sqlserver.routine` package，routine scope 由其 typed visitor/state 处理。PostgreSQL generated PL/pgSQL shell 位于独立的 `postgres.plpgsql.tokenevent|v16|v17|v18` package，不能把 `postgres.routine` 写成 grammar module。 |
 | `mysql.fullgrammar.common` / `postgres.fullgrammar.common` / `oracle.fullgrammar.common` / `sqlserver.fullgrammar.common` | full-grammar 公共 parse support、binding、visitor core、expression analyzer 和 DDL event core。 |
 | `mysql.fullgrammar.v5_7` / `mysql.fullgrammar.v8_0` / `postgres.fullgrammar.v16` / `postgres.fullgrammar.v17` / `postgres.fullgrammar.v18` / `oracle.fullgrammar.v12c` / `oracle.fullgrammar.v19c` / `oracle.fullgrammar.v21c` / `oracle.fullgrammar.v26ai` / `sqlserver.fullgrammar.v2016` / `v2017` / `v2019` / `v2022` / `v2025` | 版本化 full-grammar generated parser binding、profile module 和少量 version policy / bridge。Oracle 当前是 `INCOMPLETE_VERSIONED` generated parser；SQL Server 已有首批 source-backed 版本边界，更多 T-SQL family 裁剪仍在 backlog。 |
 
-审视结论：当前 package 注释、类级注释、关键函数注释、目录结构和本文职责表一致。core 不直接承载 MySQL/PostgreSQL 版本实现；adaptor 不承载 relationship/lineage semantic extractor；contracts 不依赖 core。
+审视结论：模块依赖方向与本文职责表一致：core 不直接承载 MySQL/PostgreSQL/Oracle/SQL Server 版本实现，adaptor 不承载最终 relationship/lineage merger，contracts 不依赖 core。原超限 expression/relationship/lineage 入口已经抽出 helper，script framing 也已按五种 dialect planner 拆分。详见 `code-design-traceability.md`。
 
 ## 解析输入和输出
 
@@ -779,7 +779,7 @@ root token-event 与对应 full-grammar 数量不要求完全一致：token-even
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammar 已能确认的结构。
 - `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
 
-当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。这里不表示全部工程契约已经 `MATCHED`：live capability、composite metadata index、lineage source-set identity、profiler diagnostics 和 catalog preservation 仍是明确实现缺口，记录在 `design-validation-report.md`。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
+当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。Live capability/preflight、composite metadata index 首列口径、lineage source-set identity 和 profiler diagnostics 已实现并通过定向契约测试；endpoint、relationship alias/naming/merger、known-physical/live-DDL 装配与 MySQL live database namespace 映射均使用完整 catalog identity。全量状态以 `design-validation-report.md` 和发布验收结果为准。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -1171,10 +1171,35 @@ bash relation-detector/scripts/run-correctness-isolated.sh
 - 19 个 parser category 无重复、无遗漏。
 - 各组 selected 之和等于 discovered 总数。
 
-2026-07-14 在当前 1198 个 fixture 上的独立复验结果为 `1198/1198`、19 个 parser category、
-0 failure；九组 Maven 墙钟时间合计约 5 分 35 秒。`verify-all.sh` 和 `verify-release.sh` 的 reactor
+2026-07-14 的历史独立复验结果为 `1198/1198`、19 个 parser category、0 failure；当次九组
+Maven 墙钟时间合计约 5 分 35 秒。该数字是固定机器/提交/参数下的性能快照，不是当前提交的
+持续 SLA；当前结果必须读取最新 isolated verification manifest。`verify-all.sh` 和 `verify-release.sh` 的 reactor
 阶段只跑 smoke correctness，随后调用上述隔离执行器生成 full 聚合 summary。直接使用单 JVM
 `-DcorrectnessFixtureProfile=full` 仍可用于诊断，但不是发布验收路径。
+
+### Token-event SLL 首跑与 LL 回退
+
+Token-event SQL/DDL parser 使用统一的 `AntlrSllParseSupport`：先完成 lexer 和 token
+stream，再以 `PredictionMode.SLL` 和 `BailErrorStrategy` 执行入口 rule；如果发生
+`ParseCancellationException`，则 rewind 同一 token stream，重建 parser 并以 `PredictionMode.LL`
+和正常 error listener 完整重试。该 helper 不拥有 DFA/context cache，不清理 ANTLR
+内建 prediction state，不改变 full-grammar 路径，也不引入额外线程、调度器或生命周期机制。
+
+2026-07-15 在同一代码、`-Xmx8g`、fixture 并发 8、九个 parser family 顺序隔离的
+历史全量 A/B 中：
+
+| Mode | Fixtures | Failures | 九组 Maven 墙钟合计 |
+| --- | ---: | ---: | ---: |
+| LL | 1198/1198 | 0 | 6 分 54 秒 |
+| SLL -> LL fallback | 1198/1198 | 0 | 5 分 10 秒 |
+
+SLL 路径在该压力下减少约 25% 墙钟时间。随后全量 sample-data CLI 的19个case
+全部成功，38份 direct/derived JSON 的完整 canonical fingerprint 和 semantic fingerprint
+与 LL 基线逐文件一致，Diagnostics 为0。因此保留该优化。
+
+并发数不按“没有 Full GC”自动提高。同一 LL 路径在 `-Xmx8g`下，并发16的全量
+隔离运行约7分39秒，慢于并发8的6分54秒；当前机器的CPU超额订阅已经抵消额外并发。
+因此发布验收的并发上限继续为8，除非在固定代码、堆和工作负载的新A/B中证明墙钟时间明显下降。
 
 sample-data CLI 同样不能把 19 个 parser case 放入一个长生命周期 batch JVM。正式入口仍是：
 

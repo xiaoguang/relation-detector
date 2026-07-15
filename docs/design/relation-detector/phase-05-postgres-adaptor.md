@@ -6,7 +6,7 @@
 
 当前 PostgreSQL adaptor 不只负责采集，也负责 PostgreSQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.postgres.tokenevent`，PostgreSQL full-grammar 公共抽象位于 `com.relationdetector.postgres.fullgrammar.common`，严格版本 profile 位于 `com.relationdetector.postgres.fullgrammar.v16`、`v17`、`v18`。core 只通过 runner 和 `FullGrammarDialectModule` registry 调度，不在 core 里 hard-code PostgreSQL 版本实现。
 
-PostgreSQL 同时实现 SPI v4 的 `PostgresScriptFramer`。它使用 generated script lexer 的 typed dollar-tag lexeme，在匹配的 `$tag$ ... $tag$` 区间内不把 semicolon 当作 statement boundary；framing 先于 SQL/DDL grammar，避免函数体被通用 splitter 截断。
+PostgreSQL 同时实现当前 SPI v5 的 `PostgresScriptFramer`。它使用 generated script lexer 的 typed dollar-tag lexeme，在匹配的 `$tag$ ... $tag$` 区间内不把 semicolon 当作 statement boundary；framing 先于 SQL/DDL grammar，避免函数体被通用 splitter 截断。
 
 PostgreSQL full-grammar 的设计目标是“按大版本严格表达官方语法边界”：
 
@@ -130,10 +130,11 @@ PostgreSQL adaptor 负责：
   - 独立 `.g4`、generated lexer/parser package、version binding、dialect module；
   - typed visitor 只做“从该版本 grammar context 提取结构字段并交给 common core”的薄桥接；
   - 版本差异通过 version policy/hook 表达，例如 v18 temporal constraint 结构。
-- `postgres.routine` 与 `postgres.plpgsql.*`
+- `postgres.routine` 与 `postgres.plpgsql.tokenevent|v16|v17|v18`
   - outer grammar typed 提取对象名、`LANGUAGE`、string body或 `BEGIN ATOMIC` statement context与起始行；
-  - token-event 使用独立 `postgres-plpgsql-token-event`，静态 SQL 只回调 PostgreSQL token-event parser；
-  - v16/v17/v18 full profile 分别使用 `plpgsql-v16/v17/v18`，静态 SQL 只回调同版本 full parser；
+  - `postgres.routine` 是 adaptor 内的 descriptor、dispatcher、provenance 和 shared shell support package，不是 grammar module；
+  - token-event 使用独立 grammar artifact `postgres-plpgsql-token-event` 和 package `postgres.plpgsql.tokenevent`，静态 SQL 只回调 PostgreSQL token-event parser；
+  - v16/v17/v18 full profile 分别使用 grammar artifact `plpgsql-v16/v17/v18` 和同版本 `postgres.plpgsql.v16|v17|v18` package，静态 SQL 只回调同版本 full parser；
   - string body缺省 `LANGUAGE` 输出 missing-language diagnostic；`BEGIN ATOMIC` 缺省 language按 SQL处理；
   - 两条路径只共享 sealed body descriptor、provenance 和无状态 helper，禁止互相 delegate；dynamic `EXECUTE` 只产生 unresolved diagnostic。
 

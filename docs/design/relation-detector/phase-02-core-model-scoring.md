@@ -24,9 +24,18 @@ public record TableId(
 规则：
 
 - `catalog` 可为空。
-- MySQL 中 `schema` 通常对应 database。
+- MySQL 中 database 映射为 `catalog`；`schema` 通常为空。不得为了沿用两段式名字而把
+  database 降级写入 schema。
 - PostgreSQL 中 `schema` 通常是 `public` 或用户 schema。
 - `normalizedName` 由 adaptor 按数据库规则提供，core 不自行猜测大小写。
+- 物理表身份必须同时比较 catalog 和 `normalizedName`：catalog 必须同时为空，或经 adaptor
+  规范化后精确相同；不能只比较 `normalizedName`，也不能把缺失 catalog 与任意显式 catalog
+  自动视为相同。
+- `TableId.sameIdentity()` 是模型层的严格身份判断；需要解析裸 endpoint 时，必须先通过
+  `CanonicalIdentifierResolver` 和明确的 `NamespaceContext` 得到 canonical key，再做精确比较。
+- catalog 与 schema 是不同身份轴。即使某个数据库产品在用户语义上把 database/schema
+  混称为同一概念，adaptor 也必须选择一个稳定映射，并让 metadata、SQL endpoint、profile
+  和 relationship alias 使用同一映射。
 
 ### ColumnRef
 
@@ -64,6 +73,16 @@ public final class RelationshipCandidate {
 `Endpoint` 包含 table 和可空 column。parser 输出的 `TableId` / `ColumnRef` 保留 SQL 中显式
 写出的 catalog、schema、quote 和标识符拼写，作为 JSON 和 evidence 的可读 endpoint；不使用
 默认 schema 把裸 endpoint 改写成 schema-qualified endpoint。
+
+当前实现状态以 `code-design-traceability.md` 为准：`Endpoint` 构造、declared self-reference、
+lineage projection anchor、relationship alias/naming/表级 CO key、known-physical/live-DDL 装配和
+metadata/profile enhancement key 均使用完整 catalog/schema/table identity。MySQL live scope 也在
+JDBC 前统一为 `catalog=<database>, schema=null`；不得重新引入只比较 `normalizedName` 或把 database
+写入 schema 的降级路径。
+
+`StatementParsePipeline` 的 known-physical inventory 与 live DDL candidate qualification 必须保留
+`MetadataTableFact` / `DatabaseDdlDefinition` 的 catalog，不能重新退化为只含 schema/table 的
+`TableId`。
 
 方向规则：
 
@@ -286,7 +305,7 @@ public record Evidence(
 
 | EvidenceType | 当前状态 | 说明 |
 | --- | --- | --- |
-| `METADATA_FOREIGN_KEY` | 已产出 | MySQL/PostgreSQL live metadata collector 会从 catalog 外键生成；其它 adaptor 需要等 live metadata collector 补齐后自然接入。 |
+| `METADATA_FOREIGN_KEY` | 已产出 | MySQL/PostgreSQL/Oracle/SQL Server live metadata collector 会从各自 catalog 的显式外键生成 child-to-parent relationship。 |
 | `DDL_FOREIGN_KEY` | 已产出 | typed DDL parser / DDL relation extraction 会从 `CREATE TABLE`、`ALTER TABLE` 等 DDL 生成。 |
 | `VIEW_JOIN` | 已产出 | typed `CREATE VIEW` / `CREATE MATERIALIZED VIEW` 查询体中的物理列谓词使用该 evidence；它保留 view 对象 provenance，但不能单独证明 FK-like 方向。 |
 | `PROCEDURE_JOIN` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前 procedure/function/routine body 中的谓词仍复用 SQL predicate evidence。 |

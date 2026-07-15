@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlParser;
@@ -40,12 +41,8 @@ public final class OracleTokenEventStructuredSqlParser
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        OracleRelationSqlParser parser = new OracleRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-
-        OracleRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
+        OracleRelationSqlParser.ScriptContext root = AntlrSllParseSupport.parse(
+                tokens, OracleRelationSqlParser::new, OracleRelationSqlParser::script, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

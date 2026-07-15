@@ -30,6 +30,7 @@ public final class ScanEngine {
     private final EvidenceEnhancementPipeline evidenceEnhancementPipeline = new EvidenceEnhancementPipeline();
     private final DataProfilePipeline dataProfilePipeline = new DataProfilePipeline();
     private final ResultAssembly resultAssembly = new ResultAssembly();
+    private final ScanCapabilityValidator capabilityValidator = new ScanCapabilityValidator();
 
     /**
      * 执行一次完整 scan，并返回 relationship、dataLineage、warning 和 source summary。
@@ -43,6 +44,11 @@ public final class ScanEngine {
 
     /** Runs a scan from an immutable, fully resolved runtime snapshot. */
     public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
+        capabilityValidator.validate(config, adaptor);
+        DatabaseConfig requestedDatabase = config.database();
+        ScanScope scope = adaptor.canonicalizeScope(new ScanScope(
+                requestedDatabase.catalog(), requestedDatabase.schema(),
+                requestedDatabase.includeTables(), requestedDatabase.excludeTables()));
         ResolvedScanConfig runtimeConfig = config;
         ScanResult result = new ScanResult(config.database().databaseType().name(), config.database().schema());
         Connection connection = null;
@@ -55,8 +61,6 @@ public final class ScanEngine {
         }
 
         DatabaseConfig database = runtimeConfig.database();
-        ScanScope scope = new ScanScope(database.catalog(), database.schema(),
-                database.includeTables(), database.excludeTables());
         AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
         List<RelationshipCandidate> candidates = new ArrayList<>();
         List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();

@@ -19,8 +19,7 @@ import com.relationdetector.oracle.routine.OracleRoutineScope;
 /** Per-parse Oracle VALUE/CONTROL and scalar-subquery expression analysis. */
 final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTreeSupport {
     private final OracleExpressionTransformSupport transforms;
-    private final Supplier<String> defaultAlias;
-    private final OracleRoutineScope routineScope;
+    private final OracleColumnReadCollector columns;
 
     OracleFullGrammarExpressionSupport(
             OracleSqlEventVisitorCore core,
@@ -30,8 +29,7 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
     ) {
         super(core, adapter);
         this.transforms = new OracleExpressionTransformSupport(core, adapter);
-        this.defaultAlias = defaultAlias;
-        this.routineScope = routineScope;
+        this.columns = new OracleColumnReadCollector(core, adapter, defaultAlias, routineScope);
     }
 
     OracleColumnRead singleSelectColumn(ParserRuleContext subquery) {
@@ -349,13 +347,13 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             return;
         }
         if (hasRole(tree, Role.COLUMN_REFERENCE)) {
-            addColumnRead(name(tree), reads);
+            columns.add(name(tree), reads);
             return;
         }
         if (hasRole(tree, Role.GENERAL_ELEMENT)) {
             String text = name(tree);
             if (!text.contains("(") && text.contains(".")) {
-                addColumnRead(text, reads);
+                columns.add(text, reads);
                 return;
             }
         }
@@ -402,62 +400,6 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
     }
 
     private List<OracleColumnRead> columnReads(ParseTree tree) {
-        Map<String, OracleColumnRead> reads = new LinkedHashMap<>();
-        collectColumnReads(tree, reads);
-        return new ArrayList<>(reads.values());
-    }
-
-    private void collectColumnReads(ParseTree tree, Map<String, OracleColumnRead> reads) {
-        if (tree == null) {
-            return;
-        }
-        if (hasRole(tree, Role.BIND_VARIABLE)) {
-            addColumnRead(name(tree), reads);
-            return;
-        }
-        if (hasRole(tree, Role.COLUMN_REFERENCE)) {
-            addColumnRead(name(tree), reads);
-            return;
-        }
-        if (hasRole(tree, Role.GENERAL_ELEMENT)) {
-            String text = name(tree);
-            if (!text.contains("(") && text.contains(".")) {
-                addColumnRead(text, reads);
-                return;
-            }
-            List<ParserRuleContext> parts = children(tree, Role.GENERAL_ELEMENT_PART);
-            if (!text.contains("(") && parts.size() == 1
-                    && children(parts.get(0), Role.FUNCTION_ARGUMENT).isEmpty()) {
-                addColumnRead(text, reads);
-                return;
-            }
-        }
-        for (ParseTree child : typedChildren(tree)) {
-            collectColumnReads(child, reads);
-        }
-    }
-
-    private void addColumnRead(String raw, Map<String, OracleColumnRead> reads) {
-        String value = core.clean(raw);
-        int dot = value.lastIndexOf('.');
-        if (dot < 0) {
-            String alias = defaultAlias.get();
-            String column = core.clean(value);
-            if (!column.isBlank() && !routineScope.isSymbol(column)) {
-                reads.putIfAbsent(alias + "." + column, new OracleColumnRead(alias, column));
-            }
-            return;
-        }
-        if (dot == 0 || dot == value.length() - 1) {
-            return;
-        }
-        String alias = core.clean(value.substring(0, dot));
-        if (alias.startsWith(":")) {
-            alias = alias.substring(1);
-        }
-        String column = core.clean(value.substring(dot + 1));
-        if (!alias.isBlank() && !column.isBlank()) {
-            reads.putIfAbsent(alias + "." + column, new OracleColumnRead(alias, column));
-        }
+        return columns.reads(tree);
     }
 }

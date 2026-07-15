@@ -34,7 +34,7 @@ class AdaptorApiVersionTest {
 
         assertTrue(error.getMessage().contains("legacy-test"));
         assertTrue(error.getMessage().contains("actual=1"));
-        assertTrue(error.getMessage().contains("required=4"));
+        assertTrue(error.getMessage().contains("required=5"));
         assertTrue(error.getMessage().contains("recompile"));
     }
 

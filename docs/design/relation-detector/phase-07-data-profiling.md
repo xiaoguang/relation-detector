@@ -13,7 +13,10 @@
 当前代码事实：
 
 - live DB profiling 已实现为显式 opt-in 能力：`dataProfile.enabled=true` 且有 JDBC connection 时，MySQL、PostgreSQL、Oracle、SQL Server profiler 都会对受限候选执行 bounded distinct containment query。
-- `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH` 均可由 live profiler 产出，并带 `profileMode=LIVE_DATABASE`、比例、阈值、样本规模、timeout/permission flags 等 attributes。
+- `VALUE_CONTAINMENT_HIGH` 可由当前 live profiler 的 sampled/matched distinct 直接产出。
+  `DataProfileEvidenceBuilder` 也支持 `VALUE_OVERLAP_HIGH` 与 `NEGATIVE_VALUE_MISMATCH`，但当前
+  dialect JDBC query尚未独立返回target distinct cardinality和source non-null row count；因此这两类
+  evidence目前使用的是containment query派生占位指标，不能描述成完整实测overlap/row-level mismatch。
 - 候选生成不会做全库列两两比较；只选择已有结构候选，或在 `discoverFromNamingEvidence=true` 时选择 top-level `namingEvidence` + target unique + type compatible 的命名候选。
 - 离线 seed `INSERT` 样本尚未进入生产链路。当前 structured event 只稳定覆盖 `INSERT SELECT`、`UPDATE`、`MERGE` 等写入映射，没有 typed literal `INSERT ... VALUES` sample event；因此不能用 regex/token span 扫描 SQL 伪造 offline sample。
 
@@ -27,9 +30,8 @@
 - 数据画像可以增强关系，也可以反证关系，但反证不能直接删除关系。
 - 不输出真实业务值，不输出采样值，也不输出可逆 hash；只输出统计量、阈值、样本规模和跳过原因。
 - 所有查询必须受候选数量、采样行数、distinct 数量、超时和权限控制。
-- 生产库读权限不足时，设计要求降级为 skip/warning，不影响静态关系抽取。当前
-  `JdbcDataProfilerTemplate` 会静默返回空 evidence，`DataProfiler` SPI 也没有 diagnostic
-  consumer，因此 warning 部分尚未实现，状态为 `PARTIAL`。
+- 生产库读权限不足时降级为 skip/warning，不影响静态关系抽取。
+  `DataProfiler` 返回 `ProfileOutcome`，区分 success、no evidence、invalid endpoint、permission denied、timeout 和 query failed；`DataProfilePipeline` 把 warning 并入最终 scan result。
 
 ### 标识符渲染边界
 
@@ -163,7 +165,9 @@ sources:
 
 - `mode`：当前等价于 `CANDIDATES_ONLY`；未来可增加显式 `DISCOVERY_ASSISTED`。
 - `maxCandidatesPerTable`：当前已有 `maxCandidatePairs` 和 `maxTargetsPerSourceColumn`，尚未按 table 维度限流。
-- `emitSkippedCandidates`：当前 profiler 失败/跳过保持静默，不输出真实 SQL 或敏感值；未来可增加安全 diagnostic。
+- `emitSkippedCandidates`：当前 permission、timeout 和 SQL failure 已通过安全 warning 输出，
+  invalid endpoint 和 no-evidence 仍不单独形成逐候选 skip item。未来可在不泄露 SQL 或业务值的
+  前提下增加显式 skipped-candidate inventory。
 
 ## 候选生成：避免全库列组合扫描
 
@@ -192,9 +196,9 @@ sources:
 - source column 与 target PK/UNIQUE column 类型兼容。
 - top-level `namingEvidence` 给出唯一方向，例如 `orders.customer_id -> customers.id`。
 - target 端有单列 `TARGET_UNIQUE`，source 端有单列 `SOURCE_INDEX` 或同表/同 schema 业务上下文。
-  组合 PK/UNIQUE/index 是列组事实：`UNIQUE(a,b)` 不能证明 `a` 或 `b` 单列唯一，组合索引的
-  任一成员也不能单独满足 single-endpoint index gate。只有 `columns.size()==1` 的 metadata
-  index fact，或未来能按完整列组建模的候选，才可通过这些 gate。
+  组合 PK/UNIQUE/index 是列组事实：`UNIQUE(a,b)` 不能证明 `a` 或 `b` 单列唯一。
+  普通组合索引 `(a,b)` 只允许物理首列 `a` 作为 `SOURCE_INDEX` / profiling lookup 支持；
+  非首列 `b` 不能单独通过 gate，且首列索引也不代表单列唯一、不能单独决定 relationship 方向。
 - DDL column inventory 或 metadata 显示两端都存在，且不属于临时表、pseudo rowset、参数或局部变量。
 
 B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINMENT_HIGH`，并且 target unique / type compatible 等结构 evidence 同时存在时，才可生成 `PROFILE_SUPPORTED_FK` 候选。
@@ -236,6 +240,18 @@ B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINME
 6. 其它 B 层强结构候选。
 
 ## Live DB 画像指标
+
+### 当前 metrics 完整性
+
+当前四个 dialect renderer 返回两个列：`source_distinct` 与 `matched_distinct`。
+`JdbcDataProfilerTemplate.metrics(...)` 暂时把：
+
+- `sourceNonNullRowsSampled = sourceDistinctValuesSampled`
+- `targetDistinctValuesSampled = sourceDistinctValuesSampled`
+
+写入 `DataProfileMetrics`。所以 containment ratio 是直接测量；overlap denominator 和 negative
+`minRowsForNegative` gate 不是独立查询结果。下面的完整指标公式是目标模型，只有 renderer 同时返回
+source row count 与 target distinct count 后，才能把三类 evidence 都标为完整 live measurement。
 
 对每个候选 `sourceTable.sourceColumn -> targetTable.targetColumn`，计算：
 
@@ -459,22 +475,28 @@ subtype 规则：
 
 - 如果连接不可用：skip。
 - 如果 catalog 可读但数据不可读：skip profile，保留 metadata。
-- 如果部分表可读：目标行为是只 profile 可读候选，并为其它候选输出安全的 skip reason。
-- 如果查询超时：目标行为是为该候选输出 warning，不影响整体 scan。
-- 当前实现只满足“不影响整体 scan”：`JdbcDataProfilerTemplate` 捕获异常后返回空 evidence，
-  尚不能区分 permission、timeout 或其它执行失败，也不会输出 warning/skip reason。这是明确的
-  diagnostic backlog，不应在验收中描述为已完成。
+- 如果部分表可读：只 profile 可读候选；权限失败通过 `PROFILE_PERMISSION_DENIED` warning 保留。
+- 如果查询超时：通过 `PROFILE_QUERY_TIMEOUT` warning 记录该候选，不影响整体 scan。
+- 其它 SQL failure 通过 `PROFILE_QUERY_FAILED` warning 保留。`ProfileOutcome` 同时区分
+  `SUCCESS`、`NO_EVIDENCE`、`SKIPPED_INVALID_ENDPOINT`、permission、timeout 和 query failure；
+  warning attributes 只携带 endpoint、SQLState、vendor code、exception class 和 renderer source，
+  不回传真实业务值、rendered SQL、driver message、连接串或参数值。
+- `JdbcDataProfilerTemplate` 使用固定安全消息，不调用 `SQLException.getMessage()`。共享分类器识别
+  authorization exception、SQLState `28xxx`/`42501`；Oracle profiler额外识别 vendor code 1031，
+  SQL Server profiler额外识别 229/916。fake JDBC 单测证明契约与脱敏边界；具体 driver/version 的
+  vendor code 行为仍属于环境性 live smoke，文档不得把单测写成真实数据库验证。
 
 ## 性能控制
 
 必须有硬上限：
 
 - `maxCandidatePairs`
-- `maxCandidatesPerTable`
 - `maxTargetsPerSourceColumn`
 - `sampleRows`
 - `maxDistinctValues`
 - `timeoutSeconds`
+
+`maxCandidatesPerTable` 仍是后续预算字段，不能在“已实现硬上限”中列为现状。
 
 复杂度目标：
 
@@ -514,18 +536,18 @@ SPI 演进：
 当前接口：
 
 ```java
-List<Evidence> profile(Connection connection, ProfileRequest request);
+ProfileOutcome profile(Connection connection, ProfileRequest request);
 ```
 
-建议兼容扩展：
+如后续确有测量证据需要 batch，可另行设计：
 
 ```java
-default List<ProfileResult> profileBatch(Connection connection, List<ProfileRequest> requests) {
-  return requests.stream().flatMap(r -> profile(connection, r).stream()).toList();
+default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileRequest> requests) {
+  return requests.stream().map(r -> profile(connection, r)).toList();
 }
 ```
 
-第一版可以继续逐候选执行；后续方言 adaptor 可覆盖 batch 以减少重复查询。
+当前生产接口仍逐候选执行；仓库没有 batch profiling SPI，也不应把建议写成已实现能力。
 
 ## 测试设计
 
@@ -543,7 +565,9 @@ default List<ProfileResult> profileBatch(Connection connection, List<ProfileRequ
 
 ### 集成测试
 
-- MySQL/PostgreSQL/Oracle/SQL Server live profiler 使用小型 in-memory/fake JDBC result 测试验证 containment / overlap / mismatch。
+- MySQL/PostgreSQL/Oracle/SQL Server live profiler 使用 fake JDBC result测试query timeout、权限分类、
+  warning脱敏与containment结果装配；overlap/mismatch公式由`DataProfileEvidenceBuilder`单测覆盖，
+  目前不能把它写成四方言SQL已独立测得全部metrics。
 - correctness fixture 不默认依赖 live DB；offline insert sample golden 等 typed literal insert sample event 补齐后再加入。
 
 ### 性能测试
@@ -582,7 +606,8 @@ default List<ProfileResult> profileBatch(Connection connection, List<ProfileRequ
 - 有 live data 权限时，高值域包含率能产生 `VALUE_CONTAINMENT_HIGH`。
 - 明显值不匹配且满足负向 gate 时能产生 `NEGATIVE_VALUE_MISMATCH`。
 - DDL/migration 中的 insert sample 只有在 typed literal insert sample event 补齐后才可以产生保守正向 evidence；默认不产生负向 evidence。
-- 权限不足、超时、样本不足都不会中断整体 scan；其中权限/超时 diagnostic 尚未实现，
-  当前只能验证它们不产生误导 evidence。
+- 权限不足、超时、样本不足都不会中断整体 scan；permission/timeout/query-failure 已产生
+  `ProfileOutcome` warning。warning message 已使用固定安全文本，Oracle 1031、SQL Server 229/916
+  与共享 SQLState 分类已有契约测试；真实 driver/version 行为仍是环境性 runtime 验收项。
 - 输出不包含真实业务值。
 - correctness/golden 暂不覆盖 live DB profiling；profiler 用独立单测验收。offline sample correctness 等 typed literal insert sample event 补齐后再加入。

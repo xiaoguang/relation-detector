@@ -1,10 +1,8 @@
 package com.relationdetector.mysql.profile;
 
 import java.sql.Connection;
-import java.util.List;
-
-import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.spi.Collectors.DataProfiler;
+import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.profile.DialectDataProfileQueryRenderer;
 import com.relationdetector.core.profile.IdentifierQuoter;
@@ -15,7 +13,7 @@ public final class MySqlDataProfiler implements DataProfiler {
     private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(new MySqlProfileQueryRenderer());
 
     @Override
-    public List<Evidence> profile(Connection connection, ProfileRequest request) {
+    public ProfileOutcome profile(Connection connection, ProfileRequest request) {
         return delegate.profile(connection, request);
     }
 

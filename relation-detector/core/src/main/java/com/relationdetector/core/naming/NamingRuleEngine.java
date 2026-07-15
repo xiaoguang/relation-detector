@@ -151,8 +151,7 @@ public final class NamingRuleEngine {
     }
 
     private boolean sameTable(Endpoint left, Endpoint right) {
-        return NamingRule.normalize(left.table().normalizedName())
-                .equals(NamingRule.normalize(right.table().normalizedName()));
+        return left.table().sameIdentity(right.table());
     }
 
     private boolean isId(Endpoint endpoint) {

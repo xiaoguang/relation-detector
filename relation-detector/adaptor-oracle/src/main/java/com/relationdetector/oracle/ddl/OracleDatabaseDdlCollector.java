@@ -80,7 +80,8 @@ public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
             ps.setString(2, owner);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    definitions.add(new DatabaseDdlDefinition(owner, tableName, rs.getString(1), "DBMS_METADATA.GET_DDL"));
+                    definitions.add(new DatabaseDdlDefinition(null, owner, tableName,
+                            rs.getString(1), "DBMS_METADATA.GET_DDL"));
                 }
             }
         } catch (Exception ex) {

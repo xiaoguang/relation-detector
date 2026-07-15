@@ -26,8 +26,19 @@ public record TableId(String catalog, String schema, String tableName, String no
         return new TableId(null, schema, tableName, normalized);
     }
 
+    /** Returns whether both values identify the same catalog-qualified table. */
+    public boolean sameIdentity(TableId other) {
+        return other != null
+                && empty(catalog).equals(empty(other.catalog))
+                && normalizedName.equals(other.normalizedName);
+    }
+
     public String displayName() {
         String schemaTable = schema == null || schema.isBlank() ? tableName : schema + "." + tableName;
         return catalog == null || catalog.isBlank() ? schemaTable : catalog + "." + schemaTable;
+    }
+
+    private static String empty(String value) {
+        return value == null || value.isBlank() ? "" : value;
     }
 }

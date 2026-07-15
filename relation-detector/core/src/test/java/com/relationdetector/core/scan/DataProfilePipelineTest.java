@@ -20,6 +20,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
+import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
@@ -40,6 +41,8 @@ import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.contracts.spi.ProfileRequest;
+import com.relationdetector.contracts.spi.ProfileOutcome;
+import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.contracts.spi.ScanScope;
 
 class DataProfilePipelineTest {
@@ -57,7 +60,29 @@ class DataProfilePipelineTest {
         assertEquals(1, strong.relationshipCandidates.size());
     }
 
+    @Test
+    void forwardsProfilerFailuresToScanWarnings() {
+        ScanPipelineContext context = contextReturning(new ProfileOutcome(
+                ProfileStatus.PERMISSION_DENIED,
+                List.of(),
+                List.of(com.relationdetector.contracts.model.WarningMessage.warn(
+                        WarningType.PROFILE_WARNING,
+                        "PROFILE_PERMISSION_DENIED",
+                        "denied",
+                        "test-profile",
+                        0))));
+
+        pipeline.profile(connection(), context);
+
+        assertEquals(1, context.result.warnings().size());
+        assertEquals("PROFILE_PERMISSION_DENIED", context.result.warnings().get(0).code());
+    }
+
     private ScanPipelineContext contextReturning(EvidenceType type) {
+        return contextReturning(ProfileOutcome.success(List.of(evidence(type))));
+    }
+
+    private ScanPipelineContext contextReturning(ProfileOutcome profileOutcome) {
         ScanConfig config = new ScanConfig();
         config.databaseType = com.relationdetector.contracts.Enums.DatabaseType.MYSQL;
         config.dataProfileEnabled = true;
@@ -68,7 +93,7 @@ class DataProfilePipelineTest {
         ScanResult result = new ScanResult("mysql", "test");
         ScanPipelineContext ctx = new ScanPipelineContext(
                 config.resolve(),
-                new TestAdaptor((connection, request) -> List.of(evidence(type))),
+                new TestAdaptor((connection, request) -> profileOutcome),
                 scope,
                 result,
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
@@ -86,11 +111,11 @@ class DataProfilePipelineTest {
 
     private MetadataSnapshot metadata() {
         MetadataSnapshot metadata = new MetadataSnapshot();
-        metadata.columnFacts().add(new MetadataColumnFact(null, "orders", "customer_id",
+        metadata.columnFacts().add(new MetadataColumnFact(null, null, "orders", "customer_id",
                 "bigint", "bigint", true, null, "", null, 1));
-        metadata.columnFacts().add(new MetadataColumnFact(null, "customers", "id",
+        metadata.columnFacts().add(new MetadataColumnFact(null, null, "customers", "id",
                 "bigint", "bigint", true, null, "", null, 1));
-        metadata.indexFacts().add(new MetadataIndexFact(null, "customers", "PRIMARY", true, true,
+        metadata.indexFacts().add(new MetadataIndexFact(null, null, "customers", "PRIMARY", true, true,
                 "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
         return metadata;
     }
@@ -142,10 +167,10 @@ class DataProfilePipelineTest {
         @Override
         public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
             return new com.relationdetector.contracts.spi.AdaptorCollectors(
-                    (connection, scope) -> new MetadataSnapshot(),
-                    (connection, scope) -> List.of(),
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of()),
                     Optional.empty(),
-                    (file, hint) -> Stream.<SqlStatementRecord>empty());
+                    Optional.of((file, hint) -> Stream.<SqlStatementRecord>empty()));
         }
 
         @Override

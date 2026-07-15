@@ -15,6 +15,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.mysql.MySqlCatalogScope;
 
 /** Collects MySQL table DDL through SHOW CREATE TABLE. */
 public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
@@ -30,9 +31,10 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
             ScanScope scope,
             Consumer<WarningMessage> warnings
     ) {
+        ScanScope canonicalScope = MySqlCatalogScope.canonicalize(scope);
         List<DatabaseDdlDefinition> definitions = new ArrayList<>();
-        for (String tableName : tableNames(connection, scope, warnings)) {
-            collectShowCreate(connection, scope.schema(), tableName, definitions, warnings);
+        for (String tableName : tableNames(connection, canonicalScope, warnings)) {
+            collectShowCreate(connection, canonicalScope.catalog(), tableName, definitions, warnings);
         }
         return definitions;
     }
@@ -47,7 +49,7 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
                 """;
         List<String> tableNames = new ArrayList<>();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, scope.catalog());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String tableName = rs.getString("TABLE_NAME");
@@ -65,21 +67,22 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
 
     private void collectShowCreate(
             Connection connection,
-            String schema,
+            String catalog,
             String tableName,
             List<DatabaseDdlDefinition> definitions,
             Consumer<WarningMessage> warnings
     ) {
-        String sql = "SHOW CREATE TABLE " + quote(schema) + "." + quote(tableName);
+        String sql = "SHOW CREATE TABLE " + quote(catalog) + "." + quote(tableName);
         try (Statement statement = connection.createStatement();
                 ResultSet rs = statement.executeQuery(sql)) {
             if (rs.next()) {
-                definitions.add(new DatabaseDdlDefinition(schema, tableName, rs.getString(2), "SHOW CREATE TABLE"));
+                definitions.add(new DatabaseDdlDefinition(catalog, null, tableName,
+                        rs.getString(2), "SHOW CREATE TABLE"));
             }
         } catch (Exception ex) {
             warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
                     "MYSQL_SHOW_CREATE_TABLE_FAILED", ex.getMessage(), "SHOW CREATE TABLE", 0,
-                    java.util.Map.of("objectSchema", schema,
+                    java.util.Map.of("objectCatalog", catalog,
                             "objectName", tableName,
                             "objectType", "TABLE",
                             "rawStatement", sql,

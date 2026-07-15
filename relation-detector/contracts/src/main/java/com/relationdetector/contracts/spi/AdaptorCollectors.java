@@ -10,12 +10,20 @@ import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 /**
  * Grouped source collection capabilities exposed by a database adaptor.
  *
- * <p>This is the only collector entry point in adaptor SPI v2.
+ * <p>This is the only collector entry point in adaptor SPI v5. Optional
+ * members make capability declarations executable: a declared live capability
+ * must have its corresponding collector present before JDBC is opened.
  */
 public record AdaptorCollectors(
-        MetadataCollector metadata,
-        ObjectDefinitionCollector objects,
+        Optional<MetadataCollector> metadata,
+        Optional<ObjectDefinitionCollector> objects,
         Optional<DatabaseDdlCollector> databaseDdl,
-        SqlLogExtractor logs
+        Optional<SqlLogExtractor> logs
 ) {
+    public AdaptorCollectors {
+        metadata = metadata == null ? Optional.empty() : metadata;
+        objects = objects == null ? Optional.empty() : objects;
+        databaseDdl = databaseDdl == null ? Optional.empty() : databaseDdl;
+        logs = logs == null ? Optional.empty() : logs;
+    }
 }

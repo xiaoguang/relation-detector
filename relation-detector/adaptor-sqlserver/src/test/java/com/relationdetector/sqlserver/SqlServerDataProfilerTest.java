@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.contracts.spi.ProfileRequest;
+import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.sqlserver.profile.SqlServerDataProfiler;
 
 class SqlServerDataProfilerTest {
@@ -27,10 +29,23 @@ class SqlServerDataProfilerTest {
         StringBuilder sql = new StringBuilder();
         var evidence = new SqlServerDataProfiler().profile(
                 connection(sql, 100, 99),
-                new ProfileRequest(candidate(), DataProfileOptions.defaults().withMaxDistinctValues(25)));
+                new ProfileRequest(candidate(), DataProfileOptions.defaults().withMaxDistinctValues(25))).evidence();
 
         assertTrue(sql.toString().contains("SELECT DISTINCT TOP (25)"));
         assertEquals(EvidenceType.VALUE_CONTAINMENT_HIGH, evidence.get(0).type());
+    }
+
+    @Test
+    void classifiesSqlServerPermissionVendorCodes() {
+        for (int vendorCode : new int[] {229, 916}) {
+            var outcome = new SqlServerDataProfiler().profile(
+                    failingConnection(new SQLException("sensitive SQL", "S0001", vendorCode)),
+                    new ProfileRequest(candidate(), DataProfileOptions.defaults()));
+
+            assertEquals(ProfileStatus.PERMISSION_DENIED, outcome.status());
+            assertEquals("Data profiling query permission denied", outcome.warnings().get(0).message());
+            assertTrue(!outcome.warnings().get(0).toString().contains("sensitive SQL"));
+        }
     }
 
     private RelationshipCandidate candidate() {
@@ -46,6 +61,16 @@ class SqlServerDataProfilerTest {
                 (proxy, method, args) -> "createStatement".equals(method.getName())
                         ? statement(sql, sourceDistinct, matchedDistinct)
                         : null);
+    }
+
+    private Connection failingConnection(SQLException failure) {
+        Statement statement = (Statement) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] { Statement.class }, (proxy, method, args) -> {
+                    if ("executeQuery".equals(method.getName())) throw failure;
+                    return null;
+                });
+        return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Connection.class },
+                (proxy, method, args) -> "createStatement".equals(method.getName()) ? statement : null);
     }
 
     private Statement statement(StringBuilder sql, long sourceDistinct, long matchedDistinct) {

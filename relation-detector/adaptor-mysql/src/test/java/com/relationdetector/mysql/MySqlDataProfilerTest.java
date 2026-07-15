@@ -7,7 +7,6 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +31,7 @@ class MySqlDataProfilerTest {
                 .withMaxDistinctValues(50)
                 .withMinContainmentRatio(0.98d));
 
-        List<Evidence> evidence = new MySqlDataProfiler().profile(connection, request);
+        var evidence = new MySqlDataProfiler().profile(connection, request).evidence();
 
         assertTrue(sql.toString().contains("LIMIT 50"));
         assertEquals(EvidenceType.VALUE_CONTAINMENT_HIGH, evidence.get(0).type());

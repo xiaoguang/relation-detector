@@ -651,7 +651,7 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void databaseAdaptorV3ExposesOnlyGroupedCapabilitiesAndScriptParsing() throws IOException {
+    void databaseAdaptorV5ExposesOnlyGroupedCapabilitiesAndScriptFraming() throws IOException {
         Path root = repoRoot();
         String adaptor = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/DatabaseAdaptor.java"));
@@ -662,7 +662,7 @@ class DialectGrammarArchitectureTest {
         String parsers = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorParsers.java"));
         assertTrue(parsers.contains("DialectScriptFramer scriptFramer"),
-                "SPI v4 parser capabilities must include dialect script framing");
+                "SPI v5 parser capabilities must include dialect script framing");
         for (String legacyGetter : List.of(
                 "MetadataCollector metadataCollector()",
                 "ObjectDefinitionCollector objectDefinitionCollector()",
@@ -674,12 +674,12 @@ class DialectGrammarArchitectureTest {
                 "DataProfiler dataProfiler()",
                 "EvidenceWeightAdjuster evidenceWeightAdjuster()")) {
             assertFalse(adaptor.contains(legacyGetter),
-                    "SPI v4 must not restore legacy getter: " + legacyGetter);
+                    "SPI v5 must not restore legacy getter: " + legacyGetter);
         }
 
         String version = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorApiVersion.java"));
-        assertTrue(version.contains("CURRENT = 4"), "adaptor SPI must expose dialect script framing as v4");
+        assertTrue(version.contains("CURRENT = 5"), "adaptor SPI must expose typed optional collectors as v5");
     }
 
     @Test
@@ -761,6 +761,54 @@ class DialectGrammarArchitectureTest {
                     .toList();
             assertTrue(offenders.isEmpty(),
                     "Parser visitors/collectors must delegate focused responsibilities, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void semanticProductionClassesRemainFocused() throws IOException {
+        Path root = repoRoot();
+        List<String> boundedSuffixes = List.of(
+                "Analyzer.java", "Support.java", "Extractor.java", "Resolver.java",
+                "Merger.java", "Framer.java", "Facade.java");
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<String> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/core/src/main/java/com/relationdetector/core/")
+                            || isAdaptorSemanticSource(path))
+                    .filter(path -> boundedSuffixes.stream()
+                            .anyMatch(suffix -> path.getFileName().toString().endsWith(suffix)))
+                    .filter(path -> !path.getFileName().toString().equals("package-info.java"))
+                    .filter(path -> !isRecordDto(path))
+                    .filter(path -> lineCount(path) > 450)
+                    .map(path -> root.relativize(path) + "=" + lineCount(path))
+                    .sorted()
+                    .toList();
+            assertTrue(offenders.isEmpty(),
+                    "Semantic production classes must delegate focused responsibilities, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void structuredScriptFramerDelegatesDialectPlanning() throws IOException {
+        Path script = repoRoot().resolve("core/src/main/java/com/relationdetector/core/script");
+        Path orchestrator = script.resolve("StructuredScriptFramer.java");
+        String text = Files.readString(orchestrator);
+
+        assertTrue(Files.readAllLines(orchestrator).size() <= 200,
+                "StructuredScriptFramer must remain a thin framing orchestrator");
+        for (String method : List.of(
+                "splitMysql(", "splitPostgres(", "splitOracle(", "splitSqlServer(", "splitCommon(")) {
+            assertFalse(text.contains(method),
+                    "Dialect slicing belongs in a dedicated planner, found " + method);
+        }
+        for (String planner : List.of(
+                "MySqlScriptSlicePlanner", "PostgresScriptSlicePlanner", "OracleScriptSlicePlanner",
+                "SqlServerScriptSlicePlanner", "CommonScriptSlicePlanner")) {
+            Path source = script.resolve(planner + ".java");
+            assertTrue(Files.isRegularFile(source), "Missing dialect planner " + planner);
+            assertTrue(Files.readAllLines(source).size() <= 250,
+                    planner + " must remain focused");
         }
     }
 
@@ -1069,6 +1117,30 @@ class DialectGrammarArchitectureTest {
             return Files.readAllLines(path).size();
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to count lines in " + path, exception);
+        }
+    }
+
+    private static boolean isAdaptorSemanticSource(Path path) {
+        String value = path.toString();
+        boolean adaptor = value.contains("/adaptor-mysql/src/main/java/")
+                || value.contains("/adaptor-postgres/src/main/java/")
+                || value.contains("/adaptor-oracle/src/main/java/")
+                || value.contains("/adaptor-sqlserver/src/main/java/");
+        return adaptor && (value.contains("/fullgrammar/")
+                || value.contains("/tokenevent/")
+                || value.contains("/routine/")
+                || value.contains("/common/"));
+    }
+
+    private static boolean isRecordDto(Path path) {
+        try {
+            String filename = path.getFileName().toString();
+            String typeName = filename.substring(0, filename.length() - ".java".length());
+            String text = Files.readString(path);
+            return text.contains("public record " + typeName + "(")
+                    || text.contains("record " + typeName + "(");
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to inspect " + path, exception);
         }
     }
 

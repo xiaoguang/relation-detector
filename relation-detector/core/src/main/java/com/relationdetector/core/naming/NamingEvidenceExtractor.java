@@ -46,7 +46,9 @@ public final class NamingEvidenceExtractor {
             endpoints.add(metadataObservation(column));
         }
         for (MetadataColumnFact fact : metadata.columnFacts()) {
-            TableId table = TableId.of(fact.schema(), fact.tableName());
+            TableId table = new TableId(fact.catalog(), fact.schema(), fact.tableName(),
+                    fact.schema() == null || fact.schema().isBlank()
+                            ? fact.tableName() : fact.schema() + "." + fact.tableName());
             endpoints.add(metadataObservation(new ColumnRef(table, fact.columnName(), fact.columnName(),
                     fact.dataType(), fact.nullable())));
         }
@@ -140,7 +142,7 @@ public final class NamingEvidenceExtractor {
                 List<EndpointObservation> rightGroup = endpointGroups.get(rightIndex);
                 EndpointObservation left = leftGroup.get(0);
                 EndpointObservation right = rightGroup.get(0);
-                if (left.endpoint().table().normalizedName().equals(right.endpoint().table().normalizedName())) {
+                if (sameTable(left.endpoint().table(), right.endpoint().table())) {
                     continue;
                 }
                 for (NamingRuleEngine.Match match : namingRuleEngine.match(
@@ -174,7 +176,15 @@ public final class NamingEvidenceExtractor {
         }
         String table = parts.get(parts.size() - 1);
         String schema = parts.size() > 1 ? parts.get(parts.size() - 2) : null;
-        return TableId.of(schema, table);
+        String catalog = parts.size() > 2
+                ? String.join(".", parts.subList(0, parts.size() - 2))
+                : null;
+        String normalized = schema == null || schema.isBlank() ? table : schema + "." + table;
+        return new TableId(catalog, schema, table, normalized);
+    }
+
+    private boolean sameTable(TableId left, TableId right) {
+        return left.sameIdentity(right);
     }
 
     private List<String> identifierParts(String identifier) {
@@ -237,6 +247,7 @@ public final class NamingEvidenceExtractor {
     private EndpointObservation metadataObservation(ColumnRef column) {
         Endpoint endpoint = Endpoint.column(column);
         Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("catalog", nullToEmpty(column.table().catalog()));
         attributes.put("catalogSchema", nullToEmpty(column.table().schema()));
         attributes.put("catalogTable", column.table().tableName());
         attributes.put("catalogColumn", column.columnName());
@@ -359,7 +370,7 @@ public final class NamingEvidenceExtractor {
     }
 
     private boolean isDeclaredSelfReference(RelationshipCandidate candidate) {
-        if (!candidate.source().table().normalizedName().equals(candidate.target().table().normalizedName())
+        if (!candidate.source().table().sameIdentity(candidate.target().table())
                 || candidate.source().column().normalizedName().equals(candidate.target().column().normalizedName())) {
             return false;
         }

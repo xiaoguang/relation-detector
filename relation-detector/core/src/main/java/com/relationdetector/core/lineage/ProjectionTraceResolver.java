@@ -49,9 +49,9 @@ final class ProjectionTraceResolver {
             Set<String> ignoredRowsets
     ) {
         Map<String, ProjectionTrace> projections = new LinkedHashMap<>();
-        Set<String> declaredProjectionKeys = declaredProjectionKeys(events, aliases);
-        Map<String, TableId> physicalAliases = physicalAliases(events, aliases, ignoredRowsets);
-        Map<String, ProjectionAnchor> wildcardAnchors = wildcardProjectionAnchors(
+        Set<String> declaredProjectionKeys = ProjectionTraceInventory.declaredKeys(events, aliases);
+        Map<String, TableId> physicalAliases = ProjectionTraceInventory.physicalAliases(events, aliases, ignoredRowsets);
+        Map<String, ProjectionAnchor> wildcardAnchors = ProjectionTraceInventory.wildcardAnchors(
                 events, aliases, physicalAliases, ignoredRowsets);
         boolean changed;
         do {
@@ -77,7 +77,7 @@ final class ProjectionTraceResolver {
                     if (resolution.sources().isEmpty()) {
                         continue;
                     }
-                    Endpoint projection = Endpoint.column(column(
+                    Endpoint projection = Endpoint.column(ProjectionTraceInventory.column(
                             aliases, aliases.resolveQualified(outputAlias), outputColumn));
                     changed |= putProjection(
                             projections,
@@ -118,7 +118,7 @@ final class ProjectionTraceResolver {
             }
             String sourceAlias = event.expression().sourceAliases().get(index);
             for (Map.Entry<String, ProjectionTrace> entry : List.copyOf(projections.entrySet())) {
-                ProjectionKey key = parseProjectionKey(entry.getKey());
+                ProjectionKey key = ProjectionTraceInventory.parseKey(entry.getKey());
                 if (key.matches(sourceAlias, aliases)) {
                     changed |= putProjection(
                             projections, outputAlias, key.column(), entry.getValue(),
@@ -130,11 +130,11 @@ final class ProjectionTraceResolver {
     }
 
     Optional<ProjectionTrace> resolve(String alias, String column) {
-        ProjectionTrace value = traces.get(projectionKey(aliases, alias, column, LineageFlowKind.VALUE));
+        ProjectionTrace value = traces.get(ProjectionTraceInventory.key(aliases, alias, column, LineageFlowKind.VALUE));
         if (value != null) {
             return Optional.of(value);
         }
-        return Optional.ofNullable(traces.get(projectionKey(aliases, alias, column, LineageFlowKind.CONTROL)));
+        return Optional.ofNullable(traces.get(ProjectionTraceInventory.key(aliases, alias, column, LineageFlowKind.CONTROL)));
     }
 
     List<SourceResolution> resolveSources(
@@ -169,7 +169,7 @@ final class ProjectionTraceResolver {
                     event, sourceAlias, sourceColumn, aliases, physicalAliases);
             if (selfReferenceTable != null) {
                 endpoints.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
-                        .add(Endpoint.column(column(aliases, selfReferenceTable, sourceColumn)));
+                        .add(Endpoint.column(ProjectionTraceInventory.column(aliases, selfReferenceTable, sourceColumn)));
                 transforms.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
                         .add(LineageTransformType.DIRECT);
                 continue;
@@ -182,7 +182,7 @@ final class ProjectionTraceResolver {
                     && !sourceColumn.isBlank()
                     && !"*".equals(sourceColumn)) {
                 endpoints.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
-                        .add(Endpoint.column(column(aliases, wildcardAnchor.table(), sourceColumn)));
+                        .add(Endpoint.column(ProjectionTraceInventory.column(aliases, wildcardAnchor.table(), sourceColumn)));
                 transforms.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
                         .add(LineageTransformType.DIRECT);
                 continue;
@@ -200,21 +200,21 @@ final class ProjectionTraceResolver {
                 }
                 continue;
             }
-            if (declaredProjectionKeys.contains(projectionOutputKey(aliases, sourceAlias, sourceColumn))) {
+            if (declaredProjectionKeys.contains(ProjectionTraceInventory.outputKey(aliases, sourceAlias, sourceColumn))) {
                 continue;
             }
             TableId table = physicalAliases.get(aliases.normalizeIdentifier(sourceAlias));
             if (table != null && !sourceColumn.isBlank()
                     && !isIgnoredRowsetTable(table, ignoredRowsets, aliases)) {
                 endpoints.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
-                        .add(Endpoint.column(column(aliases, table, sourceColumn)));
+                        .add(Endpoint.column(ProjectionTraceInventory.column(aliases, table, sourceColumn)));
                 transforms.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
                         .add(LineageTransformType.DIRECT);
                 continue;
             }
             if (wildcardAnchor != null && !sourceColumn.isBlank() && !"*".equals(sourceColumn)) {
                 endpoints.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
-                        .add(Endpoint.column(column(aliases, wildcardAnchor.table(), sourceColumn)));
+                        .add(Endpoint.column(ProjectionTraceInventory.column(aliases, wildcardAnchor.table(), sourceColumn)));
                 transforms.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
                         .add(LineageTransformType.DIRECT);
                 continue;
@@ -260,7 +260,7 @@ final class ProjectionTraceResolver {
     ) {
         List<ProjectionTrace> variants = new ArrayList<>(2);
         for (LineageFlowKind flow : LineageFlowKind.values()) {
-            ProjectionTrace projection = projections.get(projectionKey(aliases, alias, column, flow));
+            ProjectionTrace projection = projections.get(ProjectionTraceInventory.key(aliases, alias, column, flow));
             if (projection != null) {
                 variants.add(projection);
             }
@@ -288,7 +288,7 @@ final class ProjectionTraceResolver {
                 continue;
             }
             for (Map.Entry<String, ProjectionTrace> entry : List.copyOf(projections.entrySet())) {
-                ProjectionKey key = parseProjectionKey(entry.getKey());
+                ProjectionKey key = ProjectionTraceInventory.parseKey(entry.getKey());
                 if (key.matches(table, aliases) || key.matches(qualified, aliases)) {
                     changed |= putProjection(
                             projections, alias, key.column(), entry.getValue(), ignoredRowsets, aliases);
@@ -306,9 +306,9 @@ final class ProjectionTraceResolver {
             Set<String> ignoredRowsets,
             AliasSymbolTable aliases
     ) {
-        String key = projectionKey(aliases, alias, column, projection.flowKind());
-        if (parseProjectionKey(key).alias().isBlank()
-                || parseProjectionKey(key).column().isBlank()) {
+        String key = ProjectionTraceInventory.key(aliases, alias, column, projection.flowKind());
+        if (ProjectionTraceInventory.parseKey(key).alias().isBlank()
+                || ProjectionTraceInventory.parseKey(key).column().isBlank()) {
             return false;
         }
         return putProjectionKey(projections, key, projection, ignoredRowsets);
@@ -427,279 +427,6 @@ final class ProjectionTraceResolver {
         return result;
     }
 
-    private static Map<String, ProjectionAnchor> wildcardProjectionAnchors(
-            List<StructuredSqlEvent> events,
-            AliasSymbolTable aliases,
-            Map<String, TableId> physicalAliases,
-            Set<String> ignoredRowsets
-    ) {
-        Map<String, String> logicalRowsets = new LinkedHashMap<>();
-        for (StructuredSqlEvent event : events) {
-            if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
-                continue;
-            }
-            String qualified = event.qualifiedTable().isBlank()
-                    ? event.table() : event.qualifiedTable();
-            if (!isIgnoredRowsetName(qualified, ignoredRowsets, aliases)) {
-                continue;
-            }
-            String tableKey = aliases.normalizeIdentifier(qualified);
-            logicalRowsets.put(tableKey, tableKey);
-            String aliasKey = aliases.normalizeIdentifier(event.alias());
-            if (!aliasKey.isBlank()) {
-                logicalRowsets.put(aliasKey, tableKey);
-            }
-        }
-
-        Map<String, ProjectionAnchor> anchors = new LinkedHashMap<>();
-        Set<String> ambiguous = new LinkedHashSet<>();
-        Set<String> wildcardOutputs = new LinkedHashSet<>();
-        for (StructuredSqlEvent event : events) {
-            if (event.type() == StructuredParseEventType.PROJECTION_ITEM
-                    && "*".equals(event.outputColumn())) {
-                wildcardOutputs.add(aliases.normalizeIdentifier(event.outputAlias()));
-            }
-        }
-        Map<String, LinkedHashSet<TableId>> seedSources = new LinkedHashMap<>();
-        Set<String> invalidSeeds = new LinkedHashSet<>();
-        for (StructuredSqlEvent event : events) {
-            if (event.type() != StructuredParseEventType.PROJECTION_ITEM
-                    || "*".equals(event.outputColumn())) {
-                continue;
-            }
-            String outputKey = aliases.normalizeIdentifier(event.outputAlias());
-            if (outputKey.isBlank() || wildcardOutputs.contains(outputKey)) {
-                continue;
-            }
-            int count = Math.min(
-                    event.expression().sourceAliases().size(),
-                    event.expression().sourceColumns().size());
-            for (int index = 0; index < count; index++) {
-                String sourceColumn = event.expression().sourceColumns().get(index);
-                if (sourceColumn.isBlank() || "*".equals(sourceColumn)) {
-                    continue;
-                }
-                TableId physical = physicalAliases.get(aliases.normalizeIdentifier(
-                        event.expression().sourceAliases().get(index)));
-                if (physical == null) {
-                    invalidSeeds.add(outputKey);
-                } else {
-                    seedSources.computeIfAbsent(outputKey, ignored -> new LinkedHashSet<>())
-                            .add(physical);
-                }
-            }
-        }
-        for (Map.Entry<String, LinkedHashSet<TableId>> entry : seedSources.entrySet()) {
-            if (!invalidSeeds.contains(entry.getKey()) && entry.getValue().size() == 1) {
-                bindAnchor(anchors, ambiguous, aliases, entry.getKey(),
-                        entry.getValue().iterator().next(), false);
-            }
-        }
-
-        boolean changed;
-        do {
-            changed = false;
-            for (StructuredSqlEvent event : events) {
-                if (event.type() != StructuredParseEventType.PROJECTION_ITEM
-                        || !"*".equals(event.outputColumn())) {
-                    continue;
-                }
-                int count = Math.min(
-                        event.expression().sourceAliases().size(),
-                        event.expression().sourceColumns().size());
-                for (int index = 0; index < count; index++) {
-                    if (!"*".equals(event.expression().sourceColumns().get(index))) {
-                        continue;
-                    }
-                    String sourceKey = aliases.normalizeIdentifier(
-                            event.expression().sourceAliases().get(index));
-                    TableId anchor = physicalAliases.get(sourceKey);
-                    if (anchor == null && anchors.get(sourceKey) != null) {
-                        anchor = anchors.get(sourceKey).table();
-                    }
-                    ProjectionAnchor logicalAnchor = anchors.get(logicalRowsets.get(sourceKey));
-                    if (anchor == null && logicalAnchor != null) {
-                        anchor = logicalAnchor.table();
-                    }
-                    if (anchor != null) {
-                        changed |= bindAnchor(
-                                anchors, ambiguous, aliases, event.outputAlias(), anchor, true);
-                    }
-                }
-            }
-        } while (changed);
-        return anchors;
-    }
-
-    private static boolean bindAnchor(
-            Map<String, ProjectionAnchor> anchors,
-            Set<String> ambiguous,
-            AliasSymbolTable aliases,
-            String name,
-            TableId table,
-            boolean wildcardDerived
-    ) {
-        String key = aliases.normalizeIdentifier(name);
-        if (key.isBlank() || ambiguous.contains(key)) {
-            return false;
-        }
-        ProjectionAnchor existing = anchors.get(key);
-        if (existing == null) {
-            anchors.put(key, new ProjectionAnchor(table, wildcardDerived));
-            return true;
-        }
-        if (!existing.table().normalizedName().equals(table.normalizedName())) {
-            anchors.remove(key);
-            ambiguous.add(key);
-            return true;
-        }
-        if (wildcardDerived && !existing.wildcardDerived()) {
-            anchors.put(key, new ProjectionAnchor(table, true));
-            return true;
-        }
-        return false;
-    }
-
-    private static Map<String, TableId> physicalAliases(
-            List<StructuredSqlEvent> events,
-            AliasSymbolTable aliases,
-            Set<String> ignoredRowsets
-    ) {
-        Map<String, TableId> result = new LinkedHashMap<>();
-        Set<String> ambiguous = new LinkedHashSet<>();
-        Map<String, TableId> triggerPseudoTables = new LinkedHashMap<>();
-        for (StructuredSqlEvent event : events) {
-            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET
-                    && !event.targetTable().isBlank()) {
-                TableId table = aliases.resolveQualified(event.targetTable());
-                triggerPseudoTables.put(aliases.normalizeIdentifier(event.name()), table);
-                triggerPseudoTables.put(aliases.normalizeIdentifier(event.alias()), table);
-            }
-        }
-        for (StructuredSqlEvent event : events) {
-            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
-                String qualified = event.targetTable().isBlank()
-                        ? event.qualifiedTable() : event.targetTable();
-                if (!qualified.isBlank()) {
-                    TableId table = aliases.resolveQualified(qualified);
-                    bindPhysicalAlias(result, ambiguous, aliases, event.name(), table);
-                    bindPhysicalAlias(result, ambiguous, aliases, event.alias(), table);
-                }
-                continue;
-            }
-            if (event.type() != StructuredParseEventType.ROWSET_REFERENCE
-                    && event.type() != StructuredParseEventType.WRITE_TARGET) {
-                continue;
-            }
-            String qualified = event.qualifiedTable().isBlank()
-                    ? event.table() : event.qualifiedTable();
-            if (qualified.isBlank()) {
-                continue;
-            }
-            TableId table = triggerPseudoTables.get(aliases.normalizeIdentifier(qualified));
-            if (table == null && isIgnoredRowsetName(qualified, ignoredRowsets, aliases)) {
-                continue;
-            }
-            if (table == null) {
-                table = aliases.resolveQualified(qualified);
-            }
-            bindPhysicalAlias(result, ambiguous, aliases, qualified, table);
-            bindPhysicalAlias(result, ambiguous, aliases, event.table(), table);
-            bindPhysicalAlias(result, ambiguous, aliases, event.alias(), table);
-        }
-        return result;
-    }
-
-    private static void bindPhysicalAlias(
-            Map<String, TableId> aliasesByName,
-            Set<String> ambiguous,
-            AliasSymbolTable aliases,
-            String name,
-            TableId table
-    ) {
-        String key = aliases.normalizeIdentifier(name);
-        if (key.isBlank() || ambiguous.contains(key)) {
-            return;
-        }
-        TableId existing = aliasesByName.get(key);
-        if (existing != null && !existing.normalizedName().equals(table.normalizedName())) {
-            aliasesByName.remove(key);
-            ambiguous.add(key);
-            return;
-        }
-        aliasesByName.put(key, table);
-    }
-
-    private static boolean isIgnoredRowsetName(
-            String rowset,
-            Set<String> ignoredRowsets,
-            AliasSymbolTable aliases
-    ) {
-        return ignoredRowsets.contains(aliases.normalizeIdentifier(rowset));
-    }
-
-    private static String projectionKey(
-            AliasSymbolTable aliases,
-            String alias,
-            String column,
-            LineageFlowKind flowKind
-    ) {
-        return aliases.normalizeIdentifier(clean(alias)) + "."
-                + aliases.normalizeIdentifier(clean(column)) + "|" + flowKind.name();
-    }
-
-    private static Set<String> declaredProjectionKeys(
-            List<StructuredSqlEvent> events,
-            AliasSymbolTable aliases
-    ) {
-        LinkedHashSet<String> result = new LinkedHashSet<>();
-        for (StructuredSqlEvent event : events) {
-            if (event.type() != StructuredParseEventType.PROJECTION_ITEM
-                    || event.outputAlias().isBlank()
-                    || event.outputColumn().isBlank()
-                    || "*".equals(event.outputColumn())) {
-                continue;
-            }
-            result.add(projectionOutputKey(aliases, event.outputAlias(), event.outputColumn()));
-        }
-        return Set.copyOf(result);
-    }
-
-    private static String projectionOutputKey(
-            AliasSymbolTable aliases,
-            String alias,
-            String column
-    ) {
-        return aliases.normalizeIdentifier(clean(alias)) + "."
-                + aliases.normalizeIdentifier(clean(column));
-    }
-
-    private static ProjectionKey parseProjectionKey(String key) {
-        int separator = key.lastIndexOf('|');
-        String endpoint = separator < 0 ? key : key.substring(0, separator);
-        LineageFlowKind flowKind = separator < 0
-                ? LineageFlowKind.VALUE
-                : flowKind(key.substring(separator + 1));
-        int dot = endpoint.lastIndexOf('.');
-        if (dot < 0) {
-            return new ProjectionKey(endpoint, "", flowKind);
-        }
-        return new ProjectionKey(endpoint.substring(0, dot), endpoint.substring(dot + 1), flowKind);
-    }
-
-    private static LineageFlowKind flowKind(String value) {
-        try {
-            return LineageFlowKind.valueOf(value);
-        } catch (RuntimeException ignored) {
-            return LineageFlowKind.VALUE;
-        }
-    }
-
-    private static ColumnRef column(AliasSymbolTable aliases, TableId table, String name) {
-        String clean = clean(name);
-        return new ColumnRef(table, clean, aliases.normalizeIdentifier(clean), null, true);
-    }
-
     record SourceResolution(
             List<Endpoint> sources,
             List<LineageTransformType> transforms,
@@ -707,12 +434,4 @@ final class ProjectionTraceResolver {
     ) {
     }
 
-    private record ProjectionKey(String alias, String column, LineageFlowKind flowKind) {
-        boolean matches(String rowset, AliasSymbolTable aliases) {
-            return alias.equals(aliases.normalizeIdentifier(clean(rowset)));
-        }
-    }
-
-    private record ProjectionAnchor(TableId table, boolean wildcardDerived) {
-    }
 }

@@ -9,6 +9,7 @@ package com.relationdetector.contracts.metadata;
  * including type, nullability, default, generation expression, and ordinal position.
  */
 public record MetadataColumnFact(
+        String catalog,
         String schema,
         String tableName,
         String columnName,

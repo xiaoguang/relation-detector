@@ -131,7 +131,7 @@ database:
   jdbcUrl: jdbc:mysql://localhost:3306/shop
   username: readonly
   password: ${DB_PASSWORD}
-  schema: shop
+  catalog: shop
 
 output:
   format: json

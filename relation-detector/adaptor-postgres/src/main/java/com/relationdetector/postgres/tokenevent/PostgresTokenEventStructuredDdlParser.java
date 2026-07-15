@@ -15,6 +15,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 
@@ -32,11 +33,8 @@ public final class PostgresTokenEventStructuredDdlParser implements StructuredDd
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PostgresRelationSqlParser parser = new PostgresRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        PostgresRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
+        PostgresRelationSqlParser.ScriptContext root = AntlrSllParseSupport.parse(
+                tokens, PostgresRelationSqlParser::new, PostgresRelationSqlParser::script, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

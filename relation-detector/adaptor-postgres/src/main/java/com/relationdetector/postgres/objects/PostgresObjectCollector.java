@@ -95,7 +95,7 @@ public final class PostgresObjectCollector implements ObjectDefinitionCollector 
                     DatabaseObjectType type = "p".equals(rs.getString("prokind"))
                             ? DatabaseObjectType.PROCEDURE
                             : DatabaseObjectType.FUNCTION;
-                    definitions.add(new DatabaseObjectDefinition(type, rs.getString("nspname"),
+                    definitions.add(new DatabaseObjectDefinition(type, null, rs.getString("nspname"),
                             rs.getString("proname"), rs.getString("definition"), "pg_proc"));
                 }
             }
@@ -120,7 +120,8 @@ public final class PostgresObjectCollector implements ObjectDefinitionCollector 
             ps.setString(1, scope.schema() == null ? "public" : scope.schema());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.VIEW, rs.getString("schemaname"),
+                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.VIEW, null,
+                            rs.getString("schemaname"),
                             rs.getString("viewname"), rs.getString("definition"), "pg_views"));
                 }
             }
@@ -152,7 +153,7 @@ public final class PostgresObjectCollector implements ObjectDefinitionCollector 
             ps.setString(1, scope.schema() == null ? "public" : scope.schema());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.MATERIALIZED_VIEW,
+                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.MATERIALIZED_VIEW, null,
                             rs.getString("schemaname"), rs.getString("matviewname"),
                             rs.getString("definition"), "pg_matviews"));
                 }
@@ -188,7 +189,7 @@ public final class PostgresObjectCollector implements ObjectDefinitionCollector 
             ps.setString(1, scope.schema() == null ? "public" : scope.schema());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.RULE,
+                    definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.RULE, null,
                             rs.getString("schemaname"), rs.getString("tablename") + "." + rs.getString("rulename"),
                             rs.getString("definition"), "pg_rules"));
                 }

@@ -134,27 +134,27 @@ class ScanEngineDatabaseDdlSourceTest {
         @Override
         public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
             return new com.relationdetector.contracts.spi.AdaptorCollectors(
-                    (connection, scope) -> new MetadataSnapshot(),
-                    (connection, scope) -> List.of(),
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of()),
                     Optional.of((connection, scope) -> List.of(
-                            new DatabaseDdlDefinition("shop", "orders", """
+                            new DatabaseDdlDefinition(null, "shop", "orders", """
                                     ALTER TABLE shop.orders
                                       ADD CONSTRAINT fk_orders_users
                                       FOREIGN KEY (user_id) REFERENCES shop.users (id)
                                     """, "SHOW CREATE TABLE"),
-                            new DatabaseDdlDefinition("shop", "orders", """
+                            new DatabaseDdlDefinition(null, "shop", "orders", """
                                     CREATE TABLE `orders` (
                                       `user_id` bigint NOT NULL,
                                       KEY `idx_orders_user_id` (`user_id`)
                                     ) ENGINE=InnoDB
                                     """, "SHOW CREATE TABLE orders"),
-                            new DatabaseDdlDefinition("shop", "users", """
+                            new DatabaseDdlDefinition(null, "shop", "users", """
                                     CREATE TABLE `users` (
                                       `id` bigint NOT NULL,
                                       PRIMARY KEY (`id`)
                                     ) ENGINE=InnoDB
                                     """, "SHOW CREATE TABLE users"))),
-                    (file, hint) -> Stream.empty());
+                    Optional.of((file, hint) -> Stream.empty()));
         }
 
         @Override

@@ -15,6 +15,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
@@ -38,11 +39,8 @@ public final class MySqlTokenEventStructuredDdlParser implements StructuredDdlPa
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        MySqlRelationSqlParser parser = new MySqlRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        MySqlRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
+        MySqlRelationSqlParser.ScriptContext root = AntlrSllParseSupport.parse(
+                tokens, MySqlRelationSqlParser::new, MySqlRelationSqlParser::script, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

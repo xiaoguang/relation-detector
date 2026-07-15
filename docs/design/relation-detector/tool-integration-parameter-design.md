@@ -95,10 +95,15 @@ relationDetectionRequest:
 
 ### 4.1 database
 
+MySQL把database映射到`catalog`轴：工具侧应优先填写`database.catalog`。旧
+`database.schema`仍可作为兼容输入，但两者同时非空且不同会在JDBC连接前失败。PostgreSQL、
+Oracle和SQL Server继续按各自catalog/schema语义传入。当前结果JSON顶层只有legacy
+`database.schema`字段；canonical catalog身份应从endpoint table读取。
+
 ```yaml
 database:
   type: MYSQL
-  schema: sample_data
+  catalog: sample_data
   catalog: optional_catalog
   jdbcUrl: ${JDBC_URL}
   username: ${DB_USER}
@@ -468,7 +473,7 @@ relation-detector JSON 顶层结构：
 {
   "database": {
     "type": "MYSQL",
-    "schema": "sample_data"
+    "schema": ""
   },
   "generatedAt": "...",
   "summary": {

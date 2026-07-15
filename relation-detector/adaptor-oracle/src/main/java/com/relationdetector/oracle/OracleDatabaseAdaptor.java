@@ -23,13 +23,13 @@ import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParse
 /**
  * Oracle adaptor.
  *
- * <p>CN: 本 adaptor 接入 Oracle 的 parser 入口。第一版 catalog/profile collector
- * 以空快照保守返回，离线 correctness 与 sample-data 先通过 DDL/SQL/PLSQL 文本驱动；
- * live Oracle catalog 查询后续按同一 SPI 补齐。
+ * <p>CN: 本 adaptor 接入 Oracle typed parser、ALL_* catalog metadata、
+ * DBMS_METADATA object/DDL 以及有界的 live data profiler。各 catalog family 支持
+ * partial success，权限或版本差异通过 warning 返回。
  *
- * <p>EN: Oracle adaptor. Parser entry points are active in the first version,
- * while live catalog/profile collection returns conservative empty snapshots so
- * offline correctness and sample-data SQL can drive parser validation first.
+ * <p>EN: Oracle adaptor with typed parsers, ALL_* metadata collection,
+ * DBMS_METADATA object/DDL collection, and bounded live profiling. Catalog
+ * families use partial-success warnings for permission or version failures.
  */
 public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public OracleDatabaseAdaptor() {
@@ -55,10 +55,10 @@ public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
                 OracleDatabaseAdaptor::normalizeIdentifier,
                 new AdaptorCollectors(
-                        new OracleMetadataCollector(),
-                        new OracleObjectCollector(),
+                        Optional.of(new OracleMetadataCollector()),
+                        Optional.of(new OracleObjectCollector()),
                         Optional.of(new OracleDatabaseDdlCollector()),
-                        new OracleLogExtractor(scriptFramer)),
+                        Optional.of(new OracleLogExtractor(scriptFramer))),
                 new AdaptorParsers(
                         new StructuredSqlRelationshipParser(structuredSqlParser),
                         Optional.of(structuredSqlParser),

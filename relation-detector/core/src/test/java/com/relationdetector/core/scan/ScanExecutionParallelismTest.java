@@ -100,21 +100,21 @@ class ScanExecutionParallelismTest {
         @Override public String id() { return "recording"; }
         @Override public String displayName() { return "Recording"; }
         @Override public Set<DatabaseType> supportedDatabaseTypes() { return Set.of(DatabaseType.MYSQL); }
-        @Override public Set<AdaptorCapability> capabilities() { return Set.of(); }
+        @Override public Set<AdaptorCapability> capabilities() { return Set.of(AdaptorCapability.NATIVE_LOGS); }
         @Override public IdentifierRules identifierRules() { return identifier -> identifier; }
         @Override public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
             return new com.relationdetector.contracts.spi.AdaptorCollectors(
-                    (connection, scope) -> new MetadataSnapshot(),
-                    (connection, scope) -> List.of(),
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of()),
                     Optional.empty(),
-                    (file, hint) -> {
+                    Optional.of((file, hint) -> {
                         try {
                             return Stream.of(new SqlStatementRecord(Files.readString(file), StatementSourceType.NATIVE_LOG,
                                     file.toString(), 1, 1, Map.of()));
                         } catch (Exception ex) {
                             throw new IllegalStateException(ex);
                         }
-                    });
+                    }));
         }
         @Override public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
             return new com.relationdetector.contracts.spi.AdaptorParsers(

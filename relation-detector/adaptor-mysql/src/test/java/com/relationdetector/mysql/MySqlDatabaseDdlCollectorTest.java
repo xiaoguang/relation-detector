@@ -40,7 +40,8 @@ class MySqlDatabaseDdlCollectorTest {
 
         assertEquals(1, definitions.size(), "orders should be returned even when users SHOW CREATE fails");
         DatabaseDdlDefinition orders = definitions.get(0);
-        assertEquals("shop", orders.schema());
+        assertEquals("shop", orders.catalog());
+        assertEquals(null, orders.schema());
         assertEquals("orders", orders.name());
         assertEquals("SHOW CREATE TABLE", orders.source());
         assertTrue(orders.ddl().contains("CONSTRAINT `fk_orders_users`"));

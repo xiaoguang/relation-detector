@@ -3,11 +3,11 @@ package com.relationdetector.contracts;
 /**
  * 公共 contracts 的集中 enum 容器。
  *
- * <p>CN: {@code docs/design/enum-reference.md} 是这些枚举含义、JSON 拼写和维护规则的
+ * <p>CN: {@code docs/design/relation-detector/enum-reference.md} 是这些枚举含义、JSON 拼写和维护规则的
  * 设计真源。集中放置可避免 adaptor 作者发明相似但不兼容的状态值。
  *
  * <p>EN: Central enum container for the public contracts module. The design
- * source of truth is docs/design/enum-reference.md, which defines semantics,
+ * source of truth is docs/design/relation-detector/enum-reference.md, which defines semantics,
  * JSON spelling, and maintenance rules. Keeping enum values centralized prevents
  * near-duplicate states in adaptors.
  */

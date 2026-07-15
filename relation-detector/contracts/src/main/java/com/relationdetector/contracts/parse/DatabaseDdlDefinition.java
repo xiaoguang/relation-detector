@@ -11,6 +11,7 @@ package com.relationdetector.contracts.parse;
  * DDL parser runner and rewrites evidence provenance to DATABASE_DDL.
  */
 public record DatabaseDdlDefinition(
+        String catalog,
         String schema,
         String name,
         String ddl,

@@ -15,6 +15,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
@@ -36,11 +37,8 @@ public final class OracleTokenEventStructuredDdlParser implements StructuredDdlP
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        OracleRelationSqlParser parser = new OracleRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        OracleRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
+        OracleRelationSqlParser.ScriptContext root = AntlrSllParseSupport.parse(
+                tokens, OracleRelationSqlParser::new, OracleRelationSqlParser::script, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

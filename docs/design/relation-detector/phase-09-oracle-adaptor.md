@@ -24,7 +24,7 @@ Oracle adaptor 按 PostgreSQL versioned full-grammar 的设计方式接入 relat
 
 Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` full-grammar projection”的阶段。它已经不再是 sample-data facade：每个 full-grammar profile 都使用自己的 generated lexer/parser，并且 `.g4` 中已经存在官方来源可解释的首批版本差异。但它仍不是 Oracle 官方 SQL/PLSQL 手册的完整 ANTLR 转换，不能与 MySQL 8.0 / PostgreSQL v16-v18 的成熟 full-grammar 覆盖度等同展示。
 
-Oracle 的 SPI v4 `OracleScriptFramer` 使用 generated script lexer 的 typed token，只有单独一行的 `/` 才结束 PL/SQL / object block；普通 SQL 仍按 semicolon framing。client-script slash 不是 server SQL operator，因此该边界在 SQL/DDL grammar 前处理。
+Oracle 的 SPI v5 `OracleScriptFramer` 使用 generated script lexer 的 typed token，只有单独一行的 `/` 才结束 PL/SQL / object block；普通 SQL 仍按 semicolon framing。client-script slash 不是 server SQL operator，因此该边界在 SQL/DDL grammar 前处理。
 
 已实现：
 
@@ -35,7 +35,7 @@ Oracle 的 SPI v4 `OracleScriptFramer` 使用 generated script lexer 的 typed t
 - full-grammar module：`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` 通过 `FullGrammarDialectModule` 注册；每个版本使用自己的 split lexer/parser grammar，并带有首批官方版本边界差异，运行属性 `grammarCoverage=INCOMPLETE_VERSIONED`。
 - sample-data：`sample-data/oracle/12c|19c|21c|26ai`，每版 38 个 SQL 文件。
 - correctness golden：root token-event 保留会产生 relationship / lineage / diagnostics、或承载 Oracle DDL / 版本边界语法的 sample-data fixture；四个 versioned full-grammar 目录覆盖对应 `sample-data/oracle/<version>` 的保留 fixture，并保留 profile smoke / version-only fixture。
-- live database DDL：`OracleDatabaseDdlCollector` 通过 `ALL_TABLES` 与 `DBMS_METADATA.GET_DDL` 读取 table DDL；`OracleDataProfiler` 通过公共 `JdbcDataProfilerTemplate` 执行 bounded containment query。Oracle metadata / object collectors 仍是保守空实现。
+- live catalog：`OracleMetadataCollector` 读取 `ALL_TABLES` / `ALL_TAB_COLUMNS` / `ALL_CONSTRAINTS` / `ALL_CONS_COLUMNS` / `ALL_INDEXES` / `ALL_IND_COLUMNS`，保留组合列序和 child-to-parent FK。`OracleObjectCollector` 通过 `ALL_OBJECTS` + `DBMS_METADATA.GET_DDL` 读取 procedure/function/package/view/materialized view/trigger。`OracleDatabaseDdlCollector` 读取 table DDL，`OracleDataProfiler` 执行 bounded containment query。各 catalog family 失败时保留其它已成功结果并产生 warning。当前 metadata/object collector在scope schema为空时可回退connection schema/user，但database-DDL collector只读取显式`scope.schema`；这部分owner解析尚未闭环。
 
 已实现的官方版本边界：
 
@@ -190,11 +190,11 @@ Oracle correctness 当前统计：
 
 | Parser family | Fixture | SQL / DDL | Rel | Lin | Direct Name | Diag |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle token-event root | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
-| Oracle full-grammar v12c | 38 | 32 / 6 | 366 | 331 | 248 | 0 |
-| Oracle full-grammar v19c | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
-| Oracle full-grammar v21c | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
-| Oracle full-grammar v26ai | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
+| Oracle token-event root | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
+| Oracle full-grammar v12c | 38 | 32 / 6 | 366 | 330 | 248 | 0 |
+| Oracle full-grammar v19c | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
+| Oracle full-grammar v21c | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
+| Oracle full-grammar v26ai | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
 
 这里的 `Lin` 包含当前 typed write scope 产生的 direct VALUE 与 CONTROL lineage。v12c 的
 2 条差异来自本版本 natural SQL 资产，不表示其 relationship/naming 能力更强。

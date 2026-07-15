@@ -347,6 +347,24 @@ public enum EvidenceSourceType {
 - `DATABASE_DDL` 与 `DDL_FILE` 都可能产生 `DDL_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE`；区别只在来源：前者来自 live catalog 反查出的表定义，后者来自用户提供的文件。
 - 不要把文件路径作为 enum 值。
 
+## 8.1 DerivedPathKind
+
+表示 derived path 所属的事实族。它不改变 direct fact 的类型，也不能把 relationship 与 lineage 混成同一种推导。
+
+```java
+public enum DerivedPathKind {
+  RELATIONSHIP,
+  DATA_LINEAGE
+}
+```
+
+| 值 | 含义 | 输出位置 |
+| --- | --- | --- |
+| `RELATIONSHIP` | 在已确认 relationship 图上形成的可审计传递路径。 | `derivedRelationships` |
+| `DATA_LINEAGE` | 在 direct VALUE lineage 图上形成的可审计传递路径。 | `derivedDataLineages` |
+
+维护约束：conditional relationship、conditional naming edge 和 CONTROL lineage 不得作为无条件 derived closure 的输入。
+
 ## 9. StatementSourceType
 
 表示一条 SQL 语句来自哪里，用于选择 evidence 类型和解析策略。
@@ -379,8 +397,8 @@ public enum StatementSourceType {
 | `TRIGGER` | 触发器 body。 | `TRIGGER_REFERENCE` |
 | `EVENT` | MySQL scheduler event body。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `RULE` | PostgreSQL rewrite rule definition。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
-| `PACKAGE` | Oracle package specification，后续 adaptor 预留。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
-| `PACKAGE_BODY` | Oracle package body，后续 adaptor 预留。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
+| `PACKAGE` | Oracle package specification；Oracle live object collector 已支持读取。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
+| `PACKAGE_BODY` | Oracle package body；Oracle live object collector 已支持读取。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `MIGRATION` | migration 脚本中的 SQL。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `NATIVE_LOG` | 数据库原生日志提取出的 SQL。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
 | `PLAIN_SQL` | 清洗后的纯 SQL 文本。 | `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` |
@@ -389,7 +407,7 @@ public enum StatementSourceType {
 
 - `FUNCTION` 和 `PROCEDURE` 未来可共用 `PROCEDURE_JOIN` evidence，因为二者都属于持久化数据库逻辑；当前生产 parser 仍保留具体 SQL predicate evidence。
 - `VIEW`、`MATERIALIZED_VIEW` 的物理列谓词已经提升为 `VIEW_JOIN`；`RULE` 当前仍保留具体 SQL predicate evidence。
-- `EVENT`、`PACKAGE`、`PACKAGE_BODY` 属于持久化数据库逻辑，后续可按 procedure/function 专属 evidence 处理。
+- `EVENT`、`PACKAGE`、`PACKAGE_BODY` 属于持久化数据库逻辑；对象采集能力和 body 内 SQL 的 parser 覆盖是两项独立能力，不能因为对象可读取就宣称所有内部语句均已解析。
 - `MIGRATION` 不是数据库持久对象，证据来源按 `PLAIN_SQL` 处理。
 - `TRIGGER` 及带 `routineReturnsTrigger=true` 的 PostgreSQL trigger function 使用 `TRIGGER_REFERENCE`；解析失败必须记录 warning，不能静默丢弃。
 
@@ -411,17 +429,17 @@ public enum DatabaseObjectType {
 }
 ```
 
-| 值 | MySQL 对应对象 | PostgreSQL 对应对象 | 说明 |
-| --- | --- | --- | --- |
-| `PROCEDURE` | procedure | procedure | 持久化过程逻辑。 |
-| `FUNCTION` | function | function | PostgreSQL 中很多 trigger 逻辑也在 function 中。 |
-| `VIEW` | view | view | 视图 SQL 通常是稳定 JOIN 证据。 |
-| `MATERIALIZED_VIEW` | 不适用 | materialized view | PostgreSQL `pg_matviews` 定义。 |
-| `TRIGGER` | trigger | trigger + trigger function | 触发器中的引用可表达写入关系。 |
-| `EVENT` | scheduler event | 不适用 | MySQL event body 可包含关系 SQL。 |
-| `RULE` | 不适用 | rewrite rule | PostgreSQL rule 可包含查询重写 SQL。 |
-| `PACKAGE` | 不适用 | 不适用 | Oracle package spec 预留。 |
-| `PACKAGE_BODY` | 不适用 | 不适用 | Oracle package body 预留。 |
+| 值 | MySQL | PostgreSQL | Oracle | SQL Server | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| `PROCEDURE` | procedure | procedure | procedure | procedure | 持久化过程逻辑。 |
+| `FUNCTION` | function | function | function | scalar/table-valued function | PostgreSQL 中很多 trigger 逻辑也在 function 中。 |
+| `VIEW` | view | view | view | view | 视图 SQL 通常是稳定 JOIN 证据。 |
+| `MATERIALIZED_VIEW` | 不适用 | materialized view | materialized view | 不适用 | 物化语义与普通 view 不同。 |
+| `TRIGGER` | trigger | trigger + trigger function | trigger | trigger | 触发器中的引用可表达写入关系。 |
+| `EVENT` | scheduler event | 不适用 | 不适用 | 不适用 | MySQL event body 可包含关系 SQL。 |
+| `RULE` | 不适用 | rewrite rule | 不适用 | 不适用 | PostgreSQL rule 可包含查询重写 SQL。 |
+| `PACKAGE` | 不适用 | 不适用 | package specification | 不适用 | Oracle live object collector 已读取 package DDL。 |
+| `PACKAGE_BODY` | 不适用 | 不适用 | package body | 不适用 | Oracle live object collector 已读取 package body DDL。 |
 
 维护说明：
 
@@ -455,6 +473,7 @@ public enum StructuredParseEventType {
   EXPRESSION_SOURCE,
   DDL_FOREIGN_KEY,
   DDL_INDEX,
+  DDL_COLUMN,
   DYNAMIC_SQL
 }
 ```
@@ -482,6 +501,7 @@ public enum StructuredParseEventType {
 | `EXPRESSION_SOURCE` | 表达式内来源列和 transform 分析事件。 |
 | `DDL_FOREIGN_KEY` | DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
 | `DDL_INDEX` | DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
+| `DDL_COLUMN` | DDL 中的物理列 inventory；用于约束 endpoint 合法性和 naming evidence，不直接创建 relationship。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
 
 维护说明：
@@ -518,6 +538,24 @@ public enum LogFormatHint {
 - `AUTO` 识别失败时不应猜测，应给出 warning 或要求用户指定。
 - 原生日志解析只负责抽 SQL，不负责生成关系；关系解析交给 SQL parser。
 - 后续新增云厂商日志格式时，新增 enum 值，例如 `ALIYUN_RDS_MYSQL_AUDIT_LOG`。
+
+## 11.1 OfflineSampleCompleteness
+
+表示离线 `INSERT ... VALUES` 样本是否可以被视为目标列值域的完整快照。它只影响离线画像证据的安全门禁，不改变 SQL parser 的事实语义。
+
+```java
+public enum OfflineSampleCompleteness {
+  PARTIAL,
+  COMPLETE
+}
+```
+
+| 值 | 含义 | 约束 |
+| --- | --- | --- |
+| `PARTIAL` | 文件只是部分 seed/sample rows。 | 不得用缺失值推导负向 mismatch；只能产生有明确样本支持的正向统计。 |
+| `COMPLETE` | 调用方明确声明文件覆盖目标分析范围的完整值域。 | 仍需满足样本量、类型和 containment gate，不能绕过物理 endpoint 校验。 |
+
+当前生产链路尚未用文本扫描伪造离线 literal sample event；若 typed parser 没有产出可审计的 literal event，该枚举本身不会让离线画像自动生效。
 
 ## 12. DirectionConfidence
 

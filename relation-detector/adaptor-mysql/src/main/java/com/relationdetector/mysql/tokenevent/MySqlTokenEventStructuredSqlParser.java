@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
@@ -44,12 +45,8 @@ public final class MySqlTokenEventStructuredSqlParser
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        MySqlRelationSqlParser parser = new MySqlRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-
-        MySqlRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
+        MySqlRelationSqlParser.ScriptContext root = AntlrSllParseSupport.parse(
+                tokens, MySqlRelationSqlParser::new, MySqlRelationSqlParser::script, errors).root();
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)

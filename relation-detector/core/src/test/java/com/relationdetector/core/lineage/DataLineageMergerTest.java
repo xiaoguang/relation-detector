@@ -77,6 +77,23 @@ class DataLineageMergerTest {
         assertFalse(merged.attributes().containsKey("sourceLine"));
     }
 
+    @Test
+    void treatsSourceEndpointsAsAnOrderIndependentSet() {
+        Endpoint orders = Endpoint.column(ColumnRef.of(TableId.of(null, "sales_orders"), "id"));
+        Endpoint customers = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "sales_fact"), "order_id"));
+        DataLineageCandidate first = new DataLineageCandidate(
+                List.of(orders, customers), target, LineageFlowKind.VALUE, LineageTransformType.DIRECT);
+        DataLineageCandidate second = new DataLineageCandidate(
+                List.of(customers, orders), target, LineageFlowKind.VALUE, LineageTransformType.DIRECT);
+
+        List<DataLineageCandidate> merged = new DataLineageMerger().merge(List.of(first, second));
+
+        assertEquals(1, merged.size());
+        assertEquals(List.of(customers.normalizedKey(), orders.normalizedKey()),
+                merged.get(0).sources().stream().map(Endpoint::normalizedKey).toList());
+    }
+
     private DataLineageCandidate lineage(Map<String, Object> attributes) {
         DataLineageCandidate candidate = new DataLineageCandidate(
                 List.of(Endpoint.column(ColumnRef.of(TableId.of(null, "sales_orders"), "id"))),

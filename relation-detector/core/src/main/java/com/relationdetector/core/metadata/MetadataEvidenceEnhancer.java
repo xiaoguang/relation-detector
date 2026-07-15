@@ -29,6 +29,7 @@ import com.relationdetector.contracts.spi.IdentifierRules;
  * themselves.
  */
 public final class MetadataEvidenceEnhancer {
+    private final IndexEvidencePolicy indexPolicy = new IndexEvidencePolicy();
     public void enhance(List<RelationshipCandidate> candidates, MetadataSnapshot metadata) {
         enhance(candidates, metadata, defaultIdentifierRules(), NamespaceContext.empty());
     }
@@ -109,10 +110,17 @@ public final class MetadataEvidenceEnhancer {
             CanonicalIdentifierResolver resolver,
             NamespaceContext namespace
     ) {
-        return indexes.stream().anyMatch(index ->
-                (!requireUnique || index.unique() || index.primary())
-                        && index.columns().stream().anyMatch(indexColumn ->
-                        CanonicalEndpointKey.from(index, indexColumn, resolver, namespace).equals(key)));
+        return indexes.stream().anyMatch(index -> {
+            if (requireUnique) {
+                return index.columns().size() == 1
+                        && indexPolicy.provesSingleColumnUnique(index, index.columns().get(0))
+                        && CanonicalEndpointKey.from(index, index.columns().get(0), resolver, namespace).equals(key);
+            }
+            if (index.columns().isEmpty() || !indexPolicy.supportsLeadingColumnLookup(index, index.columns().get(0))) {
+                return false;
+            }
+            return CanonicalEndpointKey.from(index, index.columns().get(0), resolver, namespace).equals(key);
+        });
     }
 
     private MetadataColumnFact column(
@@ -142,10 +150,6 @@ public final class MetadataEvidenceEnhancer {
             String detail,
             Map<String, Object> attributes
     ) {
-        boolean alreadyPresent = candidate.evidence().stream().anyMatch(evidence -> evidence.type() == type);
-        if (alreadyPresent) {
-            return;
-        }
         candidate.evidence().add(new Evidence(type, java.math.BigDecimal.valueOf(score), EvidenceSourceType.METADATA,
                 "metadata catalog facts", detail, new LinkedHashMap<>(attributes)));
     }

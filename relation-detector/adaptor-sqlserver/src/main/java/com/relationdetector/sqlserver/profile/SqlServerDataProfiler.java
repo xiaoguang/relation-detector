@@ -1,21 +1,22 @@
 package com.relationdetector.sqlserver.profile;
 
 import java.sql.Connection;
-import java.util.List;
-
-import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.spi.Collectors.DataProfiler;
+import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.profile.DialectDataProfileQueryRenderer;
 import com.relationdetector.core.profile.IdentifierQuoter;
 import com.relationdetector.core.profile.JdbcDataProfilerTemplate;
+import com.relationdetector.core.profile.SqlExceptionClassifier;
 
 /** Conservative bounded SQL Server data profiler. */
 public final class SqlServerDataProfiler implements DataProfiler {
-    private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(new SqlServerProfileQueryRenderer());
+    private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(
+            new SqlServerProfileQueryRenderer(),
+            SqlExceptionClassifier.withPermissionVendorCodes(229, 916));
 
     @Override
-    public List<Evidence> profile(Connection connection, ProfileRequest request) {
+    public ProfileOutcome profile(Connection connection, ProfileRequest request) {
         return delegate.profile(connection, request);
     }
 

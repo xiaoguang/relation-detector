@@ -65,7 +65,7 @@ class DdlRelationExtractionVisitorIndependenceTest {
     }
 
     @Test
-    void mergesDuplicateForeignKeyEventsAndKeepsIndexEvidenceStable() {
+    void preservesDuplicateObservationsUntilTheRelationshipMergerFoldsExactIdentity() {
         StructuredParseResult structured = structured(List.of(
                 fk("orders", "user_id", "users", "id", 1, 1),
                 fk("orders", "user_id", "users", "id", 1, 1),
@@ -79,8 +79,20 @@ class DdlRelationExtractionVisitorIndependenceTest {
                 .extract("structured events only", "ddl-events.sql", structured);
 
         assertEquals(1, relations.size());
-        assertEquals(List.of(EvidenceType.DDL_FOREIGN_KEY, EvidenceType.SOURCE_INDEX, EvidenceType.TARGET_UNIQUE),
+        assertEquals(List.of(
+                        EvidenceType.DDL_FOREIGN_KEY,
+                        EvidenceType.DDL_FOREIGN_KEY,
+                        EvidenceType.SOURCE_INDEX,
+                        EvidenceType.TARGET_UNIQUE),
                 relations.get(0).evidence().stream().map(evidence -> evidence.type()).toList());
+
+        List<RelationshipCandidate> merged = new RelationshipMerger().merge(relations, 0.0d);
+        assertEquals(List.of(EvidenceType.DDL_FOREIGN_KEY, EvidenceType.SOURCE_INDEX, EvidenceType.TARGET_UNIQUE),
+                merged.get(0).evidence().stream().map(evidence -> evidence.type()).toList());
+        assertEquals(2, merged.get(0).rawEvidence().stream()
+                .filter(evidence -> evidence.type() == EvidenceType.DDL_FOREIGN_KEY)
+                .findFirst().orElseThrow().attributes().get("occurrenceCount"));
+        assertEquals(3, merged.get(0).rawEvidence().size());
     }
 
     private StructuredParseResult structured(List<StructuredSqlEvent> events) {

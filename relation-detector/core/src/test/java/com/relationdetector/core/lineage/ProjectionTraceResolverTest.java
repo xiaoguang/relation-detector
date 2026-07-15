@@ -244,6 +244,38 @@ class ProjectionTraceResolverTest {
                 "COUNT(*) or literal projections have no physical column source and must not become employees.active_headcount");
     }
 
+    @Test
+    void sameAliasAcrossDifferentCatalogsIsAmbiguousForPhysicalResolution() {
+        List<StructuredSqlEvent> events = List.of(
+                rowset("catalog_a.sales.orders", "o"),
+                rowset("catalog_b.sales.orders", "o"),
+                cte("projected"),
+                projection("projected", "id", "o", "id", "DIRECT"));
+
+        ProjectionTraceResolver resolver = ProjectionTraceResolver.fromEvents(
+                events, qualifiedAliases(events), Set.of("projected"));
+
+        assertTrue(resolver.resolve("projected", "id").isEmpty(),
+                "A reused alias cannot select one of two same-named tables from different catalogs");
+    }
+
+    @Test
+    void wildcardProjectionAnchorAcrossDifferentCatalogsIsAmbiguous() {
+        List<StructuredSqlEvent> events = List.of(
+                rowset("catalog_a.sales.orders", "a"),
+                rowset("catalog_b.sales.orders", "b"),
+                cte("combined"),
+                projection("combined", "*", "a", "*", "DIRECT"),
+                projection("combined", "*", "b", "*", "DIRECT"),
+                rowset("combined", "c"));
+
+        ProjectionTraceResolver resolver = ProjectionTraceResolver.fromEvents(
+                events, qualifiedAliases(events), Set.of("combined"));
+
+        assertTrue(resolver.resolve("c", "id").isEmpty(),
+                "A wildcard projection cannot bridge same-named tables from different catalogs");
+    }
+
     private static StructuredSqlEvent cte(String name) {
         return new RowsetEvent(StructuredParseEventType.CTE_DECLARATION, provenance(),
                 "", name, name, "", name, "", "");
@@ -297,6 +329,23 @@ class ProjectionTraceResolverTest {
             String alias = event.alias();
             if (!alias.isBlank()) {
                 aliases.bind(alias, tableId);
+            }
+        }
+        return aliases;
+    }
+
+    private static AliasSymbolTable qualifiedAliases(List<StructuredSqlEvent> events) {
+        AliasSymbolTable aliases = new AliasSymbolTable(
+                new CanonicalIdentifierResolver(value -> value == null ? "" : value.toLowerCase()),
+                NamespaceContext.empty());
+        for (StructuredSqlEvent event : events) {
+            if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
+                continue;
+            }
+            TableId table = aliases.resolveQualified(event.qualifiedTable());
+            aliases.bind(event.qualifiedTable(), table);
+            if (!event.alias().isBlank()) {
+                aliases.bind(event.alias(), table);
             }
         }
         return aliases;

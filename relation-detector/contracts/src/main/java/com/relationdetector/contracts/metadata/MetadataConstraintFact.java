@@ -11,11 +11,13 @@ import java.util.List;
  * referenced endpoints. This is the raw fact behind metadata FK evidence.
  */
 public record MetadataConstraintFact(
+        String catalog,
         String schema,
         String tableName,
         String constraintName,
         String constraintType,
         List<String> columns,
+        String referencedCatalog,
         String referencedSchema,
         String referencedTable,
         List<String> referencedColumns,

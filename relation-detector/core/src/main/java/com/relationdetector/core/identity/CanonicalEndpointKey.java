@@ -46,7 +46,8 @@ public record CanonicalEndpointKey(String catalog, String schema, String table, 
             CanonicalIdentifierResolver resolver,
             NamespaceContext namespace
     ) {
-        TableId table = resolver.resolve(TableId.of(fact.schema(), fact.tableName()), namespace);
+        TableId table = resolver.resolve(new TableId(
+                fact.catalog(), fact.schema(), fact.tableName(), fact.tableName()), namespace);
         return new CanonicalEndpointKey(resolver.normalize(table.catalog()), resolver.normalize(table.schema()),
                 resolver.normalize(table.tableName()),
                 resolver.normalize(fact.columnName()));
@@ -58,7 +59,8 @@ public record CanonicalEndpointKey(String catalog, String schema, String table, 
             CanonicalIdentifierResolver resolver,
             NamespaceContext namespace
     ) {
-        TableId table = resolver.resolve(TableId.of(fact.schema(), fact.tableName()), namespace);
+        TableId table = resolver.resolve(new TableId(
+                fact.catalog(), fact.schema(), fact.tableName(), fact.tableName()), namespace);
         return new CanonicalEndpointKey(resolver.normalize(table.catalog()), resolver.normalize(table.schema()),
                 resolver.normalize(table.tableName()),
                 resolver.normalize(column));
