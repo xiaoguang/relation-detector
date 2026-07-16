@@ -1,6 +1,7 @@
 package com.relationdetector.cli;
 
 import com.relationdetector.contracts.Enums.ErrorCode;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +29,18 @@ final class BatchCommand {
                     (outcome.elapsedMillis() + 999L) / 1000L,
                     outcome.status() == BatchCaseStatus.SUCCESS ? 0 : 1));
             return exitCode(outcomes);
+        } catch (Main.CliFailure error) {
+            System.err.println(error.message());
+            return error.code().code();
         } catch (IllegalArgumentException error) {
             System.err.println("Configuration format is invalid.");
             return ErrorCode.CONFIG_FORMAT_ERROR.code();
         } catch (AdaptorRegistry.AdaptorException error) {
             System.err.println("Requested database adaptor is unavailable.");
             return ErrorCode.ADAPTOR_ERROR.code();
+        } catch (IOException error) {
+            System.err.println("Configuration file cannot be read.");
+            return ErrorCode.CONFIG_FILE_ERROR.code();
         } catch (Exception error) {
             System.err.println("Batch scan failed.");
             return ErrorCode.SCAN_RUNTIME_ERROR.code();

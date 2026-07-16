@@ -50,6 +50,40 @@ class BatchCommandIntegrationTest {
         assertEquals("SUCCESS", report.path("cases").get(0).path("status").asText());
     }
 
+    @Test
+    void batchPreflightPreservesConfigFileAndFormatErrorCodes() throws Exception {
+        Path malformed = tempDir.resolve("malformed.yml");
+        Files.writeString(malformed, "database: [\n");
+        Path malformedManifestFile = tempDir.resolve("malformed-manifest.yml");
+        Files.writeString(malformedManifestFile, "cases: [\n");
+
+        Path malformedManifest = writeSingleCaseManifest("malformed-batch.yml", malformed.getFileName());
+        Path missingManifest = writeSingleCaseManifest("missing-batch.yml", Path.of("missing.yml"));
+
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR.code(),
+                new Main.MainCommand().run(new String[]{"batch", "--manifest", malformedManifest.toString()}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FILE_ERROR.code(),
+                new Main.MainCommand().run(new String[]{"batch", "--manifest", missingManifest.toString()}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR.code(),
+                new Main.MainCommand().run(new String[]{"batch", "--manifest", malformedManifestFile.toString()}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FILE_ERROR.code(),
+                new Main.MainCommand().run(new String[]{"batch", "--manifest",
+                        tempDir.resolve("missing-manifest.yml").toString()}));
+    }
+
+    private Path writeSingleCaseManifest(String name, Path config) throws Exception {
+        Path manifest = tempDir.resolve(name);
+        Files.writeString(manifest, """
+                version: 1
+                report: report.json
+                cases:
+                  - id: case
+                    config: %s
+                    output: output.json
+                """.formatted(config));
+        return manifest;
+    }
+
     private Path writeConfig(String name, Path sql) throws Exception {
         Path config = tempDir.resolve(name);
         Files.writeString(config, """

@@ -1,6 +1,7 @@
 package com.relationdetector.cli;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,12 +22,12 @@ final class BatchManifestLoader {
     BatchManifest load(Path manifestFile) throws IOException {
         Path manifest = manifestFile.toAbsolutePath().normalize();
         if (!Files.isRegularFile(manifest)) {
-            throw new IllegalArgumentException("batch manifest does not exist: " + manifest);
+            throw new IOException("batch manifest cannot be read: " + manifest);
         }
         Document document;
         try {
             document = YAML.readValue(manifest.toFile(), Document.class);
-        } catch (IOException error) {
+        } catch (JsonProcessingException error) {
             throw new IllegalArgumentException("invalid batch manifest " + manifest + ": " + error.getMessage(), error);
         }
         if (document == null || document.version != 1) {
@@ -62,9 +63,6 @@ final class BatchManifestLoader {
                 throw new IllegalArgumentException("batch case " + raw.id + " is missing output");
             }
             Path config = resolve(base, raw.config);
-            if (!Files.isRegularFile(config)) {
-                throw new IllegalArgumentException("batch case config does not exist: " + config);
-            }
             Path output = resolve(base, raw.output);
             Path directOutput = raw.directOutput == null || raw.directOutput.isBlank()
                     ? null

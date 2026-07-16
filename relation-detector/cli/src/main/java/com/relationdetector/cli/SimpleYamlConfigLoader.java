@@ -52,6 +52,7 @@ public final class SimpleYamlConfigLoader {
         if (dto == null) {
             dto = new ScanYamlConfigDto();
         }
+        validateStructure(dto);
         ScanConfig config = map(dto, file.toAbsolutePath().getParent());
 
         validate(config);
@@ -61,6 +62,32 @@ public final class SimpleYamlConfigLoader {
     static final class ConfigFormatException extends IOException {
         ConfigFormatException(JsonProcessingException cause) {
             super("configuration format is invalid", cause);
+        }
+
+        ConfigFormatException(String detail) {
+            super("configuration format is invalid: " + detail);
+        }
+    }
+
+    private void validateStructure(ScanYamlConfigDto dto) throws ConfigFormatException {
+        requireObject(dto.database, "database");
+        requireObject(dto.sources, "sources");
+        requireObject(dto.sources.metadata, "sources.metadata");
+        requireObject(dto.sources.ddl, "sources.ddl");
+        requireObject(dto.sources.objects, "sources.objects");
+        requireObject(dto.sources.logs, "sources.logs");
+        requireObject(dto.sources.dataProfile, "sources.dataProfile");
+        requireObject(dto.execution, "execution");
+        requireObject(dto.filters, "filters");
+        requireObject(dto.output, "output");
+        requireObject(dto.namingMatch, "namingMatch");
+        requireObject(dto.derivedPaths, "derivedPaths");
+        requireObject(dto.parser, "parser");
+    }
+
+    private void requireObject(Object value, String path) throws ConfigFormatException {
+        if (value == null) {
+            throw new ConfigFormatException(path + " must be an object");
         }
     }
 

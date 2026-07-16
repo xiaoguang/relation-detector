@@ -47,12 +47,16 @@ class CliErrorCodeContractTest {
     void mapsUnreadableAndMalformedYamlFilesThroughTheTypedLoaderBoundary(@TempDir Path tempDir) throws Exception {
         Path unreadable = tempDir.resolve("missing.yml");
         Path malformed = tempDir.resolve("malformed.yml");
+        Path invalidShape = tempDir.resolve("invalid-shape.yml");
         Files.writeString(malformed, "database: [\n");
+        Files.writeString(invalidShape, "database:\n");
 
         assertResult(ErrorCode.CONFIG_FILE_ERROR, new SingleScanRunner(),
                 "scan", "--config", unreadable.toString());
         assertResult(ErrorCode.CONFIG_FORMAT_ERROR, new SingleScanRunner(),
                 "scan", "--config", malformed.toString());
+        assertResult(ErrorCode.CONFIG_FORMAT_ERROR, new SingleScanRunner(),
+                "scan", "--config", invalidShape.toString());
     }
 
     private void assertResult(ErrorCode expected, SingleScanRunner runner, String... args) {
