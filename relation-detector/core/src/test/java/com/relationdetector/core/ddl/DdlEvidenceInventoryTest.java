@@ -15,6 +15,7 @@ import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
+import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.DdlEvent;
@@ -63,6 +64,51 @@ class DdlEvidenceInventoryTest {
                 .flatMap(candidate -> candidate.evidence().stream())
                 .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
                 .count());
+    }
+
+    @Test
+    void ddlFactIdentityKeepsDifferentRelationTypesIndependent() {
+        RelationshipCandidate fkLike = relationship("shop", "orders", "customer_id",
+                "shop", "customers", "id");
+        RelationshipCandidate coOccurrence = new RelationshipCandidate(
+                fkLike.source(), fkLike.target(), RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        DdlEvidenceInventory inventory = new DdlEvidenceInventory();
+        inventory.addSourceIndex(key("shop", "orders", "customer_id"),
+                observation("indexes.sql", "SOURCE_INDEX", "INDEX"));
+
+        inventory.enhance(List.of(fkLike, coOccurrence));
+
+        assertEquals(2, List.of(fkLike, coOccurrence).stream()
+                .flatMap(candidate -> candidate.evidence().stream())
+                .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
+                .count());
+    }
+
+    @Test
+    void distinctDdlProvenanceSurvivesWhileExactProvenanceRepeatsFold() {
+        RelationshipCandidate relationship = relationship("shop", "orders", "customer_id",
+                "shop", "customers", "id");
+        DdlEvidenceInventory inventory = new DdlEvidenceInventory();
+        DdlEvidenceInventory.Observation first = provenanceObservation(
+                "tables.sql:1-1", "block-1", "TABLE", "orders");
+        DdlEvidenceInventory.Observation second = provenanceObservation(
+                "tables.sql:2-2", "block-2", "INDEX", "idx_orders_customer");
+        inventory.addSourceIndex(key("shop", "orders", "customer_id"), first);
+        inventory.addSourceIndex(key("shop", "orders", "customer_id"), second);
+        inventory.addSourceIndex(key("shop", "orders", "customer_id"), first);
+
+        inventory.enhance(List.of(relationship));
+        inventory.enhance(List.of(relationship));
+
+        List<Evidence> sourceIndexes = relationship.evidence().stream()
+                .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
+                .toList();
+        assertEquals(2, sourceIndexes.size());
+        assertEquals(List.of("tables.sql:1-1", "tables.sql:2-2"), sourceIndexes.stream()
+                .map(evidence -> String.valueOf(evidence.attributes().get("sourceStatementId")))
+                .sorted()
+                .toList());
     }
 
     @Test
@@ -153,6 +199,22 @@ class DdlEvidenceInventoryTest {
         return new DdlEvidenceInventory.Observation(
                 role, kind, EvidenceSourceType.DDL_FILE, source, 1,
                 Map.of("sourceFile", source, "sourceStatementId", source + ":1-1"));
+    }
+
+    private DdlEvidenceInventory.Observation provenanceObservation(
+            String statementId,
+            String blockId,
+            String objectType,
+            String objectName
+    ) {
+        return new DdlEvidenceInventory.Observation(
+                "SOURCE_INDEX", "INDEX", EvidenceSourceType.DDL_FILE, "tables.sql", 1,
+                Map.of(
+                        "sourceFile", "tables.sql",
+                        "sourceStatementId", statementId,
+                        "sourceBlockId", blockId,
+                        "sourceObjectType", objectType,
+                        "sourceObjectName", objectName));
     }
 
     private CanonicalEndpointKey key(String schema, String table, String column) {

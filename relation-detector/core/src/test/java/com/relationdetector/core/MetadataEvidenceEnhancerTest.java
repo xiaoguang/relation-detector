@@ -65,6 +65,35 @@ class MetadataEvidenceEnhancerTest {
     }
 
     @Test
+    void metadataFactIdentityIgnoresSubtypeWithinOneRelationType() {
+        MetadataSnapshot metadata = metadataFacts();
+        RelationshipCandidate inferred = joinCandidate("orders", "user_id", "users", "id");
+        RelationshipCandidate declared = new RelationshipCandidate(
+                inferred.source(), inferred.target(), RelationType.FK_LIKE, RelationSubType.DDL_DECLARED_FK);
+
+        new MetadataEvidenceEnhancer().enhance(List.of(inferred, declared), metadata);
+
+        assertEquals(1, List.of(inferred, declared).stream()
+                .flatMap(candidate -> candidate.evidence().stream())
+                .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
+                .count());
+    }
+
+    @Test
+    void metadataFactIdentityKeepsDifferentRelationTypesIndependent() {
+        MetadataSnapshot metadata = metadataFacts();
+        RelationshipCandidate fkLike = joinCandidate("orders", "user_id", "users", "id");
+        RelationshipCandidate coOccurrence = coOccurrenceCandidate("orders", "user_id", "users", "id");
+
+        new MetadataEvidenceEnhancer().enhance(List.of(fkLike, coOccurrence), metadata);
+
+        assertEquals(2, List.of(fkLike, coOccurrence).stream()
+                .flatMap(candidate -> candidate.evidence().stream())
+                .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
+                .count());
+    }
+
+    @Test
     void enrichesColumnCoOccurrenceWithEndpointIndexUniqueAndTypeFacts() {
         MetadataSnapshot metadata = metadataFacts();
         RelationshipCandidate candidate = coOccurrenceCandidate("orders", "user_id", "users", "id");

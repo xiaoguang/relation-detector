@@ -206,6 +206,41 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void relationshipPathLimitCountsCanonicalPathsAndRetainsAcceptedVariants() {
+        ScanConfig config = enabledConfig();
+        config.derivedMaxPathsPerPair = 1;
+        Endpoint orderItemOrderId = col("order_items", "order_id");
+        Endpoint ordersId = col("orders", "id");
+        Endpoint ordersCustomerId = col("orders", "customer_id");
+        Endpoint ordersBillingCustomerId = col("orders", "billing_customer_id");
+        Endpoint customersId = col("customers", "id");
+        RelationshipCandidate firstVariant = fk(orderItemOrderId, ordersId);
+        RelationshipCandidate secondVariant = fk(orderItemOrderId, ordersId);
+        secondVariant.evidence().clear();
+        secondVariant.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "second.sql",
+                orderItemOrderId.displayName() + " = " + ordersId.displayName(),
+                Map.of("sourceLine", 9)));
+
+        DerivedPathInferenceResult result = service.infer(List.of(
+                firstVariant,
+                secondVariant,
+                fk(ordersCustomerId, customersId),
+                fk(ordersBillingCustomerId, customersId)
+        ), List.of(), List.of(), config);
+
+        List<DerivedPathCandidate> paths = result.derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(orderItemOrderId)
+                        && candidate.target().equals(customersId))
+                .toList();
+        assertEquals(1, paths.size(), "The second canonical path must be rejected by the pair quota");
+        assertEquals(2, paths.get(0).rawEvidence().size(),
+                "All variants of the accepted canonical path must survive the pair quota");
+    }
+
+    @Test
     void relationshipPathDoesNotBridgeSameNamedTablesAcrossCatalogs() {
         ScanConfig config = enabledConfig();
         Endpoint orderItemOrderId = catalogCol("tenant_a", "sales", "order_items", "order_id");

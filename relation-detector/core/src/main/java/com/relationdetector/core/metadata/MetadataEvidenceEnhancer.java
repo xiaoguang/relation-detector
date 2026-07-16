@@ -57,7 +57,7 @@ public final class MetadataEvidenceEnhancer {
             CanonicalEndpointKey targetKey = CanonicalEndpointKey.from(
                     candidate.target(), resolver, namespace);
             if (!enhancedFacts.add(new RelationshipFactKey(
-                    sourceKey, targetKey, candidate.relationType(), candidate.relationSubType()))) {
+                    candidate.relationType(), sourceKey, targetKey))) {
                 continue;
             }
             String sourceTable = candidate.source().table().tableName();
@@ -172,10 +172,9 @@ public final class MetadataEvidenceEnhancer {
     }
 
     private record RelationshipFactKey(
-            CanonicalEndpointKey source,
-            CanonicalEndpointKey target,
             RelationType type,
-            RelationSubType subType
+            CanonicalEndpointKey source,
+            CanonicalEndpointKey target
     ) {
     }
 

@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
@@ -69,7 +70,8 @@ public final class DdlEvidenceInventory {
             }
             CanonicalEndpointKey sourceKey = key(candidate.source());
             CanonicalEndpointKey targetKey = key(candidate.target());
-            if (!enhancedFacts.add(new RelationshipFactKey(sourceKey, targetKey))) {
+            if (!enhancedFacts.add(new RelationshipFactKey(
+                    candidate.relationType(), sourceKey, targetKey))) {
                 continue;
             }
             addEvidence(candidate, sourceIndexes.get(sourceKey), EvidenceType.SOURCE_INDEX,
@@ -124,7 +126,11 @@ public final class DdlEvidenceInventory {
         return CanonicalEndpointKey.from(endpoint, resolver, namespace);
     }
 
-    private record RelationshipFactKey(CanonicalEndpointKey source, CanonicalEndpointKey target) {
+    private record RelationshipFactKey(
+            RelationType type,
+            CanonicalEndpointKey source,
+            CanonicalEndpointKey target
+    ) {
     }
 
     private void add(

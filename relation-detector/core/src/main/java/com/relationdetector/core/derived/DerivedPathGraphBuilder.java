@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.relationdetector.contracts.Enums.DerivedPathKind;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.model.Endpoint;
@@ -74,6 +75,7 @@ final class DerivedPathGraphBuilder {
         List<DerivedPathObservation> observations = new ArrayList<>();
         Map<String, Integer> pathsPerPair = new LinkedHashMap<>();
         Map<String, List<DerivedEdge>> bridgeCache = new LinkedHashMap<>();
+        Set<String> acceptedCanonicalPaths = new LinkedHashSet<>();
         for (DerivedEdge start : graph.edges()) {
             if (start.kind() == DerivedEdgeKind.TABLE_IDENTITY_BRIDGE) {
                 continue;
@@ -83,7 +85,7 @@ final class DerivedPathGraphBuilder {
             visited.addAll(graphKeys(start.target()));
             dfsReferencedBy(start.source(), start.target(), List.of(start), visited,
                     graph, keyEndpointsByTable, bridgeCache, directPairs,
-                    pathsPerPair, observations);
+                    pathsPerPair, acceptedCanonicalPaths, observations);
             if (limitReached(observations.size())) {
                 break;
             }
@@ -141,6 +143,7 @@ final class DerivedPathGraphBuilder {
             Map<String, List<DerivedEdge>> bridgeCache,
             Set<String> directPairs,
             Map<String, Integer> pathsPerPair,
+            Set<String> acceptedCanonicalPaths,
             List<DerivedPathObservation> observations
     ) {
         if (path.size() >= 2 && lastEdge(path).kind() == DerivedEdgeKind.RELATIONSHIP) {
@@ -148,7 +151,8 @@ final class DerivedPathGraphBuilder {
             boolean direct = pairKeys(current, origin).stream().anyMatch(directPairs::contains);
             boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEdgeKind.NAMING);
             if (!selfLoop && !direct && !namingOnly) {
-                addPath(origin, current, path, pathsPerPair, observations);
+                addReferencedByPath(origin, current, path, pathsPerPair,
+                        acceptedCanonicalPaths, observations);
             }
         }
         if (path.size() >= config.derivedMaxPathLength || limitReached(observations.size())) {
@@ -163,7 +167,7 @@ final class DerivedPathGraphBuilder {
             visited.addAll(nextKeys);
             dfsReferencedBy(origin, edge.target(), append(path, edge), visited,
                     graph, keyEndpointsByTable, bridgeCache, directPairs,
-                    pathsPerPair, observations);
+                    pathsPerPair, acceptedCanonicalPaths, observations);
             visited.removeAll(nextKeys);
             if (limitReached(observations.size())) {
                 break;
@@ -182,6 +186,29 @@ final class DerivedPathGraphBuilder {
         int count = pathsPerPair.getOrDefault(pair, 0);
         if (config.derivedMaxPathsPerPair == 0 || count < config.derivedMaxPathsPerPair) {
             observations.add(new DerivedPathObservation(source, target, path));
+            pathsPerPair.put(pair, count + 1);
+        }
+    }
+
+    private void addReferencedByPath(
+            Endpoint source,
+            Endpoint target,
+            List<DerivedEdge> path,
+            Map<String, Integer> pathsPerPair,
+            Set<String> acceptedCanonicalPaths,
+            List<DerivedPathObservation> observations
+    ) {
+        DerivedPathObservation observation = new DerivedPathObservation(source, target, path);
+        String pathKey = canonicalPathKey(DerivedPathKind.RELATIONSHIP.name(), observation);
+        if (acceptedCanonicalPaths.contains(pathKey)) {
+            observations.add(observation);
+            return;
+        }
+        String pair = pairKey(source, target);
+        int count = pathsPerPair.getOrDefault(pair, 0);
+        if (config.derivedMaxPathsPerPair == 0 || count < config.derivedMaxPathsPerPair) {
+            acceptedCanonicalPaths.add(pathKey);
+            observations.add(observation);
             pathsPerPair.put(pair, count + 1);
         }
     }
