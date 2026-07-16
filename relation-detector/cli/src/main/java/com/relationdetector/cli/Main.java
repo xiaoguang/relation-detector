@@ -22,20 +22,18 @@ public final class Main {
 
     static final class MainCommand {
         int run(String[] args) {
-            if (args.length > 0 && "batch".equals(args[0])) {
-                return new BatchCommand().run(args);
-            }
-            CliArguments cli = CliArguments.parse(args);
-            if (cli.help) {
-                System.out.print(help());
-                return ErrorCode.OK.code();
-            }
-            if (cli.config == null) {
-                System.err.println("Missing required --config. Use --help for usage.");
-                return ErrorCode.ARGUMENT_ERROR.code();
-            }
-
             try {
+                if (args.length > 0 && "batch".equals(args[0])) {
+                    return new BatchCommand().run(args);
+                }
+                CliArguments cli = CliArguments.parse(args);
+                if (cli.help) {
+                    System.out.print(help());
+                    return ErrorCode.OK.code();
+                }
+                if (cli.config == null) {
+                    throw new CliFailure(ErrorCode.ARGUMENT_ERROR);
+                }
                 AdaptorRegistry registry = AdaptorRegistry.load(cli.pluginDir);
                 ScanRequest request = new ScanRequest(
                         cli.config,
@@ -50,14 +48,17 @@ public final class Main {
                 SingleScanRunner runner = new SingleScanRunner();
                 runner.execute(runner.prepare(request, registry));
                 return ErrorCode.OK.code();
+            } catch (CliFailure ex) {
+                System.err.println(ex.message());
+                return ex.code().code();
             } catch (IllegalArgumentException ex) {
-                System.err.println("Configuration error: " + ex.getMessage());
-                return ErrorCode.CONFIG_FORMAT_ERROR.code();
+                System.err.println("Invalid command or configuration.");
+                return ErrorCode.ARGUMENT_ERROR.code();
             } catch (AdaptorRegistry.AdaptorException ex) {
-                System.err.println("Adaptor error: " + ex.getMessage());
+                System.err.println("Requested database adaptor is unavailable.");
                 return ErrorCode.ADAPTOR_ERROR.code();
             } catch (Exception ex) {
-                System.err.println("Scan failed: " + ex.getMessage());
+                System.err.println("Scan execution failed.");
                 return ErrorCode.SCAN_RUNTIME_ERROR.code();
             }
         }
@@ -87,6 +88,28 @@ public final class Main {
                       relation-detector batch --manifest batch.yml [--plugin-dir plugins]
                         [--case-parallelism n] [--max-worker-threads n] [--fail-fast]
                     """;
+        }
+    }
+
+    static final class CliFailure extends RuntimeException {
+        private final ErrorCode code;
+
+        CliFailure(ErrorCode code) {
+            this.code = code;
+        }
+
+        ErrorCode code() { return code; }
+
+        String message() {
+            return switch (code) {
+                case ARGUMENT_ERROR -> "Invalid command arguments.";
+                case CONFIG_FILE_ERROR -> "Configuration file cannot be read.";
+                case CONFIG_FORMAT_ERROR -> "Configuration format is invalid.";
+                case INPUT_FILE_ERROR -> "Configured input file cannot be read.";
+                case DATABASE_CONNECTION_ERROR -> "Database connection failed.";
+                case OUTPUT_WRITE_ERROR -> "Output file cannot be written.";
+                default -> "Scan execution failed.";
+            };
         }
     }
 

@@ -57,7 +57,6 @@ public final class ScanEngine {
                 requestedDatabase.includeTables(), requestedDatabase.excludeTables()));
         ResolvedScanConfig runtimeConfig = config;
         Connection connection = null;
-        Exception connectionFailure = null;
         try {
             connection = openConnection(config.database());
             runtimeConfig = discoverJdbcDatabaseVersion(config, connection);
@@ -68,7 +67,8 @@ public final class ScanEngine {
             closeQuietly(connection);
             throw ex;
         } catch (Exception ex) {
-            connectionFailure = ex;
+            closeQuietly(connection);
+            throw new DatabaseConnectionException(ex);
         }
 
         ScanResult result = new ScanResult(
@@ -87,26 +87,12 @@ public final class ScanEngine {
                 dataLineageCandidates);
 
         try {
-            if (connectionFailure != null) {
-                result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
-                        "DB_SCAN_FAILED", LiveDiagnosticSanitizer.Operation.CONNECTION,
-                        "database", connectionFailure, java.util.Map.of(),
-                        adaptor.permissionDeniedVendorCodes()));
-            } else {
-                try {
-                    sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
-                } catch (LiveSourceConfigurationException ex) {
-                    throw ex;
-                } catch (Exception ex) {
-                    result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
-                            "DB_SCAN_FAILED", LiveDiagnosticSanitizer.Operation.CONNECTION,
-                            "database", ex, java.util.Map.of(), adaptor.permissionDeniedVendorCodes()));
-                }
-            }
+            sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
             sourceCollectorPipeline.collectFileSources(pipelineContext);
             evidenceEnhancementPipeline.enhance(pipelineContext);
             List<RelationshipCandidate> profiledCandidates = dataProfilePipeline.profile(connection, pipelineContext);
             evidenceEnhancementPipeline.enhanceProfiledCandidates(pipelineContext, profiledCandidates);
+            evidenceEnhancementPipeline.adjustWeights(pipelineContext);
             return resultAssembly.assemble(pipelineContext);
         } finally {
             pipelineContext.close();

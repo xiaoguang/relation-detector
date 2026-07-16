@@ -226,17 +226,23 @@ plus structured SQL parser; profiling requires profiler. File-only scans remain 
 
 ### CT-04: Live Failure Boundaries
 
+Status: `FOCUSED_GREEN` (Task 9 focused core tests).
+
 JDBC connection failure is non-recoverable and maps to the connection error contract.
 A metadata catalog-family failure is recoverable, sanitized, and must not prevent live
 DDL/object collection. Proven catalog configuration failures remain non-recoverable.
 
 ### CT-05: Evidence Weight Adjustment
 
+Status: `FOCUSED_GREEN` (Task 9 focused core tests).
+
 The advertised `EVIDENCE_WEIGHT_ADJUSTMENT` capability has exactly one consumer in the
 scan pipeline. Each raw evidence item is adjusted once before merge; built-in no-op
 adjusters preserve current output. The adjusted score is range-validated.
 
 ### CT-06: Executable CLI Error Codes
+
+Status: `IMPLEMENTED`; focused single-scan error-code verification remains required.
 
 Single-scan CLI maps argument, config file, config format, adaptor, input file, database
 connection, runtime scan, and output write failures to their declared `ErrorCode` values.

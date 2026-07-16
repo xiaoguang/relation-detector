@@ -8,14 +8,25 @@ import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
 import com.relationdetector.core.scan.ScanResult;
 import com.relationdetector.core.scan.ResolvedScanConfig;
+import com.relationdetector.core.scan.DatabaseConnectionException;
 import java.nio.file.Path;
+import java.io.IOException;
 
 final class SingleScanRunner {
     private final SimpleYamlConfigLoader configLoader = new SimpleYamlConfigLoader();
     private final AtomicOutputWriter outputWriter = new AtomicOutputWriter();
 
     PreparedScan prepare(ScanRequest request, AdaptorRegistry registry) throws Exception {
-        ScanConfig config = configLoader.load(request.config());
+        ScanConfig config;
+        try {
+            config = configLoader.load(request.config());
+        } catch (IllegalArgumentException ex) {
+            throw new Main.CliFailure(ex.getMessage() != null && ex.getMessage().startsWith("config file")
+                    ? com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FILE_ERROR
+                    : com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
+        } catch (IOException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
+        }
         applyOverrides(config, request);
         if (request.directOutput() != null && request.output() == null) {
             throw new IllegalArgumentException("--direct-output requires --output for the derived result");
@@ -24,16 +35,27 @@ final class SingleScanRunner {
             throw new IllegalArgumentException("--direct-output is only available with JSON output");
         }
         Path configDirectory = request.config().toAbsolutePath().normalize().getParent();
-        ResolvedScanConfig resolved = config.resolve(configDirectory);
+        ResolvedScanConfig resolved;
+        try {
+            resolved = config.resolve(configDirectory);
+        } catch (IllegalArgumentException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.INPUT_FILE_ERROR);
+        }
         DatabaseAdaptor adaptor = registry.resolve(resolved.database().databaseType(), resolved.database().adaptorId());
         return new PreparedScan(request, resolved, adaptor);
     }
 
     SingleScanOutcome execute(PreparedScan prepared) throws Exception {
         ResolvedScanConfig config = prepared.config();
-        ScanResult result = new ScanEngine().scan(config, prepared.adaptor());
+        ScanResult result;
+        try {
+            result = new ScanEngine().scan(config, prepared.adaptor());
+        } catch (DatabaseConnectionException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.DATABASE_CONNECTION_ERROR);
+        }
         var output = config.output();
         JsonResultWriter jsonWriter = new JsonResultWriter();
+        try {
         if (output.format() == OutputFormat.TABLE) {
             String rendered = new TableResultWriter().write(result);
             if (prepared.request().output() == null) {
@@ -53,6 +75,9 @@ final class SingleScanRunner {
             outputWriter.write(prepared.request().directOutput(), stream ->
                     jsonWriter.writeDirect(result, stream, output.includeEvidence(), output.includeWarnings(),
                             output.includeObservationCounts()));
+        }
+        } catch (IOException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.OUTPUT_WRITE_ERROR);
         }
         return new SingleScanOutcome(result.warnings().size());
     }

@@ -1,9 +1,11 @@
 package com.relationdetector.core.scan;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -73,5 +75,18 @@ class FinalScanContractTest {
 
         assertEquals(1, result.relationships().size(),
                 "direct ScanEngine use must process configured ddlPaths instead of silently ignoring them");
+    }
+
+    @Test
+    void propagatesJdbcConnectionFailureInsteadOfReturningARecoverableWarning() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.COMMON;
+        config.jdbcUrl = "jdbc:missing-driver:contains-secret";
+        config.metadataEnabled = false;
+
+        RuntimeException failure = assertThrows(RuntimeException.class,
+                () -> new ScanEngine().scan(config, new CommonDatabaseAdaptor()));
+
+        assertEquals(SQLException.class, failure.getCause().getClass());
     }
 }

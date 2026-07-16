@@ -67,6 +67,18 @@ public final class NamingEvidencePool {
                 .findFirst();
     }
 
+    /** Replaces each retained raw naming observation through the scan-local adjustment hook. */
+    public void adjustRawEvidence(java.util.function.UnaryOperator<com.relationdetector.contracts.model.Evidence> adjuster) {
+        java.util.Objects.requireNonNull(adjuster, "adjuster");
+        List<NamingEvidenceCandidate> adjusted = byKey.values().stream()
+                .map(candidate -> new NamingEvidenceCandidate(
+                        candidate.source(), candidate.target(), candidate.evidence(), candidate.rule(),
+                        candidate.directionHint(), candidate.rawEvidence().stream().map(adjuster).toList()))
+                .toList();
+        byKey.clear();
+        adjusted.forEach(this::add);
+    }
+
     private NamingEvidenceCandidate mergeOne(
             NamingEvidenceCandidate existing,
             NamingEvidenceCandidate candidate

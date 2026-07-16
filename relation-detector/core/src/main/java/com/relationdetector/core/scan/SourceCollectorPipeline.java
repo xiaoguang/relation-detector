@@ -19,6 +19,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.script.ScriptFileExtractor;
 
@@ -34,11 +35,7 @@ final class SourceCollectorPipeline {
     void collectJdbcSources(Connection connection, ScanPipelineContext ctx) {
         SourceConfig sources = ctx.config.sources();
         if (sources.metadataEnabled() && connection != null) {
-            ctx.result.sources().add("metadata");
-            ctx.metadataSnapshot = ctx.adaptor.collectors().metadata().orElseThrow()
-                    .collect(connection, ctx.scope);
-            ctx.relationshipCandidates.addAll(ctx.metadataSnapshot.relationships());
-            ctx.result.warnings().addAll(ctx.metadataSnapshot.warnings());
+            collectMetadata(connection, ctx);
         }
 
         if (sources.ddlEnabled() && sources.ddlFromDatabase() && connection != null) {
@@ -67,6 +64,24 @@ final class SourceCollectorPipeline {
                     .toList());
         }
 
+    }
+
+    private void collectMetadata(Connection connection, ScanPipelineContext ctx) {
+        ctx.result.sources().add("metadata");
+        try {
+            ctx.metadataSnapshot = ctx.adaptor.collectors().metadata().orElseThrow()
+                    .collect(connection, ctx.scope);
+            if (ctx.metadataSnapshot != null) {
+                ctx.relationshipCandidates.addAll(ctx.metadataSnapshot.relationships());
+                ctx.result.warnings().addAll(ctx.metadataSnapshot.warnings());
+            }
+        } catch (LiveSourceConfigurationException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            ctx.result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
+                    "METADATA_COLLECT_FAILED", LiveDiagnosticSanitizer.Operation.METADATA,
+                    "metadata", ex, java.util.Map.of(), ctx.adaptor.permissionDeniedVendorCodes()));
+        }
     }
 
     /**
