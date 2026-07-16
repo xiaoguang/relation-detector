@@ -53,6 +53,35 @@ full-grammar:
 
 本报告中的“通过”默认只表示对应层级通过；不得把 zero diagnostics 或 count parity 升格为 SQL/语义正确性证明。
 
+## Final Convergence Closure State
+
+This generated-free table records the frozen closure matrix from
+`docs/superpowers/specs/2026-07-16-relation-detector-final-convergence-design.md`.
+It is independent of the technical statuses below; every closure ID begins at `OPEN`.
+
+| Closure ID | Initial state |
+| --- | --- |
+| ID-01 | OPEN |
+| ID-02 | OPEN |
+| ID-03 | OPEN |
+| ID-04 | OPEN |
+| ID-05 | OPEN |
+| EV-01 | OPEN |
+| EV-02 | OPEN |
+| EV-03 | OPEN |
+| EV-04 | OPEN |
+| EV-05 | OPEN |
+| EV-06 | OPEN |
+| CT-01 | OPEN |
+| CT-02 | OPEN |
+| CT-03 | OPEN |
+| CT-04 | OPEN |
+| CT-05 | OPEN |
+| CT-06 | OPEN |
+| TG-01 | OPEN |
+| TG-02 | OPEN |
+| TG-03 | OPEN |
+
 ## 本轮代码结构注释审视
 
 生产代码结构注释的目标分成三层。package 契约强制中文 / English 双语；类和大型编排方法的自动门禁强制具体、非模板说明，但不强制所有符号双语：

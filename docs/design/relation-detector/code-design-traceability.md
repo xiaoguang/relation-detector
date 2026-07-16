@@ -7,6 +7,35 @@
 - `PARTIAL`：主链路已经落地，但仍有已定位的实现缺口，不能宣称完全匹配。
 - `REVIEW_NEEDED`：实现与设计有差异，或存在后续设计取舍，需要人工审视。
 
+## Final Convergence Closure State
+
+This generated-free table records the frozen closure matrix from
+`docs/superpowers/specs/2026-07-16-relation-detector-final-convergence-design.md`.
+It is independent of the technical statuses below; every closure ID begins at `OPEN`.
+
+| Closure ID | Initial state |
+| --- | --- |
+| ID-01 | OPEN |
+| ID-02 | OPEN |
+| ID-03 | OPEN |
+| ID-04 | OPEN |
+| ID-05 | OPEN |
+| EV-01 | OPEN |
+| EV-02 | OPEN |
+| EV-03 | OPEN |
+| EV-04 | OPEN |
+| EV-05 | OPEN |
+| EV-06 | OPEN |
+| CT-01 | OPEN |
+| CT-02 | OPEN |
+| CT-03 | OPEN |
+| CT-04 | OPEN |
+| CT-05 | OPEN |
+| CT-06 | OPEN |
+| TG-01 | OPEN |
+| TG-02 | OPEN |
+| TG-03 | OPEN |
+
 ## 代码注释同步范围
 
 生产代码的 package、命名类型和方法级结构说明已同步到代码侧；SPI v5、live collector、preflight 和
