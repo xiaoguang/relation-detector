@@ -26,7 +26,7 @@ class FinalIdentityContractTest {
         assertAll(
                 () -> assertFalse(endpointTable.sameIdentity(forgedColumnTable),
                         component + " must participate independently in structural table identity"),
-                () -> assertThrows(Exception.class,
+                () -> assertThrows(IllegalArgumentException.class,
                         () -> new Endpoint(endpointTable, ColumnRef.of(forgedColumnTable, "id")),
                         "an endpoint must reject a column from a structurally different table"));
     }
