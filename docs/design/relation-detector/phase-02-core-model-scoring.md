@@ -74,11 +74,11 @@ public final class RelationshipCandidate {
 写出的 catalog、schema、quote 和标识符拼写，作为 JSON 和 evidence 的可读 endpoint；不使用
 默认 schema 把裸 endpoint 改写成 schema-qualified endpoint。
 
-当前实现状态以 `code-design-traceability.md` 为准：`Endpoint` 构造、declared self-reference、
-lineage projection anchor、relationship alias/naming/表级 CO key、known-physical/live-DDL 装配和
-metadata/profile enhancement key 均使用完整 catalog/schema/table identity。MySQL live scope 也在
-JDBC 前统一为 `catalog=<database>, schema=null`；不得重新引入只比较 `normalizedName` 或把 database
-写入 schema 的降级路径。
+当前实现状态以 `code-design-traceability.md` 为准。完整身份是目标契约，但当前仍为 `PARTIAL`：
+`TableId.sameIdentity()` 尚未独立校验 schema/table 字段；MySQL qualified SQL 的两段名仍可能按
+`schema.table` 解释；fact merger 仍依赖 endpoint 保存的可读 `normalizedName`；derived table bridge
+遗漏 catalog。MySQL live metadata scope 已统一为 `catalog=<database>, schema=null`，但 parser、merger、
+profile 与 derived 仍需使用同一 dialect-aware canonical key 才能宣称闭环。
 
 `StatementParsePipeline` 的 known-physical inventory 与 live DDL candidate qualification 必须保留
 `MetadataTableFact` / `DatabaseDdlDefinition` 的 catalog，不能重新退化为只含 schema/table 的
@@ -349,12 +349,25 @@ relationType
 - 如果已有 `orders.user_id -> users.id`，再出现 `orders -> users`，表级 evidence 可并入列级关系，但不降低列级关系精度。
 - 如果只有表级关系，则保留表级关系。
 - A->B 和 B->A 不自动视为相同，除非 relationType 是 `CO_OCCURRENCE` 且没有列信息。
-- 同一关系中的重复 evidence 会按 `EvidenceType + EvidenceSourceType + source + score` 聚合。
-- `rawEvidence` 保留归并前的原始证据，每一次日志、对象定义、DDL 或画像命中都保留一条，便于审计和排查。
+- 先用 evidence type/source type/source/detail、file/object/statement/block/line、endpoint side、rule 和
+  attributes 建立 exact observation identity；只有身份完全相同的 parser 重复事件才折叠为
+  `occurrenceCount`。
+- 在保留 exact raw observations 之后，用 `EvidenceType + EvidenceSourceType + source + score`
+  建立用于评分/展示的 summary group。该 summary 不得把不同 SQL 位置当成同一原始观测。
+- `rawEvidence` 保留归并前可区分的原始证据。不同 file/object/statement/block/line 必须分别保留；
+  同一语义位置的完全重复事件可以折叠为一条并记录 `occurrenceCount`，且不得因此获得重复观测加分。
 - `evidence` 保留归并后的摘要证据，用于置信度计算和常规展示。聚合后的 evidence 保留原始 score 一次，并在 `attributes.count` 中记录出现次数。
 - 当 `count > 1` 时，聚合 evidence 还应记录 `firstDetail`、`lastDetail`、`sampleDetails` 和 `sampleTruncated`。`sampleDetails` 默认最多保留 5 条代表性 detail，避免日志证据爆炸。
 - 对可重复观测类证据，例如 `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`、`SQL_LOG_COLUMN_CO_OCCURRENCE`、`SQL_LOG_TABLE_CO_OCCURRENCE`，重复出现会额外生成一条 `REPEATED_OBSERVATION` evidence。
 - `REPEATED_OBSERVATION` 是小幅排序/加固证据，不替代基础证据。它的分数使用递减增益并带绝对上限：`score = 0.10 * (1 - 1 / count)`。因此重复 2 次加 0.05，重复 3 次加 0.0667，重复 100 次加 0.099；它只会接近 0.10，永远不会达到或超过 0.10。
+- conditional relationship 必须保留 typed predicate group 中的全部 discriminator guard，而不是只提升
+  第一项。不同 guard 的稳定排序后结果进入 `conditions`；存在无条件 structural observation 时 summary
+  按无条件处理，但条件 observations 仍保留在 raw evidence。
+- grouped evidence 的顶层 attributes 只能保留所有 observations 都存在且深度相等的共识属性；
+  file/statement/line/block/object 或 condition 冲突时只能留在 raw evidence，不能复制首条 provenance。
+
+当前实现状态为 `PARTIAL`：conditional summary 仍只读取第一项扁平 guard，relationship grouped
+evidence 仍使用 first observation attributes，尚未完全遵守以上两条归并契约。
 
 ## 置信度计算
 
@@ -596,7 +609,7 @@ confidence = 1 - 0.45 * 0.82 * 0.80 * 0.70
 
 合理性：数据画像明显增强了运行日志推断，但仍没有超过 DDL FK。这样可以让系统优先展示“强烈推断关系”，同时不会把它伪装成声明式外键。
 
-#### 例子 5：存储过程 JOIN，带索引、唯一性和类型兼容
+#### 例子 5：存储过程中的 JOIN，带索引、唯一性和类型兼容
 
 SQL：
 
@@ -621,7 +634,7 @@ CREATE INDEX idx_orders_user_id ON orders(user_id);
 证据：
 
 ```text
-PROCEDURE_JOIN = 0.70
+SQL_LOG_JOIN = 0.55
 TARGET_UNIQUE = 0.18
 SOURCE_INDEX = 0.10
 COLUMN_TYPE_COMPATIBLE = 0.08
@@ -630,11 +643,13 @@ COLUMN_TYPE_COMPATIBLE = 0.08
 计算：
 
 ```text
-confidence = 1 - 0.30 * 0.82 * 0.90 * 0.92
-           = 0.7963
+confidence = 1 - 0.45 * 0.82 * 0.90 * 0.92
+           = 0.6945
 ```
 
-合理性：存储过程是稳定业务逻辑，比普通日志强；索引、唯一性和类型兼容进一步支持方向判断。但过程里也可能有报表、临时过滤或批处理逻辑，所以仍低于显式约束。
+合理性：当前实现不会仅因对象类型是 procedure/function 就把 evidence 改成
+`PROCEDURE_JOIN`；routine body 的 typed predicate 继续使用 `SQL_LOG_JOIN|EXISTS|SUBQUERY_IN`，
+对象 provenance 另行保留。索引、唯一性和类型兼容用于支持方向判断。
 
 #### 例子 6：`IN` 子查询表达引用集合
 
@@ -650,7 +665,7 @@ WHERE o.user_id IN (
 );
 ```
 
-证据：
+当前输出：
 
 ```text
 SQL_LOG_SUBQUERY_IN = 0.58
@@ -680,17 +695,20 @@ JOIN order_items oi ON wi.product_id = oi.product_id;
 证据：
 
 ```text
-SQL_LOG_COLUMN_CO_OCCURRENCE = 0.40
+EvidenceType = SQL_LOG_JOIN (0.55)
+RelationSubType = COLUMN_CO_OCCURRENCE
 ```
 
 计算：
 
 ```text
-confidence = 1 - (1 - 0.40)
-           = 0.40
+confidence = 1 - (1 - 0.55)
+           = 0.55
 ```
 
-合理性：SQL 给出了明确的列等值谓词，所以比纯表级共现更有价值；但两侧都是 `product_id`，没有目标 `id`、唯一性或 metadata 证据，不能推断外键方向。
+合理性：SQL 给出了明确的列等值谓词，所以保留具体 predicate evidence；但两侧都是
+`product_id`，没有目标 `id`、唯一性或 metadata 证据，关系 subtype 保持列级
+`COLUMN_CO_OCCURRENCE`，不能推断外键方向。兼容 enum `SQL_LOG_COLUMN_CO_OCCURRENCE` 当前不主动产出。
 
 #### 例子 8：只有表共现，不生成列级 FK-like
 
@@ -703,20 +721,10 @@ WHERE o.status = 'PAID'
   AND u.marketing_opt_in = TRUE;
 ```
 
-证据：
+当前输出：不创建 relationship，也不创建 table-level co-occurrence evidence。
 
-```text
-SQL_LOG_TABLE_CO_OCCURRENCE = 0.25
-```
-
-计算：
-
-```text
-confidence = 1 - (1 - 0.25)
-           = 0.25
-```
-
-合理性：两张表在同一 SQL 中出现，但没有 `o.user_id = u.id`、`IN`、`EXISTS` 或 lineage 能解析出的列级条件。只能作为低置信表级 `CO_OCCURRENCE`。
+合理性：两张表在同一 SQL 中出现，但没有 `o.user_id = u.id`、`IN`、`EXISTS` 或可解析的
+列级条件。仅凭同语句出现不足以生成物理关系；兼容 enum `SQL_LOG_TABLE_CO_OCCURRENCE` 当前不主动产出。
 
 #### 例子 9：强推断被数据画像反证
 
@@ -894,7 +902,8 @@ confidence = 1 - (1 - 0.55) * (1 - 0.18) * (1 - 0.20)
 
 最终输出不能只给分数，必须包含：
 
-- `rawEvidence`：原始证据审计轨迹，记录每一次观测。
+- `rawEvidence`：原始证据审计轨迹；不同语义位置分别记录，同一位置的完全重复事件可以用
+  `occurrenceCount` 折叠。
 - `evidence`：归并后的摘要证据，包含计数、样本 detail 和用于评分的 evidence item。
 - top-level `namingEvidence`：完整命名证据池，包含稳定 `id`、grouped `evidence` 和 `rawEvidence`。
 - relationship 中的 `NAMING_MATCH` evidence：只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。

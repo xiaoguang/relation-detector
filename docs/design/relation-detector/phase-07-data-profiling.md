@@ -35,16 +35,17 @@
 
 ### 标识符渲染边界
 
-画像查询只能由方言 `IdentifierQuoter` 渲染标识符，不能拼接裸文本或把整个
-`catalog.schema.table.column` 当成一个 identifier quote。`TableId` 的 catalog、schema、
-tableName 必须分别 quote 后以 `.` 连接；`ColumnRef` 先通过 `table(column.table())` 渲染其
-TableId，再对 `column.columnName()` 单独 quote。也就是说，组合列引用等价于：
+画像查询只能由方言 renderer 渲染标识符，不能拼接裸文本或把整个 qualified name 当成一个
+identifier quote。renderer 必须同时遵守产品可引用 namespace：MySQL 可用 `catalog.table`，SQL Server
+可用 `[catalog].[schema].[table]`；PostgreSQL 只能引用 `schema.table`，connection database catalog
+只能用于真实性校验，不能渲染成第三段；Oracle 使用 `owner.table`。因此不能由一个通用 quoter
+无条件输出所有非空组件。
 
 ```text
-quote(catalog).quote(schema).quote(table) + "." + quote(column)
+dialectTableReference(TableId) + "." + quote(column)
 ```
 
-缺失 catalog/schema 的组件不输出，但已有组件的原始大小写和拼写不应被画像层改写。若输入
+缺失 namespace 的组件不输出，但已有组件的原始大小写和拼写不应被画像层改写。若输入
 已使用本方言的 quote，renderer 保留它；其他方言 quote 会先按单个组件去壳，再用当前方言
 quote，避免把点号、catalog 或 schema 包进同一对 quote。
 
@@ -257,12 +258,14 @@ targetDistinctValues
 containmentRatio = matchedDistinctSourceValues / sourceDistinctValues
 missingRatio = missingDistinctSourceValues / sourceDistinctValues
 overlapRatio = matchedDistinctSourceValues / min(sourceDistinctValues, targetDistinctValues)
-sourceNullRatio
 ```
+
+当前没有总行数指标，因此不输出 `sourceNullRatio`。若未来需要该指标，必须新增独立
+`sourceTotalRows` 测量，不能由 `sourceNonNullRows` 推导。
 
 ### `VALUE_CONTAINMENT_HIGH`
 
-产生条件：
+目标安全条件：
 
 - `sourceDistinctValues >= minDistinctValues`
 - `containmentRatio >= minContainmentRatio`
@@ -312,7 +315,9 @@ attributes:
 - 不存在已知过滤上下文会导致自然缺失，例如 tenant 分区、软删除、时间窗口、归档表、权限行过滤。
 - 对显式 FK 默认不验证；只有 `verifyDeclaredForeignKeys=true` 时才输出。
 
-不产生条件：
+当前实现状态为 `REVIEW_NEEDED`：`DataProfileEvidenceBuilder` 目前只检查 partial sample、distinct
+数量、source non-null row 数和 mismatch ratio，尚未携带 predicate/filter context。因而以下过滤上下文
+抑制规则仍是待实现 contract，不能写成已生效能力：
 
 - 样本太小。
 - source 大量为 null。
@@ -363,7 +368,8 @@ SELECT
 
 - 同一 source table/source column 对多个 target 的候选，可在未来显式设计 batch query；当前不缓存或
   materialize 跨候选中间结果。
-- 同一 target table/target column 被多个 source 使用时，复用 target metadata/unique/index facts，不重复查询 target distinct。
+- 同一 target table/target column 被多个 source 使用时，可在未来复用 target distinct；当前逐候选
+  query 会重复测量该值，只复用已有 metadata/unique/index facts。
 
 当前逐候选执行，并保留 `maxCandidatePairs` 和 timeout。
 
@@ -500,6 +506,11 @@ O(allTables * allColumns * allTables * allColumns)
   - 根据 metrics 和阈值生成 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`。
 - `MySqlDataProfiler` / `PostgresDataProfiler` / `OracleDataProfiler` / `SqlServerDataProfiler`
   - 分别渲染受限聚合 SQL，只返回 count / ratio 所需指标，不返回真实业务值。
+
+当前 namespace 缺口：PostgreSQL metadata endpoint 带 connection catalog，而通用 `IdentifierQuoter`
+会渲染三段表名；PostgreSQL 不支持跨 database 三段引用。另一个缺口是 PostgreSQL/SQL Server
+profile-only scan 不经过 collector resolver 的 catalog 校验。修复前，本节 live profiling 状态为
+`PARTIAL`。
 
 后续组件：
 

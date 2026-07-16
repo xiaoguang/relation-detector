@@ -138,6 +138,9 @@ derivedPaths:
 - `database.type` 必填。
 - 至少启用一种 source。
 - 启用文件 source 时文件必须存在。
+- YAML/CLI 的 `paths + include` 由 `SimpleYamlConfigLoader` 展开为显式 `*Files`。直接 Java 调用
+  `ScanConfig` 时，core 当前不会展开 `ddlPaths/objectPaths/logPaths`，仍为 `PARTIAL`；调用方在修复前
+  必须预先填充 `ddlFiles/objectFiles/logFiles`，不能把未展开路径当作已支持的 core API。
 - `execution.parallelism` 默认 `1`，表示 scan 内按源顺序串行解析；设为正整数后，独立 file/object/log statement 可以并行解析，但每个 task 使用独立 visitor、collector、`AdaptorContext` 和 warning list，最终按原始 source order 合并。JDBC collection 本身不并行。CLI 的 `--parallelism <n>` 可覆盖该配置。
 - `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL/Oracle/SQL Server SQL/DDL 均通过统一 `parser.mode` 选择 full-grammar 或 token-event，ANTLR 只作为底层 lexer/parser 支撑。
 - 当前统一 parser 配置为 `parser.mode: auto|full-grammar|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammar profile 时优先使用 full-grammar；不能选择 profile、版本不支持或 full-grammar hard failure 时使用 token-event fallback 并记录 warning。profile 已选中后的 syntax warning / partial result 属于所选 parser，不触发 fallback。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
@@ -172,7 +175,7 @@ endpoint与scan summary使用同一canonical database。
 ```json
 {
   "database": {
-    "type": "mysql",
+    "type": "MYSQL",
     "catalog": "sample_data",
     "schema": ""
   },
@@ -211,7 +214,7 @@ endpoint与scan summary使用同一canonical database。
 
 summary 只保留三段式字段：`direct*Count`、`derived*Count`、`total*Count`，relationship、dataLineage、namingEvidence 三类事实保持一致。
 
-Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。这些 observation count 是调试字段，只统计 merged fact 背后的 raw evidence observation 数量，用来解释“一个最终关系/血缘/命名证据/推导路径由多少次原始出现合并而来”。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。`derivedNamingEvidence` 是 `rule=TRANSITIVE_NAMING_PATH` 的轻量索引数组，只含 `id/source/target/rule/directionHint`，不重复完整 evidence；完整证据必须通过相同 `id` 到 `namingEvidence` 查询。
+Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。目标语义是统计 merged fact 背后的真实 occurrence：不同位置分别计数，同一位置折叠的 `occurrenceCount` 也应累加。当前实现为 `PARTIAL`：lineage/naming 已累加 `occurrenceCount`，relationship 与 derived path 仍只统计 evidence list entry。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
 
 关系：
 
@@ -266,7 +269,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
     },
     {
       "type": "NAMING_MATCH",
-      "sourceType": "DERIVED",
+      "sourceType": "NAMING_HEURISTIC",
       "score": 0.20,
       "source": "naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
       "detail": "Naming evidence naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
@@ -343,7 +346,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测。当前 naming inventory 会先按 canonical endpoint 分组，但会把该 endpoint 的全部不同 file/object/statement/block/line observation 交给 `NamingEvidenceMerger`；完全相同的 observation 才折叠为 `occurrenceCount`。Data Lineage 在 fact identity 前 canonical dedupe/sort source set，因此同一 source 集合不再因发射顺序产生重复 fact。
+- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测。当前 naming inventory 会先按 endpoint 保存的 `normalizedKey` 分组，并把该 endpoint 的全部不同 file/object/statement/block/line observation 交给 `NamingEvidenceMerger`；完全相同的 observation 才折叠为 `occurrenceCount`。Data Lineage 在 fact identity 前会 dedupe/sort source set，因此同一 source 列表不再因发射顺序产生重复 fact；但 endpoint/fact key 尚未全部切换为 dialect-aware canonical identity，状态仍是 `PARTIAL`。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
 - top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 重复观测不会把同一个基础分无限叠加。不同 SQL/DDL/metadata 位置形成可区分 observation，
@@ -375,7 +378,6 @@ Warnings: 2
 
 - 默认按 confidence 降序。
 - 同分时按 source table、target table 排序。
-- `--verbose` 时显示更多 evidence detail。
 - table 输出仍受 `minConfidence` 过滤。
 - `SQL_LOG_TABLE_CO_OCCURRENCE` / `SQL_LOG_COLUMN_CO_OCCURRENCE` 是兼容保留 evidence；当前生产 parser 默认不主动输出，普通 table 输出示例不再把它们作为现行关系来源展示。
 
@@ -385,6 +387,7 @@ warning 类型：
 
 - `CONFIG_WARNING`
 - `PERMISSION_WARNING`
+- `LIVE_SOURCE_WARNING`
 - `PARSE_WARNING`
 - `PROFILE_WARNING`
 - `AMBIGUOUS_RELATION_WARNING`
@@ -444,7 +447,7 @@ warning 字段：
 - `POSTGRES_FUNCTION_COLLECT_FAILED`、`POSTGRES_VIEW_COLLECT_FAILED`：PostgreSQL 对象定义部分收集失败。
 - `FULL_GRAMMAR_SQL_PARSE_WARNING`：full-grammar SQL parser 产生语法诊断或只返回 partial result。
 - `FULL_GRAMMAR_DDL_PARSE_WARNING`：full-grammar DDL parser 产生语法诊断或只返回 partial result。
-- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`：严格版本 full-grammar 遇到高版本专属语法，例如 PG16 profile 解析 PG17-only SQL/DDL。普通运行时可以 fallback token-event；versioned correctness fixture 中这类情况应失败。
+- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`：严格版本 full-grammar 遇到高版本专属语法，例如 PG16 profile 解析 PG17-only SQL/DDL。profile 一旦选中，syntax diagnostic / partial result 仍属于该 full-grammar 结果，不触发 token-event fallback；只有 profile 选择失败或 parser hard failure 才 fallback。versioned correctness fixture 中这类情况应失败。
 
 边界：
 
@@ -474,15 +477,11 @@ warning 字段：
 
 ## 错误码
 
-- `0`：成功。
-- `1`：配置文件不存在或不可读。
-- `2`：配置格式错误。
-- `3`：参数错误。
-- `4`：adaptor 未找到或冲突。
-- `5`：输入文件错误。
-- `10`：数据库连接失败。
-- `11`：扫描运行失败。
-- `12`：输出写入失败。
+`ErrorCode` enum 保留完整分类，但当前 single-scan CLI 实际独立映射的是：`0` 成功、`2` 配置错误、
+`3` 缺少必需参数、`4` adaptor 错误、`11` 其它 scan runtime 错误；batch partial failure 为 `13`。
+`1/5/10/12` 当前是保留值，尚未从 catch boundary 独立映射。另一个实现缺口是部分参数解析发生在
+`try` 外，非法 option value 可能直接抛出而不是稳定返回 `3`。工具集成必须按当前实际行为处理，
+不能把保留枚举值描述成已经可区分的进程结果。
 
 ## README 内容
 

@@ -60,7 +60,10 @@ public interface DatabaseAdaptor {
 - `AdaptorRegistry` 在使用任何 capability 前检查 SPI 版本。不匹配时错误包含
   plugin id、actual、required 和“请重新编译”提示，避免运行到中途才出现
   `NoSuchMethodError`。
-- `capabilities()` 是可执行契约。`ScanCapabilityValidator` 在打开 JDBC 前同时检查请求的 source、对应 capability 和 grouped optional interface；纯文件 scan 不会因 live metadata 默认值被拒绝。
+- `capabilities()` 是可执行契约。`ScanCapabilityValidator` 已在打开 JDBC 前检查主要 source、capability
+  和 collector/profiler interface；纯文件 scan 不会因 live metadata 默认值被拒绝。当前仍有一个
+  public SPI 缺口：live object/database-DDL 只验证 collector，没有同时验证下游 structured SQL/DDL
+  parser。内置 adaptor 恰好提供两侧，但 custom adaptor 仍可能在 JDBC 工作之后才失败。
 - preflight只能证明请求有可调用实现，不能证明collector返回的是完整parser-grade declaration、所有
   namespace fallback一致或真实driver权限组合已经验证。live completeness必须由各adaptor设计和
   runtime/高保真contract test单独声明。
@@ -372,8 +375,9 @@ Set<AdaptorCapability> capabilities();
 
 生产链路在 JDBC 连接前完成统一 preflight：
 
-- 用户实际配置 JDBC metadata、database DDL、database objects 或 data profile 时，
-  capability 和对应 grouped optional interface 必须同时存在，否则在打开 JDBC 前失败。
+- 用户实际配置 JDBC metadata、database DDL、database objects 或 data profile 时，目标契约要求
+  capability、collector/profiler 及必需的 structured parser 同时存在，否则在打开 JDBC 前失败；
+  当前 live object/database-DDL 的 parser-half 校验仍待补齐。
 - 用户提供 native log，但 adaptor 不支持对应格式时，在文件处理前失败并指出 adaptor id、
   source kind 和 required capability。
 - 纯文件扫描不会因为 live capability 的默认配置而失败。

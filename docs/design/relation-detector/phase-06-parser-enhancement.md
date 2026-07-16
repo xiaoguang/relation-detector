@@ -183,7 +183,7 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016
 
 版本由 package 表达，例如 `postgres.fullgrammar.v16`、`mysql.fullgrammar.v8_0`、`oracle.fullgrammar.v19c`、`sqlserver.fullgrammar.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammarDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar 实现。version package 不再持有 `.g4` 或 generated Java；它们依赖 `grammar/*` 中对应的独立 artifact，只保留 binding、profile/version policy 和少量 typed context adapter。
 
-Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade 设置 450 行上限；generated Java、top-level record DTO 与 `package-info` 排除，不设永久 allowlist。`StructuredScriptFramer` 仅保留编排，五种 dialect slice 算法已分别进入独立 planner，并由额外的 200/250 行职责门禁保护。
+Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade 设置 450 行上限；generated Java、top-level record DTO 与 `package-info` 排除，不设永久 allowlist。`StructuredScriptFramer` 仅保留编排，五种 dialect slice 算法已分别进入独立 planner，并由额外的 200/250 行职责门禁保护。当前门禁仍有一项 `PARTIAL`：top-level record 豁免通过源码文本包含判断，而非 compiler AST 顶层声明判断；注释或字符串可能误触发豁免。
 
 ## 代码结构注释索引
 
@@ -294,10 +294,11 @@ PROJECTION_ITEM
 EXPRESSION_SOURCE
 DDL_FOREIGN_KEY
 DDL_INDEX
+DDL_COLUMN
 DYNAMIC_SQL
 ```
 
-`StructuredRelationshipExtractor` 消费的是 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。`StructuredDataLineageExtractor` 消费 `WRITE_TARGET`、`UPDATE_ASSIGNMENT`、`INSERT_SELECT_MAPPING`、`MERGE_WRITE_MAPPING`、`PROJECTION_ITEM`、`LOCAL_TEMP_TABLE_DECLARATION` 等事件。`DdlRelationExtractionVisitor` 只消费 `DDL_FOREIGN_KEY` 和 `DDL_INDEX`。
+`StructuredRelationshipExtractor` 消费的是 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。`StructuredDataLineageExtractor` 消费 `WRITE_TARGET`、`UPDATE_ASSIGNMENT`、`INSERT_SELECT_MAPPING`、`MERGE_WRITE_MAPPING`、`PROJECTION_ITEM`、`LOCAL_TEMP_TABLE_DECLARATION` 等事件。`DdlRelationExtractionVisitor` 消费 `DDL_FOREIGN_KEY`、`DDL_INDEX` 和 `DDL_COLUMN`；其中 `DDL_COLUMN` 只补充 column inventory / naming evidence，不直接创建 relationship。
 
 ## 总体调用链
 
@@ -313,7 +314,7 @@ flowchart TD
   ddlRunner --> ddlBundle["ParserBundleSelector"]
   ddlBundle --> ddlFull["full-grammar DDL parser when selected"]
   ddlBundle --> ddlToken["token-event DDL parser fallback"]
-  ddlFull --> ddlEvents["DDL_FOREIGN_KEY / DDL_INDEX events"]
+  ddlFull --> ddlEvents["DDL_FOREIGN_KEY / DDL_INDEX / DDL_COLUMN events"]
   ddlToken --> ddlEvents
   ddlEvents --> ddlRel["DdlRelationExtractionVisitor"]
   ddlRel --> namingExtract["NamingEvidenceExtractor"]
@@ -486,14 +487,14 @@ sequenceDiagram
   else token-event fallback/forced
     PB->>DP: adaptor token-event DDL parser
   end
-  DP-->>DR: StructuredParseResult(DDL_FOREIGN_KEY/DDL_INDEX)
+  DP-->>DR: StructuredParseResult(DDL_FOREIGN_KEY/DDL_INDEX/DDL_COLUMN)
   DR->>DE: extract(parseResult)
   DE-->>DR: DDL RelationshipCandidate
   DR-->>SE: relations + warnings
   SE->>RM: merge(DDL relations)
 ```
 
-DDL parser 只负责产出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件。`DdlRelationExtractionVisitor` 负责把这些事件转换为 relationship，并补充 DDL evidence。它不解析 SQL/DML，也不承担 Data Lineage。
+DDL parser 负责产出 `DDL_FOREIGN_KEY` / `DDL_INDEX` / `DDL_COLUMN` 结构事件。`DdlRelationExtractionVisitor` 负责把 FK/index 事件转换为 relationship，并把 column inventory 交给 naming/evidence 链路。它不解析 SQL/DML，也不承担 Data Lineage。
 
 ### full-grammar module 注入链
 
@@ -749,29 +750,11 @@ full-grammar SQL 直接通过对应 versioned golden 验收，不再拿 token-ev
 
 ### 当前 parser golden 统计与差异审计
 
-当前 correctness 资产按 parser category 统计如下。Relationship / Lineage 统计分别来自 `expected-relations.json` 和 `expected-lineage.json` 的 `fingerprints` 数量；`Rel NAMING_MATCH` 是 relationship evidence 中引用的命名证据数量；`Top-level namingEvidence` 来自 `expected-naming-evidence.json`，表示独立命名证据池。relationship 只能引用这个证据池，不能自己重新计算 `NAMING_MATCH`。
-
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 39 | 34 / 5 | 760 | 332 | 0 | 219 | 442 |
-| MySQL root token-event | 83 | 65 / 18 | 837 | 462 | 0 | 395 | 465 |
-| MySQL full-grammar v5_7 | 89 | 71 / 18 | 698 | 496 | 0 | 281 | 351 |
-| MySQL full-grammar v8_0 | 89 | 71 / 18 | 879 | 500 | 0 | 422 | 492 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1428 | 424 | 0 | 397 | 472 |
-| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1479 | 435 | 0 | 418 | 494 |
-| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1482 | 448 | 0 | 419 | 495 |
-| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1482 | 447 | 0 | 418 | 494 |
-| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
-| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
+当前 correctness 的 fixture、SQL/DDL、relationship、lineage、diagnostic 与 naming 数量只维护在
+生成报告 [`correctness-test-summary.md`](../../generated/correctness-test-summary.md)。自然 sample-data
+的 direct/derived 与 observation 统计只维护在
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。Phase 文档不复制这些
+易变数字；relationship 仍只能引用 top-level `namingEvidence`，不能自己重新计算 `NAMING_MATCH`。
 
 root token-event 与对应 full-grammar 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 分别记录在 `docs/parser-audit/all-golden-semantic-review.md`、`parser-comparison-summary.md` 与 `sample-data-output-audit-backlog.md`。Golden review 只覆盖 fixture 基线；sample-data JSON/SQL 审计仍可能发现未进入 golden 分类的 parser gap：
 
@@ -779,7 +762,12 @@ root token-event 与对应 full-grammar 数量不要求完全一致：token-even
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammar 已能确认的结构。
 - `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
 
-当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。Live capability/preflight、composite metadata index 首列口径、lineage source-set identity 和 profiler diagnostics 已实现并通过定向契约测试；endpoint、relationship alias/naming/merger、known-physical/live-DDL 装配与四个 live adaptor namespace 映射均使用完整 catalog identity。PostgreSQL/SQL Server resolver 会在第一条系统表查询前拒绝与 connection catalog 不一致或无法证明的显式 catalog，专用配置异常会穿透 collector 与 `ScanEngine`，同时由 scan lifecycle 关闭连接。全量状态以 `design-validation-report.md` 和发布验收结果为准。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
+2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery
+source role、trigger provenance和非平凡 self-update已有定向测试。当前仍有实现级 `REVIEW_NEEDED`：
+MySQL qualified SQL 的 catalog 轴、dialect canonical fact key、`TableId` 模型不变量、derived identity
+bridge 的 catalog、profile-only catalog 校验、relationship conditional/consensus merge，以及 direct
+`ScanConfig.*Paths`。全量状态以 `design-validation-report.md` 和发布验收结果为准；不能因现有
+sample-data 数量稳定就把这些边界写成已闭环。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -970,7 +958,11 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 
 路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
 
-Endpoint identity 在 derived graph 中保持 schema 保真：parser 只保留 SQL/DDL 显式写出的 schema，不自动补默认 schema，也不丢弃 schema。`schema.table.column` 与 `table.column` 默认不是同一个 graph key。表内 identity bridge 只允许在同一个 canonical table key 内连接，例如 `orders.id -> orders.customer_id` 或 `dbo.orders.id -> dbo.orders.customer_id`；`orders.id -> dbo.orders.customer_id` 这类 schema-qualified / bare endpoint 混合路径不能被自动桥接。
+Endpoint identity 在 derived graph 中必须保持 catalog/schema 保真：parser 只保留 SQL/DDL 显式写出的
+namespace，不自动补默认 namespace。`catalog.schema.table.column`、`schema.table.column` 与
+`table.column` 默认不是同一个 graph key。当前实现仍为 `PARTIAL`：endpoint graph key 保留完整 key，
+但 table identity bridge 只按 `schema.table` 建索引，遗漏 catalog；修复前存在跨 catalog 同名表误桥接
+风险。bridge 必须改用 dialect-aware canonical table key，并增加跨 catalog 负向测试。
 
 `StructuredDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标、表达式来源和 transform，输出 `DataLineageCandidate`。
 
@@ -1007,7 +999,7 @@ sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser
 DdlRelationParserRunner
   -> selected StructuredDdlParser
   -> parseDdl(...)
-  -> DDL_FOREIGN_KEY / DDL_INDEX events
+  -> DDL_FOREIGN_KEY / DDL_INDEX / DDL_COLUMN events
   -> DdlRelationExtractionVisitor.extract(...)
 ```
 
@@ -1017,13 +1009,13 @@ token-event DDL parser 内部：
 MySqlTokenEventStructuredDdlParser / PostgresTokenEventStructuredDdlParser / OracleTokenEventStructuredDdlParser / SqlServerTokenEventStructuredDdlParser
   -> MySqlRelationSql.g4 / PostgresRelationSql.g4 / OracleRelationSql.g4 / SqlServerRelationSql.g4 typed structural parser
   -> MySqlTokenEventParseTreeVisitor / PostgresTokenEventParseTreeVisitor / OracleTokenEventParseTreeVisitor / SqlServerTokenEventParseTreeVisitor
-  -> filter DDL_FOREIGN_KEY / DDL_INDEX events
+  -> filter DDL_FOREIGN_KEY / DDL_INDEX / DDL_COLUMN events
   -> StructuredParseResult(events, warnings, attributes)
 
 Common TokenEventStructuredDdlParser
   -> CommonRelationSql.g4 typed structural parser
   -> CommonTokenEventParseTreeVisitor
-  -> filter DDL_FOREIGN_KEY / DDL_INDEX events
+  -> filter DDL_FOREIGN_KEY / DDL_INDEX / DDL_COLUMN events
 ```
 
 支持：
@@ -1061,12 +1053,12 @@ DDL full-grammar parser 也由 adaptor version module 提供：
 MySqlFullGrammarStructuredDdlParser
   -> MySqlFullGrammarParser.queries()
   -> MySqlFullGrammarDdlEventCollector
-  -> DDL_FOREIGN_KEY / DDL_INDEX
+  -> DDL_FOREIGN_KEY / DDL_INDEX / DDL_COLUMN
 
 PostgresFullGrammarStructuredDdlParser
   -> Postgres16/17/18FullGrammarParser.root()
   -> PostgresFullGrammarDdlEventCollector
-  -> DDL_FOREIGN_KEY / DDL_INDEX
+  -> DDL_FOREIGN_KEY / DDL_INDEX / DDL_COLUMN
 ```
 
 full-grammar DDL collector 不委托 token-event DDL parser。`DdlRelationExtractionVisitor` 仍复用同一套 DDL semantic layer。
@@ -1168,7 +1160,7 @@ bash relation-detector/scripts/run-correctness-isolated.sh
 
 - 所有组报告相同的 discovered fixture 总数。
 - selected、executed、passed 相等且 failed 为 0。
-- 19 个 parser category 无重复、无遗漏。
+- 所有由 manifest 发现的 parser category 无重复、无遗漏；当前数量从生成报告读取。
 - 各组 selected 之和等于 discovered 总数。
 
 2026-07-14 的历史独立复验结果为 `1198/1198`、19 个 parser category、0 failure；当次九组
@@ -1257,32 +1249,13 @@ ParserConfigRemovalTest
   -> parser.mode CLI/YAML parsing
 ```
 
-当前最近一次文档对齐时的测试资产统计：
+当前测试资产统计以 [`correctness-test-summary.md`](../../generated/correctness-test-summary.md) 为唯一
+生成源；sample-data parser/category 统计以
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 为唯一生成源。
 
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1198 | 984 / 214 | 17097 | 7294 | 0 | 6658 | 8130 |
-| common token-event | 39 | 34 / 5 | 760 | 332 | 0 | 219 | 442 |
-| MySQL root token-event | 83 | 65 / 18 | 837 | 462 | 0 | 395 | 465 |
-| MySQL full-grammar v5_7 | 89 | 71 / 18 | 698 | 496 | 0 | 281 | 351 |
-| MySQL full-grammar v8_0 | 89 | 71 / 18 | 879 | 500 | 0 | 422 | 492 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1428 | 424 | 0 | 397 | 472 |
-| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1479 | 435 | 0 | 418 | 494 |
-| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1482 | 448 | 0 | 419 | 495 |
-| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1482 | 447 | 0 | 418 | 494 |
-| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
-| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
-
-验证要求：代码或 fixture 变化后应至少运行 full correctness golden；文档或统计变化后应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。报告生成器仍需显式运行，不进入普通 `mvn test` 默认重负担路径。
+验证要求：代码或 fixture 变化后应至少运行 full correctness golden；需要刷新统计时只运行其所属
+generator，并随后在无 update 参数下做 freshness check。Phase 文档和 validation 文档不得复制一份
+需要人工同步的当前计数表。
 
 维护规则：
 

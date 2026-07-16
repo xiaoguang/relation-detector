@@ -4,11 +4,18 @@
 
 实现 MySQL adaptor，使工具能够从 MySQL 5.7/8.0+ 获取关系证据。该 adaptor 必须通过 Phase 3 的 `DatabaseAdaptor` API 接入，不直接依赖 CLI。
 
-当前 MySQL adaptor 不只负责采集，也负责 MySQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.mysql.tokenevent`，MySQL 5.7 / 8.0 full-grammar module 分别位于 `com.relationdetector.mysql.fullgrammar.v5_7` 和 `com.relationdetector.mysql.fullgrammar.v8_0`。core 只通过 runner 和 `FullGrammarDialectModule` registry 调度，不在 core 里 hard-code MySQL 版本实现。
+当前 MySQL adaptor 不只负责采集，也负责 MySQL 方言 parser binding、typed adapter、visitor 和版本策略：
+token-event parser 位于 `com.relationdetector.mysql.tokenevent`，MySQL 5.7 / 8.0 full-grammar module
+分别位于 `com.relationdetector.mysql.fullgrammar.v5_7` 和 `com.relationdetector.mysql.fullgrammar.v8_0`。
+所有 `.g4` 与 generated parser artifact 由 `relation-detector/grammar/*` 模块拥有，adaptor 只消费这些
+artifact；core 只通过 runner 和 `FullGrammarDialectModule` registry 调度。
 
 MySQL 同时实现当前 SPI v5 的 `MySqlScriptFramer`。它使用 MySQL generated script lexer 的 typed lexeme 识别 `DELIMITER` directive，并以当前 delimiter 切分 server statement；quoted text 与 comment 中的 delimiter 不参与分割。这个 framing 在 SQL/DDL grammar 之前完成，不再由 core raw-SQL splitter 猜测 routine 或 object 边界。
 
-MySQL 目前有两个严格 full-grammar profile：`mysql/5.7` 和 `mysql/8.0`。二者都使用 `adaptor-mysql` 内 vendored grammars-v4 MySQL grammar 固定快照、typed parse-tree visitor、expression analyzer 和 DDL collector；`mysql/5.7` 以 MySQL 5.7 官方文档作为版本边界 source-of-truth，在 grammar 层禁用 CTE、recursive CTE、window function、`JSON_TABLE`、invisible index 等 8.0-only 能力。未知版本仍依赖 token-event 的宽松兼容能力，或者后续新增独立 strict full-grammar profile。
+MySQL 目前有两个严格 full-grammar profile：`mysql/5.7` 和 `mysql/8.0`。二者使用 grammar 模块中
+固定的 grammars-v4 MySQL snapshot，以及 adaptor 内的 typed parse-tree visitor、expression analyzer
+和 DDL collector；`mysql/5.7` 以 MySQL 5.7 官方文档作为版本边界 source-of-truth，在 grammar 层
+禁用 CTE、recursive CTE、window function、`JSON_TABLE`、invisible index 等 8.0-only 能力。
 
 ## 支持范围
 
@@ -42,6 +49,11 @@ MySQL 特点：
   known-physical inventory 和 live DDL qualification 均保留该 namespace pair。
 - `TableId.normalizedName` 只保存 schema/table 形式；MySQL schema 为空时就是 table name，不能重复
   拼入 catalog，也不能使用 `TableId.of(database, table)` 把 database 放到 schema 轴。
+
+当前实现仍为 `PARTIAL`：live metadata 已遵守上述 catalog 映射，但 token/full parser 发出的
+`database.table` 两段名进入通用 `CanonicalIdentifierResolver` 时仍按 `schema.table` 解释；relationship、
+lineage 和 naming 也有独立调用路径。修复必须由方言 namespace adapter 把两段名解析到 catalog，
+不能靠 endpoint 名称特例或把 metadata 重新降级到 schema。
 
 ## 元数据采集
 
@@ -150,7 +162,8 @@ MySQL adaptor 负责：
 - `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 暴露 MySQL token-event DDL parser。
 - `MySqlRelationSql.g4` 与 `MySqlTokenEventParseTreeVisitor` 处理 MySQL DDL 方言差异，例如反引号、inline `KEY/INDEX`、prefix index、functional/JSON index、VISIBLE/INVISIBLE、表选项。
 - `mysql.fullgrammar.v5_7` 和 `mysql.fullgrammar.v8_0` 分别注册 MySQL 5.7 / 8.0 full-grammar DDL parser，用于 `parser.mode=auto|full-grammar` 且 profile 可选中时。
-- 两条 DDL parser 链路都只输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件；最终 relationship 仍由 core 的 `DdlRelationExtractionVisitor` 生成。
+- 两条 DDL parser 链路都输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` / `DDL_COLUMN` 结构事件；最终 relationship
+  仍由 core 的 `DdlRelationExtractionVisitor` 生成，`DDL_COLUMN` 只补充 inventory/naming evidence。
 
 ## MySQL full-grammar 与 SQL_MODE
 
@@ -170,11 +183,11 @@ parser.mode = auto | full-grammar | token-event
 
 ## Correctness 与 golden 状态
 
-当前 MySQL correctness golden 分三类：
-
-- root MySQL correctness：`test-fixtures/correctness/mysql`，83 个 fixture，SQL/DDL 为 65/18，覆盖 MySQL metadata/DDL/log/object/procedure/business SQL 和 sample-data 切片，是正式 token-event baseline；当前 relation 659、lineage 349、relationship `NAMING_MATCH` 252、top-level namingEvidence 321。
-- MySQL 5.7 full-grammar：`test-fixtures/correctness/mysql/v5_7`，89 个 fixture，SQL/DDL 为 71/18，manifest 强制 `parserMode: full-grammar`、`grammarProfile: mysql/5.7`，是 MySQL 5.7 strict version golden；当前 relation 706、lineage 414、relationship `NAMING_MATCH` 257、top-level namingEvidence 327。它从 MySQL 8.0 fixture 迁移而来，分为原样兼容、5.7 语义等价改写和 8.0-only 版本边界负向 fixture。
-- MySQL 8.0 full-grammar：`test-fixtures/correctness/mysql/v8_0`，89 个 fixture，SQL/DDL 为 71/18，manifest 强制 `parserMode: full-grammar`、`grammarProfile: mysql/8.0`，是 MySQL 8.0 strict version golden；当前 relation 923、lineage 398、relationship `NAMING_MATCH` 421、top-level namingEvidence 491。
+当前 MySQL correctness golden 分三类：root token-event baseline、MySQL 5.7 strict full-grammar 和
+MySQL 8.0 strict full-grammar。三者路径和当前数量以
+[`correctness-test-summary.md`](../../generated/correctness-test-summary.md) 为唯一生成源；本 Phase 文档
+只维护版本职责，不复制会漂移的计数。5.7 资产分为原样兼容、5.7 语义等价改写和 8.0-only
+版本边界负向 fixture。
 
 当前 MySQL 5.7 / 8.0 full-grammar 都有独立 versioned golden，不再由 root token-event baseline 兜底。full-grammar 相对 token-event 能识别更多 procedure body、复杂 business query、sample-data DDL/SQL、derived projection、INSERT/UPDATE 写入映射和表达式来源；MySQL 8.0 还覆盖 CTE、window、`JSON_TABLE`、invisible index 等高版本语法。参数、literal、局部变量、JSON path、动态 SQL 和显式临时表仍不进入 v1 physical lineage。
 
@@ -237,7 +250,10 @@ driver message 或参数值。
 - `EVENT_SCHEMA`
 - `EVENT_NAME`
 
-event body 可能包含 `INSERT ... SELECT`、`UPDATE`、`DELETE`、JOIN 或嵌套查询。系统把它映射为 `DatabaseObjectType.EVENT` / `StatementSourceType.EVENT`，证据默认按持久化过程逻辑处理，即 JOIN 使用 `PROCEDURE_JOIN`。
+event body 可能包含 `INSERT ... SELECT`、`UPDATE`、`DELETE`、JOIN 或嵌套查询。系统把它映射为
+`DatabaseObjectType.EVENT` / `StatementSourceType.EVENT` 并保留对象 provenance；当前 predicate evidence
+仍使用 `SQL_LOG_JOIN|SQL_LOG_EXISTS|SQL_LOG_SUBQUERY_IN`，不会仅因对象类型改成保留但未产出的
+`PROCEDURE_JOIN`。
 
 ## 日志提取
 

@@ -30,12 +30,13 @@ Oracle 的 SPI v5 `OracleScriptFramer` 使用 generated script lexer 的 typed t
 
 - Maven 模块：`adaptor-oracle`。
 - `DatabaseAdaptor`：`com.relationdetector.oracle.OracleDatabaseAdaptor`，通过 Java SPI 注册。
-- token-event SQL：`OracleTokenEventStructuredSqlParser`，使用 `adaptor-oracle` 自己的 `OracleRelationSql.g4` 与 typed visitor。
-- token-event DDL：`OracleTokenEventStructuredDdlParser`，同样通过 Oracle token-event grammar 的 typed DDL context 生成 DDL events。
+- token-event SQL：`OracleTokenEventStructuredSqlParser` 消费 `relation-detector/grammar/oracle-token-event`
+  生成的 parser artifact，并由 adaptor typed visitor 生成事件。
+- token-event DDL：`OracleTokenEventStructuredDdlParser` 消费同一 grammar artifact 的 typed DDL context。
 - full-grammar module：`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` 通过 `FullGrammarDialectModule` 注册；每个版本使用自己的 split lexer/parser grammar，并带有首批官方版本边界差异，运行属性 `grammarCoverage=INCOMPLETE_VERSIONED`。
 - sample-data：`sample-data/oracle/12c|19c|21c|26ai`，每版 38 个 SQL 文件。
 - correctness golden：root token-event 保留会产生 relationship / lineage / diagnostics、或承载 Oracle DDL / 版本边界语法的 sample-data fixture；四个 versioned full-grammar 目录覆盖对应 `sample-data/oracle/<version>` 的保留 fixture，并保留 profile smoke / version-only fixture。
-- live catalog：`OracleMetadataCollector` 读取 `ALL_TABLES` / `ALL_TAB_COLUMNS` / `ALL_CONSTRAINTS` / `ALL_CONS_COLUMNS` / `ALL_INDEXES` / `ALL_IND_COLUMNS`，保留组合列序和 child-to-parent FK。`OracleObjectCollector` 通过 `ALL_OBJECTS` + `DBMS_METADATA.GET_DDL` 读取 procedure/function/package/view/materialized view/trigger。`OracleDatabaseDdlCollector` 读取 table DDL；三者共用 `OracleOwnerResolver`，按显式 scope schema、connection schema、metadata username 的顺序解析 owner。显式未引用 owner 规范化为大写，显式双引号 owner 去除外层引号并保留大小写，connection/metadata fallback 保留数据库返回的 canonical 值。`OracleDataProfiler` 执行 exact aggregate query，独立返回四项 profile metrics。各 catalog family 抛出异常时保留其它已成功结果并产生脱敏 warning；`DBMS_METADATA.GET_DDL` 返回 null/blank 时输出带 object context 的 `DEFINITION_UNAVAILABLE` 并跳过下游解析。
+- live catalog：`OracleMetadataCollector` 读取 `ALL_TABLES` / `ALL_TAB_COLUMNS` / `ALL_CONSTRAINTS` / `ALL_CONS_COLUMNS` / `ALL_INDEXES` / `ALL_IND_COLUMNS`，保留组合列序和 child-to-parent FK。`OracleObjectCollector` 通过 `ALL_OBJECTS` + `DBMS_METADATA.GET_DDL` 读取 procedure/function/package/view/materialized view/trigger。`OracleDatabaseDdlCollector` 读取 table DDL；三者共用 `OracleOwnerResolver`，按显式 scope schema、connection schema、metadata username 的顺序解析 owner。当前 resolver 不消费 `scope.catalog`，而默认 adaptor scope canonicalization 仍会保留它；因此 Oracle 显式 catalog 仍是 `PARTIAL`，必须在 JDBC 前拒绝或建立真实映射，不能把未使用的 catalog 写入 scan summary。`OracleDataProfiler` 执行 exact aggregate query，独立返回四项 profile metrics。
 
 已实现的官方版本边界：
 
@@ -170,34 +171,18 @@ sample-data/oracle/26ai
 
 - `01-schema`：7 个 schema / view / index 文件。
 - `02-procedures`：13 个 procedure / trigger / package-like logic 文件。
-- `03-data`：5 个 seed / business data 文件。
+- `03-data`：6 个 seed / business data 文件。
 - `04-queries`：12 个业务查询和写入样例。
 
-Oracle correctness 当前统计：
-
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
+Oracle correctness 当前统计只维护在
+[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)。
 
 `sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
 
-当前 Oracle sample-data CLI 专项结果为；跨方言完整表只维护在
-[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)，避免多处复制后漂移：
-
-| Parser family | Fixture | SQL / DDL | Rel | Lin | Direct Name | Diag |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle token-event root | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-| Oracle full-grammar v12c | 38 | 32 / 6 | 366 | 330 | 248 | 0 |
-| Oracle full-grammar v19c | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-| Oracle full-grammar v21c | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-| Oracle full-grammar v26ai | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-
-这里的 `Lin` 包含当前 typed write scope 产生的 direct VALUE 与 CONTROL lineage。v12c 的
-2 条差异来自本版本 natural SQL 资产，不表示其 relationship/naming 能力更强。
+Oracle sample-data CLI 的 direct/derived 与 observation 统计只维护在
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)，避免多处复制后漂移。
+其中 `Lin` 包含 typed write scope 产生的 direct VALUE 与 CONTROL lineage；版本差异必须回读对应
+SQL 资产解释，不能仅按数量判断能力。
 
 ## 后续收口
 

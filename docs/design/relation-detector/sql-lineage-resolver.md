@@ -211,9 +211,11 @@ SELECT a.user_id + 1 AS user_id
 - JSON path。
 - dynamic SQL 拼接结果。
 - 显式临时表 scope。
-- trigger `OLD` / `NEW` pseudo rowset。
+- 无法通过 typed trigger target binding 解析的 `OLD` / `NEW` / `inserted` / `deleted` pseudo rowset。
 
-过滤依据必须来自 parse-tree context、结构事件、scope 或 endpoint 类型，不能通过表名/列名特殊规则猜测。
+Pseudo rowset 名称本身不是物理 endpoint；当 typed trigger metadata 能把它绑定到 target table 时，
+其列必须解析回该物理表并可参与 lineage。过滤依据必须来自 parse-tree context、结构事件、scope
+或 endpoint 类型，不能通过表名/列名特殊规则猜测。
 
 ## 8. 当前测试入口
 

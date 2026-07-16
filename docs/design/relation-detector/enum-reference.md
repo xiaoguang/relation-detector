@@ -509,7 +509,8 @@ public enum StructuredParseEventType {
 - SQL relationship extractor 当前消费 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。
 - literal filter、literal `IN`、`LIKE`、表达式 tuple、aggregate/HAVING/filter 字段不能通过这些 event 伪造成关系；这类过滤由结构属性和 endpoint 类型决定，不按特殊表名/列名判断。
 - Data Lineage extractor 当前消费写入映射、projection 和 local temp scope events。
-- DDL relationship extractor 只消费 `DDL_FOREIGN_KEY` 和 `DDL_INDEX`。
+- DDL extraction 消费 `DDL_FOREIGN_KEY`、`DDL_INDEX` 和 `DDL_COLUMN`；`DDL_COLUMN` 只进入 column
+  inventory/naming evidence，不直接创建 relationship。
 
 ## 11. LogFormatHint
 
@@ -559,7 +560,9 @@ public enum OfflineSampleCompleteness {
 
 ## 12. DirectionConfidence
 
-表示解析器对关系方向的把握程度。它不直接输出给最终用户，但会影响是否生成列级 `FK_LIKE`。
+保留的兼容枚举，当前生产方向解析链没有使用该类型。生产代码直接依据 relationship evidence、
+unique/index 和 top-level naming evidence 决定方向；无法定向的明确列等值保留为列级
+`CO_OCCURRENCE`，不会因为 `AMBIGUOUS` enum 自动退化成表级关系。
 
 ```java
 public enum DirectionConfidence {
@@ -573,11 +576,11 @@ public enum DirectionConfidence {
 
 | 值 | 含义 | Core 处理 |
 | --- | --- | --- |
-| `CERTAIN` | 方向确定。通常来自显式 FK。 | 可以输出列级 `FK_LIKE`。 |
-| `HIGH` | 方向高度可信。通常来自 target unique + source 命名/索引。 | 可以输出列级 `FK_LIKE`。 |
-| `MEDIUM` | 方向有一定依据，但不充分。 | 可结合其他 evidence；不足时降级。 |
-| `LOW` | 方向依据很弱。 | 通常不生成列级 `FK_LIKE`。 |
-| `AMBIGUOUS` | 方向不明确或多义。 | 退化为表级 `CO_OCCURRENCE` 并记录 warning。 |
+| `CERTAIN` | 方向确定。 | 保留值，当前未接入生产链。 |
+| `HIGH` | 方向高度可信。 | 保留值，当前未接入生产链。 |
+| `MEDIUM` | 方向有一定依据。 | 保留值，当前未接入生产链。 |
+| `LOW` | 方向依据很弱。 | 保留值，当前未接入生产链。 |
+| `AMBIGUOUS` | 方向不明确或多义。 | 保留值，当前未接入生产链。 |
 
 例子：
 
@@ -587,8 +590,8 @@ public enum DirectionConfidence {
 
 维护说明：
 
-- 不要把 `LOW` 的方向关系直接输出为强 `FK_LIKE`。
-- `DirectionConfidence` 是解析中间状态，不等于最终 confidence 分数。
+- 若未来接入生产链，必须先定义与现有 evidence direction resolver 的唯一映射，不能形成第二套方向状态。
+- 当前消费者不应依赖输出或 runtime attribute 中存在该值。
 
 ## 13. WarningType
 
@@ -661,7 +664,8 @@ public enum ErrorCode {
   INPUT_FILE_ERROR(5),
   DATABASE_CONNECTION_ERROR(10),
   SCAN_RUNTIME_ERROR(11),
-  OUTPUT_WRITE_ERROR(12)
+  OUTPUT_WRITE_ERROR(12),
+  BATCH_PARTIAL_FAILURE(13)
 }
 ```
 
@@ -676,11 +680,15 @@ public enum ErrorCode {
 | `DATABASE_CONNECTION_ERROR` | 10 | JDBC 连接失败。 |
 | `SCAN_RUNTIME_ERROR` | 11 | 扫描运行中发生不可恢复错误。 |
 | `OUTPUT_WRITE_ERROR` | 12 | 输出文件写入失败。 |
+| `BATCH_PARTIAL_FAILURE` | 13 | batch 至少一个 job 失败。 |
 
 维护说明：
 
 - 已使用的退出码不要复用给新含义。
 - warning 不应直接改变退出码，除非配置要求“warning as error”。
+- 当前 single-scan CLI 实际独立返回 `0/2/3/4/11`；`1/5/10/12` 仍是保留分类，尚未从 catch
+  boundary 分开映射。非法 option value 还可能在参数解析阶段直接抛出。不能把 enum 的存在当作
+  完整进程行为已经实现。
 
 ## 16. AdaptorCapability
 
@@ -775,7 +783,8 @@ public enum ScanSourceKind {
 
 ## 19. 实现检查清单
 
-- 每个 enum 都有 JSON 序列化/反序列化测试。
+- 稳定 enum 字符串由现有 JSON writer/correctness 测试间接覆盖；逐 enum 的完整
+  序列化/反序列化 contract test 尚未实现。
 - 配置中的小写值能映射到内部大写 enum。
 - 未知 enum 值给出明确错误，不静默忽略。
 - 输出 JSON 使用稳定 enum 字符串。

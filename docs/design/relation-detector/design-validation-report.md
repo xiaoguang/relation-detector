@@ -61,7 +61,7 @@ full-grammar:
 - class 层：生产类 Javadoc 说明文件负责什么、不负责什么、位于哪条链路。
 - method 层：关键 public 方法、核心编排方法、复杂 private helper 说明调用意图和边界；简单 getter、record accessor 和显而易见的小工具方法不强制注释。
 
-检查范围覆盖：
+代表性检查范围包括（实际架构测试按 source roots 扫描，不以此列表作为穷举 allowlist）：
 
 ```text
 contracts
@@ -69,9 +69,10 @@ contracts.model / metadata / parse / spi / scoring
 core.scan / parser / tokenevent / fullgrammar / relation / lineage / ddl
 core.parse / log / metadata / output / diagnostics / scoring
 cli
-mysql / mysql.tokenevent / mysql.fullgrammar.v8_0
+mysql / mysql.tokenevent / mysql.fullgrammar.v5_7 / mysql.fullgrammar.v8_0
 postgres / postgres.tokenevent / postgres.fullgrammar.common / postgres.fullgrammar.v16 / v17 / v18
 oracle / oracle.tokenevent / oracle.fullgrammar.common / oracle.fullgrammar.v12c / v19c / v21c / v26ai
+sqlserver / sqlserver.tokenevent / sqlserver.fullgrammar.common / sqlserver.fullgrammar.v2016 / v2017 / v2019 / v2022 / v2025
 ```
 
 逐包审视结论：
@@ -170,30 +171,11 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ### 当前 golden 与验证结果
 
-当前 correctness 资产统计如下：
-
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1198 | 984 / 214 | 17097 | 7294 | 0 | 6658 | 8130 |
-| common token-event | 39 | 34 / 5 | 760 | 332 | 0 | 219 | 442 |
-| MySQL root token-event | 83 | 65 / 18 | 837 | 462 | 0 | 395 | 465 |
-| MySQL full-grammar v5_7 | 89 | 71 / 18 | 698 | 496 | 0 | 281 | 351 |
-| MySQL full-grammar v8_0 | 89 | 71 / 18 | 879 | 500 | 0 | 422 | 492 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1428 | 424 | 0 | 397 | 472 |
-| PostgreSQL full-grammar v16 | 111 | 92 / 19 | 1479 | 435 | 0 | 418 | 494 |
-| PostgreSQL full-grammar v17 | 113 | 94 / 19 | 1482 | 448 | 0 | 419 | 495 |
-| PostgreSQL full-grammar v18 | 114 | 93 / 21 | 1482 | 447 | 0 | 418 | 494 |
-| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
-| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
+当前 correctness 数量只维护在生成报告
+[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)；sample-data parser/category、
+direct/derived 和 observation 数量只维护在
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。本 validation 文档不再
+复制易漂移的计数表。
 
 验证入口：
 
@@ -209,7 +191,7 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 结果：统一 event/merger 链路通过；Oracle 版本资产与部分 token-event/full-grammar typed coverage 仍未完成官方 runtime 验证。
 
 - 当前 DDL production parser 是 token-event DDL structured parser 或被 parser selection 选中的 full-grammar DDL parser。
-- 两者都输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件。
+- 两者都输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` / `DDL_COLUMN` 事件；column event 只补充 inventory。
 - `DdlRelationExtractionVisitor` 只消费 DDL events，不参与 SQL relation / lineage。
 
 ### 测试资产
@@ -224,22 +206,22 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ## 反向审计收口状态
 
-2026-07 的结构/SQL 审计已经修复以下历史不匹配：derived lineage 按 canonical path 合并、不同 edge variant 保留为 raw observations；naming inventory 合并同 endpoint 的全部 metadata/DDL observation；Oracle natural assets 使用 `GENERATED ALWAYS AS (...) VIRTUAL` 且无参 routine 不再写空 `()`；common natural 只保留一份 canonical `payments`；已审计 CASE/scalar-subquery、trigger provenance、非平凡 self-update 和 Oracle transform gap 均由 typed context 测试保护。当前 38 份 direct/derived sample-data JSON 通过数组计数、路径去重、循环和来源可移植性检查，Oracle token-event 与四个 full-grammar profile 的 audited fact sets 一致。
+2026-07 的结构/SQL 审计已经修复以下历史不匹配：derived lineage 按 canonical path 合并、不同 edge variant 保留为 raw observations；naming inventory 合并同 endpoint 的全部 metadata/DDL observation；Oracle natural assets 使用 `GENERATED ALWAYS AS (...) VIRTUAL` 且无参 routine 不再写空 `()`；common natural 只保留一份 canonical `payments`；已审计 CASE/scalar-subquery、trigger provenance、非平凡 self-update 和 Oracle transform gap 均由 typed context 测试保护。当前 direct/derived sample-data JSON 的数量与完整性结论只以生成的 parser comparison 和 verification manifest 为准。
 
-本轮已完成 preflight、index policy、lineage source identity、observation merge、catalog-aware fact
-identity、live warning 脱敏、exact profile metrics、scan summary namespace 和职责门禁收口：
+本轮已完成 preflight 主链、index policy、lineage source-set identity、live warning 脱敏、四项 exact
+profile metrics、scan summary namespace 和职责拆分；反向审计同时确认以下实现仍为 `PARTIAL`，因此
+不能再概括为“catalog-aware fact identity 已全面收口”：
 
 1. Oracle/SQL Server `METADATA` 与 `DATABASE_OBJECTS` capability 已有非空 live collector，支持组合 constraint/index 和 partial-success warning；这证明代码契约可执行，但真实权限/版本组合仍需 runtime smoke。
 2. `ScanCapabilityValidator` 在 JDBC 前验证实际请求、capability 与 grouped optional interface；纯文件 scan 不受 live capability 默认值影响。
 3. `IndexEvidencePolicy` 不允许组合 PK/UNIQUE 成员证明单列唯一；普通组合索引仅首列可支持 lookup / `SOURCE_INDEX`，不单独决定方向。
 4. `DataLineageMerger` 对 source set canonical dedupe/sort，fact identity 不再依赖发射顺序。
 5. `ProfileOutcome` 区分 success/no-evidence/skip/permission/timeout/query-failure，profile warning 会进入 scan result；warning 已脱敏。四个方言 live SQL 独立测量 source non-null rows、source/target distinct 和 matched distinct，containment、overlap 与 negative gate 均基于真实统计。
-6. Metadata facts、canonical keys、profiling lookup、relationship alias/naming/merger 与
-   known-physical 装配均保留 catalog/schema/table/column 完整身份。MySQL database 在 JDBC 前统一
-   映射为 catalog，legacy schema 仅作兼容回退；冲突配置在连接前失败。Oracle database-DDL 共用
-   current-owner fallback。顶层 JSON 在 catalog 非空时输出可选 `database.catalog`，并始终保留
-   legacy `database.schema`。PostgreSQL/SQL Server resolver 会在第一条 catalog SQL 前验证显式 scope catalog
-   与 `Connection.getCatalog()`，并在不一致或无法读取时抛出专用不可恢复配置异常；该异常穿透 collector 与 `ScanEngine`，连接仍由统一 lifecycle 关闭。
+6. Metadata facts 与大部分 live collector 保留 catalog/schema/table/column；MySQL metadata database
+   映射到 catalog，PostgreSQL/SQL Server collector resolver 也能拒绝不一致 catalog。尚未闭环的是：
+   `TableId.sameIdentity()` 独立字段校验、MySQL qualified SQL 两段名、dialect-normalized fact key、
+   derived table bridge catalog、Oracle catalog 输入、PostgreSQL profiler 三段表名和 profile-only catalog
+   validation。
 7. SPI v5、Oracle/SQL Server live 能力和 `contracts.Enums` 设计真源链接的生产 Javadoc 已同步。
 8. Metadata/DDL observation 不再在 merger 前仅按 type 丢弃；merger 按完整 observation identity 折叠精确重复并记录 `occurrenceCount`。
 9. MySQL live object collector 只用 `information_schema` 枚举身份，parser 输入由对应 `SHOW CREATE` 返回的完整 declaration 提供。
@@ -248,10 +230,9 @@ identity、live warning 脱敏、exact profile metrics、scan summary namespace 
     共享 classifier 只识别 JDBC 类型和 SQLState；Oracle 1031、SQL Server 229/916 由对应 adaptor 显式提供。
     Pipeline 对第三方 collector 返回的 null/blank definition、null element 或 null list 统一输出 `DEFINITION_UNAVAILABLE` 并跳过解析。
 
-上述三项 live 配置与诊断边界已由 focused contract tests 和本轮 19/19 parser matrix 闭环。
-此前的 1198/1198 隔离 correctness 与 19 个 sample-data case、38 份 direct/derived JSON 验收
-证明 file-based 事实链基线稳定；本轮没有重新运行 full correctness 或 sample-data CLI，因为修改不进入
-SQL parser、fact merger 或输出 schema。
+上述 live definition、warning sanitization 与 collector fail-fast 主链已有 focused tests；当前完整
+验收数量应从生成报告与 verification manifest读取，不在本文复制。file-based fact parity 不能覆盖
+profile-only、跨 catalog、直接 Java `ScanConfig.*Paths` 或 public SPI parser-half 等 live/API 边界。
 这些 file-based 验收不能代替四个数据库的真实权限、版本、driver 与 catalog 组合 runtime smoke。
 PostgreSQL/SQL Server 重建 DDL 明确属于 relationship parser 使用的 structural skeleton，不承诺完整
 可回放 declaration；若未来增加回放契约，需另行补齐 type modifier、default、identity/generated/
@@ -262,11 +243,27 @@ Visitor/Collector 实施 400 有效代码行门禁，并对 Analyzer/Support/Ext
 实施 450 有效代码行门禁；Javadoc、普通注释和空行不计入职责规模。generated Java、top-level record DTO 和 `package-info` 不参与行数约束，
 门禁没有永久 allowlist。expression、relationship 和 lineage 入口已经抽出 typed helper；
 `StructuredScriptFramer` 只负责编排，并由 200 行门禁保护；MySQL、PostgreSQL、Oracle、common 和
-SQL Server 的 slice 算法位于五个独立 planner，各受 250 行门禁保护。因此行数和实际职责均为
-`MATCHED`。
+SQL Server 的 slice 算法位于五个独立 planner，各受 250 行门禁保护。行数和职责拆分已匹配，
+但 top-level record 豁免仍使用源码文本包含判断，可能被注释或字符串误触发；该门禁状态为 `PARTIAL`。
 
 ## 后续技术债
 
+- `TableId` 模型不变量、MySQL qualified SQL、dialect canonical fact key、Oracle catalog 输入和
+  derived table bridge 必须统一到完整 catalog/schema/table identity；现有 sample-data 不含足够的
+  跨 catalog/大小写冲突，不能作为闭环证明。
+- PostgreSQL profiler 不能渲染 `catalog.schema.table` 三段名；PostgreSQL/SQL Server profile-only
+  scan 必须复用 catalog truth validation。
+- `ScanConfig.ddlPaths/objectPaths/logPaths` 的展开目前只在 CLI loader；core 直接 API 必须展开或
+  fail-fast。live object/database-DDL preflight 还需同时验证 structured parser。
+- relationship conditional summary 必须保留全部 guard；grouped relationship evidence 必须使用
+  consensus attributes；relationship/derived observation summary 必须累加 `occurrenceCount`。
+- negative profiling evidence 尚未建模 tenant、软删除、时间窗口、归档和行过滤上下文；当前只有
+  partial-sample 与数值阈值 gate。
+- CLI argument parsing 仍在 `MainCommand` 的 exception mapping 之外，`ErrorCode` 中的文件/
+  连接/输出专用 code 也没有被 single-scan 路径穷举映射；当前设计文档只能区分
+  “实际返回”与“保留合同”，不能声称 error-code enum 已完全落地。
+- `DirectionConfidence` 和部分保留 error/evidence enum 目前是 compatibility contract；还没有“每个 enum
+  value 都有 serializer/deserializer round-trip”的穷举测试。
 - root token-event 虽已使用 typed structural grammar/visitor，但复杂 routine、业务查询和部分 DDL evidence coverage 仍弱于对应 full-grammar；后续应继续扩展 typed grammar/visitor，不能恢复 scanner、regex 或名字过滤。
 - full-grammar profile 当前覆盖 MySQL 5.7/8.0、PostgreSQL 16/17/18、Oracle 12c/19c/21c/26ai 与 SQL Server 2016/2017/2019/2022/2025；新增大版本需新增 adaptor module、严格 versioned fixture 和版本边界测试。
 - Oracle/SQL Server permission vendor code 已从 adaptor 边界传入共享 classifier；单测验证不替代真实 driver/version smoke。

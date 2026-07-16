@@ -46,7 +46,7 @@ SQL Server 的 SPI v5 `SqlServerScriptFramer` 使用 generated script lexer 的 
 
 - 五个 SQL Server full-grammar `.g4` 来自同一个 pinned `grammars-v4/sql/tsql` 快照，但已经按 Microsoft 官方文档做了首批逐版本裁剪。更广泛的官方 T-SQL family 覆盖仍是 backlog。
 - 当前 sample-data 为跨版本业务等价 baseline，不混入高版本专属 T-SQL。后续版本专属语法应单独进入 version-only fixture。
-- SQL Server live metadata 通过 `sys.tables/sys.schemas/sys.columns/sys.types`、key/FK constraints 和 `sys.indexes/sys.index_columns` 采集；object collector 通过 `sys.objects/sys.schemas/sys.sql_modules` 读取 procedure/function/view/trigger 定义。metadata组合约束/索引按 ordinal 保留，无权访问 definition 会产生 warning 而非空壳对象。metadata/object/database-DDL collector共用 `SqlServerCatalogResolver`：scope catalog为空时继承connection catalog；显式 catalog 必须在第一条 `sys.*` 查询前与 `Connection.getCatalog()` 按 SQL Server identifier rules 一致，否则拒绝扫描，不执行隐式跨 database 查询。`SqlServerDatabaseDdlCollector` 通过 `sys.foreign_keys/sys.foreign_key_columns` 的 `constraint_column_id` 对 composite FK 两端做ordinal-safe配对。该 collector 当前从 `INFORMATION_SCHEMA.COLUMNS` 重建关系解析用 table skeleton，只保留基础 data type、nullable 和 key/FK；length/precision/scale、default、identity、computed、collation 等未保留，因此不能当作完整可执行 table DDL。`SqlServerDataProfiler`执行exact aggregate query，独立返回四项profile metrics。当 `sys.sql_modules.definition` 为 null/blank 时，通过统一 `LiveDiagnosticSanitizer` 输出带 object context 的 `DEFINITION_UNAVAILABLE`。
+- SQL Server live metadata 通过 `sys.tables/sys.schemas/sys.columns/sys.types`、key/FK constraints 和 `sys.indexes/sys.index_columns` 采集；object collector 通过 `sys.objects/sys.schemas/sys.sql_modules` 读取 procedure/function/view/trigger 定义。metadata组合约束/索引按 ordinal 保留，无权访问 definition 会产生 warning 而非空壳对象。metadata/object/database-DDL collector共用 `SqlServerCatalogResolver`：scope catalog为空时继承connection catalog；显式 catalog 必须在第一条 `sys.*` 查询前与 `Connection.getCatalog()` 按 SQL Server identifier rules 一致，否则拒绝扫描，不执行隐式跨 database 查询。`SqlServerDatabaseDdlCollector` 通过 `sys.foreign_keys/sys.foreign_key_columns` 的 `constraint_column_id` 对 composite FK 两端做ordinal-safe配对。该 collector 当前从 `INFORMATION_SCHEMA.COLUMNS` 重建关系解析用 table skeleton，只保留基础 data type、nullable 和 key/FK；length/precision/scale、default、identity、computed、collation 等未保留，因此不能当作完整可执行 table DDL。`SqlServerDataProfiler`执行exact aggregate query，独立返回四项profile metrics；但 profile-only scan 当前不经过 `SqlServerCatalogResolver`，显式 catalog truth validation 仍为 `PARTIAL`。当 `sys.sql_modules.definition` 为 null/blank 时，通过统一 `LiveDiagnosticSanitizer` 输出带 object context 的 `DEFINITION_UNAVAILABLE`。
 
 详细迁移审计见 `docs/parser-audit/sqlserver-migration-review.md`；版本差异清单见 `docs/parser-audit/sqlserver-version-grammar-diff.md`。
 
@@ -120,16 +120,9 @@ flowchart TD
 
 ## Correctness 范围
 
-当前 SQL Server correctness 覆盖 root token-event 与五个 versioned full-grammar 的 ERP sample-data fixture。root token-event 覆盖 38 个 fixture；versioned full-grammar 覆盖 sample-data 以及 version/profile smoke 或边界 fixture。root token-event 和 versioned full-grammar lineage 已对齐；full-grammar 由于 typed DDL / predicate context 更完整，会产生更多 relationship 和命名 evidence：
-
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server root token-event | 38 | 32 / 6 | 499 | 389 | 0 | 144 | 210 |
-| SQL Server full-grammar v2016 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2017 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2019 | 39 | 33 / 6 | 795 | 389 | 0 | 385 | 451 |
-| SQL Server full-grammar v2022 | 40 | 34 / 6 | 796 | 389 | 0 | 386 | 452 |
-| SQL Server full-grammar v2025 | 40 | 33 / 7 | 796 | 389 | 0 | 385 | 451 |
+SQL Server correctness 覆盖 root token-event 与五个 versioned full-grammar 的 ERP sample-data、
+profile smoke 和版本边界 fixture。当前 fixture/fingerprint 数量只维护在
+[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)；本 Phase 文档不复制统计。
 
 当前 fixture 语义：
 
@@ -138,7 +131,11 @@ flowchart TD
 - 预期 relationship：DDL FK/index 关系，以及 SQL predicate join / subquery relation。
 - 预期 lineage：明确字段写入、聚合写入、`UPDATE ... FROM` 与 `MERGE` 更新映射；参数、局部变量、临时表和动态 SQL 不作为物理 source。
 
-SQL Server root token-event 与 versioned full-grammar 在 correctness golden 中分别验证自己的输出。当前 natural sample-data CLI 中，token-event 与五个 full-grammar profile 均为 `342 Rel / 756 Lin / 246 direct Name`，semantic observation diff 为 0。`Lin` 包含 typed write scope 下的 direct VALUE 与 CONTROL lineage。该 parity 只证明当前同一套 natural SQL 资产的一致性；版本差异仍由 version-only fixture 和 `SqlServerParserArchitectureTest` 单独验证。跨方言完整统计只以 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 为准。
+SQL Server root token-event 与 versioned full-grammar 在 correctness golden 中分别验证自己的输出。
+自然 sample-data 的当前 direct/derived 与 semantic observation 统计只以
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 为准。该 parity 只证明
+当前同一套 natural SQL 资产的一致性；版本差异仍由 version-only fixture 和
+`SqlServerParserArchitectureTest` 单独验证。
 
 ## 后续收口
 

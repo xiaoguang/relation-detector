@@ -151,8 +151,9 @@ JSON：
 ```json
 {
   "database": {
-    "type": "mysql",
-    "schema": "shop"
+    "type": "MYSQL",
+    "catalog": "shop",
+    "schema": ""
   },
   "generatedAt": "2026-06-14T00:00:00Z",
   "relationships": [],
@@ -169,13 +170,9 @@ Warnings: 0
 
 ## 错误处理
 
-本阶段定义 CLI 错误码：
-
-- `0`：成功。
-- `1`：配置文件不存在或不可读。
-- `2`：配置格式错误。
-- `3`：参数错误。
-- `10`：扫描运行失败，后续阶段使用。
+Phase 1 的初始错误码提案已被当前 `ErrorCode` enum 和 CLI mapping 覆盖。现行 single-scan
+实际独立返回 `0/2/3/4/11`，batch partial failure 为 `13`；完整状态与保留值见
+[`enum-reference.md`](enum-reference.md#15-errorcode)。
 
 ## 验收标准
 

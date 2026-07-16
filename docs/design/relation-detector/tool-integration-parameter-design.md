@@ -205,7 +205,9 @@ sources:
     enabled: false
 ```
 
-`files` 适合少量显式文件；`paths + include` 适合目录扫描。路径相对配置文件所在目录解析。
+`files` 适合少量显式文件；`paths + include` 适合目录扫描。该展开属于 CLI/YAML loader 契约，
+路径相对配置文件所在目录解析。直接 Java 调用 `ScanConfig` 时 core 当前只消费 `*Files`，不会展开
+`*Paths`；集成方必须先展开，或等 core 增加统一展开/fail-fast 后再直接传路径。
 
 #### 数据库连接输入
 
@@ -348,7 +350,7 @@ output:
 ```yaml
 database:
   type: MYSQL
-  schema: sample_data
+  catalog: sample_data
 
 parser:
   mode: full-grammar
@@ -472,6 +474,7 @@ relation-detector JSON 顶层结构：
 {
   "database": {
     "type": "MYSQL",
+    "catalog": "sample_data",
     "schema": ""
   },
   "generatedAt": "...",
@@ -618,17 +621,19 @@ java -jar semantic-layer/semantic-cli/target/relation-detector-semantic-cli-0.1.
 
 ## 9. 错误处理
 
-CLI 退出码来自 contracts `ErrorCode`：
+CLI enum 来自 contracts `ErrorCode`，但当前 single-scan 实际映射范围小于 enum：
 
 | 退出码 | 含义 | 工具端处理 |
 | --- | --- | --- |
 | `0` | 成功 | 读取 JSON |
-| `1` | 配置文件错误 | 提示配置路径或文件不可读 |
 | `2` | 配置格式错误 | 展示配置校验错误 |
 | `3` | CLI 参数错误 | 检查命令构造 |
 | `4` | adaptor 错误 | 检查 database.type / plugin / adaptor |
-| `5` | 输入文件错误 | 检查 SQL/DDL/log 文件路径 |
-| 其它非 0 | 扫描运行错误 | 展示 stderr，保留配置和日志供排查 |
+| `11` | 扫描运行错误 | 展示 stderr，保留配置和日志供排查 |
+| `13` | batch 部分失败 | 读取 batch report，定位失败 job |
+
+`1/5/10/12` 当前为保留值，尚未从 single-scan catch boundary 独立返回。部分非法 option value 也可能
+在参数解析阶段直接抛出；调用方应把任意其它非零/异常退出视为 CLI failure，并保留 stderr。
 
 即使退出码为 `0`，也应读取 JSON 顶层 `warnings` 并提示用户。
 
