@@ -62,17 +62,16 @@ public final class DdlEvidenceInventory {
         if (candidates == null) {
             return;
         }
-        java.util.Set<String> enhancedFacts = new java.util.LinkedHashSet<>();
+        java.util.Set<RelationshipFactKey> enhancedFacts = new java.util.LinkedHashSet<>();
         for (RelationshipCandidate candidate : candidates) {
             if (!candidate.source().isColumnLevel() || !candidate.target().isColumnLevel()) {
                 continue;
             }
-            String factKey = candidate.source().normalizedKey() + "->" + candidate.target().normalizedKey();
-            if (!enhancedFacts.add(factKey)) {
-                continue;
-            }
             CanonicalEndpointKey sourceKey = key(candidate.source());
             CanonicalEndpointKey targetKey = key(candidate.target());
+            if (!enhancedFacts.add(new RelationshipFactKey(sourceKey, targetKey))) {
+                continue;
+            }
             addEvidence(candidate, sourceIndexes.get(sourceKey), EvidenceType.SOURCE_INDEX,
                     DefaultEvidenceScores.SOURCE_INDEX, "DDL indexed endpoint",
                     "indexEndpoint", candidate.source().displayName(), "source");
@@ -124,6 +123,9 @@ public final class DdlEvidenceInventory {
 
     private CanonicalEndpointKey key(com.relationdetector.contracts.model.Endpoint endpoint) {
         return CanonicalEndpointKey.from(endpoint, resolver, namespace);
+    }
+
+    private record RelationshipFactKey(CanonicalEndpointKey source, CanonicalEndpointKey target) {
     }
 
     private void add(

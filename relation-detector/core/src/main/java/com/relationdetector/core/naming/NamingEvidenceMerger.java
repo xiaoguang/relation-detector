@@ -9,15 +9,25 @@ import java.util.Map;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  *
  * Merges one naming fact per source-target-rule while preserving observations.
  */
 public final class NamingEvidenceMerger {
+    private final CanonicalEndpointKeyProvider endpointKeys;
     private final EvidenceObservationAggregator<Evidence> observations =
             new EvidenceObservationAggregator<>();
     private final NamingObservationPolicy policy = new NamingObservationPolicy();
+
+    public NamingEvidenceMerger() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public NamingEvidenceMerger(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+    }
 
     public List<NamingEvidenceCandidate> merge(List<NamingEvidenceCandidate> candidates) {
         Map<String, Accumulator> grouped = new LinkedHashMap<>();
@@ -34,8 +44,8 @@ public final class NamingEvidenceMerger {
     }
 
     private String key(NamingEvidenceCandidate candidate) {
-        return candidate.source().normalizedKey() + "->"
-                + candidate.target().normalizedKey() + ":" + candidate.rule();
+        return endpointKeys.factKey(candidate.source()) + "->"
+                + endpointKeys.factKey(candidate.target()) + ":" + candidate.rule();
     }
 
     private final class Accumulator {

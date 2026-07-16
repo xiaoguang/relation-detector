@@ -15,6 +15,12 @@ final class EvidenceEnhancementPipeline {
             ScanPipelineContext ctx,
             java.util.List<com.relationdetector.contracts.model.RelationshipCandidate> candidates
     ) {
-        enhancementService.enhanceProfiledCandidates(candidates, ctx.namingEvidencePool, ctx.parserConfig);
+        enhancementService.enhanceProfiledCandidates(
+                candidates,
+                ctx.namingEvidencePool,
+                ctx.parserConfig,
+                ctx.adaptor.identifierRules(),
+                new com.relationdetector.core.identity.NamespaceContext(
+                        ctx.scope.catalog(), ctx.scope.schema(), java.util.List.of()));
     }
 }

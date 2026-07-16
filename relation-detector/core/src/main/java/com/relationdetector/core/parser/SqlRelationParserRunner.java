@@ -72,6 +72,16 @@ public final class SqlRelationParserRunner {
             SqlStatementRecord statement,
             AdaptorContext context
     ) {
+        return parseStructuredAndRelations(adaptor, config, statement, context, namespace(context));
+    }
+
+    public ParsedSqlRelations parseStructuredAndRelations(
+            DatabaseAdaptor adaptor,
+            ScanConfig config,
+            SqlStatementRecord statement,
+            AdaptorContext context,
+            NamespaceContext namespace
+    ) {
         SqlStatementRecord effectiveStatement = withParserPolicyAttributes(config, statement);
         if (adaptor.parsers().structuredSql().isEmpty()) {
             warn(context, statement, "PARSER_MODE_FALLBACK",
@@ -81,7 +91,7 @@ public final class SqlRelationParserRunner {
         }
         ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);
         return parseStructuredAndRelations(config, effectiveStatement, context, bundle,
-                adaptor.identifierRules(), namespace(context));
+                adaptor.identifierRules(), namespace);
     }
 
     public ParsedSqlRelations parseStructuredAndRelations(

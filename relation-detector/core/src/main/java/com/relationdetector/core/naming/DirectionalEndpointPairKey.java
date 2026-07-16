@@ -1,11 +1,15 @@
 package com.relationdetector.core.naming;
 
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 record DirectionalEndpointPairKey(String sourceKey, String targetKey) {
-    static DirectionalEndpointPairKey of(RelationshipCandidate candidate) {
+    static DirectionalEndpointPairKey of(
+            RelationshipCandidate candidate,
+            CanonicalEndpointKeyProvider endpointKeys
+    ) {
         return new DirectionalEndpointPairKey(
-                candidate.source().normalizedKey(),
-                candidate.target().normalizedKey());
+                endpointKeys.factKey(candidate.source()),
+                endpointKeys.factKey(candidate.target()));
     }
 }

@@ -33,8 +33,6 @@ import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 public final class StatementExecutionService {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
-    private final StructuredDataLineageExtractor dataLineageExtractor = new StructuredDataLineageExtractor();
-    private final StructuredRelationshipExtractor relationshipExtractor = new StructuredRelationshipExtractor();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
     private final StructuredParseProvenanceNormalizer provenanceNormalizer =
             new StructuredParseProvenanceNormalizer();
@@ -57,14 +55,15 @@ public final class StatementExecutionService {
             Set<TableId> knownPhysicalTables,
             ParserBundle parserBundle
     ) {
+        NamespaceContext namespace = namespace(statement, context);
         SqlRelationParserRunner.ParsedSqlRelations parsed = parserBundle == null
                 || adaptor.parsers().structuredSql().isEmpty()
-                ? sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context)
+                ? sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context, namespace)
                 : sqlParserRunner.parseStructuredAndRelations(
-                        config, statement, context, parserBundle, adaptor.identifierRules());
+                        config, statement, context, parserBundle, adaptor.identifierRules(), namespace);
         List<DataLineageCandidate> lineages = parsed.structured()
                 .map(structured -> new StructuredDataLineageExtractor(
-                        adaptor.identifierRules(), namespace(context))
+                        adaptor.identifierRules(), namespace)
                         .extract(statement, structured, knownPhysicalTables))
                 .orElseGet(List::of);
         return new StatementExecutionOutcome(parsed.relationships(), lineages, List.of(), List.of());
@@ -88,9 +87,13 @@ public final class StatementExecutionService {
     ) {
         StructuredParseResult structured = provenanceNormalizer.normalize(
                 statement, parser.parseSql(statement, context));
-        List<RelationshipCandidate> relationships = relationshipExtractor.extract(statement, structured);
-        List<DataLineageCandidate> lineages =
-                dataLineageExtractor.extract(statement, structured, knownPhysicalTables);
+        IdentifierRules identifierRules = value ->
+                value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT);
+        NamespaceContext namespace = namespace(statement, context);
+        List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor(identifierRules, namespace)
+                .extract(statement, structured);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor(identifierRules, namespace)
+                .extract(statement, structured, knownPhysicalTables);
         return new StatementExecutionOutcome(
                 relationships, lineages, List.of(), provenanceValidator.validate(statement, structured));
     }
@@ -213,5 +216,27 @@ public final class StatementExecutionService {
             return NamespaceContext.empty();
         }
         return new NamespaceContext(context.scope().catalog(), context.scope().schema(), List.of());
+    }
+
+    private NamespaceContext namespace(SqlStatementRecord statement, AdaptorContext context) {
+        String catalog = attribute(statement, "objectCatalog", "sourceCatalog");
+        String schema = attribute(statement, "objectSchema", "sourceSchema");
+        if (!catalog.isBlank() || !schema.isBlank()) {
+            return new NamespaceContext(catalog, schema, List.of());
+        }
+        return namespace(context);
+    }
+
+    private String attribute(SqlStatementRecord statement, String... keys) {
+        if (statement == null || statement.attributes() == null) {
+            return "";
+        }
+        for (String key : keys) {
+            Object value = statement.attributes().get(key);
+            if (value != null && !String.valueOf(value).isBlank()) {
+                return String.valueOf(value);
+            }
+        }
+        return "";
     }
 }

@@ -63,8 +63,8 @@ It is independent of the technical statuses below.
 | --- | --- |
 | ID-01 | FOCUSED_GREEN |
 | ID-02 | FOCUSED_GREEN |
-| ID-03 | OPEN |
-| ID-04 | OPEN |
+| ID-03 | FOCUSED_GREEN |
+| ID-04 | FOCUSED_GREEN |
 | ID-05 | OPEN |
 | EV-01 | OPEN |
 | EV-02 | RED_PROVEN |

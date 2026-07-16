@@ -201,9 +201,9 @@ public final class StructuredDataLineageExtractor {
     }
 
     private AliasSymbolTable aliases(List<StructuredSqlEvent> events) {
-        // Preserve the identifier exactly as SQL wrote it. The scan namespace is
-        // applied only when comparing this endpoint with cross-source facts.
-        AliasSymbolTable aliases = new AliasSymbolTable(identifiers, NamespaceContext.empty());
+        // Display spelling remains on TableId while the source definition namespace
+        // supplies the physical identity used by relationship and lineage facts.
+        AliasSymbolTable aliases = new AliasSymbolTable(identifiers, namespace);
         Map<String, TableId> triggerPseudoTables = triggerPseudoTables(events, aliases);
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
@@ -390,7 +390,7 @@ public final class StructuredDataLineageExtractor {
     }
 
     private TableId tableId(String qualified) {
-        return identifiers.resolveQualified(qualified, NamespaceContext.empty());
+        return identifiers.resolveQualified(qualified, namespace);
     }
 
     private ColumnRef column(TableId table, String name) {

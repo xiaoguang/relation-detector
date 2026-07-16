@@ -5,11 +5,11 @@ import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.relation.RelationshipMerger;
 
 final class ResultAssembly {
-    private final RelationshipMerger relationshipMerger = new RelationshipMerger();
-    private final DataLineageMerger dataLineageMerger = new DataLineageMerger();
     private final DerivedPathInferenceService derivedPathInferenceService = new DerivedPathInferenceService();
 
     ScanResult assemble(ScanPipelineContext ctx) {
+        RelationshipMerger relationshipMerger = new RelationshipMerger(ctx.endpointKeys);
+        DataLineageMerger dataLineageMerger = new DataLineageMerger(ctx.endpointKeys);
         ctx.result.relationships().addAll(relationshipMerger.merge(
                 ctx.relationshipCandidates,
                 ctx.config.output().minConfidence()));

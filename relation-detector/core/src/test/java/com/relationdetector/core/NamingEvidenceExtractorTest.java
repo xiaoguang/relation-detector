@@ -151,6 +151,34 @@ class NamingEvidenceExtractorTest {
     }
 
     @Test
+    void groupsRelationshipCandidatesByCanonicalIdentityRatherThanDisplayNormalizedName() {
+        RelationshipCandidate first = sqlPredicate(
+                "products", "category_id", "product_categories", "id");
+        first.evidence().clear();
+        first.evidence().add(structuralObservation("first.sql", "line:10", 10));
+        RelationshipCandidate second = new RelationshipCandidate(
+                Endpoint.column(new ColumnRef(
+                        new TableId(null, null, "products", "display_a.products"),
+                        "category_id", "category_id", null, true)),
+                Endpoint.column(new ColumnRef(
+                        new TableId(null, null, "product_categories", "display_b.product_categories"),
+                        "id", "id", null, true)),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        second.evidence().add(structuralObservation("second.sql", "line:20", 20));
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(
+                List.of(first, second));
+
+        assertEquals(1, evidence.size(),
+                "Readable normalized names must not split one canonical directional pair");
+        assertEquals(List.of(10, 20), evidence.get(0).rawEvidence().stream()
+                .map(item -> ((Number) item.attributes().get("sourceLine")).intValue())
+                .sorted()
+                .toList());
+    }
+
+    @Test
     void reciprocalRelationshipDirectionsExecuteRulesIndependentlyBeforeMerge() {
         RelationshipCandidate forward = sqlPredicate("orders", "customer_id", "customers", "id");
         forward.evidence().clear();

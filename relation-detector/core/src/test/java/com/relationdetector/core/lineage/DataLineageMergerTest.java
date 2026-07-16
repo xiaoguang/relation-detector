@@ -94,6 +94,46 @@ class DataLineageMergerTest {
                 merged.get(0).sources().stream().map(Endpoint::normalizedKey).toList());
     }
 
+    @Test
+    void mergesEquivalentStructuralEndpointsWithoutTrustingCallerNormalizedName() {
+        DataLineageCandidate legacy = lineageWithTableIdentity(
+                "catalog_a", "sales", "orders", "legacy.orders");
+        DataLineageCandidate canonical = lineageWithTableIdentity(
+                "catalog_a", "sales", "orders", "sales.orders");
+        DataLineageCandidate otherCatalog = lineageWithTableIdentity(
+                "catalog_b", "sales", "orders", "sales.orders");
+
+        List<DataLineageCandidate> merged = new DataLineageMerger()
+                .merge(List.of(legacy, canonical, otherCatalog));
+
+        assertEquals(2, merged.size());
+        assertEquals(2, merged.stream()
+                .filter(candidate -> "catalog_a".equals(candidate.sources().get(0).table().catalog()))
+                .findFirst().orElseThrow().rawEvidence().size());
+    }
+
+    @Test
+    void canonicalSourceSetIdentityDoesNotDependOnDisplaySortOrder() {
+        Endpoint firstOrders = endpoint("orders", "z.orders");
+        Endpoint firstCustomers = endpoint("customers", "a.customers");
+        Endpoint secondOrders = endpoint("orders", "a.orders");
+        Endpoint secondCustomers = endpoint("customers", "z.customers");
+        Endpoint target = Endpoint.column(ColumnRef.of(
+                new TableId("catalog_a", "sales", "sales_fact", "sales.sales_fact"),
+                "order_id"));
+        DataLineageCandidate first = new DataLineageCandidate(
+                List.of(firstOrders, firstCustomers), target,
+                LineageFlowKind.VALUE, LineageTransformType.DIRECT);
+        DataLineageCandidate second = new DataLineageCandidate(
+                List.of(secondOrders, secondCustomers), target,
+                LineageFlowKind.VALUE, LineageTransformType.DIRECT);
+
+        List<DataLineageCandidate> merged = new DataLineageMerger().merge(List.of(first, second));
+
+        assertEquals(1, merged.size(),
+                "Canonical source-set identity must be independent of public display-key ordering");
+    }
+
     private DataLineageCandidate lineage(Map<String, Object> attributes) {
         DataLineageCandidate candidate = new DataLineageCandidate(
                 List.of(Endpoint.column(ColumnRef.of(TableId.of(null, "sales_orders"), "id"))),
@@ -110,5 +150,34 @@ class DataLineageMergerTest {
                 "ANTLR token-event write mapping",
                 attributes));
         return candidate;
+    }
+
+    private DataLineageCandidate lineageWithTableIdentity(
+            String catalog,
+            String schema,
+            String table,
+            String normalizedName
+    ) {
+        TableId sourceTable = new TableId(catalog, schema, table, normalizedName);
+        TableId targetTable = new TableId(catalog, schema, "sales_fact", schema + ".sales_fact");
+        DataLineageCandidate candidate = new DataLineageCandidate(
+                List.of(Endpoint.column(ColumnRef.of(sourceTable, "id"))),
+                Endpoint.column(ColumnRef.of(targetTable, "order_id")),
+                LineageFlowKind.VALUE,
+                LineageTransformType.DIRECT);
+        candidate.evidence().add(new DataLineageEvidence(
+                LineageTransformType.DIRECT,
+                BigDecimal.ONE,
+                EvidenceSourceType.PLAIN_SQL,
+                "query.sql",
+                normalizedName,
+                Map.of("sourceLine", 1L)));
+        return candidate;
+    }
+
+    private Endpoint endpoint(String table, String normalizedName) {
+        return Endpoint.column(ColumnRef.of(
+                new TableId("catalog_a", "sales", table, normalizedName),
+                "id"));
     }
 }

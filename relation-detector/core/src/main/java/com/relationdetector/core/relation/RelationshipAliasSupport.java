@@ -11,11 +11,13 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.ColumnRef;
+import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.identity.NamespaceContext;
 
 /**
@@ -24,11 +26,13 @@ import com.relationdetector.core.identity.NamespaceContext;
  */
 abstract class RelationshipAliasSupport {
     private final CanonicalIdentifierResolver identifiers;
+    private final CanonicalEndpointKeyProvider endpointKeys;
     private final NamespaceContext namespace;
 
     protected RelationshipAliasSupport(IdentifierRules identifierRules, NamespaceContext namespace) {
         this.identifiers = new CanonicalIdentifierResolver(identifierRules);
         this.namespace = namespace == null ? NamespaceContext.empty() : namespace;
+        this.endpointKeys = new CanonicalEndpointKeyProvider(identifierRules, this.namespace);
     }
 
     protected AliasIndex rowsetAliases(List<StructuredSqlEvent> events, Set<String> ignoredRowsets) {
@@ -223,7 +227,7 @@ abstract class RelationshipAliasSupport {
     }
 
     protected TableId tableId(String qualified) {
-        return identifiers.resolveQualified(qualified, NamespaceContext.empty());
+        return identifiers.resolveQualified(qualified, namespace);
     }
 
     private ColumnRef column(TableId table, String name) {
@@ -294,6 +298,10 @@ abstract class RelationshipAliasSupport {
 
     protected boolean sameTable(TableId left, TableId right) {
         return left != null && right != null && tableKey(left).equals(tableKey(right));
+    }
+
+    protected String endpointIdentityKey(Endpoint endpoint) {
+        return endpointKeys.factKey(endpoint);
     }
 
     private String tableKey(TableId table) {

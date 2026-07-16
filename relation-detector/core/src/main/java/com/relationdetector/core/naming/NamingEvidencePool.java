@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  *
@@ -20,14 +21,25 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
  * relationship enhancer 提供 indexed lookup。</p>
  */
 public final class NamingEvidencePool {
-    private final NamingEvidenceMerger merger = new NamingEvidenceMerger();
-    private final Map<String, NamingEvidenceCandidate> byId = new LinkedHashMap<>();
+    private final CanonicalEndpointKeyProvider endpointKeys;
+    private final NamingEvidenceMerger merger;
+    private final Map<String, NamingEvidenceCandidate> byKey = new LinkedHashMap<>();
+
+    public NamingEvidencePool() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public NamingEvidencePool(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+        this.merger = new NamingEvidenceMerger(endpointKeys);
+    }
 
     public void add(NamingEvidenceCandidate candidate) {
         if (candidate == null) {
             return;
         }
-        byId.put(candidate.id(), mergeOne(byId.get(candidate.id()), candidate));
+        String key = key(candidate);
+        byKey.put(key, mergeOne(byKey.get(key), candidate));
     }
 
     public void addAll(Collection<NamingEvidenceCandidate> candidates) {
@@ -38,7 +50,7 @@ public final class NamingEvidencePool {
     }
 
     public List<NamingEvidenceCandidate> merged() {
-        return byId.values().stream()
+        return byKey.values().stream()
                 .sorted(Comparator
                         .comparing((NamingEvidenceCandidate candidate) -> candidate.source().displayName())
                         .thenComparing(candidate -> candidate.target().displayName())
@@ -50,7 +62,7 @@ public final class NamingEvidencePool {
         if (candidate == null) {
             return Optional.empty();
         }
-        return byId.values().stream()
+        return byKey.values().stream()
                 .filter(item -> sameEndpointPair(item, candidate))
                 .findFirst();
     }
@@ -77,6 +89,11 @@ public final class NamingEvidencePool {
             com.relationdetector.contracts.model.Endpoint left,
             com.relationdetector.contracts.model.Endpoint right
     ) {
-        return left.normalizedKey().equals(right.normalizedKey());
+        return endpointKeys.same(left, right);
+    }
+
+    private String key(NamingEvidenceCandidate candidate) {
+        return endpointKeys.factKey(candidate.source()) + "->"
+                + endpointKeys.factKey(candidate.target()) + ":" + candidate.rule();
     }
 }

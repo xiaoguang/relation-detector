@@ -285,7 +285,7 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
     }
 
     private String endpointKey(RelationshipCandidate candidate) {
-        return candidate.source().normalizedKey() + "->" + candidate.target().normalizedKey();
+        return endpointIdentityKey(candidate.source()) + "->" + endpointIdentityKey(candidate.target());
     }
 
 }

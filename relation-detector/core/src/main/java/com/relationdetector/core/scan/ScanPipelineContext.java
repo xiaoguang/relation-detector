@@ -12,6 +12,7 @@ import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.ddl.DdlEvidenceInventory;
 import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 final class ScanPipelineContext implements AutoCloseable {
     final ResolvedScanConfig config;
@@ -22,6 +23,7 @@ final class ScanPipelineContext implements AutoCloseable {
     final AdaptorContext adaptorContext;
     final List<RelationshipCandidate> relationshipCandidates;
     final List<DataLineageCandidate> lineageCandidates;
+    final CanonicalEndpointKeyProvider endpointKeys;
     final NamingEvidencePool namingEvidencePool;
     final DdlEvidenceInventory ddlEvidenceInventory;
     final ScanTaskExecutor taskExecutor;
@@ -45,10 +47,11 @@ final class ScanPipelineContext implements AutoCloseable {
         this.adaptorContext = adaptorContext;
         this.relationshipCandidates = relationshipCandidates;
         this.lineageCandidates = lineageCandidates;
-        this.namingEvidencePool = new NamingEvidencePool();
+        NamespaceContext namespace = new NamespaceContext(scope.catalog(), scope.schema(), List.of());
+        this.endpointKeys = new CanonicalEndpointKeyProvider(adaptor.identifierRules(), namespace);
+        this.namingEvidencePool = new NamingEvidencePool(endpointKeys);
         this.ddlEvidenceInventory = new DdlEvidenceInventory(
-                adaptor.identifierRules(),
-                new NamespaceContext(scope.catalog(), scope.schema(), List.of()));
+                adaptor.identifierRules(), namespace);
         this.taskExecutor = new ScanTaskExecutor(config.execution().parallelism());
     }
 

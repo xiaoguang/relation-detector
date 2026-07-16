@@ -19,8 +19,9 @@ import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
-import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
+import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.provenance.SourceProvenanceValidator;
 
 /**
@@ -52,7 +53,6 @@ import com.relationdetector.core.provenance.SourceProvenanceValidator;
  */
 public final class DdlRelationParserRunner {
     private final DdlRelationExtractionVisitor visitor = new DdlRelationExtractionVisitor();
-    private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
 
@@ -173,7 +173,8 @@ public final class DdlRelationParserRunner {
         inventory.enhance(relationships);
         return new DdlParseOutcome(
                 relationships,
-                namingEvidenceExtractor.extractFromDdlEvents(structured.events(), config),
+                namingEvidenceExtractor(identifierRules, namespace)
+                        .extractFromDdlEvents(structured.events(), config),
                 inventory);
     }
 
@@ -271,8 +272,15 @@ public final class DdlRelationParserRunner {
         inventory.enhance(relationships);
         return new DdlParseOutcome(
                 relationships,
-                namingEvidenceExtractor.extractFromDdlEvents(events, config),
+                namingEvidenceExtractor(identifierRules, namespace).extractFromDdlEvents(events, config),
                 inventory);
+    }
+
+    private NamingEvidenceExtractor namingEvidenceExtractor(
+            IdentifierRules identifierRules,
+            NamespaceContext namespace
+    ) {
+        return new NamingEvidenceExtractor(new CanonicalEndpointKeyProvider(identifierRules, namespace));
     }
 
     private List<WarningMessage> mergeScriptWarnings(List<WarningMessage> warnings) {

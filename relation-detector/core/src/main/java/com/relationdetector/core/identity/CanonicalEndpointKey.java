@@ -27,13 +27,16 @@ public record CanonicalEndpointKey(String catalog, String schema, String table, 
             CanonicalIdentifierResolver resolver,
             NamespaceContext namespace
     ) {
-        if (endpoint == null || !endpoint.isColumnLevel()) {
-            throw new IllegalArgumentException("column-level endpoint is required");
+        if (endpoint == null) {
+            throw new IllegalArgumentException("endpoint is required");
         }
         CanonicalIdentifierResolver.CanonicalTableComponents table =
                 resolver.canonicalComponents(endpoint.table(), namespace);
+        String column = endpoint.isColumnLevel()
+                ? resolver.normalize(endpoint.column().columnName())
+                : "*";
         return new CanonicalEndpointKey(table.catalog(), table.schema(), table.table(),
-                resolver.normalize(endpoint.column().columnName()));
+                column);
     }
 
     public static CanonicalEndpointKey from(MetadataColumnFact fact) {

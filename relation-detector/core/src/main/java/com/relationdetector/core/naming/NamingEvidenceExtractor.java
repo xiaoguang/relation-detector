@@ -22,6 +22,7 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.log.SourceNameNormalizer;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  *
@@ -32,7 +33,17 @@ import com.relationdetector.core.log.SourceNameNormalizer;
  * evidence 才会被 {@link NamingMatchEvidenceEnhancer} 合并进去。
  */
 public final class NamingEvidenceExtractor {
-    private final NamingRuleEngine namingRuleEngine = new NamingRuleEngine();
+    private final NamingRuleEngine namingRuleEngine;
+    private final CanonicalEndpointKeyProvider endpointKeys;
+
+    public NamingEvidenceExtractor() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public NamingEvidenceExtractor(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+        this.namingRuleEngine = new NamingRuleEngine(endpointKeys);
+    }
 
     public List<NamingEvidenceCandidate> extractFromMetadata(MetadataSnapshot metadata) {
         return extractFromMetadata(metadata, null);
@@ -106,7 +117,7 @@ public final class NamingEvidenceExtractor {
             if (!isEligibleRelationshipCandidate(candidate)) {
                 continue;
             }
-            groups.computeIfAbsent(DirectionalEndpointPairKey.of(candidate),
+            groups.computeIfAbsent(DirectionalEndpointPairKey.of(candidate, endpointKeys),
                             ignored -> new RelationshipCandidateGroup(candidate))
                     .add(candidate);
         }
@@ -164,7 +175,7 @@ public final class NamingEvidenceExtractor {
             if (observation == null || !observation.endpoint().isColumnLevel()) {
                 continue;
             }
-            grouped.computeIfAbsent(observation.endpoint().normalizedKey(), ignored -> new ArrayList<>())
+            grouped.computeIfAbsent(endpointKeys.factKey(observation.endpoint()), ignored -> new ArrayList<>())
                     .add(observation);
         }
         return List.copyOf(grouped.values());
@@ -185,7 +196,7 @@ public final class NamingEvidenceExtractor {
     }
 
     private boolean sameTable(TableId left, TableId right) {
-        return left.sameIdentity(right);
+        return endpointKeys.sameTable(left, right);
     }
 
     private List<String> identifierParts(String identifier) {
@@ -303,7 +314,7 @@ public final class NamingEvidenceExtractor {
             List<EndpointObservation> right
     ) {
         List<Evidence> observations = new ArrayList<>(left.size() + right.size());
-        if (match.source().normalizedKey().equals(left.get(0).endpoint().normalizedKey())) {
+        if (endpointKeys.same(match.source(), left.get(0).endpoint())) {
             left.stream().map(EndpointObservation::evidence).forEach(observations::add);
             right.stream().map(EndpointObservation::evidence).forEach(observations::add);
         } else {
@@ -338,7 +349,7 @@ public final class NamingEvidenceExtractor {
             Set<String> seen,
             NamingEvidenceCandidate candidate
     ) {
-        String key = candidate.source().normalizedKey() + "->" + candidate.target().normalizedKey()
+        String key = endpointKeys.factKey(candidate.source()) + "->" + endpointKeys.factKey(candidate.target())
                 + ":" + candidate.rule();
         if (seen.add(key)) {
             result.add(candidate);
@@ -371,8 +382,8 @@ public final class NamingEvidenceExtractor {
     }
 
     private boolean isDeclaredSelfReference(RelationshipCandidate candidate) {
-        if (!candidate.source().table().sameIdentity(candidate.target().table())
-                || candidate.source().column().normalizedName().equals(candidate.target().column().normalizedName())) {
+        if (!endpointKeys.sameTable(candidate.source().table(), candidate.target().table())
+                || endpointKeys.same(candidate.source(), candidate.target())) {
             return false;
         }
         return candidate.evidence().stream().anyMatch(evidence -> switch (evidence.type()) {

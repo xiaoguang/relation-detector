@@ -76,12 +76,52 @@ class SemanticObservationFingerprintTest {
                 SemanticObservationFingerprint.relationships(supplier));
     }
 
+    @Test
+    void ignoresCallerNormalizedNameButKeepsCatalogInFactIdentity() {
+        RelationshipCandidate legacy = relationship(
+                "catalog_a", "sales", "orders", "legacy.orders");
+        RelationshipCandidate canonical = relationship(
+                "catalog_a", "sales", "orders", "sales.orders");
+        RelationshipCandidate otherCatalog = relationship(
+                "catalog_b", "sales", "orders", "sales.orders");
+
+        assertEquals(
+                SemanticObservationFingerprint.relationships(legacy),
+                SemanticObservationFingerprint.relationships(canonical));
+        assertNotEquals(
+                SemanticObservationFingerprint.relationships(canonical),
+                SemanticObservationFingerprint.relationships(otherCatalog));
+    }
+
     private RelationshipCandidate relationship(Map<String, Object> attributes) {
         RelationshipCandidate candidate = new RelationshipCandidate(
                 endpoint("orders", "customer_id"), endpoint("customers", "id"),
                 RelationType.CO_OCCURRENCE, RelationSubType.COLUMN_CO_OCCURRENCE);
         candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.ONE,
                 EvidenceSourceType.PLAIN_SQL, "input.sql", "typed column equality", attributes));
+        return candidate;
+    }
+
+    private RelationshipCandidate relationship(
+            String catalog,
+            String schema,
+            String table,
+            String normalizedName
+    ) {
+        TableId sourceTable = new TableId(catalog, schema, table, normalizedName);
+        TableId targetTable = new TableId(catalog, schema, "customers", schema + ".customers");
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(sourceTable, "customer_id")),
+                Endpoint.column(ColumnRef.of(targetTable, "id")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(new Evidence(
+                EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.ONE,
+                EvidenceSourceType.PLAIN_SQL,
+                "input.sql",
+                "typed column equality",
+                Map.of("sourceLine", 1L)));
         return candidate;
     }
 

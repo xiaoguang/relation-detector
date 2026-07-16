@@ -9,6 +9,7 @@ import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  *
@@ -28,13 +29,20 @@ public record SemanticObservationFingerprint(
         String conditions
 ) implements Comparable<SemanticObservationFingerprint> {
     public static List<SemanticObservationFingerprint> relationships(RelationshipCandidate candidate) {
+        return relationships(candidate, CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public static List<SemanticObservationFingerprint> relationships(
+            RelationshipCandidate candidate,
+            CanonicalEndpointKeyProvider endpointKeys
+    ) {
         List<SemanticObservationFingerprint> result = new ArrayList<>();
         for (Evidence evidence : observations(candidate)) {
             Map<String, Object> attributes = evidence.attributes();
             result.add(new SemanticObservationFingerprint(
                     "RELATIONSHIP",
-                    candidate.source().normalizedKey(),
-                    candidate.target().normalizedKey(),
+                    endpointKeys.referenceKey(candidate.source()),
+                    endpointKeys.referenceKey(candidate.target()),
                     candidate.relationType() + "/" + candidate.relationSubType(),
                     evidence.type().name(),
                     sourceIdentity(evidence.source(), attributes),
@@ -48,14 +56,21 @@ public record SemanticObservationFingerprint(
     }
 
     public static List<SemanticObservationFingerprint> lineages(DataLineageCandidate candidate) {
+        return lineages(candidate, CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public static List<SemanticObservationFingerprint> lineages(
+            DataLineageCandidate candidate,
+            CanonicalEndpointKeyProvider endpointKeys
+    ) {
         List<SemanticObservationFingerprint> result = new ArrayList<>();
         for (DataLineageEvidence evidence : observations(candidate)) {
             Map<String, Object> attributes = evidence.attributes();
             for (Endpoint source : candidate.sources()) {
                 result.add(new SemanticObservationFingerprint(
                         "DATA_LINEAGE",
-                        source.normalizedKey(),
-                        candidate.target().normalizedKey(),
+                        endpointKeys.referenceKey(source),
+                        endpointKeys.referenceKey(candidate.target()),
                         candidate.flowKind().name(),
                         candidate.transformType().name(),
                         sourceIdentity(evidence.source(), attributes),

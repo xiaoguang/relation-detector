@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.relationdetector.contracts.model.Endpoint;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  * CN: 对一对有向 column endpoints 执行已配置的系统和用户 naming rules，返回可审计的匹配结果；
@@ -15,6 +16,15 @@ import com.relationdetector.contracts.model.Endpoint;
  * it does not read SQL text, create relationships, or guess table identity across catalogs.
  */
 public final class NamingRuleEngine {
+    private final CanonicalEndpointKeyProvider endpointKeys;
+
+    public NamingRuleEngine() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    NamingRuleEngine(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+    }
     public List<Match> match(
             Endpoint left,
             Endpoint right,
@@ -157,7 +167,7 @@ public final class NamingRuleEngine {
     }
 
     private boolean sameTable(Endpoint left, Endpoint right) {
-        return left.table().sameIdentity(right.table());
+        return endpointKeys.sameTable(left.table(), right.table());
     }
 
     private boolean isId(Endpoint endpoint) {

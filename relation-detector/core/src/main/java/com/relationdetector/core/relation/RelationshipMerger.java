@@ -17,6 +17,7 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.core.scoring.ConfidenceCalculator;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  * relationship 候选合并器。
@@ -31,6 +32,7 @@ import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryG
  * summarizes repeated observations and calculates final confidence.
  */
 public final class RelationshipMerger {
+    private final CanonicalEndpointKeyProvider endpointKeys;
     private final ConfidenceCalculator calculator = new ConfidenceCalculator();
     private final EvidenceObservationAggregator<Evidence> observations =
             new EvidenceObservationAggregator<>();
@@ -38,6 +40,14 @@ public final class RelationshipMerger {
     private final RelationshipConditionalSummarizer conditionalSummarizer =
             new RelationshipConditionalSummarizer();
     private final RelationshipSubtypeResolver subtypeResolver = new RelationshipSubtypeResolver();
+
+    public RelationshipMerger() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public RelationshipMerger(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+    }
 
     /**
      *
@@ -133,7 +143,7 @@ public final class RelationshipMerger {
 
     private boolean isNoOpColumnCoOccurrence(RelationshipCandidate candidate) {
         return isColumnCoOccurrence(candidate)
-                && candidate.source().normalizedKey().equals(candidate.target().normalizedKey());
+                && endpointKeys.same(candidate.source(), candidate.target());
     }
 
     private Map<String, RelationshipCandidate> normalizeDirectionFromEvidence(Map<String, RelationshipCandidate> merged) {
@@ -257,8 +267,8 @@ public final class RelationshipMerger {
             if (next == null) {
                 continue;
             }
-            if (direction != null && (!direction.source().normalizedKey().equals(next.source().normalizedKey())
-                    || !direction.target().normalizedKey().equals(next.target().normalizedKey()))) {
+            if (direction != null && (!endpointKeys.same(direction.source(), next.source())
+                    || !endpointKeys.same(direction.target(), next.target()))) {
                 return null;
             }
             direction = next;
@@ -288,8 +298,8 @@ public final class RelationshipMerger {
     private boolean namingDirectionMatchesCurrentOrientation(RelationshipCandidate candidate, Evidence evidence) {
         DirectionHint direction = namingDirection(candidate, evidence);
         return direction != null
-                && direction.source().normalizedKey().equals(candidate.source().normalizedKey())
-                && direction.target().normalizedKey().equals(candidate.target().normalizedKey());
+                && endpointKeys.same(direction.source(), candidate.source())
+                && endpointKeys.same(direction.target(), candidate.target());
     }
 
     private RelationshipCandidate copy(
@@ -327,8 +337,8 @@ public final class RelationshipMerger {
     }
 
     private String unorderedColumnEndpointKey(RelationshipCandidate candidate) {
-        String left = candidate.source().normalizedKey();
-        String right = candidate.target().normalizedKey();
+        String left = endpointKeys.factKey(candidate.source());
+        String right = endpointKeys.factKey(candidate.target());
         return left.compareTo(right) <= 0 ? left + "|" + right : right + "|" + left;
     }
 
@@ -421,15 +431,15 @@ public final class RelationshipMerger {
         if (candidate.relationType() == RelationType.CO_OCCURRENCE
                 && !candidate.source().isColumnLevel()
                 && !candidate.target().isColumnLevel()) {
-            String a = candidate.source().normalizedKey();
-            String b = candidate.target().normalizedKey();
+            String a = endpointKeys.factKey(candidate.source());
+            String b = endpointKeys.factKey(candidate.target());
             return a.compareTo(b) <= 0
                     ? "CO:" + a + ":" + b
                     : "CO:" + b + ":" + a;
         }
         return candidate.relationType() + ":"
-                + candidate.source().normalizedKey() + "->"
-                + candidate.target().normalizedKey();
+                + endpointKeys.factKey(candidate.source()) + "->"
+                + endpointKeys.factKey(candidate.target());
     }
 
     private record DirectionHint(Endpoint source, Endpoint target) {

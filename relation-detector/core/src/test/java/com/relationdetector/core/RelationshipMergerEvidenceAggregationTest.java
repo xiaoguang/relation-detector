@@ -250,6 +250,24 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void mergesEquivalentStructuralEndpointsWithoutTrustingCallerNormalizedName() {
+        RelationshipCandidate legacy = relationshipWithTableIdentity(
+                "catalog_a", "sales", "orders", "legacy.orders");
+        RelationshipCandidate canonical = relationshipWithTableIdentity(
+                "catalog_a", "sales", "orders", "sales.orders");
+        RelationshipCandidate otherCatalog = relationshipWithTableIdentity(
+                "catalog_b", "sales", "orders", "sales.orders");
+
+        List<RelationshipCandidate> merged = merger.merge(
+                List.of(legacy, canonical, otherCatalog), 0.0d);
+
+        assertEquals(2, merged.size());
+        assertEquals(2, merged.stream()
+                .filter(candidate -> "catalog_a".equals(candidate.source().table().catalog()))
+                .findFirst().orElseThrow().rawEvidence().size());
+    }
+
+    @Test
     void uniqueEndpointAndSqlJoinInferFkDirection() {
         RelationshipCandidate sql = sqlLogJoinCoOccurrence("app.log", "line 10: o.user_id = u.id");
         sql.evidence().add(new Evidence(EvidenceType.TARGET_UNIQUE,
@@ -374,6 +392,28 @@ class RelationshipMergerEvidenceAggregationTest {
                 EvidenceSourceType.PLAIN_SQL,
                 "query.sql",
                 sourceTable + " and " + targetTable));
+        return candidate;
+    }
+
+    private RelationshipCandidate relationshipWithTableIdentity(
+            String catalog,
+            String schema,
+            String table,
+            String normalizedName
+    ) {
+        TableId orders = new TableId(catalog, schema, table, normalizedName);
+        TableId customers = new TableId(catalog, schema, "customers", schema + ".customers");
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(orders, "customer_id")),
+                Endpoint.column(ColumnRef.of(customers, "id")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(Evidence.of(
+                EvidenceType.SQL_LOG_JOIN,
+                DefaultEvidenceScores.SQL_LOG_JOIN,
+                EvidenceSourceType.PLAIN_SQL,
+                "query.sql",
+                normalizedName));
         return candidate;
     }
 

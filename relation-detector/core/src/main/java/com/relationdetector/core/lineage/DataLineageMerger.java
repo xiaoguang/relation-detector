@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.LineageTransformType;
@@ -14,6 +13,7 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  *
@@ -23,9 +23,18 @@ public final class DataLineageMerger {
     private static final Set<String> SUMMARY_ATTRIBUTE_KEYS = Set.of(
             "occurrenceCount", "count", "firstDetail", "lastDetail", "sampleDetails", "sampleTruncated");
 
+    private final CanonicalEndpointKeyProvider endpointKeys;
     private final EvidenceObservationAggregator<DataLineageEvidence> observations =
             new EvidenceObservationAggregator<>();
     private final LineageObservationPolicy observationPolicy = new LineageObservationPolicy();
+
+    public DataLineageMerger() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public DataLineageMerger(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+    }
 
     public List<DataLineageCandidate> merge(List<DataLineageCandidate> candidates) {
         Map<String, CandidateAccumulator> merged = new LinkedHashMap<>();
@@ -37,14 +46,23 @@ public final class DataLineageMerger {
 
     private String key(DataLineageCandidate candidate) {
         return candidate.flowKind() + "|" + candidate.transformType() + "|"
-                + canonicalSources(candidate).stream().map(source -> source.normalizedKey())
-                .collect(Collectors.joining(",")) + "|" + candidate.target().normalizedKey();
+                + String.join(",", canonicalSourceKeys(candidate)) + "|"
+                + endpointKeys.factKey(candidate.target());
+    }
+
+    private List<String> canonicalSourceKeys(DataLineageCandidate candidate) {
+        java.util.Set<String> keys = new java.util.TreeSet<>();
+        candidate.sources().forEach(source -> keys.add(endpointKeys.factKey(source)));
+        return List.copyOf(keys);
     }
 
     private List<com.relationdetector.contracts.model.Endpoint> canonicalSources(DataLineageCandidate candidate) {
-        Map<String, com.relationdetector.contracts.model.Endpoint> byKey = new java.util.TreeMap<>();
-        candidate.sources().forEach(source -> byKey.putIfAbsent(source.normalizedKey(), source));
-        return List.copyOf(byKey.values());
+        Map<String, com.relationdetector.contracts.model.Endpoint> byKey = new LinkedHashMap<>();
+        candidate.sources().forEach(source -> byKey.putIfAbsent(endpointKeys.factKey(source), source));
+        return byKey.values().stream()
+                .sorted(java.util.Comparator.comparing(
+                        com.relationdetector.contracts.model.Endpoint::normalizedKey))
+                .toList();
     }
 
     private DataLineageCandidate copyWithoutEvidence(DataLineageCandidate candidate) {

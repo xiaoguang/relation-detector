@@ -55,6 +55,32 @@ class NamingEvidencePoolTest {
         assertEquals(2, merged.evidence().attributes().get("count"));
     }
 
+    @Test
+    void mergesEquivalentStructuralEndpointsWithoutTrustingPublicFactId() {
+        NamingEvidencePool pool = new NamingEvidencePool();
+        pool.add(naming("catalog_a", "legacy.orders", "legacy observation"));
+        pool.add(naming("catalog_a", "sales.orders", "canonical observation"));
+        pool.add(naming("catalog_b", "sales.orders", "other catalog"));
+
+        List<NamingEvidenceCandidate> merged = pool.merged();
+
+        assertEquals(2, merged.size());
+        assertEquals(2, merged.stream()
+                .filter(candidate -> "catalog_a".equals(candidate.source().table().catalog()))
+                .findFirst().orElseThrow().rawEvidence().size());
+    }
+
+    private NamingEvidenceCandidate naming(String catalog, String normalizedName, String detail) {
+        TableId sourceTable = new TableId(catalog, "sales", "orders", normalizedName);
+        TableId targetTable = new TableId(catalog, "sales", "customers", "sales.customers");
+        return new NamingEvidenceCandidate(
+                Endpoint.column(ColumnRef.of(sourceTable, "customer_id")),
+                Endpoint.column(ColumnRef.of(targetTable, "id")),
+                evidence(detail),
+                "TABLE_ID",
+                true);
+    }
+
     private Evidence evidence(String detail) {
         return new Evidence(
                 EvidenceType.NAMING_MATCH,
