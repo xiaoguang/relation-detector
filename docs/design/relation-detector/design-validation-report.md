@@ -70,8 +70,8 @@ It is independent of the technical statuses below.
 | EV-02 | FOCUSED_GREEN |
 | EV-03 | FOCUSED_GREEN |
 | EV-04 | FOCUSED_GREEN |
-| EV-05 | OPEN |
-| EV-06 | OPEN |
+| EV-05 | FOCUSED_GREEN |
+| EV-06 | FOCUSED_GREEN |
 | CT-01 | RED_PROVEN |
 | CT-02 | OPEN |
 | CT-03 | OPEN |

@@ -177,6 +177,35 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void relationshipVariantsMergeIntoOneCanonicalDerivedPathWithBothRawObservations() {
+        ScanConfig config = enabledConfig();
+        Endpoint orderItemOrderId = col("order_items", "order_id");
+        Endpoint ordersId = col("orders", "id");
+        Endpoint ordersCustomerId = col("orders", "customer_id");
+        Endpoint customersId = col("customers", "id");
+        RelationshipCandidate firstVariant = fk(orderItemOrderId, ordersId);
+        RelationshipCandidate secondVariant = fk(orderItemOrderId, ordersId);
+        secondVariant.evidence().clear();
+        secondVariant.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "second.sql",
+                orderItemOrderId.displayName() + " = " + ordersId.displayName(),
+                Map.of("sourceLine", 9)));
+
+        DerivedPathInferenceResult result = service.infer(List.of(
+                firstVariant, secondVariant, fk(ordersCustomerId, customersId)
+        ), List.of(), List.of(), config);
+
+        List<DerivedPathCandidate> paths = result.derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(orderItemOrderId)
+                        && candidate.target().equals(customersId))
+                .toList();
+        assertEquals(1, paths.size());
+        assertEquals(2, paths.get(0).rawEvidence().size());
+    }
+
+    @Test
     void relationshipPathDoesNotBridgeSameNamedTablesAcrossCatalogs() {
         ScanConfig config = enabledConfig();
         Endpoint orderItemOrderId = catalogCol("tenant_a", "sales", "order_items", "order_id");

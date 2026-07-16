@@ -74,7 +74,6 @@ final class DerivedPathGraphBuilder {
         List<DerivedPathObservation> observations = new ArrayList<>();
         Map<String, Integer> pathsPerPair = new LinkedHashMap<>();
         Map<String, List<DerivedEdge>> bridgeCache = new LinkedHashMap<>();
-        Set<String> seenPaths = new LinkedHashSet<>();
         for (DerivedEdge start : graph.edges()) {
             if (start.kind() == DerivedEdgeKind.TABLE_IDENTITY_BRIDGE) {
                 continue;
@@ -84,7 +83,7 @@ final class DerivedPathGraphBuilder {
             visited.addAll(graphKeys(start.target()));
             dfsReferencedBy(start.source(), start.target(), List.of(start), visited,
                     graph, keyEndpointsByTable, bridgeCache, directPairs,
-                    pathsPerPair, seenPaths, observations);
+                    pathsPerPair, observations);
             if (limitReached(observations.size())) {
                 break;
             }
@@ -142,7 +141,6 @@ final class DerivedPathGraphBuilder {
             Map<String, List<DerivedEdge>> bridgeCache,
             Set<String> directPairs,
             Map<String, Integer> pathsPerPair,
-            Set<String> seenPaths,
             List<DerivedPathObservation> observations
     ) {
         if (path.size() >= 2 && lastEdge(path).kind() == DerivedEdgeKind.RELATIONSHIP) {
@@ -150,13 +148,7 @@ final class DerivedPathGraphBuilder {
             boolean direct = pairKeys(current, origin).stream().anyMatch(directPairs::contains);
             boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEdgeKind.NAMING);
             if (!selfLoop && !direct && !namingOnly) {
-                String pathKey = relationshipOutputPath(path).stream()
-                        .map(endpointKeys::factKey)
-                        .reduce((left, right) -> left + "->" + right)
-                        .orElse(pairKey(current, origin));
-                if (seenPaths.add(pathKey)) {
-                    addPath(origin, current, path, pathsPerPair, observations);
-                }
+                addPath(origin, current, path, pathsPerPair, observations);
             }
         }
         if (path.size() >= config.derivedMaxPathLength || limitReached(observations.size())) {
@@ -171,7 +163,7 @@ final class DerivedPathGraphBuilder {
             visited.addAll(nextKeys);
             dfsReferencedBy(origin, edge.target(), append(path, edge), visited,
                     graph, keyEndpointsByTable, bridgeCache, directPairs,
-                    pathsPerPair, seenPaths, observations);
+                    pathsPerPair, observations);
             visited.removeAll(nextKeys);
             if (limitReached(observations.size())) {
                 break;

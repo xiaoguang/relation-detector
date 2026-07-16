@@ -113,10 +113,9 @@ public final class DdlEvidenceInventory {
             if (observation.line() > 0) {
                 attributes.put("sourceLine", observation.line());
             }
-            Evidence evidence = new Evidence(type, BigDecimal.valueOf(score), observation.sourceType(),
-                    observation.source(), detail, attributes);
-            if (!candidate.evidence().contains(evidence)) {
-                candidate.evidence().add(evidence);
+            if (!hasAuthoritativeObservation(candidate, type, endpointSide, observation)) {
+                candidate.evidence().add(new Evidence(type, BigDecimal.valueOf(score), observation.sourceType(),
+                        observation.source(), detail, attributes));
             }
         }
     }
@@ -137,7 +136,8 @@ public final class DdlEvidenceInventory {
             return;
         }
         List<Observation> observations = inventory.computeIfAbsent(endpoint, ignored -> new ArrayList<>());
-        if (!observations.contains(observation)) {
+        if (observations.stream().noneMatch(existing ->
+                observationIdentity(existing).equals(observationIdentity(observation)))) {
             observations.add(observation);
         }
     }
@@ -148,6 +148,54 @@ public final class DdlEvidenceInventory {
     ) {
         source.forEach((endpoint, observations) -> observations.forEach(observation ->
                 add(target, endpoint, observation)));
+    }
+
+    private boolean hasAuthoritativeObservation(
+            RelationshipCandidate candidate,
+            EvidenceType type,
+            String endpointSide,
+            Observation observation
+    ) {
+        ObservationIdentity identity = observationIdentity(observation);
+        return candidate.evidence().stream().anyMatch(evidence ->
+                evidence.type() == type
+                        && endpointSide.equals(evidence.attributes().get("endpointSide"))
+                        && identity.equals(new ObservationIdentity(
+                                String.valueOf(evidence.attributes().getOrDefault("ddlRole", "")),
+                                String.valueOf(evidence.attributes().getOrDefault("ddlKind", "")),
+                                evidence.sourceType(), evidence.source(),
+                                number(evidence.attributes().get("sourceLine")),
+                                provenanceIdentity(evidence.attributes()))));
+    }
+
+    private ObservationIdentity observationIdentity(Observation observation) {
+        return new ObservationIdentity(observation.role(), observation.kind(), observation.sourceType(),
+                observation.source(), observation.line(), provenanceIdentity(observation.attributes()));
+    }
+
+    private Map<String, Object> provenanceIdentity(Map<String, Object> attributes) {
+        Map<String, Object> identity = new LinkedHashMap<>();
+        for (String key : List.of("sourceFile", "sourceStatementId", "sourceBlockId",
+                "sourceObjectType", "sourceObjectName")) {
+            if (attributes.containsKey(key)) {
+                identity.put(key, attributes.get(key));
+            }
+        }
+        return identity;
+    }
+
+    private long number(Object value) {
+        return value instanceof Number number ? number.longValue() : 0L;
+    }
+
+    private record ObservationIdentity(
+            String role,
+            String kind,
+            EvidenceSourceType sourceType,
+            String source,
+            long line,
+            Map<String, Object> provenance
+    ) {
     }
 
     public record Observation(

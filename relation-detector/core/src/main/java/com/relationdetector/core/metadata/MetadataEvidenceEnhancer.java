@@ -1,6 +1,7 @@
 package com.relationdetector.core.metadata;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +46,7 @@ public final class MetadataEvidenceEnhancer {
             return;
         }
         CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(identifierRules);
+        java.util.Set<RelationshipFactKey> enhancedFacts = new LinkedHashSet<>();
         for (RelationshipCandidate candidate : candidates) {
             if (!candidate.source().isColumnLevel()
                     || !candidate.target().isColumnLevel()) {
@@ -54,6 +56,10 @@ public final class MetadataEvidenceEnhancer {
                     candidate.source(), resolver, namespace);
             CanonicalEndpointKey targetKey = CanonicalEndpointKey.from(
                     candidate.target(), resolver, namespace);
+            if (!enhancedFacts.add(new RelationshipFactKey(
+                    sourceKey, targetKey, candidate.relationType(), candidate.relationSubType()))) {
+                continue;
+            }
             String sourceTable = candidate.source().table().tableName();
             String sourceColumn = candidate.source().column().columnName();
             String targetTable = candidate.target().table().tableName();
@@ -151,8 +157,26 @@ public final class MetadataEvidenceEnhancer {
             String detail,
             Map<String, Object> attributes
     ) {
+        String endpointSide = String.valueOf(attributes.getOrDefault("endpointSide", ""));
+        boolean alreadyAttached = candidate.evidence().stream().anyMatch(existing ->
+                existing.type() == type
+                        && existing.sourceType() == EvidenceSourceType.METADATA
+                        && "metadata catalog facts".equals(existing.source())
+                        && endpointSide.equals(String.valueOf(
+                                existing.attributes().getOrDefault("endpointSide", ""))));
+        if (alreadyAttached) {
+            return;
+        }
         candidate.evidence().add(new Evidence(type, java.math.BigDecimal.valueOf(score), EvidenceSourceType.METADATA,
                 "metadata catalog facts", detail, new LinkedHashMap<>(attributes)));
+    }
+
+    private record RelationshipFactKey(
+            CanonicalEndpointKey source,
+            CanonicalEndpointKey target,
+            RelationType type,
+            RelationSubType subType
+    ) {
     }
 
     private String normalize(String value) {

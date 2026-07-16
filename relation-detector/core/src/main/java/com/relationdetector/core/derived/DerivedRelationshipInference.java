@@ -17,12 +17,16 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.evidence.EvidenceObservationAggregator;
+import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
 import com.relationdetector.core.scan.ScanConfig;
 
 final class DerivedRelationshipInference {
     private final ScanConfig config;
     private final DerivedPathGraphBuilder graphs;
     private final DerivedNamingInference naming;
+    private final EvidenceObservationAggregator<Evidence> observations =
+            new EvidenceObservationAggregator<>();
 
     DerivedRelationshipInference(
             ScanConfig config,
@@ -51,7 +55,9 @@ final class DerivedRelationshipInference {
                 continue;
             }
             directPairs.addAll(graphs.pairKeys(relationship.source(), relationship.target()));
-            reverseEdges.add(relationshipEdge(relationship, directNamingRefs).reverse());
+            relationshipEdges(relationship, directNamingRefs).stream()
+                    .map(DerivedEdge::reverse)
+                    .forEach(reverseEdges::add);
             addKeyEndpoint(keyEndpointsByTable, relationship.target());
         }
         if (config.derivedIncludeNamingEdgesInRelationshipPaths) {
@@ -68,13 +74,25 @@ final class DerivedRelationshipInference {
 
         List<DerivedPathObservation> paths = graphs.enumerateReferencedBy(
                 graphs.build(reverseEdges), immutableEndpoints(keyEndpointsByTable), directPairs);
+        Map<String, List<DerivedPathObservation>> grouped = new LinkedHashMap<>();
+        for (DerivedPathObservation path : paths) {
+            grouped.computeIfAbsent(
+                    graphs.canonicalPathKey(DerivedPathKind.RELATIONSHIP.name(), path),
+                    ignored -> new ArrayList<>()).add(path);
+        }
         List<DerivedPathCandidate> derivedRelationships = new ArrayList<>();
         List<NamingEvidenceCandidate> derivedNaming = new ArrayList<>();
-        for (DerivedPathObservation path : paths) {
-            NamingEvidenceCandidate namingCandidate = relationshipPathNaming(path);
-            derivedRelationships.add(derivedRelationship(path, namingCandidate));
+        for (List<DerivedPathObservation> variants : grouped.values()) {
+            DerivedPathObservation representative = variants.stream()
+                    .max(Comparator.comparing(graphs::confidence))
+                    .orElseThrow();
+            NamingEvidenceCandidate namingCandidate = relationshipPathNaming(representative);
+            derivedRelationships.add(derivedRelationship(representative, variants, namingCandidate));
             if (namingCandidate != null) {
                 derivedNaming.add(namingCandidate);
+            }
+            if (graphs.limitReached(derivedRelationships.size())) {
+                break;
             }
         }
         return new Result(List.copyOf(derivedRelationships), List.copyOf(derivedNaming));
@@ -102,6 +120,7 @@ final class DerivedRelationshipInference {
 
     private DerivedPathCandidate derivedRelationship(
             DerivedPathObservation observation,
+            List<DerivedPathObservation> variants,
             NamingEvidenceCandidate namingEvidence
     ) {
         List<Endpoint> outputPath = graphs.relationshipOutputPath(observation.edges());
@@ -122,8 +141,20 @@ final class DerivedRelationshipInference {
         candidate.attributes().put("traversalPath", graphs.endpointNames(traversalPath));
         Evidence pathEvidence = graphs.pathEvidence(
                 observation, "derived:relationship", false, outputPath, traversalPath);
-        candidate.evidence().add(pathEvidence);
-        candidate.rawEvidence().add(pathEvidence);
+        EvidenceObservationAggregator.Aggregation<Evidence> aggregated = observations.aggregate(
+                variants.stream().map(variant -> graphs.pathEvidence(
+                        variant, "derived:relationship", false,
+                        graphs.relationshipOutputPath(variant.edges()), graphs.endpoints(variant)))
+                        .toList(),
+                new DerivedPathEvidencePolicy(), true);
+        SummaryGroup<Evidence> summary = aggregated.groups().get(0);
+        Map<String, Object> summaryAttributes = new LinkedHashMap<>(summary.consensusAttributes());
+        summaryAttributes.put("count", summary.count());
+        candidate.attributes().put("observationCount", summary.count());
+        candidate.evidence().add(new Evidence(
+                pathEvidence.type(), candidate.confidence(), pathEvidence.sourceType(),
+                pathEvidence.source(), pathEvidence.detail(), summaryAttributes));
+        candidate.rawEvidence().addAll(aggregated.rawObservations());
         if (namingEvidence != null) {
             candidate.evidence().add(new Evidence(
                     EvidenceType.NAMING_MATCH,
@@ -144,17 +175,29 @@ final class DerivedRelationshipInference {
         return candidate;
     }
 
-    private DerivedEdge relationshipEdge(
+    private List<DerivedEdge> relationshipEdges(
             RelationshipCandidate relationship,
             Map<String, List<String>> directNamingRefs
     ) {
-        String ref = "relationship:" + relationship.source().normalizedKey()
-                + "->" + relationship.target().normalizedKey();
-        return new DerivedEdge(
-                relationship.source(), relationship.target(), DerivedEdgeKind.RELATIONSHIP,
-                relationship.confidence(), ref,
-                directNamingRefs.getOrDefault(
-                        graphs.pairKey(relationship.source(), relationship.target()), List.of()));
+        List<Evidence> raw = relationship.rawEvidence().isEmpty()
+                ? relationship.evidence() : relationship.rawEvidence();
+        return raw.stream().filter(evidence -> evidence.type() != EvidenceType.NAMING_MATCH)
+                .map(evidence -> new DerivedEdge(
+                        relationship.source(), relationship.target(), DerivedEdgeKind.RELATIONSHIP,
+                        relationship.confidence(), relationshipReference(relationship, evidence),
+                        directNamingRefs.getOrDefault(
+                                graphs.pairKey(relationship.source(), relationship.target()), List.of())))
+                .toList();
+    }
+
+    private String relationshipReference(RelationshipCandidate relationship, Evidence evidence) {
+        return "relationship:" + relationship.source().normalizedKey()
+                + "->" + relationship.target().normalizedKey() + ":"
+                + evidence.type() + ":" + evidence.sourceType() + ":" + evidence.source()
+                + ":" + evidence.attributes().getOrDefault("sourceStatementId", "")
+                + ":" + evidence.attributes().getOrDefault("sourceBlockId", "")
+                + ":" + evidence.attributes().getOrDefault("sourceLine", "")
+                + ":" + evidence.detail();
     }
 
     private Map<String, List<String>> directNamingRefsByPair(
@@ -210,5 +253,28 @@ final class DerivedRelationshipInference {
             List<DerivedPathCandidate> derivedRelationships,
             List<NamingEvidenceCandidate> derivedNamingEvidence
     ) {
+    }
+
+    private static final class DerivedPathEvidencePolicy
+            implements EvidenceObservationAggregator.ObservationPolicy<Evidence> {
+        @Override public Object exactKey(Evidence evidence) {
+            Map<String, Object> attributes = new LinkedHashMap<>(evidence.attributes());
+            attributes.remove("occurrenceCount");
+            return List.of(evidence.type(), evidence.score(), evidence.sourceType(), evidence.source(),
+                    evidence.detail(), attributes);
+        }
+        @Override public Object summaryKey(Evidence evidence) { return "derived-relationship-path"; }
+        @Override public int occurrenceCount(Evidence evidence) {
+            return EvidenceObservationAggregator.occurrenceCount(evidence.attributes());
+        }
+        @Override public Map<String, Object> observationAttributes(Evidence evidence) { return evidence.attributes(); }
+        @Override public String detail(Evidence evidence) { return evidence.detail(); }
+        @Override public Evidence withOccurrenceCount(Evidence evidence, int count) {
+            if (count <= 1) return evidence;
+            Map<String, Object> attributes = new LinkedHashMap<>(evidence.attributes());
+            attributes.put("occurrenceCount", count);
+            return new Evidence(evidence.type(), evidence.score(), evidence.sourceType(), evidence.source(),
+                    evidence.detail(), attributes);
+        }
     }
 }

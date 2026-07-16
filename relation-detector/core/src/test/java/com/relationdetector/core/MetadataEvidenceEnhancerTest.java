@@ -44,6 +44,27 @@ class MetadataEvidenceEnhancerTest {
     }
 
     @Test
+    void metadataEnhancementIsIdempotentAcrossSqlCandidatesForOneFact() {
+        MetadataSnapshot metadata = metadataFacts();
+        RelationshipCandidate first = joinCandidate("orders", "user_id", "users", "id");
+        RelationshipCandidate second = joinCandidate("orders", "user_id", "users", "id");
+        RelationshipCandidate third = joinCandidate("orders", "user_id", "users", "id");
+        MetadataEvidenceEnhancer enhancer = new MetadataEvidenceEnhancer();
+
+        enhancer.enhance(List.of(first, second, third), metadata);
+        enhancer.enhance(List.of(first, second, third), metadata);
+
+        assertEquals(1, List.of(first, second, third).stream()
+                .flatMap(candidate -> candidate.evidence().stream())
+                .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
+                .count());
+        assertEquals(1, List.of(first, second, third).stream()
+                .flatMap(candidate -> candidate.evidence().stream())
+                .filter(evidence -> evidence.type() == EvidenceType.TARGET_UNIQUE)
+                .count());
+    }
+
+    @Test
     void enrichesColumnCoOccurrenceWithEndpointIndexUniqueAndTypeFacts() {
         MetadataSnapshot metadata = metadataFacts();
         RelationshipCandidate candidate = coOccurrenceCandidate("orders", "user_id", "users", "id");

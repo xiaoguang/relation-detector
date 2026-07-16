@@ -42,6 +42,30 @@ class DdlEvidenceInventoryTest {
     }
 
     @Test
+    void sameDdlObservationEnhancesOneFactOnlyOnceAcrossCandidatesAndRuns() {
+        RelationshipCandidate first = relationship("shop", "orders", "customer_id",
+                "shop", "customers", "id");
+        RelationshipCandidate second = relationship("shop", "orders", "customer_id",
+                "shop", "customers", "id");
+        DdlEvidenceInventory inventory = new DdlEvidenceInventory();
+        inventory.addSourceIndex(key("shop", "orders", "customer_id"),
+                observation("indexes.sql", "SOURCE_INDEX", "INDEX"));
+        inventory.addSourceIndex(key("shop", "orders", "customer_id"),
+                new DdlEvidenceInventory.Observation(
+                        "SOURCE_INDEX", "INDEX", EvidenceSourceType.DDL_FILE, "indexes.sql", 1,
+                        Map.of("sourceFile", "indexes.sql", "sourceStatementId", "indexes.sql:1-1",
+                                "displayName", "idx_orders_customer")));
+
+        inventory.enhance(List.of(first, second));
+        inventory.enhance(List.of(first, second));
+
+        assertEquals(1, List.of(first, second).stream()
+                .flatMap(candidate -> candidate.evidence().stream())
+                .filter(evidence -> evidence.type() == EvidenceType.SOURCE_INDEX)
+                .count());
+    }
+
+    @Test
     void schemaQualifiedInventoryNeverEnhancesBareOrDifferentSchemaEndpoint() {
         RelationshipCandidate relationship = relationship(null, "orders", "customer_id",
                 "archive", "customers", "id");
