@@ -77,6 +77,24 @@ class SemanticObservationFingerprintTest {
     }
 
     @Test
+    void canonicalizesCompleteConditionArraysWithoutDiscardingLaterGuards() {
+        Map<String, Object> party = Map.of(
+                "discriminator", "contracts.party_type", "operator", "EQUALS", "value", "customer");
+        Map<String, Object> north = Map.of(
+                "discriminator", "contracts.region", "operator", "EQUALS", "value", "north");
+        Map<String, Object> south = Map.of(
+                "discriminator", "contracts.region", "operator", "EQUALS", "value", "south");
+        RelationshipCandidate first = relationship(Map.of("conditions", List.of(party, north)));
+        RelationshipCandidate reordered = relationship(Map.of("conditions", List.of(north, party)));
+        RelationshipCandidate changedSecondGuard = relationship(Map.of("conditions", List.of(party, south)));
+
+        assertEquals(SemanticObservationFingerprint.relationships(first),
+                SemanticObservationFingerprint.relationships(reordered));
+        assertNotEquals(SemanticObservationFingerprint.relationships(first),
+                SemanticObservationFingerprint.relationships(changedSecondGuard));
+    }
+
+    @Test
     void ignoresCallerNormalizedNameButKeepsCatalogInFactIdentity() {
         RelationshipCandidate legacy = relationship(
                 "catalog_a", "sales", "orders", "legacy.orders");

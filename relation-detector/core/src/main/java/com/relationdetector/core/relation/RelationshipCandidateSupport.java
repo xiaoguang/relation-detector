@@ -70,12 +70,8 @@ abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
                     Endpoint.column(discriminator), guard.operator(), guard.literalValue()));
         }
         if (conditions.isEmpty()) return;
-        Map<String, Object> first = conditions.get(0).attributes();
-        attributes.put("conditional", true);
-        attributes.put("discriminatorEndpoint", first.get("discriminator"));
-        attributes.put("discriminatorOperator", first.get("operator"));
-        attributes.put("discriminatorValue", first.get("value"));
-        attributes.put("conditions", conditions.stream().map(RelationshipCondition::attributes).toList());
+        RelationshipConditionAttributes.write(attributes,
+                conditions.stream().map(RelationshipCondition::attributes).toList());
     }
 
     private String canonicalJoinKind(String raw) {

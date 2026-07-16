@@ -10,6 +10,7 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
+import com.relationdetector.core.relation.RelationshipConditionAttributes;
 
 /**
  *
@@ -50,7 +51,7 @@ public record SemanticObservationFingerprint(
                     text(attributes, "sourceBlockId"),
                     number(attributes, "sourceLine"),
                     text(attributes, "joinKind"),
-                    conditionIdentity(attributes)));
+                    RelationshipConditionAttributes.identity(attributes)));
         }
         return result.stream().sorted().toList();
     }
@@ -123,29 +124,6 @@ public record SemanticObservationFingerprint(
         } catch (NumberFormatException ignored) {
             return 0L;
         }
-    }
-
-    private static String conditionIdentity(Map<String, Object> attributes) {
-        Object value = attributes.get("conditions");
-        if (!(value instanceof List<?> list)) {
-            return "";
-        }
-        List<String> conditions = new ArrayList<>();
-        for (Object item : list) {
-            if (item instanceof Map<?, ?> condition) {
-                conditions.add(String.join("|",
-                        mapValue(condition, "discriminator"),
-                        mapValue(condition, "operator"),
-                        mapValue(condition, "value")));
-            }
-        }
-        return conditions.stream().sorted().distinct()
-                .reduce((left, right) -> left + ";" + right).orElse("");
-    }
-
-    private static String mapValue(Map<?, ?> map, String key) {
-        Object value = map.get(key);
-        return value == null ? "" : String.valueOf(value);
     }
 
     @Override

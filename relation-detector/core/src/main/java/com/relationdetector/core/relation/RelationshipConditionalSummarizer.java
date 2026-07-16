@@ -2,30 +2,33 @@ package com.relationdetector.core.relation;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
  *
  * Summarizes conditional and polymorphic structural observations.
  */
 final class RelationshipConditionalSummarizer {
+    private final CanonicalEndpointKeyProvider endpointKeys;
+
+    RelationshipConditionalSummarizer(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = endpointKeys;
+    }
+
     void summarize(RelationshipCandidate candidate) {
         List<Evidence> structural = candidate.rawEvidence().stream().filter(this::structural).toList();
         candidate.attributes().clear();
         if (structural.isEmpty() || structural.stream().anyMatch(evidence ->
-                !Boolean.TRUE.equals(evidence.attributes().get("conditional")))) return;
+                RelationshipConditionAttributes.conditions(evidence.attributes()).isEmpty())) return;
         List<Map<String, Object>> conditions = structural.stream()
-                .map(this::condition).filter(value -> !value.isEmpty()).distinct()
-                .sorted(Comparator.comparing((Map<String, Object> value) ->
-                                String.valueOf(value.get("discriminator")))
-                        .thenComparing(value -> String.valueOf(value.get("operator")))
-                        .thenComparing(value -> String.valueOf(value.get("value"))))
+                .flatMap(evidence -> RelationshipConditionAttributes.conditions(evidence.attributes()).stream())
+                .distinct()
                 .toList();
         if (conditions.isEmpty()) return;
         candidate.attributes().put("conditional", true);
@@ -34,32 +37,32 @@ final class RelationshipConditionalSummarizer {
     }
 
     void annotatePolymorphic(Collection<RelationshipCandidate> candidates) {
-        Map<String, List<RelationshipCandidate>> grouped = new LinkedHashMap<>();
+        Map<ConditionGroupKey, List<RelationshipCandidate>> grouped = new LinkedHashMap<>();
         for (RelationshipCandidate candidate : candidates) {
             if (!Boolean.TRUE.equals(candidate.attributes().get("conditional"))) continue;
             for (Map<String, Object> condition : conditions(candidate)) {
-                String key = candidate.source().normalizedKey() + "|" + condition.get("discriminator");
+                ConditionGroupKey key = new ConditionGroupKey(
+                        endpointKeys.factKey(candidate.source()),
+                        String.valueOf(condition.get("discriminator")),
+                        String.valueOf(condition.get("operator")));
                 grouped.computeIfAbsent(key, ignored -> new ArrayList<>()).add(candidate);
             }
         }
-        grouped.values().stream()
-                .filter(group -> group.stream().map(value -> value.target().normalizedKey()).distinct().count() > 1)
-                .filter(group -> group.stream().flatMap(value -> conditions(value).stream())
-                        .map(value -> value.get("value")).distinct().count() > 1)
-                .flatMap(List::stream)
+        grouped.entrySet().stream()
+                .filter(entry -> entry.getValue().stream()
+                        .map(value -> endpointKeys.factKey(value.target())).distinct().count() > 1)
+                .filter(entry -> entry.getValue().stream().flatMap(value -> conditions(value).stream())
+                        .filter(condition -> entry.getKey().matches(condition))
+                        .map(condition -> condition.get("value")).distinct().count() > 1)
+                .flatMap(entry -> entry.getValue().stream())
                 .forEach(candidate -> candidate.attributes().put("polymorphic", true));
     }
 
-    private Map<String, Object> condition(Evidence evidence) {
-        Object discriminator = evidence.attributes().get("discriminatorEndpoint");
-        Object operator = evidence.attributes().get("discriminatorOperator");
-        Object value = evidence.attributes().get("discriminatorValue");
-        if (discriminator == null || operator == null || value == null) return Map.of();
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("discriminator", discriminator);
-        result.put("operator", operator);
-        result.put("value", value);
-        return Map.copyOf(result);
+    private record ConditionGroupKey(String source, String discriminator, String operator) {
+        boolean matches(Map<String, Object> condition) {
+            return discriminator.equals(String.valueOf(condition.get("discriminator")))
+                    && operator.equals(String.valueOf(condition.get("operator")));
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -269,7 +269,8 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                 + evidenceAttribute(evidence, "sourceStatementId") + "|"
                 + evidenceAttribute(evidence, "sourceBlockId") + "|"
                 + evidenceAttribute(evidence, "sourceLine") + "|"
-                + evidenceAttribute(evidence, "joinKind");
+                + evidenceAttribute(evidence, "joinKind") + "|"
+                + (evidence == null ? "" : RelationshipConditionAttributes.identity(evidence.attributes()));
     }
 
     private String evidenceAttribute(Evidence evidence, String key) {

@@ -310,8 +310,8 @@ class StructuredRelationshipExtractorIndependenceTest {
         assertEquals(1, relations.size(),
                 () -> "Equivalent bindings must be deduplicated by canonical namespace identity: " + relations);
         assertEquals(List.of(
-                        "customers.id",
-                        "orders.customer_id"),
+                        "catalog_a.sales.customers.id",
+                        "catalog_a.sales.orders.customer_id"),
                 List.of(relations.get(0).source().displayName(), relations.get(0).target().displayName()));
     }
 

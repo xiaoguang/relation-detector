@@ -22,8 +22,10 @@ final class RelationshipObservationPolicy
     public Object exactKey(Evidence evidence) {
         Map<String, Object> identity = new LinkedHashMap<>(evidence.attributes());
         identity.keySet().removeAll(List.of(
-                "occurrenceCount", "count", "firstDetail", "lastDetail", "sampleDetails", "sampleTruncated"));
-        return summaryKey(evidence) + "|" + evidence.detail() + "|" + identity;
+                "occurrenceCount", "count", "firstDetail", "lastDetail", "sampleDetails", "sampleTruncated",
+                "conditions", "discriminatorEndpoint", "discriminatorOperator", "discriminatorValue"));
+        return summaryKey(evidence) + "|" + evidence.detail() + "|" + identity + "|"
+                + RelationshipConditionAttributes.identity(evidence.attributes());
     }
 
     @Override

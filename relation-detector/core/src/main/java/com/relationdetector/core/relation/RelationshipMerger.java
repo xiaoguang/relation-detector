@@ -37,8 +37,7 @@ public final class RelationshipMerger {
     private final EvidenceObservationAggregator<Evidence> observations =
             new EvidenceObservationAggregator<>();
     private final RelationshipObservationPolicy observationPolicy = new RelationshipObservationPolicy();
-    private final RelationshipConditionalSummarizer conditionalSummarizer =
-            new RelationshipConditionalSummarizer();
+    private final RelationshipConditionalSummarizer conditionalSummarizer;
     private final RelationshipSubtypeResolver subtypeResolver = new RelationshipSubtypeResolver();
 
     public RelationshipMerger() {
@@ -47,6 +46,7 @@ public final class RelationshipMerger {
 
     public RelationshipMerger(CanonicalEndpointKeyProvider endpointKeys) {
         this.endpointKeys = java.util.Objects.requireNonNull(endpointKeys, "endpointKeys");
+        this.conditionalSummarizer = new RelationshipConditionalSummarizer(endpointKeys);
     }
 
     /**
