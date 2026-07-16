@@ -191,6 +191,10 @@ abstract class RelationshipAliasSupport {
         return ignoredRowsets.contains(normalize(table.tableName()));
     }
 
+    protected boolean isIgnoredRawRowset(String rowset, Set<String> ignoredRowsets) {
+        return rowset != null && !rowset.isBlank() && ignoredRowsets.contains(normalize(rowset));
+    }
+
     private boolean isSystemSchema(String schema) {
         return schema != null && !schema.isBlank()
                 && Set.of("information_schema", "performance_schema", "mysql", "sys", "pg_catalog", "pg_toast")

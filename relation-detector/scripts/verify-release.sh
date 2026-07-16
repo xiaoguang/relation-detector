@@ -14,6 +14,10 @@ VERIFY_DIR="$ROOT/relation-detector/target/verification/$SESSION_ID"
 NO_CACHE_LOG="$(mktemp "${TMPDIR:-/tmp}/relation-detector-no-cache.XXXXXX.log")"
 trap 'rm -f "$NO_CACHE_LOG"' EXIT
 
+# A previous sample-data run must not affect the no-cache freshness tests.
+# verify-all recreates this summary from the current commit after acceptance.
+rm -f relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv
+
 write_failure_manifest() {
   local phase="$1"
   local status="$2"

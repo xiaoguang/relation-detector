@@ -430,6 +430,57 @@ class StructuredRelationshipExtractorIndependenceTest {
     }
 
     @Test
+    void bareLocalTemporaryTableInSubqueryFallbackRemainsIgnoredAfterNamespaceResolution() {
+        SqlStatementRecord statement = record(
+                "SELECT pdf.id FROM category_pdf pdf "
+                        + "WHERE pdf.id IN (SELECT cat_id FROM tmp_available_categories)",
+                Map.of("localTempTables", List.of("tmp_available_categories")));
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "category_pdf", "pdf", 1),
+                new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                        provenance(1), new ExpressionSource("pdf", "id"),
+                        new ExpressionSource("", "cat_id"),
+                        List.of(new ExpressionSource("pdf", "id")),
+                        List.of(new ExpressionSource("", "cat_id")),
+                        "tmp_available_categories", "", List.of(), true)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("", "case_01", List.of()))
+                .extract(statement, structured);
+
+        assertTrue(relations.isEmpty(),
+                () -> "A bare temporary inner table must be rejected before namespace materialization: "
+                        + relations);
+    }
+
+    @Test
+    void explicitlyQualifiedPhysicalTableInSubqueryFallbackIsNotShadowedByBareTemporaryName() {
+        SqlStatementRecord statement = record(
+                "SELECT pdf.id FROM category_pdf pdf "
+                        + "WHERE pdf.id IN (SELECT cat_id FROM archive.tmp_available_categories)",
+                Map.of("localTempTables", List.of("tmp_available_categories")));
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "category_pdf", "pdf", 1),
+                new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                        provenance(1), new ExpressionSource("pdf", "id"),
+                        new ExpressionSource("", "cat_id"),
+                        List.of(new ExpressionSource("pdf", "id")),
+                        List.of(new ExpressionSource("", "cat_id")),
+                        "archive.tmp_available_categories", "", List.of(), true)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("", "case_01", List.of()))
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size(),
+                () -> "An explicitly qualified inner table must remain physical: " + relations);
+    }
+
+    @Test
     void tokenEventExtractorDoesNotOwnMysqlOnlyStraightJoinCompatibility() {
         SqlStatementRecord statement = record("SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());

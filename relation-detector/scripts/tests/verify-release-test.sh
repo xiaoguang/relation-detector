@@ -17,6 +17,9 @@ grep -q -- '-DcorrectnessFixtureProfile=smoke' "$VERIFY_RELEASE"
 no_cache_line="$(grep -n 'maven.build.cache.enabled=false' "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"
 verify_all_line="$(grep -n 'verify-all.sh' "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"
 [[ -n "$no_cache_line" && -n "$verify_all_line" && "$no_cache_line" -lt "$verify_all_line" ]]
+stale_summary_cleanup_line="$(grep -n 'rm -f relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv' \
+  "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"
+[[ -n "$stale_summary_cleanup_line" && "$stale_summary_cleanup_line" -lt "$no_cache_line" ]]
 
 mkdir -p "$TMP_DIR/results" "$TMP_DIR/verification"
 cat >"$TMP_DIR/result.json" <<'JSON'

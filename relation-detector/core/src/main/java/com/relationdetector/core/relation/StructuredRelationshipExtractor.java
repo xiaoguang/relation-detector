@@ -156,6 +156,9 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                 if (!isVerifiedColumnSubquery(event)) {
                     continue;
                 }
+                if (isIgnoredRawRowset(event.innerTable(), ignoredRowsets)) {
+                    continue;
+                }
                 ColumnRef outer = resolveWithFallbackTable(
                         event.left().alias(),
                         event.left().column(),
@@ -182,6 +185,9 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                 }
             } else if (event.type() == StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE) {
                 if (!isVerifiedColumnSubquery(event)) {
+                    continue;
+                }
+                if (isIgnoredRawRowset(event.innerTable(), ignoredRowsets)) {
                     continue;
                 }
                 List<String> outerAliases = event.outerSources().stream()
