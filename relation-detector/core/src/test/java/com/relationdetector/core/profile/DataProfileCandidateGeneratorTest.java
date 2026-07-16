@@ -21,6 +21,8 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.DataProfileOptions;
+import com.relationdetector.contracts.spi.IdentifierRules;
+import com.relationdetector.core.identity.NamespaceContext;
 
 class DataProfileCandidateGeneratorTest {
     private final DataProfileCandidateGenerator generator = new DataProfileCandidateGenerator();
@@ -104,6 +106,37 @@ class DataProfileCandidateGeneratorTest {
                         .withMaxTargetsPerSourceColumn(1));
 
         assertEquals(List.of(first), selected);
+    }
+
+    @Test
+    void sourceBudgetUsesCanonicalCatalogIdentity() {
+        TableId bareOrders = TableId.of(null, "orders");
+        TableId qualifiedOrders = new TableId("shop", null, "orders", "orders");
+        RelationshipCandidate first = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(bareOrders, "customer_id")),
+                endpoint("customers", "id"),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        RelationshipCandidate second = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(qualifiedOrders, "customer_id")),
+                endpoint("customer_archive", "id"),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        first.evidence().add(joinEvidence());
+        second.evidence().add(joinEvidence());
+
+        List<RelationshipCandidate> selected = generator.select(
+                List.of(first, second),
+                new MetadataSnapshot(),
+                List.of(),
+                DataProfileOptions.defaults()
+                        .withSkipUnindexedLargeTargets(false)
+                        .withMaxTargetsPerSourceColumn(1),
+                mysqlRules(),
+                new NamespaceContext("shop", null, List.of()));
+
+        assertEquals(List.of(first), selected,
+                "Bare and explicitly catalog-qualified sources must share one profile budget");
     }
 
     @Test
@@ -233,5 +266,19 @@ class DataProfileCandidateGeneratorTest {
 
     private Endpoint endpoint(String table, String column) {
         return Endpoint.column(ColumnRef.of(TableId.of(null, table), column));
+    }
+
+    private IdentifierRules mysqlRules() {
+        return new IdentifierRules() {
+            @Override
+            public String normalize(String identifier) {
+                return identifier == null ? "" : identifier.toLowerCase(java.util.Locale.ROOT);
+            }
+
+            @Override
+            public QualifiedNameSemantics qualifiedNameSemantics() {
+                return QualifiedNameSemantics.CATALOG_TABLE;
+            }
+        };
     }
 }

@@ -106,7 +106,8 @@ public final class StructuredDataLineageExtractor {
         AliasSymbolTable aliases = aliases(events);
         Set<String> localTempTables = new java.util.LinkedHashSet<>(allLocalTempTables);
         localTempTables.addAll(localTempTables(statement, events));
-        Set<String> ignoredRowsets = ignoredRowsets(events);
+        Set<String> ignoredRowsets = new java.util.LinkedHashSet<>(ignoredRowsets(events));
+        ignoredRowsets.addAll(localTempTables);
         ProjectionTraceResolver projectionTraces = ProjectionTraceResolver.fromEvents(
                 events, aliases, ignoredRowsets);
         List<DataLineageCandidate> candidates = new ArrayList<>();
@@ -114,6 +115,9 @@ public final class StructuredDataLineageExtractor {
             if (event.type() != StructuredParseEventType.UPDATE_ASSIGNMENT
                     && event.type() != StructuredParseEventType.INSERT_SELECT_MAPPING
                     && event.type() != StructuredParseEventType.MERGE_WRITE_MAPPING) {
+                continue;
+            }
+            if (isLocalTempWriteTarget(event, localTempTables)) {
                 continue;
             }
             ColumnRef target = targetColumn(event, aliases);
@@ -317,15 +321,27 @@ public final class StructuredDataLineageExtractor {
     }
 
     private boolean isLocalTemp(TableId table, Set<String> localTempTables) {
-        if (table.schema() != null && !table.schema().isBlank()) {
-            return localTempTables.contains(normalize(table.schema() + "." + table.tableName()));
+        if ((table.catalog() != null && !table.catalog().isBlank())
+                || (table.schema() != null && !table.schema().isBlank())) {
+            return localTempTables.contains(normalize(table.displayName()));
         }
         return localTempTables.contains(normalize(table.tableName()));
     }
 
+    private boolean isLocalTempWriteTarget(StructuredSqlEvent event, Set<String> localTempTables) {
+        return matchesDeclaredRowset(event.targetTable(), localTempTables)
+                || matchesDeclaredRowset(event.qualifiedTable(), localTempTables)
+                || matchesDeclaredRowset(event.table(), localTempTables);
+    }
+
+    private boolean matchesDeclaredRowset(String value, Set<String> declaredRowsets) {
+        return value != null && !value.isBlank() && declaredRowsets.contains(normalize(value));
+    }
+
     private boolean isIgnoredRowsetTable(TableId table, Set<String> ignoredRowsets) {
-        if (table.schema() != null && !table.schema().isBlank()) {
-            return ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName()));
+        if ((table.catalog() != null && !table.catalog().isBlank())
+                || (table.schema() != null && !table.schema().isBlank())) {
+            return ignoredRowsets.contains(normalize(table.displayName()));
         }
         return ignoredRowsets.contains(normalize(table.tableName()));
     }

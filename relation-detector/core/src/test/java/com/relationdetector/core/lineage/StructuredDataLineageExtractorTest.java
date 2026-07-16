@@ -23,6 +23,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.identity.NamespaceContext;
 
 class StructuredDataLineageExtractorTest {
@@ -217,7 +218,7 @@ class StructuredDataLineageExtractorTest {
     }
 
     @Test
-    void scanSchemaMatchesKnownPhysicalInternallyButDoesNotRewriteEndpoints() {
+    void scanSchemaQualifiesKnownPhysicalLineageEndpoints() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "INSERT INTO target_table(source_id) SELECT s.id FROM source_table s",
                 StatementSourceType.PLAIN_SQL,
@@ -250,9 +251,84 @@ class StructuredDataLineageExtractorTest {
                                 TableId.of("shop", "target_table")));
 
         assertEquals(1, lineages.size());
-        assertEquals(List.of("source_table.id"),
+        assertEquals(List.of("shop.source_table.id"),
                 lineages.get(0).sources().stream().map(endpoint -> endpoint.displayName()).toList());
-        assertEquals("target_table.source_id", lineages.get(0).target().displayName());
+        assertEquals("shop.target_table.source_id", lineages.get(0).target().displayName());
+    }
+
+    @Test
+    void explicitPhysicalSourceIsNotShadowedByBareTemporaryName() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "INSERT INTO facts(source_id) SELECT p.id FROM shop.tmp_rollup p",
+                StatementSourceType.PLAIN_SQL, "unit.sql", 1, 1,
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = new StructuredParseResult(
+                "TEST", "common", statement.sourceName(), List.of(
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "FROM", "shop.tmp_rollup", "tmp_rollup", "p", "", "", ""),
+                new WriteEvent(StructuredParseEventType.WRITE_TARGET, provenance(1),
+                        "facts", "facts", "facts", "", "", "", "", ExpressionTrace.empty()),
+                new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING, provenance(1),
+                        "", "", "", "", "facts", "source_id", "INSERT_SELECT",
+                        ExpressionTrace.of(List.of("p"), List.of("id"),
+                                LineageFlowKind.VALUE, LineageTransformType.DIRECT))),
+                List.of(), Map.of());
+
+        var lineages = new StructuredDataLineageExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("", "shop", List.of())).extract(statement, structured);
+
+        assertEquals(1, lineages.size());
+        assertEquals("shop.tmp_rollup.id", lineages.get(0).sources().get(0).displayName());
+    }
+
+    @Test
+    void catalogQualifiedPhysicalSourceIsNotShadowedByBareTemporaryName() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "INSERT INTO shop.facts(source_id) SELECT p.id FROM shop.tmp_rollup p",
+                StatementSourceType.PLAIN_SQL, "unit.sql", 1, 1,
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = new StructuredParseResult(
+                "TEST", "mysql", statement.sourceName(), List.of(
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "FROM", "shop.tmp_rollup", "tmp_rollup", "p", "", "", ""),
+                new WriteEvent(StructuredParseEventType.WRITE_TARGET, provenance(1),
+                        "facts", "shop.facts", "facts", "", "", "", "", ExpressionTrace.empty()),
+                new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING, provenance(1),
+                        "", "", "", "", "shop.facts", "source_id", "INSERT_SELECT",
+                        ExpressionTrace.of(List.of("p"), List.of("id"),
+                                LineageFlowKind.VALUE, LineageTransformType.DIRECT))),
+                List.of(), Map.of());
+
+        var lineages = new StructuredDataLineageExtractor(
+                mysqlIdentifierRules(), new NamespaceContext("shop", null, List.of()))
+                .extract(statement, structured);
+
+        assertEquals(1, lineages.size());
+        assertEquals("shop.tmp_rollup.id", lineages.get(0).sources().get(0).displayName());
+    }
+
+    @Test
+    void bareTemporarySourceRemainsNonPhysicalAfterNamespaceResolution() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "INSERT INTO facts(source_id) SELECT p.id FROM tmp_rollup p",
+                StatementSourceType.PLAIN_SQL, "unit.sql", 1, 1,
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = new StructuredParseResult(
+                "TEST", "common", statement.sourceName(), List.of(
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "FROM", "tmp_rollup", "tmp_rollup", "p", "", "", ""),
+                new WriteEvent(StructuredParseEventType.WRITE_TARGET, provenance(1),
+                        "facts", "facts", "facts", "", "", "", "", ExpressionTrace.empty()),
+                new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING, provenance(1),
+                        "", "", "", "", "facts", "source_id", "INSERT_SELECT",
+                        ExpressionTrace.of(List.of("p"), List.of("id"),
+                                LineageFlowKind.VALUE, LineageTransformType.DIRECT))),
+                List.of(), Map.of());
+
+        assertEquals(List.of(), new StructuredDataLineageExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("", "shop", List.of())).extract(statement, structured));
     }
 
     @Test
@@ -360,5 +436,19 @@ class StructuredDataLineageExtractorTest {
 
     private SourceProvenance provenance(long line) {
         return SourceProvenance.source("sample-data/mysql/8.0/03-data/07.sql", line);
+    }
+
+    private IdentifierRules mysqlIdentifierRules() {
+        return new IdentifierRules() {
+            @Override
+            public String normalize(String identifier) {
+                return identifier == null ? "" : identifier.toLowerCase(Locale.ROOT);
+            }
+
+            @Override
+            public QualifiedNameSemantics qualifiedNameSemantics() {
+                return QualifiedNameSemantics.CATALOG_TABLE;
+            }
+        };
     }
 }

@@ -24,6 +24,7 @@ public final class NamingEvidencePool {
     private final CanonicalEndpointKeyProvider endpointKeys;
     private final NamingEvidenceMerger merger;
     private final Map<String, NamingEvidenceCandidate> byKey = new LinkedHashMap<>();
+    private final Map<String, String> referenceAliases = new LinkedHashMap<>();
 
     public NamingEvidencePool() {
         this(CanonicalEndpointKeyProvider.defaults());
@@ -39,7 +40,10 @@ public final class NamingEvidencePool {
             return;
         }
         String key = key(candidate);
-        byKey.put(key, mergeOne(byKey.get(key), candidate));
+        NamingEvidenceCandidate merged = mergeOne(byKey.get(key), candidate);
+        byKey.put(key, merged);
+        referenceAliases.put(candidate.id(), key);
+        referenceAliases.put(merged.id(), key);
     }
 
     public void addAll(Collection<NamingEvidenceCandidate> candidates) {
@@ -65,6 +69,13 @@ public final class NamingEvidencePool {
         return byKey.values().stream()
                 .filter(item -> sameEndpointPair(item, candidate))
                 .findFirst();
+    }
+
+    /** Resolves any canonically equivalent candidate id to the retained top-level fact id. */
+    public Optional<String> resolveReferenceId(String referenceId) {
+        String key = referenceAliases.get(referenceId);
+        NamingEvidenceCandidate retained = key == null ? null : byKey.get(key);
+        return retained == null ? Optional.empty() : Optional.of(retained.id());
     }
 
     /** Replaces each retained raw naming observation through the scan-local adjustment hook. */

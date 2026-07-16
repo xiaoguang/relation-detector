@@ -15,26 +15,26 @@ It is independent of the technical statuses below.
 
 | Closure ID | State |
 | --- | --- |
-| ID-01 | FOCUSED_GREEN |
-| ID-02 | FOCUSED_GREEN |
-| ID-03 | FOCUSED_GREEN |
-| ID-04 | FOCUSED_GREEN |
-| ID-05 | FOCUSED_GREEN |
-| EV-01 | FOCUSED_GREEN |
-| EV-02 | FOCUSED_GREEN |
-| EV-03 | FOCUSED_GREEN |
-| EV-04 | FOCUSED_GREEN |
-| EV-05 | FOCUSED_GREEN |
-| EV-06 | FOCUSED_GREEN |
-| CT-01 | FOCUSED_GREEN |
-| CT-02 | FOCUSED_GREEN |
-| CT-03 | FOCUSED_GREEN |
-| CT-04 | FOCUSED_GREEN |
-| CT-05 | FOCUSED_GREEN |
-| CT-06 | FOCUSED_GREEN |
-| TG-01 | OPEN |
-| TG-02 | OPEN |
-| TG-03 | OPEN |
+| ID-01 | FULL_GREEN |
+| ID-02 | FULL_GREEN |
+| ID-03 | FULL_GREEN |
+| ID-04 | FULL_GREEN |
+| ID-05 | FULL_GREEN |
+| EV-01 | FULL_GREEN |
+| EV-02 | FULL_GREEN |
+| EV-03 | FULL_GREEN |
+| EV-04 | FULL_GREEN |
+| EV-05 | FULL_GREEN |
+| EV-06 | FULL_GREEN |
+| CT-01 | FULL_GREEN |
+| CT-02 | FULL_GREEN |
+| CT-03 | FULL_GREEN |
+| CT-04 | FULL_GREEN |
+| CT-05 | FULL_GREEN |
+| CT-06 | FULL_GREEN |
+| TG-01 | FULL_GREEN |
+| TG-02 | FULL_GREEN |
+| TG-03 | FULL_GREEN |
 
 ## 代码注释同步范围
 
@@ -76,7 +76,7 @@ profiling outcome 的关键入口 Javadoc 已同步。架构测试使用 JDK com
 | Oracle versioned golden | `test-fixtures/correctness/oracle/v12c|v19c|v21c|v26ai`, Oracle `FullGrammarDialectModule` | `phase-09 Oracle adaptor`, `phase-06 Parser mode 和 profile 选择` | `CorrectnessFixtureRunnerTest` with Oracle sample-data fixtures, `OracleAdaptorParserTest`, `OracleParserArchitectureTest` | DOC_UPDATED | root `oracle` 是 token-event baseline；versioned directories 强制 Oracle full-grammar profile。当前 versioned outputs 是 `INCOMPLETE_VERSIONED` generated parser golden，不是 token-event bridge golden。 |
 | SQL Server versioned golden | `test-fixtures/correctness/sqlserver/v2016|v2017|v2019|v2022|v2025`, SQL Server `FullGrammarDialectModule` | `phase-10 SQL Server adaptor`, `phase-06 Parser mode 和 profile 选择` | `CorrectnessFixtureRunnerTest`, `SqlServerParserArchitectureTest`, `SqlServerTokenEventParserTest` | DOC_UPDATED | root `sqlserver` 是 token-event baseline；versioned directories 强制 SQL Server full-grammar profile。当前 sample-data 使用保守 T-SQL 子集；2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES`、2025 `VECTOR(...)` 已有 grammar-level version boundary，更多 T-SQL family 仍是 backlog。 |
 | 代码结构注释 | `**/package-info.java`, production class/method Javadocs | `phase-06 代码结构注释索引`, `code-implementation-guide` | `DialectGrammarArchitectureTest`, compile + semantic tests | MATCHED | 泛化模板已清零。package 门禁要求双语职责、输入、输出、上下游与禁止边界；公开类型和大型编排方法要求具体说明。门禁验证结构与禁用模板，语义准确性仍由代码评审负责。 |
-| 大型语义类职责门禁 | parser semantic analyzers/support/extractors/resolvers/mergers/framers | `phase-06 Visitor 与语义 helper 职责边界` | `DialectGrammarArchitectureTest` semantic/framer gates | PARTIAL | 400/450、framer 200 和 planner 250 的有效代码行门禁已覆盖目标职责且无永久 allowlist。但 top-level record 排除仍通过源码文本包含判断，注释或字符串可误触发豁免；门禁应改为 compiler AST 的顶层声明判断。 |
+| 大型语义类职责门禁 | parser semantic analyzers/support/extractors/resolvers/mergers/framers | `phase-06 Visitor 与语义 helper 职责边界` | `DialectGrammarArchitectureTest` semantic/framer gates | MATCHED | 400/450、framer 200 和 planner 250 的有效代码行门禁已覆盖目标职责且无永久 allowlist。top-level record 排除通过 JDK compiler AST 检查真实顶层声明；普通类注释或字符串中的伪 `record` 不能绕过门禁。 |
 
 ## 已知实现事实
 
@@ -96,7 +96,7 @@ profiling outcome 的关键入口 Javadoc 已同步。架构测试使用 JDK com
 | table identity 与 fact canonicalization | MATCHED | `TableId`、dialect canonical key、source namespace、live profile namespace 和 derived bridge 已使用完整身份；跨 catalog/schema、quoted case 和 profile-only mismatch 由 focused tests 保护。 |
 | 直接 API 文件路径 | FOCUSED_GREEN | `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner；CLI 以配置文件父目录解析，core direct API 以显式或当前工作目录解析。missing、non-regular 和 unreadable 输入在 scan 前 fail-fast。 |
 | relationship 条件与 provenance merge | MATCHED | 完整 guard identity、conditional/unconditional summary 与 polymorphic 计算已通过 focused tests；grouped evidence 顶层只保留所有 observation 一致的 consensus attributes。 |
-| 大型语义类职责门禁 | PARTIAL | 行数和 planner/helper 边界已实现；top-level record 豁免仍需从文本包含判断改为 AST 顶层类型判断。 |
+| 大型语义类职责门禁 | MATCHED | 行数和 planner/helper 边界已实现；top-level record 豁免使用 JDK compiler AST 判断，并以普通类注释/字符串中的伪 `record` 和真实 record DTO 做对抗测试。 |
 | profiler warning 脱敏与权限分类 | MATCHED | 脱敏和 profiler 契约已实现；共享规则只识别 JDBC 类型/SQLState，方言 vendor code 由对应 adaptor 限定。 |
 | live profiler 指标完整性 | PARTIAL | 四项计数、方言合法 table qualification 与 profile-only catalog 校验已闭环；negative filter-context guard 仍为明确 backlog。 |
 | MySQL live object parser completeness | MATCHED | `information_schema` 只用于枚举对象身份；完整 parser 输入来自 `SHOW CREATE PROCEDURE/FUNCTION/VIEW/TRIGGER/EVENT`，单对象失败产生安全 warning 并跳过。 |

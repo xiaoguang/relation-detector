@@ -65,8 +65,9 @@ abstract class RelationshipAliasSupport {
                 putAlias(aliases, bindings, ambiguousAliases, alias, pseudoTable, event.line());
                 continue;
             }
-            if (ignoredRowsets.contains(normalize(table)) || ignoredRowsets.contains(normalize(qualified))) continue;
-            TableId tableId = tableId(qualified.isBlank() ? table : qualified);
+            String rowsetIdentity = qualified.isBlank() ? table : qualified;
+            if (ignoredRowsets.contains(normalize(rowsetIdentity))) continue;
+            TableId tableId = tableId(rowsetIdentity);
             putAlias(aliases, bindings, ambiguousAliases, qualified, tableId, event.line());
             putAlias(aliases, bindings, ambiguousAliases, table, tableId, event.line());
             if (!alias.isBlank()) putAlias(aliases, bindings, ambiguousAliases, alias, tableId, event.line());
@@ -136,8 +137,8 @@ abstract class RelationshipAliasSupport {
             String table = event.table();
             String qualified = event.qualifiedTable();
             String alias = event.alias();
-            if (alias.isBlank()
-                    || (!ignoredRowsets.contains(normalize(table)) && !ignoredRowsets.contains(normalize(qualified)))) {
+            String rowsetIdentity = qualified.isBlank() ? table : qualified;
+            if (alias.isBlank() || !ignoredRowsets.contains(normalize(rowsetIdentity))) {
                 continue;
             }
             for (Map.Entry<ColumnKey, ColumnRef> entry : List.copyOf(projections.entrySet())) {
@@ -183,8 +184,9 @@ abstract class RelationshipAliasSupport {
 
     protected boolean isIgnored(TableId table, Set<String> ignoredRowsets) {
         if (isSystemSchema(table.schema())) return true;
-        if (table.schema() != null && !table.schema().isBlank()) {
-            return ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName()));
+        if ((table.catalog() != null && !table.catalog().isBlank())
+                || (table.schema() != null && !table.schema().isBlank())) {
+            return ignoredRowsets.contains(normalize(table.displayName()));
         }
         return ignoredRowsets.contains(normalize(table.tableName()));
     }

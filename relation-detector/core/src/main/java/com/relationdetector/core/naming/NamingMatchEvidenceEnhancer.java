@@ -7,6 +7,7 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.contracts.model.DerivedPathCandidate;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
@@ -30,6 +31,47 @@ public final class NamingMatchEvidenceEnhancer {
             }
             namingEvidence.findFor(candidate)
                     .ifPresent(item -> candidate.evidence().add(referenceEvidence(item)));
+        }
+    }
+
+    /** Rebinds pre-merge naming aliases to the retained top-level fact id. */
+    public void normalizeReferences(
+            List<RelationshipCandidate> relationships,
+            List<DerivedPathCandidate> derivedRelationships,
+            NamingEvidencePool namingEvidence
+    ) {
+        relationships.forEach(candidate -> {
+            normalizeReferences(candidate.evidence(), namingEvidence);
+            normalizeReferences(candidate.rawEvidence(), namingEvidence);
+        });
+        derivedRelationships.forEach(candidate -> {
+            normalizeReferences(candidate.evidence(), namingEvidence);
+            normalizeReferences(candidate.rawEvidence(), namingEvidence);
+        });
+    }
+
+    private void normalizeReferences(List<Evidence> evidence, NamingEvidencePool namingEvidence) {
+        for (int index = 0; index < evidence.size(); index++) {
+            Evidence item = evidence.get(index);
+            if (item.type() != EvidenceType.NAMING_MATCH) {
+                continue;
+            }
+            Object referenceValue = item.attributes().get("evidenceRef");
+            if (referenceValue == null) {
+                continue;
+            }
+            String reference = String.valueOf(referenceValue);
+            String retained = namingEvidence.resolveReferenceId(reference).orElse(reference);
+            if (retained.equals(reference)) {
+                continue;
+            }
+            Map<String, Object> attributes = new LinkedHashMap<>(item.attributes());
+            attributes.put("evidenceRef", retained);
+            String source = reference.equals(item.source()) ? retained : item.source();
+            String detail = ("Naming evidence " + reference).equals(item.detail())
+                    ? "Naming evidence " + retained : item.detail();
+            evidence.set(index, new Evidence(
+                    item.type(), item.score(), item.sourceType(), source, detail, attributes));
         }
     }
 

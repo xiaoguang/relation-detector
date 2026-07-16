@@ -2,6 +2,7 @@ package com.relationdetector.core.scan;
 
 import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.derived.DerivedPathInferenceService;
+import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.RelationshipMerger;
 
 final class ResultAssembly {
@@ -24,6 +25,8 @@ final class ResultAssembly {
         ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());
         ctx.result.derivedRelationships().clear();
         ctx.result.derivedRelationships().addAll(derived.derivedRelationships());
+        new NamingMatchEvidenceEnhancer().normalizeReferences(
+                ctx.result.relationships(), ctx.result.derivedRelationships(), ctx.namingEvidencePool);
         ctx.result.derivedDataLineages().clear();
         ctx.result.derivedDataLineages().addAll(derived.derivedDataLineages());
         return ctx.result;

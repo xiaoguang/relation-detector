@@ -196,7 +196,8 @@ class DialectParserEvidenceConfidenceTest {
 
         assertEquals(1, merged.rawEvidence().size());
         assertEquals(3, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
-        assertEquals(1, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("count"));
+        assertEquals(3, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("count"),
+                "Grouped evidence reports folded occurrence multiplicity without adding repetition confidence");
         assertEquals(new BigDecimal("0.5500"), merged.confidence());
         assertTrue(merged.evidence().stream()
                 .noneMatch(evidence -> evidence.type() == EvidenceType.REPEATED_OBSERVATION));

@@ -21,6 +21,8 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.RelationshipMerger;
@@ -141,6 +143,52 @@ class NamingMatchEvidenceEnhancerTest {
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH),
                 "relationship enhancer must not invent a local NAMING_MATCH when the pool has no matching id");
+    }
+
+    @Test
+    void finalReferenceNormalizationUsesTheRetainedCanonicalFactId() {
+        CanonicalEndpointKeyProvider keys = new CanonicalEndpointKeyProvider(
+                value -> value == null ? "" : value.toLowerCase(java.util.Locale.ROOT),
+                new NamespaceContext(null, "sample_data", List.of()));
+        NamingEvidencePool pool = new NamingEvidencePool(keys);
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "sales_fact"), "payment_id"));
+        NamingEvidenceCandidate qualified = new NamingEvidenceCandidate(
+                source,
+                Endpoint.column(ColumnRef.of(TableId.of("sample_data", "sales_orders"), "id")),
+                namingEvidence("sales_fact", "payment_id", "sales_orders", "id",
+                        "TRANSITIVE_NAMING_PATH").evidence(),
+                "TRANSITIVE_NAMING_PATH", true);
+        NamingEvidenceCandidate unqualified = new NamingEvidenceCandidate(
+                source,
+                Endpoint.column(ColumnRef.of(TableId.of(null, "sales_orders"), "id")),
+                qualified.evidence(), "TRANSITIVE_NAMING_PATH", true);
+        pool.add(qualified);
+        pool.add(unqualified);
+        RelationshipCandidate relationship = sqlCoOccurrence(
+                "sales_fact", "payment_id", "sales_orders", "id");
+        relationship.evidence().add(new Evidence(
+                EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.INFERENCE,
+                "derived:naming",
+                "sales_fact.payment_id -> sales_orders.id",
+                Map.of("evidenceRef", unqualified.id(), "namingRule", "TRANSITIVE_NAMING_PATH")));
+        relationship.rawEvidence().add(new Evidence(
+                EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.INFERENCE,
+                unqualified.id(),
+                "Naming evidence " + unqualified.id(),
+                Map.of("evidenceRef", unqualified.id(), "namingRule", "TRANSITIVE_NAMING_PATH")));
+
+        new NamingMatchEvidenceEnhancer().normalizeReferences(
+                List.of(relationship), List.of(), pool);
+
+        assertEquals(qualified.id(), evidence(relationship, EvidenceType.NAMING_MATCH)
+                .attributes().get("evidenceRef"));
+        assertEquals(qualified.id(), relationship.rawEvidence().get(0).attributes().get("evidenceRef"));
+        assertEquals(qualified.id(), relationship.rawEvidence().get(0).source());
+        assertEquals("Naming evidence " + qualified.id(), relationship.rawEvidence().get(0).detail());
     }
 
     private RelationshipCandidate sqlCoOccurrence(String leftTable, String leftColumn, String rightTable, String rightColumn) {

@@ -387,9 +387,10 @@ public final class RelationshipMerger {
         candidate.evidence().clear();
         for (SummaryGroup<Evidence> group : aggregation.groups()) {
             candidate.evidence().add(groupedEvidence(group));
-            if (group.distinctObservationCount() > 1
+            int repetitionCount = distinctRepetitionLocations(group, aggregation.rawObservations());
+            if (repetitionCount > 1
                     && RelationshipObservationPolicy.repeatedObservationEligible(group.first().type())) {
-                candidate.evidence().add(repeatedObservationEvidence(group));
+                candidate.evidence().add(repeatedObservationEvidence(group, repetitionCount));
             }
         }
     }
@@ -409,9 +410,21 @@ public final class RelationshipMerger {
                 first.type(), first.score(), first.sourceType(), first.source(), first.detail(), attributes);
     }
 
-    private Evidence repeatedObservationEvidence(SummaryGroup<Evidence> group) {
+    private int distinctRepetitionLocations(
+            SummaryGroup<Evidence> group,
+            List<Evidence> rawObservations
+    ) {
+        Object summaryKey = observationPolicy.summaryKey(group.first());
+        return (int) rawObservations.stream()
+                .filter(evidence -> java.util.Objects.equals(
+                        summaryKey, observationPolicy.summaryKey(evidence)))
+                .map(observationPolicy::repetitionLocationKey)
+                .distinct()
+                .count();
+    }
+
+    private Evidence repeatedObservationEvidence(SummaryGroup<Evidence> group, int count) {
         Evidence first = group.first();
-        int count = group.distinctObservationCount();
         double cap = DefaultEvidenceScores.REPEATED_OBSERVATION_MAX;
         double score = cap * (1.0d - (1.0d / count));
         Map<String, Object> attributes = new LinkedHashMap<>();

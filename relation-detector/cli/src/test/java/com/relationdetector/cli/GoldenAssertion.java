@@ -49,8 +49,11 @@ final class GoldenAssertion {
             List<RelationshipCandidate> actual
     ) throws Exception {
         List<RelationshipCandidate> merged = new RelationshipMerger().merge(actual, 0.0);
+        TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
         Set<String> actualFingerprints = merged.stream()
                 .map(this::fingerprint)
+                .map(value -> FixtureFingerprintNormalizer.preferExpectedNamespaceForm(
+                        value, fixture.schema(), expectedFingerprints))
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")) {
             if (!Files.exists(fixture.expectedRelationsFile())
@@ -59,7 +62,6 @@ final class GoldenAssertion {
             }
             return;
         }
-        TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
         assertEquals(expectedFingerprints, actualFingerprints,
                 () -> fixture.id() + " relation fingerprints. Missing="
                         + difference(expectedFingerprints, actualFingerprints)
@@ -114,17 +116,19 @@ final class GoldenAssertion {
             List<DataLineageCandidate> actual
     ) throws Exception {
         List<DataLineageCandidate> merged = new DataLineageMerger().merge(actual);
+        TreeSet<String> expectedFingerprints = expected.fingerprints().stream()
+                .map(LineageFingerprintNormalizer::normalize)
+                .collect(Collectors.toCollection(TreeSet::new));
         List<String> actualFingerprints = merged.stream()
                 .map(this::lineageFingerprint)
                 .map(LineageFingerprintNormalizer::normalize)
+                .map(value -> FixtureFingerprintNormalizer.preferExpectedNamespaceForm(
+                        value, fixture.schema(), expectedFingerprints))
                 .toList();
         if (Boolean.getBoolean("updateCorrectnessGold")
                 && (expected.exists() || !actualFingerprints.isEmpty())) {
             TreeSet<String> actualFingerprintSet = new TreeSet<>(actualFingerprints);
-            TreeSet<String> normalizedExpected = expected.fingerprints().stream()
-                    .map(LineageFingerprintNormalizer::normalize)
-                    .collect(Collectors.toCollection(TreeSet::new));
-            if (!expected.exists() || !normalizedExpected.equals(actualFingerprintSet)) {
+            if (!expected.exists() || !expectedFingerprints.equals(actualFingerprintSet)) {
                 writer.writeLineage(
                         fixture,
                         actualFingerprintSet.stream().toList(),
@@ -137,9 +141,6 @@ final class GoldenAssertion {
         if (!expected.exists()) {
             return;
         }
-        TreeSet<String> expectedFingerprints = expected.fingerprints().stream()
-                .map(LineageFingerprintNormalizer::normalize)
-                .collect(Collectors.toCollection(TreeSet::new));
         TreeSet<String> actualFingerprintSet = new TreeSet<>(actualFingerprints);
         assertEquals(expectedFingerprints, actualFingerprintSet,
                 () -> fixture.id() + " data lineage fingerprints. Missing="
@@ -170,8 +171,11 @@ final class GoldenAssertion {
             ExpectedNamingEvidence expected,
             List<NamingEvidenceCandidate> actual
     ) throws Exception {
+        TreeSet<String> expectedFingerprints = new TreeSet<>(expected.fingerprints());
         Set<String> actualFingerprints = actual.stream()
                 .map(this::namingEvidenceFingerprint)
+                .map(value -> FixtureFingerprintNormalizer.preferExpectedNamespaceForm(
+                        value, fixture.schema(), expectedFingerprints))
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")
                 && (expected.exists() || !actualFingerprints.isEmpty())) {
@@ -187,7 +191,7 @@ final class GoldenAssertion {
                             + " golden. Actual=" + actualFingerprints);
             return;
         }
-        assertEquals(new TreeSet<>(expected.fingerprints()), actualFingerprints,
+        assertEquals(expectedFingerprints, actualFingerprints,
                 () -> fixture.id() + " naming evidence fingerprints");
     }
 

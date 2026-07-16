@@ -83,6 +83,27 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void sameSqlLocationGuardVariantsDoNotAddRepetitionConfidence() {
+        RelationshipCandidate unguarded = sqlLogJoinAtPosition(Map.of());
+        RelationshipCandidate guarded = sqlLogJoinAtPosition(Map.of(
+                "conditional", true,
+                "conditions", List.of(Map.of(
+                        "discriminator", "warehouses.status",
+                        "operator", "EQUALS",
+                        "value", "active"))));
+
+        RelationshipCandidate merged = merger.merge(List.of(guarded, unguarded), 0.0d).get(0);
+
+        assertEquals(2, merged.rawEvidence().size(),
+                "Guard variants remain independently auditable under the complete observation identity");
+        assertEquals(2, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("count"));
+        assertEquals(new BigDecimal("0.5500"), merged.confidence());
+        assertTrue(merged.evidence().stream()
+                .noneMatch(item -> item.type() == EvidenceType.REPEATED_OBSERVATION),
+                "One SQL position must not earn a repeated-observation bonus from semantic variants");
+    }
+
+    @Test
     void retainsConditionalAttributesOnlyWhenEveryStructuralObservationIsGuarded() {
         List<RelationshipCandidate> conditional = merger.merge(List.of(
                 conditionalJoin("customers", "customer"),
@@ -370,6 +391,22 @@ class RelationshipMergerEvidenceAggregationTest {
         RelationshipCandidate candidate = baseRelation();
         candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN, DefaultEvidenceScores.SQL_LOG_JOIN,
                 EvidenceSourceType.NATIVE_LOG, source, detail));
+        return candidate;
+    }
+
+    private RelationshipCandidate sqlLogJoinAtPosition(Map<String, Object> semanticAttributes) {
+        RelationshipCandidate candidate = baseRelation();
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>(semanticAttributes);
+        attributes.put("sourceFile", "routine.sql");
+        attributes.put("sourceStatementId", "routine.sql:50-60");
+        attributes.put("sourceLine", 56);
+        candidate.evidence().add(new Evidence(
+                EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "routine.sql",
+                "typed column equality",
+                attributes));
         return candidate;
     }
 

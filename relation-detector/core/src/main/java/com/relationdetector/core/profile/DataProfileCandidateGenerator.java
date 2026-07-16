@@ -21,6 +21,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.core.identity.CanonicalEndpointKey;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.metadata.IndexEvidencePolicy;
@@ -63,20 +64,22 @@ public final class DataProfileCandidateGenerator {
     ) {
         DataProfileOptions effective = options == null ? DataProfileOptions.defaults() : options;
         CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(identifierRules);
+        CanonicalEndpointKeyProvider endpointKeys = new CanonicalEndpointKeyProvider(identifierRules, namespace);
         List<RelationshipCandidate> result = new ArrayList<>();
         Map<String, RelationshipCandidate> seen = new LinkedHashMap<>();
         Map<String, Integer> targetsBySource = new HashMap<>();
         int limit = effective.maxCandidatePairs();
         for (RelationshipCandidate candidate : candidates == null ? List.<RelationshipCandidate>of() : candidates) {
             if (selectedExistingCandidate(candidate, metadata, effective, resolver, namespace)) {
-                add(seen, result, targetsBySource, candidate, limit, effective.maxTargetsPerSourceColumn());
+                add(seen, result, targetsBySource, candidate, limit,
+                        effective.maxTargetsPerSourceColumn(), endpointKeys);
             }
         }
         if (effective.discoverFromNamingEvidence()) {
             for (NamingEvidenceCandidate naming : namingEvidence == null ? List.<NamingEvidenceCandidate>of() : namingEvidence) {
                 if (namingCandidateAllowed(naming, metadata, resolver, namespace)) {
                     add(seen, result, targetsBySource, discoveredCandidate(naming), limit,
-                            effective.maxTargetsPerSourceColumn());
+                            effective.maxTargetsPerSourceColumn(), endpointKeys);
                 }
             }
         }
@@ -184,15 +187,16 @@ public final class DataProfileCandidateGenerator {
     }
 
     private void add(Map<String, RelationshipCandidate> seen, List<RelationshipCandidate> result,
-            Map<String, Integer> targetsBySource, RelationshipCandidate candidate, int limit, int maxTargetsPerSource) {
+            Map<String, Integer> targetsBySource, RelationshipCandidate candidate, int limit,
+            int maxTargetsPerSource, CanonicalEndpointKeyProvider endpointKeys) {
         if (result.size() >= limit) {
             return;
         }
-        String sourceKey = candidate.source().normalizedKey();
+        String sourceKey = endpointKeys.factKey(candidate.source());
         if (targetsBySource.getOrDefault(sourceKey, 0) >= maxTargetsPerSource) {
             return;
         }
-        String key = candidate.source().normalizedKey() + "->" + candidate.target().normalizedKey();
+        String key = sourceKey + "->" + endpointKeys.factKey(candidate.target());
         if (!seen.containsKey(key)) {
             seen.put(key, candidate);
             result.add(candidate);

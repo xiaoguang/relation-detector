@@ -20,18 +20,28 @@ final class RelationshipObservationPolicy
 
     @Override
     public Object exactKey(Evidence evidence) {
+        return new ExactIdentity(
+                semanticIdentityWithoutConditions(evidence),
+                RelationshipConditionAttributes.identity(evidence.attributes()));
+    }
+
+    private SemanticIdentity semanticIdentityWithoutConditions(Evidence evidence) {
         Map<String, Object> identity = new LinkedHashMap<>(evidence.attributes());
         identity.keySet().removeAll(List.of(
                 "occurrenceCount", "count", "firstDetail", "lastDetail", "sampleDetails", "sampleTruncated",
-                "conditions", "discriminatorEndpoint", "discriminatorOperator", "discriminatorValue"));
-        return summaryKey(evidence) + "|" + evidence.detail() + "|" + identity + "|"
-                + RelationshipConditionAttributes.identity(evidence.attributes());
+                "conditional", "polymorphic", "conditions",
+                "discriminatorEndpoint", "discriminatorOperator", "discriminatorValue"));
+        return new SemanticIdentity(summaryKey(evidence), evidence.detail(), Map.copyOf(identity));
     }
 
     @Override
     public Object summaryKey(Evidence evidence) {
         return evidence.type() + "|" + evidence.sourceType() + "|"
                 + evidence.source() + "|" + evidence.score();
+    }
+
+    Object repetitionLocationKey(Evidence evidence) {
+        return semanticIdentityWithoutConditions(evidence);
     }
 
     @Override public int occurrenceCount(Evidence evidence) {
@@ -47,5 +57,11 @@ final class RelationshipObservationPolicy
         attributes.put("occurrenceCount", count);
         return new Evidence(evidence.type(), evidence.score(), evidence.sourceType(), evidence.source(),
                 evidence.detail(), attributes);
+    }
+
+    private record SemanticIdentity(Object summaryKey, String detail, Map<String, Object> attributes) {
+    }
+
+    private record ExactIdentity(SemanticIdentity semantic, String conditionIdentity) {
     }
 }

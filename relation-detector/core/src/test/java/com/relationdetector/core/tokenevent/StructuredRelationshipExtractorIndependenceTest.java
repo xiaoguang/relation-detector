@@ -27,6 +27,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.identity.NamespaceContext;
 
 /**
@@ -362,6 +363,73 @@ class StructuredRelationshipExtractorIndependenceTest {
     }
 
     @Test
+    void namespaceQualificationDoesNotPromoteLocalTemporaryTablesToPhysicalEndpoints() {
+        SqlStatementRecord statement = record(
+                "SELECT * FROM tmp_rollup tr JOIN customers c ON tr.customer_id = c.id",
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "tmp_rollup", "tr", 1),
+                table("JOIN", "customers", "c", 1),
+                equality("tr", "customer_id", "c", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("", "shop", List.of()))
+                .extract(statement, structured);
+
+        assertTrue(relations.isEmpty(),
+                () -> "A scan namespace must not turn a local temporary table into a physical endpoint: "
+                        + relations);
+    }
+
+    @Test
+    void explicitlyQualifiedPhysicalTableIsNotShadowedByBareTemporaryName() {
+        SqlStatementRecord statement = record(
+                "SELECT * FROM shop.tmp_rollup pr JOIN customers c ON pr.customer_id = c.id",
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = structured(List.of(
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "FROM", "shop.tmp_rollup", "tmp_rollup", "pr", "", "", ""),
+                table("JOIN", "customers", "c", 1),
+                equality("pr", "customer_id", "c", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                value -> value == null ? "" : value.toLowerCase(Locale.ROOT),
+                new NamespaceContext("", "shop", List.of()))
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size(),
+                () -> "An explicit physical namespace must win over a bare temporary name: " + relations);
+        assertTrue(relations.stream().anyMatch(relation ->
+                        relation.source().displayName().contains("shop.tmp_rollup.customer_id")
+                                || relation.target().displayName().contains("shop.tmp_rollup.customer_id")),
+                () -> "The physical endpoint must remain qualified: " + relations);
+    }
+
+    @Test
+    void catalogQualifiedPhysicalTableIsNotShadowedByBareTemporaryName() {
+        SqlStatementRecord statement = record(
+                "SELECT * FROM shop.tmp_rollup pr JOIN shop.customers c ON pr.customer_id = c.id",
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = structured(List.of(
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "FROM", "shop.tmp_rollup", "tmp_rollup", "pr", "", "", ""),
+                new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(1),
+                        "JOIN", "shop.customers", "customers", "c", "", "", ""),
+                equality("pr", "customer_id", "c", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor(
+                mysqlIdentifierRules(), new NamespaceContext("shop", null, List.of()))
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size(),
+                () -> "A catalog-qualified physical table must not match a bare temporary identity: " + relations);
+    }
+
+    @Test
     void tokenEventExtractorDoesNotOwnMysqlOnlyStraightJoinCompatibility() {
         SqlStatementRecord statement = record("SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());
@@ -447,5 +515,19 @@ class StructuredRelationshipExtractorIndependenceTest {
 
     private SourceProvenance provenance(long line) {
         return SourceProvenance.source("independence.sql", line);
+    }
+
+    private IdentifierRules mysqlIdentifierRules() {
+        return new IdentifierRules() {
+            @Override
+            public String normalize(String identifier) {
+                return identifier == null ? "" : identifier.toLowerCase(Locale.ROOT);
+            }
+
+            @Override
+            public QualifiedNameSemantics qualifiedNameSemantics() {
+                return QualifiedNameSemantics.CATALOG_TABLE;
+            }
+        };
     }
 }

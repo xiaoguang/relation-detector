@@ -359,6 +359,7 @@ relationType
 - `evidence` 保留归并后的摘要证据，用于置信度计算和常规展示。聚合后的 evidence 保留原始 score 一次，并在 `attributes.count` 中记录出现次数。
 - 当 `count > 1` 时，聚合 evidence 还应记录 `firstDetail`、`lastDetail`、`sampleDetails` 和 `sampleTruncated`。`sampleDetails` 默认最多保留 5 条代表性 detail，避免日志证据爆炸。
 - 对可重复观测类证据，例如 `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`、`SQL_LOG_COLUMN_CO_OCCURRENCE`、`SQL_LOG_TABLE_CO_OCCURRENCE`，重复出现会额外生成一条 `REPEATED_OBSERVATION` evidence。
+- `REPEATED_OBSERVATION` 按独立 typed observation 计数；同一语义位置仅因 guard 条件不同而形成的多个 raw observation 仍需保留，但不构成重复出现加分。不同位置或其它 typed 语义属性不同的 observation 继续参与有界加分。
 - `REPEATED_OBSERVATION` 是小幅排序/加固证据，不替代基础证据。它的分数使用递减增益并带绝对上限：`score = 0.10 * (1 - 1 / count)`。因此重复 2 次加 0.05，重复 3 次加 0.0667，重复 100 次加 0.099；它只会接近 0.10，永远不会达到或超过 0.10。
 - conditional relationship 必须保留 typed predicate group 中的全部 discriminator guard，而不是只提升
   第一项。不同 guard 的稳定排序后结果进入 `conditions`；存在无条件 structural observation 时 summary
@@ -366,8 +367,9 @@ relationType
 - grouped evidence 的顶层 attributes 只能保留所有 observations 都存在且深度相等的共识属性；
   file/statement/line/block/object 或 condition 冲突时只能留在 raw evidence，不能复制首条 provenance。
 
-当前实现状态为 `PARTIAL`：conditional summary 仍只读取第一项扁平 guard，relationship grouped
-evidence 仍使用 first observation attributes，尚未完全遵守以上两条归并契约。
+当前实现状态为 `MATCHED`：conditional summary 聚合 typed predicate group 的全部 guard；relationship
+grouped evidence 只保留所有 observations 深度相等的共识属性，冲突 provenance 和 condition 仅保留在
+raw evidence。
 
 ## 置信度计算
 

@@ -22,6 +22,7 @@ import javax.tools.ToolProvider;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
@@ -29,6 +30,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class DialectGrammarArchitectureTest {
     private static final List<String> FORBIDDEN_JAVADOC_TEMPLATES = List.of(
@@ -36,6 +38,26 @@ class DialectGrammarArchitectureTest {
             "对应的生产操作",
             "Production responsibility and collaboration boundary",
             "Executes the production operation represented by");
+
+    @TempDir
+    Path tempDir;
+
+    @Test
+    void recordDtoExemptionUsesTheTopLevelAstDeclaration() throws IOException {
+        Path ordinaryClass = tempDir.resolve("OversizedAnalyzer.java");
+        Files.writeString(ordinaryClass, """
+                final class OversizedAnalyzer {
+                    // record OversizedAnalyzer(String value) {}
+                    String example = "record OversizedAnalyzer(";
+                }
+                """);
+        Path recordDto = tempDir.resolve("EndpointDto.java");
+        Files.writeString(recordDto, "record EndpointDto(String value) {}\n");
+
+        assertFalse(isRecordDto(ordinaryClass),
+                "Comments and strings must not exempt an ordinary class from the source-size gate");
+        assertTrue(isRecordDto(recordDto), "A top-level record DTO remains exempt");
+    }
 
     @Test
     void productionJavadocsDoNotContainGenericTemplates() throws IOException {
@@ -1196,8 +1218,10 @@ class DialectGrammarArchitectureTest {
                 "JDBC version discovery must return a new resolved config, not mutate the caller DTO");
         assertTrue(context.contains("final ResolvedScanConfig config"),
                 "Scan pipeline state must hold the immutable runtime config");
-        assertTrue(cliRunner.contains("ResolvedScanConfig resolved = config.resolve()"),
-                "CLI overrides must be complete before immutable resolution");
+        int override = cliRunner.indexOf("applyOverrides(config, request)");
+        int resolution = cliRunner.indexOf("resolved = config.resolve(configDirectory)");
+        assertTrue(override >= 0 && resolution > override,
+                "CLI overrides must be complete before base-directory-aware immutable resolution");
     }
 
     @Test
@@ -1286,12 +1310,26 @@ class DialectGrammarArchitectureTest {
     }
 
     private static boolean isRecordDto(Path path) {
-        try {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            throw new IllegalStateException("JDK compiler is required for record DTO classification");
+        }
+        try (StandardJavaFileManager fileManager =
+                     compiler.getStandardFileManager(null, Locale.ROOT, null)) {
             String filename = path.getFileName().toString();
             String typeName = filename.substring(0, filename.length() - ".java".length());
-            String text = Files.readString(path);
-            return text.contains("public record " + typeName + "(")
-                    || text.contains("record " + typeName + "(");
+            Iterable<? extends JavaFileObject> units = fileManager.getJavaFileObjects(path);
+            JavacTask task = (JavacTask) compiler.getTask(null, fileManager, null,
+                    List.of("-proc:none", "-Xlint:none"), null, units);
+            for (CompilationUnitTree unit : task.parse()) {
+                for (Tree declaration : unit.getTypeDecls()) {
+                    if (declaration instanceof ClassTree type
+                            && type.getSimpleName().contentEquals(typeName)) {
+                        return type.getKind() == Tree.Kind.RECORD;
+                    }
+                }
+            }
+            return false;
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to inspect " + path, exception);
         }

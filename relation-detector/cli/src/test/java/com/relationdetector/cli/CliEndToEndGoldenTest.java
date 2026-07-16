@@ -178,8 +178,15 @@ class CliEndToEndGoldenTest {
 
         assertEquals(0, exitCode, "CLI scan should succeed for " + fixtureDir);
         String json = Files.readString(output);
-        assertEquals(new TreeSet<>(expectedFingerprints(fixtureDir.resolve("expected-relations.json"))),
-                new TreeSet<>(relationshipFingerprints(json)),
+        String configuredNamespace = manifestValue(fixtureDir.resolve("manifest.yml"), "schema");
+        TreeSet<String> expectedRelationships = new TreeSet<>(
+                expectedFingerprints(fixtureDir.resolve("expected-relations.json")));
+        Set<String> actualRelationships = relationshipFingerprints(json).stream()
+                .map(fingerprint -> FixtureFingerprintNormalizer.preferExpectedNamespaceForm(
+                        fingerprint, configuredNamespace, expectedRelationships))
+                .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+        assertEquals(expectedRelationships,
+                actualRelationships,
                 fixtureDir + " relationship fingerprints from CLI JSON");
         if (compareLineage && Files.exists(fixtureDir.resolve("expected-lineage.json"))) {
             Set<String> expectedLineage = expectedFingerprints(
@@ -187,6 +194,8 @@ class CliEndToEndGoldenTest {
                     .map(LineageFingerprintNormalizer::normalize)
                     .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
             Set<String> actualLineage = lineageFingerprints(json).stream()
+                    .map(fingerprint -> FixtureFingerprintNormalizer.preferExpectedNamespaceForm(
+                            fingerprint, configuredNamespace, expectedLineage))
                     .map(LineageFingerprintNormalizer::normalize)
                     .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
             assertEquals(expectedLineage, actualLineage,

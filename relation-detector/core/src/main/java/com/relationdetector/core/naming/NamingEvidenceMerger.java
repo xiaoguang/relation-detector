@@ -52,6 +52,7 @@ public final class NamingEvidenceMerger {
     private final class Accumulator {
         private final NamingEvidenceCandidate first;
         private final List<Evidence> raw = new ArrayList<>();
+        private final List<Evidence> summaries = new ArrayList<>();
         private boolean directionHint;
 
         Accumulator(NamingEvidenceCandidate first) {
@@ -60,6 +61,7 @@ public final class NamingEvidenceMerger {
 
         void add(NamingEvidenceCandidate candidate) {
             directionHint = directionHint || candidate.directionHint();
+            summaries.add(candidate.evidence());
             List<Evidence> incoming = candidate.rawEvidence().isEmpty()
                     ? List.of(candidate.evidence()) : candidate.rawEvidence();
             raw.addAll(incoming);
@@ -74,8 +76,9 @@ public final class NamingEvidenceMerger {
         }
 
         private Evidence summaryEvidence(SummaryGroup<Evidence> group) {
-            Evidence firstEvidence = group.first();
-            Map<String, Object> attributes = new LinkedHashMap<>(group.consensusAttributes());
+            Evidence namingEvidence = first.evidence();
+            Map<String, Object> attributes = namingConsensusAttributes();
+            group.consensusAttributes().forEach(attributes::putIfAbsent);
             summarizeConditional(attributes);
             attributes.put("count", group.count());
             if (group.count() > 1) {
@@ -85,8 +88,23 @@ public final class NamingEvidenceMerger {
                 attributes.put("sampleTruncated", group.sampleTruncated());
             }
             return new Evidence(
-                    firstEvidence.type(), firstEvidence.score(), firstEvidence.sourceType(),
-                    firstEvidence.source(), firstEvidence.detail(), attributes);
+                    namingEvidence.type(), namingEvidence.score(), namingEvidence.sourceType(),
+                    namingEvidence.source(), namingEvidence.detail(), attributes);
+        }
+
+        private Map<String, Object> namingConsensusAttributes() {
+            Map<String, Object> consensus = new LinkedHashMap<>();
+            boolean firstSummary = true;
+            for (Evidence summary : summaries) {
+                Map<String, Object> candidate = policy.observationAttributes(summary);
+                if (firstSummary) {
+                    consensus.putAll(candidate);
+                    firstSummary = false;
+                } else {
+                    EvidenceObservationAggregator.retainConsensusAttributes(consensus, candidate);
+                }
+            }
+            return consensus;
         }
 
         private void summarizeConditional(Map<String, Object> attributes) {
@@ -139,7 +157,7 @@ public final class NamingEvidenceMerger {
 
         @Override
         public Object summaryKey(Evidence evidence) {
-            return evidence.type();
+            return "NAMING_OBSERVATION";
         }
 
         @Override

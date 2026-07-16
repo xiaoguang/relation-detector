@@ -363,9 +363,9 @@ final class ProjectionTraceResolver {
             Set<String> ignoredRowsets,
             AliasSymbolTable aliases
     ) {
-        if (table.schema() != null && !table.schema().isBlank()) {
-            return ignoredRowsets.contains(aliases.normalizeIdentifier(
-                    table.schema() + "." + table.tableName()));
+        if ((table.catalog() != null && !table.catalog().isBlank())
+                || (table.schema() != null && !table.schema().isBlank())) {
+            return ignoredRowsets.contains(aliases.normalizeIdentifier(table.displayName()));
         }
         return ignoredRowsets.contains(aliases.normalizeIdentifier(table.tableName()));
     }

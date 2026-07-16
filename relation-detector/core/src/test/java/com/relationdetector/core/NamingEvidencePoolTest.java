@@ -16,6 +16,8 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.naming.NamingEvidencePool;
 
 class NamingEvidencePoolTest {
@@ -101,6 +103,27 @@ class NamingEvidencePoolTest {
         assertEquals(2, merged.stream()
                 .filter(candidate -> "catalog_a".equals(candidate.source().table().catalog()))
                 .findFirst().orElseThrow().rawEvidence().size());
+    }
+
+    @Test
+    void resolvesEveryCanonicalAliasToTheRetainedTopLevelFactId() {
+        CanonicalEndpointKeyProvider keys = new CanonicalEndpointKeyProvider(
+                value -> value == null ? "" : value.toLowerCase(java.util.Locale.ROOT),
+                new NamespaceContext(null, "sample_data", List.of()));
+        NamingEvidencePool pool = new NamingEvidencePool(keys);
+        NamingEvidenceCandidate qualified = new NamingEvidenceCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "sales_fact"), "payment_id")),
+                Endpoint.column(ColumnRef.of(TableId.of("sample_data", "sales_orders"), "id")),
+                evidence("qualified path"), "TRANSITIVE_NAMING_PATH", true);
+        NamingEvidenceCandidate unqualified = new NamingEvidenceCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "sales_fact"), "payment_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "sales_orders"), "id")),
+                evidence("unqualified relationship path"), "TRANSITIVE_NAMING_PATH", true);
+
+        pool.add(qualified);
+        pool.add(unqualified);
+
+        assertEquals(qualified.id(), pool.resolveReferenceId(unqualified.id()).orElseThrow());
     }
 
     private NamingEvidenceCandidate naming(String catalog, String normalizedName, String detail) {
