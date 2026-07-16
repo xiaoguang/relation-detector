@@ -61,26 +61,31 @@ It is independent of the technical statuses below.
 
 | Closure ID | State |
 | --- | --- |
-| ID-01 | FULL_GREEN |
-| ID-02 | FULL_GREEN |
-| ID-03 | FULL_GREEN |
-| ID-04 | FULL_GREEN |
-| ID-05 | FULL_GREEN |
-| EV-01 | FULL_GREEN |
-| EV-02 | FULL_GREEN |
-| EV-03 | FULL_GREEN |
-| EV-04 | FULL_GREEN |
-| EV-05 | FULL_GREEN |
-| EV-06 | FULL_GREEN |
-| CT-01 | FULL_GREEN |
-| CT-02 | FULL_GREEN |
-| CT-03 | FULL_GREEN |
-| CT-04 | FULL_GREEN |
-| CT-05 | FULL_GREEN |
-| CT-06 | FULL_GREEN |
-| TG-01 | FULL_GREEN |
-| TG-02 | FULL_GREEN |
-| TG-03 | FULL_GREEN |
+| ID-01 | CLOSED |
+| ID-02 | CLOSED |
+| ID-03 | CLOSED |
+| ID-04 | CLOSED |
+| ID-05 | CLOSED |
+| EV-01 | CLOSED |
+| EV-02 | CLOSED |
+| EV-03 | CLOSED |
+| EV-04 | CLOSED |
+| EV-05 | CLOSED |
+| EV-06 | CLOSED |
+| CT-01 | CLOSED |
+| CT-02 | CLOSED |
+| CT-03 | CLOSED |
+| CT-04 | CLOSED |
+| CT-05 | CLOSED |
+| CT-06 | CLOSED |
+| TG-01 | CLOSED |
+| TG-02 | CLOSED |
+| TG-03 | CLOSED |
+
+All 20 frozen IDs are closed after focused and reverse-audit gates, isolated full correctness,
+the 19-category/38-JSON sample-data CLI matrix, semantic observation parity, and release-manifest
+integrity checks passed. Environment-dependent runtime smoke and explicitly out-of-scope parser or
+profiling improvements remain backlog items; they do not reopen this closure matrix.
 
 ## 本轮代码结构注释审视
 

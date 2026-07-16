@@ -10,6 +10,11 @@ This document separates three questions that used to be mixed together:
 
 `sample-data` is the broad ERP corpus. The SQL files are dialect-native, so this table is a capability snapshot, not a strict equality benchmark.
 
+The direct and derived snapshot tables are synchronized from
+`relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv` by
+`relation-detector/scripts/sync-parser-comparison-summary.py`. Refresh them with
+`--update`; do not edit the generated rows by hand.
+
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | common token-event sample-data | 9 | 6 / 3 | 321 | 110 | 250 | 0 |
@@ -54,11 +59,11 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 | PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1265 | 57 | 906 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 | 1265 | 57 | 906 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1265 | 57 | 906 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1265 | 57 | 906 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1265 | 57 | 906 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 | 1023 | 57 | 733 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
 | SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
 | SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
 | SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
