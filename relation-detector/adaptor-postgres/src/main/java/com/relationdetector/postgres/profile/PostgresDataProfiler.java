@@ -21,7 +21,7 @@ public final class PostgresDataProfiler implements DataProfiler {
     }
 
     private static final class PostgresProfileQueryRenderer implements DialectDataProfileQueryRenderer {
-        private static final IdentifierQuoter QUOTER = IdentifierQuoter.doubleQuote();
+        private static final IdentifierQuoter QUOTER = IdentifierQuoter.postgres();
 
         @Override
         public String sourceName() {

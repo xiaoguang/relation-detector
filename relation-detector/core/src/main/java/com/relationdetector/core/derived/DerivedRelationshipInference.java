@@ -179,8 +179,7 @@ final class DerivedRelationshipInference {
     private void addKeyEndpoint(Map<String, List<Endpoint>> byTable, Endpoint endpoint) {
         for (String tableKey : graphs.tableGraphKeys(endpoint)) {
             List<Endpoint> endpoints = byTable.computeIfAbsent(tableKey, ignored -> new ArrayList<>());
-            if (endpoints.stream().noneMatch(existing ->
-                    existing.normalizedKey().equals(endpoint.normalizedKey()))) {
+            if (endpoints.stream().noneMatch(existing -> graphs.sameEndpoint(existing, endpoint))) {
                 endpoints.add(endpoint);
             }
         }

@@ -20,7 +20,6 @@ import com.relationdetector.contracts.spi.IdentifierRules;
 public final class EvidenceEnhancementService {
     private final MetadataEvidenceEnhancer metadataEvidenceEnhancer = new MetadataEvidenceEnhancer();
     private final NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
-    private final DerivedPathInferenceService derivedPathInferenceService = new DerivedPathInferenceService();
 
     public void enhance(List<RelationshipCandidate> relationshipCandidates, NamingEvidencePool namingEvidencePool) {
         enhance(relationshipCandidates, namingEvidencePool, null, null);
@@ -62,7 +61,9 @@ public final class EvidenceEnhancementService {
         }
         namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(relationshipCandidates,
                 config));
-        namingEvidencePool.addAll(derivedPathInferenceService.deriveNamingEvidence(namingEvidencePool.merged(), config));
+        namingEvidencePool.addAll(new DerivedPathInferenceService(
+                new CanonicalEndpointKeyProvider(identifierRules, namespace))
+                .deriveNamingEvidence(namingEvidencePool.merged(), config));
         namingMatchEvidenceEnhancer.enhance(relationshipCandidates, namingEvidencePool);
     }
 

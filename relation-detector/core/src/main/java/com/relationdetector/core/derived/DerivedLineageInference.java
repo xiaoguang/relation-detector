@@ -117,7 +117,7 @@ final class DerivedLineageInference {
     }
 
     private boolean isPureNoOpSelfLineage(Endpoint source, DataLineageCandidate lineage) {
-        return source.normalizedKey().equals(lineage.target().normalizedKey())
+        return graphs.sameEndpoint(source, lineage.target())
                 && lineage.transformType() == LineageTransformType.DIRECT
                 && lineage.evidence().stream().allMatch(evidence ->
                 evidence.transformType() == LineageTransformType.DIRECT);

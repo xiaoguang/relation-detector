@@ -1,5 +1,6 @@
 package com.relationdetector.contracts.spi;
 
+import java.sql.Connection;
 import java.util.Set;
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
@@ -42,6 +43,14 @@ public interface DatabaseAdaptor {
      * namespace axes before any live collector or parser receives it.
      */
     default ScanScope canonicalizeScope(ScanScope scope) {
+        return scope;
+    }
+
+    /**
+     * Validates and resolves the namespace that can actually be queried through
+     * the open JDBC connection. Core invokes this once before any live source.
+     */
+    default ScanScope resolveLiveScope(Connection connection, ScanScope scope) {
         return scope;
     }
 

@@ -15,6 +15,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
@@ -23,9 +24,11 @@ import com.relationdetector.core.scan.ScanConfig;
  */
 final class DerivedPathGraphBuilder {
     private final ScanConfig config;
+    private final CanonicalEndpointKeyProvider endpointKeys;
 
-    DerivedPathGraphBuilder(ScanConfig config) {
+    DerivedPathGraphBuilder(ScanConfig config, CanonicalEndpointKeyProvider endpointKeys) {
         this.config = config;
+        this.endpointKeys = endpointKeys;
     }
 
     DerivedPathGraph build(List<DerivedEdge> sourceEdges) {
@@ -148,7 +151,7 @@ final class DerivedPathGraphBuilder {
             boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEdgeKind.NAMING);
             if (!selfLoop && !direct && !namingOnly) {
                 String pathKey = relationshipOutputPath(path).stream()
-                        .map(Endpoint::normalizedKey)
+                        .map(endpointKeys::factKey)
                         .reduce((left, right) -> left + "->" + right)
                         .orElse(pairKey(current, origin));
                 if (seenPaths.add(pathKey)) {
@@ -206,7 +209,7 @@ final class DerivedPathGraphBuilder {
     ) {
         List<DerivedEdge> outgoing = new ArrayList<>(outgoing(graph, current));
         outgoing.addAll(bridgeCache.computeIfAbsent(
-                current.normalizedKey(),
+                endpointKeys.factKey(current),
                 ignored -> lazyIdentityBridges(current, keyEndpointsByTable)));
         return outgoing.stream().distinct().sorted(edgeComparator()).toList();
     }
@@ -221,9 +224,10 @@ final class DerivedPathGraphBuilder {
                 if (overlaps(graphKeys(current), graphKeys(keyEndpoint))) {
                     continue;
                 }
+                String bridgeKey = endpointKeys.factKey(current) + "->" + endpointKeys.factKey(keyEndpoint);
                 String ref = "table-identity:" + current.normalizedKey()
                         + "->" + keyEndpoint.normalizedKey();
-                if (seen.add(ref)) {
+                if (seen.add(bridgeKey)) {
                     bridges.add(new DerivedEdge(
                             current,
                             keyEndpoint,
@@ -300,22 +304,24 @@ final class DerivedPathGraphBuilder {
     }
 
     String canonicalPathKey(String kind, DerivedPathObservation observation) {
-        return kind + ":" + observation.source().normalizedKey() + "->"
-                + observation.target().normalizedKey() + ":"
-                + endpoints(observation).stream().map(Endpoint::normalizedKey)
+        return kind + ":" + endpointKeys.factKey(observation.source()) + "->"
+                + endpointKeys.factKey(observation.target()) + ":"
+                + endpoints(observation).stream().map(endpointKeys::factKey)
                 .reduce((left, right) -> left + "->" + right).orElse("");
     }
 
     Comparator<DerivedEdge> edgeComparator() {
         return Comparator
-                .comparing((DerivedEdge edge) -> edge.source().normalizedKey())
+                .comparing((DerivedEdge edge) -> endpointKeys.factKey(edge.source()))
+                .thenComparing(edge -> endpointKeys.factKey(edge.target()))
+                .thenComparing(edge -> edge.source().normalizedKey())
                 .thenComparing(edge -> edge.target().normalizedKey())
                 .thenComparing(edge -> edge.kind().name())
                 .thenComparing(DerivedEdge::ref);
     }
 
     String pairKey(Endpoint source, Endpoint target) {
-        return source.normalizedKey() + "->" + target.normalizedKey();
+        return endpointKeys.factKey(source) + "->" + endpointKeys.factKey(target);
     }
 
     Set<String> pairKeys(Endpoint source, Endpoint target) {
@@ -329,18 +335,15 @@ final class DerivedPathGraphBuilder {
     }
 
     LinkedHashSet<String> graphKeys(Endpoint endpoint) {
-        return new LinkedHashSet<>(List.of(endpoint.normalizedKey()));
+        return new LinkedHashSet<>(List.of(endpointKeys.factKey(endpoint)));
     }
 
     LinkedHashSet<String> tableGraphKeys(Endpoint endpoint) {
-        LinkedHashSet<String> keys = new LinkedHashSet<>();
-        String schema = endpoint.table().schema();
-        String table = endpoint.table().tableName();
-        if (table == null || table.isBlank()) {
-            return keys;
-        }
-        keys.add(schema == null || schema.isBlank() ? table : schema + "." + table);
-        return keys;
+        return new LinkedHashSet<>(List.of(endpointKeys.factKey(Endpoint.table(endpoint.table()))));
+    }
+
+    boolean sameEndpoint(Endpoint left, Endpoint right) {
+        return endpointKeys.same(left, right);
     }
 
     boolean limitReached(int count) {

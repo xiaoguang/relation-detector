@@ -177,6 +177,51 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void relationshipPathDoesNotBridgeSameNamedTablesAcrossCatalogs() {
+        ScanConfig config = enabledConfig();
+        Endpoint orderItemOrderId = catalogCol("tenant_a", "sales", "order_items", "order_id");
+        Endpoint tenantAOrdersId = catalogCol("tenant_a", "sales", "orders", "id");
+        Endpoint tenantBOrdersCustomerId = catalogCol("tenant_b", "sales", "orders", "customer_id");
+        Endpoint customersId = catalogCol("tenant_b", "sales", "customers", "id");
+
+        DerivedPathInferenceResult result = service.infer(List.of(
+                fk(orderItemOrderId, tenantAOrdersId),
+                fk(tenantBOrdersCustomerId, customersId)
+        ), List.of(), List.of(), config);
+
+        assertTrue(result.derivedRelationships().stream().noneMatch(candidate ->
+                        candidate.source().equals(orderItemOrderId)
+                                && candidate.target().equals(customersId)),
+                "tenant_a.sales.orders must not bridge to tenant_b.sales.orders");
+    }
+
+    @Test
+    void lineageAndNamingPathsDoNotJoinSameNamedEndpointsAcrossCatalogs() {
+        ScanConfig config = enabledConfig();
+        Endpoint lineageSource = catalogCol("tenant_a", "sales", "orders", "customer_id");
+        Endpoint tenantAStage = catalogCol("tenant_a", "sales", "stage", "customer_id");
+        Endpoint tenantBStage = catalogCol("tenant_b", "sales", "stage", "customer_id");
+        Endpoint lineageTarget = catalogCol("tenant_b", "sales", "facts", "customer_id");
+
+        NamingEvidencePool namingPool = new NamingEvidencePool();
+        namingPool.add(naming(lineageSource, tenantAStage));
+        namingPool.add(naming(tenantBStage, lineageTarget));
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(),
+                List.of(
+                        lineage(lineageSource, tenantAStage, LineageFlowKind.VALUE),
+                        lineage(tenantBStage, lineageTarget, LineageFlowKind.VALUE)),
+                namingPool.merged(),
+                config);
+
+        assertTrue(result.derivedDataLineages().isEmpty(),
+                "lineage traversal must preserve catalog identity at every hop");
+        assertTrue(result.derivedNamingEvidence().isEmpty(),
+                "naming traversal must preserve catalog identity at every hop");
+    }
+
+    @Test
     void relationshipPathTraversesReferencedByButOutputsForwardFkLikeDirection() {
         ScanConfig config = enabledConfig();
         Endpoint cashierAccountId = col("cashier_journals", "account_id");
@@ -533,6 +578,11 @@ class DerivedPathInferenceServiceTest {
 
     private Endpoint col(String schema, String table, String column) {
         return Endpoint.column(ColumnRef.of(TableId.of(schema, table), column));
+    }
+
+    private Endpoint catalogCol(String catalog, String schema, String table, String column) {
+        TableId tableId = new TableId(catalog, schema, table, schema + "." + table);
+        return Endpoint.column(ColumnRef.of(tableId, column));
     }
 
     private NamingEvidenceCandidate naming(Endpoint source, Endpoint target) {

@@ -1,5 +1,6 @@
 package com.relationdetector.mysql;
 
+import java.sql.Connection;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,6 +46,11 @@ public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
     @Override
     public ScanScope canonicalizeScope(ScanScope scope) {
         return MySqlCatalogScope.canonicalize(scope);
+    }
+
+    @Override
+    public ScanScope resolveLiveScope(Connection connection, ScanScope scope) {
+        return MySqlCatalogScope.resolve(connection, scope);
     }
 
     private MySqlDatabaseAdaptor(

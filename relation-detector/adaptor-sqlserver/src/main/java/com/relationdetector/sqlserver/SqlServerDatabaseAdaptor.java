@@ -1,5 +1,6 @@
 package com.relationdetector.sqlserver;
 
+import java.sql.Connection;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -10,6 +11,7 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
+import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.sqlserver.ddl.SqlServerDatabaseDdlCollector;
 import com.relationdetector.sqlserver.log.SqlServerLogExtractor;
@@ -31,6 +33,13 @@ public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public SqlServerDatabaseAdaptor() {
         this(new SqlServerTokenEventStructuredSqlParser(), new SqlServerTokenEventStructuredDdlParser(),
                 new SqlServerScriptFramer());
+    }
+
+    @Override
+    public ScanScope resolveLiveScope(Connection connection, ScanScope scope) {
+        String catalog = SqlServerCatalogResolver.resolve(connection, scope);
+        String schema = scope.schema() == null || scope.schema().isBlank() ? "dbo" : scope.schema();
+        return new ScanScope(catalog, schema, scope.includeTables(), scope.excludeTables());
     }
 
     @Override

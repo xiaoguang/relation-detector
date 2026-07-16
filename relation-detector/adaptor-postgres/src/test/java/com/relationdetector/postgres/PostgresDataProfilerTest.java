@@ -39,10 +39,33 @@ class PostgresDataProfilerTest {
         assertEquals("0.8", evidence.get(0).attributes().get("missingRatio"));
     }
 
+    @Test
+    void rendersSchemaQualifiedTablesAfterCatalogValidation() {
+        StringBuilder sql = new StringBuilder();
+        new PostgresDataProfiler().profile(
+                connection(sql, 200, 100, 100, 100),
+                new ProfileRequest(catalogCandidate(), DataProfileOptions.defaults()));
+
+        assertTrue(sql.toString().contains("\"sales\".\"orders\""));
+        assertTrue(sql.toString().contains("\"sales\".\"customers\""));
+        assertFalse(sql.toString().contains("\"warehouse\""),
+                "PostgreSQL catalog selects the JDBC database and is not legal table-qualification syntax");
+    }
+
     private RelationshipCandidate candidate() {
         return new RelationshipCandidate(
                 Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id")),
                 Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.PROFILE_SUPPORTED_FK);
+    }
+
+    private RelationshipCandidate catalogCandidate() {
+        TableId orders = new TableId("connected_db", "sales", "orders", "sales.orders");
+        TableId customers = new TableId("connected_db", "sales", "customers", "sales.customers");
+        return new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(orders, "customer_id")),
+                Endpoint.column(ColumnRef.of(customers, "id")),
                 RelationType.FK_LIKE,
                 RelationSubType.PROFILE_SUPPORTED_FK);
     }

@@ -54,16 +54,23 @@ public final class ScanEngine {
                 requestedDatabase.catalog(), requestedDatabase.schema(),
                 requestedDatabase.includeTables(), requestedDatabase.excludeTables()));
         ResolvedScanConfig runtimeConfig = config;
-        ScanResult result = new ScanResult(
-                config.database().databaseType().name(), scope.catalog(), scope.schema());
         Connection connection = null;
         Exception connectionFailure = null;
         try {
             connection = openConnection(config.database());
             runtimeConfig = discoverJdbcDatabaseVersion(config, connection);
+            if (connection != null) {
+                scope = adaptor.resolveLiveScope(connection, scope);
+            }
+        } catch (LiveSourceConfigurationException ex) {
+            closeQuietly(connection);
+            throw ex;
         } catch (Exception ex) {
             connectionFailure = ex;
         }
+
+        ScanResult result = new ScanResult(
+                config.database().databaseType().name(), scope.catalog(), scope.schema());
 
         AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
         List<RelationshipCandidate> candidates = new ArrayList<>();

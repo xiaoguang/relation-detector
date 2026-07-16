@@ -5,8 +5,6 @@ import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.relation.RelationshipMerger;
 
 final class ResultAssembly {
-    private final DerivedPathInferenceService derivedPathInferenceService = new DerivedPathInferenceService();
-
     ScanResult assemble(ScanPipelineContext ctx) {
         RelationshipMerger relationshipMerger = new RelationshipMerger(ctx.endpointKeys);
         DataLineageMerger dataLineageMerger = new DataLineageMerger(ctx.endpointKeys);
@@ -16,7 +14,7 @@ final class ResultAssembly {
         ctx.result.dataLineages().addAll(dataLineageMerger.merge(ctx.lineageCandidates));
         ctx.result.namingEvidence().clear();
         ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());
-        var derived = derivedPathInferenceService.infer(
+        var derived = new DerivedPathInferenceService(ctx.endpointKeys).infer(
                 ctx.result.relationships(),
                 ctx.result.dataLineages(),
                 ctx.result.namingEvidence(),

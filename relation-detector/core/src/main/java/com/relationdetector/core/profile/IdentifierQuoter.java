@@ -13,22 +13,35 @@ import com.relationdetector.contracts.model.TableId;
 public final class IdentifierQuoter {
     private final String openQuote;
     private final String closeQuote;
+    private final boolean includeCatalog;
+    private final boolean includeSchema;
 
-    private IdentifierQuoter(String openQuote, String closeQuote) {
+    private IdentifierQuoter(String openQuote, String closeQuote,
+            boolean includeCatalog, boolean includeSchema) {
         this.openQuote = openQuote;
         this.closeQuote = closeQuote;
+        this.includeCatalog = includeCatalog;
+        this.includeSchema = includeSchema;
     }
 
     public static IdentifierQuoter mysql() {
-        return new IdentifierQuoter("`", "`");
+        return new IdentifierQuoter("`", "`", true, false);
+    }
+
+    public static IdentifierQuoter postgres() {
+        return new IdentifierQuoter("\"", "\"", false, true);
+    }
+
+    public static IdentifierQuoter oracle() {
+        return new IdentifierQuoter("\"", "\"", false, true);
     }
 
     public static IdentifierQuoter doubleQuote() {
-        return new IdentifierQuoter("\"", "\"");
+        return new IdentifierQuoter("\"", "\"", true, true);
     }
 
     public static IdentifierQuoter sqlServer() {
-        return new IdentifierQuoter("[", "]");
+        return new IdentifierQuoter("[", "]", true, true);
     }
 
     public String table(TableId table) {
@@ -36,8 +49,12 @@ public final class IdentifierQuoter {
             return "";
         }
         List<String> rendered = new ArrayList<>();
-        addComponent(rendered, table.catalog());
-        addComponent(rendered, table.schema());
+        if (includeCatalog) {
+            addComponent(rendered, table.catalog());
+        }
+        if (includeSchema) {
+            addComponent(rendered, table.schema());
+        }
         addComponent(rendered, table.tableName());
         return String.join(".", rendered);
     }

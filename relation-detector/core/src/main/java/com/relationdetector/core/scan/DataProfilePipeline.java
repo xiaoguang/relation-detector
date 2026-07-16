@@ -14,6 +14,7 @@ import com.relationdetector.core.identity.NamespaceContext;
 
 final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
+    private final DataProfileNamespacePolicy namespacePolicy = new DataProfileNamespacePolicy();
 
     List<RelationshipCandidate> profile(Connection connection, ScanPipelineContext ctx) {
         EvidenceConfig evidenceConfig = ctx.config.evidence();
@@ -31,6 +32,10 @@ final class DataProfilePipeline {
                     ctx.adaptor.identifierRules(),
                     new NamespaceContext(ctx.scope.catalog(), ctx.scope.schema(), List.of()));
             for (RelationshipCandidate candidate : selected) {
+                if (!namespacePolicy.supports(ctx.config.database().databaseType(), ctx.scope,
+                        ctx.adaptor.identifierRules(), candidate)) {
+                    continue;
+                }
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
                 ProfileOutcome outcome = profiler.profile(connection,
                         new ProfileRequest(candidate, evidenceConfig.dataProfileOptions()));

@@ -31,7 +31,8 @@ class IdentifierQuoterTest {
         TableId table = new TableId("erp", "sales", "orders", "sales.orders");
         ColumnRef column = ColumnRef.of(table, "customer_id");
 
-        assertEquals("`erp`.`sales`.`orders`", IdentifierQuoter.mysql().table(table));
+        assertEquals("`erp`.`orders`", IdentifierQuoter.mysql().table(table),
+                "MySQL database identity occupies the catalog axis; schema is not executable qualification");
         assertEquals("`customer_id`", IdentifierQuoter.mysql().column(column));
     }
 }

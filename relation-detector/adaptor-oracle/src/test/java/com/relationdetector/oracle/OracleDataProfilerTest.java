@@ -51,10 +51,32 @@ class OracleDataProfilerTest {
         assertTrue(!outcome.warnings().get(0).toString().contains("password"));
     }
 
+    @Test
+    void rendersOwnerQualifiedTablesWithoutCatalog() {
+        StringBuilder sql = new StringBuilder();
+        new OracleDataProfiler().profile(
+                connection(sql, 150, 100, 100, 100),
+                new ProfileRequest(ownerCandidate(), DataProfileOptions.defaults()));
+
+        assertTrue(sql.toString().contains("\"APP\".\"ORDERS\""));
+        assertTrue(sql.toString().contains("\"APP\".\"CUSTOMERS\""));
+        assertFalse(sql.toString().contains("\"APP\".\"APP\""));
+    }
+
     private RelationshipCandidate candidate() {
         return new RelationshipCandidate(
                 Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id")),
                 Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.PROFILE_SUPPORTED_FK);
+    }
+
+    private RelationshipCandidate ownerCandidate() {
+        TableId orders = new TableId(null, "APP", "ORDERS", "APP.ORDERS");
+        TableId customers = new TableId(null, "APP", "CUSTOMERS", "APP.CUSTOMERS");
+        return new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(orders, "CUSTOMER_ID")),
+                Endpoint.column(ColumnRef.of(customers, "ID")),
                 RelationType.FK_LIKE,
                 RelationSubType.PROFILE_SUPPORTED_FK);
     }

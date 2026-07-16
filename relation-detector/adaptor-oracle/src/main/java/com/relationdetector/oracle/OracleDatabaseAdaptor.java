@@ -1,5 +1,6 @@
 package com.relationdetector.oracle;
 
+import java.sql.Connection;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -10,6 +11,7 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
+import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 import com.relationdetector.oracle.log.OracleLogExtractor;
@@ -37,6 +39,12 @@ public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public OracleDatabaseAdaptor() {
         this(new OracleTokenEventStructuredSqlParser(), new OracleTokenEventStructuredDdlParser(),
                 new OracleScriptFramer());
+    }
+
+    @Override
+    public ScanScope resolveLiveScope(Connection connection, ScanScope scope) {
+        String owner = OracleOwnerResolver.resolve(connection, scope);
+        return new ScanScope(null, owner, scope.includeTables(), scope.excludeTables());
     }
 
     @Override

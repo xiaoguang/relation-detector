@@ -22,7 +22,7 @@ public final class OracleDataProfiler implements DataProfiler {
     }
 
     private static final class OracleProfileQueryRenderer implements DialectDataProfileQueryRenderer {
-        private static final IdentifierQuoter QUOTER = IdentifierQuoter.doubleQuote();
+        private static final IdentifierQuoter QUOTER = IdentifierQuoter.oracle();
 
         @Override
         public String sourceName() {

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -78,6 +79,36 @@ class DataProfilePipelineTest {
         assertEquals("PROFILE_PERMISSION_DENIED", context.result.warnings().get(0).code());
     }
 
+    @Test
+    void doesNotProfilePostgresCandidateFromAnotherCatalog() {
+        AtomicInteger calls = new AtomicInteger();
+        ScanPipelineContext context = existingCandidateContext(
+                DatabaseType.POSTGRESQL,
+                new ScanScope("connected_db", "sales", List.of(), List.of()),
+                relationship("other_db", "sales"),
+                calls);
+
+        pipeline.profile(connection(), context);
+
+        assertEquals(0, calls.get(),
+                "PostgreSQL cannot execute a candidate whose explicit catalog differs from the connected database");
+    }
+
+    @Test
+    void doesNotProfileOracleCandidateWithCatalog() {
+        AtomicInteger calls = new AtomicInteger();
+        ScanPipelineContext context = existingCandidateContext(
+                DatabaseType.ORACLE,
+                new ScanScope(null, "APP", List.of(), List.of()),
+                relationship("unsupported_catalog", "APP"),
+                calls);
+
+        pipeline.profile(connection(), context);
+
+        assertEquals(0, calls.get(),
+                "Oracle live profiling cannot execute catalog-qualified endpoints");
+    }
+
     private ScanPipelineContext contextReturning(EvidenceType type) {
         return contextReturning(ProfileOutcome.success(List.of(evidence(type))));
     }
@@ -93,7 +124,7 @@ class DataProfilePipelineTest {
         ScanResult result = new ScanResult("mysql", "test");
         ScanPipelineContext ctx = new ScanPipelineContext(
                 config.resolve(),
-                new TestAdaptor((connection, request) -> profileOutcome),
+                new TestAdaptor(DatabaseType.MYSQL, (connection, request) -> profileOutcome),
                 scope,
                 result,
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
@@ -107,6 +138,39 @@ class DataProfilePipelineTest {
                 "TABLE_ID",
                 true));
         return ctx;
+    }
+
+    private ScanPipelineContext existingCandidateContext(DatabaseType databaseType, ScanScope scope,
+            RelationshipCandidate candidate, AtomicInteger calls) {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = databaseType;
+        config.dataProfileEnabled = true;
+        config.skipUnindexedLargeTargets = false;
+        candidate.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        ScanResult result = new ScanResult(databaseType.name(), scope.catalog(), scope.schema());
+        ScanPipelineContext ctx = new ScanPipelineContext(
+                config.resolve(),
+                new TestAdaptor(databaseType, (connection, request) -> {
+                    calls.incrementAndGet();
+                    return new ProfileOutcome(ProfileStatus.NO_EVIDENCE, List.of(), List.of());
+                }),
+                scope,
+                result,
+                new AdaptorContext(scope, Map.of(), result.warnings()::add),
+                new ArrayList<>(List.of(candidate)),
+                new ArrayList<>());
+        ctx.metadataSnapshot = new MetadataSnapshot();
+        return ctx;
+    }
+
+    private RelationshipCandidate relationship(String catalog, String schema) {
+        TableId source = new TableId(catalog, schema, "orders", "orders");
+        TableId target = new TableId(catalog, schema, "customers", "customers");
+        return new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(source, "customer_id")),
+                Endpoint.column(ColumnRef.of(target, "id")),
+                com.relationdetector.contracts.Enums.RelationType.FK_LIKE,
+                com.relationdetector.contracts.Enums.RelationSubType.INFERRED_JOIN_FK);
     }
 
     private MetadataSnapshot metadata() {
@@ -138,7 +202,7 @@ class DataProfilePipelineTest {
                 });
     }
 
-    private record TestAdaptor(DataProfiler profiler) implements DatabaseAdaptor {
+    private record TestAdaptor(DatabaseType databaseType, DataProfiler profiler) implements DatabaseAdaptor {
         @Override
         public String id() {
             return "test";
@@ -151,7 +215,7 @@ class DataProfilePipelineTest {
 
         @Override
         public Set<DatabaseType> supportedDatabaseTypes() {
-            return Set.of(DatabaseType.MYSQL);
+            return Set.of(databaseType);
         }
 
         @Override

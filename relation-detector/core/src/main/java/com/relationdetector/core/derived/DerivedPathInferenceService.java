@@ -5,6 +5,7 @@ import java.util.List;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
@@ -12,6 +13,16 @@ import com.relationdetector.core.scan.ScanConfig;
  * Orchestrates derived inference over already merged, typed facts.
  */
 public final class DerivedPathInferenceService {
+    private final CanonicalEndpointKeyProvider endpointKeys;
+
+    public DerivedPathInferenceService() {
+        this(CanonicalEndpointKeyProvider.defaults());
+    }
+
+    public DerivedPathInferenceService(CanonicalEndpointKeyProvider endpointKeys) {
+        this.endpointKeys = endpointKeys;
+    }
+
     public List<NamingEvidenceCandidate> deriveNamingEvidence(
             List<NamingEvidenceCandidate> namingEvidence,
             ScanConfig config
@@ -19,7 +30,7 @@ public final class DerivedPathInferenceService {
         if (!enabled(config) || !config.derivedNamingEvidenceEnabled) {
             return List.of();
         }
-        DerivedPathGraphBuilder graphBuilder = new DerivedPathGraphBuilder(config);
+        DerivedPathGraphBuilder graphBuilder = new DerivedPathGraphBuilder(config, endpointKeys);
         return new DerivedNamingInference(config, graphBuilder).derive(namingEvidence);
     }
 
@@ -32,7 +43,7 @@ public final class DerivedPathInferenceService {
         if (!enabled(config)) {
             return DerivedPathInferenceResult.empty();
         }
-        DerivedPathGraphBuilder graphBuilder = new DerivedPathGraphBuilder(config);
+        DerivedPathGraphBuilder graphBuilder = new DerivedPathGraphBuilder(config, endpointKeys);
         DerivedNamingInference namingInference = new DerivedNamingInference(config, graphBuilder);
         DerivedRelationshipInference.Result relationshipsResult = config.derivedRelationshipsEnabled
                 ? new DerivedRelationshipInference(config, graphBuilder, namingInference)

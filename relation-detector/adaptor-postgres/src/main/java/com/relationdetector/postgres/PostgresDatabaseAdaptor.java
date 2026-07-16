@@ -1,5 +1,6 @@
 package com.relationdetector.postgres;
 
+import java.sql.Connection;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -10,6 +11,7 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
+import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.postgres.ddl.PostgresDatabaseDdlCollector;
 import com.relationdetector.postgres.log.PostgresLogExtractor;
@@ -28,6 +30,13 @@ public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public PostgresDatabaseAdaptor() {
         this(new PostgresTokenEventStructuredSqlParser(), new PostgresTokenEventStructuredDdlParser(),
                 new PostgresScriptFramer());
+    }
+
+    @Override
+    public ScanScope resolveLiveScope(Connection connection, ScanScope scope) {
+        PostgresNamespaceResolver.Namespace namespace = PostgresNamespaceResolver.resolve(connection, scope);
+        return new ScanScope(namespace.catalog(), namespace.schema(),
+                scope.includeTables(), scope.excludeTables());
     }
 
     private PostgresDatabaseAdaptor(

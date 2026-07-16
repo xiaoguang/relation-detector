@@ -3,6 +3,7 @@ package com.relationdetector.oracle;
 import java.sql.Connection;
 import java.util.Locale;
 
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
 
 /**
@@ -14,6 +15,10 @@ public final class OracleOwnerResolver {
     }
 
     public static String resolve(Connection connection, ScanScope scope) {
+        if (scope.catalog() != null && !scope.catalog().isBlank()) {
+            throw new LiveSourceConfigurationException(
+                    "Oracle database.catalog is not supported for live queries");
+        }
         if (scope.schema() != null && !scope.schema().isBlank()) {
             return normalizeExplicit(scope.schema());
         }
