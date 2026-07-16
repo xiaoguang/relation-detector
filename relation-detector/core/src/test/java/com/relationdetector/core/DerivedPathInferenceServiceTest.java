@@ -241,6 +241,55 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void relationshipFactLimitCountsCanonicalPathsAndRetainsAcceptedVariants() {
+        ScanConfig config = enabledConfig();
+        config.derivedMaxFacts = 1;
+        Endpoint orderItemOrderId = col("a_order_items", "order_id");
+        Endpoint ordersId = col("a_orders", "id");
+        Endpoint ordersCustomerId = col("a_orders", "customer_id");
+        Endpoint invoiceItemInvoiceId = col("z_invoice_items", "invoice_id");
+        Endpoint invoicesId = col("z_invoices", "id");
+        Endpoint invoicesCustomerId = col("z_invoices", "customer_id");
+        Endpoint customersId = col("customers", "id");
+        RelationshipCandidate firstVariant = fk(orderItemOrderId, ordersId);
+        RelationshipCandidate secondVariant = fk(orderItemOrderId, ordersId);
+        secondVariant.evidence().clear();
+        secondVariant.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "second.sql",
+                orderItemOrderId.displayName() + " = " + ordersId.displayName(),
+                Map.of("sourceLine", 9)));
+        RelationshipCandidate invoiceFirstVariant = fk(invoiceItemInvoiceId, invoicesId);
+        RelationshipCandidate invoiceSecondVariant = fk(invoiceItemInvoiceId, invoicesId);
+        invoiceSecondVariant.evidence().clear();
+        invoiceSecondVariant.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "invoice-second.sql",
+                invoiceItemInvoiceId.displayName() + " = " + invoicesId.displayName(),
+                Map.of("sourceLine", 11)));
+
+        DerivedPathInferenceResult result = service.infer(List.of(
+                firstVariant,
+                secondVariant,
+                fk(ordersCustomerId, customersId),
+                invoiceFirstVariant,
+                invoiceSecondVariant,
+                fk(invoicesCustomerId, customersId)
+        ), List.of(), List.of(), config);
+
+        assertEquals(1, result.derivedRelationships().size(),
+                "The second canonical relationship fact must be rejected by the global quota");
+        DerivedPathCandidate accepted = result.derivedRelationships().get(0);
+        assertTrue(accepted.source().equals(orderItemOrderId)
+                || accepted.source().equals(invoiceItemInvoiceId));
+        assertEquals(customersId, accepted.target());
+        assertEquals(2, accepted.rawEvidence().size(),
+                "All variants of the accepted canonical fact must survive the global quota");
+    }
+
+    @Test
     void relationshipPathDoesNotBridgeSameNamedTablesAcrossCatalogs() {
         ScanConfig config = enabledConfig();
         Endpoint orderItemOrderId = catalogCol("tenant_a", "sales", "order_items", "order_id");
