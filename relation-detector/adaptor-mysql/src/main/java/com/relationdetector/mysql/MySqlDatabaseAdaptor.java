@@ -9,6 +9,7 @@ import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
+import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.ddl.MySqlDatabaseDdlCollector;
@@ -25,6 +26,18 @@ import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
  * MySQL 5.7/8.0 adaptor implementing the Phase 4 design.
  */
 public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
+    private static final IdentifierRules IDENTIFIER_RULES = new IdentifierRules() {
+        @Override
+        public String normalize(String identifier) {
+            return normalizeIdentifier(identifier);
+        }
+
+        @Override
+        public QualifiedNameSemantics qualifiedNameSemantics() {
+            return QualifiedNameSemantics.CATALOG_TABLE;
+        }
+    };
+
     public MySqlDatabaseAdaptor() {
         this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser(), new MySqlScriptFramer());
     }
@@ -50,7 +63,7 @@ public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.NATIVE_LOGS,
                         AdaptorCapability.DATA_PROFILING,
                         AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
-                MySqlDatabaseAdaptor::normalizeIdentifier,
+                IDENTIFIER_RULES,
                 new AdaptorCollectors(
                         Optional.of(new MySqlMetadataCollector()),
                         Optional.of(new MySqlObjectCollector()),

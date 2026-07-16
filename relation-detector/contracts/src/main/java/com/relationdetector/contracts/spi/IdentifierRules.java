@@ -10,7 +10,19 @@ package com.relationdetector.contracts.spi;
  * quoting differ by dialect, so normalization belongs to adaptors.
  */
 public interface IdentifierRules {
+    enum QualifiedNameSemantics {
+        SCHEMA_TABLE,
+        CATALOG_TABLE
+    }
+
     String normalize(String identifier);
+
+    /**
+     * Maps a two-component qualified name onto the owning dialect namespace axes.
+     */
+    default QualifiedNameSemantics qualifiedNameSemantics() {
+        return QualifiedNameSemantics.SCHEMA_TABLE;
+    }
 
     default String unquote(String identifier) {
         if (identifier == null || identifier.length() < 2) {
@@ -18,8 +30,11 @@ public interface IdentifierRules {
         }
         char first = identifier.charAt(0);
         char last = identifier.charAt(identifier.length() - 1);
-        if ((first == '`' && last == '`') || (first == '"' && last == '"')) {
-            return identifier.substring(1, identifier.length() - 1);
+        if ((first == '`' && last == '`') || (first == '"' && last == '"')
+                || (first == '[' && last == ']')) {
+            String body = identifier.substring(1, identifier.length() - 1);
+            String doubled = String.valueOf(last) + last;
+            return body.replace(doubled, String.valueOf(last));
         }
         return identifier;
     }

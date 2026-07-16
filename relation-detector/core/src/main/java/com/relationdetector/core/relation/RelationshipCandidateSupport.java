@@ -102,7 +102,7 @@ abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
         if (normalize(left.displayName()).equals(normalize(right.displayName()))) {
             return isExplicitSelfJoinRole(left, right, leftAlias, rightAlias);
         }
-        return !left.table().equals(right.table())
+        return !sameTable(left.table(), right.table())
                 || isExplicitSelfJoinColumnEquality(left, right, leftAlias, rightAlias);
     }
 
@@ -116,7 +116,7 @@ abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
             String leftAlias, String rightAlias) {
         String normalizedLeftAlias = normalize(leftAlias);
         String normalizedRightAlias = normalize(rightAlias);
-        return left.table().equals(right.table())
+        return sameTable(left.table(), right.table())
                 && !normalizedLeftAlias.isBlank() && !normalizedRightAlias.isBlank()
                 && !normalizedLeftAlias.equals(normalizedRightAlias);
     }

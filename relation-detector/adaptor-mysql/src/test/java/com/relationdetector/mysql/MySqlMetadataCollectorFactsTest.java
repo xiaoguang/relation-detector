@@ -18,9 +18,36 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
+import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
 
 class MySqlMetadataCollectorFactsTest {
+    @Test
+    void resolvesTwoPartMysqlNamesOntoTheCatalogAxis() {
+        CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(
+                new MySqlDatabaseAdaptor().identifierRules());
+
+        TableId table = resolver.resolveQualified("db.orders", NamespaceContext.empty());
+
+        assertEquals("db", table.catalog());
+        assertNull(table.schema());
+        assertEquals("orders", table.tableName());
+    }
+
+    @Test
+    void preservesAllAxesForThreePartMysqlNames() {
+        CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(
+                new MySqlDatabaseAdaptor().identifierRules());
+
+        TableId table = resolver.resolveQualified("erp.sales.orders", NamespaceContext.empty());
+
+        assertEquals("erp", table.catalog());
+        assertEquals("sales", table.schema());
+        assertEquals("orders", table.tableName());
+    }
+
     @Test
     void canonicalizesMysqlDatabaseOntoCatalogAxis() {
         MySqlDatabaseAdaptor adaptor = new MySqlDatabaseAdaptor();

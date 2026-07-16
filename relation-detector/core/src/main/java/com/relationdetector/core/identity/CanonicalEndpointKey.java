@@ -30,9 +30,9 @@ public record CanonicalEndpointKey(String catalog, String schema, String table, 
         if (endpoint == null || !endpoint.isColumnLevel()) {
             throw new IllegalArgumentException("column-level endpoint is required");
         }
-        TableId table = resolver.resolve(endpoint.table(), namespace);
-        return new CanonicalEndpointKey(resolver.normalize(table.catalog()), resolver.normalize(table.schema()),
-                resolver.normalize(table.tableName()),
+        CanonicalIdentifierResolver.CanonicalTableComponents table =
+                resolver.canonicalComponents(endpoint.table(), namespace);
+        return new CanonicalEndpointKey(table.catalog(), table.schema(), table.table(),
                 resolver.normalize(endpoint.column().columnName()));
     }
 
@@ -49,10 +49,9 @@ public record CanonicalEndpointKey(String catalog, String schema, String table, 
             CanonicalIdentifierResolver resolver,
             NamespaceContext namespace
     ) {
-        TableId table = resolver.resolve(new TableId(
+        CanonicalIdentifierResolver.CanonicalTableComponents table = resolver.canonicalComponents(new TableId(
                 fact.catalog(), fact.schema(), fact.tableName(), fact.tableName()), namespace);
-        return new CanonicalEndpointKey(resolver.normalize(table.catalog()), resolver.normalize(table.schema()),
-                resolver.normalize(table.tableName()),
+        return new CanonicalEndpointKey(table.catalog(), table.schema(), table.table(),
                 resolver.normalize(fact.columnName()));
     }
 
@@ -62,10 +61,9 @@ public record CanonicalEndpointKey(String catalog, String schema, String table, 
             CanonicalIdentifierResolver resolver,
             NamespaceContext namespace
     ) {
-        TableId table = resolver.resolve(new TableId(
+        CanonicalIdentifierResolver.CanonicalTableComponents table = resolver.canonicalComponents(new TableId(
                 fact.catalog(), fact.schema(), fact.tableName(), fact.tableName()), namespace);
-        return new CanonicalEndpointKey(resolver.normalize(table.catalog()), resolver.normalize(table.schema()),
-                resolver.normalize(table.tableName()),
+        return new CanonicalEndpointKey(table.catalog(), table.schema(), table.table(),
                 resolver.normalize(column));
     }
 

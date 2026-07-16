@@ -15,8 +15,8 @@ It is independent of the technical statuses below.
 
 | Closure ID | State |
 | --- | --- |
-| ID-01 | RED_PROVEN |
-| ID-02 | OPEN |
+| ID-01 | FOCUSED_GREEN |
+| ID-02 | FOCUSED_GREEN |
 | ID-03 | OPEN |
 | ID-04 | OPEN |
 | ID-05 | OPEN |

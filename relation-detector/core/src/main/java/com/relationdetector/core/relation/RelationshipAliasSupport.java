@@ -292,7 +292,7 @@ abstract class RelationshipAliasSupport {
         }
     }
 
-    private boolean sameTable(TableId left, TableId right) {
+    protected boolean sameTable(TableId left, TableId right) {
         return left != null && right != null && tableKey(left).equals(tableKey(right));
     }
 

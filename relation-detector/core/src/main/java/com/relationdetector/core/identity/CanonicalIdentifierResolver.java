@@ -21,16 +21,19 @@ public final class CanonicalIdentifierResolver {
     public TableId resolve(TableId table, NamespaceContext namespace) {
         Objects.requireNonNull(table, "table");
         NamespaceContext context = namespace == null ? NamespaceContext.empty() : namespace;
-        String catalog = blank(table.catalog()) ? context.catalog() : table.catalog();
-        String schema = blank(table.schema()) ? context.defaultSchema() : table.schema();
-        String resolvedCatalog = unquote(catalog);
-        String resolvedSchema = unquote(schema);
-        String resolvedTable = unquote(table.tableName());
-        String normalizedName = resolvedSchema.isBlank()
-                ? resolvedTable
-                : resolvedSchema + "." + resolvedTable;
-        return new TableId(emptyToNull(resolvedCatalog), emptyToNull(resolvedSchema),
-                resolvedTable, normalizedName);
+        String catalog = table.catalog();
+        String schema = table.schema();
+        if (rules.qualifiedNameSemantics() == IdentifierRules.QualifiedNameSemantics.CATALOG_TABLE
+                && blank(catalog) && !blank(schema)) {
+            catalog = schema;
+            schema = null;
+        }
+        if (blank(catalog)) catalog = context.catalog();
+        if (rules.qualifiedNameSemantics() == IdentifierRules.QualifiedNameSemantics.SCHEMA_TABLE
+                && blank(schema)) {
+            schema = context.defaultSchema();
+        }
+        return tableId(catalog, schema, table.tableName());
     }
 
     /**
@@ -44,31 +47,111 @@ public final class CanonicalIdentifierResolver {
         }
         NamespaceContext context = namespace == null ? NamespaceContext.empty() : namespace;
         String tablePart = parts.get(parts.size() - 1);
-        String schemaPart = parts.size() >= 2 ? parts.get(parts.size() - 2) : context.defaultSchema();
-        List<String> catalogParts = parts.size() >= 3
-                ? parts.subList(0, parts.size() - 2)
-                : context.catalog().isBlank() ? List.of() : List.of(context.catalog());
-
-        String resolvedCatalog = catalogParts.stream().map(this::unquote).filter(value -> !value.isBlank())
-                .reduce((left, right) -> left + "." + right).orElse("");
-        String resolvedSchema = unquote(schemaPart);
-        String resolvedTable = unquote(tablePart);
-        String normalizedName = resolvedSchema.isBlank()
-                ? resolvedTable
-                : resolvedSchema + "." + resolvedTable;
-        return new TableId(emptyToNull(resolvedCatalog), emptyToNull(resolvedSchema),
-                resolvedTable, normalizedName);
+        if (parts.size() == 2
+                && rules.qualifiedNameSemantics() == IdentifierRules.QualifiedNameSemantics.CATALOG_TABLE) {
+            String catalog = parts.get(0);
+            return tableId(catalog, null, tablePart);
+        }
+        String schema = parts.size() >= 2 ? parts.get(parts.size() - 2) : context.defaultSchema();
+        String catalog = parts.size() >= 3
+                ? joinParts(parts.subList(0, parts.size() - 2))
+                : context.catalog();
+        return tableId(catalog, schema, tablePart);
     }
 
     public String tableKey(TableId table, NamespaceContext namespace) {
-        TableId resolved = resolve(table, namespace);
-        return normalize(resolved.catalog()) + "|" + normalize(resolved.schema()) + "|"
-                + normalize(resolved.tableName());
+        CanonicalTableComponents components = canonicalComponents(table, namespace);
+        return components.catalog() + "|" + components.schema() + "|" + components.table();
     }
 
     public String normalize(String identifier) {
         String normalized = rules.normalize(identifier);
         return normalized == null ? "" : normalized;
+    }
+
+    private TableId tableId(String catalog, String schema, String table) {
+        String displayCatalog = displayComponent(catalog);
+        String displaySchema = displayComponent(schema);
+        String displayTable = displayComponent(table);
+        String canonicalSchema = normalizeComponent(schema);
+        String canonicalTable = normalizeComponent(table);
+        String normalizedName = canonicalSchema.isBlank()
+                ? canonicalTable
+                : canonicalSchema + "." + canonicalTable;
+        return new TableId(emptyToNull(displayCatalog), emptyToNull(displaySchema),
+                displayTable, normalizedName);
+    }
+
+    CanonicalTableComponents canonicalComponents(TableId table, NamespaceContext namespace) {
+        Objects.requireNonNull(table, "table");
+        NamespaceContext context = namespace == null ? NamespaceContext.empty() : namespace;
+        String catalog = table.catalog();
+        String schema = table.schema();
+        if (rules.qualifiedNameSemantics() == IdentifierRules.QualifiedNameSemantics.CATALOG_TABLE
+                && blank(catalog) && !blank(schema)) {
+            catalog = schema;
+            schema = null;
+        }
+        if (blank(catalog)) catalog = context.catalog();
+        if (rules.qualifiedNameSemantics() == IdentifierRules.QualifiedNameSemantics.SCHEMA_TABLE
+                && blank(schema)) {
+            schema = context.defaultSchema();
+        }
+        CanonicalNameParts canonicalName = canonicalName(table, schema);
+        return new CanonicalTableComponents(
+                normalizeComponent(catalog),
+                canonicalName.schema(),
+                canonicalName.table());
+    }
+
+    private CanonicalNameParts canonicalName(TableId table, String schema) {
+        String structuralSchema = displayComponent(schema);
+        String normalizedSchema = normalizeComponent(schema);
+        String structuralTable = displayComponent(table.tableName());
+        String normalizedTable = normalizeComponent(table.tableName());
+        String normalizedName = table.normalizedName().strip();
+
+        for (String tableCandidate : distinctCandidates(structuralTable, normalizedTable)) {
+            String prefix;
+            if (normalizedName.equals(tableCandidate)) {
+                prefix = "";
+            } else {
+                String suffix = "." + tableCandidate;
+                if (!normalizedName.endsWith(suffix)) {
+                    continue;
+                }
+                prefix = normalizedName.substring(0, normalizedName.length() - suffix.length());
+            }
+            if (structuralSchema.isBlank()) {
+                if (prefix.isBlank()) {
+                    return new CanonicalNameParts("", tableCandidate);
+                }
+                continue;
+            }
+            if (prefix.equals(structuralSchema) || prefix.equals(normalizedSchema)) {
+                return new CanonicalNameParts(prefix, tableCandidate);
+            }
+        }
+        return new CanonicalNameParts(normalizedSchema, normalizedTable);
+    }
+
+    private List<String> distinctCandidates(String first, String second) {
+        return first.equals(second) ? List.of(first) : List.of(first, second);
+    }
+
+    private String normalizeComponent(String value) {
+        String normalized = normalize(value == null ? "" : value.strip());
+        return rules.unquote(normalized == null ? "" : normalized.strip()).strip();
+    }
+
+    private String displayComponent(String value) {
+        String display = value == null ? "" : value.strip();
+        return rules.unquote(display).strip();
+    }
+
+    private String joinParts(List<String> parts) {
+        return parts.stream().filter(value -> !value.isBlank()).reduce((left, right) -> left + "." + right)
+                .orElse("");
     }
 
     private List<String> qualifiedParts(String raw) {
@@ -113,27 +196,17 @@ public final class CanonicalIdentifierResolver {
         part.setLength(0);
     }
 
-    private String unquote(String value) {
-        String clean = value == null ? "" : value.strip();
-        if (clean.length() < 2) {
-            return clean;
-        }
-        char first = clean.charAt(0);
-        char last = clean.charAt(clean.length() - 1);
-        if ((first == '"' && last == '"') || (first == '`' && last == '`')
-                || (first == '[' && last == ']')) {
-            String body = clean.substring(1, clean.length() - 1);
-            String doubled = String.valueOf(last) + last;
-            return body.replace(doubled, String.valueOf(last));
-        }
-        return clean;
-    }
-
     private boolean blank(String value) {
         return value == null || value.isBlank();
     }
 
     private String emptyToNull(String value) {
         return value.isBlank() ? null : value;
+    }
+
+    record CanonicalTableComponents(String catalog, String schema, String table) {
+    }
+
+    private record CanonicalNameParts(String schema, String table) {
     }
 }

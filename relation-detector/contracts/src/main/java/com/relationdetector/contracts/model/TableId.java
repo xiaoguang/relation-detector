@@ -33,6 +33,8 @@ public record TableId(String catalog, String schema, String tableName, String no
     public boolean sameIdentity(TableId other) {
         return other != null
                 && empty(catalog).equals(empty(other.catalog))
+                && empty(schema).equals(empty(other.schema))
+                && tableName.equals(other.tableName)
                 && normalizedName.equals(other.normalizedName);
     }
 
