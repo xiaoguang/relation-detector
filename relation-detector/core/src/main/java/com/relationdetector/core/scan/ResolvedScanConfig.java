@@ -1,6 +1,7 @@
 package com.relationdetector.core.scan;
 
 import java.util.ArrayList;
+import java.nio.file.Path;
 
 /**
  *
@@ -25,17 +26,26 @@ public record ResolvedScanConfig(
     }
 
     public static ResolvedScanConfig from(ScanConfig input) {
+        return from(input, Path.of(""));
+    }
+
+    public static ResolvedScanConfig from(ScanConfig input, Path baseDirectory) {
         if (input == null) {
             throw new IllegalArgumentException("scan config is required");
         }
+        ScanInputPathResolver pathResolver = new ScanInputPathResolver();
         return new ResolvedScanConfig(
                 new DatabaseConfig(input.databaseType, input.adaptorId, input.jdbcUrl, input.username, input.password,
                         input.catalog, input.schema, input.includeTables, input.excludeTables),
                 new SourceConfig(input.metadataEnabled, input.ddlEnabled, input.ddlFromDatabase,
-                        input.ddlFiles, input.ddlPaths, input.ddlIncludes,
+                        pathResolver.resolve(input.ddlFiles, input.ddlPaths, input.ddlIncludes, baseDirectory),
+                        java.util.List.of(), java.util.List.of(),
                         input.objectsEnabled, input.objectsFromDatabase,
-                        input.objectFiles, input.objectPaths, input.objectIncludes,
-                        input.logsEnabled, input.logFiles, input.logPaths, input.logIncludes,
+                        pathResolver.resolve(input.objectFiles, input.objectPaths, input.objectIncludes, baseDirectory),
+                        java.util.List.of(), java.util.List.of(),
+                        input.logsEnabled,
+                        pathResolver.resolve(input.logFiles, input.logPaths, input.logIncludes, baseDirectory),
+                        java.util.List.of(), java.util.List.of(),
                         input.logFormatHint, input.logsFilterSystemQueries,
                         input.logSystemSchemas, input.logMetadataQueryMarkers),
                 new ParserConfig(input.parserMode, input.grammarProfile, input.databaseVersion,

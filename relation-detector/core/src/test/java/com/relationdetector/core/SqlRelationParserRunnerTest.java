@@ -319,6 +319,7 @@ class SqlRelationParserRunnerTest {
 
     private record TestAdaptor(SqlRelationParser sqlRelationParser, StructuredSqlParser structuredParser)
             implements DatabaseAdaptor {
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         private TestAdaptor(SqlRelationParser sqlRelationParser) {
             this(sqlRelationParser, null);
         }

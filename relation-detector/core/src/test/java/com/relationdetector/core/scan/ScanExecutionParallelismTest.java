@@ -97,6 +97,7 @@ class ScanExecutionParallelismTest {
     }
 
     private record RecordingAdaptor(StructuredSqlParser parser) implements DatabaseAdaptor {
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override public String id() { return "recording"; }
         @Override public String displayName() { return "Recording"; }
         @Override public Set<DatabaseType> supportedDatabaseTypes() { return Set.of(DatabaseType.MYSQL); }

@@ -169,6 +169,7 @@ class ScanEngineObjectWarningProvenanceTest {
     }
 
     private static class ObjectWarningAdaptor implements DatabaseAdaptor {
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override
         public String id() {
             return "test-object-warning";

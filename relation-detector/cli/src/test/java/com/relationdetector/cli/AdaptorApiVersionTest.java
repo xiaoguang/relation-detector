@@ -28,8 +28,8 @@ class AdaptorApiVersionTest {
     void legacyPluginIsRejectedBeforeCapabilitiesAreUsed() {
         DatabaseAdaptor legacy = new LegacyAdaptor();
 
-        AdaptorRegistry.AdaptorException error = assertThrows(
-                AdaptorRegistry.AdaptorException.class,
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
                 () -> AdaptorRegistry.requireCurrentApi(legacy));
 
         assertTrue(error.getMessage().contains("legacy-test"));

@@ -23,7 +23,8 @@ final class SingleScanRunner {
         if (request.directOutput() != null && config.outputFormat != OutputFormat.JSON) {
             throw new IllegalArgumentException("--direct-output is only available with JSON output");
         }
-        ResolvedScanConfig resolved = config.resolve();
+        Path configDirectory = request.config().toAbsolutePath().normalize().getParent();
+        ResolvedScanConfig resolved = config.resolve(configDirectory);
         DatabaseAdaptor adaptor = registry.resolve(resolved.database().databaseType(), resolved.database().adaptorId());
         return new PreparedScan(request, resolved, adaptor);
     }

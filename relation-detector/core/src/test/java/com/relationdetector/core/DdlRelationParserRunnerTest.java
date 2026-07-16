@@ -295,6 +295,7 @@ class DdlRelationParserRunnerTest {
     }
 
     private record TestAdaptor(StructuredDdlParser structuredDdl) implements DatabaseAdaptor {
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override
         public String id() {
             return "ddl-test";

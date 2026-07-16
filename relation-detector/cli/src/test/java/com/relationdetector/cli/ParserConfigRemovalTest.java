@@ -187,10 +187,11 @@ class ParserConfigRemovalTest {
                 """.formatted(ddlRoot, procedures, data, queries));
 
         ScanConfig config = new SimpleYamlConfigLoader().load(file);
+        var resolved = config.resolve(root);
 
-        assertEquals(List.of(table, nestedTable), config.ddlFiles);
-        assertEquals(List.of(proc), config.objectFiles);
-        assertEquals(List.of(dataSql, query), config.logFiles);
+        assertEquals(List.of(table.toRealPath(), nestedTable.toRealPath()), resolved.sources().ddlFiles());
+        assertEquals(List.of(proc.toRealPath()), resolved.sources().objectFiles());
+        assertEquals(List.of(dataSql.toRealPath(), query.toRealPath()), resolved.sources().logFiles());
     }
 
     @Test

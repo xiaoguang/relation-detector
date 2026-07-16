@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.contracts.spi.AdaptorApiVersion;
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.core.scan.AdaptorContractValidator;
 
 /**
  * Java SPI adaptor 发现与选择器。
@@ -65,13 +65,7 @@ public final class AdaptorRegistry {
     }
 
     static void requireCurrentApi(DatabaseAdaptor adaptor) {
-        int actual = adaptor.spiVersion();
-        if (actual != AdaptorApiVersion.CURRENT) {
-            throw new AdaptorException("adaptor SPI version mismatch: plugin=" + adaptor.id()
-                    + ", actual=" + actual
-                    + ", required=" + AdaptorApiVersion.CURRENT
-                    + "; recompile the plugin against the current relation-detector contracts");
-        }
+        new AdaptorContractValidator().validateSpiVersion(adaptor);
     }
 
     /**

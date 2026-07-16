@@ -22,6 +22,7 @@ final class ScanCapabilityValidator {
         if (live && sources.ddlEnabled() && sources.ddlFromDatabase()) {
             require(adaptor, AdaptorCapability.DDL_PARSING,
                     adaptor.collectors().databaseDdl().isPresent(), "live database DDL");
+            requireParser(adaptor, adaptor.parsers().structuredDdl().isPresent(), "live database DDL", "structured DDL parser");
         }
         if (hasObjectFiles(sources) && adaptor.parsers().structuredSql().isEmpty()) {
             throw unsupported(adaptor, "object files", "structured SQL parser");
@@ -29,6 +30,7 @@ final class ScanCapabilityValidator {
         if (live && sources.objectsEnabled() && sources.objectsFromDatabase()) {
             require(adaptor, AdaptorCapability.DATABASE_OBJECTS,
                     adaptor.collectors().objects().isPresent(), "live database objects");
+            requireParser(adaptor, adaptor.parsers().structuredSql().isPresent(), "live database objects", "structured SQL parser");
         }
         if (hasLogFiles(sources)) {
             require(adaptor, AdaptorCapability.NATIVE_LOGS,
@@ -57,19 +59,25 @@ final class ScanCapabilityValidator {
                 + " required=" + requirement);
     }
 
+    private void requireParser(DatabaseAdaptor adaptor, boolean parserPresent, String requestedSource, String parser) {
+        if (!parserPresent) {
+            throw unsupported(adaptor, requestedSource, parser);
+        }
+    }
+
     private boolean hasDdlFiles(SourceConfig sources) {
         return sources.ddlEnabled()
-                && (!sources.ddlFiles().isEmpty() || !sources.ddlPaths().isEmpty());
+                && !sources.ddlFiles().isEmpty();
     }
 
     private boolean hasObjectFiles(SourceConfig sources) {
         return sources.objectsEnabled()
-                && (!sources.objectFiles().isEmpty() || !sources.objectPaths().isEmpty());
+                && !sources.objectFiles().isEmpty();
     }
 
     private boolean hasLogFiles(SourceConfig sources) {
         return sources.logsEnabled()
-                && (!sources.logFiles().isEmpty() || !sources.logPaths().isEmpty());
+                && !sources.logFiles().isEmpty();
     }
 
     private boolean hasText(String value) {

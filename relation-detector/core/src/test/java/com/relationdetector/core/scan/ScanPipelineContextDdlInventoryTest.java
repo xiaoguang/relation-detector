@@ -61,6 +61,7 @@ class ScanPipelineContextDdlInventoryTest {
     }
 
     private static final class CaseSensitiveAdaptor implements DatabaseAdaptor {
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override public String id() { return "case-sensitive"; }
         @Override public String displayName() { return "Case Sensitive"; }
         @Override public Set<DatabaseType> supportedDatabaseTypes() { return Set.of(DatabaseType.MYSQL); }

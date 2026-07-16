@@ -30,6 +30,7 @@ public final class ScanEngine {
     private final EvidenceEnhancementPipeline evidenceEnhancementPipeline = new EvidenceEnhancementPipeline();
     private final DataProfilePipeline dataProfilePipeline = new DataProfilePipeline();
     private final ResultAssembly resultAssembly = new ResultAssembly();
+    private final AdaptorContractValidator adaptorContractValidator = new AdaptorContractValidator();
     private final ScanCapabilityValidator capabilityValidator = new ScanCapabilityValidator();
 
     /**
@@ -48,6 +49,7 @@ public final class ScanEngine {
      * Runs a scan from an immutable, fully resolved runtime snapshot.
      */
     public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
+        adaptorContractValidator.validate(config.database(), adaptor);
         capabilityValidator.validate(config, adaptor);
         DatabaseConfig requestedDatabase = config.database();
         ScanScope scope = adaptor.canonicalizeScope(new ScanScope(

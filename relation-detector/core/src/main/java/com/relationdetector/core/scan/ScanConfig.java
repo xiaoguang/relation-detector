@@ -113,6 +113,11 @@ public final class ScanConfig {
     }
 
     public ResolvedScanConfig resolve() {
-        return ResolvedScanConfig.from(this);
+        return resolve(Path.of(""));
+    }
+
+    /** Resolves file inputs relative to the caller's configuration base directory. */
+    public ResolvedScanConfig resolve(Path baseDirectory) {
+        return ResolvedScanConfig.from(this, baseDirectory);
     }
 }

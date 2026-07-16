@@ -1,15 +1,10 @@
 package com.relationdetector.cli;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -53,7 +48,6 @@ public final class SimpleYamlConfigLoader {
         }
         ScanConfig config = map(dto, file.toAbsolutePath().getParent());
 
-        expandConfiguredPaths(config);
         validate(config);
         return config;
     }
@@ -209,66 +203,6 @@ public final class SimpleYamlConfigLoader {
 
     private String resolved(String value) {
         return value == null ? null : resolveEnv(value);
-    }
-
-    private void expandConfiguredPaths(ScanConfig config) throws IOException {
-        config.ddlFiles = merge(config.ddlFiles, expand(config.ddlPaths, config.ddlIncludes));
-        config.objectFiles = merge(config.objectFiles, expand(config.objectPaths, config.objectIncludes));
-        config.logFiles = merge(config.logFiles, expand(config.logPaths, config.logIncludes));
-    }
-
-    private List<Path> merge(List<Path> explicit, List<Path> expanded) {
-        Set<Path> merged = new LinkedHashSet<>();
-        explicit.forEach(merged::add);
-        expanded.forEach(merged::add);
-        return new ArrayList<>(merged);
-    }
-
-    private List<Path> expand(List<Path> roots, List<String> includes) throws IOException {
-        if (roots.isEmpty()) {
-            return List.of();
-        }
-        List<String> patterns = includes.isEmpty() ? List.of("**/*.sql") : includes;
-        List<Path> files = new ArrayList<>();
-        for (Path root : roots) {
-            if (!Files.exists(root)) {
-                throw new IllegalArgumentException("source path does not exist: " + root);
-            }
-            if (Files.isRegularFile(root)) {
-                Path name = root.getFileName();
-                if (name != null && matchesAny(name, patterns)) {
-                    files.add(root);
-                }
-                continue;
-            }
-            try (var stream = Files.walk(root)) {
-                stream.filter(Files::isRegularFile)
-                        .filter(file -> matchesAny(root.relativize(file), patterns))
-                        .sorted(Comparator.comparing(Path::toString))
-                        .forEach(files::add);
-            }
-        }
-        return files;
-    }
-
-    private boolean matchesAny(Path relative, List<String> patterns) {
-        for (String pattern : patterns) {
-            if (matches(relative, pattern)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean matches(Path relative, String pattern) {
-        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
-        if (matcher.matches(relative)) {
-            return true;
-        }
-        if (pattern.startsWith("**/")) {
-            return FileSystems.getDefault().getPathMatcher("glob:" + pattern.substring(3)).matches(relative);
-        }
-        return false;
     }
 
     private void validate(ScanConfig config) {

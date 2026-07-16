@@ -67,7 +67,7 @@ class ScanEngineDiagnosticsTest {
 
         WarningMessage warning = onlyWarning(result);
         assertEquals("DDL_PARSE_FAILED", warning.code());
-        assertEquals(ddlFile.toString(), warning.source());
+        assertEquals(ddlFile.toRealPath().toString(), warning.source());
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("CREATE TABLE orders"),
                 "warning should retain the original DDL text that failed");
         assertEquals("IllegalStateException", warning.attributes().get("exceptionClass"));
@@ -90,7 +90,7 @@ class ScanEngineDiagnosticsTest {
 
         WarningMessage warning = warningWithRawStatementContaining(result, "CREATE PROCEDURE rebuild_orders");
         assertEquals("SQL_PARSE_FAILED", warning.code());
-        assertEquals(procedureFile.toString(), warning.source());
+        assertEquals(procedureFile.toRealPath().toString(), warning.source());
         assertEquals(1L, warning.line());
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("CREATE PROCEDURE rebuild_orders"),
                 "warning should retain the original procedure SQL statement that failed");
@@ -110,7 +110,7 @@ class ScanEngineDiagnosticsTest {
 
         WarningMessage warning = onlyWarning(result);
         assertEquals("SQL_PARSE_FAILED", warning.code());
-        assertEquals(logFile.toString(), warning.source());
+        assertEquals(logFile.toRealPath().toString(), warning.source());
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("orders o JOIN users u"),
                 "warning should retain the original log SQL statement that failed");
         assertEquals("NATIVE_LOG", warning.attributes().get("statementSourceType"));
@@ -160,6 +160,7 @@ class ScanEngineDiagnosticsTest {
     }
 
     private static final class TestAdaptor implements DatabaseAdaptor {
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         private final SqlRelationParser sqlRelationParser;
         private final Optional<StructuredSqlParser> structuredSqlParser;
         private final Optional<StructuredDdlParser> structuredDdlParser;
