@@ -1,6 +1,7 @@
 package com.relationdetector.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +19,38 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.core.naming.NamingEvidencePool;
 
 class NamingEvidencePoolTest {
+    @Test
+    void groupedNamingEvidenceRetainsOnlyConsensusAttributes() {
+        NamingEvidencePool pool = new NamingEvidencePool();
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        Map<String, Object> common = Map.of(
+                "namingRule", "TABLE_ID",
+                "directionHint", true,
+                "match", Map.of("sourceSuffix", "_id", "targetColumn", "id"));
+
+        pool.add(new NamingEvidenceCandidate(source, target,
+                evidence("routine observation", common, Map.of(
+                        "sourceFile", "routines/rebuild_orders.sql",
+                        "sourceLine", 18L,
+                        "sourceObjectName", "rebuild_orders")), "TABLE_ID", true));
+        pool.add(new NamingEvidenceCandidate(source, target,
+                evidence("query observation", common, Map.of(
+                        "sourceFile", "queries/orders.sql",
+                        "sourceLine", 44L,
+                        "sourceObjectName", "orders_query")), "TABLE_ID", true));
+
+        NamingEvidenceCandidate merged = pool.merged().get(0);
+
+        assertEquals("TABLE_ID", merged.evidence().attributes().get("namingRule"));
+        assertEquals(common.get("match"), merged.evidence().attributes().get("match"));
+        assertFalse(merged.evidence().attributes().containsKey("sourceFile"));
+        assertFalse(merged.evidence().attributes().containsKey("sourceLine"));
+        assertFalse(merged.evidence().attributes().containsKey("sourceObjectName"));
+        assertEquals(2, merged.rawEvidence().size(),
+                "conflicting provenance must remain available in complete raw evidence");
+    }
+
     @Test
     void mergesObservationsByStableNamingEvidenceId() {
         NamingEvidencePool pool = new NamingEvidencePool();
@@ -92,5 +125,21 @@ class NamingEvidencePoolTest {
                         "directionHint", true,
                         "suggestedSourceEndpoint", "orders.customer_id",
                         "suggestedTargetEndpoint", "customers.id"));
+    }
+
+    private Evidence evidence(
+            String detail,
+            Map<String, Object> common,
+            Map<String, Object> provenance
+    ) {
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>(common);
+        attributes.putAll(provenance);
+        return new Evidence(
+                EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(0.2d),
+                EvidenceSourceType.NAMING_HEURISTIC,
+                "test",
+                detail,
+                attributes);
     }
 }

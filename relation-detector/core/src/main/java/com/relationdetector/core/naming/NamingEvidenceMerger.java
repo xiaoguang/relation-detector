@@ -9,6 +9,7 @@ import java.util.Map;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
+import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
@@ -49,12 +50,8 @@ public final class NamingEvidenceMerger {
     }
 
     private final class Accumulator {
-        private static final int MAX_SAMPLE_DETAILS = 5;
         private final NamingEvidenceCandidate first;
         private final List<Evidence> raw = new ArrayList<>();
-        private final List<String> sampleDetails = new ArrayList<>();
-        private int count;
-        private String lastDetail;
         private boolean directionHint;
 
         Accumulator(NamingEvidenceCandidate first) {
@@ -65,34 +62,27 @@ public final class NamingEvidenceMerger {
             directionHint = directionHint || candidate.directionHint();
             List<Evidence> incoming = candidate.rawEvidence().isEmpty()
                     ? List.of(candidate.evidence()) : candidate.rawEvidence();
-            for (Evidence evidence : incoming) {
-                int occurrences = policy.occurrenceCount(evidence);
-                raw.add(evidence);
-                count += occurrences;
-                lastDetail = evidence.detail();
-                if (sampleDetails.size() < MAX_SAMPLE_DETAILS) {
-                    sampleDetails.add(evidence.detail());
-                }
-            }
+            raw.addAll(incoming);
         }
 
         NamingEvidenceCandidate toCandidate() {
             var aggregation = observations.aggregate(raw, policy, true);
             return new NamingEvidenceCandidate(
-                    first.source(), first.target(), summaryEvidence(), first.rule(), directionHint,
+                    first.source(), first.target(), summaryEvidence(aggregation.groups().get(0)),
+                    first.rule(), directionHint,
                     aggregation.rawObservations());
         }
 
-        private Evidence summaryEvidence() {
-            Evidence firstEvidence = first.evidence();
-            Map<String, Object> attributes = new LinkedHashMap<>(firstEvidence.attributes());
+        private Evidence summaryEvidence(SummaryGroup<Evidence> group) {
+            Evidence firstEvidence = group.first();
+            Map<String, Object> attributes = new LinkedHashMap<>(group.consensusAttributes());
             summarizeConditional(attributes);
-            attributes.put("count", count);
-            if (count > 1) {
-                attributes.put("firstDetail", raw.get(0).detail());
-                attributes.put("lastDetail", lastDetail);
-                attributes.put("sampleDetails", List.copyOf(sampleDetails));
-                attributes.put("sampleTruncated", count > sampleDetails.size());
+            attributes.put("count", group.count());
+            if (group.count() > 1) {
+                attributes.put("firstDetail", group.firstDetail());
+                attributes.put("lastDetail", group.lastDetail());
+                attributes.put("sampleDetails", group.sampleDetails());
+                attributes.put("sampleTruncated", group.sampleTruncated());
             }
             return new Evidence(
                     firstEvidence.type(), firstEvidence.score(), firstEvidence.sourceType(),
@@ -154,8 +144,7 @@ public final class NamingEvidenceMerger {
 
         @Override
         public int occurrenceCount(Evidence evidence) {
-            Object value = evidence.attributes().get("occurrenceCount");
-            return value instanceof Number number ? Math.max(1, number.intValue()) : 1;
+            return EvidenceObservationAggregator.occurrenceCount(evidence.attributes());
         }
 
         @Override

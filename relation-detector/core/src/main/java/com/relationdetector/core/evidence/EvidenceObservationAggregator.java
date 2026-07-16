@@ -40,6 +40,14 @@ public final class EvidenceObservationAggregator<O> {
                         || !Objects.deepEquals(entry.getValue(), candidate.get(entry.getKey())));
     }
 
+    public static int occurrenceCount(Map<String, Object> attributes) {
+        Object value = attributes == null ? null : attributes.get("occurrenceCount");
+        if (value instanceof Number number && number.intValue() > 0) {
+            return number.intValue();
+        }
+        return 1;
+    }
+
     private List<O> foldExact(List<O> observations, ObservationPolicy<O> policy) {
         Map<Object, ExactGroup<O>> folded = new LinkedHashMap<>();
         for (O observation : observations) {
@@ -77,6 +85,7 @@ public final class EvidenceObservationAggregator<O> {
     public record SummaryGroup<O>(
             O first,
             int count,
+            int distinctObservationCount,
             String firstDetail,
             String lastDetail,
             List<String> sampleDetails,
@@ -108,6 +117,7 @@ public final class EvidenceObservationAggregator<O> {
         private final List<String> sampleDetails = new ArrayList<>();
         private final Map<String, Object> consensusAttributes = new LinkedHashMap<>();
         private int count;
+        private int distinctObservationCount;
         private String lastDetail;
         private boolean firstObservation = true;
 
@@ -117,8 +127,8 @@ public final class EvidenceObservationAggregator<O> {
         }
 
         private void add(O observation) {
-            int occurrences = Math.max(1, policy.occurrenceCount(observation));
             Map<String, Object> attributes = policy.observationAttributes(observation);
+            int occurrences = policy.occurrenceCount(observation);
             if (firstObservation) {
                 consensusAttributes.putAll(attributes);
                 firstObservation = false;
@@ -126,6 +136,7 @@ public final class EvidenceObservationAggregator<O> {
                 retainConsensusAttributes(consensusAttributes, attributes);
             }
             count += occurrences;
+            distinctObservationCount++;
             lastDetail = policy.detail(observation);
             if (sampleDetails.size() < MAX_SAMPLE_DETAILS) {
                 sampleDetails.add(policy.detail(observation));
@@ -136,6 +147,7 @@ public final class EvidenceObservationAggregator<O> {
             return new SummaryGroup<>(
                     first,
                     count,
+                    distinctObservationCount,
                     policy.detail(first),
                     lastDetail,
                     sampleDetails,

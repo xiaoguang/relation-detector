@@ -216,6 +216,60 @@ class JsonResultWriterEvidenceOutputTest {
     }
 
     @Test
+    void everyDirectAndDerivedObservationSummaryCountsFoldedOccurrences() {
+        ScanResult result = new ScanResult("mysql", "public");
+        Endpoint a = Endpoint.column(ColumnRef.of(TableId.of(null, "a"), "id"));
+        Endpoint b = Endpoint.column(ColumnRef.of(TableId.of(null, "b"), "a_id"));
+        Endpoint c = Endpoint.column(ColumnRef.of(TableId.of(null, "c"), "b_id"));
+        Evidence relationshipEvidence = foldedEvidence(EvidenceType.SQL_LOG_JOIN);
+        RelationshipCandidate relationship = new RelationshipCandidate(
+                a, b, RelationType.FK_LIKE, RelationSubType.INFERRED_JOIN_FK);
+        relationship.rawEvidence().add(relationshipEvidence);
+        relationship.evidence().add(relationshipEvidence);
+        result.relationships().add(relationship);
+
+        DataLineageCandidate lineage = new DataLineageCandidate(
+                List.of(a), b, LineageFlowKind.VALUE, LineageTransformType.DIRECT);
+        DataLineageEvidence lineageEvidence = new DataLineageEvidence(
+                LineageTransformType.DIRECT, BigDecimal.valueOf(0.8d),
+                EvidenceSourceType.PLAIN_SQL, "fixture.sql", "a.id -> b.a_id",
+                Map.of("occurrenceCount", 3));
+        lineage.rawEvidence().add(lineageEvidence);
+        lineage.evidence().add(lineageEvidence);
+        result.dataLineages().add(lineage);
+
+        NamingEvidenceCandidate naming = new NamingEvidenceCandidate(
+                a, b, foldedEvidence(EvidenceType.NAMING_MATCH), "TABLE_ID", true);
+        result.namingEvidence().add(naming);
+
+        DerivedPathCandidate derivedRelationship = new DerivedPathCandidate(
+                DerivedPathKind.RELATIONSHIP, a, c, List.of(a, b, c));
+        derivedRelationship.rawEvidence().add(foldedEvidence(EvidenceType.TRANSITIVE_PATH));
+        result.derivedRelationships().add(derivedRelationship);
+
+        DerivedPathCandidate derivedLineage = new DerivedPathCandidate(
+                DerivedPathKind.DATA_LINEAGE, a, c, List.of(a, b, c));
+        derivedLineage.rawEvidence().add(foldedEvidence(EvidenceType.TRANSITIVE_PATH));
+        result.derivedDataLineages().add(derivedLineage);
+
+        NamingEvidenceCandidate derivedNaming = new NamingEvidenceCandidate(
+                b, c, foldedEvidence(EvidenceType.NAMING_MATCH), "TRANSITIVE_NAMING_PATH", true);
+        result.namingEvidence().add(derivedNaming);
+
+        JsonNode summary = readTree(new JsonResultWriter().write(result, true, true)).path("summary");
+
+        assertEquals(3, summary.path("directRelationshipObservationCount").asInt());
+        assertEquals(3, summary.path("derivedRelationshipObservationCount").asInt());
+        assertEquals(6, summary.path("totalRelationshipObservationCount").asInt());
+        assertEquals(3, summary.path("directDataLineageObservationCount").asInt());
+        assertEquals(3, summary.path("derivedDataLineageObservationCount").asInt());
+        assertEquals(6, summary.path("totalDataLineageObservationCount").asInt());
+        assertEquals(3, summary.path("directNamingEvidenceObservationCount").asInt());
+        assertEquals(3, summary.path("derivedNamingEvidenceObservationCount").asInt());
+        assertEquals(6, summary.path("totalNamingEvidenceObservationCount").asInt());
+    }
+
+    @Test
     void writesTopLevelNamingEvidence() {
         ScanResult result = new ScanResult("mysql", "public");
         Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
@@ -638,6 +692,11 @@ class JsonResultWriterEvidenceOutputTest {
                                 "directionHint", true)),
                 "TABLE_ID",
                 true);
+    }
+
+    private Evidence foldedEvidence(EvidenceType type) {
+        return new Evidence(type, BigDecimal.valueOf(0.55d), EvidenceSourceType.PLAIN_SQL,
+                "fixture.sql", "folded observation", Map.of("occurrenceCount", 3));
     }
 
     private JsonNode readTree(String json) {

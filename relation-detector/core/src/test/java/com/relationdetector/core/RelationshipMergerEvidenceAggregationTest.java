@@ -72,10 +72,12 @@ class RelationshipMergerEvidenceAggregationTest {
         RelationshipCandidate first = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
         RelationshipCandidate duplicate = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
 
-        RelationshipCandidate merged = merger.merge(List.of(first, duplicate), 0.0d).get(0);
+        RelationshipCandidate merged = merger.merge(List.of(first, duplicate, duplicate), 0.0d).get(0);
 
         assertEquals(1, merged.rawEvidence().size());
-        assertEquals(2, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
+        assertEquals(3, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
+        assertEquals(3, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("count"),
+                "Folded occurrences must remain visible in the grouped summary");
         assertEquals(new BigDecimal("0.5500"), merged.confidence());
         assertTrue(merged.evidence().stream().noneMatch(e -> e.type() == EvidenceType.REPEATED_OBSERVATION));
     }

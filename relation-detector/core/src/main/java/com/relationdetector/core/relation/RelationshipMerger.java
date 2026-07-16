@@ -373,7 +373,7 @@ public final class RelationshipMerger {
         candidate.evidence().clear();
         for (SummaryGroup<Evidence> group : aggregation.groups()) {
             candidate.evidence().add(groupedEvidence(group));
-            if (group.count() > 1
+            if (group.distinctObservationCount() > 1
                     && RelationshipObservationPolicy.repeatedObservationEligible(group.first().type())) {
                 candidate.evidence().add(repeatedObservationEvidence(group));
             }
@@ -382,7 +382,8 @@ public final class RelationshipMerger {
 
     private Evidence groupedEvidence(SummaryGroup<Evidence> group) {
         Evidence first = group.first();
-        Map<String, Object> attributes = new LinkedHashMap<>(first.attributes());
+        Map<String, Object> attributes = new LinkedHashMap<>(group.consensusAttributes());
+        attributes.remove("occurrenceCount");
         attributes.put("count", group.count());
         if (group.count() > 1) {
             attributes.put("firstDetail", group.firstDetail());
@@ -396,17 +397,18 @@ public final class RelationshipMerger {
 
     private Evidence repeatedObservationEvidence(SummaryGroup<Evidence> group) {
         Evidence first = group.first();
+        int count = group.distinctObservationCount();
         double cap = DefaultEvidenceScores.REPEATED_OBSERVATION_MAX;
-        double score = cap * (1.0d - (1.0d / group.count()));
+        double score = cap * (1.0d - (1.0d / count));
         Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("count", group.count());
+        attributes.put("count", count);
         attributes.put("maxScore", String.format(java.util.Locale.ROOT, "%.2f", cap));
         attributes.put("formula", "maxScore * (1 - 1 / count)");
         attributes.put("baseEvidenceType", first.type().name());
         return new Evidence(
                 EvidenceType.REPEATED_OBSERVATION, BigDecimal.valueOf(score),
                 first.sourceType(), first.source(),
-                "Repeated " + first.type() + " observed " + group.count() + " times",
+                "Repeated " + first.type() + " observed " + count + " times",
                 attributes);
     }
 

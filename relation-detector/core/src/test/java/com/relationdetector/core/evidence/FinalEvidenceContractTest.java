@@ -33,6 +33,37 @@ import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 
 class FinalEvidenceContractTest {
     @Test
+    void groupedRelationshipEvidenceRetainsOnlyDeepConsensusAttributes() {
+        Map<String, Object> semanticAttributes = Map.of(
+                "mappingKind", "JOIN_EQUALITY",
+                "join", Map.of("kind", "INNER", "operator", "EQUALS"));
+        RelationshipCandidate routine = relationship("customers");
+        routine.evidence().add(provenanceEvidence(semanticAttributes, Map.of(
+                "sourceFile", "routines/rebuild_orders.sql",
+                "sourceLine", 18L,
+                "sourceObjectName", "rebuild_orders")));
+        RelationshipCandidate query = relationship("customers");
+        query.evidence().add(provenanceEvidence(semanticAttributes, Map.of(
+                "sourceFile", "queries/orders.sql",
+                "sourceLine", 44L,
+                "sourceObjectName", "orders_query")));
+
+        RelationshipCandidate merged = new RelationshipMerger().merge(List.of(routine, query), 0.0d).get(0);
+        Evidence grouped = merged.evidence().stream()
+                .filter(item -> item.type() == EvidenceType.SQL_LOG_JOIN)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("JOIN_EQUALITY", grouped.attributes().get("mappingKind"));
+        assertEquals(semanticAttributes.get("join"), grouped.attributes().get("join"));
+        assertFalse(grouped.attributes().containsKey("sourceFile"));
+        assertFalse(grouped.attributes().containsKey("sourceLine"));
+        assertFalse(grouped.attributes().containsKey("sourceObjectName"));
+        assertEquals(2, merged.rawEvidence().size(),
+                "conflicting provenance must remain available in complete raw evidence");
+    }
+
+    @Test
     void preservesEveryTypedConditionFromOneStructuralObservationAfterMerge() {
         RelationshipCandidate observation = new RelationshipCandidate(
                 Endpoint.column(ColumnRef.of(TableId.of(null, "contracts"), "party_id")),
@@ -157,6 +188,17 @@ class FinalEvidenceContractTest {
         return new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55d),
                 EvidenceSourceType.PLAIN_SQL, "contracts.sql", "guarded equality",
                 Map.of("conditional", true, "conditions", conditions));
+    }
+
+    private Evidence provenanceEvidence(
+            Map<String, Object> semanticAttributes,
+            Map<String, Object> provenanceAttributes
+    ) {
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>(semanticAttributes);
+        attributes.putAll(provenanceAttributes);
+        return new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55d),
+                EvidenceSourceType.PLAIN_SQL, "contracts.sql", String.valueOf(provenanceAttributes.get("sourceFile")),
+                attributes);
     }
 
     private Map<String, Object> condition(String discriminatorColumn, String value) {

@@ -51,13 +51,15 @@ class DataLineageMergerTest {
                 "sourceStatementId", "sample-data/mysql/8.0/03-data/07.sql:20-28",
                 "sourceLine", 24L);
 
+        Map<String, Object> folded = new LinkedHashMap<>(attributes);
+        folded.put("occurrenceCount", 3);
         DataLineageCandidate merged = new DataLineageMerger()
-                .merge(List.of(lineage(attributes), lineage(attributes)))
+                .merge(List.of(lineage(folded)))
                 .get(0);
 
         assertEquals(1, merged.rawEvidence().size());
-        assertEquals(2, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
-        assertEquals(2, merged.evidence().get(0).attributes().get("count"));
+        assertEquals(3, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
+        assertEquals(3, merged.evidence().get(0).attributes().get("count"));
     }
 
     @Test

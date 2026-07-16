@@ -22,6 +22,7 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 import com.relationdetector.core.scan.ScanResult;
 
 /**
@@ -245,9 +246,10 @@ public final class JsonResultWriter {
 
     private int relationshipObservationCount(List<RelationshipCandidate> relationships) {
         return relationships.stream()
-                .mapToInt(relation -> relation.rawEvidence().isEmpty()
-                        ? relation.evidence().size()
-                        : relation.rawEvidence().size())
+                .flatMap(relation -> (relation.rawEvidence().isEmpty()
+                        ? relation.evidence()
+                        : relation.rawEvidence()).stream())
+                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
                 .sum();
     }
 
@@ -256,32 +258,23 @@ public final class JsonResultWriter {
                 .flatMap(lineage -> (lineage.rawEvidence().isEmpty()
                         ? lineage.evidence()
                         : lineage.rawEvidence()).stream())
-                .mapToInt(this::lineageEvidenceOccurrenceCount)
+                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
                 .sum();
-    }
-
-    private int lineageEvidenceOccurrenceCount(com.relationdetector.contracts.model.DataLineageEvidence evidence) {
-        Object value = evidence.attributes().get("occurrenceCount");
-        return value instanceof Number number ? Math.max(1, number.intValue()) : 1;
     }
 
     private int namingEvidenceObservationCount(List<NamingEvidenceCandidate> namingEvidence) {
         return namingEvidence.stream()
                 .flatMap(candidate -> candidate.rawEvidence().stream())
-                .mapToInt(this::evidenceOccurrenceCount)
+                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
                 .sum();
-    }
-
-    private int evidenceOccurrenceCount(Evidence evidence) {
-        Object value = evidence.attributes().get("occurrenceCount");
-        return value instanceof Number number ? Math.max(1, number.intValue()) : 1;
     }
 
     private int derivedPathObservationCount(List<DerivedPathCandidate> candidates) {
         return candidates.stream()
-                .mapToInt(candidate -> candidate.rawEvidence().isEmpty()
-                        ? candidate.evidence().size()
-                        : candidate.rawEvidence().size())
+                .flatMap(candidate -> (candidate.rawEvidence().isEmpty()
+                        ? candidate.evidence()
+                        : candidate.rawEvidence()).stream())
+                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
                 .sum();
     }
 

@@ -34,7 +34,9 @@ final class RelationshipObservationPolicy
                 + evidence.source() + "|" + evidence.score();
     }
 
-    @Override public int occurrenceCount(Evidence evidence) { return 1; }
+    @Override public int occurrenceCount(Evidence evidence) {
+        return EvidenceObservationAggregator.occurrenceCount(evidence.attributes());
+    }
     @Override public Map<String, Object> observationAttributes(Evidence evidence) { return evidence.attributes(); }
     @Override public String detail(Evidence evidence) { return evidence.detail(); }
 

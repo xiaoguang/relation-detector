@@ -141,12 +141,7 @@ public final class DataLineageMerger {
 
         @Override
         public int occurrenceCount(DataLineageEvidence evidence) {
-            Object explicit = evidence.attributes().get("occurrenceCount");
-            if (explicit instanceof Number number) {
-                return Math.max(1, number.intValue());
-            }
-            Object grouped = evidence.attributes().get("count");
-            return grouped instanceof Number number ? Math.max(1, number.intValue()) : 1;
+            return EvidenceObservationAggregator.occurrenceCount(evidence.attributes());
         }
 
         @Override
