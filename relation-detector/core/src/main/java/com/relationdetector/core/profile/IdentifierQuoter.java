@@ -7,6 +7,7 @@ import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.TableId;
 
 /**
+ *
  * Dialect-aware identifier rendering for bounded profiling queries.
  */
 public final class IdentifierQuoter {

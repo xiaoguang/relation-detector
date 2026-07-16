@@ -64,7 +64,7 @@
 ## 全局约束
 
 - Java 17 + Maven 多模块工程；仓库根下 `relation-detector/` 与 `semantic-layer/` 为同级目录，根 `pom.xml` 统一聚合二者。
-- MySQL 和 PostgreSQL 是当前覆盖最完整的方言，但仍有已审计的 typed visitor/provenance 缺口，不能解释为官方语法全覆盖。Oracle 已有 token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammar；SQL Server 已有 token-event、`sqlserver/2016|2017|2019|2022|2025` full-grammar sample-data golden，以及首批 grammar-level 官方版本边界。更多 Oracle / SQL Server 官方语法 family、真实版本资产修正和 runtime smoke 仍在后续扩展。
+- MySQL 和 PostgreSQL 是当前 parser/sample-data 覆盖最完整的方言，但不能解释为官方语法全覆盖。PostgreSQL live metadata inventory、trigger definition、catalog propagation 和 ordinal-safe composite FK 的代码契约已闭环；真实数据库权限/版本组合仍需环境性 smoke。Oracle 已有 token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammar；SQL Server 已有 token-event、`sqlserver/2016|2017|2019|2022|2025` full-grammar sample-data golden，以及首批 grammar-level 官方版本边界。更多 Oracle / SQL Server 官方语法 family 和四方言 runtime smoke 仍在后续扩展。
 - core 统一负责候选关系归并、最终评分、输出模型。
 - adaptor 可以提供采集、token-event parser、versioned full-grammar module、证据生成、权重修正等数据库特定能力。
 - SQL/DDL parser 运行模式统一为 `parser.mode=auto|full-grammar|token-event`。无方言或无合理版本信息时使用 `token-event`；能选中版本化 grammar profile 时可使用 `full-grammar`。

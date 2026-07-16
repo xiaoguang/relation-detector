@@ -13,6 +13,7 @@ import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.oracle.script.OracleScriptFramer;
 
 /**
+ *
  * Oracle log extractor backed by plain SQL statement splitting.
  */
 public final class OracleLogExtractor implements SqlLogExtractor {

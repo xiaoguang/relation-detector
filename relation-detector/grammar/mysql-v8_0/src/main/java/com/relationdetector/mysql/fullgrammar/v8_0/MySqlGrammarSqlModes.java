@@ -10,6 +10,7 @@ package com.relationdetector.mysql.fullgrammar.v8_0;
 import java.util.*;
 
 /**
+ *
  * Converts MySQL {@code SQL_MODE} strings into MySQL full-grammar runtime flags.
  *
  * <p>These flags are MySQL grammar inputs only. They are not system parser
@@ -18,6 +19,7 @@ import java.util.*;
 public class MySqlGrammarSqlModes {
 
     /**
+     *
      * Converts a mode string into individual mode flags.
      *
      * @param modes The input string to parse.

@@ -9,7 +9,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
 
-/** Version-owned typed access to generated MySQL expression contexts. */
+/**
+ *
+ * Version-owned typed access to generated MySQL expression contexts.
+ */
 public interface MySqlExpressionContextAdapter extends FullGrammarParseTreeAdapter {
     boolean isArithmeticExpression(ParseTree tree);
 

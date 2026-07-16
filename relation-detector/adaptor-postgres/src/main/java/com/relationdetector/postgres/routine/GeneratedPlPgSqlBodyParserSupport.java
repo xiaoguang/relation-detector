@@ -22,6 +22,12 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 
+/**
+ * CN: 驱动指定的 generated PL/pgSQL shell parser，保留可恢复语句和诊断，并把 typed static SQL fragments 回调当前 SQL parser；
+ * 不在 PL/pgSQL grammar 中复制 PostgreSQL SQL 语义。
+ * EN: Runs a supplied generated PL/pgSQL shell parser, preserves recoverable statements and diagnostics, and sends
+ * typed static-SQL fragments to the active SQL parser; it does not duplicate PostgreSQL SQL semantics.
+ */
 public final class GeneratedPlPgSqlBodyParserSupport {
     private GeneratedPlPgSqlBodyParserSupport() {
     }

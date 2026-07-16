@@ -21,13 +21,21 @@ import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDd
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 /**
+ *
  * SQL Server adaptor backed by typed T-SQL parsers, sys catalog metadata and
  * object readers, reconstructed live DDL, native logs, and bounded profiling.
  */
 public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
+    public static final Set<Integer> PERMISSION_DENIED_VENDOR_CODES = Set.of(229, 916);
+
     public SqlServerDatabaseAdaptor() {
         this(new SqlServerTokenEventStructuredSqlParser(), new SqlServerTokenEventStructuredDdlParser(),
                 new SqlServerScriptFramer());
+    }
+
+    @Override
+    public Set<Integer> permissionDeniedVendorCodes() {
+        return PERMISSION_DENIED_VENDOR_CODES;
     }
 
     private SqlServerDatabaseAdaptor(

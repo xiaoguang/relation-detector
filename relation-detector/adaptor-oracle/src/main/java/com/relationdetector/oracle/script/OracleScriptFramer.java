@@ -15,6 +15,11 @@ import com.relationdetector.core.script.ScriptLexeme;
 import com.relationdetector.core.script.ScriptLexemeKind;
 import com.relationdetector.core.script.StructuredScriptFramer;
 
+/**
+ * CN: 识别 Oracle SQL*Plus 风格的 slash object terminator、引号和注释并生成 statement records；不解析 PL/SQL 语义。
+ * EN: Frames Oracle client scripts using SQL*Plus slash terminators, quotes, and comments; it does not parse PL/SQL
+ * semantics or emit physical facts.
+ */
 public final class OracleScriptFramer implements DialectScriptFramer {
     @Override
     public ScriptFrameResult frame(ScriptFrameRequest request) {

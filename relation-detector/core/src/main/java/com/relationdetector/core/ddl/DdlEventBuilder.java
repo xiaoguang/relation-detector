@@ -9,6 +9,7 @@ import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
+ *
  * Shared builder for normalized DDL parser events.
  *
  * <p>CN: 方言 typed DDL visitor 后续可以只提交 table/column/constraint 结构，

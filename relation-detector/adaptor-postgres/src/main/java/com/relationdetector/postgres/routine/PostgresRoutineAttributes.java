@@ -9,7 +9,10 @@ import java.util.Set;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Structured routine-scope attributes shared by PostgreSQL parser modes. */
+/**
+ *
+ * Structured routine-scope attributes shared by PostgreSQL parser modes.
+ */
 public final class PostgresRoutineAttributes {
     public static final String NON_COLUMN_IDENTIFIERS = "routineNonColumnIdentifiers";
     public static final String EMBEDDED_SQL = "postgresRoutineEmbeddedSql";

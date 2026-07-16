@@ -38,7 +38,10 @@ import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParser.U
 import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParserBaseVisitor;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/** PostgreSQL 17 typed parse-tree traversal; shared semantics stay in core/common helpers. */
+/**
+ *
+ * PostgreSQL 17 typed parse-tree traversal; shared semantics stay in core/common helpers.
+ */
 final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;

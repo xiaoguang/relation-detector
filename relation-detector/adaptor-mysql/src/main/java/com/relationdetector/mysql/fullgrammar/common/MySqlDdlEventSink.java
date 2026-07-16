@@ -6,6 +6,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.ddl.DdlEventBuilder;
 
 /**
+ *
  * Shared DDL event sink for MySQL full-grammar visitors.
  */
 public final class MySqlDdlEventSink {

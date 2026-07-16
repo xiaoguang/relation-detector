@@ -10,7 +10,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Symbol;
 
-/** Per-parse Oracle DDL column, key, foreign-key and index collector. */
+/**
+ *
+ * Per-parse Oracle DDL column, key, foreign-key and index collector.
+ */
 final class OracleFullGrammarDdlCollector extends OracleFullGrammarParseTreeSupport {
     private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
     private final Consumer<ParseTree> visitor;

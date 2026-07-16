@@ -7,7 +7,10 @@ import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.core.naming.NamingRule;
 import com.relationdetector.core.naming.NamingRuleSet;
 
-/** Immutable evidence extraction, profiling, and derived-path configuration. */
+/**
+ *
+ * Immutable evidence extraction, profiling, and derived-path configuration.
+ */
 public record EvidenceConfig(
         boolean dataProfileEnabled,
         DataProfileOptions dataProfileOptions,

@@ -10,7 +10,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
 
-/** Stateless parse-tree access and identifier normalization for SQL Server collectors. */
+/**
+ *
+ * Stateless parse-tree access and identifier normalization for SQL Server collectors.
+ */
 abstract class SqlServerParseTreeSupport {
     private final FullGrammarParseTreeAdapter adapter;
 

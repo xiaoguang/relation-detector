@@ -57,6 +57,7 @@ public final class DdlRelationParserRunner {
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
 
     /**
+     *
      * 解析来自非文件来源的 DDL 文本，例如 MySQL {@code SHOW CREATE TABLE}。
      *
      * <p>EN: Parses DDL text that came from a non-file source, such as MySQL
@@ -112,6 +113,7 @@ public final class DdlRelationParserRunner {
     }
 
     /**
+     *
      * 使用调用方已经选定的 DDL parser 解析 DDL 文本。
      *
      * <p>EN: Parses DDL text with an explicitly selected DDL parser. Correctness
@@ -210,7 +212,10 @@ public final class DdlRelationParserRunner {
                 identifierRules, namespace);
     }
 
-    /** Parses script-framed DDL statements and merges their typed events before extraction. */
+    /**
+     *
+     * Parses script-framed DDL statements and merges their typed events before extraction.
+     */
     public DdlParseOutcome parseStatementsWithEvidence(
             StructuredDdlParser parser,
             List<SqlStatementRecord> statements,

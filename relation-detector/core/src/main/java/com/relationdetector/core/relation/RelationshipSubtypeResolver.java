@@ -5,7 +5,10 @@ import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 
-/** Resolves the strongest relationship subtype from merged evidence. */
+/**
+ *
+ * Resolves the strongest relationship subtype from merged evidence.
+ */
 final class RelationshipSubtypeResolver {
     RelationSubType resolve(RelationshipCandidate candidate) {
         if (candidate.relationType() == RelationType.CO_OCCURRENCE) {

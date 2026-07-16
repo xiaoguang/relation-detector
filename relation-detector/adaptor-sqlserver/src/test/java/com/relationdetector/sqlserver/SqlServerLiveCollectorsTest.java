@@ -1,6 +1,7 @@
 package com.relationdetector.sqlserver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -10,6 +11,7 @@ import java.sql.Types;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.rowset.RowSetMetaDataImpl;
 import javax.sql.rowset.RowSetProvider;
@@ -17,10 +19,35 @@ import javax.sql.rowset.RowSetProvider;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
+import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.sqlserver.metadata.SqlServerMetadataCollector;
 import com.relationdetector.sqlserver.objects.SqlServerObjectCollector;
 
 class SqlServerLiveCollectorsTest {
+    @Test
+    void adaptorOwnsSqlServerPermissionVendorCodes() {
+        assertEquals(java.util.Set.of(229, 916), new SqlServerDatabaseAdaptor().permissionDeniedVendorCodes());
+    }
+
+    @Test
+    void rejectsExplicitCatalogThatDoesNotMatchConnectionBeforeCatalogQuery() {
+        AtomicInteger preparedStatements = new AtomicInteger();
+        Connection connection = (Connection) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {Connection.class}, (proxy, method, args) -> switch (method.getName()) {
+                    case "getCatalog" -> "ERPDB";
+                    case "prepareStatement" -> {
+                        preparedStatements.incrementAndGet();
+                        throw new AssertionError("catalog SQL must not run");
+                    }
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+
+        assertThrows(LiveSourceConfigurationException.class, () -> new SqlServerMetadataCollector().collect(connection,
+                new ScanScope("OTHER", "dbo", List.of(), List.of())));
+        assertEquals(0, preparedStatements.get());
+    }
+
     @Test
     void collectsCatalogFactsForeignKeyAndObjectDefinition() throws Exception {
         Connection connection = connection();
@@ -47,7 +74,11 @@ class SqlServerLiveCollectorsTest {
                 new ScanScope("ERPDB", "dbo", List.of(), List.of()), warnings::add);
 
         assertTrue(objects.isEmpty());
-        assertEquals("SQLSERVER_OBJECT_DEFINITION_UNAVAILABLE", warnings.get(0).code());
+        assertEquals(WarningType.LIVE_SOURCE_WARNING, warnings.get(0).type());
+        assertEquals("DEFINITION_UNAVAILABLE", warnings.get(0).code());
+        assertEquals("ERPDB", warnings.get(0).attributes().get("objectCatalog"));
+        assertEquals("dbo", warnings.get(0).attributes().get("objectSchema"));
+        assertEquals("rebuild_orders", warnings.get(0).attributes().get("objectName"));
     }
 
     private Connection connection() {

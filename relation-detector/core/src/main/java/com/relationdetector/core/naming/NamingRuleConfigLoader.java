@@ -10,6 +10,11 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
+/**
+ * CN: 从系统资源、用户 YAML 文件或 inline JSON 读取并校验 naming rule 配置；只构造规则模型，不执行 endpoint 匹配。
+ * EN: Loads and validates naming rules from system resources, user YAML files, or inline JSON; it builds rule models
+ * without matching endpoints or producing naming evidence.
+ */
 public final class NamingRuleConfigLoader {
     private static final YAMLMapper YAML = new YAMLMapper();
     private static final String SYSTEM_DEFAULT = "/naming-rules/system-default.yml";

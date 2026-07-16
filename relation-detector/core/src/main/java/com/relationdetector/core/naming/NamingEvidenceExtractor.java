@@ -24,6 +24,7 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.log.SourceNameNormalizer;
 
 /**
+ *
  * Extracts independent name-only evidence hints.
  *
  * <p>CN: 本类只生成 NAMING_MATCH evidence pool。它不会创建 RelationshipCandidate。

@@ -10,6 +10,7 @@ import com.relationdetector.core.relation.*;
 import com.relationdetector.core.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -49,6 +50,19 @@ import com.relationdetector.contracts.Enums.RelationType;
  */
 class JsonResultWriterEvidenceOutputTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test
+    void writesOptionalCatalogWithoutRemovingSchema() throws Exception {
+        JsonNode catalogOnly = JSON.readTree(new JsonResultWriter().write(
+                new ScanResult("mysql", "shop", null), true, true));
+        assertEquals("shop", catalogOnly.path("database").path("catalog").asText());
+        assertEquals("", catalogOnly.path("database").path("schema").asText());
+
+        JsonNode legacy = JSON.readTree(new JsonResultWriter().write(
+                new ScanResult("postgres", "public"), true, true));
+        assertFalse(legacy.path("database").has("catalog"));
+        assertEquals("public", legacy.path("database").path("schema").asText());
+    }
 
     @Test
     void outputStreamRenderingMatchesStringContract() throws Exception {

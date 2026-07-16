@@ -6,6 +6,7 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
+ *
  * Version bridge for MySQL full-grammar DDL parsing.
  */
 public interface MySqlFullGrammarDdlBinding {

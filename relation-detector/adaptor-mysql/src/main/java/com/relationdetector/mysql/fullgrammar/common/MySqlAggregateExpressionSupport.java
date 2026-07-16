@@ -9,7 +9,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Collects typed MySQL aggregate arguments independently of CASE/control roles. */
+/**
+ *
+ * Collects typed MySQL aggregate arguments independently of CASE/control roles.
+ */
 final class MySqlAggregateExpressionSupport {
     private final MySqlFullGrammarExpressionAnalyzer analyzer;
     private final MySqlExpressionContextAdapter contexts;

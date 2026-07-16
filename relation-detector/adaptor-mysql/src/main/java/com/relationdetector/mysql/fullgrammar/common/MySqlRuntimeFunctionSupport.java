@@ -12,7 +12,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Handles typed MySQL runtime date-function arguments. */
+/**
+ *
+ * Handles typed MySQL runtime date-function arguments.
+ */
 final class MySqlRuntimeFunctionSupport {
     private final MySqlFullGrammarExpressionAnalyzer analyzer;
     private final MySqlExpressionContextAdapter contexts;

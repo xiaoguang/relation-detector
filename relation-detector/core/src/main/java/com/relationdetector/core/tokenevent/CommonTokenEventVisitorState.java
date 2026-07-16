@@ -15,7 +15,10 @@ import com.relationdetector.core.antlr.common.CommonRelationSqlBaseVisitor;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Per-parse mutable state and identifier/source helpers for the common visitor. */
+/**
+ *
+ * Per-parse mutable state and identifier/source helpers for the common visitor.
+ */
 abstract class CommonTokenEventVisitorState extends CommonRelationSqlBaseVisitor<Void> {
     protected final TokenEventEventEmitter emitter;
     protected final List<StructuredSqlEvent> events = new ArrayList<>();

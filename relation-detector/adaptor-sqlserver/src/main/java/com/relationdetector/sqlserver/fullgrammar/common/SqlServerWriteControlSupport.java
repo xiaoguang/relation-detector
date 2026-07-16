@@ -9,7 +9,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
 
-/** Emits SQL Server full-grammar write controls from typed contexts. */
+/**
+ *
+ * Emits SQL Server full-grammar write controls from typed contexts.
+ */
 final class SqlServerWriteControlSupport extends SqlServerParseTreeSupport {
     private final FullGrammarEventFacade sink;
     private final SqlServerExpressionAnalyzer expressions;

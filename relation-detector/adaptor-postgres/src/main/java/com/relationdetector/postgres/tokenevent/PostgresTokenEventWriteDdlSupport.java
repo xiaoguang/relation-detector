@@ -10,7 +10,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** INSERT/UPDATE/MERGE mappings, projections and DDL inventory for PostgreSQL token-event SQL. */
+/**
+ *
+ * INSERT/UPDATE/MERGE mappings, projections and DDL inventory for PostgreSQL token-event SQL.
+ */
 abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpressionSupport {
     PostgresTokenEventWriteDdlSupport(SqlStatementRecord statement) { super(statement); }
 

@@ -19,6 +19,11 @@ import com.relationdetector.core.parse.AntlrSllParseSupport;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 
+/**
+ * CN: 用 compact SQL Server grammar 将 DDL 文本转换为 typed DDL events 和 parser diagnostics；不执行 metadata 查询或 evidence merge。
+ * EN: Converts SQL Server DDL text into typed DDL events and parser diagnostics with the compact grammar;
+ * it does not query metadata or merge evidence.
+ */
 public final class SqlServerTokenEventStructuredDdlParser implements StructuredDdlParser {
     @Override
     public StructuredParseResult parseDdl(String ddl, String sourceName, AdaptorContext context) {

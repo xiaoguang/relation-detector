@@ -24,6 +24,7 @@ import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
 /**
+ *
  * Low-level ANTLR SQL support for token-event parsers.
  *
  * <p>This class owns lexer/parser setup, visible token extraction, syntax

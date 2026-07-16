@@ -8,6 +8,12 @@ import java.util.Optional;
 
 import com.relationdetector.contracts.model.Endpoint;
 
+/**
+ * CN: 对一对有向 column endpoints 执行已配置的系统和用户 naming rules，返回可审计的匹配结果；
+ * 不读取 SQL 文本，不创建 relationship，也不跨 catalog 猜测表身份。
+ * EN: Evaluates configured naming rules for one directional column-endpoint pair and returns auditable matches;
+ * it does not read SQL text, create relationships, or guess table identity across catalogs.
+ */
 public final class NamingRuleEngine {
     public List<Match> match(
             Endpoint left,

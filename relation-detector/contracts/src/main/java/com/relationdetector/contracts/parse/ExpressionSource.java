@@ -1,6 +1,9 @@
 package com.relationdetector.contracts.parse;
 
-/** A column-shaped source before alias resolution. */
+/**
+ *
+ * A column-shaped source before alias resolution.
+ */
 public record ExpressionSource(String alias, String column) {
     public static final ExpressionSource EMPTY = new ExpressionSource("", "");
 

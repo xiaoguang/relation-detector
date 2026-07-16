@@ -22,7 +22,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.WriteEvent;
 
-/** Shared per-parse state and typed event factory for Oracle full grammar. */
+/**
+ *
+ * Shared per-parse state and typed event factory for Oracle full grammar.
+ */
 public final class OracleSqlEventVisitorCore {
     private final SqlStatementRecord statement;
     private final List<StructuredSqlEvent> events = new ArrayList<>();

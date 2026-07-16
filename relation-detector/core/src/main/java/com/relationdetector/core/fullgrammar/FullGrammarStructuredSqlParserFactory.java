@@ -43,6 +43,7 @@ public final class FullGrammarStructuredSqlParserFactory {
     }
 
     /**
+     *
      * 按 request 与可用 module 创建 SQL parser。
      *
      * <p>EN: Creates the SQL parser selected by the request and available modules.

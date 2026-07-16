@@ -45,6 +45,7 @@ import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
@@ -64,8 +65,12 @@ import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 import com.relationdetector.mysql.MySqlCatalogScope;
 
-/** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
-
+/**
+ * CN: 从 information_schema 读取 MySQL catalog 的表、列、约束和索引，保留组合成员顺序并输出 raw metadata facts；
+ * 不负责跨来源合并、命名匹配或置信度调整。
+ * EN: Reads tables, columns, constraints, and indexes from a MySQL catalog while preserving composite ordinals and
+ * emitting raw metadata facts; it does not merge sources, run naming rules, or adjust confidence.
+ */
 public final class MySqlMetadataCollector implements MetadataCollector {
     @Override
     public MetadataSnapshot collect(Connection connection, ScanScope scope) {
@@ -112,8 +117,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 }
             }
         } catch (Exception ex) {
-            snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_METADATA_TABLES_FAILED", ex.getMessage(), "information_schema.TABLES", 0));
+            warn(snapshot, "MYSQL_METADATA_TABLES_FAILED", ex, "information_schema.TABLES");
         }
     }
 
@@ -156,12 +160,12 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 }
             }
         } catch (Exception ex) {
-            snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_METADATA_COLUMNS_FAILED", ex.getMessage(), "information_schema.COLUMNS", 0));
+            warn(snapshot, "MYSQL_METADATA_COLUMNS_FAILED", ex, "information_schema.COLUMNS");
         }
     }
 
     /**
+     *
      * Reads explicit MySQL foreign keys from information_schema.
      *
      * <p>Why {@code KEY_COLUMN_USAGE}: MySQL records one row per constrained
@@ -175,19 +179,19 @@ public final class MySqlMetadataCollector implements MetadataCollector {
      * <p>Complete composite-key example:
      * <pre>{@code
      * CREATE TABLE crm.accounts (
-     *   tenant_id BIGINT NOT NULL,
-     *   account_id BIGINT NOT NULL,
-     *   PRIMARY KEY (tenant_id, account_id)
+     * tenant_id BIGINT NOT NULL,
+     * account_id BIGINT NOT NULL,
+     * PRIMARY KEY (tenant_id, account_id)
      * );
      *
      * CREATE TABLE crm.invoices (
-     *   tenant_id BIGINT NOT NULL,
-     *   account_id BIGINT NOT NULL,
-     *   invoice_id BIGINT NOT NULL,
-     *   PRIMARY KEY (tenant_id, invoice_id),
-     *   CONSTRAINT fk_invoice_account
-     *     FOREIGN KEY (tenant_id, account_id)
-     *     REFERENCES crm.accounts(tenant_id, account_id)
+     * tenant_id BIGINT NOT NULL,
+     * account_id BIGINT NOT NULL,
+     * invoice_id BIGINT NOT NULL,
+     * PRIMARY KEY (tenant_id, invoice_id),
+     * CONSTRAINT fk_invoice_account
+     * FOREIGN KEY (tenant_id, account_id)
+     * REFERENCES crm.accounts(tenant_id, account_id)
      * );
      * }</pre>
      *
@@ -252,11 +256,15 @@ public final class MySqlMetadataCollector implements MetadataCollector {
                 }
             }
         } catch (Exception ex) {
-            snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_METADATA_FK_FAILED", ex.getMessage(), "information_schema.KEY_COLUMN_USAGE", 0));
+            warn(snapshot, "MYSQL_METADATA_FK_FAILED", ex, "information_schema.KEY_COLUMN_USAGE");
         }
     }
 
+    /**
+     * CN: 按 constraint 名和 ordinal 汇总 PK/UNIQUE 列组；组合唯一键保持整体身份，不证明任一成员单列唯一。
+     * EN: Groups PK and UNIQUE columns by constraint and ordinal; composite uniqueness remains group-level evidence
+     * and never proves that an individual member is unique.
+     */
     private void collectConstraints(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
         String constraintsSql = """
                 SELECT CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, CONSTRAINT_TYPE
@@ -328,8 +336,7 @@ public final class MySqlMetadataCollector implements MetadataCollector {
             }
             builders.values().forEach(builder -> snapshot.constraintFacts().add(builder.toFact()));
         } catch (Exception ex) {
-            snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_METADATA_CONSTRAINTS_FAILED", ex.getMessage(), "information_schema.TABLE_CONSTRAINTS", 0));
+            warn(snapshot, "MYSQL_METADATA_CONSTRAINTS_FAILED", ex, "information_schema.TABLE_CONSTRAINTS");
         }
     }
 
@@ -364,14 +371,18 @@ public final class MySqlMetadataCollector implements MetadataCollector {
             }
             indexes.values().forEach(builder -> snapshot.indexFacts().add(builder.toFact()));
         } catch (Exception ex) {
-            snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_METADATA_INDEXES_FAILED", ex.getMessage(), "information_schema.STATISTICS", 0));
+            warn(snapshot, "MYSQL_METADATA_INDEXES_FAILED", ex, "information_schema.STATISTICS");
         }
     }
 
     private ConstraintBuilder builder(Map<String, ConstraintBuilder> builders, String schema, String table, String name) {
         return builders.computeIfAbsent(schema + "|" + table + "|" + name,
                 ignored -> new ConstraintBuilder(schema, table, name));
+    }
+
+    private void warn(MetadataSnapshot snapshot, String code, Exception failure, String source) {
+        snapshot.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
+                code, LiveDiagnosticSanitizer.Operation.METADATA, source, failure, Map.of()));
     }
 
     private TableId mysqlTable(String catalog, String tableName) {

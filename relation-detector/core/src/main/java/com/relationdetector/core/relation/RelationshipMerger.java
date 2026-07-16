@@ -40,6 +40,7 @@ public final class RelationshipMerger {
     private final RelationshipSubtypeResolver subtypeResolver = new RelationshipSubtypeResolver();
 
     /**
+     *
      * 合并候选并按 minConfidence 过滤输出。
      *
      * <p>EN: Merges candidates and filters final output by minConfidence.
@@ -84,6 +85,7 @@ public final class RelationshipMerger {
     }
 
     /**
+     *
      * Folds SQL-only column co-occurrence into an already directional FK-like
      * relationship when DDL/metadata/profile evidence has supplied direction.
      *

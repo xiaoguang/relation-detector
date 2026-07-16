@@ -105,7 +105,35 @@ class ScanEngineDatabaseDdlSourceTest {
                 "unqualified live DDL unique key should enhance the schema-qualified relationship");
     }
 
-    private static final class DatabaseDdlAdaptor implements DatabaseAdaptor {
+    @Test
+    void nullDatabaseDdlListProducesDefinitionUnavailable() {
+        assertDefinitionUnavailableOnly(scanDatabaseDdl(new NullDdlListAdaptor()));
+    }
+
+    @Test
+    void nullDatabaseDdlElementProducesDefinitionUnavailable() {
+        assertDefinitionUnavailableOnly(scanDatabaseDdl(new NullDdlElementAdaptor()));
+    }
+
+    private ScanResult scanDatabaseDdl(DatabaseAdaptor adaptor) {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = JDBC_URL;
+        config.metadataEnabled = false;
+        config.ddlEnabled = true;
+        config.ddlFromDatabase = true;
+        return new ScanEngine().scan(config, adaptor);
+    }
+
+    private void assertDefinitionUnavailableOnly(ScanResult result) {
+        assertEquals(1, result.warnings().stream()
+                .filter(warning -> warning.code().equals("DEFINITION_UNAVAILABLE")).count());
+        assertTrue(result.warnings().stream().noneMatch(warning ->
+                warning.code().equals("DATABASE_DDL_COLLECT_FAILED")));
+        assertTrue(result.relationships().isEmpty());
+    }
+
+    private static class DatabaseDdlAdaptor implements DatabaseAdaptor {
         @Override
         public String id() {
             return "test-database-ddl";
@@ -171,6 +199,28 @@ class ScanEngineDatabaseDdlSourceTest {
             return new com.relationdetector.contracts.spi.AdaptorProfiling(
                     Optional.empty(),
                     (evidence, context) -> evidence);
+        }
+    }
+
+    private static final class NullDdlListAdaptor extends DatabaseDdlAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of()),
+                    Optional.of((connection, scope) -> null),
+                    Optional.of((file, hint) -> Stream.empty()));
+        }
+    }
+
+    private static final class NullDdlElementAdaptor extends DatabaseDdlAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of()),
+                    Optional.of((connection, scope) -> java.util.Arrays.asList((DatabaseDdlDefinition) null)),
+                    Optional.of((file, hint) -> Stream.empty()));
         }
     }
 

@@ -13,7 +13,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.DdlConstraintSemantic;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
 
-/** Per-parse DDL event collector used by the SQL Server full grammar. */
+/**
+ *
+ * Per-parse DDL event collector used by the SQL Server full grammar.
+ */
 final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     private final DdlEventBuilder builder;
     private final Consumer<ParseTree> visitor;

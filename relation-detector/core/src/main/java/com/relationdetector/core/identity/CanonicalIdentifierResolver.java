@@ -7,7 +7,10 @@ import java.util.Objects;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
-/** Resolves identifiers only from explicit namespace context and exact dialect rules. */
+/**
+ *
+ * Resolves identifiers only from explicit namespace context and exact dialect rules.
+ */
 public final class CanonicalIdentifierResolver {
     private final IdentifierRules rules;
 
@@ -30,7 +33,10 @@ public final class CanonicalIdentifierResolver {
                 resolvedTable, normalizedName);
     }
 
-    /** Parses a qualified identifier without dropping an explicit catalog or schema. */
+    /**
+     *
+     * Parses a qualified identifier without dropping an explicit catalog or schema.
+     */
     public TableId resolveQualified(String qualified, NamespaceContext namespace) {
         List<String> parts = qualifiedParts(qualified);
         if (parts.isEmpty()) {

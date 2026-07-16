@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 /**
+ *
  * Shared MySQL full-grammar ANTLR parse lifecycle.
  *
  * <p>Version packages provide generated lexer/parser constructors and entry

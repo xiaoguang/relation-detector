@@ -9,7 +9,10 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
-/** Projection/write emission and DDL inventory traversal for the common grammar. */
+/**
+ *
+ * Projection/write emission and DDL inventory traversal for the common grammar.
+ */
 abstract class CommonTokenEventWriteDdlSupport extends CommonTokenEventExpressionSupport {
     CommonTokenEventWriteDdlSupport(SqlStatementRecord statement) {
         super(statement);

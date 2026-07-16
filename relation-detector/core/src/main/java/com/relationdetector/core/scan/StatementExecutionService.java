@@ -25,6 +25,7 @@ import com.relationdetector.core.provenance.SourceProvenanceValidator;
 import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 
 /**
+ *
  * Executes one SQL or DDL statement through the same structured parser,
  * relationship, and lineage path used by production scans. SQL naming rules run
  * once later in the scan-level evidence enhancement stage.

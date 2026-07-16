@@ -12,7 +12,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** VALUE/CONTROL role splitting and scalar-subquery context for Oracle token-event SQL. */
+/**
+ *
+ * VALUE/CONTROL role splitting and scalar-subquery context for Oracle token-event SQL.
+ */
 abstract class OracleTokenEventControlSupport extends OracleTokenEventExpressionSupport {
     OracleTokenEventControlSupport(SqlStatementRecord statement) {
         super(statement);

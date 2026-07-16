@@ -7,13 +7,14 @@ import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.profile.DialectDataProfileQueryRenderer;
 import com.relationdetector.core.profile.IdentifierQuoter;
 import com.relationdetector.core.profile.JdbcDataProfilerTemplate;
-import com.relationdetector.core.profile.SqlExceptionClassifier;
 
-/** Conservative bounded SQL Server data profiler. */
+/**
+ *
+ * Exact SQL Server data profiler.
+ */
 public final class SqlServerDataProfiler implements DataProfiler {
     private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(
-            new SqlServerProfileQueryRenderer(),
-            SqlExceptionClassifier.withPermissionVendorCodes(229, 916));
+            new SqlServerProfileQueryRenderer(), 229, 916);
 
     @Override
     public ProfileOutcome profile(Connection connection, ProfileRequest request) {
@@ -31,22 +32,17 @@ public final class SqlServerDataProfiler implements DataProfiler {
         @Override
         public String render(ProfileRequest request) {
             return """
-                SELECT COUNT(*) AS source_distinct,
-                       ISNULL(SUM(CASE WHEN EXISTS (
-                           SELECT 1 FROM %s t WHERE t.%s = s.v
-                       ) THEN 1 ELSE 0 END), 0) AS matched_distinct
-                FROM (
-                    SELECT DISTINCT TOP (%d) %s AS v
-                    FROM %s
-                    WHERE %s IS NOT NULL
-                ) s
+                SELECT (SELECT COUNT_BIG(*) FROM %1$s s WHERE s.%2$s IS NOT NULL) AS source_non_null_rows,
+                       (SELECT COUNT_BIG(DISTINCT s.%2$s) FROM %1$s s WHERE s.%2$s IS NOT NULL) AS source_distinct,
+                       (SELECT COUNT_BIG(DISTINCT s.%2$s) FROM %1$s s
+                          WHERE s.%2$s IS NOT NULL
+                            AND EXISTS (SELECT 1 FROM %3$s t WHERE t.%4$s = s.%2$s)) AS matched_distinct,
+                       (SELECT COUNT_BIG(DISTINCT t.%4$s) FROM %3$s t WHERE t.%4$s IS NOT NULL) AS target_distinct
                 """.formatted(
-                    QUOTER.table(request.candidate().target().table()),
-                    QUOTER.column(request.candidate().target().column()),
-                    Math.min(request.options().maxDistinctValues(), request.options().sampleRows()),
-                    QUOTER.column(request.candidate().source().column()),
                     QUOTER.table(request.candidate().source().table()),
-                    QUOTER.column(request.candidate().source().column()));
+                    QUOTER.column(request.candidate().source().column()),
+                    QUOTER.table(request.candidate().target().table()),
+                    QUOTER.column(request.candidate().target().column()));
         }
     }
 }

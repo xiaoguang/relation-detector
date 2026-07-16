@@ -4,7 +4,10 @@ import java.sql.Connection;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 
-/** Inputs used to select a versioned full-grammar profile. */
+/**
+ *
+ * Inputs used to select a versioned full-grammar profile.
+ */
 public record FullGrammarProfileRequest(
         DatabaseType databaseType,
         String configuredProfile,

@@ -9,5 +9,10 @@
  * confidence from evidence base scores, metadata enhancement, and repeated
  * observations. Data Lineage confidence is separate and does not feed this
  * formula.
+ * <p>Responsibility: 按 evidence weights 计算可解释 confidence / Computes explainable confidence from evidence.
+ * <p>Inputs: merged evidence types、subtype 与 configured scoring policy / Evidence, subtype, and scoring policy.
+ * <p>Outputs: deterministic confidence values and breakdowns / Deterministic confidence values and breakdowns.
+ * <p>Upstream/Downstream: fact merger 上游，ScanResult/output 下游 / Between fact merge and output.
+ * <p>Forbidden: 不改变 endpoint、事实类型或 evidence provenance / Must not change endpoints, fact kinds, or provenance.
  */
 package com.relationdetector.core.scoring;

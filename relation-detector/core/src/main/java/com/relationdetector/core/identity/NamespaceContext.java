@@ -2,7 +2,10 @@ package com.relationdetector.core.identity;
 
 import java.util.List;
 
-/** Explicit catalog/schema resolution context for one scan or statement. */
+/**
+ *
+ * Explicit catalog/schema resolution context for one scan or statement.
+ */
 public record NamespaceContext(String catalog, String currentSchema, List<String> searchPath) {
     public NamespaceContext {
         catalog = catalog == null ? "" : catalog;

@@ -8,6 +8,7 @@ import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 
 /**
+ *
  * Grouped source collection capabilities exposed by a database adaptor.
  *
  * <p>This is the only collector entry point in adaptor SPI v5. Optional

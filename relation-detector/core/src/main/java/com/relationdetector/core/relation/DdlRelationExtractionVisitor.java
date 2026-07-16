@@ -40,6 +40,7 @@ import com.relationdetector.core.identity.NamespaceContext;
  */
 public final class DdlRelationExtractionVisitor {
     /**
+     *
      * 从 DDL structured events 生成 relationship 候选。
      *
      * <p>EN: Builds relationship candidates from DDL structured events.

@@ -2,7 +2,10 @@ package com.relationdetector.core.log;
 
 import java.nio.file.Path;
 
-/** Normalizes evidence source names without changing routine/object labels. */
+/**
+ *
+ * Normalizes evidence source names without changing routine/object labels.
+ */
 public final class SourceNameNormalizer {
     private SourceNameNormalizer() {
     }

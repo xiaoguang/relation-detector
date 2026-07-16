@@ -3,7 +3,10 @@ package com.relationdetector.core.script;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Plans Oracle slash-terminated object blocks and ordinary statements. */
+/**
+ *
+ * Plans Oracle slash-terminated object blocks and ordinary statements.
+ */
 final class OracleScriptSlicePlanner extends ScriptFramingSupport implements ScriptSlicePlanner {
     @Override
     public List<Slice> plan(String text, List<ScriptLexeme> lexemes, List<Slice> markedSlices) {

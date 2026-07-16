@@ -16,6 +16,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
+ *
  * Shared Oracle full-grammar ANTLR lifecycle.
  */
 public final class OracleFullGrammarParseSupport {

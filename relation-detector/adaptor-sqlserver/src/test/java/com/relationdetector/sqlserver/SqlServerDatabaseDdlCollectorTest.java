@@ -28,12 +28,13 @@ class SqlServerDatabaseDdlCollectorTest {
 
         assertEquals(1, definitions.size());
         DatabaseDdlDefinition ddl = definitions.get(0);
+        assertEquals("erpdb", ddl.catalog());
         assertEquals("dbo", ddl.schema());
         assertEquals("orders", ddl.name());
         assertEquals("INFORMATION_SCHEMA", ddl.source());
         assertTrue(ddl.ddl().contains("CREATE TABLE [dbo].[orders]"));
         assertTrue(ddl.ddl().contains("CONSTRAINT [orders_pkey] PRIMARY KEY ([id])"));
-        assertTrue(ddl.ddl().contains("CONSTRAINT [fk_orders_customers] FOREIGN KEY ([customer_id]) REFERENCES [dbo].[customers] ([id])"));
+        assertTrue(ddl.ddl().contains("CONSTRAINT [fk_orders_customers] FOREIGN KEY ([tenant_id], [customer_id]) REFERENCES [dbo].[customers] ([tenant_id], [id])"));
     }
 
     private Connection connection() {
@@ -42,6 +43,7 @@ class SqlServerDatabaseDdlCollectorTest {
                 new Class<?>[]{Connection.class},
                 (proxy, method, args) -> switch (method.getName()) {
                     case "prepareStatement" -> preparedStatement((String) args[0]);
+                    case "getCatalog" -> "erpdb";
                     case "close" -> null;
                     case "isClosed" -> false;
                     default -> throw new UnsupportedOperationException(method.getName());
@@ -67,14 +69,22 @@ class SqlServerDatabaseDdlCollectorTest {
         if (sql.contains("INFORMATION_SCHEMA.COLUMNS")) {
             return List.of(
                     Map.of("COLUMN_NAME", "id", "DATA_TYPE", "bigint", "IS_NULLABLE", "NO"),
+                    Map.of("COLUMN_NAME", "tenant_id", "DATA_TYPE", "bigint", "IS_NULLABLE", "NO"),
                     Map.of("COLUMN_NAME", "customer_id", "DATA_TYPE", "bigint", "IS_NULLABLE", "NO"));
         }
-        if (sql.contains("INFORMATION_SCHEMA.TABLE_CONSTRAINTS")) {
+        if (sql.contains("sys.key_constraints")) {
+            return List.of(Map.of(
+                    "CONSTRAINT_NAME", "orders_pkey", "CONSTRAINT_TYPE", "PK",
+                    "COLUMN_NAME", "id", "COLUMN_ORDINAL", "1"));
+        }
+        if (sql.contains("sys.foreign_keys")) {
             return List.of(
-                    Map.of("CONSTRAINT_NAME", "orders_pkey", "CONSTRAINT_TYPE", "PRIMARY KEY", "COLUMN_NAME", "id"),
-                    Map.of("CONSTRAINT_NAME", "fk_orders_customers", "CONSTRAINT_TYPE", "FOREIGN KEY",
-                            "COLUMN_NAME", "customer_id", "FOREIGN_TABLE_SCHEMA", "dbo",
-                            "FOREIGN_TABLE_NAME", "customers", "FOREIGN_COLUMN_NAME", "id"));
+                    Map.of("CONSTRAINT_NAME", "fk_orders_customers", "CHILD_COLUMN_NAME", "customer_id",
+                            "FOREIGN_TABLE_SCHEMA", "dbo", "FOREIGN_TABLE_NAME", "customers",
+                            "FOREIGN_COLUMN_NAME", "id", "COLUMN_ORDINAL", "2"),
+                    Map.of("CONSTRAINT_NAME", "fk_orders_customers", "CHILD_COLUMN_NAME", "tenant_id",
+                            "FOREIGN_TABLE_SCHEMA", "dbo", "FOREIGN_TABLE_NAME", "customers",
+                            "FOREIGN_COLUMN_NAME", "tenant_id", "COLUMN_ORDINAL", "1"));
         }
         return List.of();
     }
@@ -90,6 +100,8 @@ class SqlServerDatabaseDdlCollectorTest {
                 (proxy, method, args) -> switch (method.getName()) {
                     case "next" -> ++cursor.index < rows.size();
                     case "getString" -> rows.get(cursor.index).get(String.valueOf(args[0]).toUpperCase());
+                    case "getInt" -> Integer.parseInt(rows.get(cursor.index)
+                            .get(String.valueOf(args[0]).toUpperCase()));
                     case "close" -> null;
                     default -> throw new UnsupportedOperationException(method.getName());
                 });

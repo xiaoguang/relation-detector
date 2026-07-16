@@ -11,7 +11,10 @@ import com.relationdetector.postgres.routine.PlPgSqlBodyStructure;
 import com.relationdetector.postgres.routine.PlPgSqlStaticSqlFragment;
 import com.relationdetector.postgres.routine.PlPgSqlStaticSqlFragment.MaskRange;
 
-/** Collects procedural-shell symbols and typed embedded-SQL boundaries. */
+/**
+ *
+ * Collects procedural-shell symbols and typed embedded-SQL boundaries.
+ */
 final class PlPgSqlShellCollector extends PlPgSqlParserBaseVisitor<Void> {
     private final String source;
     private final List<PlPgSqlBodyStructure.StaticSqlStatement> staticStatements = new ArrayList<>();

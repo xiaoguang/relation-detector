@@ -7,7 +7,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic;
 
-/** Classifies typed expression operations without collecting physical columns. */
+/**
+ *
+ * Classifies typed expression operations without collecting physical columns.
+ */
 final class FullGrammarTransformClassifier {
     private final FullGrammarParseTreeAdapter adapter;
     private final DialectFunctionSemanticRegistry functions;

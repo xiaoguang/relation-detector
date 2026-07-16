@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
+ *
  * Oracle routine-scope state shared by token-event and full-grammar visitors.
  *
  * <p>Oracle PL/SQL bodies are parsed by the outer Oracle grammar, unlike

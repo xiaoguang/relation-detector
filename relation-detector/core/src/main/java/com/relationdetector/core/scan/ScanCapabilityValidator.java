@@ -3,7 +3,10 @@ package com.relationdetector.core.scan;
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 
-/** Validates requested scan sources before any live database connection is opened. */
+/**
+ *
+ * Validates requested scan sources before any live database connection is opened.
+ */
 final class ScanCapabilityValidator {
     void validate(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
         boolean live = hasText(config.database().jdbcUrl());

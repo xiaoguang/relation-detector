@@ -9,6 +9,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.ddl.DdlEvidenceInventory;
 
 /**
+ *
  * Per-statement structured execution output before scan-level merge.
  */
 public record StatementExecutionOutcome(

@@ -8,7 +8,10 @@ import java.util.Optional;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.ParserRuleContext;
 
-/** Immutable class-literal role table shared by the four Oracle adapters. */
+/**
+ *
+ * Immutable class-literal role table shared by the four Oracle adapters.
+ */
 public abstract class AbstractOracleFullGrammarParseTreeAdapter
         implements OracleFullGrammarParseTreeAdapter {
     private final Map<Role, List<Class<?>>> roles;

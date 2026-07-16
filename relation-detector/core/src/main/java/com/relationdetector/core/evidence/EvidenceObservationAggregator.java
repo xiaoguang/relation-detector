@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Shared exact-folding and grouped-summary mechanics for evidence observations. */
+/**
+ *
+ * Shared exact-folding and grouped-summary mechanics for evidence observations.
+ */
 public final class EvidenceObservationAggregator<O> {
     private static final int MAX_SAMPLE_DETAILS = 5;
 

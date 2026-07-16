@@ -9,7 +9,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Symbol;
 
-/** Stateless typed-role and generated-context access shared by Oracle collectors. */
+/**
+ *
+ * Stateless typed-role and generated-context access shared by Oracle collectors.
+ */
 abstract class OracleFullGrammarParseTreeSupport {
     final OracleSqlEventVisitorCore core;
     private final OracleFullGrammarParseTreeAdapter adapter;

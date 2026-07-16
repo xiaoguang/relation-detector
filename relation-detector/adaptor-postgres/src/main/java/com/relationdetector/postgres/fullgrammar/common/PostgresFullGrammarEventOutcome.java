@@ -5,7 +5,10 @@ import java.util.List;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-/** Events and recoverable routine diagnostics emitted by a version visitor. */
+/**
+ *
+ * Events and recoverable routine diagnostics emitted by a version visitor.
+ */
 public record PostgresFullGrammarEventOutcome(
         List<StructuredSqlEvent> events,
         List<WarningMessage> warnings

@@ -19,7 +19,10 @@ import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.mysql.script.MySqlScriptFramer;
 
-/** Extracts MySQL log record payloads without classifying SQL by raw text. */
+/**
+ *
+ * Extracts MySQL log record payloads without classifying SQL by raw text.
+ */
 public final class MySqlLogExtractor implements SqlLogExtractor {
     private final MySqlScriptFramer scriptFramer;
 

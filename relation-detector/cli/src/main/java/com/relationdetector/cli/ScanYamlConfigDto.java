@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/** Jackson YAML transport model. Defaults remain owned by ScanConfig. */
+/**
+ *
+ * Jackson YAML transport model. Defaults remain owned by ScanConfig.
+ */
 final class ScanYamlConfigDto {
     public Database database = new Database();
     public Sources sources = new Sources();

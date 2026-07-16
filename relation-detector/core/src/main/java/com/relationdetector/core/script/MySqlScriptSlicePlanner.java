@@ -3,7 +3,10 @@ package com.relationdetector.core.script;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Plans MySQL client-script slices, including DELIMITER and fixture terminators. */
+/**
+ *
+ * Plans MySQL client-script slices, including DELIMITER and fixture terminators.
+ */
 final class MySqlScriptSlicePlanner extends ScriptFramingSupport implements ScriptSlicePlanner {
     @Override
     public List<Slice> plan(String text, List<ScriptLexeme> lexemes, List<Slice> markedSlices) {

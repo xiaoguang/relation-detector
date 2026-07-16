@@ -13,7 +13,12 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Symbol;
-/** Shared typed Oracle collector; versioned parsers remain independent. */
+/**
+ * CN: 遍历版本 adapter 暴露的 Oracle typed contexts，协调 rowset、predicate、write、DDL 与 routine scope collectors；
+ * 不读取 raw SQL，也不在不同版本 generated parser 之间委托。
+ * EN: Traverses Oracle typed contexts exposed by a version adapter and coordinates rowset, predicate, write, DDL,
+ * and routine-scope collectors; it neither scans raw SQL nor delegates across generated parser versions.
+ */
 public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGrammarParseTreeSupport {
     private final OracleRoutineScope routineScope = new OracleRoutineScope();
     private final OracleFullGrammarExpressionSupport expressionSupport;
@@ -46,6 +51,11 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         return core.events();
     }
 
+    /**
+     * CN: 按 typed role 将当前 context 分发给唯一职责 collector，并维持嵌套 query/routine scope；未知 context 仅遍历 typed children。
+     * EN: Dispatches each typed context to its owning collector while maintaining nested query and routine scopes;
+     * unknown contexts only recurse through typed children.
+     */
     private void visit(ParseTree tree) {
         if (tree == null) {
             return;

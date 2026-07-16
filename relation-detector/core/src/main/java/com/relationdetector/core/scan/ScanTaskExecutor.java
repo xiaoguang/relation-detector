@@ -9,7 +9,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** One bounded worker pool shared by every source group in a scan. */
+/**
+ *
+ * One bounded worker pool shared by every source group in a scan.
+ */
 final class ScanTaskExecutor implements AutoCloseable {
     private static final AtomicInteger POOL_IDS = new AtomicInteger();
 

@@ -16,6 +16,7 @@ import java.util.Optional;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
+ *
  * Shared state and sink helpers for MySQL full-grammar SQL visitors.
  *
  * <p>Version visitors still decide structure from their generated contexts; this

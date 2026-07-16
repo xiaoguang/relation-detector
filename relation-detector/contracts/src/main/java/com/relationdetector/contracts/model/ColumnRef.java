@@ -26,6 +26,7 @@ public record ColumnRef(
     }
 
     /**
+     *
      * 用默认 normalizedName 创建列引用。
      *
      * <p>EN: Creates a column reference using the column name as the default normalized name.

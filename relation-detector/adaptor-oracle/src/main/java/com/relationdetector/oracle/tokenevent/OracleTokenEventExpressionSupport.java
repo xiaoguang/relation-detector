@@ -9,7 +9,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Direct column and value-expression analysis for Oracle token-event SQL. */
+/**
+ *
+ * Direct column and value-expression analysis for Oracle token-event SQL.
+ */
 abstract class OracleTokenEventExpressionSupport extends OracleTokenEventVisitorState {
     OracleTokenEventExpressionSupport(SqlStatementRecord statement) {
         super(statement);

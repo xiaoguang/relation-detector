@@ -5,7 +5,10 @@ import java.util.Map;
 
 import com.relationdetector.contracts.model.Endpoint;
 
-/** Canonical column-to-literal guard attached to a direct structural relationship. */
+/**
+ *
+ * Canonical column-to-literal guard attached to a direct structural relationship.
+ */
 record RelationshipCondition(Endpoint discriminator, String operator, String literalValue) {
     RelationshipCondition {
         if (discriminator == null || !discriminator.isColumnLevel()) {

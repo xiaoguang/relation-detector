@@ -187,7 +187,7 @@ Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typ
 
 ## 代码结构注释索引
 
-生产代码的结构性注释分成三层：package 的 `package-info.java` 说明职责边界，生产类 Javadoc 说明文件在链路中的位置，关键 public 方法 / 编排方法 / 复杂 helper 说明调用意图。中文说明职责，English 说明同一职责边界，避免后续维护者只靠类名猜测调用方向。
+生产代码的结构性注释分成三层：package 的 `package-info.java` 说明职责、输入、输出、上下游和禁止边界，生产类 Javadoc 说明文件在链路中的位置，关键 public 方法 / 大型编排方法说明调用意图与失败边界。中文和 English 应说明同一职责边界，避免后续维护者只靠类名猜测调用方向。compiler/doc-tree 架构门禁会拒绝缺失的双语 package contract、过短的公开边界说明、TODO/TBD 以及已知泛化模板；它不能自动证明描述与实现完全一致，内容准确性仍需代码评审。
 
 | Package | 结构职责 |
 | --- | --- |
@@ -779,7 +779,7 @@ root token-event 与对应 full-grammar 数量不要求完全一致：token-even
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammar 已能确认的结构。
 - `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
 
-当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。Live capability/preflight、composite metadata index 首列口径、lineage source-set identity 和 profiler diagnostics 已实现并通过定向契约测试；endpoint、relationship alias/naming/merger、known-physical/live-DDL 装配与 MySQL live database namespace 映射均使用完整 catalog identity。全量状态以 `design-validation-report.md` 和发布验收结果为准。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
+当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。Live capability/preflight、composite metadata index 首列口径、lineage source-set identity 和 profiler diagnostics 已实现并通过定向契约测试；endpoint、relationship alias/naming/merger、known-physical/live-DDL 装配与四个 live adaptor namespace 映射均使用完整 catalog identity。PostgreSQL/SQL Server resolver 会在第一条系统表查询前拒绝与 connection catalog 不一致或无法证明的显式 catalog，专用配置异常会穿透 collector 与 `ScanEngine`，同时由 scan lifecycle 关闭连接。全量状态以 `design-validation-report.md` 和发布验收结果为准。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
 
 ### PostgreSQL 版本专属 fixture 差异
 

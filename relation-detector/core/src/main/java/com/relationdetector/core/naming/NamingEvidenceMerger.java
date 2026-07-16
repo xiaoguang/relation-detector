@@ -10,7 +10,10 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 
-/** Merges one naming fact per source-target-rule while preserving observations. */
+/**
+ *
+ * Merges one naming fact per source-target-rule while preserving observations.
+ */
 public final class NamingEvidenceMerger {
     private final EvidenceObservationAggregator<Evidence> observations =
             new EvidenceObservationAggregator<>();

@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 /**
+ *
  * Version bridge for MySQL full-grammar SQL parsing.
  */
 public interface MySqlFullGrammarSqlBinding {

@@ -38,6 +38,7 @@ public final class SimpleYamlConfigLoader {
     private final NamingRuleConfigLoader namingRuleConfigLoader = new NamingRuleConfigLoader();
 
     /**
+     *
      * 从 YAML 文件加载 ScanConfig。
      *
      * <p>EN: Loads ScanConfig from a YAML file.

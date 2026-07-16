@@ -12,6 +12,7 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 
 /**
+ *
  * Scan-scoped canonical naming evidence pool.
  *
  * <p>CN: namingEvidence 的唯一 scan 级证据池。调用方可以从 metadata、DDL

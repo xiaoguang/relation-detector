@@ -10,7 +10,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-/** Normalizes generic statement provenance from typed parse events. */
+/**
+ *
+ * Normalizes generic statement provenance from typed parse events.
+ */
 public final class StructuredParseProvenanceNormalizer {
     private static final Set<StructuredParseEventType> WRITE_EVENTS = EnumSet.of(
             StructuredParseEventType.WRITE_TARGET,

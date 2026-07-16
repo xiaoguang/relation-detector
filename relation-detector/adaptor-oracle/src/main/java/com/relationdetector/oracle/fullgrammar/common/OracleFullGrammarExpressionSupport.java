@@ -16,7 +16,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
-/** Per-parse Oracle VALUE/CONTROL and scalar-subquery expression analysis. */
+/**
+ *
+ * Per-parse Oracle VALUE/CONTROL and scalar-subquery expression analysis.
+ */
 final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTreeSupport {
     private final OracleExpressionTransformSupport transforms;
     private final OracleColumnReadCollector columns;

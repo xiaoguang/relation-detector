@@ -3,6 +3,7 @@ package com.relationdetector.core.ddl;
 import java.util.List;
 
 /**
+ *
  * Shared identifier cleanup helpers for typed DDL visitors.
  */
 public final class DdlColumnListExtractor {

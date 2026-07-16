@@ -13,7 +13,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DialectScriptFramer;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
-/** Reads one file and delegates all client-script framing to the selected adaptor. */
+/**
+ *
+ * Reads one file and delegates all client-script framing to the selected adaptor.
+ */
 public final class ScriptFileExtractor {
     public Stream<SqlStatementRecord> extract(
             Path file,

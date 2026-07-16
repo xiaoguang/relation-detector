@@ -6,7 +6,10 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/** Resolves the direct projection exposed by a typed SELECT subquery. */
+/**
+ *
+ * Resolves the direct projection exposed by a typed SELECT subquery.
+ */
 final class SubqueryProjectionTraceSupport {
     private final SourceLocationSupport source;
     private final FullGrammarParseTreeAdapter parseTreeAdapter;

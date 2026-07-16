@@ -1,183 +1,261 @@
 package com.relationdetector.postgres.metadata;
 
-
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
-import com.relationdetector.contracts.spi.AdaptorContext;
-import com.relationdetector.contracts.model.ColumnRef;
-import com.relationdetector.contracts.spi.Collectors.DataProfiler;
-import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
-import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
-import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
-import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
-import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
-import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
-import com.relationdetector.contracts.model.Endpoint;
-import com.relationdetector.contracts.model.Evidence;
-import com.relationdetector.contracts.spi.IdentifierRules;
-import com.relationdetector.contracts.metadata.MetadataSnapshot;
-import com.relationdetector.contracts.spi.ProfileRequest;
-import com.relationdetector.contracts.model.RelationshipCandidate;
-import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.model.TableId;
-import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.Enums.AdaptorCapability;
-import com.relationdetector.contracts.Enums.DatabaseObjectType;
-import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
-import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
-import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.WarningType;
-import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
-import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlParser;
-import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
+import com.relationdetector.contracts.metadata.MetadataColumnFact;
+import com.relationdetector.contracts.metadata.MetadataConstraintFact;
+import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataSnapshot;
+import com.relationdetector.contracts.metadata.MetadataTableFact;
+import com.relationdetector.contracts.model.ColumnRef;
+import com.relationdetector.contracts.model.Endpoint;
+import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
+import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
+import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
+import com.relationdetector.postgres.PostgresConstraintCatalogReader;
+import com.relationdetector.postgres.PostgresConstraintCatalogReader.Constraint;
+import com.relationdetector.postgres.PostgresNamespaceResolver;
 
-/** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
-
+/**
+ * CN: 读取 PostgreSQL 表、列、约束、索引以及声明 FK，单个 catalog family 失败时保留其余结果。
+ *
+ * <p>EN: Reads PostgreSQL tables, columns, constraints, indexes, and declared FKs with partial success.
+ */
 public final class PostgresMetadataCollector implements MetadataCollector {
+    private final PostgresConstraintCatalogReader constraintReader = new PostgresConstraintCatalogReader();
+
     @Override
     public MetadataSnapshot collect(Connection connection, ScanScope scope) {
-        /*
-         * Keep this collector focused on raw catalog extraction. It does not
-         * deduplicate, score-merge, or reinterpret direction. The core merger
-         * later combines these declared-FK candidates with weaker evidence from
-         * DDL files, SQL object bodies, logs, naming, and data profiling.
-         */
         MetadataSnapshot snapshot = new MetadataSnapshot();
-        collectForeignKeys(connection, scope, snapshot);
+        var namespace = PostgresNamespaceResolver.resolve(connection, scope);
+        collectTables(connection, scope, namespace.catalog(), namespace.schema(), snapshot);
+        collectColumns(connection, scope, namespace.catalog(), namespace.schema(), snapshot);
+        collectConstraints(connection, scope, namespace.catalog(), namespace.schema(), snapshot);
+        collectIndexes(connection, scope, namespace.catalog(), namespace.schema(), snapshot);
         return snapshot;
     }
 
-    /**
-     * Reads explicit PostgreSQL foreign keys from pg_catalog.
-     *
-     * <p>Why the query looks more complex than MySQL:
-     * PostgreSQL stores FK column numbers as arrays on {@code pg_constraint}:
-     * {@code con.conkey} contains source/child column attnums and
-     * {@code con.confkey} contains target/parent column attnums. The query uses
-     * {@code unnest(... ) WITH ORDINALITY} on both arrays and joins by
-     * {@code ord} so the first source column maps to the first target column,
-     * the second source column maps to the second target column, and so on.
-     * {@code pg_attribute} then translates each attnum into a column name.
-     *
-     * <p>Complete composite-key example:
-     * <pre>{@code
-     * CREATE TABLE public.accounts (
-     *   tenant_id bigint NOT NULL,
-     *   account_id bigint NOT NULL,
-     *   PRIMARY KEY (tenant_id, account_id)
-     * );
-     *
-     * CREATE TABLE public.invoices (
-     *   tenant_id bigint NOT NULL,
-     *   account_id bigint NOT NULL,
-     *   invoice_id bigint NOT NULL,
-     *   PRIMARY KEY (tenant_id, invoice_id),
-     *   CONSTRAINT fk_invoice_account
-     *     FOREIGN KEY (tenant_id, account_id)
-     *     REFERENCES public.accounts(tenant_id, account_id)
-     * );
-     * }</pre>
-     *
-     * <p>The result-set loop emits two candidates:
-     * <pre>{@code
-     * public.invoices.tenant_id  -> public.accounts.tenant_id
-     * public.invoices.account_id -> public.accounts.account_id
-     * }</pre>
-     *
-     * <p>Scope behavior: if the scan request does not provide a schema, this
-     * implementation defaults to {@code public}, matching the common PostgreSQL
-     * deployment convention. Future adaptors can expand this to multiple schemas
-     * without changing the common {@link MetadataCollector} contract.
-     *
-     * <p>Permission/version behavior: if catalog access fails, the exception is
-     * recorded as a warning and scanning continues with other evidence sources.
-     */
-    private void collectForeignKeys(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
+    private void collectTables(Connection connection, ScanScope scope, String catalog, String schema,
+            MetadataSnapshot snapshot) {
         String sql = """
-                SELECT
-                  ns.nspname AS source_schema,
-                  source_table.relname AS source_table,
-                  source_col.attname AS source_column,
-                  target_ns.nspname AS target_schema,
-                  target_table.relname AS target_table,
-                  target_col.attname AS target_column,
-                  con.conname AS constraint_name
-                FROM pg_constraint con
-                JOIN pg_class source_table ON source_table.oid = con.conrelid
-                JOIN pg_namespace ns ON ns.oid = source_table.relnamespace
-                JOIN pg_class target_table ON target_table.oid = con.confrelid
-                JOIN pg_namespace target_ns ON target_ns.oid = target_table.relnamespace
-                JOIN unnest(con.conkey) WITH ORDINALITY AS source_cols(attnum, ord) ON true
-                JOIN unnest(con.confkey) WITH ORDINALITY AS target_cols(attnum, ord) ON target_cols.ord = source_cols.ord
-                JOIN pg_attribute source_col ON source_col.attrelid = source_table.oid AND source_col.attnum = source_cols.attnum
-                JOIN pg_attribute target_col ON target_col.attrelid = target_table.oid AND target_col.attnum = target_cols.attnum
-                WHERE con.contype = 'f'
-                  AND ns.nspname = ?
+                /* metadata_tables */
+                SELECT n.nspname AS schema_name, c.relname AS table_name,
+                       CASE c.relkind WHEN 'p' THEN 'PARTITIONED TABLE' ELSE 'TABLE' END AS table_type
+                FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = ? AND c.relkind IN ('r','p') ORDER BY c.relname
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            String catalog = scope.catalog() == null || scope.catalog().isBlank()
-                    ? connection.getCatalog()
-                    : scope.catalog();
-            // PostgreSQL deployments often rely on "public"; use it as the
-            // adaptor-level default when the CLI config does not specify schema.
-            ps.setString(1, scope.schema() == null ? "public" : scope.schema());
+            ps.setString(1, schema);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    /*
-                     * The SQL has already paired source and target columns by
-                     * ordinal position. At this point each row is one
-                     * child-column -> parent-column mapping. Direction is not
-                     * inferred from naming; it comes directly from
-                     * pg_constraint.conrelid (source) and confrelid (target).
-                     */
-                    String sourceSchema = rs.getString("source_schema");
-                    String targetSchema = rs.getString("target_schema");
-                    TableId sourceTable = new TableId(catalog, sourceSchema, rs.getString("source_table"),
-                            sourceSchema + "." + rs.getString("source_table"));
-                    TableId targetTable = new TableId(catalog, targetSchema, rs.getString("target_table"),
-                            targetSchema + "." + rs.getString("target_table"));
-                    RelationshipCandidate candidate = new RelationshipCandidate(
-                            Endpoint.column(ColumnRef.of(sourceTable, rs.getString("source_column"))),
-                            Endpoint.column(ColumnRef.of(targetTable, rs.getString("target_column"))),
-                            RelationType.FK_LIKE,
-                            RelationSubType.DECLARED_FK);
-                    /*
-                     * Declared FK metadata is the strongest evidence currently
-                     * emitted by adaptors. It remains below 1.0 so future product
-                     * policy can distinguish "declared in catalog" from
-                     * "declared and independently verified by data/profile".
-                     */
-                    candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, DefaultEvidenceScores.METADATA_FOREIGN_KEY,
-                            EvidenceSourceType.METADATA, "pg_catalog.pg_constraint",
-                            rs.getString("constraint_name")));
-                    snapshot.relationships().add(candidate);
+                    String table = rs.getString("table_name");
+                    if (!inScope(scope, table)) continue;
+                    String rowSchema = rs.getString("schema_name");
+                    snapshot.tables().add(table(catalog, rowSchema, table));
+                    snapshot.tableFacts().add(new MetadataTableFact(catalog, rowSchema, table,
+                            rs.getString("table_type"), null, null));
                 }
             }
         } catch (Exception ex) {
-            snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "POSTGRES_METADATA_FK_FAILED", ex.getMessage(), "pg_catalog.pg_constraint", 0));
+            warn(snapshot, "POSTGRES_METADATA_TABLES_FAILED", "pg_catalog.pg_class", ex);
+        }
+    }
+
+    private void collectColumns(Connection connection, ScanScope scope, String catalog, String schema,
+            MetadataSnapshot snapshot) {
+        String sql = """
+                /* metadata_columns */
+                SELECT n.nspname AS schema_name, c.relname AS table_name, a.attname AS column_name,
+                       t.typname AS data_type, format_type(a.atttypid, a.atttypmod) AS column_type,
+                       NOT a.attnotnull AS nullable, COALESCE(pg_get_expr(d.adbin, d.adrelid), '') AS default_value,
+                       a.attidentity AS identity_kind, a.attgenerated AS generated_kind, a.attnum AS ordinal_position
+                FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace JOIN pg_type t ON t.oid = a.atttypid
+                LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+                WHERE n.nspname = ? AND c.relkind IN ('r','p') AND a.attnum > 0 AND NOT a.attisdropped
+                ORDER BY c.relname, a.attnum
+                """;
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, schema);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String tableName = rs.getString("table_name");
+                    if (!inScope(scope, tableName)) continue;
+                    String rowSchema = rs.getString("schema_name");
+                    String generated = rs.getString("generated_kind");
+                    String defaultValue = blankToNull(rs.getString("default_value"));
+                    MetadataColumnFact fact = new MetadataColumnFact(catalog, rowSchema, tableName,
+                            rs.getString("column_name"), rs.getString("data_type"), rs.getString("column_type"),
+                            rs.getBoolean("nullable"), generated == null || generated.isBlank() ? defaultValue : null,
+                            extra(rs.getString("identity_kind"), generated),
+                            generated == null || generated.isBlank() ? null : defaultValue,
+                            rs.getInt("ordinal_position"));
+                    snapshot.columnFacts().add(fact);
+                    snapshot.columns().add(new ColumnRef(table(catalog, rowSchema, tableName), fact.columnName(),
+                            fact.columnName(), fact.dataType(), fact.nullable()));
+                }
+            }
+        } catch (Exception ex) {
+            warn(snapshot, "POSTGRES_METADATA_COLUMNS_FAILED", "pg_catalog.pg_attribute", ex);
+        }
+    }
+
+    private void collectConstraints(Connection connection, ScanScope scope, String catalog, String schema,
+            MetadataSnapshot snapshot) {
+        try {
+            for (Constraint constraint : constraintReader.read(connection, schema, scope)) {
+                String referencedCatalog = "FOREIGN KEY".equals(constraint.type()) ? catalog : null;
+                snapshot.constraintFacts().add(new MetadataConstraintFact(catalog, constraint.schema(),
+                        constraint.table(), constraint.name(), constraint.type(), constraint.columns(), referencedCatalog,
+                        constraint.referencedSchema(), constraint.referencedTable(), constraint.referencedColumns(),
+                        constraint.updateRule(), constraint.deleteRule()));
+                if ("FOREIGN KEY".equals(constraint.type())) {
+                    addForeignKey(snapshot, catalog, constraint);
+                }
+            }
+        } catch (Exception ex) {
+            warn(snapshot, "POSTGRES_METADATA_CONSTRAINTS_FAILED", "pg_catalog.pg_constraint", ex);
+        }
+    }
+
+    private void addForeignKey(MetadataSnapshot snapshot, String catalog, Constraint constraint) {
+        int count = Math.min(constraint.columns().size(), constraint.referencedColumns().size());
+        for (int i = 0; i < count; i++) {
+            RelationshipCandidate candidate = new RelationshipCandidate(
+                    Endpoint.column(ColumnRef.of(table(catalog, constraint.schema(), constraint.table()),
+                            constraint.columns().get(i))),
+                    Endpoint.column(ColumnRef.of(table(catalog, constraint.referencedSchema(),
+                            constraint.referencedTable()), constraint.referencedColumns().get(i))),
+                    RelationType.FK_LIKE, RelationSubType.DECLARED_FK);
+            candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY,
+                    DefaultEvidenceScores.METADATA_FOREIGN_KEY, EvidenceSourceType.METADATA,
+                    "pg_catalog.pg_constraint", constraint.name()));
+            snapshot.relationships().add(candidate);
+        }
+    }
+
+    private void collectIndexes(Connection connection, ScanScope scope, String catalog, String schema,
+            MetadataSnapshot snapshot) {
+        String sql = """
+                /* metadata_indexes */
+                SELECT n.nspname AS schema_name, t.relname AS table_name, i.relname AS index_name,
+                       x.indisunique AS is_unique, x.indisprimary AS is_primary, am.amname AS index_type,
+                       keys.ord AS position, a.attname AS column_name,
+                       CASE WHEN keys.attnum = 0 THEN pg_get_indexdef(i.oid, keys.ord::integer, true) ELSE '' END AS expression
+                FROM pg_index x JOIN pg_class t ON t.oid = x.indrelid
+                JOIN pg_namespace n ON n.oid = t.relnamespace JOIN pg_class i ON i.oid = x.indexrelid
+                JOIN pg_am am ON am.oid = i.relam
+                JOIN unnest(x.indkey) WITH ORDINALITY keys(attnum, ord) ON true
+                LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = keys.attnum
+                WHERE n.nspname = ? ORDER BY t.relname, i.relname, keys.ord
+                """;
+        Map<String, IndexBuilder> groups = new LinkedHashMap<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, schema);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String tableName = rs.getString("table_name");
+                    if (!inScope(scope, tableName)) continue;
+                    String key = rs.getString("schema_name") + "|" + tableName + "|" + rs.getString("index_name");
+                    IndexBuilder builder = groups.computeIfAbsent(key, ignored -> new IndexBuilder(
+                            string(rs, "schema_name"), tableName, string(rs, "index_name"),
+                            bool(rs, "is_unique"), bool(rs, "is_primary"), string(rs, "index_type")));
+                    builder.add(rs.getInt("position"), blankToEmpty(rs.getString("column_name")),
+                            blankToEmpty(rs.getString("expression")));
+                }
+            }
+            for (IndexBuilder builder : groups.values()) {
+                snapshot.indexFacts().add(builder.build(catalog));
+            }
+        } catch (Exception ex) {
+            warn(snapshot, "POSTGRES_METADATA_INDEXES_FAILED", "pg_catalog.pg_index", ex);
+        }
+    }
+
+    private TableId table(String catalog, String schema, String name) {
+        return new TableId(catalog, schema, name, schema + "." + name);
+    }
+
+    private boolean inScope(ScanScope scope, String table) {
+        String key = table == null ? "" : table.toLowerCase(Locale.ROOT);
+        boolean included = scope.includeTables().isEmpty()
+                || scope.includeTables().stream().map(value -> value.toLowerCase(Locale.ROOT)).anyMatch(key::equals);
+        return included && scope.excludeTables().stream().map(value -> value.toLowerCase(Locale.ROOT)).noneMatch(key::equals);
+    }
+
+    private String extra(String identity, String generated) {
+        List<String> values = new ArrayList<>();
+        if (identity != null && !identity.isBlank()) values.add("IDENTITY");
+        if (generated != null && !generated.isBlank()) values.add("GENERATED");
+        return String.join(" ", values);
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private String blankToEmpty(String value) {
+        return value == null || "null".equalsIgnoreCase(value) ? "" : value;
+    }
+
+    private void warn(MetadataSnapshot snapshot, String code, String source, Exception ex) {
+        snapshot.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(code,
+                LiveDiagnosticSanitizer.Operation.METADATA, source, ex, Map.of()));
+    }
+
+    private String string(ResultSet rs, String column) {
+        try { return rs.getString(column); } catch (Exception ex) { throw new IllegalStateException(ex); }
+    }
+
+    private boolean bool(ResultSet rs, String column) {
+        try { return rs.getBoolean(column); } catch (Exception ex) { throw new IllegalStateException(ex); }
+    }
+
+    private static final class IndexBuilder {
+        private final String schema;
+        private final String table;
+        private final String name;
+        private final boolean unique;
+        private final boolean primary;
+        private final String type;
+        private final Map<Integer, String> columns = new TreeMap<>();
+        private final Map<Integer, String> expressions = new TreeMap<>();
+
+        private IndexBuilder(String schema, String table, String name, boolean unique, boolean primary, String type) {
+            this.schema = schema;
+            this.table = table;
+            this.name = name;
+            this.unique = unique;
+            this.primary = primary;
+            this.type = type;
+        }
+
+        private void add(int position, String column, String expression) {
+            columns.put(position, column);
+            expressions.put(position, expression);
+        }
+
+        private MetadataIndexFact build(String catalog) {
+            List<Integer> positions = List.copyOf(columns.keySet());
+            return new MetadataIndexFact(catalog, schema, table, name, unique, primary, type, true,
+                    new ArrayList<>(columns.values()), new ArrayList<>(expressions.values()), List.of(), positions);
         }
     }
 }

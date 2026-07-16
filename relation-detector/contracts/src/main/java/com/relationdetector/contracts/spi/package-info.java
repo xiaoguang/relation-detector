@@ -9,5 +9,10 @@
  * DDL, log, token-event parser, full-grammar profile hooks, and profiling
  * services through these contracts. Dialect implementations belong to adaptor
  * modules, not to this package.
+ * <p>Responsibility: 定义 core 与数据库 adaptor 的可执行边界 / Defines the executable core-to-adaptor boundary.
+ * <p>Inputs: scan scope、JDBC connection、SQL 与 profile request / Scan scope, connections, SQL, and profile requests.
+ * <p>Outputs: metadata、definitions、events、profile evidence 与 warnings / Metadata, definitions, events, and warnings.
+ * <p>Upstream/Downstream: core 调用，方言 adaptor 实现 / Called by core and implemented by dialect adaptors.
+ * <p>Forbidden: 不放置方言实现或扫描策略 / Must not contain dialect implementations or scan policy.
  */
 package com.relationdetector.contracts.spi;

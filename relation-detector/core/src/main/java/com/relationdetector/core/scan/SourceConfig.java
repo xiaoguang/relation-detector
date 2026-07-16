@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.LogFormatHint;
 
-/** Immutable source collection configuration. */
+/**
+ *
+ * Immutable source collection configuration.
+ */
 public record SourceConfig(
         boolean metadataEnabled,
         boolean ddlEnabled,

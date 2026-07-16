@@ -13,6 +13,7 @@ import com.relationdetector.core.naming.NamingRule;
 import com.relationdetector.core.naming.NamingRuleSet;
 
 /**
+ *
  * Mutable YAML/CLI input DTO. Production scans immediately snapshot it into a
  * {@link ResolvedScanConfig}; callers may keep using this class to assemble
  * configuration without exposing mutable state to a running scan.

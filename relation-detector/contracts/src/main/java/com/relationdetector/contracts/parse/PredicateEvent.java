@@ -4,7 +4,10 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
-/** Equality, USING, EXISTS, IN, or tuple-IN predicate event. */
+/**
+ *
+ * Equality, USING, EXISTS, IN, or tuple-IN predicate event.
+ */
 public record PredicateEvent(
         StructuredParseEventType type,
         SourceProvenance provenance,

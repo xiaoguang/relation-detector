@@ -7,6 +7,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.model.Endpoint;
 
 /**
+ *
  * Projection alias/source trace used by CTE and derived-table lineage.
  */
 public record ProjectionTrace(

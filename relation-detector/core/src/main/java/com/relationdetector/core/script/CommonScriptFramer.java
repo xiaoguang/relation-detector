@@ -11,6 +11,11 @@ import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.ScriptFrameResult;
 import com.relationdetector.contracts.spi.DialectScriptFramer;
 
+/**
+ * CN: 使用 common script lexer 将 portable SQL 文本切成带字符区间和行号的 statement records；不解析 SQL 事实。
+ * EN: Uses the common script lexer to frame portable SQL into statement records with exact ranges and lines;
+ * it does not parse relationships, lineage, or DDL facts.
+ */
 public final class CommonScriptFramer implements DialectScriptFramer {
     @Override
     public ScriptFrameResult frame(ScriptFrameRequest request) {

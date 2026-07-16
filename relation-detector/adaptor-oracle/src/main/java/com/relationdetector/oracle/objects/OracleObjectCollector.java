@@ -6,17 +6,20 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Consumer;
 
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
-import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.oracle.OracleOwnerResolver;
+import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
-/** Collects Oracle stored object declarations through ALL_OBJECTS and DBMS_METADATA. */
+/**
+ *
+ * Collects Oracle stored object declarations through ALL_OBJECTS and DBMS_METADATA.
+ */
 public final class OracleObjectCollector implements ObjectDefinitionCollector {
     @Override
     public List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope) {
@@ -26,7 +29,7 @@ public final class OracleObjectCollector implements ObjectDefinitionCollector {
     @Override
     public List<DatabaseObjectDefinition> collect(
             Connection connection, ScanScope scope, Consumer<WarningMessage> warnings) {
-        String owner = owner(connection, scope);
+        String owner = OracleOwnerResolver.resolve(connection, scope);
         String sql = """
                 SELECT OWNER, OBJECT_NAME, OBJECT_TYPE FROM ALL_OBJECTS
                 WHERE OWNER=? AND OBJECT_TYPE IN
@@ -46,16 +49,22 @@ public final class OracleObjectCollector implements ObjectDefinitionCollector {
                         if (ddl != null && !ddl.isBlank()) {
                             result.add(new DatabaseObjectDefinition(type(nativeType), null, objectOwner, name,
                                     ddl, "DBMS_METADATA.GET_DDL"));
+                        } else {
+                            warnings.accept(DiagnosticWarnings.objectDefinitionUnavailable(
+                                    "DBMS_METADATA.GET_DDL", null, objectOwner, name, nativeType));
                         }
                     } catch (Exception ex) {
-                        warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                                "ORACLE_OBJECT_DDL_FAILED", ex.getMessage(), objectOwner + "." + name, 0));
+                        warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                                "ORACLE_OBJECT_DDL_FAILED", "DBMS_METADATA.GET_DDL", ex,
+                                null, objectOwner, name, type(nativeType),
+                                com.relationdetector.oracle.OracleDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
                     }
                 }
             }
         } catch (Exception ex) {
-            warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "ORACLE_OBJECT_LIST_FAILED", ex.getMessage(), "ALL_OBJECTS", 0));
+            warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                    "ORACLE_OBJECT_LIST_FAILED", "ALL_OBJECTS", ex,
+                    com.relationdetector.oracle.OracleDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
         }
         return result.stream().sorted(Comparator.comparing(DatabaseObjectDefinition::schema)
                 .thenComparing(value -> value.type().name()).thenComparing(DatabaseObjectDefinition::name)).toList();
@@ -84,11 +93,4 @@ public final class OracleObjectCollector implements ObjectDefinitionCollector {
         };
     }
 
-    private String owner(Connection connection, ScanScope scope) {
-        if (scope.schema() != null && !scope.schema().isBlank()) return scope.schema().toUpperCase(Locale.ROOT);
-        try { if (connection.getSchema() != null) return connection.getSchema().toUpperCase(Locale.ROOT); }
-        catch (Exception ignored) { }
-        try { return connection.getMetaData().getUserName().toUpperCase(Locale.ROOT); }
-        catch (Exception ignored) { return ""; }
-    }
 }

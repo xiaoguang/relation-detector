@@ -11,7 +11,10 @@ import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.log.SourceNameNormalizer;
 
-/** Statement, object descriptor, and provenance assembly shared by script framing. */
+/**
+ *
+ * Statement, object descriptor, and provenance assembly shared by script framing.
+ */
 abstract class ScriptFramingSupport {
     protected List<Slice> splitSemicolon(List<ScriptLexeme> lexemes, int start, int end) {
         List<Slice> result = new ArrayList<>();

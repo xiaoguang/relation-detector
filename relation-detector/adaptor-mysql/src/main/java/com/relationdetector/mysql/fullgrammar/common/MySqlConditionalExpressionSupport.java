@@ -10,7 +10,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter.ConditionalParts;
 
-/** Separates CASE/IF VALUE and CONTROL roles from MySQL write orchestration. */
+/**
+ *
+ * Separates CASE/IF VALUE and CONTROL roles from MySQL write orchestration.
+ */
 final class MySqlConditionalExpressionSupport {
     private final MySqlFullGrammarExpressionAnalyzer analyzer;
     private final MySqlExpressionContextAdapter contexts;

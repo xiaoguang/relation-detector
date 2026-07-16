@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** Exact identifier normalization for values already selected by typed contexts. */
+/**
+ *
+ * Exact identifier normalization for values already selected by typed contexts.
+ */
 public final class FullGrammarIdentifiers {
     private FullGrammarIdentifiers() {
     }

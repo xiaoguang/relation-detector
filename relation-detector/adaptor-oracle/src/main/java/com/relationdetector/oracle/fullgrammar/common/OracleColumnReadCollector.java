@@ -12,7 +12,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
-/** Collects physical Oracle column reads while excluding typed routine symbols. */
+/**
+ *
+ * Collects physical Oracle column reads while excluding typed routine symbols.
+ */
 final class OracleColumnReadCollector extends OracleFullGrammarParseTreeSupport {
     private final Supplier<String> defaultAlias;
     private final OracleRoutineScope routineScope;

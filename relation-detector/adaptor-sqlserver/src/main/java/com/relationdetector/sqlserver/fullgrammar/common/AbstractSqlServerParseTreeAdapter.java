@@ -12,13 +12,19 @@ import com.relationdetector.core.fullgrammar.AbstractFullGrammarParseTreeAdapter
 import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
 import com.relationdetector.core.fullgrammar.FullGrammarIdentifiers;
 
-/** Shared typed identifier/function/rowset semantics for versioned T-SQL contexts. */
+/**
+ *
+ * Shared typed identifier/function/rowset semantics for versioned T-SQL contexts.
+ */
 public abstract class AbstractSqlServerParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter {
     protected AbstractSqlServerParseTreeAdapter(RoleBinding... bindings) {
         super(bindings);
     }
 
-    /** Returns the normalized semantic kind of a typed version-specific JOIN context. */
+    /**
+     *
+     * Returns the normalized semantic kind of a typed version-specific JOIN context.
+     */
     public abstract String joinKind(ParseTree tree);
 
     @Override

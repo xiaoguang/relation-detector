@@ -13,7 +13,10 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 
-/** Per-parse state and identifier/scope helpers for SQL Server token-event traversal. */
+/**
+ *
+ * Per-parse state and identifier/scope helpers for SQL Server token-event traversal.
+ */
 abstract class SqlServerTokenEventVisitorState extends SqlServerRelationSqlBaseVisitor<Void> {
     protected final Map<String, LineageTransformType> functionExtensions = Map.of(
             "isnull", LineageTransformType.COALESCE);

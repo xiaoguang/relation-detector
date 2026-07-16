@@ -7,7 +7,10 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.core.scan.ScanConfig;
 
-/** Orchestrates derived inference over already merged, typed facts. */
+/**
+ *
+ * Orchestrates derived inference over already merged, typed facts.
+ */
 public final class DerivedPathInferenceService {
     public List<NamingEvidenceCandidate> deriveNamingEvidence(
             List<NamingEvidenceCandidate> namingEvidence,

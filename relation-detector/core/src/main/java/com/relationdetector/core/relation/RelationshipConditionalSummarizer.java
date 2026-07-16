@@ -10,7 +10,10 @@ import java.util.Map;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 
-/** Summarizes conditional and polymorphic structural observations. */
+/**
+ *
+ * Summarizes conditional and polymorphic structural observations.
+ */
 final class RelationshipConditionalSummarizer {
     void summarize(RelationshipCandidate candidate) {
         List<Evidence> structural = candidate.rawEvidence().stream().filter(this::structural).toList();

@@ -37,6 +37,7 @@ public final class SqlRelationParserRunner {
             new StructuredParseProvenanceNormalizer();
 
     /**
+     *
      * 解析一条 SQL statement 并返回 relationship 候选。
      *
      * <p>EN: Parses one SQL statement and returns relationship candidates.
@@ -51,6 +52,7 @@ public final class SqlRelationParserRunner {
     }
 
     /**
+     *
      * 只返回结构化 parse result，供 Data Lineage 复用。
      *
      * <p>EN: Returns only the structured parse result, mainly for Data Lineage extraction.

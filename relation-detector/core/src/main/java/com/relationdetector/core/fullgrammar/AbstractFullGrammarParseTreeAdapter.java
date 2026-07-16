@@ -6,7 +6,10 @@ import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/** Immutable class-to-role binding shared by version context adapters. */
+/**
+ *
+ * Immutable class-to-role binding shared by version context adapters.
+ */
 public abstract class AbstractFullGrammarParseTreeAdapter implements FullGrammarParseTreeAdapter {
     private final Map<Role, List<Class<?>>> roleTypes;
 

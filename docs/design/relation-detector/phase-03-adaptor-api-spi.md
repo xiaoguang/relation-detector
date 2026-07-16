@@ -29,6 +29,9 @@ public interface DatabaseAdaptor {
   Set<AdaptorCapability> capabilities();
   IdentifierRules identifierRules();
 
+  default ScanScope canonicalizeScope(ScanScope scope) { return scope; }
+  default Set<Integer> permissionDeniedVendorCodes() { return Set.of(); }
+
   AdaptorCollectors collectors();
   AdaptorParsers parsers();
   AdaptorProfiling profiling();
@@ -40,6 +43,13 @@ public interface DatabaseAdaptor {
 - `id()` 例如 `mysql`、`postgresql`。
 - `supportedDatabaseTypes()` 用于匹配 YAML 中的 `database.type`。
 - `capabilities()` 声明该 adaptor 支持哪些来源和功能。
+- `canonicalizeScope()` 在 capability preflight 之后、打开 JDBC 连接之前将外部
+  `ScanScope` 转成方言内部的 namespace 语义。默认不改动；MySQL 用它把
+  database 统一放到 catalog 轴。该方法只做配置级规范化，不能用未打开的
+  connection 猜测 live catalog。
+- `permissionDeniedVendorCodes()` 是二进制兼容的方言诊断策略，默认空集合。共享层只识别 JDBC
+  异常类型和 SQLState；Oracle 1031、SQL Server 229/916 等 vendor code 由拥有它们的 adaptor
+  明确返回，不能全局应用到其他方言。
 - `spiVersion()` 是二进制 API 版本。内置 adaptor 显式返回
   `AdaptorApiVersion.CURRENT`（当前为 5）；为了让旧二进制类可被加载并获得可读错误，
   接口 default 返回 1。
@@ -100,7 +110,7 @@ public interface ObjectDefinitionCollector {
 - PostgreSQL rule。
 - Oracle package / package body。
 
-具体 adaptor 只返回数据库真实支持且当前 collector 已实现的子集。当前 Oracle live collector 包含 procedure、function、package、package body、view、materialized view 和 trigger；SQL Server live collector 包含 procedure、function、view 和 trigger。
+具体 adaptor 只返回数据库真实支持且当前 collector 已实现的子集。当前 Oracle live collector 包含 procedure、function、package、package body、view、materialized view 和 trigger；SQL Server live collector 包含 T-SQL procedure、function、view 和 trigger。PostgreSQL 返回 function/procedure、view/materialized-view query、rule definition 和 non-internal trigger definition；trigger function 作为独立 function definition 采集，不通过名称猜测额外 binding。
 
 如果数据库账号权限不足，返回 warning，不终止扫描。
 
@@ -277,6 +287,9 @@ Optional<DatabaseDdlCollector> ddl = adaptor.collectors().databaseDdl();
 职责：
 
 - 从 live database 读取表定义 DDL 文本，但不直接生成关系。
+- `DatabaseDdlDefinition.ddl()` 允许是 parser-grade structural declaration，但 adaptor 文档必须明确
+  它是完整可执行 DDL 还是关系解析骨架。缺少 type modifier、default、identity/generated/computed、
+  collation 等信息时不得标记为 full-fidelity declaration。
 - MySQL 实现使用 `SHOW CREATE TABLE catalog.table`，返回
   `DatabaseDdlDefinition(catalog, schema, name, ddl, "SHOW CREATE TABLE")`。MySQL database
   在统一身份模型中映射为 `catalog`，不能降级写入 `schema`。
@@ -285,7 +298,7 @@ Optional<DatabaseDdlCollector> ddl = adaptor.collectors().databaseDdl();
   `catalog=<database>, schema=null`，且 include/exclude table 配置原样保留。
 - `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 `parser.mode` 选择后的 DDL extraction；默认无 profile/version 时使用 token-event DDL。
 - 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
-- collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。
+- collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。当前这两个字段是经 adaptor identifier rules 规范化后的精确表名列表，不是 glob 或正则；文件输入的 `paths + include` 才是路径 glob 契约。
 
 ## 数据画像接口
 
@@ -299,7 +312,8 @@ public interface DataProfiler {
 
 - 只对已有候选关系运行。
 - 不对所有表列做全组合扫描。
-- 必须遵守 `sampleRows` 和 `timeoutSeconds`。
+- live 模式对每个候选执行 exact aggregate query，并遵守 `timeoutSeconds`；`sampleRows` 和
+  `maxDistinctValues` 只保留给离线样本模式。
 - 默认关闭。
 
 ## 权重修正接口

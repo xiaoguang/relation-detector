@@ -6,7 +6,10 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
-/** Shared, stateless classification rules for expression lineage transforms. */
+/**
+ *
+ * Shared, stateless classification rules for expression lineage transforms.
+ */
 public final class LineageTransformClassifier {
     private static final Map<String, LineageTransformType> COMMON_FUNCTIONS = Map.ofEntries(
             Map.entry("sum", LineageTransformType.CUMULATIVE),
@@ -38,6 +41,7 @@ public final class LineageTransformClassifier {
     }
 
     /**
+     *
      * Applies common transform priority to value flow. Control callers provide
      * the dependency-role transform first so child value expressions cannot
      * overwrite CASE, locator, grouping, or window semantics.
@@ -59,6 +63,7 @@ public final class LineageTransformClassifier {
     }
 
     /**
+     *
      * Classifies a parser-provided function name. A {@code CUMULATIVE} mapping
      * denotes an aggregate that becomes cumulative only when windowed.
      */

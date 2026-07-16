@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
+ *
  * MySQL routine scope policy shared by parser families.
  *
  * <p>This class does not discover SQL structure. Visitors call it only after a

@@ -16,6 +16,7 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Operato
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
+ *
  * SQL Server expression analyzer.
  *
  * <p>The shared core expression analyzer already understands T-SQL bracketed

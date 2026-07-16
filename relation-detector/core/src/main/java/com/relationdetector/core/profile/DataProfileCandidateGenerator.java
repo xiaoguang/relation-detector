@@ -27,6 +27,7 @@ import com.relationdetector.core.metadata.IndexEvidencePolicy;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
+ *
  * Selects bounded data-profile candidates without scanning arbitrary columns.
  */
 public final class DataProfileCandidateGenerator {

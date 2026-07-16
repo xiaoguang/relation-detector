@@ -8,7 +8,10 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
-/** Typed traversal facade for the Oracle token-event structural grammar. */
+/**
+ *
+ * Typed traversal facade for the Oracle token-event structural grammar.
+ */
 public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWriteDdlSupport {
     public OracleTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         super(statement);

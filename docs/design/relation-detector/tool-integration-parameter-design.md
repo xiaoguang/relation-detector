@@ -97,14 +97,13 @@ relationDetectionRequest:
 
 MySQL把database映射到`catalog`轴：工具侧应优先填写`database.catalog`。旧
 `database.schema`仍可作为兼容输入，但两者同时非空且不同会在JDBC连接前失败。PostgreSQL、
-Oracle和SQL Server继续按各自catalog/schema语义传入。当前结果JSON顶层只有legacy
-`database.schema`字段；canonical catalog身份应从endpoint table读取。
+Oracle和SQL Server继续按各自catalog/schema语义传入。结果JSON顶层在catalog非空时输出可选
+`database.catalog`，并始终保留legacy `database.schema`字段。
 
 ```yaml
 database:
   type: MYSQL
   catalog: sample_data
-  catalog: optional_catalog
   jdbcUrl: ${JDBC_URL}
   username: ${DB_USER}
   password: ${DB_PASSWORD}
@@ -163,7 +162,7 @@ filters:
     - audit_logs
 ```
 
-`includeTables` / `excludeTables` 用于限制扫描和输出候选范围。工具端应把用户选择的表过滤条件透传到这里，不应在读取结果后再粗暴删除 evidence，因为那会破坏 relationship / lineage / namingEvidence 的引用闭环。
+`includeTables` / `excludeTables` 用于限制扫描和输出候选范围。当前契约是物理表名的 exact list，adaptor 按 identifier rules 规范化大小写/引用符后精确匹配，不解释 glob 或正则。工具端应把用户选择的精确表集透传到这里，不应在读取结果后再粗暴删除 evidence，因为那会破坏 relationship / lineage / namingEvidence 的引用闭环。文件路径的 `paths + include` 是独立的 glob 契约，不应与 table filter 混用。
 
 ### 4.4 sources
 

@@ -5,7 +5,10 @@ import java.util.Set;
 
 import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
 
-/** Stable de-duplication for MySQL expression source analyses. */
+/**
+ *
+ * Stable de-duplication for MySQL expression source analyses.
+ */
 final class MySqlExpressionAnalysisAccumulator {
     private MySqlExpressionAnalysisAccumulator() {
     }

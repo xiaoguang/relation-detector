@@ -10,5 +10,10 @@
  * token-event by parser.mode, grammar profile, database version, and adaptor
  * capability, then feeds structured results into semantic extraction. Fallback
  * happens here, not inside full-grammar event generation.
+ * <p>Responsibility: 编排 structured SQL/DDL parser 与事实 extractor / Orchestrates parsers and fact extractors.
+ * <p>Inputs: framed statement、adaptor parser capabilities 与 context / Statements, parser capabilities, and context.
+ * <p>Outputs: direct relationship/lineage/DDL outcomes and diagnostics / Direct facts and diagnostics.
+ * <p>Upstream/Downstream: statement execution 上游，evidence enhancement 下游 / Between execution and enhancement.
+ * <p>Forbidden: 不运行 naming rules 两次或绕过 typed parse contracts / Must not duplicate naming or bypass typed parse.
  */
 package com.relationdetector.core.parser;

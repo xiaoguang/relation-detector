@@ -20,7 +20,10 @@ import com.relationdetector.mysql.script.MySqlScriptFramer;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
-/** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
+/**
+ *
+ * MySQL 5.7/8.0 adaptor implementing the Phase 4 design.
+ */
 public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public MySqlDatabaseAdaptor() {
         this(new MySqlTokenEventStructuredSqlParser(), new MySqlTokenEventStructuredDdlParser(), new MySqlScriptFramer());

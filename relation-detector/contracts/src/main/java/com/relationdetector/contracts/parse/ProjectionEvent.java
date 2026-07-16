@@ -2,7 +2,10 @@ package com.relationdetector.contracts.parse;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
-/** Projection item or standalone expression-source event. */
+/**
+ *
+ * Projection item or standalone expression-source event.
+ */
 public record ProjectionEvent(
         StructuredParseEventType type,
         SourceProvenance provenance,

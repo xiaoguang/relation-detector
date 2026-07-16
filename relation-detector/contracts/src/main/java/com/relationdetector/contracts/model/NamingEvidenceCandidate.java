@@ -3,6 +3,7 @@ package com.relationdetector.contracts.model;
 import java.util.List;
 
 /**
+ *
  * Name-only evidence hint extracted from catalog, DDL inventory, or an already
  * parsed SQL predicate.
  *

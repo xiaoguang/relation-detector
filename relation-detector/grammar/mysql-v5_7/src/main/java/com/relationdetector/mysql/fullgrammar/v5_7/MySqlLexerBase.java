@@ -11,7 +11,10 @@ import org.antlr.v4.runtime.*;
 import java.util.*;
 
 
-/** The base lexer class provides a number of functions needed in actions in the lexer (grammar). */
+/**
+ *
+ * The base lexer class provides a number of functions needed in actions in the lexer (grammar).
+ */
 public abstract class MySqlLexerBase extends Lexer {
 
     public MySqlLexerBase(CharStream input) {

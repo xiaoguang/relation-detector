@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
+ *
  * Dialect-owned semantic view of generated ANTLR contexts.
  *
  * <p>Core expression and event semantics depend on these roles instead of

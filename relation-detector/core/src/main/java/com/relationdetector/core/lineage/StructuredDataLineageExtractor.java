@@ -61,6 +61,7 @@ public final class StructuredDataLineageExtractor {
     }
 
     /**
+     *
      * 从结构化 SQL events 抽取字段血缘。
      *
      * <p>EN: Extracts field lineage from structured SQL events.
@@ -90,6 +91,12 @@ public final class StructuredDataLineageExtractor {
         return candidates;
     }
 
+    /**
+     * CN: 在单一 statement scope 中把 typed write mappings 转换为 direct lineage candidates，并附加准确 provenance；
+     * 本方法不生成 derived lineage，也不把 CONTROL source 当作 VALUE source。
+     * EN: Converts typed write mappings in one statement scope into direct lineage candidates with provenance;
+     * it does not infer derived lineage or promote CONTROL sources to VALUE sources.
+     */
     private List<DataLineageCandidate> extractFromEvents(
             SqlStatementRecord statement,
             List<StructuredSqlEvent> events,

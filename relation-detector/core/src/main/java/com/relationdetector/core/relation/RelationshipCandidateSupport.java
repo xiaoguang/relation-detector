@@ -23,7 +23,10 @@ import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.provenance.EvidenceProvenanceMapper;
 
-/** Builds relationship candidates and evidence after typed endpoints have been resolved. */
+/**
+ *
+ * Builds relationship candidates and evidence after typed endpoints have been resolved.
+ */
 abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
     protected RelationshipCandidateSupport(IdentifierRules identifierRules, NamespaceContext namespace) {
         super(identifierRules, namespace);

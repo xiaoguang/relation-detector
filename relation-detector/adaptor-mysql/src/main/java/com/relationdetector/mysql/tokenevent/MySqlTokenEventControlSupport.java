@@ -10,7 +10,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Scalar-subquery and conditional CONTROL analysis for MySQL token-event SQL. */
+/**
+ *
+ * Scalar-subquery and conditional CONTROL analysis for MySQL token-event SQL.
+ */
 abstract class MySqlTokenEventControlSupport extends MySqlTokenEventExpressionSupport {
     MySqlTokenEventControlSupport(SqlStatementRecord statement) {
         super(statement);

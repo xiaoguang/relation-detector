@@ -14,7 +14,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.core.scan.ScanConfig;
 
-/** Classifies native-log catalog noise from typed rowset events after parsing. */
+/**
+ *
+ * Classifies native-log catalog noise from typed rowset events after parsing.
+ */
 public final class TypedLogNoiseClassifier {
     private TypedLogNoiseClassifier() {
     }

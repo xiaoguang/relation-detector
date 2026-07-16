@@ -3,6 +3,7 @@ package com.relationdetector.mysql.fullgrammar.common;
 import java.util.Set;
 
 /**
+ *
  * MySQL full-grammar version capability descriptor.
  *
  * <p>Generated parser classes stay version-local. This policy is the small,

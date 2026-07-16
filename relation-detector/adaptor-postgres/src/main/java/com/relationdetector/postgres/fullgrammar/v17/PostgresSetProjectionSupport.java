@@ -13,7 +13,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.postgres.common.PostgresSetProjectionLayout;
 import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParser.*;
 
-/** Coordinates PostgreSQL set-operation projection layout for the v17 typed contexts. */
+/**
+ *
+ * Coordinates PostgreSQL set-operation projection layout for the v17 typed contexts.
+ */
 final class PostgresSetProjectionSupport {
     private final SqlStatementRecord statement;
     private final FullGrammarEventFacade sink;

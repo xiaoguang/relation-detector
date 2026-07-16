@@ -10,7 +10,10 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 
-/** Validates the absolute source-location contract shared by all parser frontends. */
+/**
+ *
+ * Validates the absolute source-location contract shared by all parser frontends.
+ */
 public final class SourceProvenanceValidator {
     public List<WarningMessage> validate(SqlStatementRecord statement, StructuredParseResult result) {
         long sourceFileLineCount = number(statement, "sourceFileLineCount");

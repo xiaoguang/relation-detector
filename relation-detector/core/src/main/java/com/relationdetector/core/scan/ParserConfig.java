@@ -1,6 +1,9 @@
 package com.relationdetector.core.scan;
 
-/** Immutable parser selection and discovered database-version configuration. */
+/**
+ *
+ * Immutable parser selection and discovered database-version configuration.
+ */
 public record ParserConfig(
         String mode,
         String grammarProfile,

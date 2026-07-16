@@ -19,6 +19,7 @@ public record FullGrammarExpressionAnalysis(
         String flowKind
 ) {
     /**
+     *
      * Returns whether the expression contains at least one physical-looking source column.
      *
      * <p>CN: 只说明 visitor 找到了字段来源；不代表该字段一定会进入最终 lineage。</p>
@@ -28,6 +29,7 @@ public record FullGrammarExpressionAnalysis(
     }
 
     /**
+     *
      * Keeps the first source for expression forms whose v1 semantics are intentionally conservative.
      *
      * <p>CN: 某些 COALESCE/derived 场景 v1 只接受第一个可解析物理来源，避免未经审核的额外血缘。</p>

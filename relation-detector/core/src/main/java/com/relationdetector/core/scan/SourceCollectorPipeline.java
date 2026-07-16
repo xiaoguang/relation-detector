@@ -17,6 +17,7 @@ import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.script.ScriptFileExtractor;
@@ -68,6 +69,12 @@ final class SourceCollectorPipeline {
 
     }
 
+    /**
+     * CN: 对配置中的 DDL、对象和日志文件执行 framing、typed dispatch 与 provenance 汇总，并写入当前 scan context；
+     * 本方法不打开 JDBC，也不运行 derived inference。
+     * EN: Frames and dispatches configured DDL, object, and log files and adds their provenance to the scan context;
+     * it does not open JDBC connections or run derived inference.
+     */
     void collectFileSources(ScanPipelineContext ctx) {
         SourceConfig sources = ctx.config.sources();
         if (sources.ddlEnabled()) {
@@ -184,25 +191,85 @@ final class SourceCollectorPipeline {
 
     private List<DatabaseObjectDefinition> collectDatabaseObjects(Connection connection, ScanPipelineContext ctx) {
         try {
-            return ctx.adaptor.collectors().objects().orElseThrow()
+            List<DatabaseObjectDefinition> definitions = ctx.adaptor.collectors().objects().orElseThrow()
                     .collect(connection, ctx.scope, ctx.result.warnings()::add);
+            if (definitions == null) {
+                warnUnavailableObject(ctx);
+                return List.of();
+            }
+            return definitions.stream()
+                    .filter(definition -> validObjectDefinition(definition, ctx))
+                    .toList();
+        } catch (LiveSourceConfigurationException ex) {
+            throw ex;
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.objectCollectFailed(
-                    "OBJECT_DEFINITION_COLLECT_FAILED", "database-objects", ex));
+                    "OBJECT_DEFINITION_COLLECT_FAILED", "database-objects", ex,
+                    ctx.adaptor.permissionDeniedVendorCodes()));
             return List.of();
         }
     }
 
     private List<DatabaseDdlDefinition> collectDatabaseDdl(Connection connection, ScanPipelineContext ctx) {
         try {
-            return ctx.adaptor.collectors().databaseDdl()
-                    .map(collector -> collector.collect(connection, ctx.scope, ctx.result.warnings()::add))
-                    .orElse(List.of());
+            var collector = ctx.adaptor.collectors().databaseDdl();
+            if (collector.isEmpty()) {
+                return List.of();
+            }
+            List<DatabaseDdlDefinition> definitions = collector.orElseThrow()
+                    .collect(connection, ctx.scope, ctx.result.warnings()::add);
+            if (definitions == null) {
+                warnUnavailableDdl(ctx);
+                return List.of();
+            }
+            return definitions.stream()
+                    .filter(definition -> validDdlDefinition(definition, ctx))
+                    .toList();
+        } catch (LiveSourceConfigurationException ex) {
+            throw ex;
         } catch (Exception ex) {
-            ctx.result.warnings().add(DiagnosticWarnings.objectCollectFailed(
-                    "DATABASE_DDL_COLLECT_FAILED", "database-ddl", ex));
+            ctx.result.warnings().add(DiagnosticWarnings.databaseDdlCollectFailed(
+                    "DATABASE_DDL_COLLECT_FAILED", "database-ddl", ex,
+                    ctx.adaptor.permissionDeniedVendorCodes()));
             return List.of();
         }
+    }
+
+    private boolean validObjectDefinition(DatabaseObjectDefinition definition, ScanPipelineContext ctx) {
+        if (definition != null && definition.sql() != null && !definition.sql().isBlank()) {
+            return true;
+        }
+        if (definition != null) {
+            ctx.result.warnings().add(DiagnosticWarnings.objectDefinitionUnavailable(
+                    definition.source(), definition.catalog(), definition.schema(), definition.name(),
+                    definition.type() == null ? null : definition.type().name()));
+        } else {
+            warnUnavailableObject(ctx);
+        }
+        return false;
+    }
+
+    private boolean validDdlDefinition(DatabaseDdlDefinition definition, ScanPipelineContext ctx) {
+        if (definition != null && definition.ddl() != null && !definition.ddl().isBlank()) {
+            return true;
+        }
+        if (definition != null) {
+            ctx.result.warnings().add(DiagnosticWarnings.databaseDdlDefinitionUnavailable(
+                    definition.source(), definition.catalog(), definition.schema(), definition.name()));
+        } else {
+            warnUnavailableDdl(ctx);
+        }
+        return false;
+    }
+
+    private void warnUnavailableObject(ScanPipelineContext ctx) {
+        ctx.result.warnings().add(DiagnosticWarnings.objectDefinitionUnavailable(
+                "database-objects", null, null, null, null));
+    }
+
+    private void warnUnavailableDdl(ScanPipelineContext ctx) {
+        ctx.result.warnings().add(DiagnosticWarnings.databaseDdlDefinitionUnavailable(
+                "database-ddl", null, null, null));
     }
 
     private SqlStatementRecord objectStatement(DatabaseObjectDefinition definition) {

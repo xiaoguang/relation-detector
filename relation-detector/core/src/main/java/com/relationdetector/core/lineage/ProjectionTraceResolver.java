@@ -20,6 +20,7 @@ import com.relationdetector.core.identity.AliasSymbolTable;
 import com.relationdetector.core.lineage.model.ProjectionTrace;
 
 /**
+ *
  * Resolves CTE / derived-table projection aliases from structured parser events.
  */
 final class ProjectionTraceResolver {
@@ -147,6 +148,12 @@ final class ProjectionTraceResolver {
                 declaredProjectionKeys, traces, ignoredRowsets);
     }
 
+    /**
+     * CN: 将 typed expression sources 解析为物理 endpoint，并在当前 query scope 内传播 projection、VALUE/CONTROL 与 transform；
+     * 无法证明为物理列的参数、局部变量和伪 rowset 不会被补造成 source。
+     * EN: Resolves typed expression sources to physical endpoints and propagates projections, VALUE/CONTROL roles,
+     * and transforms within the current query scope; unproven parameters, locals, and pseudo-rowsets are not invented.
+     */
     private static List<SourceResolution> sourceEndpoints(
             StructuredSqlEvent event,
             AliasSymbolTable aliases,

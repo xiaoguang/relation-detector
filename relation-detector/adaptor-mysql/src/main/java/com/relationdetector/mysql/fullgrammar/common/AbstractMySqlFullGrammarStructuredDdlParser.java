@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
  * Shared MySQL full-grammar DDL parser lifecycle.
  */
 public abstract class AbstractMySqlFullGrammarStructuredDdlParser implements StructuredDdlParser {

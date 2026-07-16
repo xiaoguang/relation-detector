@@ -8,7 +8,10 @@ import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.ScriptFrameResult;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Shared framing orchestrator fed exclusively by dialect-generated script lexer tokens. */
+/**
+ *
+ * Shared framing orchestrator fed exclusively by dialect-generated script lexer tokens.
+ */
 public final class StructuredScriptFramer extends ScriptFramingSupport {
     public ScriptFrameResult frame(
             ScriptFrameRequest request,

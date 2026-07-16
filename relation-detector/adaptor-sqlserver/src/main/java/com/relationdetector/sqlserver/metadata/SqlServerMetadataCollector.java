@@ -28,13 +28,18 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.sqlserver.SqlServerCatalogResolver;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
-/** Reads SQL Server sys catalog facts with partial success for each family. */
+/**
+ *
+ * Reads SQL Server sys catalog facts with partial success for each family.
+ */
 public final class SqlServerMetadataCollector implements MetadataCollector {
     @Override
     public MetadataSnapshot collect(Connection connection, ScanScope scope) {
         MetadataSnapshot snapshot = new MetadataSnapshot();
-        String catalog = catalog(connection, scope);
+        String catalog = SqlServerCatalogResolver.resolve(connection, scope);
         String schema = scope.schema() == null || scope.schema().isBlank() ? "dbo" : scope.schema();
         collectTablesAndColumns(connection, scope, catalog, schema, snapshot);
         collectConstraints(connection, scope, catalog, schema, snapshot);
@@ -207,11 +212,6 @@ public final class SqlServerMetadataCollector implements MetadataCollector {
         return new TableId(catalog, schema, name, schema + "." + name);
     }
 
-    private String catalog(Connection connection, ScanScope scope) {
-        if (scope.catalog() != null && !scope.catalog().isBlank()) return scope.catalog();
-        try { return connection.getCatalog(); } catch (Exception ignored) { return null; }
-    }
-
     private boolean inScope(ScanScope scope, String table) {
         String key = table == null ? "" : table.toLowerCase(Locale.ROOT);
         boolean included = scope.includeTables().isEmpty()
@@ -220,7 +220,9 @@ public final class SqlServerMetadataCollector implements MetadataCollector {
     }
 
     private void warn(MetadataSnapshot snapshot, String code, Exception ex, String source) {
-        snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING, code, ex.getMessage(), source, 0));
+        snapshot.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
+                code, LiveDiagnosticSanitizer.Operation.METADATA, source, ex, Map.of(),
+                com.relationdetector.sqlserver.SqlServerDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
     }
 
     private String rsString(ResultSet rs, String name) { try { return rs.getString(name); } catch (Exception ex) { throw new IllegalStateException(ex); } }

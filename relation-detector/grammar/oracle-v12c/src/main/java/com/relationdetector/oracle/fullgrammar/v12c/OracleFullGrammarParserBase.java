@@ -2,6 +2,7 @@ package com.relationdetector.oracle.fullgrammar.v12c;
 
 import org.antlr.v4.runtime.*;
 
+/** CN: 承载 Oracle 12c grammar 的版本与 join 谓词，不产生关系事实。 EN: Hosts parser predicates without emitting facts. */
 public abstract class OracleFullGrammarParserBase extends Parser
 {
     private boolean _isVersion12 = true;

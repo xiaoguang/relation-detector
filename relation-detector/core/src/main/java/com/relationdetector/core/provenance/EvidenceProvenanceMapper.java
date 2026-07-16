@@ -6,7 +6,10 @@ import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-/** Copies typed event provenance into evidence attributes without changing semantic facts. */
+/**
+ *
+ * Copies typed event provenance into evidence attributes without changing semantic facts.
+ */
 public final class EvidenceProvenanceMapper {
     private EvidenceProvenanceMapper() {
     }

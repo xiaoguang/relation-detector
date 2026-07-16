@@ -9,16 +9,38 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 
 class OracleDatabaseDdlCollectorTest {
     @Test
+    void nullTableDdlProducesSafeWarningAndIsNotCollected() {
+        List<com.relationdetector.contracts.model.WarningMessage> warnings = new ArrayList<>();
+
+        var definitions = new OracleDatabaseDdlCollector().collect(
+                connection("ERP", true),
+                new ScanScope(null, "ERP", List.of("ORDERS"), List.of()),
+                warnings::add);
+
+        assertTrue(definitions.isEmpty());
+        assertEquals(1, warnings.size());
+        assertEquals(WarningType.LIVE_SOURCE_WARNING, warnings.get(0).type());
+        assertEquals("DEFINITION_UNAVAILABLE", warnings.get(0).code());
+        assertEquals("ERP", warnings.get(0).attributes().get("objectSchema"));
+        assertEquals("ORDERS", warnings.get(0).attributes().get("objectName"));
+        assertEquals("TABLE", warnings.get(0).attributes().get("objectType"));
+    }
+
+    @Test
     void adaptorCollectsLiveTableDdlFromDbmsMetadata() {
-        Connection connection = connection();
+        Connection connection = connection("IGNORED");
         ScanScope scope = new ScanScope(null, "ERP", List.of("ORDERS"), List.of());
 
         List<DatabaseDdlDefinition> definitions = new OracleDatabaseAdaptor()
@@ -35,35 +57,55 @@ class OracleDatabaseDdlCollectorTest {
         assertTrue(ddl.ddl().contains("FOREIGN KEY (\"CUSTOMER_ID\") REFERENCES \"ERP\".\"CUSTOMERS\""));
     }
 
-    private Connection connection() {
+    @Test
+    void fallsBackToCurrentConnectionOwnerWhenScopeSchemaIsMissing() {
+        List<DatabaseDdlDefinition> definitions = new OracleDatabaseDdlCollector().collect(
+                connection("ERP"),
+                new ScanScope(null, null, List.of("ORDERS"), List.of()));
+
+        assertEquals(1, definitions.size());
+        assertEquals("ERP", definitions.get(0).schema());
+    }
+
+    private Connection connection(String currentSchema) {
+        return connection(currentSchema, false);
+    }
+
+    private Connection connection(String currentSchema, boolean nullDdl) {
         return (Connection) Proxy.newProxyInstance(
                 Connection.class.getClassLoader(),
                 new Class<?>[]{Connection.class},
                 (proxy, method, args) -> switch (method.getName()) {
-                    case "prepareStatement" -> preparedStatement((String) args[0]);
+                    case "prepareStatement" -> preparedStatement((String) args[0], nullDdl);
+                    case "getSchema" -> currentSchema;
                     case "close" -> null;
                     case "isClosed" -> false;
                     default -> throw new UnsupportedOperationException(method.getName());
                 });
     }
 
-    private PreparedStatement preparedStatement(String sql) {
+    private PreparedStatement preparedStatement(String sql, boolean nullDdl) {
         return (PreparedStatement) Proxy.newProxyInstance(
                 PreparedStatement.class.getClassLoader(),
                 new Class<?>[]{PreparedStatement.class},
                 (proxy, method, args) -> switch (method.getName()) {
                     case "setString" -> null;
-                    case "executeQuery" -> resultSet(rowsFor(sql));
+                    case "executeQuery" -> resultSet(rowsFor(sql, nullDdl));
                     case "close" -> null;
                     default -> throw new UnsupportedOperationException(method.getName());
                 });
     }
 
-    private List<Map<String, String>> rowsFor(String sql) {
+    private List<Map<String, String>> rowsFor(String sql, boolean nullDdl) {
         if (sql.contains("ALL_TABLES")) {
             return List.of(Map.of("TABLE_NAME", "ORDERS"));
         }
         if (sql.contains("DBMS_METADATA.GET_DDL")) {
+            if (nullDdl) {
+                Map<String, String> row = new LinkedHashMap<>();
+                row.put("DDL", null);
+                return List.of(row);
+            }
             return List.of(Map.of("DDL", """
                     CREATE TABLE "ERP"."ORDERS" (
                       "ID" NUMBER NOT NULL,

@@ -11,5 +11,10 @@
  * analyzer, SQL/DDL parsers, and profile module. Version is expressed by the
  * package; classes do not carry 80. It emits unified StructuredSqlEvent / DDL
  * events while semantic decisions stay in core.
+ * <p>Responsibility: 绑定 MySQL 8.0 generated grammar 与 typed adapter / Binds the MySQL 8.0 generated grammar.
+ * <p>Inputs: framed MySQL 8.0 SQL/DDL statements / Framed MySQL 8.0 statements.
+ * <p>Outputs: v8.0 full-grammar parse trees and structured events / Versioned parse trees and events.
+ * <p>Upstream/Downstream: grammar artifact 上游，fullgrammar.common 下游 / Between grammar artifact and common semantics.
+ * <p>Forbidden: 不调用 v5.7 或 token-event parser / Must not invoke the v5.7 or token-event parser.
  */
 package com.relationdetector.mysql.fullgrammar.v8_0;

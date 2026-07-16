@@ -12,7 +12,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** VALUE/CONTROL, scalar-subquery and transform analysis for PostgreSQL token-event SQL. */
+/**
+ *
+ * VALUE/CONTROL, scalar-subquery and transform analysis for PostgreSQL token-event SQL.
+ */
 abstract class PostgresTokenEventExpressionSupport extends PostgresTokenEventVisitorState {
     PostgresTokenEventExpressionSupport(SqlStatementRecord statement) { super(statement); }
 

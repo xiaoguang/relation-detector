@@ -20,6 +20,7 @@ import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 
 /**
+ *
  * PostgreSQL DDL token-event parser backed by PostgresRelationSql.g4.
  *
  * <p>CN: root baseline DDL 走 PostgreSQL 自己的 typed grammar / visitor，

@@ -15,6 +15,11 @@ import com.relationdetector.core.script.ScriptLexeme;
 import com.relationdetector.core.script.ScriptLexemeKind;
 import com.relationdetector.core.script.StructuredScriptFramer;
 
+/**
+ * CN: 识别 MySQL 客户端 DELIMITER、引号和注释边界并生成 statement records；不解释 routine body 或 SQL 事实。
+ * EN: Frames MySQL client scripts around DELIMITER directives, quotes, and comments; it does not interpret routine
+ * bodies or derive SQL facts.
+ */
 public final class MySqlScriptFramer implements DialectScriptFramer {
     @Override
     public ScriptFrameResult frame(ScriptFrameRequest request) {

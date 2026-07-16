@@ -31,6 +31,7 @@ public final class AdaptorRegistry {
     }
 
     /**
+     *
      * 加载内置 SPI adaptor，并可选加载 plugin-dir jar。
      *
      * <p>EN: Loads built-in SPI adaptors and optionally adaptor jars from plugin-dir.
@@ -74,6 +75,7 @@ public final class AdaptorRegistry {
     }
 
     /**
+     *
      * 根据数据库类型和可选 adaptorId 选择唯一 adaptor。
      *
      * <p>EN: Resolves a single adaptor by database type and optional adaptorId.

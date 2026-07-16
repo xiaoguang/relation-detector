@@ -17,7 +17,10 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 
-/** Per-parse mutable state and identifier helpers for MySQL token-event traversal. */
+/**
+ *
+ * Per-parse mutable state and identifier helpers for MySQL token-event traversal.
+ */
 abstract class MySqlTokenEventVisitorState extends MySqlRelationSqlBaseVisitor<Void> {
     protected final Map<String, LineageTransformType> functionExtensions = Map.of(
             "string_agg", LineageTransformType.CONCAT_FORMAT);

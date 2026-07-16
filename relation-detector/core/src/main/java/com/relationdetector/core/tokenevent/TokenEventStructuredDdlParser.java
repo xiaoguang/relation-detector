@@ -42,6 +42,7 @@ public class TokenEventStructuredDdlParser implements StructuredDdlParser {
     }
 
     /**
+     *
      * 解析 DDL 文本并返回 DDL 结构事件。
      *
      * <p>EN: Parses DDL text and returns DDL structured events.

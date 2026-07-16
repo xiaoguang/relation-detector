@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 
-/** Plans portable scripts and compound procedure/function/trigger bodies. */
+/**
+ *
+ * Plans portable scripts and compound procedure/function/trigger bodies.
+ */
 final class CommonScriptSlicePlanner extends ScriptFramingSupport implements ScriptSlicePlanner {
     @Override
     public List<Slice> plan(String text, List<ScriptLexeme> lexemes, List<Slice> markedSlices) {

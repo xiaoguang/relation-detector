@@ -2,7 +2,10 @@ package com.relationdetector.contracts.parse;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
-/** Rowset, CTE, temporary-table, trigger-rowset, or table-reference event. */
+/**
+ *
+ * Rowset, CTE, temporary-table, trigger-rowset, or table-reference event.
+ */
 public record RowsetEvent(
         StructuredParseEventType type,
         SourceProvenance provenance,

@@ -9,5 +9,10 @@
  * metadata, database DDL, object definitions, logs, SQL/DDL parsers,
  * relationship merging, and data-lineage merging into one scan. It owns flow and
  * failure isolation, not dialect parsing or semantic relationship rules.
+ * <p>Responsibility: 校验配置并串联 live/file collectors、parsers、mergers 与 output model / Orchestrates a full scan.
+ * <p>Inputs: ResolvedScanConfig、DatabaseAdaptor、files and optional JDBC connection / Resolved configuration and sources.
+ * <p>Outputs: 包含 direct/derived facts、warnings 与 provenance 的 ScanResult / Complete ScanResult.
+ * <p>Upstream/Downstream: CLI/embedding API 上游，output writer 下游 / Between callers and output writers.
+ * <p>Forbidden: capability 未通过前不得打开 JDBC，也不实现方言语义 / Must not open JDBC before preflight or parse dialects.
  */
 package com.relationdetector.core.scan;

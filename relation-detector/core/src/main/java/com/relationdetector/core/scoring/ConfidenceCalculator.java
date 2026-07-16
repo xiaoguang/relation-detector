@@ -23,6 +23,7 @@ public final class ConfidenceCalculator {
     private static final MathContext MC = new MathContext(12, RoundingMode.HALF_UP);
 
     /**
+     *
      * 根据 evidence 列表计算最终 relationship confidence。
      *
      * <p>EN: Calculates final relationship confidence from evidence items.

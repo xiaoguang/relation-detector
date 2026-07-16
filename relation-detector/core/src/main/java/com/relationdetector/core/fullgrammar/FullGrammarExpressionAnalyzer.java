@@ -13,6 +13,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.CaseParts;
 
 /**
+ *
  * Shared full-grammar expression semantics over dialect-owned typed context views.
  *
  * <p>This class never interprets terminal text. Generated-context adapters expose

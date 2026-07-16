@@ -28,13 +28,18 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.oracle.OracleOwnerResolver;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
-/** Reads Oracle catalog facts with partial success for each catalog family. */
+/**
+ *
+ * Reads Oracle catalog facts with partial success for each catalog family.
+ */
 public final class OracleMetadataCollector implements MetadataCollector {
     @Override
     public MetadataSnapshot collect(Connection connection, ScanScope scope) {
         MetadataSnapshot snapshot = new MetadataSnapshot();
-        String owner = owner(connection, scope);
+        String owner = OracleOwnerResolver.resolve(connection, scope);
         collectTables(connection, scope, owner, snapshot);
         collectColumns(connection, scope, owner, snapshot);
         collectConstraints(connection, scope, owner, snapshot);
@@ -174,14 +179,6 @@ public final class OracleMetadataCollector implements MetadataCollector {
         }
     }
 
-    private String owner(Connection connection, ScanScope scope) {
-        if (scope.schema() != null && !scope.schema().isBlank()) return scope.schema().toUpperCase(Locale.ROOT);
-        try { if (connection.getSchema() != null) return connection.getSchema().toUpperCase(Locale.ROOT); }
-        catch (Exception ignored) { }
-        try { return connection.getMetaData().getUserName().toUpperCase(Locale.ROOT); }
-        catch (Exception ignored) { return ""; }
-    }
-
     private boolean inScope(ScanScope scope, String table) {
         String key = table == null ? "" : table.toLowerCase(Locale.ROOT);
         boolean included = scope.includeTables().isEmpty()
@@ -190,7 +187,9 @@ public final class OracleMetadataCollector implements MetadataCollector {
     }
 
     private void warn(MetadataSnapshot snapshot, String code, Exception ex, String source) {
-        snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING, code, ex.getMessage(), source, 0));
+        snapshot.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
+                code, LiveDiagnosticSanitizer.Operation.METADATA, source, ex, Map.of(),
+                com.relationdetector.oracle.OracleDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
     }
 
     private String rsString(ResultSet rs, String name) {

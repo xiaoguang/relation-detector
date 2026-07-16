@@ -14,6 +14,11 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
 
+/**
+ * CN: 通过选定版本 binding 解析 framed T-SQL，并把 typed parse tree 转为结构化事件和版本 provenance；不回退到 token-event parser。
+ * EN: Parses framed T-SQL through the selected version binding and converts its typed tree into events and version
+ * provenance; it never falls back to the token-event parser.
+ */
 public final class SqlServerFullGrammarStructuredSqlParser implements StructuredSqlParser {
     private final SqlGrammarProfile profile;
     private final SqlServerFullGrammarSqlBinding binding;

@@ -13,5 +13,10 @@
  * does not hold a token-event parser delegate. Broader Oracle official grammar
  * coverage should extend this full-grammar path instead of reusing token-event
  * event production.
+ * <p>Responsibility: 共享 Oracle 12c/19c/21c/26ai typed event semantics / Shares Oracle full-grammar event semantics.
+ * <p>Inputs: version adapter 提供的 official grammar contexts / Version-adapted generated contexts.
+ * <p>Outputs: rowset、predicate、write、DDL 与 expression events / Structured SQL/DDL events and traces.
+ * <p>Upstream/Downstream: version modules 上游，core extractors 下游 / Between version modules and core extractors.
+ * <p>Forbidden: 不反射 context、不扫描 raw SQL、不调用 token parser / Must not reflect, scan text, or delegate modes.
  */
 package com.relationdetector.oracle.fullgrammar.common;

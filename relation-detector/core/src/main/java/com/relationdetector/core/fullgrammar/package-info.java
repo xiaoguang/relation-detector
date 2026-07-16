@@ -12,5 +12,10 @@
  * typed visitor helpers. Concrete dialect grammars and visitors live in adaptor
  * modules. Full-grammar replaces the event source only; relationship and
  * lineage semantics stay shared in core.relation and core.lineage.
+ * <p>Responsibility: 定义 full-grammar profile、binding 与公共 typed semantics / Defines full-grammar profiles and bindings.
+ * <p>Inputs: adaptor version modules 的 typed parse-tree adapters / Typed adapters from versioned adaptor modules.
+ * <p>Outputs: structured parser factories 与 expression traces / Parser factories and expression traces.
+ * <p>Upstream/Downstream: version grammar 上游，core extraction 下游 / Between version grammars and core extraction.
+ * <p>Forbidden: 不按 class name、反射或 raw SQL 推断 grammar context / Must not infer contexts by names or reflection.
  */
 package com.relationdetector.core.fullgrammar;

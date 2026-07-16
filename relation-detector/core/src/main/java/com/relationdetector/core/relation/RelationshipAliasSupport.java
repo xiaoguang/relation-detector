@@ -18,7 +18,10 @@ import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 import com.relationdetector.core.identity.NamespaceContext;
 
-/** Resolves typed rowset aliases and direct projection aliases for relationship extraction. */
+/**
+ *
+ * Resolves typed rowset aliases and direct projection aliases for relationship extraction.
+ */
 abstract class RelationshipAliasSupport {
     private final CanonicalIdentifierResolver identifiers;
     private final NamespaceContext namespace;

@@ -19,7 +19,10 @@ import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.postgres.script.PostgresScriptFramer;
 
-/** Extracts PostgreSQL log record payloads before typed SQL classification. */
+/**
+ *
+ * Extracts PostgreSQL log record payloads before typed SQL classification.
+ */
 public final class PostgresLogExtractor implements SqlLogExtractor {
     private final PostgresScriptFramer scriptFramer;
 

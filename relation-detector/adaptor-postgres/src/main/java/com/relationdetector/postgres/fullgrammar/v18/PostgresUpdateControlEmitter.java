@@ -4,7 +4,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.Set_clauseContext;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.UpdatestmtContext;
 
-/** Emits PostgreSQL 18 UPDATE locator controls from typed contexts. */
+/**
+ *
+ * Emits PostgreSQL 18 UPDATE locator controls from typed contexts.
+ */
 final class PostgresUpdateControlEmitter {
     private PostgresUpdateControlEmitter() {
     }

@@ -7,7 +7,10 @@ import java.util.Optional;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/** Version-owned typed classification of generated Oracle grammar contexts. */
+/**
+ *
+ * Version-owned typed classification of generated Oracle grammar contexts.
+ */
 public interface OracleFullGrammarParseTreeAdapter {
     enum Role {
         ROUTINE_BODY,

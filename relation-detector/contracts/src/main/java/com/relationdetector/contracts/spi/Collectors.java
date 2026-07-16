@@ -102,6 +102,7 @@ public final class Collectors {
     }
 
     /**
+     *
      * Collects table DDL text from the live database.
      *
      * <p>Implementations use the native catalog surface for each database, for

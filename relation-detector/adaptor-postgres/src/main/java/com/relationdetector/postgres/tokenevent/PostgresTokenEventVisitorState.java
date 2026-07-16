@@ -16,7 +16,10 @@ import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
 
-/** Per-parse state, provenance and identifier helpers for PostgreSQL token-event traversal. */
+/**
+ *
+ * Per-parse state, provenance and identifier helpers for PostgreSQL token-event traversal.
+ */
 abstract class PostgresTokenEventVisitorState extends PostgresRelationSqlBaseVisitor<Void> {
     protected final SqlStatementRecord statement;
     protected final TokenEventEventEmitter emitter;

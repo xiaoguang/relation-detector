@@ -9,7 +9,10 @@ import java.util.Set;
 
 import com.relationdetector.contracts.model.TableId;
 
-/** Query-scope alias table with exact, shadowing-aware resolution. */
+/**
+ *
+ * Query-scope alias table with exact, shadowing-aware resolution.
+ */
 public final class AliasSymbolTable {
     private final CanonicalIdentifierResolver resolver;
     private final NamespaceContext namespace;

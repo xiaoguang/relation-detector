@@ -9,7 +9,10 @@ import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.OperatorSemantic;
 
-/** Oracle expression transform classification, independent of collector state. */
+/**
+ *
+ * Oracle expression transform classification, independent of collector state.
+ */
 final class OracleExpressionTransformSupport extends OracleFullGrammarParseTreeSupport {
     OracleExpressionTransformSupport(
             OracleSqlEventVisitorCore core,

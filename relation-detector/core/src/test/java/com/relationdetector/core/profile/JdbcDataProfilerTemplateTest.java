@@ -69,7 +69,7 @@ class JdbcDataProfilerTemplateTest {
     @Test
     void configuredVendorCodeDoesNotChangeUnknownErrors() {
         JdbcDataProfilerTemplate vendorProfiler = new JdbcDataProfilerTemplate(
-                new Renderer(), SqlExceptionClassifier.withPermissionVendorCodes(1031));
+                new Renderer(), 1031);
 
         assertEquals(ProfileStatus.PERMISSION_DENIED,
                 vendorProfiler.profile(connection(new SQLException("denied", "", 1031)), request()).status());

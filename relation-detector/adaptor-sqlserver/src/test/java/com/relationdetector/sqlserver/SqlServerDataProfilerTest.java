@@ -1,6 +1,7 @@
 package com.relationdetector.sqlserver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -25,13 +26,15 @@ import com.relationdetector.sqlserver.profile.SqlServerDataProfiler;
 
 class SqlServerDataProfilerTest {
     @Test
-    void usesTopAndEmitsContainmentEvidence() {
+    void usesExactMetricsAndEmitsContainmentEvidence() {
         StringBuilder sql = new StringBuilder();
         var evidence = new SqlServerDataProfiler().profile(
-                connection(sql, 100, 99),
+                connection(sql, 120, 100, 99, 110),
                 new ProfileRequest(candidate(), DataProfileOptions.defaults().withMaxDistinctValues(25))).evidence();
 
-        assertTrue(sql.toString().contains("SELECT DISTINCT TOP (25)"));
+        assertFalse(sql.toString().contains("TOP ("));
+        assertTrue(sql.toString().contains("source_non_null_rows"));
+        assertTrue(sql.toString().contains("target_distinct"));
         assertEquals(EvidenceType.VALUE_CONTAINMENT_HIGH, evidence.get(0).type());
     }
 
@@ -56,10 +59,11 @@ class SqlServerDataProfilerTest {
                 RelationSubType.PROFILE_SUPPORTED_FK);
     }
 
-    private Connection connection(StringBuilder sql, long sourceDistinct, long matchedDistinct) {
+    private Connection connection(StringBuilder sql, long sourceRows, long sourceDistinct,
+            long matchedDistinct, long targetDistinct) {
         return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Connection.class },
                 (proxy, method, args) -> "createStatement".equals(method.getName())
-                        ? statement(sql, sourceDistinct, matchedDistinct)
+                        ? statement(sql, sourceRows, sourceDistinct, matchedDistinct, targetDistinct)
                         : null);
     }
 
@@ -73,18 +77,19 @@ class SqlServerDataProfilerTest {
                 (proxy, method, args) -> "createStatement".equals(method.getName()) ? statement : null);
     }
 
-    private Statement statement(StringBuilder sql, long sourceDistinct, long matchedDistinct) {
+    private Statement statement(StringBuilder sql, long sourceRows, long sourceDistinct,
+            long matchedDistinct, long targetDistinct) {
         return (Statement) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Statement.class },
                 (proxy, method, args) -> {
                     if ("executeQuery".equals(method.getName())) {
                         sql.append(String.valueOf(args[0]));
-                        return resultSet(sourceDistinct, matchedDistinct);
+                        return resultSet(sourceRows, sourceDistinct, matchedDistinct, targetDistinct);
                     }
                     return null;
                 });
     }
 
-    private ResultSet resultSet(long sourceDistinct, long matchedDistinct) {
+    private ResultSet resultSet(long sourceRows, long sourceDistinct, long matchedDistinct, long targetDistinct) {
         boolean[] next = { true };
         return (ResultSet) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { ResultSet.class },
                 (proxy, method, args) -> {
@@ -94,7 +99,13 @@ class SqlServerDataProfilerTest {
                         return value;
                     }
                     if ("getLong".equals(method.getName())) {
-                        return "source_distinct".equals(args[0]) ? sourceDistinct : matchedDistinct;
+                        return switch (String.valueOf(args[0])) {
+                            case "source_non_null_rows" -> sourceRows;
+                            case "source_distinct" -> sourceDistinct;
+                            case "matched_distinct" -> matchedDistinct;
+                            case "target_distinct" -> targetDistinct;
+                            default -> throw new IllegalArgumentException(String.valueOf(args[0]));
+                        };
                     }
                     return null;
                 });

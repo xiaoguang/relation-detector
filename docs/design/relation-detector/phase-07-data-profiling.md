@@ -12,11 +12,10 @@
 
 当前代码事实：
 
-- live DB profiling 已实现为显式 opt-in 能力：`dataProfile.enabled=true` 且有 JDBC connection 时，MySQL、PostgreSQL、Oracle、SQL Server profiler 都会对受限候选执行 bounded distinct containment query。
-- `VALUE_CONTAINMENT_HIGH` 可由当前 live profiler 的 sampled/matched distinct 直接产出。
-  `DataProfileEvidenceBuilder` 也支持 `VALUE_OVERLAP_HIGH` 与 `NEGATIVE_VALUE_MISMATCH`，但当前
-  dialect JDBC query尚未独立返回target distinct cardinality和source non-null row count；因此这两类
-  evidence目前使用的是containment query派生占位指标，不能描述成完整实测overlap/row-level mismatch。
+- live DB profiling 已实现为显式 opt-in 能力：`dataProfile.enabled=true` 且有 JDBC connection 时，MySQL、PostgreSQL、Oracle、SQL Server profiler 都会对受限候选执行 exact aggregate query。
+- live query 独立返回 source non-null rows、source distinct、matched distinct 和 target distinct；
+  `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH` 与 `NEGATIVE_VALUE_MISMATCH` 都使用真实数据库统计，
+  不再用 source distinct 代填其它指标。
 - 候选生成不会做全库列两两比较；只选择已有结构候选，或在 `discoverFromNamingEvidence=true` 时选择 top-level `namingEvidence` + target unique + type compatible 的命名候选。
 - 离线 seed `INSERT` 样本尚未进入生产链路。当前 structured event 只稳定覆盖 `INSERT SELECT`、`UPDATE`、`MERGE` 等写入映射，没有 typed literal `INSERT ... VALUES` sample event；因此不能用 regex/token span 扫描 SQL 伪造 offline sample。
 
@@ -29,7 +28,8 @@
 - 数据画像只能产生 evidence，不能覆盖显式 FK。
 - 数据画像可以增强关系，也可以反证关系，但反证不能直接删除关系。
 - 不输出真实业务值，不输出采样值，也不输出可逆 hash；只输出统计量、阈值、样本规模和跳过原因。
-- 所有查询必须受候选数量、采样行数、distinct 数量、超时和权限控制。
+- live 查询受候选数量、超时和权限控制；`sampleRows/maxDistinctValues` 仅约束未来离线样本，不影响
+  exact live query。
 - 生产库读权限不足时降级为 skip/warning，不影响静态关系抽取。
   `DataProfiler` 返回 `ProfileOutcome`，区分 success、no evidence、invalid endpoint、permission denied、timeout 和 query failed；`DataProfilePipeline` 把 warning 并入最终 scan result。
 
@@ -145,8 +145,8 @@ sources:
 字段说明：
 
 - `enabled`：默认 false。关闭时不查询业务数据。
-- `sampleRows`：每个候选最多采样 source 行数。
-- `maxDistinctValues`：每个候选最多采样 source distinct 非空值数量。
+- `sampleRows`：保留给 offline insert sample 的 source 行数预算；不限制 live exact query。
+- `maxDistinctValues`：保留给 offline insert sample 的 distinct 预算；不限制 live exact query。
 - `timeoutSeconds`：单个画像查询最大执行时间。
 - `maxCandidatePairs`：本次扫描最多画像的候选关系数量。
 - `maxTargetsPerSourceColumn`：同一个 source column 最多尝试几个 target。
@@ -243,26 +243,20 @@ B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINME
 
 ### 当前 metrics 完整性
 
-当前四个 dialect renderer 返回两个列：`source_distinct` 与 `matched_distinct`。
-`JdbcDataProfilerTemplate.metrics(...)` 暂时把：
-
-- `sourceNonNullRowsSampled = sourceDistinctValuesSampled`
-- `targetDistinctValuesSampled = sourceDistinctValuesSampled`
-
-写入 `DataProfileMetrics`。所以 containment ratio 是直接测量；overlap denominator 和 negative
-`minRowsForNegative` gate 不是独立查询结果。下面的完整指标公式是目标模型，只有 renderer 同时返回
-source row count 与 target distinct count 后，才能把三类 evidence 都标为完整 live measurement。
+四个 dialect renderer 都返回 `source_non_null_rows`、`source_distinct`、`matched_distinct` 和
+`target_distinct`。`JdbcDataProfilerTemplate.metrics(...)` 直接写入 `DataProfileMetrics`，不代填指标。
 
 对每个候选 `sourceTable.sourceColumn -> targetTable.targetColumn`，计算：
 
 ```text
-sourceNonNullRowsSampled
-sourceDistinctValuesSampled
+sourceNonNullRows
+sourceDistinctValues
 matchedDistinctSourceValues
 missingDistinctSourceValues
-containmentRatio = matchedDistinctSourceValues / sourceDistinctValuesSampled
-missingRatio = missingDistinctSourceValues / sourceDistinctValuesSampled
-overlapRatio = matchedDistinctSourceValues / min(sourceDistinctValuesSampled, targetDistinctValuesSampled or sourceDistinctValuesSampled)
+targetDistinctValues
+containmentRatio = matchedDistinctSourceValues / sourceDistinctValues
+missingRatio = missingDistinctSourceValues / sourceDistinctValues
+overlapRatio = matchedDistinctSourceValues / min(sourceDistinctValues, targetDistinctValues)
 sourceNullRatio
 ```
 
@@ -270,7 +264,7 @@ sourceNullRatio
 
 产生条件：
 
-- `sourceDistinctValuesSampled >= minDistinctValues`
+- `sourceDistinctValues >= minDistinctValues`
 - `containmentRatio >= minContainmentRatio`
 - source/target 类型兼容
 - target 有 PK/UNIQUE，或候选本身来自 SQL/DDL/metadata 强证据
@@ -286,8 +280,9 @@ attributes:
   profileMode: LIVE_DATABASE
   containmentRatio: 0.995
   matchedDistinctSourceValues: 995
-  sourceDistinctValuesSampled: 1000
-  sampleRows: 10000
+  sourceDistinctValues: 1000
+  sourceNonNullRows: 5000
+  targetDistinctValues: 1200
   minContainmentRatio: 0.98
   minDistinctValues: 20
   targetUnique: true
@@ -311,8 +306,8 @@ attributes:
 产生条件：
 
 - 关系候选来自 A 层，或者 B 层已具备 naming + target unique + type compatible。
-- `sourceDistinctValuesSampled >= minDistinctValues`
-- `sourceNonNullRowsSampled >= minRowsForNegative`
+- `sourceDistinctValues >= minDistinctValues`
+- `sourceNonNullRows >= minRowsForNegative`
 - `missingRatio >= maxMismatchRatio`
 - 不存在已知过滤上下文会导致自然缺失，例如 tenant 分区、软删除、时间窗口、归档表、权限行过滤。
 - 对显式 FK 默认不验证；只有 `verifyDeclaredForeignKeys=true` 时才输出。
@@ -335,8 +330,8 @@ attributes:
   profileMode: LIVE_DATABASE
   missingRatio: 0.72
   missingDistinctSourceValues: 720
-  sourceDistinctValuesSampled: 1000
-  sourceNonNullRowsSampled: 5000
+  sourceDistinctValues: 1000
+  sourceNonNullRows: 5000
   maxMismatchRatio: 0.50
   negativeGatesSatisfied: true
 ```
@@ -345,52 +340,32 @@ attributes:
 
 ### 通用逻辑
 
-所有方言都应渲染为只读聚合查询，返回统计量，不返回值。
+所有方言都渲染为只读 exact aggregate query，返回统计量，不返回值。
 
 伪 SQL：
 
 ```sql
-WITH sampled_source AS (
-  SELECT DISTINCT source_col AS v
-  FROM source_table
-  WHERE source_col IS NOT NULL
-  FETCH FIRST :maxDistinctValues ROWS ONLY
-),
-matched AS (
-  SELECT s.v
-  FROM sampled_source s
-  JOIN target_table t ON t.target_col = s.v
-)
 SELECT
-  (SELECT COUNT(*) FROM sampled_source) AS source_distinct,
-  (SELECT COUNT(DISTINCT v) FROM matched) AS matched_distinct;
+  (SELECT COUNT(*) FROM source_table WHERE source_col IS NOT NULL) AS source_non_null_rows,
+  (SELECT COUNT(DISTINCT source_col) FROM source_table WHERE source_col IS NOT NULL) AS source_distinct,
+  (SELECT COUNT(DISTINCT s.source_col)
+     FROM source_table s JOIN target_table t ON t.target_col = s.source_col
+    WHERE s.source_col IS NOT NULL) AS matched_distinct,
+  (SELECT COUNT(DISTINCT target_col) FROM target_table WHERE target_col IS NOT NULL) AS target_distinct;
 ```
 
-方言差异：
-
-- MySQL 5.7/8.0 使用 `LIMIT`。
-- PostgreSQL 使用 `LIMIT`，可选 `TABLESAMPLE` 只在明确配置时使用。
-- Oracle 使用 `FETCH FIRST n ROWS ONLY` 或 `ROWNUM <= n`，按版本能力选择。
-- SQL Server 使用 `TOP (n)` 或 `OFFSET/FETCH`，按版本能力选择。
-
-### 采样方式
-
-默认不使用随机采样，因为 `ORDER BY RAND()` / `ORDER BY random()` 对大表代价高。
-
-优先顺序：
-
-1. 如果 source 列有索引，使用 index-friendly distinct limit。
-2. 如果数据库支持低成本 block sampling，且配置允许，使用 `TABLESAMPLE`。
-3. 否则使用普通 distinct limit，并受 timeout 保护。
+方言只在 identifier quoting、Oracle `FROM DUAL` 和 SQL Server `COUNT_BIG` 上不同；live query
+不使用 `LIMIT`、`FETCH FIRST`、`TOP` 或随机采样。查询必须受 JDBC timeout 保护。
 
 ### 批处理优化
 
 为了避免候选多时一条一条慢查询，可以做两层优化：
 
-- 同一 source table/source column 对多个 target 的候选，先 materialize sampled source CTE，再分别 join target。
+- 同一 source table/source column 对多个 target 的候选，可在未来显式设计 batch query；当前不缓存或
+  materialize 跨候选中间结果。
 - 同一 target table/target column 被多个 source 使用时，复用 target metadata/unique/index facts，不重复查询 target distinct。
 
-第一版可以保守地逐候选执行；但必须保留 `maxCandidatePairs` 和 timeout。
+当前逐候选执行，并保留 `maxCandidatePairs` 和 timeout。
 
 ## Offline insert sample 设计
 
@@ -481,21 +456,21 @@ subtype 规则：
   `SUCCESS`、`NO_EVIDENCE`、`SKIPPED_INVALID_ENDPOINT`、permission、timeout 和 query failure；
   warning attributes 只携带 endpoint、SQLState、vendor code、exception class 和 renderer source，
   不回传真实业务值、rendered SQL、driver message、连接串或参数值。
-- `JdbcDataProfilerTemplate` 使用固定安全消息，不调用 `SQLException.getMessage()`。共享分类器识别
-  authorization exception、SQLState `28xxx`/`42501`；Oracle profiler额外识别 vendor code 1031，
-  SQL Server profiler额外识别 229/916。fake JDBC 单测证明契约与脱敏边界；具体 driver/version 的
+- `JdbcDataProfilerTemplate` 使用固定安全消息，不调用 `SQLException.getMessage()`。共享分类器的
+  方言中立规则只识别 authorization exception 和 SQLState `28xxx`/`42501`；Oracle profiler
+  由调用方额外传入 vendor code 1031，SQL Server profiler 额外传入 229/916。普通 live
+  collector 也由 adaptor 的 `permissionDeniedVendorCodes()` 传入自己的 vendor policy；方言 code 不在全局默认集合。fake JDBC 单测证明契约与脱敏边界；具体 driver/version 的
   vendor code 行为仍属于环境性 live smoke，文档不得把单测写成真实数据库验证。
 
 ## 性能控制
 
-必须有硬上限：
+live 模式必须有硬上限：
 
 - `maxCandidatePairs`
 - `maxTargetsPerSourceColumn`
-- `sampleRows`
-- `maxDistinctValues`
 - `timeoutSeconds`
 
+`sampleRows`、`maxDistinctValues` 只属于离线 sample 配置，不限制 exact live query。
 `maxCandidatesPerTable` 仍是后续预算字段，不能在“已实现硬上限”中列为现状。
 
 复杂度目标：
@@ -518,9 +493,9 @@ O(allTables * allColumns * allTables * allColumns)
 
 - `DataProfileCandidateGenerator`
   - 输入 relationships、namingEvidence、metadata/DDL column inventory。
-  - 输出 bounded profile candidates。
+  - 输出受候选预算约束的 profile candidates。
 - `DataProfilePipeline`
-  - 在 production scan 中复用 relationship candidates、metadata、top-level naming evidence，选择 bounded live DB profile 候选。
+  - 在 production scan 中复用 relationship candidates、metadata、top-level naming evidence，选择预算内 live DB profile 候选。
 - `DataProfileEvidenceBuilder`
   - 根据 metrics 和阈值生成 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`。
 - `MySqlDataProfiler` / `PostgresDataProfiler` / `OracleDataProfiler` / `SqlServerDataProfiler`
@@ -565,9 +540,9 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 
 ### 集成测试
 
-- MySQL/PostgreSQL/Oracle/SQL Server live profiler 使用 fake JDBC result测试query timeout、权限分类、
-  warning脱敏与containment结果装配；overlap/mismatch公式由`DataProfileEvidenceBuilder`单测覆盖，
-  目前不能把它写成四方言SQL已独立测得全部metrics。
+- MySQL/PostgreSQL/Oracle/SQL Server live profiler 使用 fake JDBC result测试四项 exact metrics、query timeout、权限分类、
+  warning脱敏与containment/overlap/mismatch结果装配；这证明renderer/JDBC contract，不替代真实数据库
+  optimizer、权限和版本组合的runtime smoke。
 - correctness fixture 不默认依赖 live DB；offline insert sample golden 等 typed literal insert sample event 补齐后再加入。
 
 ### 性能测试
@@ -589,8 +564,9 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
     "profileMode": "LIVE_DATABASE",
     "containmentRatio": 0.995,
     "matchedDistinctSourceValues": 995,
-    "sourceDistinctValuesSampled": 1000,
-    "sampleRows": 10000,
+    "sourceDistinctValues": 1000,
+    "sourceNonNullRows": 5000,
+    "targetDistinctValues": 1200,
     "minContainmentRatio": 0.98
   }
 }
@@ -601,13 +577,14 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 ## 验收标准
 
 - 默认配置不执行任何业务数据查询。
-- 开启画像后只对 bounded candidates 查询。
+- 开启画像后只对预算内 candidates 查询。
 - 不做全库列组合扫描。
 - 有 live data 权限时，高值域包含率能产生 `VALUE_CONTAINMENT_HIGH`。
 - 明显值不匹配且满足负向 gate 时能产生 `NEGATIVE_VALUE_MISMATCH`。
 - DDL/migration 中的 insert sample 只有在 typed literal insert sample event 补齐后才可以产生保守正向 evidence；默认不产生负向 evidence。
-- 权限不足、超时、样本不足都不会中断整体 scan；permission/timeout/query-failure 已产生
-  `ProfileOutcome` warning。warning message 已使用固定安全文本，Oracle 1031、SQL Server 229/916
-  与共享 SQLState 分类已有契约测试；真实 driver/version 行为仍是环境性 runtime 验收项。
+- 权限不足、超时、样本不足都不会中断整体 scan；permission/timeout/query-failure 会产生
+  `ProfileOutcome` warning。warning message 使用固定安全文本，Oracle profiler 传入 1031、
+  SQL Server profiler 传入 229/916，并与共享 SQLState 分类一起受契约测试保护；真实
+  driver/version 行为仍是环境性 runtime 验收项。
 - 输出不包含真实业务值。
 - correctness/golden 暂不覆盖 live DB profiling；profiler 用独立单测验收。offline sample correctness 等 typed literal insert sample event 补齐后再加入。

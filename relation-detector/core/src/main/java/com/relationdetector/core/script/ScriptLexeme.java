@@ -2,7 +2,10 @@ package com.relationdetector.core.script;
 
 import org.antlr.v4.runtime.Token;
 
-/** One generated-lexer token with its exact source interval. */
+/**
+ *
+ * One generated-lexer token with its exact source interval.
+ */
 public record ScriptLexeme(
         ScriptLexemeKind kind,
         String text,

@@ -20,7 +20,10 @@ import com.relationdetector.postgres.script.PostgresScriptFramer;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
-/** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
+/**
+ *
+ * PostgreSQL 12+ adaptor implementing the Phase 5 design.
+ */
 public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public PostgresDatabaseAdaptor() {
         this(new PostgresTokenEventStructuredSqlParser(), new PostgresTokenEventStructuredDdlParser(),

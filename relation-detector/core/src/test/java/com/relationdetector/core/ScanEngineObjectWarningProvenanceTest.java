@@ -11,6 +11,7 @@ import com.relationdetector.core.relation.*;
 import com.relationdetector.core.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
@@ -46,6 +49,7 @@ import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
+import com.relationdetector.contracts.Enums.WarningType;
 
 /**
  * Database object warnings must identify the object that supplied the SQL, not
@@ -96,7 +100,75 @@ class ScanEngineObjectWarningProvenanceTest {
                 "database-object statements must cover every line in their collected SQL text");
     }
 
-    private static final class ObjectWarningAdaptor implements DatabaseAdaptor {
+    @Test
+    void thirdPartyBlankObjectDefinitionIsRejectedBeforeParsing() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = JDBC_URL;
+        config.schema = "shop";
+        config.metadataEnabled = false;
+        config.objectsEnabled = true;
+        config.objectsFromDatabase = true;
+
+        ScanResult result = new ScanEngine().scan(config, new BlankObjectAdaptor());
+
+        WarningMessage warning = result.warnings().stream()
+                .filter(candidate -> candidate.code().equals("DEFINITION_UNAVAILABLE"))
+                .findFirst().orElseThrow();
+        assertEquals(WarningType.LIVE_SOURCE_WARNING, warning.type());
+        assertEquals("rebuild_orders", warning.attributes().get("objectName"));
+        assertTrue(result.relationships().isEmpty());
+        assertTrue(result.dataLineages().isEmpty());
+    }
+
+    @Test
+    void liveConfigurationFailureEscapesScanAndClosesConnection() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = JDBC_URL;
+        config.metadataEnabled = false;
+        config.objectsEnabled = true;
+        config.objectsFromDatabase = true;
+
+        assertThrows(LiveSourceConfigurationException.class,
+                () -> new ScanEngine().scan(config, new ConfigurationFailureAdaptor()));
+        assertTrue(driver.closed.get(), "fail-fast must still close the JDBC connection");
+    }
+
+    @Test
+    void nullObjectDefinitionListProducesDefinitionUnavailable() {
+        ScanResult result = scanObjects(new NullObjectListAdaptor());
+
+        assertDefinitionUnavailableOnly(result);
+    }
+
+    @Test
+    void nullObjectDefinitionElementProducesDefinitionUnavailable() {
+        ScanResult result = scanObjects(new NullObjectElementAdaptor());
+
+        assertDefinitionUnavailableOnly(result);
+    }
+
+    private ScanResult scanObjects(DatabaseAdaptor adaptor) {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = JDBC_URL;
+        config.metadataEnabled = false;
+        config.objectsEnabled = true;
+        config.objectsFromDatabase = true;
+        return new ScanEngine().scan(config, adaptor);
+    }
+
+    private void assertDefinitionUnavailableOnly(ScanResult result) {
+        assertEquals(1, result.warnings().stream()
+                .filter(warning -> warning.code().equals("DEFINITION_UNAVAILABLE")).count());
+        assertTrue(result.warnings().stream().noneMatch(warning ->
+                warning.code().equals("OBJECT_DEFINITION_COLLECT_FAILED")));
+        assertTrue(result.relationships().isEmpty());
+        assertTrue(result.dataLineages().isEmpty());
+    }
+
+    private static class ObjectWarningAdaptor implements DatabaseAdaptor {
         @Override
         public String id() {
             return "test-object-warning";
@@ -164,7 +236,52 @@ class ScanEngineObjectWarningProvenanceTest {
         }
     }
 
+    private static final class BlankObjectAdaptor extends ObjectWarningAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> List.of(new DatabaseObjectDefinition(
+                            DatabaseObjectType.PROCEDURE, null, "shop", "rebuild_orders", " ", "test-catalog"))),
+                    Optional.empty(), Optional.of((file, hint) -> Stream.empty()));
+        }
+    }
+
+    private static final class ConfigurationFailureAdaptor extends ObjectWarningAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> {
+                        throw new LiveSourceConfigurationException("database.catalog cannot be verified");
+                    }),
+                    Optional.empty(), Optional.of((file, hint) -> Stream.empty()));
+        }
+    }
+
+    private static final class NullObjectListAdaptor extends ObjectWarningAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> null),
+                    Optional.empty(), Optional.of((file, hint) -> Stream.empty()));
+        }
+    }
+
+    private static final class NullObjectElementAdaptor extends ObjectWarningAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    Optional.of((connection, scope) -> new MetadataSnapshot()),
+                    Optional.of((connection, scope) -> java.util.Arrays.asList((DatabaseObjectDefinition) null)),
+                    Optional.empty(), Optional.of((file, hint) -> Stream.empty()));
+        }
+    }
+
     private static final class TestDriver implements Driver {
+        private final AtomicBoolean closed = new AtomicBoolean();
+
         @Override
         public Connection connect(String url, Properties info) throws SQLException {
             if (!acceptsURL(url)) {
@@ -174,7 +291,10 @@ class ScanEngineObjectWarningProvenanceTest {
                     Connection.class.getClassLoader(),
                     new Class<?>[]{Connection.class},
                     (proxy, method, args) -> switch (method.getName()) {
-                        case "close" -> null;
+                        case "close" -> {
+                            closed.set(true);
+                            yield null;
+                        }
                         case "isClosed" -> false;
                         default -> throw new UnsupportedOperationException(method.getName());
                     });

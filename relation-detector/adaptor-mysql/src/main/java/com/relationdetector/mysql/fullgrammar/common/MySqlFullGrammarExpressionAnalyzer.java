@@ -14,7 +14,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter.QueryParts;
 
-/** Shared MySQL expression semantics; generated context access stays in version adapters. */
+/**
+ *
+ * Shared MySQL expression semantics; generated context access stays in version adapters.
+ */
 public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     private final MySqlExpressionContextAdapter contexts;
     private final MySqlConditionalExpressionSupport conditionals;

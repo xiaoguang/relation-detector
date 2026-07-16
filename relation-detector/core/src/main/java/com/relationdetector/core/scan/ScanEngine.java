@@ -5,13 +5,13 @@ import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
-import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**
  * 默认扫描编排器。
@@ -33,6 +33,7 @@ public final class ScanEngine {
     private final ScanCapabilityValidator capabilityValidator = new ScanCapabilityValidator();
 
     /**
+     *
      * 执行一次完整 scan，并返回 relationship、dataLineage、warning 和 source summary。
      *
      * <p>EN: Runs one complete scan and returns relationships, data lineages,
@@ -42,7 +43,10 @@ public final class ScanEngine {
         return scan(config.resolve(), adaptor);
     }
 
-    /** Runs a scan from an immutable, fully resolved runtime snapshot. */
+    /**
+     *
+     * Runs a scan from an immutable, fully resolved runtime snapshot.
+     */
     public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
         capabilityValidator.validate(config, adaptor);
         DatabaseConfig requestedDatabase = config.database();
@@ -50,7 +54,8 @@ public final class ScanEngine {
                 requestedDatabase.catalog(), requestedDatabase.schema(),
                 requestedDatabase.includeTables(), requestedDatabase.excludeTables()));
         ResolvedScanConfig runtimeConfig = config;
-        ScanResult result = new ScanResult(config.database().databaseType().name(), config.database().schema());
+        ScanResult result = new ScanResult(
+                config.database().databaseType().name(), scope.catalog(), scope.schema());
         Connection connection = null;
         Exception connectionFailure = null;
         try {
@@ -60,7 +65,6 @@ public final class ScanEngine {
             connectionFailure = ex;
         }
 
-        DatabaseConfig database = runtimeConfig.database();
         AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
         List<RelationshipCandidate> candidates = new ArrayList<>();
         List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();
@@ -73,19 +77,23 @@ public final class ScanEngine {
                 candidates,
                 dataLineageCandidates);
 
-        if (connectionFailure != null) {
-            result.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "DB_SCAN_FAILED", connectionFailure.getMessage(), database.jdbcUrl(), 0));
-        } else {
-            try {
-                sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
-            } catch (Exception ex) {
-                result.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                        "DB_SCAN_FAILED", ex.getMessage(), database.jdbcUrl(), 0));
-            }
-        }
-
         try {
+            if (connectionFailure != null) {
+                result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
+                        "DB_SCAN_FAILED", LiveDiagnosticSanitizer.Operation.CONNECTION,
+                        "database", connectionFailure, java.util.Map.of(),
+                        adaptor.permissionDeniedVendorCodes()));
+            } else {
+                try {
+                    sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
+                } catch (LiveSourceConfigurationException ex) {
+                    throw ex;
+                } catch (Exception ex) {
+                    result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
+                            "DB_SCAN_FAILED", LiveDiagnosticSanitizer.Operation.CONNECTION,
+                            "database", ex, java.util.Map.of(), adaptor.permissionDeniedVendorCodes()));
+                }
+            }
             sourceCollectorPipeline.collectFileSources(pipelineContext);
             evidenceEnhancementPipeline.enhance(pipelineContext);
             List<RelationshipCandidate> profiledCandidates = dataProfilePipeline.profile(connection, pipelineContext);

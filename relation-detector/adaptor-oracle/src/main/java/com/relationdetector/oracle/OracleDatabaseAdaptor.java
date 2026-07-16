@@ -32,9 +32,16 @@ import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParse
  * families use partial-success warnings for permission or version failures.
  */
 public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
+    public static final Set<Integer> PERMISSION_DENIED_VENDOR_CODES = Set.of(1031);
+
     public OracleDatabaseAdaptor() {
         this(new OracleTokenEventStructuredSqlParser(), new OracleTokenEventStructuredDdlParser(),
                 new OracleScriptFramer());
+    }
+
+    @Override
+    public Set<Integer> permissionDeniedVendorCodes() {
+        return PERMISSION_DENIED_VENDOR_CODES;
     }
 
     private OracleDatabaseAdaptor(

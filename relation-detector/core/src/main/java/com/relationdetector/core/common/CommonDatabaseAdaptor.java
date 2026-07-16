@@ -29,6 +29,7 @@ import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 import com.relationdetector.core.script.CommonScriptFramer;
 
 /**
+ *
  * Portable common SQL adaptor used when the CLI is explicitly configured with
  * {@code database.type: common}.
  *

@@ -4,7 +4,10 @@ import java.util.List;
 
 import com.relationdetector.contracts.model.WarningMessage;
 
-/** Framed server statements extracted from one dialect client script. */
+/**
+ *
+ * Framed server statements extracted from one dialect client script.
+ */
 public record ScriptFrameResult(
         List<SqlStatementRecord> statements,
         List<WarningMessage> warnings

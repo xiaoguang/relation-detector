@@ -6,7 +6,10 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 
-/** Emits typed INSERT VALUES mappings independently of versioned generated contexts. */
+/**
+ *
+ * Emits typed INSERT VALUES mappings independently of versioned generated contexts.
+ */
 public final class MySqlInsertValuesSupport {
     private MySqlInsertValuesSupport() {
     }

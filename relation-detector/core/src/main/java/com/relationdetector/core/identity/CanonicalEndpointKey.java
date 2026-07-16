@@ -6,7 +6,10 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
-/** Exact catalog/schema/table/column identity used for cross-source evidence lookup. */
+/**
+ *
+ * Exact catalog/schema/table/column identity used for cross-source evidence lookup.
+ */
 public record CanonicalEndpointKey(String catalog, String schema, String table, String column) {
     public CanonicalEndpointKey {
         catalog = clean(catalog);

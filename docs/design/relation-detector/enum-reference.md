@@ -598,6 +598,7 @@ public enum DirectionConfidence {
 public enum WarningType {
   CONFIG_WARNING,
   PERMISSION_WARNING,
+  LIVE_SOURCE_WARNING,
   PARSE_WARNING,
   PROFILE_WARNING,
   AMBIGUOUS_RELATION_WARNING,
@@ -609,6 +610,7 @@ public enum WarningType {
 | --- | --- | --- | --- |
 | `CONFIG_WARNING` | 配置可用但存在可疑项。 | include/exclude 同时命中同一表。 | 否 |
 | `PERMISSION_WARNING` | 权限不足导致某些来源不可读。 | 不能读取 MySQL routine definition。 | 否 |
+| `LIVE_SOURCE_WARNING` | live JDBC 来源超时、查询失败或 definition 不可用。 | `DBMS_METADATA.GET_DDL` 返回空定义。 | 否 |
 | `PARSE_WARNING` | 单条 SQL/DDL 解析失败。 | parser 不支持某段 PL/pgSQL。 | 否 |
 | `PROFILE_WARNING` | 数据画像部分失败或跳过。 | 某候选画像查询超时。 | 否 |
 | `AMBIGUOUS_RELATION_WARNING` | 关系方向或列映射不明确。 | `a.x = b.y` 两侧都非 unique。 | 否 |
@@ -618,7 +620,7 @@ public enum WarningType {
 
 - warning 是“扫描还能继续”的问题。
 - 不可恢复错误应使用错误码退出，不要只给 warning。
-- 解析/提取失败应把原始失败 SQL/DDL 放入 `WarningMessage.attributes.rawStatement`；异常类型放入 `exceptionClass`，来源类型放入 `statementSourceType`。
+- file parser 的解析/提取失败可把原始失败 SQL/DDL 放入 `WarningMessage.attributes.rawStatement`；live JDBC warning 只能使用固定消息和白名单 context，禁止包含 SQL、JDBC URL 或 driver message。异常类型放入 `exceptionClass`，来源类型放入 `statementSourceType`。
 - parser 正常返回空关系不自动等价为 `PARSE_WARNING`，因为很多 SQL 不包含可用关系证据。
 - warning detail 不应包含 password 或采样到的真实业务值。
 

@@ -10,7 +10,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Projection, write mapping and DDL event traversal for Oracle token-event SQL. */
+/**
+ *
+ * Projection, write mapping and DDL event traversal for Oracle token-event SQL.
+ */
 abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSupport {
     OracleTokenEventWriteDdlSupport(SqlStatementRecord statement) {
         super(statement);

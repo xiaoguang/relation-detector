@@ -16,8 +16,12 @@ import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.mysql.MySqlCatalogScope;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
-/** Collects MySQL table DDL through SHOW CREATE TABLE. */
+/**
+ *
+ * Collects MySQL table DDL through SHOW CREATE TABLE.
+ */
 public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
     @Override
     public List<DatabaseDdlDefinition> collect(Connection connection, ScanScope scope) {
@@ -59,8 +63,9 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
                 }
             }
         } catch (Exception ex) {
-            warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_DATABASE_DDL_TABLES_FAILED", ex.getMessage(), "information_schema.TABLES", 0));
+            warnings.accept(LiveDiagnosticSanitizer.jdbcWarning(
+                    "MYSQL_DATABASE_DDL_TABLES_FAILED", LiveDiagnosticSanitizer.Operation.DATABASE_DDL,
+                    "information_schema.TABLES", ex, java.util.Map.of()));
         }
         return tableNames;
     }
@@ -76,17 +81,22 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
         try (Statement statement = connection.createStatement();
                 ResultSet rs = statement.executeQuery(sql)) {
             if (rs.next()) {
-                definitions.add(new DatabaseDdlDefinition(catalog, null, tableName,
-                        rs.getString(2), "SHOW CREATE TABLE"));
+                String ddl = rs.getString(2);
+                if (ddl == null || ddl.isBlank()) {
+                    warnings.accept(com.relationdetector.core.diagnostics.DiagnosticWarnings
+                            .databaseDdlDefinitionUnavailable("SHOW CREATE TABLE", catalog, null, tableName));
+                } else {
+                    definitions.add(new DatabaseDdlDefinition(catalog, null, tableName,
+                            ddl, "SHOW CREATE TABLE"));
+                }
             }
         } catch (Exception ex) {
-            warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_SHOW_CREATE_TABLE_FAILED", ex.getMessage(), "SHOW CREATE TABLE", 0,
+            warnings.accept(LiveDiagnosticSanitizer.jdbcWarning(
+                    "MYSQL_SHOW_CREATE_TABLE_FAILED", LiveDiagnosticSanitizer.Operation.DATABASE_DDL,
+                    "SHOW CREATE TABLE", ex,
                     java.util.Map.of("objectCatalog", catalog,
                             "objectName", tableName,
-                            "objectType", "TABLE",
-                            "rawStatement", sql,
-                            "exceptionClass", ex.getClass().getSimpleName())));
+                            "objectType", "TABLE")));
         }
     }
 

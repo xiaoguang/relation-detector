@@ -7,14 +7,149 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import javax.lang.model.element.Modifier;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.util.DocTrees;
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.SourcePositions;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
+
 import org.junit.jupiter.api.Test;
 
 class DialectGrammarArchitectureTest {
+    private static final List<String> FORBIDDEN_JAVADOC_TEMPLATES = List.of(
+            "生产职责与协作边界",
+            "对应的生产操作",
+            "Production responsibility and collaboration boundary",
+            "Executes the production operation represented by");
+
+    @Test
+    void productionJavadocsDoNotContainGenericTemplates() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<String> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> !path.toString().contains("/target/"))
+                    .filter(path -> {
+                        try {
+                            String text = Files.readString(path);
+                            return FORBIDDEN_JAVADOC_TEMPLATES.stream().anyMatch(text::contains);
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .map(path -> root.relativize(path).toString())
+                    .sorted()
+                    .toList();
+            assertTrue(offenders.isEmpty(), "Generic production Javadocs remain: " + offenders);
+        }
+    }
+
+    @Test
+    void handwrittenProductionBoundariesHaveConcreteJavadoc() throws Exception {
+        Path root = repoRoot();
+        List<Path> sources;
+        try (Stream<Path> stream = Files.walk(root)) {
+            sources = stream.filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> !path.toString().contains("/target/"))
+                    .filter(path -> !path.getFileName().toString().equals("package-info.java"))
+                    .filter(path -> !path.getFileName().toString().equals("module-info.java"))
+                    .toList();
+        }
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertTrue(compiler != null, "JDK compiler is required for Javadoc architecture checks");
+        List<String> offenders = new ArrayList<>();
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, Locale.ROOT, null)) {
+            Iterable<? extends JavaFileObject> units = fileManager.getJavaFileObjectsFromPaths(sources);
+            JavacTask task = (JavacTask) compiler.getTask(null, fileManager, null,
+                    List.of("-proc:none", "-Xlint:none"), null, units);
+            DocTrees docTrees = DocTrees.instance(task);
+            SourcePositions positions = docTrees.getSourcePositions();
+            for (CompilationUnitTree unit : task.parse()) {
+                new ProductionJavadocScanner(root, unit, docTrees, positions, offenders).scan(unit, null);
+            }
+        }
+        assertTrue(offenders.isEmpty(),
+                "Handwritten production boundaries require concrete Javadoc, offenders=" + offenders);
+    }
+
+    @Test
+    void handwrittenProductionPackagesHaveBilingualPackageDocumentation() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<String> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(this::isDocumentedProductionSource)
+                    .filter(path -> !path.getFileName().toString().equals("package-info.java"))
+                    .map(Path::getParent)
+                    .distinct()
+                    .filter(directory -> {
+                        Path packageInfo = directory.resolve("package-info.java");
+                        if (!Files.isRegularFile(packageInfo)) {
+                            return true;
+                        }
+                        try {
+                            String text = Files.readString(packageInfo);
+                            return !concretePackageContract(text);
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .map(directory -> root.relativize(directory).toString())
+                    .sorted()
+                    .toList();
+            assertTrue(offenders.isEmpty(),
+                    "Handwritten production packages require bilingual package-info.java, offenders=" + offenders);
+        }
+    }
+
+    private boolean concretePackageContract(String text) {
+        return text.contains("CN:")
+                && text.contains("EN:")
+                && text.length() >= 180
+                && containsAny(text, "负责", "职责", "边界", "responsibility", "owns", "boundary", "layer")
+                && containsAny(text, "输入", "读取", "接收", "消费", "调用", "input", "reads", "receives", "consumes", "calls")
+                && containsAny(text, "输出", "产生", "返回", "转换", "渲染", "output", "emits", "returns", "converts", "renders")
+                && containsAny(text, "上游", "下游", "交给", "串成", "upstream", "downstream", "through", "connects", "belongs")
+                && containsAny(text, "不", "禁止", "does not", "must not", "not in", "rather than");
+    }
+
+    private boolean containsAny(String text, String... fragments) {
+        String normalized = text.toLowerCase(Locale.ROOT);
+        for (String fragment : fragments) {
+            if (normalized.contains(fragment.toLowerCase(Locale.ROOT))) return true;
+        }
+        return false;
+    }
+
+    private boolean isDocumentedProductionSource(Path path) {
+        String value = path.toString();
+        return value.contains("/contracts/src/main/java/")
+                || value.contains("/core/src/main/java/")
+                || value.contains("/cli/src/main/java/")
+                || value.contains("/adaptor-mysql/src/main/java/")
+                || value.contains("/adaptor-postgres/src/main/java/")
+                || value.contains("/adaptor-oracle/src/main/java/")
+                || value.contains("/adaptor-sqlserver/src/main/java/");
+    }
+
     @Test
     void coreDoesNotRetainThePreMigrationAntlrSourceTree() {
         Path root = repoRoot();
@@ -730,7 +865,7 @@ class DialectGrammarArchitectureTest {
             assertTrue(text.contains(helper),
                     "FullGrammarEventFacade should delegate " + helper + " responsibilities");
         }
-        assertTrue(Files.readAllLines(sink).size() <= 400,
+        assertTrue(effectiveCodeLineCount(sink) <= 400,
                 "FullGrammarEventFacade must remain a thin facade");
         assertFalse(text.contains("new StructuredSqlEvent"),
                 "StructuredSqlEvent creation belongs in FullGrammarEventRecorder");
@@ -750,14 +885,8 @@ class DialectGrammarArchitectureTest {
                             || path.toString().contains("/routine/"))
                     .filter(path -> path.getFileName().toString().contains("Visitor")
                             || path.getFileName().toString().contains("Collector"))
-                    .filter(path -> {
-                        try {
-                            return Files.readAllLines(path).size() > 400;
-                        } catch (IOException exception) {
-                            throw new IllegalStateException(exception);
-                        }
-                    })
-                    .map(path -> root.relativize(path) + "=" + lineCount(path))
+                    .filter(path -> effectiveCodeLineCount(path) > 400)
+                    .map(path -> root.relativize(path) + "=" + effectiveCodeLineCount(path))
                     .toList();
             assertTrue(offenders.isEmpty(),
                     "Parser visitors/collectors must delegate focused responsibilities, offenders=" + offenders);
@@ -780,8 +909,8 @@ class DialectGrammarArchitectureTest {
                             .anyMatch(suffix -> path.getFileName().toString().endsWith(suffix)))
                     .filter(path -> !path.getFileName().toString().equals("package-info.java"))
                     .filter(path -> !isRecordDto(path))
-                    .filter(path -> lineCount(path) > 450)
-                    .map(path -> root.relativize(path) + "=" + lineCount(path))
+                    .filter(path -> effectiveCodeLineCount(path) > 450)
+                    .map(path -> root.relativize(path) + "=" + effectiveCodeLineCount(path))
                     .sorted()
                     .toList();
             assertTrue(offenders.isEmpty(),
@@ -795,7 +924,7 @@ class DialectGrammarArchitectureTest {
         Path orchestrator = script.resolve("StructuredScriptFramer.java");
         String text = Files.readString(orchestrator);
 
-        assertTrue(Files.readAllLines(orchestrator).size() <= 200,
+        assertTrue(effectiveCodeLineCount(orchestrator) <= 200,
                 "StructuredScriptFramer must remain a thin framing orchestrator");
         for (String method : List.of(
                 "splitMysql(", "splitPostgres(", "splitOracle(", "splitSqlServer(", "splitCommon(")) {
@@ -807,7 +936,7 @@ class DialectGrammarArchitectureTest {
                 "SqlServerScriptSlicePlanner", "CommonScriptSlicePlanner")) {
             Path source = script.resolve(planner + ".java");
             assertTrue(Files.isRegularFile(source), "Missing dialect planner " + planner);
-            assertTrue(Files.readAllLines(source).size() <= 250,
+            assertTrue(effectiveCodeLineCount(source) <= 250,
                     planner + " must remain focused");
         }
     }
@@ -827,7 +956,7 @@ class DialectGrammarArchitectureTest {
             assertTrue(text.contains(component),
                     "DerivedPathInferenceService should delegate to " + component);
         }
-        assertTrue(Files.readAllLines(service).size() <= 140,
+        assertTrue(effectiveCodeLineCount(service) <= 140,
                 "DerivedPathInferenceService must remain an orchestration facade");
     }
 
@@ -1112,9 +1241,33 @@ class DialectGrammarArchitectureTest {
         return count;
     }
 
-    private static long lineCount(Path path) {
+    private static long effectiveCodeLineCount(Path path) {
         try {
-            return Files.readAllLines(path).size();
+            long count = 0;
+            boolean inBlockComment = false;
+            for (String line : Files.readAllLines(path)) {
+                String remaining = line.strip();
+                while (!remaining.isEmpty()) {
+                    if (inBlockComment) {
+                        int end = remaining.indexOf("*/");
+                        if (end < 0) {
+                            remaining = "";
+                        } else {
+                            inBlockComment = false;
+                            remaining = remaining.substring(end + 2).stripLeading();
+                        }
+                    } else if (remaining.startsWith("//")) {
+                        remaining = "";
+                    } else if (remaining.startsWith("/*")) {
+                        inBlockComment = true;
+                        remaining = remaining.substring(2);
+                    } else {
+                        count++;
+                        remaining = "";
+                    }
+                }
+            }
+            return count;
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to count lines in " + path, exception);
         }
@@ -1218,6 +1371,113 @@ class DialectGrammarArchitectureTest {
             return lines <= 90 && text.contains("OracleFullGrammarParseTreeEventCollector");
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + path, e);
+        }
+    }
+
+    private static final class ProductionJavadocScanner extends TreePathScanner<Void, Void> {
+        private static final Set<String> ORCHESTRATION_SUFFIXES = Set.of(
+                "Engine", "Pipeline", "Service", "Collector", "Extractor", "Resolver", "Merger",
+                "Framer", "Analyzer", "Visitor", "Writer");
+
+        private final Path root;
+        private final CompilationUnitTree unit;
+        private final DocTrees docTrees;
+        private final SourcePositions positions;
+        private final List<String> offenders;
+        private final List<String> enclosingTypes = new ArrayList<>();
+
+        private ProductionJavadocScanner(Path root, CompilationUnitTree unit, DocTrees docTrees,
+                SourcePositions positions, List<String> offenders) {
+            this.root = root;
+            this.unit = unit;
+            this.docTrees = docTrees;
+            this.positions = positions;
+            this.offenders = offenders;
+        }
+
+        @Override
+        public Void visitClass(ClassTree node, Void unused) {
+            if (!node.getSimpleName().toString().isBlank()) {
+                boolean topLevel = enclosingTypes.isEmpty();
+                boolean publicBoundary = node.getModifiers().getFlags().contains(Modifier.PUBLIC)
+                        || node.getModifiers().getFlags().contains(Modifier.PROTECTED);
+                if (topLevel && publicBoundary && node.getKind() != com.sun.source.tree.Tree.Kind.RECORD) {
+                    requireConcrete(node.getSimpleName().toString(), getCurrentPath());
+                }
+                enclosingTypes.add(node.getSimpleName().toString());
+                try {
+                    return super.visitClass(node, unused);
+                } finally {
+                    enclosingTypes.remove(enclosingTypes.size() - 1);
+                }
+            }
+            return super.visitClass(node, unused);
+        }
+
+        @Override
+        public Void visitMethod(MethodTree node, Void unused) {
+            boolean criticalHelper = isOrchestrationType() && bodyLines(node) >= 60;
+            if (criticalHelper && !isOverride(node)) {
+                TreePath path = new TreePath(getCurrentPath(), node);
+                requireConcrete(node.getName().toString() + "()", path);
+            }
+            return super.visitMethod(node, unused);
+        }
+
+        private boolean isOrchestrationType() {
+            if (enclosingTypes.isEmpty()) return false;
+            String name = enclosingTypes.get(enclosingTypes.size() - 1);
+            return ORCHESTRATION_SUFFIXES.stream().anyMatch(name::endsWith);
+        }
+
+        private boolean isOverride(MethodTree node) {
+            return node.getModifiers().getAnnotations().stream()
+                    .anyMatch(annotation -> annotation.getAnnotationType().toString().endsWith("Override"));
+        }
+
+        private long bodyLines(MethodTree node) {
+            if (node.getBody() == null) return 0;
+            long start = positions.getStartPosition(unit, node.getBody());
+            long end = positions.getEndPosition(unit, node.getBody());
+            if (start < 0 || end < 0) return 0;
+            return unit.getLineMap().getLineNumber(end) - unit.getLineMap().getLineNumber(start) + 1;
+        }
+
+        private void requireBilingual(String symbol, TreePath path) {
+            String doc = docText(path);
+            if (!validSection(doc, "CN:") || !validSection(doc, "EN:")
+                    || doc.contains("TODO") || doc.contains("TBD")) {
+                long position = positions.getStartPosition(unit, path.getLeaf());
+                long line = position < 0 ? 0 : unit.getLineMap().getLineNumber(position);
+                Path file = Path.of(unit.getSourceFile().toUri());
+                offenders.add(root.relativize(file) + ":" + line + "#" + symbol);
+            }
+        }
+
+        private void requireConcrete(String symbol, TreePath path) {
+            String doc = docText(path);
+            String normalized = doc.replaceAll("[\\s*/<>{}@]", "");
+            boolean forbidden = FORBIDDEN_JAVADOC_TEMPLATES.stream().anyMatch(doc::contains);
+            if (normalized.length() < 24 || forbidden || doc.contains("TODO") || doc.contains("TBD")) {
+                long position = positions.getStartPosition(unit, path.getLeaf());
+                long line = position < 0 ? 0 : unit.getLineMap().getLineNumber(position);
+                Path file = Path.of(unit.getSourceFile().toUri());
+                offenders.add(root.relativize(file) + ":" + line + "#" + symbol);
+            }
+        }
+
+        private boolean validSection(String doc, String marker) {
+            int start = doc.indexOf(marker);
+            if (start < 0) return false;
+            int other = marker.equals("CN:") ? doc.indexOf("EN:", start + 3) : doc.length();
+            String section = doc.substring(start + marker.length(), other < 0 ? doc.length() : other)
+                    .replaceAll("[\\s*/<>{}@]", "");
+            return section.length() >= 8;
+        }
+
+        private String docText(TreePath path) {
+            var doc = docTrees.getDocCommentTree(path);
+            return doc == null ? "" : doc.toString();
         }
     }
 

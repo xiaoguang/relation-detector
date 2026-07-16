@@ -8,6 +8,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
+ *
  * Expression lineage summary shared by Oracle full-grammar version visitors.
  */
 public record OracleExpressionAnalysis(

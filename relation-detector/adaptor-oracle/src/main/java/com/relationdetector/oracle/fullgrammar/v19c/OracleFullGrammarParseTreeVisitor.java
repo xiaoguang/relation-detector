@@ -7,6 +7,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeEventCollector;
 
 /**
+ *
  * Oracle 19c generated-parser bridge to the shared full-grammar event collector.
  */
 public final class OracleFullGrammarParseTreeVisitor {

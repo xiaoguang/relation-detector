@@ -8,7 +8,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Stateless transform policy shared by version-specific MySQL context adapters. */
+/**
+ *
+ * Stateless transform policy shared by version-specific MySQL context adapters.
+ */
 public final class MySqlTransformSemantics {
     private MySqlTransformSemantics() {
     }

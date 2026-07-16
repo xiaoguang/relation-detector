@@ -18,10 +18,30 @@ import javax.sql.rowset.RowSetProvider;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
 
 class OracleLiveCollectorsTest {
+    @Test
+    void adaptorOwnsOraclePermissionVendorCodes() {
+        assertEquals(java.util.Set.of(1031), new OracleDatabaseAdaptor().permissionDeniedVendorCodes());
+    }
+
+    @Test
+    void nullObjectDefinitionProducesSafeWarning() {
+        List<com.relationdetector.contracts.model.WarningMessage> warnings = new ArrayList<>();
+
+        var objects = new OracleObjectCollector().collect(connection(true),
+                new ScanScope(null, "ERP", List.of(), List.of()), warnings::add);
+
+        assertTrue(objects.isEmpty());
+        assertEquals(1, warnings.size());
+        assertEquals(WarningType.LIVE_SOURCE_WARNING, warnings.get(0).type());
+        assertEquals("DEFINITION_UNAVAILABLE", warnings.get(0).code());
+        assertEquals("REBUILD_ORDERS", warnings.get(0).attributes().get("objectName"));
+    }
+
     @Test
     void collectsCatalogFactsForeignKeyAndObjectDefinition() throws Exception {
         Connection connection = connection();
@@ -56,24 +76,30 @@ class OracleLiveCollectorsTest {
     }
 
     private Connection connection() {
+        return connection(false);
+    }
+
+    private Connection connection(boolean nullObjectDdl) {
         return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {Connection.class},
                 (proxy, method, args) -> {
-                    if (method.getName().equals("prepareStatement")) return statement(String.valueOf(args[0]));
+                    if (method.getName().equals("prepareStatement")) {
+                        return statement(String.valueOf(args[0]), nullObjectDdl);
+                    }
                     if (method.getName().equals("getSchema")) return "ERP";
                     throw new UnsupportedOperationException(method.getName());
                 });
     }
 
-    private PreparedStatement statement(String sql) {
+    private PreparedStatement statement(String sql, boolean nullObjectDdl) {
         return (PreparedStatement) Proxy.newProxyInstance(getClass().getClassLoader(),
                 new Class<?>[] {PreparedStatement.class}, (proxy, method, args) -> {
                     if (method.getName().equals("setString") || method.getName().equals("close")) return null;
-                    if (method.getName().equals("executeQuery")) return rows(sql);
+                    if (method.getName().equals("executeQuery")) return rows(sql, nullObjectDdl);
                     throw new UnsupportedOperationException(method.getName());
                 });
     }
 
-    private java.sql.ResultSet rows(String sql) throws Exception {
+    private java.sql.ResultSet rows(String sql, boolean nullObjectDdl) throws Exception {
         if (sql.contains("ALL_TABLES")) return row(Map.of("OWNER", "ERP", "TABLE_NAME", "ORDERS"));
         if (sql.contains("ALL_TAB_COLUMNS")) return row(values(
                 "OWNER", "ERP", "TABLE_NAME", "ORDERS", "COLUMN_NAME", "USER_ID", "DATA_TYPE", "NUMBER",
@@ -87,7 +113,9 @@ class OracleLiveCollectorsTest {
                 "INDEX_TYPE", "NORMAL", "COLUMN_NAME", "USER_ID", "COLUMN_POSITION", 1));
         if (sql.contains("ALL_OBJECTS")) return row(values(
                 "OWNER", "ERP", "OBJECT_NAME", "REBUILD_ORDERS", "OBJECT_TYPE", "PROCEDURE"));
-        if (sql.contains("DBMS_METADATA.GET_DDL")) return row(Map.of("DDL", "CREATE PROCEDURE ERP.REBUILD_ORDERS AS BEGIN NULL; END;"));
+        if (sql.contains("DBMS_METADATA.GET_DDL")) {
+            return row(values("DDL", nullObjectDdl ? null : "CREATE PROCEDURE ERP.REBUILD_ORDERS AS BEGIN NULL; END;"));
+        }
         return row(Map.of());
     }
 

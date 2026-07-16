@@ -13,7 +13,10 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.identity.AliasSymbolTable;
 
-/** Builds projection anchors and physical alias inventory from typed events. */
+/**
+ *
+ * Builds projection anchors and physical alias inventory from typed events.
+ */
 final class ProjectionTraceInventory {
     private ProjectionTraceInventory() {
     }

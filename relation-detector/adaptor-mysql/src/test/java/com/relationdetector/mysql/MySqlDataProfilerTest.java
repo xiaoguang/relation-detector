@@ -1,6 +1,7 @@
 package com.relationdetector.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -24,16 +25,18 @@ import com.relationdetector.mysql.profile.MySqlDataProfiler;
 
 class MySqlDataProfilerTest {
     @Test
-    void emitsContainmentEvidenceFromBoundedAggregateQuery() {
+    void emitsContainmentEvidenceFromExactAggregateQuery() {
         StringBuilder sql = new StringBuilder();
-        Connection connection = connection(sql, 100, 99);
+        Connection connection = connection(sql, 120, 100, 99, 110);
         ProfileRequest request = new ProfileRequest(candidate(), DataProfileOptions.defaults()
                 .withMaxDistinctValues(50)
                 .withMinContainmentRatio(0.98d));
 
         var evidence = new MySqlDataProfiler().profile(connection, request).evidence();
 
-        assertTrue(sql.toString().contains("LIMIT 50"));
+        assertFalse(sql.toString().contains("LIMIT"));
+        assertTrue(sql.toString().contains("source_non_null_rows"));
+        assertTrue(sql.toString().contains("target_distinct"));
         assertEquals(EvidenceType.VALUE_CONTAINMENT_HIGH, evidence.get(0).type());
         assertEquals("0.99", evidence.get(0).attributes().get("containmentRatio"));
     }
@@ -46,11 +49,12 @@ class MySqlDataProfilerTest {
                 RelationSubType.PROFILE_SUPPORTED_FK);
     }
 
-    private Connection connection(StringBuilder sql, long sourceDistinct, long matchedDistinct) {
+    private Connection connection(StringBuilder sql, long sourceRows, long sourceDistinct,
+            long matchedDistinct, long targetDistinct) {
         return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Connection.class },
                 (proxy, method, args) -> {
                     if ("createStatement".equals(method.getName())) {
-                        return statement(sql, sourceDistinct, matchedDistinct);
+                        return statement(sql, sourceRows, sourceDistinct, matchedDistinct, targetDistinct);
                     }
                     if ("close".equals(method.getName())) {
                         return null;
@@ -59,7 +63,8 @@ class MySqlDataProfilerTest {
                 });
     }
 
-    private Statement statement(StringBuilder sql, long sourceDistinct, long matchedDistinct) {
+    private Statement statement(StringBuilder sql, long sourceRows, long sourceDistinct,
+            long matchedDistinct, long targetDistinct) {
         return (Statement) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Statement.class },
                 (proxy, method, args) -> {
                     if ("setQueryTimeout".equals(method.getName()) || "close".equals(method.getName())) {
@@ -67,13 +72,13 @@ class MySqlDataProfilerTest {
                     }
                     if ("executeQuery".equals(method.getName())) {
                         sql.append(String.valueOf(args[0]));
-                        return resultSet(sourceDistinct, matchedDistinct);
+                        return resultSet(sourceRows, sourceDistinct, matchedDistinct, targetDistinct);
                     }
                     throw new UnsupportedOperationException(method.getName());
                 });
     }
 
-    private ResultSet resultSet(long sourceDistinct, long matchedDistinct) {
+    private ResultSet resultSet(long sourceRows, long sourceDistinct, long matchedDistinct, long targetDistinct) {
         boolean[] next = { true };
         return (ResultSet) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { ResultSet.class },
                 (proxy, method, args) -> {
@@ -83,7 +88,13 @@ class MySqlDataProfilerTest {
                         return value;
                     }
                     if ("getLong".equals(method.getName())) {
-                        return "source_distinct".equals(args[0]) ? sourceDistinct : matchedDistinct;
+                        return switch (String.valueOf(args[0])) {
+                            case "source_non_null_rows" -> sourceRows;
+                            case "source_distinct" -> sourceDistinct;
+                            case "matched_distinct" -> matchedDistinct;
+                            case "target_distinct" -> targetDistinct;
+                            default -> throw new IllegalArgumentException(String.valueOf(args[0]));
+                        };
                     }
                     if ("close".equals(method.getName())) {
                         return null;

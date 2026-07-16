@@ -16,7 +16,10 @@ import com.relationdetector.core.identity.CanonicalEndpointKey;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 import com.relationdetector.core.identity.NamespaceContext;
 
-/** Scan-level DDL index, uniqueness and column observations keyed by exact endpoint identity. */
+/**
+ *
+ * Scan-level DDL index, uniqueness and column observations keyed by exact endpoint identity.
+ */
 public final class DdlEvidenceInventory {
     private final Map<CanonicalEndpointKey, List<Observation>> sourceIndexes = new LinkedHashMap<>();
     private final Map<CanonicalEndpointKey, List<Observation>> targetUnique = new LinkedHashMap<>();

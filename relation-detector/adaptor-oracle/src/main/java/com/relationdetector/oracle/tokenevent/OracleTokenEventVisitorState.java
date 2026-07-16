@@ -17,7 +17,10 @@ import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
-/** Per-parse state, routine scope and identifiers for Oracle token-event traversal. */
+/**
+ *
+ * Per-parse state, routine scope and identifiers for Oracle token-event traversal.
+ */
 abstract class OracleTokenEventVisitorState extends OracleRelationSqlBaseVisitor<Void> {
     protected final Map<String, LineageTransformType> functionExtensions = Map.of(
             "nvl", LineageTransformType.COALESCE,

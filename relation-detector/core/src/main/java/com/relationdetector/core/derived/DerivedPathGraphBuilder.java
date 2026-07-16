@@ -17,7 +17,10 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.scan.ScanConfig;
 
-/** Builds immutable adjacency once and enumerates bounded, cycle-free paths. */
+/**
+ *
+ * Builds immutable adjacency once and enumerates bounded, cycle-free paths.
+ */
 final class DerivedPathGraphBuilder {
     private final ScanConfig config;
 

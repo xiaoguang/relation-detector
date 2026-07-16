@@ -6,6 +6,7 @@ import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
+ *
  * Small base class for adaptors that expose grouped collector/parser/profiling
  * capabilities.
  *

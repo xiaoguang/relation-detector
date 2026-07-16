@@ -3,6 +3,7 @@ package com.relationdetector.contracts.spi;
 import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 
 /**
+ *
  * Bounded data profiling options resolved from runtime configuration.
  */
 public record DataProfileOptions(

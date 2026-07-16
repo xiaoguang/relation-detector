@@ -21,6 +21,7 @@ import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
+ *
  * Adds catalog metadata evidence to already-discovered column relationships.
  *
  * <p>This class is intentionally an enhancer, not a relationship generator.

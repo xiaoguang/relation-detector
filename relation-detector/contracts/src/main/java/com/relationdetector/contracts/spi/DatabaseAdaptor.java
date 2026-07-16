@@ -45,6 +45,16 @@ public interface DatabaseAdaptor {
         return scope;
     }
 
+    /**
+     * CN: 返回仅属于当前 JDBC 方言的权限拒绝 vendor code；共享诊断层不会隐式应用其他数据库的 code。
+     *
+     * <p>EN: Returns permission-denied vendor codes owned by this JDBC dialect; shared diagnostics never apply
+     * another database's codes implicitly.
+     */
+    default Set<Integer> permissionDeniedVendorCodes() {
+        return Set.of();
+    }
+
     AdaptorCollectors collectors();
 
     AdaptorParsers parsers();

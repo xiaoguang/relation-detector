@@ -9,7 +9,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Direct expression and selected-value analysis for MySQL token-event SQL. */
+/**
+ *
+ * Direct expression and selected-value analysis for MySQL token-event SQL.
+ */
 abstract class MySqlTokenEventExpressionSupport extends MySqlTokenEventVisitorState {
     MySqlTokenEventExpressionSupport(SqlStatementRecord statement) {
         super(statement);

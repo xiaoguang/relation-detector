@@ -7,7 +7,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.postgres.fullgrammar.common.PostgresSqlEventVisitorCore;
 import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.*;
 
-/** Emits PostgreSQL MERGE rowsets, predicates, and write mappings for v18 contexts. */
+/**
+ *
+ * Emits PostgreSQL MERGE rowsets, predicates, and write mappings for v18 contexts.
+ */
 final class PostgresMergeEventSupport {
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammarEventFacade sink;

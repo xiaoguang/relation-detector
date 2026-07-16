@@ -15,6 +15,11 @@ import com.relationdetector.core.script.ScriptLexeme;
 import com.relationdetector.core.script.ScriptLexemeKind;
 import com.relationdetector.core.script.StructuredScriptFramer;
 
+/**
+ * CN: 识别 SQL Server 独立行 GO、引号和注释并生成 batch statement records；不解析 T-SQL 结构或事实。
+ * EN: Frames SQL Server client scripts around standalone GO lines, quotes, and comments; it does not parse T-SQL
+ * structure or emit physical facts.
+ */
 public final class SqlServerScriptFramer implements DialectScriptFramer {
     @Override
     public ScriptFrameResult frame(ScriptFrameRequest request) {

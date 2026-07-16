@@ -11,7 +11,10 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** PostgreSQL operation and typed-role classification independent of source collection. */
+/**
+ *
+ * PostgreSQL operation and typed-role classification independent of source collection.
+ */
 final class PostgresTransformSupport {
     private final FullGrammarParseTreeAdapter adapter;
     private final DialectFunctionSemanticRegistry functions;

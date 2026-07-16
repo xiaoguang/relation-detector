@@ -2,7 +2,10 @@ package com.relationdetector.core.metadata;
 
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
 
-/** Defines when a multi-column index can support a single endpoint. */
+/**
+ *
+ * Defines when a multi-column index can support a single endpoint.
+ */
 public final class IndexEvidencePolicy {
     public boolean provesSingleColumnUnique(MetadataIndexFact index, String column) {
         return index != null

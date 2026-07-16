@@ -9,7 +9,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.mysql.fullgrammar.common.MySqlSqlEventVisitorCore.ColumnParts;
 
-/** Emits typed UPDATE locator controls without depending on a versioned parser. */
+/**
+ *
+ * Emits typed UPDATE locator controls without depending on a versioned parser.
+ */
 public final class MySqlUpdateControlSupport {
     private MySqlUpdateControlSupport() {
     }

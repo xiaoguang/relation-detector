@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
+ *
  * Shared Oracle DDL event post-processing.
  */
 public final class OracleDdlEventVisitorCore {

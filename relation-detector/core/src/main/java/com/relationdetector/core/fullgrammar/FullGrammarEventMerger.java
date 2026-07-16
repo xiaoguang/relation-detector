@@ -24,6 +24,7 @@ public final class FullGrammarEventMerger {
     }
 
     /**
+     *
      * Native events are deduplicated by a stable event key.
      */
     public static List<StructuredSqlEvent> merge(

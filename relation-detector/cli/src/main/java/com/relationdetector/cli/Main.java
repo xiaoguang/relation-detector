@@ -5,7 +5,10 @@ import java.nio.file.Path;
 import com.relationdetector.contracts.Enums.ErrorCode;
 import com.relationdetector.contracts.Enums.OutputFormat;
 
-/** CLI entry point. Kept dependency-free for the first implementation drop. */
+/**
+ *
+ * CLI entry point. Kept dependency-free for the first implementation drop.
+ */
 public final class Main {
     private Main() {
     }

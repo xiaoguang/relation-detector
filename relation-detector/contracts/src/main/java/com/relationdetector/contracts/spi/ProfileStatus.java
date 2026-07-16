@@ -1,6 +1,9 @@
 package com.relationdetector.contracts.spi;
 
-/** Outcome category for one bounded live data-profile query. */
+/**
+ *
+ * Outcome category for one bounded live data-profile query.
+ */
 public enum ProfileStatus {
     SUCCESS,
     NO_EVIDENCE,

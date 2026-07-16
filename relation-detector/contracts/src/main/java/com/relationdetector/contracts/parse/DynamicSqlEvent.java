@@ -2,7 +2,10 @@ package com.relationdetector.contracts.parse;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
-/** Dynamic SQL marker that cannot be resolved statically. */
+/**
+ *
+ * Dynamic SQL marker that cannot be resolved statically.
+ */
 public record DynamicSqlEvent(
         StructuredParseEventType type,
         SourceProvenance provenance,

@@ -3,6 +3,7 @@ package com.relationdetector.core.scan;
 import java.util.ArrayList;
 
 /**
+ *
  * Immutable runtime snapshot produced from the mutable YAML/CLI input DTO.
  * JDBC discovery creates a new snapshot and never mutates the caller's DTO.
  */

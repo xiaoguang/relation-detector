@@ -12,7 +12,10 @@ import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 
-/** Collects typed Oracle CASE and conjunction guards without owning SQL traversal. */
+/**
+ *
+ * Collects typed Oracle CASE and conjunction guards without owning SQL traversal.
+ */
 final class OracleConditionalPredicateSupport extends OracleFullGrammarParseTreeSupport {
     private final OracleFullGrammarExpressionSupport expressions;
 

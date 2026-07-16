@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
  * Shared MySQL full-grammar SQL parser lifecycle.
  */
 public abstract class AbstractMySqlFullGrammarStructuredSqlParser implements StructuredSqlParser {

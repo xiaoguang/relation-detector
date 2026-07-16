@@ -7,6 +7,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.sqlserver.fullgrammar.common.SqlServerFullGrammarSqlBinding;
 
+/** CN: 绑定 SQL Server 2016 generated parser 与共享 collector，不接受其他版本 context。 EN: Binds only the SQL Server 2016 generated parser to the shared collector. */
 public final class FullGrammarBinding implements SqlServerFullGrammarSqlBinding {
     @Override
     public ParsedTree parse(SqlStatementRecord statement) {

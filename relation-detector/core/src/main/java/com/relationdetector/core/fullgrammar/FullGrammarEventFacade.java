@@ -12,6 +12,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
 /**
+ *
  * Thin facade used by typed full-grammar visitors.
  *
  * <p>Traversal remains in dialect visitors. Per-parse helper instances own rowset,
@@ -244,7 +245,10 @@ public final class FullGrammarEventFacade {
         projectionEvents.projection(ctx, outputAlias, outputColumn, expression);
     }
 
-    /** Emits a typed direct-column projection after a dialect visitor resolves its query-local alias. */
+    /**
+     *
+     * Emits a typed direct-column projection after a dialect visitor resolves its query-local alias.
+     */
     public void directProjection(
             ParserRuleContext ctx,
             String outputAlias,
@@ -355,7 +359,10 @@ public final class FullGrammarEventFacade {
         return source.firstIdentifier(tree);
     }
 
-    /** Returns the output name only when the expression is a typed direct-column trace. */
+    /**
+     *
+     * Returns the output name only when the expression is a typed direct-column trace.
+     */
     public String directProjectedColumnName(ParseTree expression) {
         FullGrammarExpressionAnalysis analysis =
                 expressionAnalyzer.analyzeRelationColumnExpression(expression, "_projection");

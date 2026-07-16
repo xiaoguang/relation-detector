@@ -15,7 +15,10 @@ public final class Enums {
     private Enums() {
     }
 
-    /** Database selected by YAML database.type and used for adaptor matching. */
+    /**
+     *
+     * Database selected by YAML database.type and used for adaptor matching.
+     */
     public enum DatabaseType {
         COMMON,
         MYSQL,
@@ -24,13 +27,19 @@ public final class Enums {
         ORACLE
     }
 
-    /** User-facing output format selected by --format or output.format. */
+    /**
+     *
+     * User-facing output format selected by --format or output.format.
+     */
     public enum OutputFormat {
         JSON,
         TABLE
     }
 
-    /** Coarse final relationship class. */
+    /**
+     *
+     * Coarse final relationship class.
+     */
     public enum RelationType {
         /** A source column probably references a target primary/unique column. */
         FK_LIKE,
@@ -38,7 +47,10 @@ public final class Enums {
         CO_OCCURRENCE
     }
 
-    /** Main trust shape of a relationship after all evidence is merged. */
+    /**
+     *
+     * Main trust shape of a relationship after all evidence is merged.
+     */
     public enum RelationSubType {
         DECLARED_FK,
         DDL_DECLARED_FK,
@@ -50,13 +62,19 @@ public final class Enums {
         TABLE_CO_OCCURRENCE
     }
 
-    /** Field-level value flow category for Data Lineage output. */
+    /**
+     *
+     * Field-level value flow category for Data Lineage output.
+     */
     public enum LineageFlowKind {
         VALUE,
         CONTROL
     }
 
-    /** Coarse transform shape used to score and explain Data Lineage. */
+    /**
+     *
+     * Coarse transform shape used to score and explain Data Lineage.
+     */
     public enum LineageTransformType {
         DIRECT,
         AGGREGATE,
@@ -70,7 +88,10 @@ public final class Enums {
         UNKNOWN_EXPRESSION
     }
 
-    /** Individual evidence type used by the scoring model. */
+    /**
+     *
+     * Individual evidence type used by the scoring model.
+     */
     public enum EvidenceType {
         METADATA_FOREIGN_KEY,
         DDL_FOREIGN_KEY,
@@ -93,7 +114,10 @@ public final class Enums {
         REPEATED_OBSERVATION
     }
 
-    /** Where an evidence item came from; not the same as what the evidence says. */
+    /**
+     *
+     * Where an evidence item came from; not the same as what the evidence says.
+     */
     public enum EvidenceSourceType {
         METADATA,
         DDL_FILE,
@@ -106,13 +130,19 @@ public final class Enums {
         INFERENCE
     }
 
-    /** Derived path output family. */
+    /**
+     *
+     * Derived path output family.
+     */
     public enum DerivedPathKind {
         RELATIONSHIP,
         DATA_LINEAGE
     }
 
-    /** Source category for a SQL statement entering the parser. */
+    /**
+     *
+     * Source category for a SQL statement entering the parser.
+     */
     public enum StatementSourceType {
         DDL_FILE,
         PROCEDURE,
@@ -129,7 +159,10 @@ public final class Enums {
         PLAIN_SQL
     }
 
-    /** Persistent database object kinds that may contain relationship SQL. */
+    /**
+     *
+     * Persistent database object kinds that may contain relationship SQL.
+     */
     public enum DatabaseObjectType {
         PROCEDURE,
         FUNCTION,
@@ -142,7 +175,10 @@ public final class Enums {
         PACKAGE_BODY
     }
 
-    /** Structured parser event categories emitted before relationship scoring. */
+    /**
+     *
+     * Structured parser event categories emitted before relationship scoring.
+     */
     public enum StructuredParseEventType {
         TABLE_REFERENCE,
         COLUMN_EQUALITY,
@@ -169,7 +205,10 @@ public final class Enums {
         DYNAMIC_SQL
     }
 
-    /** Hint used by adaptors when extracting SQL from raw log files. */
+    /**
+     *
+     * Hint used by adaptors when extracting SQL from raw log files.
+     */
     public enum LogFormatHint {
         AUTO,
         PLAIN_SQL,
@@ -178,13 +217,19 @@ public final class Enums {
         POSTGRES_STATEMENT_LOG
     }
 
-    /** Completeness assertion for offline INSERT-derived data-profile samples. */
+    /**
+     *
+     * Completeness assertion for offline INSERT-derived data-profile samples.
+     */
     public enum OfflineSampleCompleteness {
         PARTIAL,
         COMPLETE
     }
 
-    /** Parser confidence about source -> target direction before final scoring. */
+    /**
+     *
+     * Parser confidence about source -> target direction before final scoring.
+     */
     public enum DirectionConfidence {
         CERTAIN,
         HIGH,
@@ -193,24 +238,34 @@ public final class Enums {
         AMBIGUOUS
     }
 
-    /** Non-fatal scan problem category. */
+    /**
+     *
+     * Non-fatal scan problem category.
+     */
     public enum WarningType {
         CONFIG_WARNING,
         PERMISSION_WARNING,
+        LIVE_SOURCE_WARNING,
         PARSE_WARNING,
         PROFILE_WARNING,
         AMBIGUOUS_RELATION_WARNING,
         ADAPTOR_CAPABILITY_WARNING
     }
 
-    /** Severity of a warning. ERROR severity does not always mean non-zero exit. */
+    /**
+     *
+     * Severity of a warning. ERROR severity does not always mean non-zero exit.
+     */
     public enum WarningSeverity {
         INFO,
         WARN,
         ERROR
     }
 
-    /** Stable CLI process exit codes. */
+    /**
+     *
+     * Stable CLI process exit codes.
+     */
     public enum ErrorCode {
         OK(0),
         CONFIG_FILE_ERROR(1),
@@ -234,7 +289,10 @@ public final class Enums {
         }
     }
 
-    /** Capabilities exposed by each database adaptor for configuration checks. */
+    /**
+     *
+     * Capabilities exposed by each database adaptor for configuration checks.
+     */
     public enum AdaptorCapability {
         METADATA,
         DDL_PARSING,
@@ -244,7 +302,10 @@ public final class Enums {
         EVIDENCE_WEIGHT_ADJUSTMENT
     }
 
-    /** Enabled scan source in YAML sources.*. */
+    /**
+     *
+     * Enabled scan source in YAML sources.*.
+     */
     public enum ScanSourceKind {
         METADATA,
         DDL,

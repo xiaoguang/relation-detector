@@ -7,7 +7,10 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Creates an embedded SQL statement from a typed outer-grammar context span. */
+/**
+ *
+ * Creates an embedded SQL statement from a typed outer-grammar context span.
+ */
 public final class PostgresRoutineStatementFactory {
     private PostgresRoutineStatementFactory() {
     }

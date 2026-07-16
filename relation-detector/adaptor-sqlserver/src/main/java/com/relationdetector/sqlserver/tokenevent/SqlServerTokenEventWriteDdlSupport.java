@@ -10,7 +10,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Projection, write mapping and DDL event traversal for SQL Server token-event SQL. */
+/**
+ *
+ * Projection, write mapping and DDL event traversal for SQL Server token-event SQL.
+ */
 abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExpressionSupport {
     SqlServerTokenEventWriteDdlSupport(SqlStatementRecord statement, boolean ddlOnly) {
         super(statement, ddlOnly);

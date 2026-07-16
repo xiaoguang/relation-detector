@@ -11,7 +11,10 @@ import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
-/** Typed traversal facade for the portable common token-event grammar. */
+/**
+ *
+ * Typed traversal facade for the portable common token-event grammar.
+ */
 public final class CommonTokenEventParseTreeVisitor extends CommonTokenEventWriteDdlSupport {
     public CommonTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         super(statement);

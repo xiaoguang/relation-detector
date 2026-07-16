@@ -1,6 +1,7 @@
 package com.relationdetector.core.profile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -31,7 +32,14 @@ class DataProfileEvidenceBuilderTest {
         Evidence containment = only(evidence, EvidenceType.VALUE_CONTAINMENT_HIGH);
         assertEquals("0.99", String.valueOf(containment.attributes().get("containmentRatio")));
         assertEquals(99L, containment.attributes().get("matchedDistinctSourceValues"));
-        assertEquals(100L, containment.attributes().get("sourceDistinctValuesSampled"));
+        assertEquals(100L, containment.attributes().get("sourceDistinctValues"));
+        assertEquals(120L, containment.attributes().get("sourceNonNullRows"));
+        assertEquals(100L, containment.attributes().get("targetDistinctValues"));
+        assertFalse(containment.attributes().containsKey("sourceDistinctValuesSampled"));
+        assertFalse(containment.attributes().containsKey("sourceNonNullRowsSampled"));
+        assertFalse(containment.attributes().containsKey("targetDistinctValuesSampled"));
+        assertFalse(containment.attributes().containsKey("sampleRows"));
+        assertFalse(containment.attributes().containsKey("maxDistinctValues"));
         assertEquals("LIVE_DATABASE", containment.attributes().get("profileMode"));
     }
 

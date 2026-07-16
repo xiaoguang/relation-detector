@@ -1,6 +1,9 @@
 package com.relationdetector.contracts.parse;
 
-/** Parser-event source location and object provenance. */
+/**
+ *
+ * Parser-event source location and object provenance.
+ */
 public record SourceProvenance(
         String sourceName,
         long line,
@@ -56,7 +59,10 @@ public record SourceProvenance(
                 tokenEventNative, fullGrammarNative, fullGrammarContextSource);
     }
 
-    /** Rebases parser-relative provenance onto the exact script statement slice. */
+    /**
+     *
+     * Rebases parser-relative provenance onto the exact script statement slice.
+     */
     public SourceProvenance rebase(SqlStatementRecord statement) {
         long absoluteLine = Math.max(1L, statement.startLine()) + Math.max(1L, line) - 1L;
         return new SourceProvenance(

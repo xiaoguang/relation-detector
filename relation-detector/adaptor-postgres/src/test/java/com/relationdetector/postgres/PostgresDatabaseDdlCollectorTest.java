@@ -28,12 +28,13 @@ class PostgresDatabaseDdlCollectorTest {
 
         assertEquals(1, definitions.size());
         DatabaseDdlDefinition ddl = definitions.get(0);
+        assertEquals("erp", ddl.catalog());
         assertEquals("public", ddl.schema());
         assertEquals("orders", ddl.name());
-        assertEquals("INFORMATION_SCHEMA", ddl.source());
+        assertEquals("POSTGRES_CATALOG_STRUCTURAL_DDL", ddl.source());
         assertTrue(ddl.ddl().contains("CREATE TABLE \"public\".\"orders\""));
         assertTrue(ddl.ddl().contains("CONSTRAINT \"orders_pkey\" PRIMARY KEY (\"id\")"));
-        assertTrue(ddl.ddl().contains("CONSTRAINT \"fk_orders_customers\" FOREIGN KEY (\"customer_id\") REFERENCES \"public\".\"customers\" (\"id\")"));
+        assertTrue(ddl.ddl().contains("CONSTRAINT \"fk_orders_customers\" FOREIGN KEY (\"tenant_id\", \"customer_id\") REFERENCES \"public\".\"customers\" (\"tenant_id\", \"id\")"));
     }
 
     private Connection connection() {
@@ -42,6 +43,7 @@ class PostgresDatabaseDdlCollectorTest {
                 new Class<?>[]{Connection.class},
                 (proxy, method, args) -> switch (method.getName()) {
                     case "prepareStatement" -> preparedStatement((String) args[0]);
+                    case "getCatalog" -> "erp";
                     case "close" -> null;
                     case "isClosed" -> false;
                     default -> throw new UnsupportedOperationException(method.getName());
@@ -69,14 +71,24 @@ class PostgresDatabaseDdlCollectorTest {
                     Map.of("COLUMN_NAME", "id", "DATA_TYPE", "bigint", "IS_NULLABLE", "NO"),
                     Map.of("COLUMN_NAME", "customer_id", "DATA_TYPE", "bigint", "IS_NULLABLE", "NO"));
         }
-        if (sql.contains("information_schema.table_constraints")) {
+        if (sql.contains("metadata_constraints")) {
             return List.of(
-                    Map.of("CONSTRAINT_NAME", "orders_pkey", "CONSTRAINT_TYPE", "PRIMARY KEY", "COLUMN_NAME", "id"),
-                    Map.of("CONSTRAINT_NAME", "fk_orders_customers", "CONSTRAINT_TYPE", "FOREIGN KEY",
-                            "COLUMN_NAME", "customer_id", "FOREIGN_TABLE_SCHEMA", "public",
-                            "FOREIGN_TABLE_NAME", "customers", "FOREIGN_COLUMN_NAME", "id"));
+                    constraintRow("orders_pkey", "PRIMARY KEY", "1", "id", "", "", ""),
+                    constraintRow("fk_orders_customers", "FOREIGN KEY", "2", "customer_id", "public", "customers", "id"),
+                    constraintRow("fk_orders_customers", "FOREIGN KEY", "1", "tenant_id", "public", "customers", "tenant_id"));
         }
         return List.of();
+    }
+
+    private Map<String, String> constraintRow(String name, String type, String position, String column,
+            String referencedSchema, String referencedTable, String referencedColumn) {
+        return Map.ofEntries(
+                Map.entry("SCHEMA_NAME", "public"), Map.entry("TABLE_NAME", "orders"),
+                Map.entry("CONSTRAINT_NAME", name), Map.entry("CONSTRAINT_TYPE", type),
+                Map.entry("POSITION", position), Map.entry("COLUMN_NAME", column),
+                Map.entry("REFERENCED_SCHEMA", referencedSchema), Map.entry("REFERENCED_TABLE", referencedTable),
+                Map.entry("REFERENCED_COLUMN", referencedColumn), Map.entry("UPDATE_RULE", "NO ACTION"),
+                Map.entry("DELETE_RULE", "NO ACTION"));
     }
 
     private ResultSet resultSet(List<Map<String, String>> rows) {
@@ -90,6 +102,7 @@ class PostgresDatabaseDdlCollectorTest {
                 (proxy, method, args) -> switch (method.getName()) {
                     case "next" -> ++cursor.index < rows.size();
                     case "getString" -> rows.get(cursor.index).get(String.valueOf(args[0]).toUpperCase());
+                    case "getInt" -> Integer.parseInt(rows.get(cursor.index).get(String.valueOf(args[0]).toUpperCase()));
                     case "close" -> null;
                     default -> throw new UnsupportedOperationException(method.getName());
                 });

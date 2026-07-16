@@ -3,7 +3,10 @@ package com.relationdetector.postgres.routine;
 import java.util.List;
 import java.util.Set;
 
-/** Typed PL/pgSQL shell output. Static SQL is parsed by the active SQL parser. */
+/**
+ *
+ * Typed PL/pgSQL shell output. Static SQL is parsed by the active SQL parser.
+ */
 public record PlPgSqlBodyStructure(
         List<StaticSqlStatement> staticStatements,
         List<Integer> dynamicSqlLines,

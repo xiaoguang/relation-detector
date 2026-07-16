@@ -61,6 +61,7 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
     }
 
     /**
+     *
      * 从结构化 SQL events 抽取 relationship 候选。
      *
      * <p>EN: Extracts relationship candidates from structured SQL events.
@@ -80,6 +81,12 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
         return deduplicate(candidates);
     }
 
+    /**
+     * CN: 在单一 typed statement scope 内解析别名和投影，并把等值、EXISTS、USING 与 IN 事件转换为关系候选；
+     * 本方法不运行命名规则，也不依据列名决定关系方向。
+     * EN: Resolves aliases and projections inside one typed statement scope and converts equality, EXISTS, USING,
+     * and IN events into candidates; it neither runs naming rules nor infers direction from identifier spelling.
+     */
     private List<RelationshipCandidate> extractFromEvents(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
         Set<String> ignoredRowsets = ignoredRowsets(statement, events);
         AliasIndex aliases = rowsetAliases(events, ignoredRowsets);

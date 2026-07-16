@@ -4,7 +4,10 @@ import java.util.stream.Collectors;
 
 import com.relationdetector.core.scan.ScanResult;
 
-/** Human-readable table writer for terminal use. */
+/**
+ *
+ * Human-readable table writer for terminal use.
+ */
 public final class TableResultWriter {
     public String write(ScanResult result) {
         if (result.relationships().isEmpty()) {

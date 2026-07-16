@@ -10,5 +10,10 @@
  * records from typed structural ANTLR grammar contexts and is the official
  * fallback when no full-grammar profile is selected. It owns structure extraction, not
  * FK-like direction, co-occurrence, lineage transform, or confidence semantics.
+ * <p>Responsibility: 提供 compact token-event parser 的公共 typed event helpers / Provides common token-event helpers.
+ * <p>Inputs: common/adaptor generated token-event contexts / Generated compact grammar contexts.
+ * <p>Outputs: parser-mode 独立的 StructuredSqlEvent records / Parser-mode-neutral structured events.
+ * <p>Upstream/Downstream: compact grammar 上游，core extractors 下游 / Between compact grammars and extractors.
+ * <p>Forbidden: 不调用 full-grammar parser 或以 raw SQL 补结构 / Must not call full grammar or scan raw SQL.
  */
 package com.relationdetector.core.tokenevent;

@@ -4,7 +4,10 @@ import java.util.Objects;
 
 import com.relationdetector.contracts.spi.ScanScope;
 
-/** Canonicalizes MySQL's database namespace onto the catalog axis. */
+/**
+ *
+ * Canonicalizes MySQL's database namespace onto the catalog axis.
+ */
 public final class MySqlCatalogScope {
     private MySqlCatalogScope() {
     }

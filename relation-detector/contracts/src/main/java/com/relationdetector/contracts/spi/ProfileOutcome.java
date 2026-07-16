@@ -5,7 +5,10 @@ import java.util.List;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.WarningMessage;
 
-/** Evidence and diagnostics produced by one live profiling request. */
+/**
+ *
+ * Evidence and diagnostics produced by one live profiling request.
+ */
 public record ProfileOutcome(
         ProfileStatus status,
         List<Evidence> evidence,

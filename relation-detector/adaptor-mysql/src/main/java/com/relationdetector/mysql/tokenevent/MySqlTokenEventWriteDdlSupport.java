@@ -10,7 +10,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Write/projection and DDL event traversal for MySQL token-event SQL. */
+/**
+ *
+ * Write/projection and DDL event traversal for MySQL token-event SQL.
+ */
 abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupport {
     MySqlTokenEventWriteDdlSupport(SqlStatementRecord statement) {
         super(statement);

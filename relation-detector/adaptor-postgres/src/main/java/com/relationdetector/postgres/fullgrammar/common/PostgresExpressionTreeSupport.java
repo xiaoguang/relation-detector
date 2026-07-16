@@ -6,7 +6,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 
-/** Locates PostgreSQL scalar and direct-scope typed contexts. */
+/**
+ *
+ * Locates PostgreSQL scalar and direct-scope typed contexts.
+ */
 final class PostgresExpressionTreeSupport {
     private final FullGrammarParseTreeAdapter adapter;
 

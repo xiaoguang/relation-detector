@@ -10,7 +10,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** VALUE/CONTROL and transform analysis for common token-event expressions. */
+/**
+ *
+ * VALUE/CONTROL and transform analysis for common token-event expressions.
+ */
 abstract class CommonTokenEventExpressionSupport extends CommonTokenEventVisitorState {
     CommonTokenEventExpressionSupport(SqlStatementRecord statement) {
         super(statement);

@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 /**
+ *
  * MySQL 8.0 generated grammar binding.
  */
 final class FullGrammarBinding implements MySqlFullGrammarSqlBinding, MySqlFullGrammarDdlBinding {

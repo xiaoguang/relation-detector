@@ -26,7 +26,10 @@ public record TableId(String catalog, String schema, String tableName, String no
         return new TableId(null, schema, tableName, normalized);
     }
 
-    /** Returns whether both values identify the same catalog-qualified table. */
+    /**
+     *
+     * Returns whether both values identify the same catalog-qualified table.
+     */
     public boolean sameIdentity(TableId other) {
         return other != null
                 && empty(catalog).equals(empty(other.catalog))

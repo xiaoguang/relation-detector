@@ -23,7 +23,10 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.postgres.common.PostgresSetProjectionLayout;
 
-/** Typed traversal facade for the PostgreSQL token-event structural grammar. */
+/**
+ *
+ * Typed traversal facade for the PostgreSQL token-event structural grammar.
+ */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEventWriteDdlSupport {
     private final boolean allowRoutineDispatch;
 

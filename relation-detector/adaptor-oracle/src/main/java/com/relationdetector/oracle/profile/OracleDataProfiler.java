@@ -7,13 +7,14 @@ import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.profile.DialectDataProfileQueryRenderer;
 import com.relationdetector.core.profile.IdentifierQuoter;
 import com.relationdetector.core.profile.JdbcDataProfilerTemplate;
-import com.relationdetector.core.profile.SqlExceptionClassifier;
 
-/** Conservative bounded Oracle data profiler. */
+/**
+ *
+ * Exact Oracle data profiler.
+ */
 public final class OracleDataProfiler implements DataProfiler {
     private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(
-            new OracleProfileQueryRenderer(),
-            SqlExceptionClassifier.withPermissionVendorCodes(1031));
+            new OracleProfileQueryRenderer(), 1031);
 
     @Override
     public ProfileOutcome profile(Connection connection, ProfileRequest request) {
@@ -31,23 +32,18 @@ public final class OracleDataProfiler implements DataProfiler {
         @Override
         public String render(ProfileRequest request) {
             return """
-                SELECT COUNT(*) AS source_distinct,
-                       COALESCE(SUM(CASE WHEN EXISTS (
-                           SELECT 1 FROM %s t WHERE t.%s = s.v
-                       ) THEN 1 ELSE 0 END), 0) AS matched_distinct
-                FROM (
-                    SELECT DISTINCT %s AS v
-                    FROM %s
-                    WHERE %s IS NOT NULL
-                    FETCH FIRST %d ROWS ONLY
-                ) s
+                SELECT (SELECT COUNT(*) FROM %1$s s WHERE s.%2$s IS NOT NULL) AS source_non_null_rows,
+                       (SELECT COUNT(DISTINCT s.%2$s) FROM %1$s s WHERE s.%2$s IS NOT NULL) AS source_distinct,
+                       (SELECT COUNT(DISTINCT s.%2$s) FROM %1$s s
+                          WHERE s.%2$s IS NOT NULL
+                            AND EXISTS (SELECT 1 FROM %3$s t WHERE t.%4$s = s.%2$s)) AS matched_distinct,
+                       (SELECT COUNT(DISTINCT t.%4$s) FROM %3$s t WHERE t.%4$s IS NOT NULL) AS target_distinct
+                FROM DUAL
                 """.formatted(
-                    QUOTER.table(request.candidate().target().table()),
-                    QUOTER.column(request.candidate().target().column()),
-                    QUOTER.column(request.candidate().source().column()),
                     QUOTER.table(request.candidate().source().table()),
                     QUOTER.column(request.candidate().source().column()),
-                    Math.min(request.options().maxDistinctValues(), request.options().sampleRows()));
+                    QUOTER.table(request.candidate().target().table()),
+                    QUOTER.column(request.candidate().target().column()));
         }
     }
 }

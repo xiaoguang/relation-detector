@@ -15,6 +15,11 @@ import com.relationdetector.core.script.ScriptLexeme;
 import com.relationdetector.core.script.ScriptLexemeKind;
 import com.relationdetector.core.script.StructuredScriptFramer;
 
+/**
+ * CN: 识别 PostgreSQL dollar-quoted bodies、普通引号和注释并生成精确 statement ranges；不解析 PL/pgSQL body。
+ * EN: Frames PostgreSQL scripts around dollar-quoted bodies, ordinary quotes, and comments with exact ranges;
+ * it does not parse PL/pgSQL bodies or SQL facts.
+ */
 public final class PostgresScriptFramer implements DialectScriptFramer {
     @Override
     public ScriptFrameResult frame(ScriptFrameRequest request) {

@@ -8,7 +8,10 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
-/** Typed traversal facade for the SQL Server token-event structural grammar. */
+/**
+ *
+ * Typed traversal facade for the SQL Server token-event structural grammar.
+ */
 public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEventWriteDdlSupport {
     public SqlServerTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         this(statement, false);

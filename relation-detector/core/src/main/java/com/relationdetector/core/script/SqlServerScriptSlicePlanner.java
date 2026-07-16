@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 
-/** Plans SQL Server GO batches and keeps routine/trigger bodies atomic. */
+/**
+ *
+ * Plans SQL Server GO batches and keeps routine/trigger bodies atomic.
+ */
 final class SqlServerScriptSlicePlanner extends ScriptFramingSupport implements ScriptSlicePlanner {
     @Override
     public List<Slice> plan(String text, List<ScriptLexeme> lexemes, List<Slice> markedSlices) {

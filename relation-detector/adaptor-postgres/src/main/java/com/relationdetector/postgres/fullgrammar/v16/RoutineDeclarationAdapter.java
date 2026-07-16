@@ -13,7 +13,10 @@ import com.relationdetector.postgres.routine.SqlAtomicBody;
 import com.relationdetector.postgres.routine.SqlStringBody;
 import com.relationdetector.postgres.routine.UnsupportedRoutineBody;
 
-/** Adapts the version-local generated routine declaration to the shared descriptor. */
+/**
+ *
+ * Adapts the version-local generated routine declaration to the shared descriptor.
+ */
 final class RoutineDeclarationAdapter {
     java.util.List<String> parameterNames(PostgresFullGrammarParser.CreatefunctionstmtContext declaration) {
         var list = declaration.func_args_with_defaults().func_args_with_defaults_list();

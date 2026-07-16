@@ -1,6 +1,9 @@
 package com.relationdetector.core.fullgrammar;
 
-/** Result of selecting a versioned SQL grammar profile. */
+/**
+ *
+ * Result of selecting a versioned SQL grammar profile.
+ */
 public record SqlGrammarProfileSelection(
         SqlGrammarProfile profile,
         boolean usedFallback,

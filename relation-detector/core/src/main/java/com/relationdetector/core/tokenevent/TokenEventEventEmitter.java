@@ -23,7 +23,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.WriteEvent;
 
-/** Shared strongly typed event emission helper for token-event visitors. */
+/**
+ *
+ * Shared strongly typed event emission helper for token-event visitors.
+ */
 public final class TokenEventEventEmitter {
     private final SqlStatementRecord statement;
     private final Predicate<StructuredParseEventType> typeFilter;

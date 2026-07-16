@@ -9,7 +9,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
-/** Column, scalar-subquery and CASE expression analysis for SQL Server token-event SQL. */
+/**
+ *
+ * Column, scalar-subquery and CASE expression analysis for SQL Server token-event SQL.
+ */
 abstract class SqlServerTokenEventExpressionSupport extends SqlServerTokenEventVisitorState {
     SqlServerTokenEventExpressionSupport(SqlStatementRecord statement, boolean ddlOnly) {
         super(statement, ddlOnly);

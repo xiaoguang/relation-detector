@@ -8,8 +8,10 @@ import java.util.Map;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.contracts.Enums.DatabaseObjectType;
 
 /**
+ *
  * Factory for operator-facing diagnostic warnings.
  *
  * <p>Design mapping: parse/extraction failures are not relationship evidence,
@@ -32,6 +34,7 @@ public final class DiagnosticWarnings {
     }
 
     /**
+     *
      * Builds a warning for a DDL file that could not be parsed by an adaptor.
      *
      * <p>The raw file text is retained when it can be read. If reading the file
@@ -53,6 +56,7 @@ public final class DiagnosticWarnings {
     }
 
     /**
+     *
      * Builds a warning for one SQL statement from a procedure/function/view,
      * trigger, native log, or plain SQL file that threw during relationship
      * parsing.
@@ -73,7 +77,10 @@ public final class DiagnosticWarnings {
                 ex.getMessage(), source, statement.startLine(), attributes);
     }
 
-    /** Builds a warning for a raw SQL/object file that could not be split into statements. */
+    /**
+     *
+     * Builds a warning for a raw SQL/object file that could not be split into statements.
+     */
     public static WarningMessage sqlFileExtractFailed(Path file, Exception ex) {
         Map<String, Object> attributes = exceptionAttributes(ex);
         readString(file).ifPresent(text -> attributes.put("rawStatement", text));
@@ -81,23 +88,131 @@ public final class DiagnosticWarnings {
                 ex.getMessage(), file.toString(), 0, attributes);
     }
 
-    /** Builds a warning for a database-native log file that could not be extracted. */
+    /**
+     *
+     * Builds a warning for a database-native log file that could not be extracted.
+     */
     public static WarningMessage logExtractFailed(Path file, Exception ex) {
         Map<String, Object> attributes = exceptionAttributes(ex);
         return WarningMessage.warn(WarningType.PARSE_WARNING, "LOG_EXTRACT_FAILED",
                 ex.getMessage(), file.toString(), 0, attributes);
     }
 
-    /** Builds a warning when database object definition collection partially fails. */
+    /**
+     *
+     * Builds a warning when database object definition collection partially fails.
+     */
     public static WarningMessage objectCollectFailed(String code, String source, Exception ex) {
-        return WarningMessage.warn(WarningType.PERMISSION_WARNING, code,
-                ex.getMessage(), source, 0, exceptionAttributes(ex));
+        return objectCollectFailed(code, source, ex, java.util.Set.of());
+    }
+
+    public static WarningMessage objectCollectFailed(
+            String code, String source, Exception ex, java.util.Set<Integer> permissionVendorCodes) {
+        return LiveDiagnosticSanitizer.jdbcWarning(code,
+                LiveDiagnosticSanitizer.Operation.OBJECT, source, ex, Map.of(), permissionVendorCodes);
+    }
+
+    /**
+     * CN: 构造带完整对象身份且不暴露 SQL 或驱动消息的 live object warning。
+     *
+     * <p>EN: Builds a live-object warning with object identity and without SQL or driver-message leakage.
+     */
+    public static WarningMessage objectCollectFailed(
+            String code,
+            String source,
+            Exception ex,
+            String catalog,
+            String schema,
+            String objectName,
+            DatabaseObjectType objectType
+    ) {
+        return objectCollectFailed(code, source, ex, catalog, schema, objectName, objectType, java.util.Set.of());
+    }
+
+    public static WarningMessage objectCollectFailed(
+            String code,
+            String source,
+            Exception ex,
+            String catalog,
+            String schema,
+            String objectName,
+            DatabaseObjectType objectType,
+            java.util.Set<Integer> permissionVendorCodes
+    ) {
+        Map<String, Object> context = new LinkedHashMap<>();
+        putIfPresent(context, "objectCatalog", catalog);
+        putIfPresent(context, "objectSchema", schema);
+        putIfPresent(context, "objectName", objectName);
+        if (objectType != null) {
+            context.put("objectType", objectType.name());
+        }
+        return LiveDiagnosticSanitizer.jdbcWarning(code,
+                LiveDiagnosticSanitizer.Operation.OBJECT, source, ex, context, permissionVendorCodes);
+    }
+
+    /** CN: 为缺少 SQL 声明的 live 对象构造统一 warning。EN: Warns when a live object has no declaration. */
+    public static WarningMessage objectDefinitionUnavailable(
+            String source,
+            String catalog,
+            String schema,
+            String objectName,
+            String objectType
+    ) {
+        return LiveDiagnosticSanitizer.definitionUnavailable(
+                LiveDiagnosticSanitizer.Operation.OBJECT, source,
+                objectContext(catalog, schema, objectName, objectType));
+    }
+
+    /**
+     *
+     * Builds a sanitized warning for live database DDL collection.
+     */
+    public static WarningMessage databaseDdlCollectFailed(String code, String source, Exception ex) {
+        return databaseDdlCollectFailed(code, source, ex, java.util.Set.of());
+    }
+
+    public static WarningMessage databaseDdlCollectFailed(
+            String code, String source, Exception ex, java.util.Set<Integer> permissionVendorCodes) {
+        return LiveDiagnosticSanitizer.jdbcWarning(code,
+                LiveDiagnosticSanitizer.Operation.DATABASE_DDL, source, ex, Map.of(), permissionVendorCodes);
+    }
+
+    /** CN: 为缺少表 DDL 的 live catalog 项构造统一 warning。EN: Warns when a live table has no DDL. */
+    public static WarningMessage databaseDdlDefinitionUnavailable(
+            String source,
+            String catalog,
+            String schema,
+            String objectName
+    ) {
+        return LiveDiagnosticSanitizer.definitionUnavailable(
+                LiveDiagnosticSanitizer.Operation.DATABASE_DDL, source,
+                objectContext(catalog, schema, objectName, "TABLE"));
+    }
+
+    private static Map<String, Object> objectContext(
+            String catalog,
+            String schema,
+            String objectName,
+            String objectType
+    ) {
+        Map<String, Object> context = new LinkedHashMap<>();
+        putIfPresent(context, "objectCatalog", catalog);
+        putIfPresent(context, "objectSchema", schema);
+        putIfPresent(context, "objectName", objectName);
+        putIfPresent(context, "objectType", objectType);
+        return context;
     }
 
     private static Map<String, Object> exceptionAttributes(Exception ex) {
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("exceptionClass", ex.getClass().getSimpleName());
         return attributes;
+    }
+
+    private static void putIfPresent(Map<String, Object> attributes, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            attributes.put(key, value);
+        }
     }
 
     private static java.util.Optional<String> readString(Path file) {

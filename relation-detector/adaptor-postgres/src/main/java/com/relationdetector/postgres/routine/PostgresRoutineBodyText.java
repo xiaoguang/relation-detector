@@ -1,5 +1,10 @@
 package com.relationdetector.postgres.routine;
 
+/**
+ * CN: 去除 outer grammar 已识别的 dollar quote 或 SQL string 外壳，返回 body 原文；不切分 statement 或推断语言。
+ * EN: Removes dollar-quote or SQL-string delimiters already identified by the outer grammar and returns body text;
+ * it neither frames statements nor infers the routine language.
+ */
 public final class PostgresRoutineBodyText {
     private PostgresRoutineBodyText() {
     }

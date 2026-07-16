@@ -5,7 +5,10 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
-/** Registers typed Oracle routine parameters and local variables. */
+/**
+ *
+ * Registers typed Oracle routine parameters and local variables.
+ */
 final class OracleRoutineSymbolCollector extends OracleFullGrammarParseTreeSupport {
     OracleRoutineSymbolCollector(
             OracleSqlEventVisitorCore core,

@@ -14,6 +14,12 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.postgres.script.PostgresScriptFramer;
 
+/**
+ * CN: 根据 outer grammar 已识别的 body 类型和 LANGUAGE，将 routine 分发给 PL/pgSQL shell 或当前模式 SQL parser；
+ * 不从 body 文本猜测语言，也不解析 dynamic EXECUTE 字符串。
+ * EN: Dispatches typed routine bodies by LANGUAGE to the PL/pgSQL shell or the current-mode SQL parser;
+ * it does not guess languages from body text or parse dynamic EXECUTE strings.
+ */
 public final class PostgresRoutineLanguageDispatcher {
     private final PlPgSqlBodyParser plPgSqlParser;
 

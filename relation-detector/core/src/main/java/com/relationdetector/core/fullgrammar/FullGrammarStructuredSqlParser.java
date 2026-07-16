@@ -9,6 +9,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 
 /**
+ *
  * Parser entry point for versioned full-grammar SQL profiles.
  *
  * <p>This class wraps the concrete profile parser and adds profile diagnostics.

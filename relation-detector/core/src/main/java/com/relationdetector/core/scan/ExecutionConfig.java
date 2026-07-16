@@ -1,6 +1,9 @@
 package com.relationdetector.core.scan;
 
-/** Immutable scan execution budget. */
+/**
+ *
+ * Immutable scan execution budget.
+ */
 public record ExecutionConfig(int parallelism) {
     public ExecutionConfig {
         if (parallelism <= 0) {

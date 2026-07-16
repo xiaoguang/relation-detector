@@ -4,7 +4,10 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 
-/** Immutable database identity, connection, and scan-scope configuration. */
+/**
+ *
+ * Immutable database identity, connection, and scan-scope configuration.
+ */
 public record DatabaseConfig(
         DatabaseType databaseType,
         String adaptorId,

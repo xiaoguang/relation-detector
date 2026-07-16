@@ -5,7 +5,10 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-/** Builds an embedded SQL fragment while preserving its original line layout. */
+/**
+ *
+ * Builds an embedded SQL fragment while preserving its original line layout.
+ */
 public final class PlPgSqlStaticSqlFragment {
     private PlPgSqlStaticSqlFragment() {
     }

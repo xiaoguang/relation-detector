@@ -6,7 +6,10 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
-/** Typed expression dependency trace attached to projection and write events. */
+/**
+ *
+ * Typed expression dependency trace attached to projection and write events.
+ */
 public record ExpressionTrace(
         List<ExpressionSource> sources,
         LineageFlowKind flowKind,

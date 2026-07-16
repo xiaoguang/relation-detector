@@ -2,7 +2,10 @@ package com.relationdetector.contracts.parse;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
-/** Foreign-key, index, unique-key, or column-inventory event. */
+/**
+ *
+ * Foreign-key, index, unique-key, or column-inventory event.
+ */
 public record DdlEvent(
         StructuredParseEventType type,
         SourceProvenance provenance,

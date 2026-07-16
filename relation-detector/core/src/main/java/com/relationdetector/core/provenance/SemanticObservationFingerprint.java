@@ -10,7 +10,10 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 
-/** Parser-neutral identity of one semantic relationship or lineage observation. */
+/**
+ *
+ * Parser-neutral identity of one semantic relationship or lineage observation.
+ */
 public record SemanticObservationFingerprint(
         String factKind,
         String sourceEndpoint,

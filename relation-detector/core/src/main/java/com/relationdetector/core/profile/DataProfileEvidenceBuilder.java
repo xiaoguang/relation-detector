@@ -14,27 +14,28 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.ProfileRequest;
 
 /**
+ *
  * Converts bounded profiling metrics into explainable evidence.
  */
 public final class DataProfileEvidenceBuilder {
     public List<Evidence> build(ProfileRequest request, DataProfileMetrics metrics, String sourceName) {
         if (request == null || metrics == null || metrics.queryTimedOut() || metrics.permissionDenied()
-                || metrics.sourceDistinctValuesSampled() <= 0) {
+                || metrics.sourceDistinctValues() <= 0) {
             return List.of();
         }
 
         List<Evidence> result = new ArrayList<>();
-        double containmentRatio = ratio(metrics.matchedDistinctSourceValues(), metrics.sourceDistinctValuesSampled());
+        double containmentRatio = ratio(metrics.matchedDistinctSourceValues(), metrics.sourceDistinctValues());
         double overlapRatio = ratio(metrics.matchedDistinctSourceValues(),
                 denominatorForOverlap(metrics));
-        double missingRatio = ratio(metrics.missingDistinctSourceValues(), metrics.sourceDistinctValuesSampled());
+        double missingRatio = ratio(metrics.missingDistinctSourceValues(), metrics.sourceDistinctValues());
 
-        if (metrics.sourceDistinctValuesSampled() >= request.options().minDistinctValues()
+        if (metrics.sourceDistinctValues() >= request.options().minDistinctValues()
                 && containmentRatio >= request.options().minContainmentRatio()) {
             result.add(evidence(EvidenceType.VALUE_CONTAINMENT_HIGH, DefaultEvidenceScores.VALUE_CONTAINMENT_HIGH,
                     sourceName, "source values are highly contained by target values",
                     attributes(request, metrics, containmentRatio, overlapRatio, missingRatio)));
-        } else if (metrics.sourceDistinctValuesSampled() >= request.options().minDistinctValues()
+        } else if (metrics.sourceDistinctValues() >= request.options().minDistinctValues()
                 && metrics.matchedDistinctSourceValues() > 0
                 && overlapRatio >= request.options().minOverlapRatio()) {
             result.add(evidence(EvidenceType.VALUE_OVERLAP_HIGH, DefaultEvidenceScores.VALUE_OVERLAP_HIGH,
@@ -43,8 +44,8 @@ public final class DataProfileEvidenceBuilder {
         }
 
         if (!metrics.partialSample()
-                && metrics.sourceDistinctValuesSampled() >= request.options().minDistinctValues()
-                && metrics.sourceNonNullRowsSampled() >= request.options().minRowsForNegative()
+                && metrics.sourceDistinctValues() >= request.options().minDistinctValues()
+                && metrics.sourceNonNullRows() >= request.options().minRowsForNegative()
                 && missingRatio >= request.options().maxMismatchRatio()) {
             result.add(evidence(EvidenceType.NEGATIVE_VALUE_MISMATCH,
                     DefaultEvidenceScores.NEGATIVE_VALUE_MISMATCH,
@@ -83,11 +84,13 @@ public final class DataProfileEvidenceBuilder {
         attributes.put("missingRatio", ratioText(missingRatio));
         attributes.put("matchedDistinctSourceValues", metrics.matchedDistinctSourceValues());
         attributes.put("missingDistinctSourceValues", metrics.missingDistinctSourceValues());
-        attributes.put("sourceDistinctValuesSampled", metrics.sourceDistinctValuesSampled());
-        attributes.put("sourceNonNullRowsSampled", metrics.sourceNonNullRowsSampled());
-        attributes.put("targetDistinctValuesSampled", metrics.targetDistinctValuesSampled());
-        attributes.put("sampleRows", request.options().sampleRows());
-        attributes.put("maxDistinctValues", request.options().maxDistinctValues());
+        attributes.put("sourceDistinctValues", metrics.sourceDistinctValues());
+        attributes.put("sourceNonNullRows", metrics.sourceNonNullRows());
+        attributes.put("targetDistinctValues", metrics.targetDistinctValues());
+        if (metrics.partialSample()) {
+            attributes.put("sampleRows", request.options().sampleRows());
+            attributes.put("maxDistinctValues", request.options().maxDistinctValues());
+        }
         attributes.put("minContainmentRatio", request.options().minContainmentRatio());
         attributes.put("minOverlapRatio", request.options().minOverlapRatio());
         attributes.put("maxMismatchRatio", request.options().maxMismatchRatio());
@@ -100,11 +103,11 @@ public final class DataProfileEvidenceBuilder {
     }
 
     private long denominatorForOverlap(DataProfileMetrics metrics) {
-        long target = metrics.targetDistinctValuesSampled();
+        long target = metrics.targetDistinctValues();
         if (target <= 0) {
-            return metrics.sourceDistinctValuesSampled();
+            return metrics.sourceDistinctValues();
         }
-        return Math.min(metrics.sourceDistinctValuesSampled(), target);
+        return Math.min(metrics.sourceDistinctValues(), target);
     }
 
     private double ratio(long numerator, long denominator) {

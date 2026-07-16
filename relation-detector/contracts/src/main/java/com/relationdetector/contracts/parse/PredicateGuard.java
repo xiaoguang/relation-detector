@@ -1,6 +1,9 @@
 package com.relationdetector.contracts.parse;
 
-/** Typed column-to-literal condition guarding a structural predicate. */
+/**
+ *
+ * Typed column-to-literal condition guarding a structural predicate.
+ */
 public record PredicateGuard(
         ExpressionSource discriminator,
         String operator,

@@ -40,6 +40,7 @@ public final class JsonResultWriter {
             .enable(SerializationFeature.INDENT_OUTPUT);
 
     /**
+     *
      * 将 ScanResult 渲染成最终 JSON 字符串。
      *
      * <p>EN: Renders ScanResult into the final JSON string.
@@ -49,6 +50,7 @@ public final class JsonResultWriter {
     }
 
     /**
+     *
      * 将 ScanResult 渲染成最终 JSON 字符串。
      *
      * <p>Observation counts are debug-only counters derived from rawEvidence.
@@ -67,6 +69,7 @@ public final class JsonResultWriter {
     }
 
     /**
+     *
      * Renders the direct-fact view of a completed scan without reparsing the input.
      */
     public String writeDirect(
@@ -110,6 +113,12 @@ public final class JsonResultWriter {
         }
     }
 
+    /**
+     * CN: 将已合并的扫描事实装配为稳定 JSON 树，并按调用参数选择 direct 或 direct+derived 视图；
+     * 本方法只序列化现有事实，不重新评分、推导或合并证据。
+     * EN: Assembles merged scan facts into a stable JSON tree and selects the direct or direct-plus-derived view;
+     * it serializes existing facts without rescoring, deriving, or merging evidence.
+     */
     private ObjectNode document(
             ScanResult result,
             boolean includeEvidence,
@@ -146,6 +155,9 @@ public final class JsonResultWriter {
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");
         database.put("type", safe(result.databaseType()));
+        if (result.catalog() != null && !result.catalog().isBlank()) {
+            database.put("catalog", result.catalog());
+        }
         database.put("schema", safe(result.schema()));
         root.put("generatedAt", String.valueOf(result.generatedAt()));
 

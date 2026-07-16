@@ -12,7 +12,10 @@ import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 
-/** SQL Server log extractor backed by plain SQL statement splitting. */
+/**
+ *
+ * SQL Server log extractor backed by plain SQL statement splitting.
+ */
 public final class SqlServerLogExtractor implements SqlLogExtractor {
     private final SqlServerScriptFramer scriptFramer;
 

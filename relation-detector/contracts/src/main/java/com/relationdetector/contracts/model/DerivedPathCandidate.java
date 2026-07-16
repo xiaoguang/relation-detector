@@ -9,6 +9,7 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
 
 /**
+ *
  * Inferred transitive path fact.
  *
  * <p>CN: 这是由已确认的 relationship / Data Lineage / naming evidence 图推导出来的

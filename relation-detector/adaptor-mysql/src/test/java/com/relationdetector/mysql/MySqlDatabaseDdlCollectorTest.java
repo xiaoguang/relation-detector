@@ -56,7 +56,8 @@ class MySqlDatabaseDdlCollectorTest {
         assertEquals("MYSQL_SHOW_CREATE_TABLE_FAILED", warning.code());
         assertEquals("users", warning.attributes().get("objectName"));
         assertEquals("TABLE", warning.attributes().get("objectType"));
-        assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("`shop`.`users`"));
+        assertFalse(warning.attributes().containsKey("rawStatement"));
+        assertFalse(warning.toString().contains("SHOW CREATE TABLE `shop`.`users`"));
     }
 
     private Connection connection(List<String> showCreateSql) {

@@ -12,7 +12,10 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
-/** Collects typed predicate events from direct-column and subquery traces. */
+/**
+ *
+ * Collects typed predicate events from direct-column and subquery traces.
+ */
 final class PredicateEventSink {
     private final SourceLocationSupport source;
     private final FullGrammarEventRecorder recorder;

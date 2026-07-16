@@ -2,7 +2,10 @@ package com.relationdetector.contracts.parse;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
-/** Write target or column assignment/mapping event. */
+/**
+ *
+ * Write target or column assignment/mapping event.
+ */
 public record WriteEvent(
         StructuredParseEventType type,
         SourceProvenance provenance,

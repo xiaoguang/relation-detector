@@ -9,13 +9,17 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
-import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.sqlserver.SqlServerCatalogResolver;
+import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
-/** Collects SQL Server module declarations from sys.sql_modules. */
+/**
+ *
+ * Collects SQL Server module declarations from sys.sql_modules.
+ */
 public final class SqlServerObjectCollector implements ObjectDefinitionCollector {
     @Override
     public List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope) {
@@ -26,7 +30,7 @@ public final class SqlServerObjectCollector implements ObjectDefinitionCollector
     public List<DatabaseObjectDefinition> collect(
             Connection connection, ScanScope scope, Consumer<WarningMessage> warnings) {
         String schema = scope.schema() == null || scope.schema().isBlank() ? "dbo" : scope.schema();
-        String catalog = catalog(connection, scope);
+        String catalog = SqlServerCatalogResolver.resolve(connection, scope);
         String sql = """
                 SELECT s.name AS schema_name, o.name AS object_name, o.type AS object_type, m.definition
                 FROM sys.objects o JOIN sys.schemas s ON s.schema_id=o.schema_id
@@ -43,10 +47,9 @@ public final class SqlServerObjectCollector implements ObjectDefinitionCollector
                     String name = rs.getString("object_name");
                     String definition = rs.getString("definition");
                     if (definition == null || definition.isBlank()) {
-                        warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                                "SQLSERVER_OBJECT_DEFINITION_UNAVAILABLE",
-                                "module definition is unavailable; VIEW DEFINITION permission may be required",
-                                objectSchema + "." + name, 0));
+                        warnings.accept(DiagnosticWarnings.objectDefinitionUnavailable(
+                                "sys.sql_modules", catalog, objectSchema, name,
+                                type(rs.getString("object_type")).name()));
                         continue;
                     }
                     result.add(new DatabaseObjectDefinition(type(rs.getString("object_type")), catalog,
@@ -54,8 +57,9 @@ public final class SqlServerObjectCollector implements ObjectDefinitionCollector
                 }
             }
         } catch (Exception ex) {
-            warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "SQLSERVER_OBJECT_LIST_FAILED", ex.getMessage(), "sys.sql_modules", 0));
+            warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                    "SQLSERVER_OBJECT_LIST_FAILED", "sys.sql_modules", ex,
+                    com.relationdetector.sqlserver.SqlServerDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
         }
         return result.stream().sorted(Comparator.comparing(DatabaseObjectDefinition::schema)
                 .thenComparing(value -> value.type().name()).thenComparing(DatabaseObjectDefinition::name)).toList();
@@ -71,8 +75,4 @@ public final class SqlServerObjectCollector implements ObjectDefinitionCollector
         };
     }
 
-    private String catalog(Connection connection, ScanScope scope) {
-        if (scope.catalog() != null && !scope.catalog().isBlank()) return scope.catalog();
-        try { return connection.getCatalog(); } catch (Exception ignored) { return null; }
-    }
 }

@@ -1,6 +1,7 @@
 package com.relationdetector.postgres;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -23,16 +24,17 @@ import com.relationdetector.postgres.profile.PostgresDataProfiler;
 
 class PostgresDataProfilerTest {
     @Test
-    void emitsNegativeMismatchEvidenceFromBoundedAggregateQuery() {
+    void emitsNegativeMismatchEvidenceFromExactAggregateQuery() {
         StringBuilder sql = new StringBuilder();
         var evidence = new PostgresDataProfiler().profile(
-                connection(sql, 100, 20),
+                connection(sql, 200, 100, 20, 150),
                 new ProfileRequest(candidate(), DataProfileOptions.defaults()
                         .withMaxDistinctValues(40)
                         .withMinRowsForNegative(50)
                         .withMaxMismatchRatio(0.50d))).evidence();
 
-        assertTrue(sql.toString().contains("LIMIT 40"));
+        assertFalse(sql.toString().contains("LIMIT"));
+        assertTrue(sql.toString().contains("target_distinct"));
         assertEquals(EvidenceType.NEGATIVE_VALUE_MISMATCH, evidence.get(0).type());
         assertEquals("0.8", evidence.get(0).attributes().get("missingRatio"));
     }
@@ -45,25 +47,27 @@ class PostgresDataProfilerTest {
                 RelationSubType.PROFILE_SUPPORTED_FK);
     }
 
-    private Connection connection(StringBuilder sql, long sourceDistinct, long matchedDistinct) {
+    private Connection connection(StringBuilder sql, long sourceRows, long sourceDistinct,
+            long matchedDistinct, long targetDistinct) {
         return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Connection.class },
                 (proxy, method, args) -> "createStatement".equals(method.getName())
-                        ? statement(sql, sourceDistinct, matchedDistinct)
+                        ? statement(sql, sourceRows, sourceDistinct, matchedDistinct, targetDistinct)
                         : null);
     }
 
-    private Statement statement(StringBuilder sql, long sourceDistinct, long matchedDistinct) {
+    private Statement statement(StringBuilder sql, long sourceRows, long sourceDistinct,
+            long matchedDistinct, long targetDistinct) {
         return (Statement) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Statement.class },
                 (proxy, method, args) -> {
                     if ("executeQuery".equals(method.getName())) {
                         sql.append(String.valueOf(args[0]));
-                        return resultSet(sourceDistinct, matchedDistinct);
+                        return resultSet(sourceRows, sourceDistinct, matchedDistinct, targetDistinct);
                     }
                     return null;
                 });
     }
 
-    private ResultSet resultSet(long sourceDistinct, long matchedDistinct) {
+    private ResultSet resultSet(long sourceRows, long sourceDistinct, long matchedDistinct, long targetDistinct) {
         boolean[] next = { true };
         return (ResultSet) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { ResultSet.class },
                 (proxy, method, args) -> {
@@ -73,7 +77,13 @@ class PostgresDataProfilerTest {
                         return value;
                     }
                     if ("getLong".equals(method.getName())) {
-                        return "source_distinct".equals(args[0]) ? sourceDistinct : matchedDistinct;
+                        return switch (String.valueOf(args[0])) {
+                            case "source_non_null_rows" -> sourceRows;
+                            case "source_distinct" -> sourceDistinct;
+                            case "matched_distinct" -> matchedDistinct;
+                            case "target_distinct" -> targetDistinct;
+                            default -> throw new IllegalArgumentException(String.valueOf(args[0]));
+                        };
                     }
                     return null;
                 });

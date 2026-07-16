@@ -55,8 +55,8 @@ filters:
     - users
     - audit_logs
   excludeTables:
-    - tmp_*
-    - archive_*
+    - tmp_orders
+    - archive_orders
 
 sources:
   metadata:
@@ -157,10 +157,13 @@ derivedPaths:
 - `sampleRows`、`timeoutSeconds` 必须为正数。
 
 MySQL namespace兼容说明：live collector内部把database统一规范到catalog轴；旧
-`database.schema`只作为输入兼容回退。当前顶层JSON的`database`对象为保持既有schema仍只包含
-`type/schema`，尚无`catalog`字段，因此catalog-only配置的顶层`database.schema`为空；完整catalog
-身份保存在relationship/lineage/naming endpoint的`table`显示值中。不得用顶层`schema`反推MySQL
-canonical database。
+`database.schema`只作为输入兼容回退。顶层JSON的`database`对象在catalog非空时增加可选
+`catalog`，并始终保留legacy `schema`。catalog-only配置因此输出`catalog=<database>`和空schema；
+endpoint与scan summary使用同一canonical database。
+
+`filters.includeTables` / `filters.excludeTables` 当前是精确物理表名列表，adaptor 只做
+大小写/引用符规范化后的 exact match。`tmp_*` 之类 glob 只适用于文件路径
+`paths + include`，不适用于 live table filter。
 
 ## JSON 输出
 
@@ -170,6 +173,7 @@ canonical database。
 {
   "database": {
     "type": "mysql",
+    "catalog": "sample_data",
     "schema": ""
   },
   "generatedAt": "2026-06-14T00:00:00Z",
@@ -447,11 +451,18 @@ warning 字段：
 - “没有识别出关系”不一定是解析失败。例如一条纯过滤 SQL 没有 JOIN/IN/EXISTS 关系时，可以没有 warning。
 - warning 不产生 evidence，也不参与 confidence 计算；它只告诉运维人员哪些输入没有被完整消费。
 - `rawStatement` 可能很长，适合用于审计和排错；后续如果输出体积成为问题，可以新增截断策略，但默认必须优先保留可诊断性。
-- 上述 parser warning 的 `rawStatement` 是显式审计选择，不能推广到 JDBC/live collector warning。当前
-  data profiler 已使用固定安全消息并去除 rendered SQL/driver message；但 `ScanEngine` 的连接失败以及
-  部分 metadata/object/database-DDL collector 仍直接携带 `SQLException.getMessage()`，连接失败的
-  `source` 还使用原始 JDBC URL。因而“所有 live warning 已统一脱敏”尚未完成，部署时不得在 JDBC URL
-  中嵌入密码，后续应由统一 live-diagnostic sanitizer 收口。
+- 上述 parser warning 的 `rawStatement` 是显式审计选择，不能推广到 JDBC/live collector warning。
+  connection、metadata、object、database-DDL 和 data profiler failure 统一通过
+  `LiveDiagnosticSanitizer` 输出固定消息、SQLState、vendor code、exception class及白名单对象/endpoint
+  上下文；不得输出 JDBC URL、rendered SQL、driver message、连接参数或业务值。
+- live object/database-DDL collector 和 `SourceCollectorPipeline` 都必须在 parser 前拒绝 null/blank
+  definition。能取得对象身份时，输出 `LIVE_SOURCE_WARNING` / `DEFINITION_UNAVAILABLE`
+  以及 catalog/schema/name/type；第三方 collector 如果返回 null 元素或 null list，pipeline
+  也必须产生安全 warning，不得静默丢弃或调用下游 parser。
+- profiler 与普通 metadata/object/database-DDL collector 共用 `JdbcExceptionClassifier`的标准
+  timeout、SQLState permission 和 query-failure 分类。Oracle 1031、SQL Server 229/916 必须由
+  对应 adaptor 的调用边界传入，不能在共享 classifier 默认应用到其它方言。
+  `LiveDiagnosticSanitizer` 统一输出固定消息及 SQLState/vendorCode/exceptionClass，不保留原始异常文本。
 
 严重程度：
 

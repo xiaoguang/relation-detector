@@ -14,6 +14,11 @@ import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlParser;
 
+/**
+ * CN: 用 compact SQL Server grammar 解析单条 framed T-SQL，并由 token-event visitor 产生 typed SQL events；不负责 framing 或事实合并。
+ * EN: Parses one framed T-SQL statement with the compact grammar and emits typed events through the token-event visitor;
+ * it does not frame scripts or merge facts.
+ */
 public final class SqlServerTokenEventStructuredSqlParser
         extends TypedDialectTokenEventStructuredSqlParser<SqlServerRelationSqlParser.Tsql_fileContext> {
     public SqlServerTokenEventStructuredSqlParser() {

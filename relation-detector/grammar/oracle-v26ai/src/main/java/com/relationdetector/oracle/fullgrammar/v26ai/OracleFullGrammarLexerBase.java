@@ -2,6 +2,7 @@ package com.relationdetector.oracle.fullgrammar.v26ai;
 
 import org.antlr.v4.runtime.*;
 
+/** CN: 为 Oracle 26ai generated lexer 提供换行位置谓词，不解释 SQL 语义。 EN: Supplies lexer predicates only. */
 public abstract class OracleFullGrammarLexerBase extends Lexer
 {
     public OracleFullGrammarLexerBase(CharStream input)

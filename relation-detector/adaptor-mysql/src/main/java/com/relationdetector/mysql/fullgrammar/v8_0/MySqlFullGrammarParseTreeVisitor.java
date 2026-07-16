@@ -37,7 +37,10 @@ import com.relationdetector.mysql.fullgrammar.v8_0.MySqlFullGrammarParserBaseVis
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/** MySQL 8.0 typed parse-tree traversal; shared fact semantics remain in core. */
+/**
+ *
+ * MySQL 8.0 typed parse-tree traversal; shared fact semantics remain in core.
+ */
 final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseVisitor<Void> {
     private final FullGrammarEventFacade sink;
     private final MySqlSqlEventVisitorCore core;

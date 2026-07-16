@@ -15,7 +15,10 @@ import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
 
-/** Deduplicates field-level lineage without touching relationship confidence. */
+/**
+ *
+ * Deduplicates field-level lineage without touching relationship confidence.
+ */
 public final class DataLineageMerger {
     private static final Set<String> SUMMARY_ATTRIBUTE_KEYS = Set.of(
             "occurrenceCount", "count", "firstDetail", "lastDetail", "sampleDetails", "sampleTruncated");

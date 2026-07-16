@@ -13,6 +13,7 @@ import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
+ *
  * Scan-level evidence enhancement shared by production scans and correctness.
  */
 public final class EvidenceEnhancementService {

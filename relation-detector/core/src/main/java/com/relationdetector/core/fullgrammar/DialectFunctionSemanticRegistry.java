@@ -6,7 +6,10 @@ import java.util.Map;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
-/** Immutable dialect function semantics keyed by exact parsed function symbols. */
+/**
+ *
+ * Immutable dialect function semantics keyed by exact parsed function symbols.
+ */
 public final class DialectFunctionSemanticRegistry {
     private static final Map<String, LineageTransformType> STANDARD = Map.ofEntries(
             Map.entry("sum", LineageTransformType.AGGREGATE),

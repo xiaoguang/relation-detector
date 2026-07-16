@@ -1,6 +1,9 @@
 package com.relationdetector.core.script;
 
-/** Structural token classes needed only for client-script framing. */
+/**
+ *
+ * Structural token classes needed only for client-script framing.
+ */
 public enum ScriptLexemeKind {
     WORD,
     QUOTED,

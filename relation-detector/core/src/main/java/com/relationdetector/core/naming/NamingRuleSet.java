@@ -5,6 +5,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * CN: 保存一次 scan 使用的不可变 naming rule 集合，并在构造时拒绝重复 rule id；不负责读取配置或执行匹配。
+ * EN: Holds the immutable naming-rule set for one scan and rejects duplicate rule identifiers at construction time;
+ * it neither loads configuration nor evaluates endpoint matches.
+ */
 public final class NamingRuleSet {
     private static final NamingRuleSet SYSTEM_DEFAULT =
             new NamingRuleConfigLoader().loadSystemDefault();

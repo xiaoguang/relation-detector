@@ -20,7 +20,10 @@ import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.T
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.Target_labelContext;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.Target_starContext;
 
-/** Coordinates PostgreSQL set-operation projection layout for the v16 typed contexts. */
+/**
+ *
+ * Coordinates PostgreSQL set-operation projection layout for the v16 typed contexts.
+ */
 final class PostgresSetProjectionSupport {
     private final SqlStatementRecord statement;
     private final FullGrammarEventFacade sink;

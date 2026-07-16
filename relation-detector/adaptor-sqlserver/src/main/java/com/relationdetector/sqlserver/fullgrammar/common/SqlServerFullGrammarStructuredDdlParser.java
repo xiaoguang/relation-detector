@@ -15,6 +15,11 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
 
+/**
+ * CN: 通过选定 SQL Server version binding 解析 DDL 并产生 typed DDL events；不读取 live catalog 或增强 relationship。
+ * EN: Parses DDL through the selected SQL Server version binding and emits typed DDL events; it neither reads the
+ * live catalog nor enhances relationships.
+ */
 public final class SqlServerFullGrammarStructuredDdlParser implements StructuredDdlParser {
     private final SqlGrammarProfile profile;
     private final SqlServerFullGrammarSqlBinding binding;

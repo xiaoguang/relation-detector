@@ -2,7 +2,10 @@ package com.relationdetector.postgres.common;
 
 import java.util.List;
 
-/** Canonical ordinal layout shared by typed PostgreSQL set-operation visitors. */
+/**
+ *
+ * Canonical ordinal layout shared by typed PostgreSQL set-operation visitors.
+ */
 public record PostgresSetProjectionLayout(List<String> columns, boolean arityMatches) {
     public PostgresSetProjectionLayout {
         columns = columns == null ? List.of() : List.copyOf(columns);

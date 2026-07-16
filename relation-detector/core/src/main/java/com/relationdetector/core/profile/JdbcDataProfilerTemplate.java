@@ -3,7 +3,6 @@ package com.relationdetector.core.profile;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
 import java.sql.Statement;
 import java.util.List;
 
@@ -14,25 +13,29 @@ import com.relationdetector.contracts.spi.Collectors.DataProfiler;
 import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.spi.ProfileStatus;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
+import com.relationdetector.core.diagnostics.JdbcExceptionClassifier;
+import com.relationdetector.core.diagnostics.JdbcFailureKind;
 
 /**
- * Shared bounded JDBC profiler. Dialect classes only render SQL.
+ *
+ * Shared exact JDBC profiler. Dialect classes only render SQL.
  */
 public final class JdbcDataProfilerTemplate implements DataProfiler {
     private final DialectDataProfileQueryRenderer renderer;
-    private final SqlExceptionClassifier exceptionClassifier;
+    private final int[] permissionVendorCodes;
     private final DataProfileEvidenceBuilder evidenceBuilder = new DataProfileEvidenceBuilder();
 
     public JdbcDataProfilerTemplate(DialectDataProfileQueryRenderer renderer) {
-        this(renderer, SqlExceptionClassifier.standard());
+        this(renderer, new int[0]);
     }
 
     public JdbcDataProfilerTemplate(
             DialectDataProfileQueryRenderer renderer,
-            SqlExceptionClassifier exceptionClassifier
+            int... permissionVendorCodes
     ) {
         this.renderer = java.util.Objects.requireNonNull(renderer, "renderer");
-        this.exceptionClassifier = java.util.Objects.requireNonNull(exceptionClassifier, "exceptionClassifier");
+        this.permissionVendorCodes = permissionVendorCodes == null ? new int[0] : permissionVendorCodes.clone();
     }
 
     @Override
@@ -48,14 +51,13 @@ public final class JdbcDataProfilerTemplate implements DataProfiler {
                     return ProfileOutcome.success(evidenceBuilder.build(request, metrics(rs), renderer.sourceName()));
                 }
             }
-        } catch (SQLTimeoutException ex) {
-            return failure(ProfileStatus.TIMEOUT, "PROFILE_QUERY_TIMEOUT", ex, request);
         } catch (SQLException ex) {
-            ProfileStatus status = exceptionClassifier.classify(ex);
-            if (status == ProfileStatus.PERMISSION_DENIED) {
-                return failure(ProfileStatus.PERMISSION_DENIED, "PROFILE_PERMISSION_DENIED", ex, request);
-            }
-            return failure(ProfileStatus.QUERY_FAILED, "PROFILE_QUERY_FAILED", ex, request);
+            JdbcFailureKind kind = JdbcExceptionClassifier.classify(ex, permissionVendorCodes);
+            return switch (kind) {
+                case TIMEOUT -> failure(ProfileStatus.TIMEOUT, "PROFILE_QUERY_TIMEOUT", ex, request);
+                case PERMISSION -> failure(ProfileStatus.PERMISSION_DENIED, "PROFILE_PERMISSION_DENIED", ex, request);
+                case QUERY_FAILED -> failure(ProfileStatus.QUERY_FAILED, "PROFILE_QUERY_FAILED", ex, request);
+            };
         }
         return new ProfileOutcome(ProfileStatus.NO_EVIDENCE, List.of(), List.of());
     }
@@ -66,34 +68,26 @@ public final class JdbcDataProfilerTemplate implements DataProfiler {
             SQLException failure,
             ProfileRequest request
     ) {
-        WarningMessage warning = WarningMessage.warn(
-                WarningType.PROFILE_WARNING,
-                code,
-                safeMessage(status),
-                renderer.sourceName(),
-                0,
+        LiveDiagnosticSanitizer.Operation operation = switch (status) {
+            case TIMEOUT -> LiveDiagnosticSanitizer.Operation.PROFILE_TIMEOUT;
+            case PERMISSION_DENIED -> LiveDiagnosticSanitizer.Operation.PROFILE_PERMISSION;
+            default -> LiveDiagnosticSanitizer.Operation.PROFILE_QUERY;
+        };
+        WarningMessage warning = LiveDiagnosticSanitizer.warning(
+                WarningType.PROFILE_WARNING, code, operation, renderer.sourceName(), failure,
                 java.util.Map.of(
                         "sourceEndpoint", request.candidate().source().normalizedKey(),
                         "targetEndpoint", request.candidate().target().normalizedKey(),
-                        "sqlState", failure.getSQLState() == null ? "" : failure.getSQLState(),
-                        "vendorCode", failure.getErrorCode(),
-                        "exceptionClass", failure.getClass().getName(),
                         "profilerSource", renderer.sourceName()));
         return new ProfileOutcome(status, List.of(), List.of(warning));
     }
 
-    private String safeMessage(ProfileStatus status) {
-        return switch (status) {
-            case TIMEOUT -> "Data profiling query timed out";
-            case PERMISSION_DENIED -> "Data profiling query permission denied";
-            default -> "Data profiling query failed";
-        };
-    }
-
     private DataProfileMetrics metrics(ResultSet rs) throws java.sql.SQLException {
+        long sourceRows = rs.getLong("source_non_null_rows");
         long sourceDistinct = rs.getLong("source_distinct");
         long matched = rs.getLong("matched_distinct");
+        long targetDistinct = rs.getLong("target_distinct");
         long missing = Math.max(0, sourceDistinct - matched);
-        return DataProfileMetrics.live(sourceDistinct, sourceDistinct, matched, missing, sourceDistinct, false, false);
+        return DataProfileMetrics.live(sourceRows, sourceDistinct, matched, missing, targetDistinct, false, false);
     }
 }

@@ -6,7 +6,10 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-/** Resolves direct physical-column traces without owning predicate semantics. */
+/**
+ *
+ * Resolves direct physical-column traces without owning predicate semantics.
+ */
 final class DirectColumnTraceSupport {
     private final SourceLocationSupport source;
     private final RowsetScopeSink rowsets;

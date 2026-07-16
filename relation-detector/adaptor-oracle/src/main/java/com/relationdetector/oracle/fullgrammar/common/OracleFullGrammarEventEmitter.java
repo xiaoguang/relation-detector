@@ -14,7 +14,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 
-/** Per-parse Oracle rowset, projection and write event emitter. */
+/**
+ *
+ * Per-parse Oracle rowset, projection and write event emitter.
+ */
 final class OracleFullGrammarEventEmitter extends OracleFullGrammarParseTreeSupport {
     private final OracleFullGrammarExpressionSupport expressions;
     private final Consumer<String> rowsetRegistrar;

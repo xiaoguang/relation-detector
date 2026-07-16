@@ -10,9 +10,13 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 
-/** Public scan result passed to JSON/table writers. */
+/**
+ *
+ * Public scan result passed to JSON/table writers.
+ */
 public final class ScanResult {
     private final String databaseType;
+    private final String catalog;
     private final String schema;
     private final Instant generatedAt;
     private final List<RelationshipCandidate> relationships = new ArrayList<>();
@@ -24,7 +28,12 @@ public final class ScanResult {
     private final List<String> sources = new ArrayList<>();
 
     public ScanResult(String databaseType, String schema) {
+        this(databaseType, null, schema);
+    }
+
+    public ScanResult(String databaseType, String catalog, String schema) {
         this.databaseType = databaseType;
+        this.catalog = catalog;
         this.schema = schema;
         this.generatedAt = Instant.now();
     }
@@ -35,6 +44,10 @@ public final class ScanResult {
 
     public String schema() {
         return schema;
+    }
+
+    public String catalog() {
+        return catalog;
     }
 
     public Instant generatedAt() {

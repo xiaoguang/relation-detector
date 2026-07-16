@@ -4,7 +4,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Symbol;
 
-/** Stateless JOIN-kind classification over version-owned typed contexts. */
+/**
+ *
+ * Stateless JOIN-kind classification over version-owned typed contexts.
+ */
 final class OracleJoinSemanticSupport {
     private final OracleFullGrammarParseTreeAdapter adapter;
 

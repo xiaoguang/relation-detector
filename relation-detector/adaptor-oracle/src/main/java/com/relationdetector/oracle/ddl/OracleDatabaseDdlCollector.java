@@ -9,13 +9,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.oracle.OracleOwnerResolver;
+import com.relationdetector.core.diagnostics.DiagnosticWarnings;
+import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
-/** Collects Oracle table DDL through DBMS_METADATA. */
+/**
+ *
+ * Collects Oracle table DDL through DBMS_METADATA.
+ */
 public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
     @Override
     public List<DatabaseDdlDefinition> collect(Connection connection, ScanScope scope) {
@@ -29,7 +34,7 @@ public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
             ScanScope scope,
             Consumer<WarningMessage> warnings
     ) {
-        String owner = owner(scope);
+        String owner = OracleOwnerResolver.resolve(connection, scope);
         List<DatabaseDdlDefinition> definitions = new ArrayList<>();
         for (String tableName : tableNames(connection, scope, owner, warnings)) {
             collectTableDdl(connection, owner, tableName, definitions, warnings);
@@ -61,8 +66,9 @@ public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
                 }
             }
         } catch (Exception ex) {
-            warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "ORACLE_DATABASE_DDL_TABLES_FAILED", ex.getMessage(), "ALL_TABLES", 0));
+            warnings.accept(DiagnosticWarnings.databaseDdlCollectFailed(
+                    "ORACLE_DATABASE_DDL_TABLES_FAILED", "ALL_TABLES", ex,
+                    com.relationdetector.oracle.OracleDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
         }
         return tableNames;
     }
@@ -80,24 +86,23 @@ public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
             ps.setString(2, owner);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    definitions.add(new DatabaseDdlDefinition(null, owner, tableName,
-                            rs.getString(1), "DBMS_METADATA.GET_DDL"));
+                    String ddl = rs.getString(1);
+                    if (ddl == null || ddl.isBlank()) {
+                        warnings.accept(DiagnosticWarnings.databaseDdlDefinitionUnavailable(
+                                "DBMS_METADATA.GET_DDL", null, owner, tableName));
+                    } else {
+                        definitions.add(new DatabaseDdlDefinition(null, owner, tableName,
+                                ddl, "DBMS_METADATA.GET_DDL"));
+                    }
                 }
             }
         } catch (Exception ex) {
-            warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "ORACLE_DBMS_METADATA_GET_DDL_FAILED", ex.getMessage(), "DBMS_METADATA.GET_DDL", 0,
-                    Map.of("objectSchema", owner,
-                            "objectName", tableName,
-                            "objectType", "TABLE",
-                            "exceptionClass", ex.getClass().getSimpleName())));
+            warnings.accept(LiveDiagnosticSanitizer.jdbcWarning(
+                    "ORACLE_DBMS_METADATA_GET_DDL_FAILED",
+                    LiveDiagnosticSanitizer.Operation.DATABASE_DDL, "DBMS_METADATA.GET_DDL", ex,
+                    Map.of("objectSchema", owner, "objectName", tableName, "objectType", "TABLE"),
+                    com.relationdetector.oracle.OracleDatabaseAdaptor.PERMISSION_DENIED_VENDOR_CODES));
         }
-    }
-
-    private String owner(ScanScope scope) {
-        return scope.schema() == null || scope.schema().isBlank()
-                ? ""
-                : scope.schema().toUpperCase(Locale.ROOT);
     }
 
     private boolean inScope(ScanScope scope, String tableName) {

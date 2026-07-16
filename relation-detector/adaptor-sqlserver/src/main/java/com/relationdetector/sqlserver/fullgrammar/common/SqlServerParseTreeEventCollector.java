@@ -16,7 +16,10 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
-/** Shared typed SQL Server collector; token-event remains independent. */
+/**
+ *
+ * Shared typed SQL Server collector; token-event remains independent.
+ */
 public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSupport {
     private final SqlServerExpressionAnalyzer expressionAnalyzer;
     private final AbstractSqlServerParseTreeAdapter sqlServerAdapter;

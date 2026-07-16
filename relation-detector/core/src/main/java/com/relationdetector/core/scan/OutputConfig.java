@@ -2,7 +2,10 @@ package com.relationdetector.core.scan;
 
 import com.relationdetector.contracts.Enums.OutputFormat;
 
-/** Immutable output and final confidence-filter configuration. */
+/**
+ *
+ * Immutable output and final confidence-filter configuration.
+ */
 public record OutputConfig(
         OutputFormat format,
         double minConfidence,

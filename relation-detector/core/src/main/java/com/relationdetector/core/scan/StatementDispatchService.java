@@ -6,7 +6,10 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-/** Routes script-framed statements without inspecting SQL text. */
+/**
+ *
+ * Routes script-framed statements without inspecting SQL text.
+ */
 final class StatementDispatchService {
     DdlFileDispatch dispatchDdlFile(List<SqlStatementRecord> statements, DatabaseType databaseType) {
         List<SqlStatementRecord> safe = statements == null ? List.of() : List.copyOf(statements);
