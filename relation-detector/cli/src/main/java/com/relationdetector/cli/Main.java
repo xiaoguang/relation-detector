@@ -21,6 +21,18 @@ public final class Main {
     }
 
     static final class MainCommand {
+        private final SingleScanRunner scanRunner;
+        private final AdaptorRegistryLoader registryLoader;
+
+        MainCommand() {
+            this(new SingleScanRunner(), AdaptorRegistry::load);
+        }
+
+        MainCommand(SingleScanRunner scanRunner, AdaptorRegistryLoader registryLoader) {
+            this.scanRunner = scanRunner;
+            this.registryLoader = registryLoader;
+        }
+
         int run(String[] args) {
             try {
                 if (args.length > 0 && "batch".equals(args[0])) {
@@ -34,7 +46,7 @@ public final class Main {
                 if (cli.config == null) {
                     throw new CliFailure(ErrorCode.ARGUMENT_ERROR);
                 }
-                AdaptorRegistry registry = AdaptorRegistry.load(cli.pluginDir);
+                AdaptorRegistry registry = registryLoader.load(cli.pluginDir);
                 ScanRequest request = new ScanRequest(
                         cli.config,
                         cli.format,
@@ -45,8 +57,7 @@ public final class Main {
                         cli.grammarProfile,
                         cli.databaseVersion,
                         cli.parallelism);
-                SingleScanRunner runner = new SingleScanRunner();
-                runner.execute(runner.prepare(request, registry));
+                scanRunner.execute(scanRunner.prepare(request, registry));
                 return ErrorCode.OK.code();
             } catch (CliFailure ex) {
                 System.err.println(ex.message());
@@ -89,6 +100,11 @@ public final class Main {
                         [--case-parallelism n] [--max-worker-threads n] [--fail-fast]
                     """;
         }
+    }
+
+    @FunctionalInterface
+    interface AdaptorRegistryLoader {
+        AdaptorRegistry load(Path pluginDir) throws Exception;
     }
 
     static final class CliFailure extends RuntimeException {

@@ -242,12 +242,12 @@ adjusters preserve current output. The adjusted score is range-validated.
 
 ### CT-06: Executable CLI Error Codes
 
-Status: `IMPLEMENTED`; focused single-scan error-code verification remains required.
+Status: `FOCUSED_GREEN` (Task 9 focused CLI/batch tests).
 
 Single-scan CLI maps argument, config file, config format, adaptor, input file, database
 connection, runtime scan, and output write failures to their declared `ErrorCode` values.
-Argument parsing is inside the mapping boundary. Batch behavior retains its separate
-partial-failure contract.
+Argument parsing is inside the mapping boundary. Batch partial failure retains code 13 and
+records only a typed error code plus fixed safe text, never an exception message.
 
 ## 8. Verification Gates
 

@@ -40,7 +40,7 @@ public final class SimpleYamlConfigLoader {
      */
     public ScanConfig load(Path file) throws IOException {
         if (!Files.isRegularFile(file)) {
-            throw new IllegalArgumentException("config file does not exist: " + file);
+            throw new IOException("config file cannot be read: " + file);
         }
         ScanYamlConfigDto dto = YAML.readValue(file.toFile(), ScanYamlConfigDto.class);
         if (dto == null) {

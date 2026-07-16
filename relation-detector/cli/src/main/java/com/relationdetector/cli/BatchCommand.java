@@ -27,17 +27,15 @@ final class BatchCommand {
                     outcome.batchCase().id(),
                     (outcome.elapsedMillis() + 999L) / 1000L,
                     outcome.status() == BatchCaseStatus.SUCCESS ? 0 : 1));
-            return outcomes.stream().anyMatch(outcome -> outcome.status() == BatchCaseStatus.FAILED)
-                    ? ErrorCode.BATCH_PARTIAL_FAILURE.code()
-                    : ErrorCode.OK.code();
+            return exitCode(outcomes);
         } catch (IllegalArgumentException error) {
-            System.err.println("Configuration error: " + error.getMessage());
+            System.err.println("Configuration format is invalid.");
             return ErrorCode.CONFIG_FORMAT_ERROR.code();
         } catch (AdaptorRegistry.AdaptorException error) {
-            System.err.println("Adaptor error: " + error.getMessage());
+            System.err.println("Requested database adaptor is unavailable.");
             return ErrorCode.ADAPTOR_ERROR.code();
         } catch (Exception error) {
-            System.err.println("Batch scan failed: " + error.getMessage());
+            System.err.println("Batch scan failed.");
             return ErrorCode.SCAN_RUNTIME_ERROR.code();
         }
     }
@@ -54,6 +52,12 @@ final class BatchCommand {
             prepared.add(new PreparedBatchCase(batchCase, scan.config(), scan.adaptor(), workers));
         }
         return List.copyOf(prepared);
+    }
+
+    static int exitCode(List<BatchCaseOutcome> outcomes) {
+        return outcomes.stream().anyMatch(outcome -> outcome.status() == BatchCaseStatus.FAILED)
+                ? ErrorCode.BATCH_PARTIAL_FAILURE.code()
+                : ErrorCode.OK.code();
     }
 
     private static final class BatchArguments {

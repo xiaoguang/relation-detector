@@ -34,6 +34,7 @@ final class BatchReportWriter {
             value.put("directOutput", outcome.batchCase().directOutput().toString());
         }
         if (!outcome.error().isBlank()) {
+            value.put("errorCode", outcome.errorCode().name());
             value.put("error", outcome.error());
         }
         return value;

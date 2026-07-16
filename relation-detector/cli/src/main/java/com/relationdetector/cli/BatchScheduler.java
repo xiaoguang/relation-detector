@@ -1,5 +1,6 @@
 package com.relationdetector.cli;
 
+import com.relationdetector.contracts.Enums.ErrorCode;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.scan.ResolvedScanConfig;
 import java.util.ArrayList;
@@ -101,17 +102,26 @@ enum BatchCaseStatus {
     SKIPPED_FAIL_FAST
 }
 
-record BatchCaseOutcome(BatchCase batchCase, BatchCaseStatus status, long elapsedMillis, String error) {
+record BatchCaseOutcome(
+        BatchCase batchCase,
+        BatchCaseStatus status,
+        long elapsedMillis,
+        ErrorCode errorCode,
+        String error
+) {
     static BatchCaseOutcome success(BatchCase batchCase, long elapsedMillis) {
-        return new BatchCaseOutcome(batchCase, BatchCaseStatus.SUCCESS, elapsedMillis, "");
+        return new BatchCaseOutcome(batchCase, BatchCaseStatus.SUCCESS, elapsedMillis, null, "");
     }
 
     static BatchCaseOutcome failed(BatchCase batchCase, long elapsedMillis, Exception error) {
-        String message = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
-        return new BatchCaseOutcome(batchCase, BatchCaseStatus.FAILED, elapsedMillis, message);
+        ErrorCode code = error instanceof Main.CliFailure failure
+                ? failure.code()
+                : ErrorCode.SCAN_RUNTIME_ERROR;
+        return new BatchCaseOutcome(batchCase, BatchCaseStatus.FAILED, elapsedMillis, code,
+                new Main.CliFailure(code).message());
     }
 
     static BatchCaseOutcome skipped(BatchCase batchCase) {
-        return new BatchCaseOutcome(batchCase, BatchCaseStatus.SKIPPED_FAIL_FAST, 0L, "");
+        return new BatchCaseOutcome(batchCase, BatchCaseStatus.SKIPPED_FAIL_FAST, 0L, null, "");
     }
 }

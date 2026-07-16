@@ -13,18 +13,28 @@ import java.nio.file.Path;
 import java.io.IOException;
 
 final class SingleScanRunner {
-    private final SimpleYamlConfigLoader configLoader = new SimpleYamlConfigLoader();
-    private final AtomicOutputWriter outputWriter = new AtomicOutputWriter();
+    private final ConfigLoader configLoader;
+    private final ScanExecutor scanExecutor;
+    private final OutputWriter outputWriter;
+    private final AtomicOutputWriter atomicOutputWriter = new AtomicOutputWriter();
+
+    SingleScanRunner() {
+        this(new SimpleYamlConfigLoader()::load, (config, adaptor) -> new ScanEngine().scan(config, adaptor), output -> { });
+    }
+
+    SingleScanRunner(ConfigLoader configLoader, ScanExecutor scanExecutor, OutputWriter outputWriter) {
+        this.configLoader = configLoader;
+        this.scanExecutor = scanExecutor;
+        this.outputWriter = outputWriter;
+    }
 
     PreparedScan prepare(ScanRequest request, AdaptorRegistry registry) throws Exception {
         ScanConfig config;
         try {
             config = configLoader.load(request.config());
-        } catch (IllegalArgumentException ex) {
-            throw new Main.CliFailure(ex.getMessage() != null && ex.getMessage().startsWith("config file")
-                    ? com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FILE_ERROR
-                    : com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         } catch (IOException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FILE_ERROR);
+        } catch (IllegalArgumentException ex) {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         }
         applyOverrides(config, request);
@@ -49,7 +59,7 @@ final class SingleScanRunner {
         ResolvedScanConfig config = prepared.config();
         ScanResult result;
         try {
-            result = new ScanEngine().scan(config, prepared.adaptor());
+            result = scanExecutor.scan(config, prepared.adaptor());
         } catch (DatabaseConnectionException ex) {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.DATABASE_CONNECTION_ERROR);
         }
@@ -61,18 +71,21 @@ final class SingleScanRunner {
             if (prepared.request().output() == null) {
                 System.out.print(rendered);
             } else {
-                outputWriter.writeString(prepared.request().output(), rendered);
+                outputWriter.validate(prepared.request().output());
+                atomicOutputWriter.writeString(prepared.request().output(), rendered);
             }
         } else if (prepared.request().output() == null) {
             jsonWriter.write(result, System.out, output.includeEvidence(), output.includeWarnings(),
                     output.includeObservationCounts());
         } else {
-            outputWriter.write(prepared.request().output(), stream ->
+            outputWriter.validate(prepared.request().output());
+            atomicOutputWriter.write(prepared.request().output(), stream ->
                     jsonWriter.write(result, stream, output.includeEvidence(), output.includeWarnings(),
                             output.includeObservationCounts()));
         }
         if (prepared.request().directOutput() != null) {
-            outputWriter.write(prepared.request().directOutput(), stream ->
+            outputWriter.validate(prepared.request().directOutput());
+            atomicOutputWriter.write(prepared.request().directOutput(), stream ->
                     jsonWriter.writeDirect(result, stream, output.includeEvidence(), output.includeWarnings(),
                             output.includeObservationCounts()));
         }
@@ -102,6 +115,21 @@ final class SingleScanRunner {
         if (request.parallelism() != null) {
             config.executionParallelism = request.parallelism();
         }
+    }
+
+    @FunctionalInterface
+    interface ConfigLoader {
+        ScanConfig load(Path path) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface ScanExecutor {
+        ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor);
+    }
+
+    @FunctionalInterface
+    interface OutputWriter {
+        void validate(Path output) throws IOException;
     }
 }
 

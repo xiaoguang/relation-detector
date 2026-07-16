@@ -29,9 +29,9 @@ It is independent of the technical statuses below.
 | CT-01 | FOCUSED_GREEN |
 | CT-02 | FOCUSED_GREEN |
 | CT-03 | FOCUSED_GREEN |
-| CT-04 | OPEN |
-| CT-05 | OPEN |
-| CT-06 | OPEN |
+| CT-04 | FOCUSED_GREEN |
+| CT-05 | FOCUSED_GREEN |
+| CT-06 | FOCUSED_GREEN |
 | TG-01 | OPEN |
 | TG-02 | OPEN |
 | TG-03 | OPEN |
