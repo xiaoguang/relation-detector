@@ -1,8 +1,10 @@
 package com.relationdetector.core.scan;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -20,6 +22,8 @@ import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
@@ -27,6 +31,8 @@ import com.relationdetector.contracts.metadata.MetadataIndexFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
+import com.relationdetector.contracts.model.DataLineageCandidate;
+import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
@@ -45,6 +51,8 @@ import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
+import com.relationdetector.core.output.JsonResultWriter;
 
 class DataProfilePipelineTest {
     private final DataProfilePipeline pipeline = new DataProfilePipeline();
@@ -109,11 +117,99 @@ class DataProfilePipelineTest {
                 "Oracle live profiling cannot execute catalog-qualified endpoints");
     }
 
+    @Test
+    void noOpAdjustmentPreservesCanonicalFinalProfileOutputAndLineage() throws Exception {
+        ScanPipelineContext baseline = contextReturning(EvidenceType.VALUE_CONTAINMENT_HIGH);
+        ScanPipelineContext adjusted = contextReturning(EvidenceType.VALUE_CONTAINMENT_HIGH);
+        DataLineageEvidence lineage = lineageEvidence();
+        baseline.lineageCandidates.add(lineageCandidate(lineage));
+        adjusted.lineageCandidates.add(lineageCandidate(lineage));
+        try {
+            ScanResult before = assembleProfiledResult(baseline, false);
+            ScanResult after = assembleProfiledResult(adjusted, true);
+
+            assertArrayEquals(canonicalJson(before), canonicalJson(after));
+            assertEquals(List.of(lineage), after.dataLineages().get(0).rawEvidence());
+            assertEquals(BigDecimal.valueOf(0.7d), after.dataLineages().get(0).evidence().get(0).score());
+            assertEquals("lineage", after.dataLineages().get(0).evidence().get(0).detail());
+        } finally {
+            baseline.close();
+            adjusted.close();
+        }
+    }
+
+    @Test
+    void profileGeneratedEvidenceIsAdjustedExactlyOnceBeforeFinalAssembly() {
+        AtomicInteger calls = new AtomicInteger();
+        ScanPipelineContext context = contextReturning(
+                ProfileOutcome.success(List.of(evidence(EvidenceType.VALUE_CONTAINMENT_HIGH))),
+                (item, ignored) -> {
+                    calls.incrementAndGet();
+                    return new Evidence(item.type(), item.score().add(BigDecimal.valueOf(0.1d)),
+                            item.sourceType(), item.source(), item.detail(), item.attributes());
+                });
+        try {
+            List<RelationshipCandidate> profiled = pipeline.profile(connection(), context);
+            new EvidenceEnhancementPipeline().enhanceProfiledCandidates(context, profiled);
+            int expectedCalls = context.relationshipCandidates.stream()
+                    .mapToInt(candidate -> candidate.rawEvidence().isEmpty()
+                            ? candidate.evidence().size() : candidate.rawEvidence().size())
+                    .sum()
+                    + context.namingEvidencePool.merged().stream()
+                            .mapToInt(candidate -> candidate.rawEvidence().size())
+                            .sum();
+
+            new EvidenceEnhancementPipeline().adjustWeights(context);
+            ScanResult result = new ResultAssembly().assemble(context);
+
+            assertEquals(expectedCalls, calls.get());
+            assertEquals(List.of(BigDecimal.valueOf(0.3d)), result.relationships().get(0).rawEvidence().stream()
+                    .filter(item -> item.type() == EvidenceType.VALUE_CONTAINMENT_HIGH)
+                    .map(Evidence::score)
+                    .toList());
+        } finally {
+            context.close();
+        }
+    }
+
+    private ScanResult assembleProfiledResult(ScanPipelineContext context, boolean adjustWeights) {
+        List<RelationshipCandidate> profiled = pipeline.profile(connection(), context);
+        new EvidenceEnhancementPipeline().enhanceProfiledCandidates(context, profiled);
+        if (adjustWeights) {
+            new EvidenceEnhancementPipeline().adjustWeights(context);
+        }
+        return new ResultAssembly().assemble(context);
+    }
+
+    private byte[] canonicalJson(ScanResult result) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        var document = mapper.readTree(new JsonResultWriter().write(result, true, true, true));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) document).remove("generatedAt");
+        return mapper.writeValueAsBytes(document);
+    }
+
+    private DataLineageCandidate lineageCandidate(DataLineageEvidence evidence) {
+        DataLineageCandidate candidate = new DataLineageCandidate(
+                List.of(endpoint("orders", "customer_id")), endpoint("audit", "customer_id"),
+                LineageFlowKind.VALUE, LineageTransformType.DIRECT);
+        candidate.evidence().add(evidence);
+        return candidate;
+    }
+
+    private DataLineageEvidence lineageEvidence() {
+        return new DataLineageEvidence(LineageTransformType.DIRECT, BigDecimal.valueOf(0.7d),
+                EvidenceSourceType.PLAIN_SQL, "lineage.sql", "lineage", Map.of());
+    }
+
     private ScanPipelineContext contextReturning(EvidenceType type) {
         return contextReturning(ProfileOutcome.success(List.of(evidence(type))));
     }
 
     private ScanPipelineContext contextReturning(ProfileOutcome profileOutcome) {
+        return contextReturning(profileOutcome, (evidence, ignored) -> evidence);
+    }
+
+    private ScanPipelineContext contextReturning(ProfileOutcome profileOutcome, EvidenceWeightAdjuster adjuster) {
         ScanConfig config = new ScanConfig();
         config.databaseType = com.relationdetector.contracts.Enums.DatabaseType.MYSQL;
         config.dataProfileEnabled = true;
@@ -124,7 +220,7 @@ class DataProfilePipelineTest {
         ScanResult result = new ScanResult("mysql", "test");
         ScanPipelineContext ctx = new ScanPipelineContext(
                 config.resolve(),
-                new TestAdaptor(DatabaseType.MYSQL, (connection, request) -> profileOutcome),
+                new TestAdaptor(DatabaseType.MYSQL, (connection, request) -> profileOutcome, adjuster),
                 scope,
                 result,
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
@@ -153,7 +249,7 @@ class DataProfilePipelineTest {
                 new TestAdaptor(databaseType, (connection, request) -> {
                     calls.incrementAndGet();
                     return new ProfileOutcome(ProfileStatus.NO_EVIDENCE, List.of(), List.of());
-                }),
+                }, (evidence, ignored) -> evidence),
                 scope,
                 result,
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
@@ -202,7 +298,8 @@ class DataProfilePipelineTest {
                 });
     }
 
-    private record TestAdaptor(DatabaseType databaseType, DataProfiler profiler) implements DatabaseAdaptor {
+    private record TestAdaptor(DatabaseType databaseType, DataProfiler profiler, EvidenceWeightAdjuster adjuster)
+            implements DatabaseAdaptor {
         @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override
         public String id() {
@@ -251,7 +348,7 @@ class DataProfilePipelineTest {
         public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
             return new com.relationdetector.contracts.spi.AdaptorProfiling(
                     Optional.of(profiler),
-                    (evidence, context) -> evidence);
+                    adjuster);
         }
     }
 }

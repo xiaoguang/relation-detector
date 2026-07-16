@@ -32,6 +32,8 @@ final class SingleScanRunner {
         ScanConfig config;
         try {
             config = configLoader.load(request.config());
+        } catch (SimpleYamlConfigLoader.ConfigFormatException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         } catch (IOException ex) {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FILE_ERROR);
         } catch (IllegalArgumentException ex) {

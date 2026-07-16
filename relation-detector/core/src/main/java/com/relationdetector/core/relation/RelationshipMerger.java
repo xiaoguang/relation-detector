@@ -63,7 +63,7 @@ public final class RelationshipMerger {
             if (existing == null) {
                 merged.put(key, candidate);
             } else {
-                existing.evidence().addAll(candidate.evidence());
+                mergeEvidence(existing, candidate);
                 existing.warnings().addAll(candidate.warnings());
                 existing.relationSubType(
                         subtypeResolver.dominant(existing.relationSubType(), candidate.relationSubType()));
@@ -122,7 +122,7 @@ public final class RelationshipMerger {
             if (directional == null) {
                 continue;
             }
-            directional.evidence().addAll(candidate.evidence());
+            mergeEvidence(directional, candidate);
             directional.warnings().addAll(candidate.warnings());
             iterator.remove();
         }
@@ -329,8 +329,7 @@ public final class RelationshipMerger {
             merged.put(key, candidate);
             return;
         }
-        existing.evidence().addAll(candidate.evidence());
-        existing.rawEvidence().addAll(candidate.rawEvidence());
+        mergeEvidence(existing, candidate);
         existing.warnings().addAll(candidate.warnings());
         existing.relationSubType(
                 subtypeResolver.dominant(existing.relationSubType(), candidate.relationSubType()));
@@ -340,6 +339,18 @@ public final class RelationshipMerger {
         String left = endpointKeys.factKey(candidate.source());
         String right = endpointKeys.factKey(candidate.target());
         return left.compareTo(right) <= 0 ? left + "|" + right : right + "|" + left;
+    }
+
+    private void mergeEvidence(RelationshipCandidate target, RelationshipCandidate incoming) {
+        boolean targetHasRaw = !target.rawEvidence().isEmpty();
+        boolean incomingHasRaw = !incoming.rawEvidence().isEmpty();
+        if (targetHasRaw || incomingHasRaw) {
+            if (!targetHasRaw) {
+                target.rawEvidence().addAll(target.evidence());
+            }
+            target.rawEvidence().addAll(incomingHasRaw ? incoming.rawEvidence() : incoming.evidence());
+        }
+        target.evidence().addAll(incoming.evidence());
     }
 
     /**
@@ -366,7 +377,10 @@ public final class RelationshipMerger {
      * bonus approaches the cap and can never exceed it.
      */
     private void summarizeRepeatedEvidence(RelationshipCandidate candidate) {
-        List<Evidence> raw = deduplicateNamingReferences(candidate.evidence());
+        List<Evidence> observationsToSummarize = candidate.rawEvidence().isEmpty()
+                ? candidate.evidence()
+                : candidate.rawEvidence();
+        List<Evidence> raw = deduplicateNamingReferences(observationsToSummarize);
         var aggregation = observations.aggregate(raw, observationPolicy, true);
         candidate.rawEvidence().clear();
         candidate.rawEvidence().addAll(aggregation.rawObservations());

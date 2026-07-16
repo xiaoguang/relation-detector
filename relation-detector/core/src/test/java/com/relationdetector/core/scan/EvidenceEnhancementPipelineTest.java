@@ -21,6 +21,7 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.relation.RelationshipMerger;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,31 @@ class EvidenceEnhancementPipelineTest {
 
         assertEquals(relationshipBefore, context.relationshipCandidates.get(0).evidence().get(0));
         assertEquals(namingBefore, context.namingEvidencePool.merged().get(0).rawEvidence().get(0));
+    }
+
+    @Test
+    void preservesAdjustedRawObservationsThroughFinalRelationshipMerge() {
+        AtomicInteger calls = new AtomicInteger();
+        ScanPipelineContext context = context((evidence, ignored) -> {
+            calls.incrementAndGet();
+            return withScore(evidence, 0.1d);
+        });
+        RelationshipCandidate candidate = context.relationshipCandidates.get(0);
+        candidate.rawEvidence().add(evidence(EvidenceType.SQL_LOG_JOIN, 0.4d));
+        candidate.rawEvidence().add(evidence(EvidenceType.SQL_LOG_JOIN, 0.4d));
+
+        new EvidenceEnhancementPipeline().adjustWeights(context);
+        RelationshipCandidate merged = new RelationshipMerger().merge(context.relationshipCandidates, 0.0d).get(0);
+
+        assertEquals(3, calls.get(), "each relationship raw observation and naming observation is adjusted once");
+        assertEquals(List.of(BigDecimal.valueOf(0.5d)),
+                merged.rawEvidence().stream().map(Evidence::score).toList());
+        assertEquals(List.of(BigDecimal.valueOf(0.5d)),
+                merged.evidence().stream()
+                        .filter(evidence -> evidence.type() == EvidenceType.SQL_LOG_JOIN)
+                        .map(Evidence::score)
+                        .toList());
+        assertEquals(BigDecimal.valueOf(0.5d).setScale(4), merged.confidence());
     }
 
     private ScanPipelineContext context(EvidenceWeightAdjuster adjuster) {

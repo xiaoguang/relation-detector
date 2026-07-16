@@ -122,6 +122,32 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void preservesEvidenceOnlyObservationsWhenMergedWithAuthoritativeRawObservations() {
+        RelationshipCandidate adjusted = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
+        adjusted.rawEvidence().add(new Evidence(
+                EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(0.5d),
+                EvidenceSourceType.PLAIN_SQL,
+                "query.sql",
+                "line 10: o.user_id = u.id",
+                Map.of()));
+        RelationshipCandidate declared = baseRelation();
+        declared.evidence().add(Evidence.of(
+                EvidenceType.TARGET_UNIQUE,
+                DefaultEvidenceScores.TARGET_UNIQUE,
+                EvidenceSourceType.METADATA,
+                "metadata",
+                "users.id is primary key"));
+
+        RelationshipCandidate merged = merger.merge(List.of(adjusted, declared), 0.0d).get(0);
+
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN, EvidenceType.TARGET_UNIQUE),
+                merged.rawEvidence().stream().map(Evidence::type).toList());
+        assertEquals(BigDecimal.valueOf(0.5d), evidence(merged, EvidenceType.SQL_LOG_JOIN).score());
+        assertEquals(1, evidence(merged, EvidenceType.TARGET_UNIQUE).attributes().get("count"));
+    }
+
+    @Test
     void deduplicatesNamingRawReferencesWithoutCollapsingStructuralObservations() {
         RelationshipCandidate first = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
         RelationshipCandidate second = sqlLogJoin("query.sql", "line 38: o.user_id = u.id");

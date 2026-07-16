@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
@@ -42,7 +43,12 @@ public final class SimpleYamlConfigLoader {
         if (!Files.isRegularFile(file)) {
             throw new IOException("config file cannot be read: " + file);
         }
-        ScanYamlConfigDto dto = YAML.readValue(file.toFile(), ScanYamlConfigDto.class);
+        ScanYamlConfigDto dto;
+        try {
+            dto = YAML.readValue(file.toFile(), ScanYamlConfigDto.class);
+        } catch (JsonProcessingException ex) {
+            throw new ConfigFormatException(ex);
+        }
         if (dto == null) {
             dto = new ScanYamlConfigDto();
         }
@@ -50,6 +56,12 @@ public final class SimpleYamlConfigLoader {
 
         validate(config);
         return config;
+    }
+
+    static final class ConfigFormatException extends IOException {
+        ConfigFormatException(JsonProcessingException cause) {
+            super("configuration format is invalid", cause);
+        }
     }
 
     private ScanConfig map(ScanYamlConfigDto dto, Path baseDir) {

@@ -14,23 +14,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class CliErrorCodeContractTest {
     private static final String SECRET = "jdbc:vendor://db?password=secret SQL=SELECT+credential";
 
     @Test
-    void mapsEachSingleScanErrorCodeToFixedSafeStderr() {
+    void mapsInjectableSingleScanErrorCodeToFixedSafeStderr() {
         assertResult(ErrorCode.OK, runner((path) -> config(), (config, adaptor) -> result(), output -> { }),
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.ARGUMENT_ERROR, runner((path) -> config(), (config, adaptor) -> result(), output -> { }),
                 "scan");
-        assertResult(ErrorCode.CONFIG_FILE_ERROR, runner((path) -> { throw new IOException(SECRET); },
-                (config, adaptor) -> result(), output -> { }), "scan", "--config", "scan.yml");
-        assertResult(ErrorCode.CONFIG_FORMAT_ERROR, runner((path) -> { throw new IllegalArgumentException(SECRET); },
-                (config, adaptor) -> result(), output -> { }), "scan", "--config", "scan.yml");
         assertResult(ErrorCode.ADAPTOR_ERROR, runner((path) -> config(), (config, adaptor) -> result(), output -> { }),
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.INPUT_FILE_ERROR, runner((path) -> invalidInputConfig(), (config, adaptor) -> result(), output -> { }),
@@ -43,6 +41,18 @@ class CliErrorCodeContractTest {
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.OUTPUT_WRITE_ERROR, runner((path) -> config(), (config, adaptor) -> result(),
                 output -> { throw new IOException(SECRET); }), "scan", "--config", "scan.yml", "--output", "result.json");
+    }
+
+    @Test
+    void mapsUnreadableAndMalformedYamlFilesThroughTheTypedLoaderBoundary(@TempDir Path tempDir) throws Exception {
+        Path unreadable = tempDir.resolve("missing.yml");
+        Path malformed = tempDir.resolve("malformed.yml");
+        Files.writeString(malformed, "database: [\n");
+
+        assertResult(ErrorCode.CONFIG_FILE_ERROR, new SingleScanRunner(),
+                "scan", "--config", unreadable.toString());
+        assertResult(ErrorCode.CONFIG_FORMAT_ERROR, new SingleScanRunner(),
+                "scan", "--config", malformed.toString());
     }
 
     private void assertResult(ErrorCode expected, SingleScanRunner runner, String... args) {
