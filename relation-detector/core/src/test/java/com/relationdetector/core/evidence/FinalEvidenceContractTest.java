@@ -40,10 +40,10 @@ class FinalEvidenceContractTest {
                                 Map.of("discriminator", "contracts.region", "operator", "=", "value", "NORTH")))));
 
         RelationshipCandidate merged = new RelationshipMerger().merge(List.of(observation), 0.0d).get(0);
-        Object conditions = merged.attributes().get("conditions");
-        int conditionCount = conditions instanceof List<?> list ? list.size() : 0;
-
-        assertEquals(2, conditionCount,
-                "a merged relationship must retain both typed conditions from its structural observation");
+        assertEquals(List.of(
+                Map.of("discriminator", "contracts.party_type", "operator", "=", "value", "CUSTOMER"),
+                Map.of("discriminator", "contracts.region", "operator", "=", "value", "NORTH")),
+                merged.attributes().get("conditions"),
+                "a merged relationship must retain each typed condition exactly once with its discriminator, operator, and value");
     }
 }

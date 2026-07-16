@@ -11,22 +11,22 @@
 
 This generated-free table records the frozen closure matrix from
 `docs/superpowers/specs/2026-07-16-relation-detector-final-convergence-design.md`.
-It is independent of the technical statuses below; every closure ID begins at `OPEN`.
+It is independent of the technical statuses below.
 
-| Closure ID | Initial state |
+| Closure ID | State |
 | --- | --- |
-| ID-01 | OPEN |
+| ID-01 | RED_PROVEN |
 | ID-02 | OPEN |
 | ID-03 | OPEN |
 | ID-04 | OPEN |
 | ID-05 | OPEN |
 | EV-01 | OPEN |
-| EV-02 | OPEN |
+| EV-02 | RED_PROVEN |
 | EV-03 | OPEN |
 | EV-04 | OPEN |
 | EV-05 | OPEN |
 | EV-06 | OPEN |
-| CT-01 | OPEN |
+| CT-01 | RED_PROVEN |
 | CT-02 | OPEN |
 | CT-03 | OPEN |
 | CT-04 | OPEN |

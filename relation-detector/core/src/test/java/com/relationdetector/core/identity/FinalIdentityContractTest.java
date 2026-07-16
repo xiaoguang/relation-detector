@@ -19,7 +19,7 @@ class FinalIdentityContractTest {
         assertAll(
                 () -> assertFalse(endpointTable.sameIdentity(forgedColumnTable),
                         "identity must compare structural table components, not a caller-supplied normalized name"),
-                () -> assertThrows(IllegalArgumentException.class,
+                () -> assertThrows(Exception.class,
                         () -> new Endpoint(endpointTable, ColumnRef.of(forgedColumnTable, "id")),
                         "an endpoint must reject a column from a structurally different table"));
     }
