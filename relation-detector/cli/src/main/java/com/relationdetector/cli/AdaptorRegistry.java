@@ -12,6 +12,7 @@ import java.util.ServiceLoader;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.core.scan.AdaptorContractValidator;
+import com.relationdetector.core.scan.DatabaseConfig;
 
 /**
  * Java SPI adaptor 发现与选择器。
@@ -24,9 +25,10 @@ import com.relationdetector.core.scan.AdaptorContractValidator;
  * by database.type and optional adaptorId.
  */
 public final class AdaptorRegistry {
+    private static final AdaptorContractValidator CONTRACT_VALIDATOR = new AdaptorContractValidator();
     private final List<DatabaseAdaptor> adaptors;
 
-    private AdaptorRegistry(List<DatabaseAdaptor> adaptors) {
+    AdaptorRegistry(List<DatabaseAdaptor> adaptors) {
         this.adaptors = adaptors;
     }
 
@@ -60,12 +62,12 @@ public final class AdaptorRegistry {
     }
 
     private static void addValidated(List<DatabaseAdaptor> discovered, DatabaseAdaptor adaptor) {
-        requireCurrentApi(adaptor);
-        discovered.add(adaptor);
-    }
-
-    static void requireCurrentApi(DatabaseAdaptor adaptor) {
-        new AdaptorContractValidator().validateSpiVersion(adaptor);
+        try {
+            CONTRACT_VALIDATOR.validateSpiVersion(adaptor);
+            discovered.add(adaptor);
+        } catch (IllegalArgumentException error) {
+            throw adaptorError(error);
+        }
     }
 
     /**
@@ -75,11 +77,22 @@ public final class AdaptorRegistry {
      * <p>EN: Resolves a single adaptor by database type and optional adaptorId.
      */
     public DatabaseAdaptor resolve(DatabaseType databaseType, String adaptorId) {
-        List<DatabaseAdaptor> matches = adaptors.stream()
-                .filter(adaptor -> adaptor.supportedDatabaseTypes().contains(databaseType))
-                .filter(adaptor -> adaptorId == null || adaptorId.isBlank() || adaptor.id().equals(adaptorId))
-                .toList();
+        DatabaseConfig database = new DatabaseConfig(
+                databaseType, adaptorId, null, null, null, null, null, List.of(), List.of());
+        List<DatabaseAdaptor> matches = new ArrayList<>();
+        List<IllegalArgumentException> violations = new ArrayList<>();
+        for (DatabaseAdaptor adaptor : adaptors) {
+            try {
+                CONTRACT_VALIDATOR.validate(database, adaptor);
+                matches.add(adaptor);
+            } catch (IllegalArgumentException error) {
+                violations.add(error);
+            }
+        }
         if (matches.isEmpty()) {
+            if (violations.size() == 1) {
+                throw adaptorError(violations.get(0));
+            }
             throw new AdaptorException("no adaptor found for database type " + databaseType);
         }
         if (matches.size() > 1) {
@@ -88,9 +101,17 @@ public final class AdaptorRegistry {
         return matches.get(0);
     }
 
+    private static AdaptorException adaptorError(IllegalArgumentException error) {
+        return new AdaptorException(error.getMessage(), error);
+    }
+
     static final class AdaptorException extends RuntimeException {
         AdaptorException(String message) {
             super(message);
+        }
+
+        AdaptorException(String message, IllegalArgumentException cause) {
+            super(message, cause);
         }
     }
 }
