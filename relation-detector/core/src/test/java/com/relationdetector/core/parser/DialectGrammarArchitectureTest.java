@@ -819,7 +819,7 @@ class DialectGrammarArchitectureTest {
         String parsers = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorParsers.java"));
         assertTrue(parsers.contains("DialectScriptFramer scriptFramer"),
-                "SPI v5 parser capabilities must include dialect script framing");
+                "SPI v6 parser capabilities must include dialect script framing");
         for (String legacyGetter : List.of(
                 "MetadataCollector metadataCollector()",
                 "ObjectDefinitionCollector objectDefinitionCollector()",
@@ -831,12 +831,12 @@ class DialectGrammarArchitectureTest {
                 "DataProfiler dataProfiler()",
                 "EvidenceWeightAdjuster evidenceWeightAdjuster()")) {
             assertFalse(adaptor.contains(legacyGetter),
-                    "SPI v5 must not restore legacy getter: " + legacyGetter);
+                    "SPI v6 must not restore legacy getter: " + legacyGetter);
         }
 
         String version = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorApiVersion.java"));
-        assertTrue(version.contains("CURRENT = 5"), "adaptor SPI must expose typed optional collectors as v5");
+        assertTrue(version.contains("CURRENT = 6"), "adaptor SPI must expose live-only profiling contracts as v6");
     }
 
     @Test

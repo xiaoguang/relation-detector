@@ -8,11 +8,14 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
@@ -22,6 +25,9 @@ import com.relationdetector.core.scan.ScanEngine;
 class SqlServerLiveScopeScanTest {
     private static final String JDBC_URL = "jdbc:relation-test:sqlserver-live-scope";
     private Driver driver;
+
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void registerDriver() throws SQLException {
@@ -35,21 +41,23 @@ class SqlServerLiveScopeScanTest {
     }
 
     @Test
-    void profileOnlyCatalogMismatchFailsBeforeProfiling() {
-        ScanConfig config = profileOnlyConfig();
+    void profileCatalogMismatchFailsBeforeProfiling() throws Exception {
+        ScanConfig config = profileConfigWithFileSource();
         config.catalog = "requested_db";
 
         assertThrows(LiveSourceConfigurationException.class,
                 () -> new ScanEngine().scan(config, new SqlServerDatabaseAdaptor()));
     }
 
-    private ScanConfig profileOnlyConfig() {
+    private ScanConfig profileConfigWithFileSource() throws Exception {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.SQLSERVER;
         config.jdbcUrl = JDBC_URL;
         config.databaseVersion = "2022";
         config.metadataEnabled = false;
         config.dataProfileEnabled = true;
+        config.logsEnabled = true;
+        config.logFiles.add(Files.writeString(tempDir.resolve("query.sql"), "SELECT 1;"));
         return config;
     }
 

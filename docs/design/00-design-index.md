@@ -33,6 +33,7 @@
 - [PostgreSQL PL/pgSQL 版本与双路径审计](../parser-audit/postgres-plpgsql-version-review.md)
 - [ENUM 详细说明](relation-detector/enum-reference.md)
 - [设计一致性检查报告](relation-detector/design-validation-report.md)
+- [代码与设计对应审视报告](relation-detector/code-design-traceability.md)
 
 ## Semantic Layer 子系统设计
 

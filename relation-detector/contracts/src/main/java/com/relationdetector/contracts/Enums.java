@@ -219,15 +219,6 @@ public final class Enums {
 
     /**
      *
-     * Completeness assertion for offline INSERT-derived data-profile samples.
-     */
-    public enum OfflineSampleCompleteness {
-        PARTIAL,
-        COMPLETE
-    }
-
-    /**
-     *
      * Parser confidence about source -> target direction before final scoring.
      */
     public enum DirectionConfidence {

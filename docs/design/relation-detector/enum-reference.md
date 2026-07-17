@@ -114,7 +114,7 @@ public enum RelationSubType {
 | `DDL_DECLARED_FK` | `FK_LIKE` | DDL 文件中明确声明外键。 | `DDL_FOREIGN_KEY` | `FOREIGN KEY (user_id) REFERENCES users(id)`。 |
 | `INFERRED_JOIN_FK` | `FK_LIKE` | JOIN / comma join 谓词加上足够方向证据后得到的推断 FK-like。方向证据可以来自 DDL/metadata/data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或 top-level `namingEvidence` 中被该关系引用的唯一 `NAMING_MATCH` 方向提示。 | `SQL_LOG_JOIN` + `TARGET_UNIQUE`、metadata/index facts、`NAMING_MATCH` evidenceRef | `JOIN users u ON o.user_id = u.id`；若 `users.id` unique，或命名证据唯一指向 `orders.user_id -> users.id`，则输出该方向。 |
 | `SUBQUERY_INFERRED_FK` | `FK_LIKE` | `IN` / `EXISTS` 谓词加上足够方向证据后得到的推断 FK-like。谓词 evidence 保留具体语法来源；命名只能作为已有谓词上的方向提示，不能单独创建关系。 | `SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` + unique/profile facts 或 `NAMING_MATCH` evidenceRef | `o.user_id IN (SELECT id FROM users)`；若 `users.id` unique 或命名方向唯一，则可推导 `orders.user_id -> users.id`。 |
-| `PROFILE_SUPPORTED_FK` | `FK_LIKE` | 数据画像强支持的推断关系。 | `VALUE_CONTAINMENT_HIGH`、`TARGET_UNIQUE` | 抽样发现 `orders.user_id` 99.5% 都存在于 `users.id`。 |
+| `PROFILE_SUPPORTED_FK` | `FK_LIKE` | 数据画像强支持的推断关系。 | `VALUE_CONTAINMENT_HIGH`、`TARGET_UNIQUE` | live exact aggregate 发现 `orders.user_id` 99.5% 都存在于 `users.id`。 |
 | `NAMING_SUPPORTED_FK` | `FK_LIKE` | 命名方向启发式支持的 FK-like；当前实现通常保留 `INFERRED_JOIN_FK` / `SUBQUERY_INFERRED_FK` subtype，并用 `NAMING_MATCH` evidenceRef 标明方向来源。 | 既有 SQL predicate evidence + top-level `namingEvidence` 引用 | `user_id` / `id` 这类名称必须先进入命名证据池，并且同端点已有 JOIN/EXISTS/IN 等 SQL 谓词候选，才能作为方向提示。 |
 | `COLUMN_CO_OCCURRENCE` | `CO_OCCURRENCE` | SQL 给出明确列等值，但无法可靠判断 FK-like 方向。 | 当前生产 parser 通常保留具体 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`；`SQL_LOG_COLUMN_CO_OCCURRENCE` 仅作兼容保留。 | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `TABLE_CO_OCCURRENCE` | `CO_OCCURRENCE` | 只能证明两个表共现，不能证明列级引用。当前生产 parser 默认不主动输出表级共现 evidence。 | `SQL_LOG_TABLE_CO_OCCURRENCE` 仅作兼容保留。 | 外部导入或显式 opt-in 审计场景发现 `FROM users, audit_logs` 且没有连接条件。 |
@@ -294,9 +294,9 @@ attributes.joinKind: IN_SUBQUERY
 | 值 | 含义 | 默认分 | 何时产生 |
 | --- | --- | ---: | --- |
 | `NAMING_MATCH` | 命名方向规则匹配。 | 0.20 | 完整证据保存在 top-level `namingEvidence`；relationship 只能引用它。attributes 包含 `evidenceRef`、`namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。 |
-| `VALUE_CONTAINMENT_HIGH` | source 值域高度包含于 target。 | 0.30 | 抽样包含率高于阈值。 |
-| `VALUE_OVERLAP_HIGH` | source 与 target 值重合率较高。 | 0.20 | 抽样重合率高于阈值。 |
-| `NEGATIVE_VALUE_MISMATCH` | 数据画像显示明显不匹配。 | -0.30 | 大量 source 值不在 target 中，或类型/基数明显不合理。 |
+| `VALUE_CONTAINMENT_HIGH` | source 值域高度包含于 target。 | 0.30 | live exact aggregate 的包含率高于阈值。 |
+| `VALUE_OVERLAP_HIGH` | source 与 target 值重合率较高。 | 0.20 | live exact aggregate 的重合率高于阈值。 |
+| `NEGATIVE_VALUE_MISMATCH` | 声明 FK 的 live 数据明显不匹配。 | -0.30 | 非条件 DDL/metadata FK 的 missing ratio、distinct 和非空行门禁同时满足。 |
 | `TRANSITIVE_PATH` | 已确认有向证据图上的传递路径推导。 | 路径置信度 | `derivedPaths.enabled=true` 时由 core 推导产生；不表示直接物理 FK 或直接字段写入。 |
 
 维护说明：
@@ -304,8 +304,9 @@ attributes.joinKind: IN_SUBQUERY
 - `NAMING_MATCH` 不能单独生成关系；它先作为 top-level naming evidence 进入证据池，relationship 只能通过 `evidenceRef` 引用它，并在方向唯一时参与 FK-like 方向推导。
 - `VALUE_CONTAINMENT_HIGH` 是强辅助证据；当前由 MySQL/PostgreSQL/Oracle/SQL Server live profiler 在 `dataProfile.enabled=true`、候选受限、权限允许且 containment gate 满足时产出。
 - `VALUE_OVERLAP_HIGH` 当前也由四个 live profiler 产出；它表示值域重合较高，但不如 `VALUE_CONTAINMENT_HIGH` 强。
-- `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系；当前只在 live sample 非 partial、样本规模和 missing ratio gate 满足时产出。
-- 离线 seed `INSERT` 画像仍等待 typed literal `INSERT ... VALUES` sample event；生产代码不得用 regex/token span 扫描 SQL 伪造该 evidence。
+- `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系；当前只对非条件
+  `DDL_FOREIGN_KEY` / `METADATA_FOREIGN_KEY` 的 live database metrics 应用，并要求样本规模和
+  missing ratio gate 满足。SQL、naming、conditional 或 polymorphic 候选不产生该负向 evidence。
 - `TRANSITIVE_PATH` 只出现在 `derivedRelationships` / `derivedDataLineages`，或作为 derived `namingEvidence` 的推导说明；默认关闭，不参与直接 relationship / lineage 的 correctness golden。
 - EvidenceType 的默认分值、定分理由、合并公式和完整 SQL 算例，以 [Phase 2：核心模型和评分详细设计](phase-02-core-model-scoring.md) 的“置信度计算”章节为准。维护枚举时必须同步检查该章节，避免 enum 文档和评分模型出现两套解释。
 
@@ -337,7 +338,7 @@ public enum EvidenceSourceType {
 | `DATABASE_OBJECT` | 过程、函数、视图、触发器定义。 | `view user_orders` |
 | `NATIVE_LOG` | 数据库原生日志。 | MySQL slow log、PostgreSQL statement log |
 | `PLAIN_SQL` | 清洗后的纯 SQL 文本文件。 | `app-sql.sql` |
-| `DATA_PROFILE` | 数据画像查询结果。 | `99.5% sampled values matched` |
+| `DATA_PROFILE` | live 数据画像聚合结果。 | `99.5% distinct values matched` |
 | `NAMING_HEURISTIC` | 命名规则推断。 | `user_id` -> `users.id` |
 | `INFERENCE` | core 在已有证据图上做的传递推导。 | `a.r -> b.s -> c.t` |
 
@@ -540,24 +541,6 @@ public enum LogFormatHint {
 - 原生日志解析只负责抽 SQL，不负责生成关系；关系解析交给 SQL parser。
 - 后续新增云厂商日志格式时，新增 enum 值，例如 `ALIYUN_RDS_MYSQL_AUDIT_LOG`。
 
-## 11.1 OfflineSampleCompleteness
-
-表示离线 `INSERT ... VALUES` 样本是否可以被视为目标列值域的完整快照。它只影响离线画像证据的安全门禁，不改变 SQL parser 的事实语义。
-
-```java
-public enum OfflineSampleCompleteness {
-  PARTIAL,
-  COMPLETE
-}
-```
-
-| 值 | 含义 | 约束 |
-| --- | --- | --- |
-| `PARTIAL` | 文件只是部分 seed/sample rows。 | 不得用缺失值推导负向 mismatch；只能产生有明确样本支持的正向统计。 |
-| `COMPLETE` | 调用方明确声明文件覆盖目标分析范围的完整值域。 | 仍需满足样本量、类型和 containment gate，不能绕过物理 endpoint 校验。 |
-
-当前生产链路尚未用文本扫描伪造离线 literal sample event；若 typed parser 没有产出可审计的 literal event，该枚举本身不会让离线画像自动生效。
-
 ## 12. DirectionConfidence
 
 保留的兼容枚举，当前生产方向解析链没有使用该类型。生产代码直接依据 relationship evidence、
@@ -686,9 +669,9 @@ public enum ErrorCode {
 
 - 已使用的退出码不要复用给新含义。
 - warning 不应直接改变退出码，除非配置要求“warning as error”。
-- 当前 single-scan CLI 实际独立返回 `0/2/3/4/11`；`1/5/10/12` 仍是保留分类，尚未从 catch
-  boundary 分开映射。非法 option value 还可能在参数解析阶段直接抛出。不能把 enum 的存在当作
-  完整进程行为已经实现。
+- single-scan CLI 已分别映射 `0/1/2/3/4/5/10/11/12`；batch partial failure 使用 `13`。
+  参数、配置文件、配置 shape、adaptor、输入文件、连接、运行时和输出写入都有独立 catch boundary，
+  并输出固定脱敏 stderr。新增错误码时必须同步穷举 contract test，不能只增加 enum 常量。
 
 ## 16. AdaptorCapability
 
@@ -783,8 +766,8 @@ public enum ScanSourceKind {
 
 ## 19. 实现检查清单
 
-- 稳定 enum 字符串由现有 JSON writer/correctness 测试间接覆盖；逐 enum 的完整
-  序列化/反序列化 contract test 尚未实现。
+- 所有 public production enum value 由 AST discovery gate 逐值执行 Jackson
+  serializer/deserializer round-trip；`ErrorCode` 另有冻结集合和各 catch path 的穷举测试。
 - 配置中的小写值能映射到内部大写 enum。
 - 未知 enum 值给出明确错误，不静默忽略。
 - 输出 JSON 使用稳定 enum 字符串。

@@ -9,17 +9,16 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
  */
 final class ScanCapabilityValidator {
     void validate(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
-        boolean live = hasText(config.database().jdbcUrl());
         SourceConfig sources = config.sources();
 
-        if (live && sources.metadataEnabled()) {
+        if (sources.metadataEnabled()) {
             require(adaptor, AdaptorCapability.METADATA, adaptor.collectors().metadata().isPresent(), "live metadata");
         }
         if (hasDdlFiles(sources)) {
             require(adaptor, AdaptorCapability.DDL_PARSING,
                     adaptor.parsers().structuredDdl().isPresent(), "DDL files");
         }
-        if (live && sources.ddlEnabled() && sources.ddlFromDatabase()) {
+        if (sources.ddlEnabled() && sources.ddlFromDatabase()) {
             require(adaptor, AdaptorCapability.DDL_PARSING,
                     adaptor.collectors().databaseDdl().isPresent(), "live database DDL");
             requireParser(adaptor, adaptor.parsers().structuredDdl().isPresent(), "live database DDL", "structured DDL parser");
@@ -27,7 +26,7 @@ final class ScanCapabilityValidator {
         if (hasObjectFiles(sources) && adaptor.parsers().structuredSql().isEmpty()) {
             throw unsupported(adaptor, "object files", "structured SQL parser");
         }
-        if (live && sources.objectsEnabled() && sources.objectsFromDatabase()) {
+        if (sources.objectsEnabled() && sources.objectsFromDatabase()) {
             require(adaptor, AdaptorCapability.DATABASE_OBJECTS,
                     adaptor.collectors().objects().isPresent(), "live database objects");
             requireParser(adaptor, adaptor.parsers().structuredSql().isPresent(), "live database objects", "structured SQL parser");
@@ -36,7 +35,7 @@ final class ScanCapabilityValidator {
             require(adaptor, AdaptorCapability.NATIVE_LOGS,
                     adaptor.collectors().logs().isPresent(), "native log files");
         }
-        if (live && config.evidence().dataProfileEnabled()) {
+        if (config.evidence().dataProfileEnabled()) {
             require(adaptor, AdaptorCapability.DATA_PROFILING,
                     adaptor.profiling().dataProfiler().isPresent(), "live data profiling");
         }
@@ -78,9 +77,5 @@ final class ScanCapabilityValidator {
     private boolean hasLogFiles(SourceConfig sources) {
         return sources.logsEnabled()
                 && !sources.logFiles().isEmpty();
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
     }
 }

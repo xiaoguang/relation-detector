@@ -15,7 +15,7 @@
 
 ## DatabaseAdaptor 接口
 
-当前公开契约是 **adaptor SPI v5**。`DatabaseAdaptor` 只暴露 grouped
+当前公开契约是 **adaptor SPI v6**。`DatabaseAdaptor` 只暴露 grouped
 capability；metadata、object、DDL、log、parser 和 profiling 的旧 getter 已从接口删除，
 不再保留双接口兼容桥。这是一次明确的二进制 SPI 升级：外部 adaptor 必须基于
 当前 `contracts` 重新编译。
@@ -51,7 +51,7 @@ public interface DatabaseAdaptor {
   异常类型和 SQLState；Oracle 1031、SQL Server 229/916 等 vendor code 由拥有它们的 adaptor
   明确返回，不能全局应用到其他方言。
 - `spiVersion()` 是二进制 API 版本。内置 adaptor 显式返回
-  `AdaptorApiVersion.CURRENT`（当前为 5）；为了让旧二进制类可被加载并获得可读错误，
+  `AdaptorApiVersion.CURRENT`（当前为 6）；为了让旧二进制类可被加载并获得可读错误，
   接口 default 返回 1。
 - `collectors()` 聚合 metadata、object definition、database DDL 和 SQL log extractor。
 - `parsers()` 聚合 SQL relationship parser、structured SQL parser、structured DDL parser 和必需的 dialect script framer。
@@ -60,10 +60,14 @@ public interface DatabaseAdaptor {
 - `AdaptorRegistry` 在使用任何 capability 前检查 SPI 版本。不匹配时错误包含
   plugin id、actual、required 和“请重新编译”提示，避免运行到中途才出现
   `NoSuchMethodError`。
-- `capabilities()` 是可执行契约。`ScanCapabilityValidator` 已在打开 JDBC 前检查主要 source、capability
-  和 collector/profiler interface；纯文件 scan 不会因 live metadata 默认值被拒绝。当前仍有一个
-  public SPI 缺口：live object/database-DDL 只验证 collector，没有同时验证下游 structured SQL/DDL
-  parser。内置 adaptor 恰好提供两侧，但 custom adaptor 仍可能在 JDBC 工作之后才失败。
+- `capabilities()` 是可执行契约。`ScanCapabilityValidator` 已在打开 JDBC 前检查实际请求的 source、
+  capability、collector/profiler 以及下游 parser；live database DDL 同时要求 structured DDL parser，
+  live database objects 同时要求 structured SQL parser。纯文件 scan 不会因 live metadata 默认值被拒绝，
+  custom adaptor 缺少任一生产者或消费者时也会在 JDBC 前失败。
+- `ScanConfigurationValidator` 在 `ScanConfig.resolve()`、`ResolvedScanConfig` 构造和
+  `ScanEngine.scan()` 三个边界执行统一规则。metadata、database-DDL、database-object 或 profiling
+  任一 live 功能启用但缺少 JDBC URL 时会在 capability 检查及连接前失败；`ScanCapabilityValidator`
+  只负责 capability、producer 和 consumer 契约，不再用 JDBC URL 猜测是否请求 live 功能。
 - preflight只能证明请求有可调用实现，不能证明collector返回的是完整parser-grade declaration、所有
   namespace fallback一致或真实driver权限组合已经验证。live completeness必须由各adaptor设计和
   runtime/高保真contract test单独声明。
@@ -219,7 +223,7 @@ core Simple parser 假装支持。
 
 `DialectScriptFramer` 将 client script 的边界处理与 server SQL grammar 明确分开：前者只
 产生可解析的 `SqlStatementRecord` 和 framing warning，后者才产生 `StructuredParseResult`。
-这是 adaptor SPI v5 的必需能力，不能再用 core 的通用文本 splitter、对象文件 extractor
+这是 adaptor SPI v6 的必需能力，不能再用 core 的通用文本 splitter、对象文件 extractor
 或 raw-SQL regex 推断 statement / object 边界。
 
 ```java
@@ -315,8 +319,13 @@ public interface DataProfiler {
 
 - 只对已有候选关系运行。
 - 不对所有表列做全组合扫描。
-- live 模式对每个候选执行 exact aggregate query，并遵守 `timeoutSeconds`；`sampleRows` 和
-  `maxDistinctValues` 只保留给离线样本模式。
+- live 模式对每个候选执行 exact aggregate query，并遵守 `timeoutSeconds`、候选总量和每个 source
+  的 target 数预算。SPI v6 不包含离线样本选项。
+- `ProfileOutcome.evidence` 只允许 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH` 和
+  `NEGATIVE_VALUE_MISMATCH`。adaptor 不得借 profiler 注入 metadata、DDL、SQL、naming 或 derived evidence。
+- 只有 `SUCCESS` 可携带非空 evidence；`NO_EVIDENCE`、skip 和 failure status 必须返回空 evidence。
+- core consumer 必须重验上述 allowlist/status invariant，并对 `NEGATIVE_VALUE_MISMATCH` 再执行
+  声明 FK、live mode 和 conditional/polymorphic policy，不能把外部 adaptor 视为可信边界。
 - 默认关闭。
 
 ## 权重修正接口
@@ -375,9 +384,11 @@ Set<AdaptorCapability> capabilities();
 
 生产链路在 JDBC 连接前完成统一 preflight：
 
-- 用户实际配置 JDBC metadata、database DDL、database objects 或 data profile 时，目标契约要求
-  capability、collector/profiler 及必需的 structured parser 同时存在，否则在打开 JDBC 前失败；
-  当前 live object/database-DDL 的 parser-half 校验仍待补齐。
+- 用户实际配置 JDBC metadata、database DDL、database objects 或 data profile 时，capability、
+  collector/profiler 及必需的 structured parser 必须同时存在，否则在打开 JDBC 前失败。
+- metadata、database DDL 或 database objects 等 live-backed source 一旦启用，`jdbcUrl` 必须非空。
+  `ScanConfigurationValidator` 在 capability preflight 和 JDBC 打开前执行该组合校验，不能依赖
+  `live = hasText(jdbcUrl)` 来反向证明请求不是 live。
 - 用户提供 native log，但 adaptor 不支持对应格式时，在文件处理前失败并指出 adaptor id、
   source kind 和 required capability。
 - 纯文件扫描不会因为 live capability 的默认配置而失败。

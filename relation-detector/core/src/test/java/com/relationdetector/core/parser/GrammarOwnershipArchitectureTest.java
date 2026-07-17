@@ -72,7 +72,7 @@ class GrammarOwnershipArchitectureTest {
         String parsers = Files.readString(contracts.resolve("spi/AdaptorParsers.java"));
         assertTrue(parsers.contains("DialectScriptFramer scriptFramer"));
         String version = Files.readString(contracts.resolve("spi/AdaptorApiVersion.java"));
-        assertTrue(version.contains("CURRENT = 5"));
+        assertTrue(version.contains("CURRENT = 6"));
     }
 
     @Test

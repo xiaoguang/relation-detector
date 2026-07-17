@@ -29,7 +29,6 @@ class PostgresDataProfilerTest {
         var evidence = new PostgresDataProfiler().profile(
                 connection(sql, 200, 100, 20, 150),
                 new ProfileRequest(candidate(), DataProfileOptions.defaults()
-                        .withMaxDistinctValues(40)
                         .withMinRowsForNegative(50)
                         .withMaxMismatchRatio(0.50d))).evidence();
 
@@ -53,11 +52,18 @@ class PostgresDataProfilerTest {
     }
 
     private RelationshipCandidate candidate() {
-        return new RelationshipCandidate(
+        RelationshipCandidate candidate = new RelationshipCandidate(
                 Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id")),
                 Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id")),
                 RelationType.FK_LIKE,
-                RelationSubType.PROFILE_SUPPORTED_FK);
+                RelationSubType.DDL_DECLARED_FK);
+        candidate.evidence().add(com.relationdetector.contracts.model.Evidence.of(
+                EvidenceType.DDL_FOREIGN_KEY,
+                1.0d,
+                com.relationdetector.contracts.Enums.EvidenceSourceType.DDL_FILE,
+                "test",
+                "declared foreign key"));
+        return candidate;
     }
 
     private RelationshipCandidate catalogCandidate() {

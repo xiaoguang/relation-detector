@@ -183,7 +183,7 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016
 
 版本由 package 表达，例如 `postgres.fullgrammar.v16`、`mysql.fullgrammar.v8_0`、`oracle.fullgrammar.v19c`、`sqlserver.fullgrammar.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammarDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar 实现。version package 不再持有 `.g4` 或 generated Java；它们依赖 `grammar/*` 中对应的独立 artifact，只保留 binding、profile/version policy 和少量 typed context adapter。
 
-Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade 设置 450 行上限；generated Java、top-level record DTO 与 `package-info` 排除，不设永久 allowlist。`StructuredScriptFramer` 仅保留编排，五种 dialect slice 算法已分别进入独立 planner，并由额外的 200/250 行职责门禁保护。当前门禁仍有一项 `PARTIAL`：top-level record 豁免通过源码文本包含判断，而非 compiler AST 顶层声明判断；注释或字符串可能误触发豁免。
+Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade 设置 450 行上限；generated Java、top-level record DTO 与 `package-info` 排除，不设永久 allowlist。`StructuredScriptFramer` 仅保留编排，五种 dialect slice 算法已分别进入独立 planner，并由额外的 200/250 行职责门禁保护。top-level record DTO 豁免通过 JDK compiler AST 检查真实顶层声明；普通类注释或字符串中的伪 `record` 不能绕过门禁。
 
 ## 代码结构注释索引
 
@@ -763,11 +763,11 @@ root token-event 与对应 full-grammar 数量不要求完全一致：token-even
 - `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
 
 2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery
-source role、trigger provenance和非平凡 self-update已有定向测试。当前仍有实现级 `REVIEW_NEEDED`：
-MySQL qualified SQL 的 catalog 轴、dialect canonical fact key、`TableId` 模型不变量、derived identity
-bridge 的 catalog、profile-only catalog 校验、relationship conditional/consensus merge，以及 direct
-`ScanConfig.*Paths`。全量状态以 `design-validation-report.md` 和发布验收结果为准；不能因现有
-sample-data 数量稳定就把这些边界写成已闭环。
+source role、trigger provenance和非平凡 self-update已有定向测试。MySQL catalog 轴、dialect canonical
+fact key、`TableId` 模型不变量、derived identity bridge、profile-only catalog 校验、relationship
+conditional/consensus merge，以及 direct `ScanConfig.*Paths` 已由统一底层原语和负向测试闭环。
+仍存在的 parser backlog 是 root token-event 对复杂 routine/业务查询的 typed visitor coverage、Oracle
+更广泛官方语法和 SQL Server 更多版本化 T-SQL family；它们不能因 sample-data 数量稳定而被写成完整覆盖。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -962,11 +962,11 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 
 路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
 
-Endpoint identity 在 derived graph 中必须保持 catalog/schema 保真：parser 只保留 SQL/DDL 显式写出的
+Endpoint identity 在 derived graph 中保持 catalog/schema 保真：parser 只保留 SQL/DDL 显式写出的
 namespace，不自动补默认 namespace。`catalog.schema.table.column`、`schema.table.column` 与
-`table.column` 默认不是同一个 graph key。当前实现仍为 `PARTIAL`：endpoint graph key 保留完整 key，
-但 table identity bridge 只按 `schema.table` 建索引，遗漏 catalog；修复前存在跨 catalog 同名表误桥接
-风险。bridge 必须改用 dialect-aware canonical table key，并增加跨 catalog 负向测试。
+`table.column` 默认不是同一个 graph key。endpoint adjacency、direct pair、path identity 和 lazy table
+identity bridge 均使用 `CanonicalEndpointKeyProvider`；跨 catalog 同名表不会被桥接，相关负向测试
+覆盖 relationship、lineage 和 naming path。
 
 `StructuredDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标、表达式来源和 transform，输出 `DataLineageCandidate`。
 

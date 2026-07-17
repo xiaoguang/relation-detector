@@ -74,11 +74,12 @@ public final class RelationshipCandidate {
 写出的 catalog、schema、quote 和标识符拼写，作为 JSON 和 evidence 的可读 endpoint；不使用
 默认 schema 把裸 endpoint 改写成 schema-qualified endpoint。
 
-当前实现状态以 `code-design-traceability.md` 为准。完整身份是目标契约，但当前仍为 `PARTIAL`：
-`TableId.sameIdentity()` 尚未独立校验 schema/table 字段；MySQL qualified SQL 的两段名仍可能按
-`schema.table` 解释；fact merger 仍依赖 endpoint 保存的可读 `normalizedName`；derived table bridge
-遗漏 catalog。MySQL live metadata scope 已统一为 `catalog=<database>, schema=null`，但 parser、merger、
-profile 与 derived 仍需使用同一 dialect-aware canonical key 才能宣称闭环。
+当前实现已经闭环这条身份契约：`TableId.sameIdentity()` 对 catalog、schema、tableName 和
+normalizedName 做严格结构比较；需要方言大小写与缺省 namespace 语义时，由
+`CanonicalIdentifierResolver` / `CanonicalEndpointKeyProvider` 生成方言感知的 canonical key。
+MySQL 的两段 `database.table` 按 `CATALOG_TABLE` 解释；relationship、lineage、naming、profile、
+known-physical inventory 和 derived graph 都使用同一 catalog/schema/table 身份。公开
+`normalizedKey()` 继续用于可读输出和 evidence 兼容，不能作为跨方言事实相等的唯一依据。
 
 `StatementParsePipeline` 的 known-physical inventory 与 live DDL candidate qualification 必须保留
 `MetadataTableFact` / `DatabaseDdlDefinition` 的 catalog，不能重新退化为只含 schema/table 的
@@ -321,7 +322,7 @@ public record Evidence(
 | `COLUMN_TYPE_COMPATIBLE` | 已产出 | metadata enhancer 在已有关系候选上按两端 column facts 增强。 |
 | `VALUE_CONTAINMENT_HIGH` | 已产出（live DB opt-in） | MySQL/PostgreSQL/Oracle/SQL Server live profiler 在 `dataProfile.enabled=true` 且候选、权限、样本和阈值 gate 满足时产出；correctness fixture 默认不依赖 live DB。 |
 | `VALUE_OVERLAP_HIGH` | 已产出（live DB opt-in） | 同一 live profiler 在包含率未达强条件但 overlap 达阈值时产出；只输出统计量，不输出业务值。 |
-| `NEGATIVE_VALUE_MISMATCH` | 已产出（live DB opt-in） | 负向 evidence 只在 live sample 非 partial、distinct/row 数和 missing ratio gate 满足时产出；降低 confidence，不删除显式关系。 |
+| `NEGATIVE_VALUE_MISMATCH` | 已产出（live DB opt-in） | 只验证两端为物理列、非条件/非多态的 `DDL_FOREIGN_KEY` / `METADATA_FOREIGN_KEY`，并要求 live database metrics 通过 distinct、row 数与 missing ratio gate。它降低 confidence，不删除声明式关系。 |
 | `TRANSITIVE_PATH` | 已产出（opt-in derived path） | `derivedPaths.enabled=true` 时由 `DerivedPathInferenceService` 从已定向关系、`VALUE` lineage 或 namingEvidence 图推导；默认关闭，不修改直接 relationship / lineage。 |
 | `REPEATED_OBSERVATION` | 已派生产出 | 只能由 `RelationshipMerger` 在同组可重复观测 evidence 的 `count > 1` 时生成，不由 parser、metadata collector 或 profiler 直接产出。 |
 
@@ -380,7 +381,8 @@ raw evidence。
 1. 数据库声明强于静态文本，静态文本强于运行日志；运行 SQL 里的列等值只证明共现，不证明 FK 方向。
 2. 能证明方向和列级对应的 DDL/metadata/data-profile 证据，比只能证明 SQL 列共现或表共现的证据强。
 3. 辅助证据只能加固已有候选，不能单独创造关系。例如索引、唯一性、类型兼容、命名匹配都不能凭空证明外键；但“明确 SQL 谓词 + 一侧唯一、一侧非唯一”或“明确 SQL 谓词 + top-level `namingEvidence` 中唯一可引用的 `NAMING_MATCH` 方向提示”可以把方向推导为 source 指向 target。
-4. 数据画像可以增强也可以反证，但默认仍低于显式约束，因为抽样数据可能不完整，历史数据也可能暂时“看起来像”外键。
+4. 数据画像可以增强也可以反证，但默认仍低于显式约束：即使使用 exact aggregate，软删除、
+   租户范围、归档和历史脏数据也可能使当前值域暂时“看起来像”或“不像”外键。
 
 基础分和设计理由：
 
@@ -400,9 +402,9 @@ raw evidence。
 | `SOURCE_INDEX` | 0.10 | 子表外键列常有索引，但索引也可能只是为了过滤或排序。只能作为辅助证据。 | `CREATE INDEX idx_orders_user_id ON orders(user_id);` |
 | `TARGET_UNIQUE` | 0.18 | 被引用列通常是 PK/unique；这是比普通索引更强的方向证据，但唯一列不代表一定被引用。 | `users.id` 是 primary key。 |
 | `COLUMN_TYPE_COMPATIBLE` | 0.08 | 类型一致是必要条件之一，但大量无关列都可能同类型，所以只能给很小加分。 | `orders.user_id BIGINT` 与 `users.id BIGINT`。 |
-| `VALUE_CONTAINMENT_HIGH` | 0.30 | 如果 source 的非空取值几乎都存在于 target，说明“引用集合”关系很强；但抽样、软删除、分区数据会影响判断，所以低于结构证据。 | 抽样显示 `orders.user_id` 的 99.5% 值存在于 `users.id`。 |
-| `VALUE_OVERLAP_HIGH` | 0.20 | 值域重合能提示关系，但不如包含率强。两个状态码、租户 id、时间片等也可能高度重合。 | `invoice.account_id` 与 `account.id` 抽样重合率高。 |
-| `NEGATIVE_VALUE_MISMATCH` | -0.30 | 明显值不匹配应降低置信度，但不直接清零，因为日志/DDL/metadata 仍可能代表真实关系，只是样本不完整或数据质量差。 | 抽样发现大量 `orders.user_id` 不存在于 `users.id`。 |
+| `VALUE_CONTAINMENT_HIGH` | 0.30 | 如果 source 的非空 distinct 值几乎都存在于 target，说明“引用集合”关系很强；但软删除、租户范围和历史数据会影响判断，所以低于结构证据。 | live exact aggregate 显示 `orders.user_id` 的 99.5% distinct 值存在于 `users.id`。 |
+| `VALUE_OVERLAP_HIGH` | 0.20 | 值域重合能提示关系，但不如包含率强。两个状态码、租户 id、时间片等也可能高度重合。 | `invoice.account_id` 与 `account.id` 的 live distinct 值重合率高。 |
+| `NEGATIVE_VALUE_MISMATCH` | -0.30 | 明显值不匹配只能反驳已声明的非条件 FK，不能反驳普通 SQL/naming 推断；即使对声明 FK 也只降低置信度，不直接清零。 | live 查询发现声明 FK `orders.user_id -> users.id` 有大量缺失值。 |
 | `REPEATED_OBSERVATION` | 0.00-0.10 | 同一关系被重复观测到确实比只出现一次更可信，但频率本身不能把日志 JOIN 刷成显式外键。因此它只给递减的小幅加分，并设置绝对上限。 | `SQL_LOG_JOIN` 在同一日志源中出现 3 次，额外分 `0.10 * (1 - 1 / 3) = 0.0667`。 |
 
 正向证据合并：

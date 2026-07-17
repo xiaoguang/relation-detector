@@ -18,6 +18,8 @@ import com.relationdetector.contracts.spi.ProfileRequest;
  * Converts bounded profiling metrics into explainable evidence.
  */
 public final class DataProfileEvidenceBuilder {
+    private final NegativeProfileEvidencePolicy negativePolicy = new NegativeProfileEvidencePolicy();
+
     public List<Evidence> build(ProfileRequest request, DataProfileMetrics metrics, String sourceName) {
         if (request == null || metrics == null || metrics.queryTimedOut() || metrics.permissionDenied()
                 || metrics.sourceDistinctValues() <= 0) {
@@ -43,15 +45,18 @@ public final class DataProfileEvidenceBuilder {
                     attributes(request, metrics, containmentRatio, overlapRatio, missingRatio)));
         }
 
-        if (!metrics.partialSample()
+        if (negativePolicy.allows(request, metrics)
                 && metrics.sourceDistinctValues() >= request.options().minDistinctValues()
                 && metrics.sourceNonNullRows() >= request.options().minRowsForNegative()
                 && missingRatio >= request.options().maxMismatchRatio()) {
+            Map<String, Object> negativeAttributes = new LinkedHashMap<>(
+                    attributes(request, metrics, containmentRatio, overlapRatio, missingRatio));
+            negativeAttributes.put("negativePolicy", "DECLARED_FOREIGN_KEY_ONLY");
             result.add(evidence(EvidenceType.NEGATIVE_VALUE_MISMATCH,
                     DefaultEvidenceScores.NEGATIVE_VALUE_MISMATCH,
                     sourceName,
                     "source values are frequently missing from target values",
-                    attributes(request, metrics, containmentRatio, overlapRatio, missingRatio)));
+                    negativeAttributes));
         }
 
         return List.copyOf(result);
@@ -87,16 +92,11 @@ public final class DataProfileEvidenceBuilder {
         attributes.put("sourceDistinctValues", metrics.sourceDistinctValues());
         attributes.put("sourceNonNullRows", metrics.sourceNonNullRows());
         attributes.put("targetDistinctValues", metrics.targetDistinctValues());
-        if (metrics.partialSample()) {
-            attributes.put("sampleRows", request.options().sampleRows());
-            attributes.put("maxDistinctValues", request.options().maxDistinctValues());
-        }
         attributes.put("minContainmentRatio", request.options().minContainmentRatio());
         attributes.put("minOverlapRatio", request.options().minOverlapRatio());
         attributes.put("maxMismatchRatio", request.options().maxMismatchRatio());
         attributes.put("minDistinctValues", request.options().minDistinctValues());
         attributes.put("minRowsForNegative", request.options().minRowsForNegative());
-        attributes.put("partialSample", metrics.partialSample());
         attributes.put("queryTimedOut", metrics.queryTimedOut());
         attributes.put("permissionDenied", metrics.permissionDenied());
         return attributes;

@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
-import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.core.naming.NamingRule;
@@ -48,10 +47,8 @@ public final class ScanConfig {
     public List<String> logSystemSchemas = new ArrayList<>();
     public List<String> logMetadataQueryMarkers = new ArrayList<>();
     public boolean dataProfileEnabled;
-    public int sampleRows = 10_000;
     public int timeoutSeconds = 30;
     public int maxCandidatePairs = 1_000;
-    public int maxDistinctValues = 5_000;
     public int maxTargetsPerSourceColumn = 3;
     public double minContainmentRatio = 0.98d;
     public double minOverlapRatio = 0.80d;
@@ -60,8 +57,6 @@ public final class ScanConfig {
     public int minRowsForNegative = 100;
     public boolean verifyDeclaredForeignKeys;
     public boolean discoverFromNamingEvidence;
-    public boolean useOfflineInsertSamples = true;
-    public OfflineSampleCompleteness offlineSampleCompleteness = OfflineSampleCompleteness.PARTIAL;
     public boolean skipUnindexedLargeTargets = true;
     public OutputFormat outputFormat = OutputFormat.JSON;
     public double minConfidence = 0.30d;
@@ -91,10 +86,8 @@ public final class ScanConfig {
 
     public DataProfileOptions dataProfileOptions() {
         return new DataProfileOptions(
-                sampleRows,
                 timeoutSeconds,
                 maxCandidatePairs,
-                maxDistinctValues,
                 maxTargetsPerSourceColumn,
                 minContainmentRatio,
                 minOverlapRatio,
@@ -103,8 +96,6 @@ public final class ScanConfig {
                 minRowsForNegative,
                 verifyDeclaredForeignKeys,
                 discoverFromNamingEvidence,
-                useOfflineInsertSamples,
-                offlineSampleCompleteness,
                 skipUnindexedLargeTargets);
     }
 

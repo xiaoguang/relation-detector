@@ -8,7 +8,7 @@ catalog、schema、标识符和日志规则。当前 parser/sample-data 与 live
 
 当前 PostgreSQL adaptor 不只负责采集，也负责 PostgreSQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.postgres.tokenevent`，PostgreSQL full-grammar 公共抽象位于 `com.relationdetector.postgres.fullgrammar.common`，严格版本 profile 位于 `com.relationdetector.postgres.fullgrammar.v16`、`v17`、`v18`。core 只通过 runner 和 `FullGrammarDialectModule` registry 调度，不在 core 里 hard-code PostgreSQL 版本实现。
 
-PostgreSQL 同时实现当前 SPI v5 的 `PostgresScriptFramer`。它使用 generated script lexer 的 typed dollar-tag lexeme，在匹配的 `$tag$ ... $tag$` 区间内不把 semicolon 当作 statement boundary；framing 先于 SQL/DDL grammar，避免函数体被通用 splitter 截断。
+PostgreSQL 同时实现当前 SPI v6 的 `PostgresScriptFramer`。它使用 generated script lexer 的 typed dollar-tag lexeme，在匹配的 `$tag$ ... $tag$` 区间内不把 semicolon 当作 statement boundary；framing 先于 SQL/DDL grammar，避免函数体被通用 splitter 截断。
 
 PostgreSQL full-grammar 的设计目标是“按大版本严格表达官方语法边界”：
 
@@ -289,12 +289,13 @@ PostgreSQL 当前实现：
 - 对已经筛选出的候选执行 exact aggregate query，不使用 `LIMIT` 采样替代真实分母。
 - 由 JDBC query timeout 控制单候选超时。
 - 独立测量 source non-null rows、source distinct、matched distinct 和 target distinct。
-- `sampleRows` / `maxDistinctValues` 只保留给未来离线样本模式，不限制 live exact query。
+- live exact query 只受 timeout、候选总量和每个 source 的 target 数预算限制。
 
-当前实现状态为 `PARTIAL`：metadata endpoint 会保留 connection database catalog，但通用
-`IdentifierQuoter` 会把它渲染成 PostgreSQL 不支持的 `catalog.schema.table` 三段引用；renderer 必须
-只渲染 `schema.table`，同时单独校验 request catalog 与 connection catalog。仅启用 profile、关闭其它
-live collector 时目前也会绕过 `PostgresNamespaceResolver` 的 catalog 校验。
+当前实现已区分“身份中的 catalog”和“PostgreSQL 可执行 SQL 的限定形式”。`ScanEngine` 在任何
+metadata/object/database-DDL/profile 操作前调用 `PostgresNamespaceResolver`，显式 catalog 必须与
+`Connection.getCatalog()` 一致；profile-only scan 也经过同一入口。`IdentifierQuoter.postgres()`
+只渲染 `schema.table`，`DataProfileNamespacePolicy` 会在渲染前拒绝异库 endpoint，因此不会把
+`catalog.schema.table` 发给 PostgreSQL，也不会在丢弃 catalog 后误查同名表。
 
 示意：
 

@@ -87,6 +87,7 @@ class EvidenceEnhancementPipelineTest {
     private ScanPipelineContext context(EvidenceWeightAdjuster adjuster) {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
+        config.jdbcUrl = "jdbc:test:evidence-enhancement";
         RelationshipCandidate relationship = relationship();
         relationship.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN, 0.4d));
         DataLineageCandidate lineage = new DataLineageCandidate(

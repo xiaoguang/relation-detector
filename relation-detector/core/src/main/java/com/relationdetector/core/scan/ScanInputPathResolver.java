@@ -24,7 +24,7 @@ public final class ScanInputPathResolver {
         for (Path configuredRoot : roots) {
             Path root = resolve(configuredRoot, base);
             if (!Files.exists(root)) {
-                throw new IllegalArgumentException("source path does not exist: " + root);
+                throw new ScanInputException("source path does not exist: " + root);
             }
             if (Files.isRegularFile(root)) {
                 if (matchesAny(root.getFileName(), patterns)) {
@@ -38,18 +38,18 @@ public final class ScanInputPathResolver {
                         .map(this::requireRegularFile)
                         .forEach(resolved::add);
             } catch (IOException ex) {
-                throw new IllegalArgumentException("source path is unreadable: " + root, ex);
+                throw new ScanInputException("source path is unreadable: " + root, ex);
             }
         }
         if (!roots.isEmpty() && resolved.isEmpty()) {
-            throw new IllegalArgumentException("source paths did not resolve to files: " + roots);
+            throw new ScanInputException("source paths did not resolve to files: " + roots);
         }
         return resolved.stream().sorted(Comparator.comparing(Path::toString)).toList();
     }
 
     private Path resolve(Path path, Path base) {
         if (path == null) {
-            throw new IllegalArgumentException("source path is required");
+            throw new ScanInputException("source path is required");
         }
         Path candidate = path.isAbsolute() ? path : base.resolve(path);
         return candidate.toAbsolutePath().normalize();
@@ -57,12 +57,12 @@ public final class ScanInputPathResolver {
 
     private Path requireRegularFile(Path path) {
         if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
-            throw new IllegalArgumentException("source file is unreadable: " + path);
+            throw new ScanInputException("source file is unreadable: " + path);
         }
         try {
             return path.toRealPath();
         } catch (IOException ex) {
-            throw new IllegalArgumentException("source file is unreadable: " + path, ex);
+            throw new ScanInputException("source file is unreadable: " + path, ex);
         }
     }
 
@@ -76,11 +76,15 @@ public final class ScanInputPathResolver {
     }
 
     private boolean matches(Path relative, String pattern) {
-        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
-        if (matcher.matches(relative)) {
-            return true;
+        try {
+            PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+            if (matcher.matches(relative)) {
+                return true;
+            }
+            return pattern.startsWith("**/")
+                    && FileSystems.getDefault().getPathMatcher("glob:" + pattern.substring(3)).matches(relative);
+        } catch (IllegalArgumentException ex) {
+            throw new ScanInputException("source include pattern is invalid", ex);
         }
-        return pattern.startsWith("**/")
-                && FileSystems.getDefault().getPathMatcher("glob:" + pattern.substring(3)).matches(relative);
     }
 }

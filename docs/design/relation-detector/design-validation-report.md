@@ -243,8 +243,10 @@ direct/derived 和 observation 数量只维护在
 2026-07 的结构/SQL 审计已经修复以下历史不匹配：derived lineage 按 canonical path 合并、不同 edge variant 保留为 raw observations；naming inventory 合并同 endpoint 的全部 metadata/DDL observation；Oracle natural assets 使用 `GENERATED ALWAYS AS (...) VIRTUAL` 且无参 routine 不再写空 `()`；common natural 只保留一份 canonical `payments`；已审计 CASE/scalar-subquery、trigger provenance、非平凡 self-update 和 Oracle transform gap 均由 typed context 测试保护。当前 direct/derived sample-data JSON 的数量与完整性结论只以生成的 parser comparison 和 verification manifest 为准。
 
 本轮已完成 preflight 主链、index policy、lineage source-set identity、live warning 脱敏、四项 exact
-profile metrics、scan summary namespace 和职责拆分；反向审计同时确认以下实现仍为 `PARTIAL`，因此
-不能再概括为“catalog-aware fact identity 已全面收口”：
+profile metrics、scan summary namespace 和职责拆分。以下条目记录当前实现边界和验证层级；
+catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，negative profiling 通过
+“只验证非条件声明 FK”的适用范围解决过滤上下文不可证问题，offline profile
+配置已从 runtime 和 SPI 删除：
 
 1. Oracle/SQL Server `METADATA` 与 `DATABASE_OBJECTS` capability 已有非空 live collector，支持组合 constraint/index 和 partial-success warning；这证明代码契约可执行，但真实权限/版本组合仍需 runtime smoke。
 2. `AdaptorContractValidator` 与 `ScanCapabilityValidator` 在 JDBC 前分别验证 SPI/type/id 及实际请求的 capability、collector 和 consumer；live DDL 要求 structured DDL parser，live objects 要求 structured SQL parser，纯文件 scan 不新增 live capability 要求。
@@ -257,7 +259,7 @@ profile metrics、scan summary namespace 和职责拆分；反向审计同时确
    使用 catalog/schema/table；PostgreSQL 异库候选和 Oracle 带 catalog 候选不会进入 profiler，MySQL
    缺省 database 时从 connection catalog 建立 live scope；跨 catalog 同名表不能形成 derived
    relationship、lineage 或 naming path。
-7. SPI v5、Oracle/SQL Server live 能力和 `contracts.Enums` 设计真源链接的生产 Javadoc 已同步。
+7. SPI v6、Oracle/SQL Server live 能力和 `contracts.Enums` 设计真源链接的生产 Javadoc 已同步。
 8. Metadata/DDL observation 不再在 merger 前仅按 type 丢弃；merger 按完整 observation identity 折叠精确重复并记录 `occurrenceCount`。
 9. MySQL live object collector 只用 `information_schema` 枚举身份，parser 输入由对应 `SHOW CREATE` 返回的完整 declaration 提供。
 10. Connection、metadata、object、database-DDL 和 profiler 的 SQLException failure 共用
@@ -267,6 +269,15 @@ profile metrics、scan summary namespace 和职责拆分；反向审计同时确
 11. `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner；CLI 以配置文件父目录调用
     `ScanConfig.resolve(baseDirectory)`，direct API 无参调用以当前工作目录为 base。运行态仅消费稳定排序、
     规范绝对路径且去重的 `*Files`，missing、non-regular 和 unreadable 输入均在 scan 前明确失败。
+12. `ScanConfigurationValidator` 是 YAML/CLI override、`ScanConfig.resolve()`、手工
+    `ResolvedScanConfig` 和 `ScanEngine.scan()` 的共用行为边界；live source 缺 JDBC、无可执行
+    source、非法 parser mode、derived limit 或 confidence 在 adaptor capability 检查和 JDBC 前失败。
+13. 内置 `JdbcDataProfilerTemplate` / `DataProfileEvidenceBuilder` 只对 live database、非条件
+    `DDL_FOREIGN_KEY` / `METADATA_FOREIGN_KEY` 产生 `NEGATIVE_VALUE_MISMATCH`。`DataProfilePipeline`
+    通过 `ProfileEvidenceContractValidator` 重验 status、evidence allowlist、source type和负向策略；
+    pre-merge guard同时读取 candidate、structural evidence与raw evidence attributes。
+14. offline INSERT profiling 没有可执行 producer，其 runtime/SPI 字段已在 v6 删除；
+    YAML transport 仅保留拒绝哨兵，旧字段明确返回 config format error，不会被静默忽略。
 
 上述 live definition、warning sanitization 与 collector fail-fast 主链已有 focused tests；当前完整
 验收数量应从生成报告与 verification manifest读取，不在本文复制。direct Java `ScanConfig.*Paths`、
@@ -293,12 +304,16 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   并按全部 structural observations 计算 conditional 与 polymorphic summary。grouped evidence 仅保留
   deep-consensus attributes；relationship、lineage、naming 和 derived observation summary 统一累加
   `occurrenceCount`，而 repeated-observation confidence 仍按独立 observation 计数。
-- negative profiling evidence 尚未建模 tenant、软删除、时间窗口、归档和行过滤上下文；当前只有
-  partial-sample 与数值阈值 gate。
+- negative profiling 的目标边界是不从普通 SQL/naming 候选推断 tenant、软删除、时间窗口、
+  归档或行过滤上下文，只验证 typed 声明 FK。内置 builder和core SPI consumer均遵守该规则，并从
+  pre-merge structural guards判断conditional/polymorphic。若未来要对
+  普通推断关系产生反证，必须先引入可审计的过滤上下文模型。
+- offline literal-INSERT profiling 仍未实现，也不再是公开配置或 SPI 承诺。如未来重新引入，
+  必须同时提供 typed producer、sample completeness 契约、资源边界和独立 SPI 升级。
 - CLI argument、config file、config format、adaptor、input、connection、runtime 和 output write
-  failure 已由 single-scan typed mapping 与穷举测试覆盖；batch partial failure 保持 exit 13，并只写
-  typed error code 与固定脱敏文本。single-scan 和 batch preflight 都区分文件不可读、YAML 语法错误
-  以及 explicit-null object shape，不再依赖异常消息猜测。
+  failure 的静态 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
+  脱敏文本。仍缺 live namespace resolver 配置错误的执行期 mapping：当前它会落入
+  `ARGUMENT_ERROR`，而设计要求单次与 batch 都归入配置错误。
 - `DirectionConfidence` 和保留 error/evidence enum 继续作为 compatibility contract；所有 public production
   enum value 已由 AST discovery gate 逐值执行 Jackson serializer/deserializer round-trip，冻结的 CLI
   `ErrorCode` matrix 另有穷举集合断言和路径测试。
@@ -308,7 +323,11 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - PostgreSQL/SQL Server database-DDL 当前明确保持“关系解析骨架”；只有产品引入数据库回放需求时，
   才扩展为包含 type modifier、default、identity/generated/computed/collation 的完整 declaration。
 - Live collector 的 JDBC proxy 测试不能替代真实 MySQL/PostgreSQL/Oracle/SQL Server 权限、版本和 catalog 组合 runtime smoke。
-- PostgreSQL/SQL Server 当前选择拒绝显式跨 database catalog，而非实现 catalog-qualified 系统查询；resolver 与 `ScanEngine` 将该错误作为整个 scan 的非可恢复配置失败。
+- PostgreSQL/SQL Server 当前选择拒绝显式跨 database catalog，而非实现 catalog-qualified 系统查询；
+  resolver与`ScanEngine`会中止scan，single/batch CLI均将该执行期`LiveSourceConfigurationException`
+  归类为`CONFIG_FORMAT_ERROR`。
+- 生产 Javadoc 结构门禁已通过；`core.profile`、MySQL/PostgreSQL root package 和 SQL Server
+  database-DDL package 已按当前实现校准。
 - 双语 package Javadoc 和具体类/大方法 Javadoc 架构门禁能验证结构类别和禁用模板，但不能自动证明每句话与调用链一致；内容准确性仍需代码评审。
 - 更广泛的 Oracle 官方语法覆盖仍需要补齐；当前 versioned sample-data golden 不能替代官方版本边界测试。
 - SQL Server 已有独立 adaptor，不回退到 MySQL/PostgreSQL/Oracle parser；后续需要补更多 Microsoft 官方逐版本 T-SQL family 和 runtime smoke。

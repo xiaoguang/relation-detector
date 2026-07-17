@@ -3,28 +3,19 @@ package com.relationdetector.contracts.spi;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 
 /**
- * 单个 relationship 候选的数据画像请求。
+ * CN: adaptor profiler 接收的单个候选及其 live JDBC 运行参数。
  *
- * <p>CN: core 选择候选后把采样行数和超时配置交给 adaptor profiler。
- *
- * <p>EN: Data-profiling request for one relationship candidate. Core selects
- * candidates and passes sampling/timeout configuration to the adaptor profiler.
+ * <p>EN: One relationship candidate and its live JDBC runtime options passed
+ * to an adaptor profiler. Core owns candidate selection and bounded execution.
  */
 public record ProfileRequest(
         RelationshipCandidate candidate,
-        int sampleRows,
-        int timeoutSeconds,
         DataProfileOptions options
 ) {
-    public ProfileRequest(RelationshipCandidate candidate, int sampleRows, int timeoutSeconds) {
-        this(candidate, sampleRows, timeoutSeconds,
-                DataProfileOptions.defaults(sampleRows, timeoutSeconds, 1_000));
-    }
-
-    public ProfileRequest(RelationshipCandidate candidate, DataProfileOptions options) {
-        this(candidate,
-                options == null ? DataProfileOptions.defaults().sampleRows() : options.sampleRows(),
-                options == null ? DataProfileOptions.defaults().timeoutSeconds() : options.timeoutSeconds(),
-                options == null ? DataProfileOptions.defaults() : options);
+    public ProfileRequest {
+        if (candidate == null) {
+            throw new IllegalArgumentException("profile candidate is required");
+        }
+        options = options == null ? DataProfileOptions.defaults() : options;
     }
 }

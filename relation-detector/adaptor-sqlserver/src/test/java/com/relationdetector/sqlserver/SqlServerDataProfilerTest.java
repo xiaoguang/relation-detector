@@ -30,7 +30,7 @@ class SqlServerDataProfilerTest {
         StringBuilder sql = new StringBuilder();
         var evidence = new SqlServerDataProfiler().profile(
                 connection(sql, 120, 100, 99, 110),
-                new ProfileRequest(candidate(), DataProfileOptions.defaults().withMaxDistinctValues(25))).evidence();
+                new ProfileRequest(candidate(), DataProfileOptions.defaults())).evidence();
 
         assertFalse(sql.toString().contains("TOP ("));
         assertTrue(sql.toString().contains("source_non_null_rows"));

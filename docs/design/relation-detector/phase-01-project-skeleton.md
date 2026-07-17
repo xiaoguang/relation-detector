@@ -171,7 +171,7 @@ Warnings: 0
 ## 错误处理
 
 Phase 1 的初始错误码提案已被当前 `ErrorCode` enum 和 CLI mapping 覆盖。现行 single-scan
-实际独立返回 `0/2/3/4/11`，batch partial failure 为 `13`；完整状态与保留值见
+可返回 `0/1/2/3/4/5/10/11/12`，batch partial failure 为 `13`；完整状态与保留值见
 [`enum-reference.md`](enum-reference.md#15-errorcode)。
 
 ## 验收标准

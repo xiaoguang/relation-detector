@@ -31,7 +31,6 @@ class OracleDataProfilerTest {
         var evidence = new OracleDataProfiler().profile(
                 connection(sql, 150, 100, 85, 90),
                 new ProfileRequest(candidate(), DataProfileOptions.defaults()
-                        .withMaxDistinctValues(30)
                         .withMinContainmentRatio(0.98d)
                         .withMinOverlapRatio(0.80d))).evidence();
 

@@ -34,6 +34,7 @@ class ScanPipelineContextDdlInventoryTest {
     void aggregateInventoryUsesAdaptorRulesAndExplicitScanNamespace() {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = "jdbc:test:ddl-inventory";
         config.schema = "Shop";
         ScanScope scope = new ScanScope(null, "Shop", List.of(), List.of());
         DatabaseAdaptor adaptor = new CaseSensitiveAdaptor();

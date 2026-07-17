@@ -24,6 +24,8 @@ class ResolvedScanConfigTest {
         ScanConfig input = new ScanConfig();
         input.databaseType = DatabaseType.MYSQL;
         input.schema = "shop";
+        input.metadataEnabled = false;
+        input.logsEnabled = true;
         input.logFiles.add(Path.of("queries.sql"));
         input.includeTables.add("orders");
 
@@ -43,6 +45,7 @@ class ResolvedScanConfigTest {
     void jdbcVersionDiscoveryReturnsNewSnapshotWithoutMutatingInput() {
         ScanConfig input = new ScanConfig();
         input.databaseType = DatabaseType.POSTGRESQL;
+        input.jdbcUrl = "jdbc:test:resolved-config";
         ResolvedScanConfig original = input.resolve();
 
         ResolvedScanConfig discovered = original.withJdbcDatabaseVersion("18.1");
@@ -60,6 +63,7 @@ class ResolvedScanConfigTest {
     void configuredVersionWinsOverJdbcDiscovery() {
         ScanConfig input = new ScanConfig();
         input.databaseType = DatabaseType.SQLSERVER;
+        input.jdbcUrl = "jdbc:test:resolved-config";
         input.databaseVersion = "2022";
         input.databaseVersionSource = "CONFIG";
         ResolvedScanConfig original = input.resolve();

@@ -11,7 +11,7 @@ import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
  *
  * Grouped source collection capabilities exposed by a database adaptor.
  *
- * <p>This is the only collector entry point in adaptor SPI v5. Optional
+ * <p>This is the only collector entry point in adaptor SPI v6. Optional
  * members make capability declarations executable: a declared live capability
  * must have its corresponding collector present before JDBC is opened.
  */

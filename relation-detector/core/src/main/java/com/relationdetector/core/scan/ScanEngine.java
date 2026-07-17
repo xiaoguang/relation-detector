@@ -32,6 +32,7 @@ public final class ScanEngine {
     private final ResultAssembly resultAssembly = new ResultAssembly();
     private final AdaptorContractValidator adaptorContractValidator = new AdaptorContractValidator();
     private final ScanCapabilityValidator capabilityValidator = new ScanCapabilityValidator();
+    private final ScanConfigurationValidator configurationValidator = new ScanConfigurationValidator();
 
     /**
      *
@@ -49,6 +50,7 @@ public final class ScanEngine {
      * Runs a scan from an immutable, fully resolved runtime snapshot.
      */
     public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
+        configurationValidator.validate(config);
         adaptorContractValidator.validate(config.database(), adaptor);
         capabilityValidator.validate(config, adaptor);
         DatabaseConfig requestedDatabase = config.database();

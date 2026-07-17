@@ -23,9 +23,19 @@ class FinalScanContractTest {
 
     static java.util.stream.Stream<Consumer<ScanConfig>> configuredPathSources() {
         return java.util.stream.Stream.of(
-                config -> config.ddlPaths.add(Path.of("input")),
-                config -> config.objectPaths.add(Path.of("input")),
-                config -> config.logPaths.add(Path.of("input")));
+                config -> {
+                    config.ddlEnabled = true;
+                    config.ddlFromDatabase = false;
+                    config.ddlPaths.add(Path.of("input"));
+                },
+                config -> {
+                    config.objectsEnabled = true;
+                    config.objectPaths.add(Path.of("input"));
+                },
+                config -> {
+                    config.logsEnabled = true;
+                    config.logPaths.add(Path.of("input"));
+                });
     }
 
     @ParameterizedTest
@@ -38,6 +48,7 @@ class FinalScanContractTest {
 
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
+        config.metadataEnabled = false;
         configure.accept(config);
         if (!config.ddlPaths.isEmpty()) config.ddlIncludes.add("**/*.sql");
         if (!config.objectPaths.isEmpty()) config.objectIncludes.add("**/*.sql");
@@ -78,11 +89,14 @@ class FinalScanContractTest {
     }
 
     @Test
-    void propagatesJdbcConnectionFailureInsteadOfReturningARecoverableWarning() {
+    void propagatesJdbcConnectionFailureInsteadOfReturningARecoverableWarning() throws Exception {
+        Path log = Files.writeString(tempDir.resolve("query.sql"), "SELECT 1;");
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
         config.jdbcUrl = "jdbc:missing-driver:contains-secret";
         config.metadataEnabled = false;
+        config.logsEnabled = true;
+        config.logFiles.add(log);
 
         RuntimeException failure = assertThrows(RuntimeException.class,
                 () -> new ScanEngine().scan(config, new CommonDatabaseAdaptor()));

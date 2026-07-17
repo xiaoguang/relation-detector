@@ -78,7 +78,6 @@ sources:
       - app-sql.sql
   dataProfile:
     enabled: false
-    sampleRows: 10000
     timeoutSeconds: 30
     maxCandidatePairs: 1000
 
@@ -136,11 +135,13 @@ derivedPaths:
 配置校验：
 
 - `database.type` 必填。
-- 至少启用一种 source。
+- 至少存在一种可执行 source：带 JDBC 的 metadata、带文件或 JDBC database-DDL 的 DDL、带文件或
+  JDBC database-object 的 object，或至少一个已解析文件的 logs。`dataProfile` 不是独立 source。
 - 启用文件 source 时文件必须存在。
-- YAML/CLI 的 `paths + include` 由 `SimpleYamlConfigLoader` 展开为显式 `*Files`。直接 Java 调用
-  `ScanConfig` 时，core 当前不会展开 `ddlPaths/objectPaths/logPaths`，仍为 `PARTIAL`；调用方在修复前
-  必须预先填充 `ddlFiles/objectFiles/logFiles`，不能把未展开路径当作已支持的 core API。
+- `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner。CLI 以配置文件父目录调用
+  `ScanConfig.resolve(baseDirectory)`；直接 Java API 可传显式 base directory，无参 `resolve()` / `scan()`
+  以当前工作目录为 base。运行态只消费稳定排序、规范绝对路径且去重的 `*Files`，缺失、非普通文件或
+  不可读输入在 scan 前失败。
 - `execution.parallelism` 默认 `1`，表示 scan 内按源顺序串行解析；设为正整数后，独立 file/object/log statement 可以并行解析，但每个 task 使用独立 visitor、collector、`AdaptorContext` 和 warning list，最终按原始 source order 合并。JDBC collection 本身不并行。CLI 的 `--parallelism <n>` 可覆盖该配置。
 - `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL/Oracle/SQL Server SQL/DDL 均通过统一 `parser.mode` 选择 full-grammar 或 token-event，ANTLR 只作为底层 lexer/parser 支撑。
 - 当前统一 parser 配置为 `parser.mode: auto|full-grammar|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammar profile 时优先使用 full-grammar；不能选择 profile、版本不支持或 full-grammar hard failure 时使用 token-event fallback 并记录 warning。profile 已选中后的 syntax warning / partial result 属于所选 parser，不触发 fallback。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
@@ -156,8 +157,17 @@ derivedPaths:
 - `namingMatch.systemRulesEnabled` 默认 `true`。系统默认规则来自 `naming-rules/system-default.yml`，当前表达 `TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID` 三类 direct 规则。客户规则可通过 `ruleFiles` 和 inline `rules` 追加；重复 `id`、只配置 source 或 target 半边、或配置 `TRANSITIVE_NAMING_PATH` 都必须报错。
 - 客户规则第一阶段统一使用 `rule: USER_CONFIGURED`，支持列名 equals / equalsAny / suffix / suffixAny、表 aliases、显式 `sourceEndpoint` / `targetEndpoint`。`TRANSITIVE_NAMING_PATH` 不是客户配置规则，只能由 derived path 引擎产生。
 - `derivedPaths.enabled` 默认 `false`。开启后输出传递推导视图：`derivedRelationships`、`derivedDataLineages`，并可向 top-level `namingEvidence` 增加 `TRANSITIVE_NAMING_PATH`。JSON 同时提供只读轻量视图 `derivedNamingEvidence`，方便统计和阅读 derived naming；完整 grouped evidence / rawEvidence 仍只保存在 top-level `namingEvidence`，relationship 也只引用 top-level `namingEvidence.id`。relationship 推导内部可反向遍历 referenced-by 图，但 JSON 中的 derived relationship source/target 仍保持 FK-like 正向；审计路径放在 `path`、`traversalPath` 和 attributes 中。`maxPathLength` 默认 `5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制。
-- 启用 JDBC source 时 jdbcUrl、username、password 必须可解析。
-- `sampleRows`、`timeoutSeconds` 必须为正数。
+- 启用 live-backed source 时必须有非空 `jdbcUrl`；username/password 是 driver-dependent 认证输入，
+  不强制两者同时非空。
+- `timeoutSeconds`、execution 和 profiling 数量限制必须为正数；derived path length 必须大于零，
+  其它 derived 数量上限不得为负数。
+- `output.minConfidence`、derived confidence/decay 和 profiling ratio 必须是 `[0,1]` 内有限数。
+- `ScanConfigurationValidator` 是 YAML override 后、batch 和 direct API 共用的行为校验入口；
+  `ScanConfig.resolve()`、`ResolvedScanConfig` 构造与 `ScanEngine.scan()` 都执行同一规则。
+- PostgreSQL/SQL Server live scope resolver 为验证 connection catalog 而在连接建立后抛出的
+  `LiveSourceConfigurationException` 仍属于不可恢复配置错误。direct API 原样抛出；single-scan 和
+  batch CLI 都必须映射为 `CONFIG_FORMAT_ERROR`，不能降级 warning 或归入通用 argument/runtime error。
+- YAML 中旧的离线画像字段会返回 `CONFIG_FORMAT_ERROR`，不会被未知字段策略静默忽略。
 
 MySQL namespace兼容说明：live collector内部把database统一规范到catalog轴；旧
 `database.schema`只作为输入兼容回退。顶层JSON的`database`对象在catalog非空时增加可选
@@ -214,7 +224,7 @@ endpoint与scan summary使用同一canonical database。
 
 summary 只保留三段式字段：`direct*Count`、`derived*Count`、`total*Count`，relationship、dataLineage、namingEvidence 三类事实保持一致。
 
-Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。目标语义是统计 merged fact 背后的真实 occurrence：不同位置分别计数，同一位置折叠的 `occurrenceCount` 也应累加。当前实现为 `PARTIAL`：lineage/naming 已累加 `occurrenceCount`，relationship 与 derived path 仍只统计 evidence list entry。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
+Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。它统计 merged fact 背后的真实 occurrence：不同位置分别计数，同一位置折叠的 `occurrenceCount` 也累加。relationship、lineage、naming 和 derived path 都通过统一 occurrence helper 计算。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
 
 关系：
 
@@ -346,7 +356,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测。当前 naming inventory 会先按 endpoint 保存的 `normalizedKey` 分组，并把该 endpoint 的全部不同 file/object/statement/block/line observation 交给 `NamingEvidenceMerger`；完全相同的 observation 才折叠为 `occurrenceCount`。Data Lineage 在 fact identity 前会 dedupe/sort source set，因此同一 source 列表不再因发射顺序产生重复 fact；但 endpoint/fact key 尚未全部切换为 dialect-aware canonical identity，状态仍是 `PARTIAL`。
+- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。`rawEvidence` 保留归并前可区分的每次观测；完全相同的 observation 才折叠为 `occurrenceCount`。Naming 按有向 canonical endpoint pair 分组并保留全部 file/object/statement/block/line；Data Lineage 在 fact identity 前 canonical dedupe/sort source set。relationship、lineage、naming 和 derived 的事实身份均使用 dialect-aware canonical endpoint key；公开 `normalizedKey()` 只承担输出/evidence 兼容。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
 - top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 重复观测不会把同一个基础分无限叠加。不同 SQL/DDL/metadata 位置形成可区分 observation，
@@ -477,11 +487,16 @@ warning 字段：
 
 ## 错误码
 
-`ErrorCode` enum 保留完整分类，但当前 single-scan CLI 实际独立映射的是：`0` 成功、`2` 配置错误、
-`3` 缺少必需参数、`4` adaptor 错误、`11` 其它 scan runtime 错误；batch partial failure 为 `13`。
-`1/5/10/12` 当前是保留值，尚未从 catch boundary 独立映射。另一个实现缺口是部分参数解析发生在
-`try` 外，非法 option value 可能直接抛出而不是稳定返回 `3`。工具集成必须按当前实际行为处理，
-不能把保留枚举值描述成已经可区分的进程结果。
+`ErrorCode` enum 的目标 single-scan 映射是：`0` 成功、`1` 配置文件不可读、`2` 配置
+格式/shape/执行期 live namespace 错误、`3` 命令参数错误、`4` adaptor 错误、`5` 输入文件错误、
+`10` 数据库连接错误、`11` 其它 scan runtime 错误、`12` 输出写入错误；batch partial failure 为
+`13`。参数解析位于顶层 try boundary 内，非法 option value 稳定返回 `3`。stderr 使用固定脱敏文本，
+不传播 JDBC URL、SQL 或原始异常消息。
+
+静态 loader、override 和 input/connection/output 分支已对应。执行期
+`LiveSourceConfigurationException` 由 `SingleScanRunner` 转为 `CONFIG_FORMAT_ERROR`；batch 复用同一
+runner，并由 `BatchScheduler` 保留 typed `CliFailure`，因此 case code 同为 `CONFIG_FORMAT_ERROR`、batch
+总退出码仍为 `BATCH_PARTIAL_FAILURE`。所有 stderr 和 batch report error text 使用固定安全消息。
 
 ## README 内容
 

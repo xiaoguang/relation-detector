@@ -48,10 +48,14 @@ class ScanCapabilityValidatorTest {
     }
 
     @Test
-    void pureFileScanDoesNotRequireLiveMetadataCapability() {
+    void pureFileScanDoesNotRequireLiveMetadataCapability() throws Exception {
+        java.nio.file.Path log = java.nio.file.Files.createTempFile("capability-file-scan", ".sql");
+        java.nio.file.Files.writeString(log, "SELECT 1;\n");
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
-        config.metadataEnabled = true;
+        config.metadataEnabled = false;
+        config.logsEnabled = true;
+        config.logFiles.add(log);
 
         new ScanEngine().scan(config, new CommonDatabaseAdaptor());
     }

@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
-import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.core.naming.NamingRuleConfigLoader;
 import com.relationdetector.core.scan.ScanConfig;
@@ -55,7 +54,6 @@ public final class SimpleYamlConfigLoader {
         validateStructure(dto);
         ScanConfig config = map(dto, file.toAbsolutePath().getParent());
 
-        validate(config);
         return config;
     }
 
@@ -77,6 +75,7 @@ public final class SimpleYamlConfigLoader {
         requireObject(dto.sources.objects, "sources.objects");
         requireObject(dto.sources.logs, "sources.logs");
         requireObject(dto.sources.dataProfile, "sources.dataProfile");
+        rejectRemovedOfflineProfileConfig(dto.sources.dataProfile);
         requireObject(dto.execution, "execution");
         requireObject(dto.filters, "filters");
         requireObject(dto.output, "output");
@@ -141,10 +140,8 @@ public final class SimpleYamlConfigLoader {
 
     private void mapDataProfile(ScanConfig config, ScanYamlConfigDto.DataProfile profile) {
         if (profile.enabled != null) config.dataProfileEnabled = profile.enabled;
-        if (profile.sampleRows != null) config.sampleRows = profile.sampleRows;
         if (profile.timeoutSeconds != null) config.timeoutSeconds = profile.timeoutSeconds;
         if (profile.maxCandidatePairs != null) config.maxCandidatePairs = profile.maxCandidatePairs;
-        if (profile.maxDistinctValues != null) config.maxDistinctValues = profile.maxDistinctValues;
         if (profile.maxTargetsPerSourceColumn != null) config.maxTargetsPerSourceColumn = profile.maxTargetsPerSourceColumn;
         if (profile.minContainmentRatio != null) config.minContainmentRatio = profile.minContainmentRatio;
         if (profile.minOverlapRatio != null) config.minOverlapRatio = profile.minOverlapRatio;
@@ -153,10 +150,15 @@ public final class SimpleYamlConfigLoader {
         if (profile.minRowsForNegative != null) config.minRowsForNegative = profile.minRowsForNegative;
         if (profile.verifyDeclaredForeignKeys != null) config.verifyDeclaredForeignKeys = profile.verifyDeclaredForeignKeys;
         if (profile.discoverFromNamingEvidence != null) config.discoverFromNamingEvidence = profile.discoverFromNamingEvidence;
-        if (profile.useOfflineInsertSamples != null) config.useOfflineInsertSamples = profile.useOfflineInsertSamples;
-        if (profile.offlineSampleCompleteness != null) config.offlineSampleCompleteness =
-                OfflineSampleCompleteness.valueOf(resolveEnv(profile.offlineSampleCompleteness).toUpperCase());
         if (profile.skipUnindexedLargeTargets != null) config.skipUnindexedLargeTargets = profile.skipUnindexedLargeTargets;
+    }
+
+    private void rejectRemovedOfflineProfileConfig(ScanYamlConfigDto.DataProfile profile)
+            throws ConfigFormatException {
+        if (profile.sampleRows != null || profile.maxDistinctValues != null
+                || profile.useOfflineInsertSamples != null || profile.offlineSampleCompleteness != null) {
+            throw new ConfigFormatException("offline dataProfile fields were removed in adaptor SPI v6");
+        }
     }
 
     private void mapOutput(ScanConfig config, ScanYamlConfigDto.Output output) {
@@ -244,53 +246,8 @@ public final class SimpleYamlConfigLoader {
         return value == null ? null : resolveEnv(value);
     }
 
-    private void validate(ScanConfig config) {
-        if (config.databaseType == null) {
-            throw new IllegalArgumentException("database.type is required");
-        }
-        boolean atLeastOneSource = config.metadataEnabled || config.ddlEnabled || config.objectsEnabled || config.logsEnabled;
-        if (!atLeastOneSource) {
-            throw new IllegalArgumentException("at least one source among metadata, ddl, objects, logs must be enabled");
-        }
-        if (config.sampleRows <= 0 || config.timeoutSeconds <= 0 || config.maxCandidatePairs <= 0
-                || config.maxDistinctValues <= 0 || config.maxTargetsPerSourceColumn <= 0
-                || config.minDistinctValues <= 0 || config.minRowsForNegative <= 0) {
-            throw new IllegalArgumentException("dataProfile numeric limits must be positive");
-        }
-        validateRatio(config.minContainmentRatio, "dataProfile minContainmentRatio");
-        validateRatio(config.minOverlapRatio, "dataProfile minOverlapRatio");
-        validateRatio(config.maxMismatchRatio, "dataProfile maxMismatchRatio");
-        if (config.offlineSampleCompleteness == null) {
-            throw new IllegalArgumentException("dataProfile offlineSampleCompleteness is required");
-        }
-        if (config.derivedMaxPathLength <= 0) {
-            throw new IllegalArgumentException("derivedPaths maxPathLength must be positive");
-        }
-        if (config.executionParallelism <= 0) {
-            throw new IllegalArgumentException("execution parallelism must be positive");
-        }
-        if (config.derivedMaxPathsPerPair < 0 || config.derivedMaxFacts < 0) {
-            throw new IllegalArgumentException("derivedPaths maxPathsPerPair and maxFacts must be non-negative");
-        }
-        validateRatio(config.derivedConfidenceDecay, "derivedPaths confidenceDecay");
-        validateRatio(config.derivedMinConfidence, "derivedPaths minConfidence");
-        config.namingRuleSet();
-        config.parserMode = normalizeParserMode(config.parserMode);
-    }
-
-    private void validateRatio(double value, String name) {
-        if (Double.isNaN(value) || value < 0.0d || value > 1.0d) {
-            throw new IllegalArgumentException(name + " must be between 0 and 1");
-        }
-    }
-
     private String normalizeParserMode(String value) {
-        String normalized = value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
-        return switch (normalized) {
-            case "auto", "full-grammar", "token-event" -> normalized;
-            default -> throw new IllegalArgumentException(
-                    "parser.mode must be one of auto, full-grammar, token-event");
-        };
+        return value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
     }
 
     private String resolveEnv(String value) {

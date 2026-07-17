@@ -235,8 +235,8 @@ class ParserConfigRemovalTest {
                   mode: %s
                 """.formatted(formerValue));
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> new SimpleYamlConfigLoader().load(file));
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, config::resolve);
 
         assertTrue(error.getMessage().contains("parser.mode must be one of"));
     }
@@ -387,7 +387,7 @@ class ParserConfigRemovalTest {
                 """);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> new SimpleYamlConfigLoader().load(file));
+                () -> new SimpleYamlConfigLoader().load(file).resolve());
         assertTrue(ex.getMessage().contains("duplicate namingMatch rule id"));
     }
 
@@ -457,10 +457,8 @@ class ParserConfigRemovalTest {
                     enabled: false
                   dataProfile:
                     enabled: true
-                    sampleRows: 25
                     timeoutSeconds: 12
                     maxCandidatePairs: 77
-                    maxDistinctValues: 33
                     maxTargetsPerSourceColumn: 2
                     minContainmentRatio: 0.97
                     minOverlapRatio: 0.73
@@ -469,8 +467,6 @@ class ParserConfigRemovalTest {
                     minRowsForNegative: 88
                     verifyDeclaredForeignKeys: true
                     discoverFromNamingEvidence: true
-                    useOfflineInsertSamples: false
-                    offlineSampleCompleteness: COMPLETE
                     skipUnindexedLargeTargets: false
                   logs:
                     enabled: true
@@ -502,10 +498,8 @@ class ParserConfigRemovalTest {
                 "SimpleYamlConfigLoader should be backed by Jackson YAML");
         assertEquals("shop", config.schema);
         assertEquals(true, config.dataProfileEnabled);
-        assertEquals(25, config.sampleRows);
         assertEquals(12, config.timeoutSeconds);
         assertEquals(77, config.maxCandidatePairs);
-        assertEquals(33, config.maxDistinctValues);
         assertEquals(2, config.maxTargetsPerSourceColumn);
         assertEquals(0.97d, config.minContainmentRatio);
         assertEquals(0.73d, config.minOverlapRatio);
@@ -514,8 +508,6 @@ class ParserConfigRemovalTest {
         assertEquals(88, config.minRowsForNegative);
         assertEquals(true, config.verifyDeclaredForeignKeys);
         assertEquals(true, config.discoverFromNamingEvidence);
-        assertEquals(false, config.useOfflineInsertSamples);
-        assertEquals("COMPLETE", config.offlineSampleCompleteness.name());
         assertEquals(false, config.skipUnindexedLargeTargets);
         assertEquals(0.42d, config.minConfidence);
         assertEquals(false, config.includeEvidence);

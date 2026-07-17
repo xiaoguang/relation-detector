@@ -94,7 +94,7 @@ repo-root/
   - MySQL general/slow log 解析。
   - MySQL 方言规则。
   - MySQL token-event parser。
-  - MySQL 8.0 full-grammar module。
+  - MySQL 5.7/8.0 full-grammar modules。
 
 - `relation-detector/adaptor-postgres`
   - PostgreSQL 元数据采集。
@@ -108,7 +108,7 @@ repo-root/
   - Oracle 初始 adaptor。
   - Oracle token-event fallback，使用 `grammar/oracle-token-event` 中的 `OracleRelationSql.g4` typed grammar。
   - Oracle 12c/19c/21c/26ai `INCOMPLETE_VERSIONED` full-grammar profile，当前覆盖对应版本 sample-data golden、profile smoke 和首批 version-only golden，并使用各自 generated parser。
-  - 当前 metadata/object collector 保守返回空；更广泛的 Oracle 官方语法覆盖和真实 Oracle runtime smoke 属于后续补强。
+  - metadata、object 和 database-DDL live collector 已实现 typed inventory、对象声明与安全 warning；真实 Oracle 权限、版本和 driver 组合 runtime smoke 仍属于环境性验收。
 
 - `relation-detector/adaptor-sqlserver`
   - SQL Server adaptor。
@@ -243,7 +243,7 @@ root `relation-detector/test-fixtures/correctness/mysql`、root `relation-detect
 
 - `PROFILE_SUPPORTED_FK`
   - 来自数据画像支持。
-  - 例子：抽样发现 `orders.user_id` 的值 99.5% 都存在于 `users.id`。
+  - 例子：live exact aggregate 发现 `orders.user_id` 的 distinct 值 99.5% 都存在于 `users.id`。
 
 - `NAMING_SUPPORTED_FK`
   - 来自命名规则和其他证据共同支持。
@@ -488,38 +488,20 @@ confidence: 0.25
 - 可能影响生产库性能。
 - 可能涉及敏感信息。
 
-启用后采用抽样、上限和超时控制，不做默认全量扫描。
+启用后只对有结构或命名前置线索的有限候选执行 exact aggregate query；通过候选数量、
+每个 source 的 target 数和 JDBC timeout 控制成本，不使用行采样近似分母。
 
-画像证据包括：
+画像 query 只返回 `source_non_null_rows`、`source_distinct`、`matched_distinct` 和
+`target_distinct`。core 由这些统计构造：
 
-- 列定义相似：
-  - 类型一致。
-  - 长度一致。
-  - precision/scale 一致。
-  - 字符集/排序规则一致。
-  - nullable 形态合理。
+- `VALUE_CONTAINMENT_HIGH`：source distinct values 高度包含于 target。
+- `VALUE_OVERLAP_HIGH`：两端 distinct values 有较高重合。
+- `NEGATIVE_VALUE_MISMATCH`：仅对 live、非条件 DDL/metadata 声明 FK，在完整行数与
+  missing ratio gate 满足时降低置信度。
 
-- 目标列唯一：
-  - 目标列是 PK 或 unique。
-  - 源列有普通索引。
-  - 符合多对一引用特征。
-
-- 值域包含：
-  - 源列 A 的非空取值大部分或全部存在于目标列 B。
-  - 例子：`orders.user_id` 的值全部出现在 `users.id` 中。
-
-- 重合率：
-  - 抽样计算 `source distinct values` 中能在目标列命中的比例。
-  - 高于阈值则加分，低于阈值则降低置信度或记录反证。
-
-- 基数形态：
-  - 源列重复较多。
-  - 目标列唯一或接近唯一。
-  - 体现多对一引用关系。
-
-- 空值比例：
-  - 源列允许为空且有一定空值，说明可能是可选关系。
-  - 不直接否定关系，但进入解释信息。
+类型兼容、target unique 和 source index 来自 metadata/DDL 候选 gate，不是 profiler 伪造的
+数值 evidence。当前不读取或输出真实业务值，也不输出 null ratio；如需总行数/null ratio，必须
+新增独立指标。
 
 例子：
 
@@ -623,7 +605,7 @@ PREPARE stmt FROM @sql;
 - view/procedure/trigger 这类数据库对象定义强于普通日志，因为它们更稳定，但仍可能服务报表、审计、同步或批处理。
 - SQL 日志证明真实执行过，但单条 SQL 可能是临时分析或 ETL，所以保持中等置信度。
 - 命名、索引、唯一性、类型兼容是辅助证据，不应单独输出高置信 FK。
-- 数据画像能增强或降低置信度，但受抽样、软删除、租户过滤、历史脏数据影响，默认低于显式结构证据。
+- 数据画像能增强或降低置信度，但普通 SQL/naming 候选缺少可审计过滤上下文时不得获得负向证据；负向值不匹配只用于 live、非条件声明 FK，且默认低于显式结构证据。
 
 ### 7.2 合并公式
 
@@ -635,11 +617,9 @@ confidence = 1 - product(1 - evidenceScore)
 
 显式数据库 FK 最低不低于 0.95，最终最高封顶 0.99。
 
-负向证据用于降低最终分数，例如：
-
-- 源列大量值不存在于目标列。
-- 类型明显不兼容。
-- 目标列非唯一且基数形态不符合引用关系。
+负向证据只用于降低非条件声明 FK 的最终分数：当完整 live aggregate 指标证明大量
+source distinct values 不存在于 target 时，才产生 `NEGATIVE_VALUE_MISMATCH`。类型兼容、
+target unique 和索引属于候选/方向 gate，不伪装成负向画像 evidence。
 
 ### 7.3 评分解释
 
@@ -671,7 +651,7 @@ confidence = 1 - product(1 - evidenceScore)
       "type": "VALUE_CONTAINMENT_HIGH",
       "score": 0.30,
       "source": "data-profile",
-      "detail": "99.5% sampled orders.user_id values exist in users.id"
+      "detail": "source values are highly contained by target values"
     }
   ]
 }
@@ -737,7 +717,7 @@ database:
   jdbcUrl: jdbc:mysql://localhost:3306/shop
   username: readonly
   password: ${DB_PASSWORD}
-  schema: shop
+  catalog: shop
 
 filters:
   includeTables:
@@ -745,8 +725,8 @@ filters:
     - users
     - audit_logs
   excludeTables:
-    - tmp_*
-    - archive_*
+    - tmp_orders
+    - archive_orders
 
 sources:
   metadata:
@@ -776,7 +756,6 @@ sources:
       - app-sql.sql
   dataProfile:
     enabled: false
-    sampleRows: 10000
     timeoutSeconds: 30
 
 parser:
@@ -988,20 +967,17 @@ Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relat
 
 ### Phase 7：可选数据画像
 
-- 实现配置开关。
-- 实现采样行数上限。
-- 实现查询超时。
-- 实现列定义相似度。
-- 实现值域包含率。
-- 实现重合率。
-- 实现唯一性和基数判断。
-- 实现负向证据。
+- 实现 live-only 配置开关、候选数量预算和单查询超时。
+- 实现方言安全的 exact aggregate query。
+- 实现值域包含率、重合率和完整指标审计。
+- 将负向证据限制为 live、非条件声明 FK；普通 SQL/naming 候选只接受正向画像支持。
+- 离线 literal-INSERT profiling 不属于当前 runtime 或 SPI v6 契约。
 
 验收：
 
 - 默认不读取业务数据。
 - 开启画像后能提升或降低对应关系置信度。
-- 大表查询受 sampleRows 和 timeout 控制。
+- 大表查询受候选预算、每个 source 的 target 预算和 timeout 控制；当前没有行采样上限。
 
 ### Phase 8：输出和用户体验
 

@@ -61,6 +61,7 @@ class ScanEngineDiagnosticsTest {
                 """);
         ScanConfig config = baseConfig();
         config.ddlEnabled = true;
+        config.ddlFromDatabase = false;
         config.ddlFiles.add(ddlFile);
 
         ScanResult result = new ScanEngine().scan(config, TestAdaptor.withThrowingDdlParser());

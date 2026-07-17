@@ -17,12 +17,7 @@ public record ResolvedScanConfig(
         OutputConfig output
 ) {
     public ResolvedScanConfig {
-        if (database == null || database.databaseType() == null) {
-            throw new IllegalArgumentException("database.type is required");
-        }
-        if (sources == null || parser == null || evidence == null || execution == null || output == null) {
-            throw new IllegalArgumentException("all resolved scan configuration groups are required");
-        }
+        new ScanConfigurationValidator().validate(database, sources, parser, evidence, execution, output);
     }
 
     public static ResolvedScanConfig from(ScanConfig input) {
@@ -31,24 +26,34 @@ public record ResolvedScanConfig(
 
     public static ResolvedScanConfig from(ScanConfig input, Path baseDirectory) {
         if (input == null) {
-            throw new IllegalArgumentException("scan config is required");
+            throw new ScanConfigurationException("scan config is required");
         }
+        ScanConfigurationValidator configurationValidator = new ScanConfigurationValidator();
+        configurationValidator.validate(input);
         ScanInputPathResolver pathResolver = new ScanInputPathResolver();
         return new ResolvedScanConfig(
                 new DatabaseConfig(input.databaseType, input.adaptorId, input.jdbcUrl, input.username, input.password,
                         input.catalog, input.schema, input.includeTables, input.excludeTables),
                 new SourceConfig(input.metadataEnabled, input.ddlEnabled, input.ddlFromDatabase,
-                        pathResolver.resolve(input.ddlFiles, input.ddlPaths, input.ddlIncludes, baseDirectory),
+                        input.ddlEnabled
+                                ? pathResolver.resolve(input.ddlFiles, input.ddlPaths, input.ddlIncludes, baseDirectory)
+                                : java.util.List.of(),
                         java.util.List.of(), java.util.List.of(),
                         input.objectsEnabled, input.objectsFromDatabase,
-                        pathResolver.resolve(input.objectFiles, input.objectPaths, input.objectIncludes, baseDirectory),
+                        input.objectsEnabled
+                                ? pathResolver.resolve(input.objectFiles, input.objectPaths,
+                                        input.objectIncludes, baseDirectory)
+                                : java.util.List.of(),
                         java.util.List.of(), java.util.List.of(),
                         input.logsEnabled,
-                        pathResolver.resolve(input.logFiles, input.logPaths, input.logIncludes, baseDirectory),
+                        input.logsEnabled
+                                ? pathResolver.resolve(input.logFiles, input.logPaths, input.logIncludes, baseDirectory)
+                                : java.util.List.of(),
                         java.util.List.of(), java.util.List.of(),
                         input.logFormatHint, input.logsFilterSystemQueries,
                         input.logSystemSchemas, input.logMetadataQueryMarkers),
-                new ParserConfig(input.parserMode, input.grammarProfile, input.databaseVersion,
+                new ParserConfig(configurationValidator.normalizeParserMode(input.parserMode),
+                        input.grammarProfile, input.databaseVersion,
                         input.databaseVersionSource),
                 new EvidenceConfig(input.dataProfileEnabled, input.dataProfileOptions(),
                         input.namingMatchEnabled, input.namingMatchSystemRulesEnabled,
@@ -133,10 +138,8 @@ public record ResolvedScanConfig(
     }
 
     private static void applyProfileOptions(ScanConfig copy, com.relationdetector.contracts.spi.DataProfileOptions options) {
-        copy.sampleRows = options.sampleRows();
         copy.timeoutSeconds = options.timeoutSeconds();
         copy.maxCandidatePairs = options.maxCandidatePairs();
-        copy.maxDistinctValues = options.maxDistinctValues();
         copy.maxTargetsPerSourceColumn = options.maxTargetsPerSourceColumn();
         copy.minContainmentRatio = options.minContainmentRatio();
         copy.minOverlapRatio = options.minOverlapRatio();
@@ -145,8 +148,6 @@ public record ResolvedScanConfig(
         copy.minRowsForNegative = options.minRowsForNegative();
         copy.verifyDeclaredForeignKeys = options.verifyDeclaredForeignKeys();
         copy.discoverFromNamingEvidence = options.discoverFromNamingEvidence();
-        copy.useOfflineInsertSamples = options.useOfflineInsertSamples();
-        copy.offlineSampleCompleteness = options.offlineSampleCompleteness();
         copy.skipUnindexedLargeTargets = options.skipUnindexedLargeTargets();
     }
 }

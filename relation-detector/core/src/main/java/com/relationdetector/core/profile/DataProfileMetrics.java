@@ -12,8 +12,7 @@ public record DataProfileMetrics(
         long missingDistinctSourceValues,
         long targetDistinctValues,
         boolean queryTimedOut,
-        boolean permissionDenied,
-        boolean partialSample
+        boolean permissionDenied
 ) {
     public DataProfileMetrics {
         profileMode = profileMode == null || profileMode.isBlank() ? "LIVE_DATABASE" : profileMode;
@@ -35,18 +34,6 @@ public record DataProfileMetrics(
     ) {
         return new DataProfileMetrics("LIVE_DATABASE", sourceNonNullRows, sourceDistinctValues,
                 matchedDistinctSourceValues, missingDistinctSourceValues, targetDistinctValues,
-                queryTimedOut, permissionDenied, false);
-    }
-
-    public static DataProfileMetrics offlinePartial(
-            long sourceNonNullRows,
-            long sourceDistinctValues,
-            long matchedDistinctSourceValues,
-            long missingDistinctSourceValues,
-            long targetDistinctValues
-    ) {
-        return new DataProfileMetrics("OFFLINE_INSERT_SAMPLE", sourceNonNullRows, sourceDistinctValues,
-                matchedDistinctSourceValues, missingDistinctSourceValues, targetDistinctValues,
-                false, false, true);
+                queryTimedOut, permissionDenied);
     }
 }

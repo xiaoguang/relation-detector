@@ -3,6 +3,7 @@ package com.relationdetector.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
@@ -14,6 +15,8 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -29,6 +32,18 @@ class AdaptorApiVersionTest {
             DatabaseAdaptor adaptor = AdaptorRegistry.load(null).resolve(type, null);
             assertEquals(AdaptorApiVersion.CURRENT, adaptor.spiVersion(), adaptor.id());
         }
+    }
+
+    @Test
+    void v5PluginIsRejectedWithV6RecompileGuidance() {
+        DatabaseAdaptor legacy = new ContractAdaptor(5, "legacy-v5", Set.of(DatabaseType.MYSQL));
+
+        AdaptorRegistry.AdaptorException error = assertThrows(AdaptorRegistry.AdaptorException.class,
+                () -> registry(legacy).resolve(DatabaseType.MYSQL, null));
+
+        assertTrue(error.getMessage().contains("actual=5"));
+        assertTrue(error.getMessage().contains("required=6"));
+        assertTrue(error.getMessage().contains("recompile"));
     }
 
     static Stream<Arguments> invalidAdaptorContracts() {
@@ -52,6 +67,10 @@ class AdaptorApiVersionTest {
         config.databaseType = databaseType;
         config.adaptorId = adaptorId;
         config.metadataEnabled = false;
+        config.logsEnabled = true;
+        Path logFile = Files.createTempFile("adaptor-contract", ".sql");
+        Files.writeString(logFile, "SELECT 1;");
+        config.logFiles.add(logFile);
 
         IllegalArgumentException directError = assertThrows(IllegalArgumentException.class,
                 () -> new ScanEngine().scan(config, adaptor));

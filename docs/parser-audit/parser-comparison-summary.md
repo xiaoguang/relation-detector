@@ -109,7 +109,7 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 | Oracle full-grammar vs Oracle token-event on broad sample-data | root/v26ai `366 / 328 / 248` | `AUDITED_SET_MATCH` | Exact observations match for the same v26ai asset; the v12c lineage count difference is a version-specific SQL asset delta. |
 | SQL Server full-grammar vs token-event on broad sample-data | all profiles `342 / 756 / 246` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage observations, and direct naming ids match across root and all five full profiles. |
 | Cross-dialect semantic-equivalent scenarios | all scenarios are `MATCHED` | `NO_CONFIRMED_GAP` | Use this benchmark as the primary proof that equivalent SQL can converge across parser categories. |
-| Dynamic SQL, parameters, local variables, temporary tables, pseudo rowsets | excluded by design in lineage audit | `EXPECTED_FILTERED_SCOPE` | Do not add these to physical relation / lineage golden unless a future design changes the semantic boundary. |
+| Dynamic SQL, parameters, local variables, temporary tables, pseudo rowsets | non-physical endpoints excluded by design | `EXPECTED_FILTERED_SCOPE` | Parameters, locals, dynamic SQL and pseudo rowsets do not become physical facts. A typed local temporary rowset may act only as an internal IN/tuple-IN bridge when its pre-predicate VALUE/DIRECT projection resolves uniquely to physical columns; the temporary endpoint itself never survives, and transformed, ambiguous, cyclic or self-folding paths remain suppressed. |
 
 ## 4. Output Audit Notes
 

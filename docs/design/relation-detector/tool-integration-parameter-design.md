@@ -205,9 +205,10 @@ sources:
     enabled: false
 ```
 
-`files` 适合少量显式文件；`paths + include` 适合目录扫描。该展开属于 CLI/YAML loader 契约，
-路径相对配置文件所在目录解析。直接 Java 调用 `ScanConfig` 时 core 当前只消费 `*Files`，不会展开
-`*Paths`；集成方必须先展开，或等 core 增加统一展开/fail-fast 后再直接传路径。
+`files` 适合少量显式文件；`paths + include` 适合目录扫描。`ScanInputPathResolver` 是两种入口
+共用的唯一展开 owner：CLI 以配置文件目录作为 base，直接 Java API 可传显式 base directory，
+无参 `resolve()` / `scan()` 以当前工作目录作为 base。missing、非普通文件和不可读输入都会在
+扫描前失败。
 
 #### 数据库连接输入
 
@@ -229,10 +230,8 @@ sources:
 
   dataProfile:
     enabled: true
-    sampleRows: 10000
     timeoutSeconds: 30
     maxCandidatePairs: 1000
-    maxDistinctValues: 5000
     maxTargetsPerSourceColumn: 3
     minContainmentRatio: 0.98
     minOverlapRatio: 0.80
@@ -241,12 +240,10 @@ sources:
     minRowsForNegative: 100
     verifyDeclaredForeignKeys: false
     discoverFromNamingEvidence: false
-    useOfflineInsertSamples: true
-    offlineSampleCompleteness: PARTIAL
     skipUnindexedLargeTargets: true
 ```
 
-数据画像可能访问真实数据，工具 UI 应明确提示权限和成本。默认建议关闭；只在用户明确授权并需要 `VALUE_CONTAINMENT_HIGH` / `VALUE_OVERLAP_HIGH` / `NEGATIVE_VALUE_MISMATCH` 这类数据证据时开启。
+数据画像可能访问真实数据，工具 UI 应明确提示权限和成本。默认建议关闭；只在用户明确授权并需要 `VALUE_CONTAINMENT_HIGH` / `VALUE_OVERLAP_HIGH` 这类正向数据证据，或需要用 `NEGATIVE_VALUE_MISMATCH` 验证非条件声明 FK 时开启。
 
 ### 4.5 namingMatch
 
@@ -621,19 +618,23 @@ java -jar semantic-layer/semantic-cli/target/relation-detector-semantic-cli-0.1.
 
 ## 9. 错误处理
 
-CLI enum 来自 contracts `ErrorCode`，但当前 single-scan 实际映射范围小于 enum：
+CLI enum 来自 contracts `ErrorCode`，single-scan 和 batch 已按下表稳定映射：
 
 | 退出码 | 含义 | 工具端处理 |
 | --- | --- | --- |
 | `0` | 成功 | 读取 JSON |
+| `1` | 配置文件不可读 | 检查配置路径和权限 |
 | `2` | 配置格式错误 | 展示配置校验错误 |
 | `3` | CLI 参数错误 | 检查命令构造 |
 | `4` | adaptor 错误 | 检查 database.type / plugin / adaptor |
+| `5` | 输入文件错误 | 检查 DDL/object/log 路径和 include 结果 |
+| `10` | 数据库连接错误 | 检查连接配置和网络/认证 |
 | `11` | 扫描运行错误 | 展示 stderr，保留配置和日志供排查 |
+| `12` | 输出写入错误 | 检查输出目录和权限 |
 | `13` | batch 部分失败 | 读取 batch report，定位失败 job |
 
-`1/5/10/12` 当前为保留值，尚未从 single-scan catch boundary 独立返回。部分非法 option value 也可能
-在参数解析阶段直接抛出；调用方应把任意其它非零/异常退出视为 CLI failure，并保留 stderr。
+非法 option value 位于顶层 catch boundary 内并返回 `3`。stderr 只包含固定脱敏消息；工具端可依赖
+退出码分类，但仍应把未知非零值视为 CLI failure，并保留版本和运行清单供排查。
 
 即使退出码为 `0`，也应读取 JSON 顶层 `warnings` 并提示用户。
 

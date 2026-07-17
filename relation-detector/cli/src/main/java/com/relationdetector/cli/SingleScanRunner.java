@@ -2,6 +2,7 @@ package com.relationdetector.cli;
 
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.output.JsonResultWriter;
 import com.relationdetector.core.output.TableResultWriter;
 import com.relationdetector.core.scan.ScanConfig;
@@ -9,6 +10,7 @@ import com.relationdetector.core.scan.ScanEngine;
 import com.relationdetector.core.scan.ScanResult;
 import com.relationdetector.core.scan.ResolvedScanConfig;
 import com.relationdetector.core.scan.DatabaseConnectionException;
+import com.relationdetector.core.scan.ScanInputException;
 import java.nio.file.Path;
 import java.io.IOException;
 
@@ -50,8 +52,10 @@ final class SingleScanRunner {
         ResolvedScanConfig resolved;
         try {
             resolved = config.resolve(configDirectory);
-        } catch (IllegalArgumentException ex) {
+        } catch (ScanInputException ex) {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.INPUT_FILE_ERROR);
+        } catch (IllegalArgumentException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         }
         DatabaseAdaptor adaptor = registry.resolve(resolved.database().databaseType(), resolved.database().adaptorId());
         return new PreparedScan(request, resolved, adaptor);
@@ -62,6 +66,8 @@ final class SingleScanRunner {
         ScanResult result;
         try {
             result = scanExecutor.scan(config, prepared.adaptor());
+        } catch (LiveSourceConfigurationException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         } catch (DatabaseConnectionException ex) {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.DATABASE_CONNECTION_ERROR);
         }

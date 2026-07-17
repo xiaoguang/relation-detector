@@ -8,7 +8,7 @@
 
 - `VALUE_CONTAINMENT_HIGH`：source 列的非空取值高度包含于 target 列，强支持“source 引用 target”。
 - `VALUE_OVERLAP_HIGH`：两列取值有较高重合，弱支持两列有关。
-- `NEGATIVE_VALUE_MISMATCH`：对已有候选关系，真实数据明显不匹配，降低置信度。
+- `NEGATIVE_VALUE_MISMATCH`：对非条件的 DDL/metadata 声明 FK，live 数据明显不匹配时降低置信度；不用于普通 SQL/naming 推断。
 
 当前代码事实：
 
@@ -17,9 +17,13 @@
   `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH` 与 `NEGATIVE_VALUE_MISMATCH` 都使用真实数据库统计，
   不再用 source distinct 代填其它指标。
 - 候选生成不会做全库列两两比较；只选择已有结构候选，或在 `discoverFromNamingEvidence=true` 时选择 top-level `namingEvidence` + target unique + type compatible 的命名候选。
-- 离线 seed `INSERT` 样本尚未进入生产链路。当前 structured event 只稳定覆盖 `INSERT SELECT`、`UPDATE`、`MERGE` 等写入映射，没有 typed literal `INSERT ... VALUES` sample event；因此不能用 regex/token span 扫描 SQL 伪造 offline sample。
+- profiling 只支持 live JDBC exact aggregate query。未实现的离线 `INSERT` 样本配置已从 runtime、SPI v6、示例和文档中删除；YAML transport 仅保留同名拒绝哨兵，旧字段会明确报配置错误。
 
-因此本文档同时记录当前 live profiling 实现和后续 offline sample 设计边界。
+实现复核边界：内置四方言 profiler 都通过 `DataProfileEvidenceBuilder` 执行下述负向 policy；但
+`DataProfilePipeline` 当前会直接接受外部 SPI profiler 返回的 evidence，尚未在 consumer 边界拒绝
+越界的 `NEGATIVE_VALUE_MISMATCH`。另外，typed predicate guard 在 final relationship merge 前主要
+存在于 structural evidence attributes，不能只依赖 candidate summary attributes 判断 conditional。
+因此“全局只允许非条件声明 FK 负向 evidence”当前为 `PARTIAL`，不是已完全闭环状态。
 
 ## 设计原则
 
@@ -27,9 +31,9 @@
 - 不做全库任意列两两比较；画像只服务候选关系或强约束候选。
 - 数据画像只能产生 evidence，不能覆盖显式 FK。
 - 数据画像可以增强关系，也可以反证关系，但反证不能直接删除关系。
-- 不输出真实业务值，不输出采样值，也不输出可逆 hash；只输出统计量、阈值、样本规模和跳过原因。
-- live 查询受候选数量、超时和权限控制；`sampleRows/maxDistinctValues` 仅约束未来离线样本，不影响
-  exact live query。
+- 负向 policy 必须由 core SPI consumer 最终执行；不能只信任内置或外部 adaptor 返回的 evidence type。
+- 不输出真实业务值，也不输出可逆 hash；只输出 exact aggregate 统计量、阈值、统计规模和跳过原因。
+- live 查询受候选数量、每个 source 的 target 数、超时和权限控制。
 - 生产库读权限不足时降级为 skip/warning，不影响静态关系抽取。
   `DataProfiler` 返回 `ProfileOutcome`，区分 success、no evidence、invalid endpoint、permission denied、timeout 和 query failed；`DataProfilePipeline` 把 warning 并入最终 scan result。
 
@@ -60,37 +64,9 @@ quote，避免把点号、catalog 或 schema 包进同一对 quote。
 - view / procedure / trigger / query 中的 JOIN / EXISTS / IN。
 - top-level `namingEvidence`。
 
-此时不产生 `VALUE_CONTAINMENT_HIGH` 或 `NEGATIVE_VALUE_MISMATCH`，除非输入文件中还包含可解析的 seed/sample `INSERT`，见下一节。
+此时不产生任何 data-profile evidence。`INSERT ... VALUES` 仍可作为 SQL 资产被 parser 接受，但不进入数据画像。
 
-### 2. DDL 或 migration 文件里带 `INSERT`
-
-许多 migration 文件会同时包含 `CREATE TABLE` 和 seed/reference data，例如：
-
-```sql
-CREATE TABLE regions(id BIGINT PRIMARY KEY, code VARCHAR(32));
-CREATE TABLE customers(id BIGINT PRIMARY KEY, region_id BIGINT);
-
-INSERT INTO regions(id, code) VALUES (1, 'NE'), (2, 'SW');
-INSERT INTO customers(id, region_id) VALUES (100, 1), (101, 2), (102, 2);
-```
-
-设计上把这些 literal `INSERT` 当成离线样本，而不当成线上真实数据全量。
-
-可用范围：
-
-- `INSERT INTO table(col, ...) VALUES (...)`：可以抽取列值样本。
-- 多行 `VALUES`：可以抽取多条样本。
-- `INSERT INTO ... SELECT ...`：只有当 SELECT 端是可完全解析的 literal/CTE seed 数据时，才可作为样本；否则只作为 lineage，不作为数据画像样本。
-- `LOAD DATA`、`COPY FROM file`、动态 SQL、过程变量生成的数据：不作为可验证样本。
-
-离线样本 evidence 规则：
-
-- 只有 source 和 target 两侧都有样本，且 source distinct 样本数达到 `minOfflineDistinctValues`，才允许产出 `VALUE_CONTAINMENT_HIGH`。
-- 只有在输入 manifest 或配置明确声明样本覆盖完整，例如 `dataProfile.offlineSampleCompleteness: COMPLETE`，才允许产出 `NEGATIVE_VALUE_MISMATCH`。
-- 默认情况下，DDL/migration 中的 seed insert 不足以产生负向 evidence，因为文件可能只包含部分数据。
-- 输出 attributes 必须标记 `profileMode=OFFLINE_INSERT_SAMPLE`、`sampleCompleteness=PARTIAL|COMPLETE`。
-
-### 3. 有数据库连接，但没有业务数据读取权限
+### 2. 有数据库连接，但没有业务数据读取权限
 
 如果只能读取 catalog / metadata，不能读取业务表：
 
@@ -98,27 +74,22 @@ INSERT INTO customers(id, region_id) VALUES (100, 1), (101, 2), (102, 2);
 - 不产出 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`。
 - 输出 warning 或 info：`DATA_PROFILE_SKIPPED_NO_PERMISSION`，attributes 包含 table/column 和失败摘要，不包含 SQL 参数或敏感信息。
 
-### 4. 有数据库连接，并且有只读数据权限
+### 3. 有数据库连接，并且有只读数据权限
 
 这是完整数据画像路径。
 
 系统可以对候选关系执行受限聚合查询，但仍不能扫描任意列组合。查询只返回 count / ratio，不返回值。
 
-### 5. 混合输入
+### 4. 混合输入
 
 常见情况是：
 
 - metadata 来自 live DB。
 - DDL 来自文件。
 - SQL/object definitions 来自仓库。
-- seed insert 来自 migration。
 - 数据画像来自 live DB。
 
-优先级：
-
-1. live DB 数据画像优先于 offline insert sample。
-2. offline insert sample 只能作为辅助 evidence，不能覆盖 live metadata FK。
-3. 同一关系若同时有 live profile 与 offline sample，evidence 分开记录，source/detail/attributes 必须可区分。
+只有 live JDBC profiler 产生数据画像 evidence；文件输入只提供结构、SQL、DDL、对象和命名证据。
 
 ## 配置
 
@@ -126,8 +97,6 @@ INSERT INTO customers(id, region_id) VALUES (100, 1), (101, 2), (102, 2);
 sources:
   dataProfile:
     enabled: false
-    sampleRows: 10000
-    maxDistinctValues: 5000
     timeoutSeconds: 30
     maxCandidatePairs: 1000
     maxTargetsPerSourceColumn: 3
@@ -138,16 +107,12 @@ sources:
     minRowsForNegative: 100
     verifyDeclaredForeignKeys: false
     discoverFromNamingEvidence: false
-    useOfflineInsertSamples: true
-    offlineSampleCompleteness: PARTIAL
     skipUnindexedLargeTargets: true
 ```
 
 字段说明：
 
 - `enabled`：默认 false。关闭时不查询业务数据。
-- `sampleRows`：保留给 offline insert sample 的 source 行数预算；不限制 live exact query。
-- `maxDistinctValues`：保留给 offline insert sample 的 distinct 预算；不限制 live exact query。
 - `timeoutSeconds`：单个画像查询最大执行时间。
 - `maxCandidatePairs`：本次扫描最多画像的候选关系数量。
 - `maxTargetsPerSourceColumn`：同一个 source column 最多尝试几个 target。
@@ -158,9 +123,9 @@ sources:
 - `minRowsForNegative`：负向 evidence 的最小 source 非空行样本规模。
 - `verifyDeclaredForeignKeys`：是否验证显式 FK，默认 false。开启后即使发现 mismatch，也只降低 confidence 并输出 evidence，不删除 FK。
 - `discoverFromNamingEvidence`：是否允许从 top-level namingEvidence + profile 发现新关系，默认 false。
-- `useOfflineInsertSamples`：配置字段已保留；生产链路等待 typed literal insert sample event 后启用，当前不做 regex/text fallback。
-- `offlineSampleCompleteness`：`PARTIAL` 或 `COMPLETE`。默认 `PARTIAL`，不产生负向 evidence。
 - `skipUnindexedLargeTargets`：当 metadata 中存在 index facts 且 target column 无可见索引时跳过，避免昂贵 target lookup。
+
+SPI v6 只暴露上述 live profiling 字段。旧的离线字段不会被忽略：YAML loader 在 transport 边界检测到它们时返回明确配置错误，且不会构造 runtime `DataProfileOptions`。
 
 尚未实现但可后续加入的预算字段：
 
@@ -308,22 +273,18 @@ attributes:
 
 产生条件：
 
-- 关系候选来自 A 层，或者 B 层已具备 naming + target unique + type compatible。
+- 候选必须携带 `DDL_FOREIGN_KEY` 或 `METADATA_FOREIGN_KEY` 声明证据。
+- source/target 都是物理列 endpoint。
+- 候选不是 conditional 或 polymorphic relationship。
+- metrics 来自 `LIVE_DATABASE` exact query。
 - `sourceDistinctValues >= minDistinctValues`
 - `sourceNonNullRows >= minRowsForNegative`
 - `missingRatio >= maxMismatchRatio`
-- 不存在已知过滤上下文会导致自然缺失，例如 tenant 分区、软删除、时间窗口、归档表、权限行过滤。
 - 对显式 FK 默认不验证；只有 `verifyDeclaredForeignKeys=true` 时才输出。
 
-当前实现状态为 `REVIEW_NEEDED`：`DataProfileEvidenceBuilder` 目前只检查 partial sample、distinct
-数量、source non-null row 数和 mismatch ratio，尚未携带 predicate/filter context。因而以下过滤上下文
-抑制规则仍是待实现 contract，不能写成已生效能力：
-
-- 样本太小。
-- source 大量为 null。
-- SQL predicate 带强过滤条件但画像无法复现过滤条件。
-- target 表是历史快照、分区表、归档表、软删除过滤未应用。
-- 输入只是 migration/seed 的 partial insert sample。
+SQL JOIN、EXISTS、IN、routine/trigger、naming-only、conditional 和 polymorphic 候选仍可获得
+`VALUE_CONTAINMENT_HIGH` / `VALUE_OVERLAP_HIGH`，但不会获得负向证据。这个边界避免在没有 tenant、
+软删除、时间窗口、归档或权限行过滤上下文时，把普通推断关系的自然缺失解释成反证。
 
 输出：
 
@@ -338,7 +299,7 @@ attributes:
   sourceDistinctValues: 1000
   sourceNonNullRows: 5000
   maxMismatchRatio: 0.50
-  negativeGatesSatisfied: true
+  negativePolicy: DECLARED_FOREIGN_KEY_ONLY
 ```
 
 ## 查询策略
@@ -372,39 +333,6 @@ SELECT
   query 会重复测量该值，只复用已有 metadata/unique/index facts。
 
 当前逐候选执行，并保留 `maxCandidatePairs` 和 timeout。
-
-## Offline insert sample 设计
-
-新增内部模型：
-
-```text
-ColumnValueSample
-  table
-  column
-  sourceFile
-  sourceLine
-  nonNullCount
-  distinctCount
-  sampleCompleteness
-  valuesInternalOnly
-```
-
-注意：`valuesInternalOnly` 表示值只存在内存中用于集合比较，不进入 JSON 输出。
-
-抽取规则：
-
-- 使用 typed SQL parser 解析 `INSERT`，不能用 regex 扫描 SQL。
-- 只记录 literal values、typed null 和简单 cast literal。
-- 表达式、函数、变量、sequence、subquery、dynamic SQL 不进入 value sample。
-- 多文件样本按 table/column 合并，但保留 raw observation count。
-
-离线 containment：
-
-```text
-offlineContainmentRatio = sourceSampleDistinctContainedByTargetSample / sourceSampleDistinct
-```
-
-只有当 source/target 样本都达到阈值且 `offlineSampleCompleteness` 合适时才产出 evidence。
 
 ## 与 relationship / namingEvidence 的关系
 
@@ -476,7 +404,6 @@ live 模式必须有硬上限：
 - `maxTargetsPerSourceColumn`
 - `timeoutSeconds`
 
-`sampleRows`、`maxDistinctValues` 只属于离线 sample 配置，不限制 exact live query。
 `maxCandidatesPerTable` 仍是后续预算字段，不能在“已实现硬上限”中列为现状。
 
 复杂度目标：
@@ -502,20 +429,18 @@ O(allTables * allColumns * allTables * allColumns)
   - 输出受候选预算约束的 profile candidates。
 - `DataProfilePipeline`
   - 在 production scan 中复用 relationship candidates、metadata、top-level naming evidence，选择预算内 live DB profile 候选。
+  - 作为 SPI consumer 重验 `ProfileOutcome`：只接受三类 profile evidence，failure/skip status 不接受
+    evidence，并对负向 evidence 重新执行 core-owned policy。
 - `DataProfileEvidenceBuilder`
   - 根据 metrics 和阈值生成 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`。
 - `MySqlDataProfiler` / `PostgresDataProfiler` / `OracleDataProfiler` / `SqlServerDataProfiler`
   - 分别渲染受限聚合 SQL，只返回 count / ratio 所需指标，不返回真实业务值。
 
-当前 namespace 缺口：PostgreSQL metadata endpoint 带 connection catalog，而通用 `IdentifierQuoter`
-会渲染三段表名；PostgreSQL 不支持跨 database 三段引用。另一个缺口是 PostgreSQL/SQL Server
-profile-only scan 不经过 collector resolver 的 catalog 校验。修复前，本节 live profiling 状态为
-`PARTIAL`。
-
-后续组件：
-
-- `OfflineInsertSampleExtractor`
-  - 等 typed literal `INSERT ... VALUES` sample event 补齐后，从 structured event 生成内部 value sample；不得用 regex 或 token span 扫描 SQL。
+live profiling 的 namespace 已按方言闭环：MySQL 渲染 catalog/table，PostgreSQL 渲染
+schema/table，Oracle 渲染 owner/table，SQL Server 渲染 catalog/schema/table。`ScanEngine` 在任何
+live source（包括 profile-only）之前解析并验证 executable scope；`DataProfileNamespacePolicy` 再对
+candidate endpoint 做防御性校验。PostgreSQL 异库 candidate 和 Oracle 带 catalog candidate 会在 SQL
+渲染前拒绝，不会通过省略 namespace 轴误查同名表。
 
 SPI 演进：
 
@@ -535,6 +460,13 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 
 当前生产接口仍逐候选执行；仓库没有 batch profiling SPI，也不应把建议写成已实现能力。
 
+`ProfileOutcome` 不是 adaptor 的任意 evidence 注入口。生产契约只允许
+`VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`；只有 `SUCCESS`
+可以携带非空 evidence。core 必须在 `DataProfilePipeline` 再验证一次，避免第三方 v6 adaptor 绕过
+candidate selection、conditional guard 或负向 evidence policy。当前 `ProfileEvidenceContractValidator` 在
+写入 warning 或 candidate 前原子校验 status、evidence allowlist、`DATA_PROFILE` source type 和负向策略；
+pre-merge conditional/polymorphic 判断同时读取 candidate、structural evidence 与 raw evidence attributes。
+
 ## 测试设计
 
 ### 单元测试
@@ -542,11 +474,10 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 - candidate generator 不做全列组合扫描。
 - namingEvidence + target unique + type compatible 能进入 B 层候选。
 - 纯同名 `status/type/code` 不进入画像候选。
-- offline insert sample 只从 typed literal insert 产生；当前生产 parser 尚未产出该 typed sample event，因此 offline evidence 不应出现在输出里。
-- partial offline sample 不产生 `NEGATIVE_VALUE_MISMATCH`。
 - containment ratio 达阈值产生 `VALUE_CONTAINMENT_HIGH`。
 - overlap 达阈值但 containment 不达阈值产生 `VALUE_OVERLAP_HIGH`。
-- negative gates 满足时产生 `NEGATIVE_VALUE_MISMATCH`。
+- 只有非条件声明式 FK 满足 negative gates 时产生 `NEGATIVE_VALUE_MISMATCH`。
+- SQL/naming/conditional/polymorphic 候选即使缺失率高也不产生负向证据，但正向 evidence 不受影响。
 - 样本太小、权限失败、超时不产生误导 evidence。
 
 ### 集成测试
@@ -554,7 +485,7 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 - MySQL/PostgreSQL/Oracle/SQL Server live profiler 使用 fake JDBC result测试四项 exact metrics、query timeout、权限分类、
   warning脱敏与containment/overlap/mismatch结果装配；这证明renderer/JDBC contract，不替代真实数据库
   optimizer、权限和版本组合的runtime smoke。
-- correctness fixture 不默认依赖 live DB；offline insert sample golden 等 typed literal insert sample event 补齐后再加入。
+- correctness fixture 不默认依赖 live DB；live profiler 使用独立 JDBC contract tests。
 
 ### 性能测试
 
@@ -591,11 +522,11 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 - 开启画像后只对预算内 candidates 查询。
 - 不做全库列组合扫描。
 - 有 live data 权限时，高值域包含率能产生 `VALUE_CONTAINMENT_HIGH`。
-- 明显值不匹配且满足负向 gate 时能产生 `NEGATIVE_VALUE_MISMATCH`。
-- DDL/migration 中的 insert sample 只有在 typed literal insert sample event 补齐后才可以产生保守正向 evidence；默认不产生负向 evidence。
+- 非条件声明式 FK 明显值不匹配且满足负向 gate 时能产生 `NEGATIVE_VALUE_MISMATCH`。
+- 普通 SQL、naming、conditional 和 polymorphic 候选不产生负向 evidence。
 - 权限不足、超时、样本不足都不会中断整体 scan；permission/timeout/query-failure 会产生
   `ProfileOutcome` warning。warning message 使用固定安全文本，Oracle profiler 传入 1031、
   SQL Server profiler 传入 229/916，并与共享 SQLState 分类一起受契约测试保护；真实
   driver/version 行为仍是环境性 runtime 验收项。
 - 输出不包含真实业务值。
-- correctness/golden 暂不覆盖 live DB profiling；profiler 用独立单测验收。offline sample correctness 等 typed literal insert sample event 补齐后再加入。
+- correctness/golden 暂不覆盖 live DB profiling；profiler 用独立单测验收。

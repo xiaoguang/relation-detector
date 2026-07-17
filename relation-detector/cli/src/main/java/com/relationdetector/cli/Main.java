@@ -157,7 +157,7 @@ public final class Main {
                     case "--output" -> parsed.output = Path.of(requireValue(args, index++, arg));
                     case "--direct-output" -> parsed.directOutput = Path.of(requireValue(args, index++, arg));
                     case "--plugin-dir" -> parsed.pluginDir = Path.of(requireValue(args, index++, arg));
-                    case "--min-confidence" -> parsed.minConfidence = Double.parseDouble(requireValue(args, index++, arg));
+                    case "--min-confidence" -> parsed.minConfidence = unitDouble(requireValue(args, index++, arg), arg);
                     case "--parser-mode" -> parsed.parserMode = normalizeParserMode(requireValue(args, index++, arg));
                     case "--grammar-profile" -> parsed.grammarProfile = requireValue(args, index++, arg);
                     case "--database-version" -> parsed.databaseVersion = requireValue(args, index++, arg);
@@ -181,6 +181,14 @@ public final class Main {
             int parsed = Integer.parseInt(value);
             if (parsed <= 0) {
                 throw new IllegalArgumentException(option + " must be positive");
+            }
+            return parsed;
+        }
+
+        private static double unitDouble(String value, String option) {
+            double parsed = Double.parseDouble(value);
+            if (!Double.isFinite(parsed) || parsed < 0.0d || parsed > 1.0d) {
+                throw new IllegalArgumentException(option + " must be between 0 and 1");
             }
             return parsed;
         }

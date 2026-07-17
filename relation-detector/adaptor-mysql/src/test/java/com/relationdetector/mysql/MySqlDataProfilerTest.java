@@ -29,7 +29,6 @@ class MySqlDataProfilerTest {
         StringBuilder sql = new StringBuilder();
         Connection connection = connection(sql, 120, 100, 99, 110);
         ProfileRequest request = new ProfileRequest(candidate(), DataProfileOptions.defaults()
-                .withMaxDistinctValues(50)
                 .withMinContainmentRatio(0.98d));
 
         var evidence = new MySqlDataProfiler().profile(connection, request).evidence();

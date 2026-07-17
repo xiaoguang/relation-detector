@@ -10,11 +10,13 @@ import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.core.profile.DataProfileCandidateGenerator;
+import com.relationdetector.core.profile.ProfileEvidenceContractValidator;
 import com.relationdetector.core.identity.NamespaceContext;
 
 final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
     private final DataProfileNamespacePolicy namespacePolicy = new DataProfileNamespacePolicy();
+    private final ProfileEvidenceContractValidator evidenceContract = new ProfileEvidenceContractValidator();
 
     List<RelationshipCandidate> profile(Connection connection, ScanPipelineContext ctx) {
         EvidenceConfig evidenceConfig = ctx.config.evidence();
@@ -37,10 +39,10 @@ final class DataProfilePipeline {
                     continue;
                 }
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
-                ProfileOutcome outcome = profiler.profile(connection,
-                        new ProfileRequest(candidate, evidenceConfig.dataProfileOptions()));
+                ProfileRequest request = new ProfileRequest(candidate, evidenceConfig.dataProfileOptions());
+                ProfileOutcome outcome = profiler.profile(connection, request);
+                List<Evidence> evidence = evidenceContract.validate(request, outcome);
                 ctx.result.warnings().addAll(outcome.warnings());
-                List<Evidence> evidence = outcome.evidence();
                 if (evidence.isEmpty()) {
                     continue;
                 }

@@ -71,6 +71,22 @@ class BatchCommandIntegrationTest {
                         tempDir.resolve("missing-manifest.yml").toString()}));
     }
 
+    @Test
+    void batchUsesTheSameRuntimeConfigurationValidation() throws Exception {
+        Path invalid = tempDir.resolve("live-without-jdbc.yml");
+        Files.writeString(invalid, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: true
+                """);
+        Path manifest = writeSingleCaseManifest("runtime-invalid-batch.yml", invalid.getFileName());
+
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR.code(),
+                new Main.MainCommand().run(new String[]{"batch", "--manifest", manifest.toString()}));
+    }
+
     private Path writeSingleCaseManifest(String name, Path config) throws Exception {
         Path manifest = tempDir.resolve(name);
         Files.writeString(manifest, """

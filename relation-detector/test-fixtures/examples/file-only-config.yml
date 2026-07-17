@@ -34,7 +34,6 @@ sources:
       - test-fixtures/examples/app-sql.sql
   dataProfile:
     enabled: false
-    sampleRows: 10000
     timeoutSeconds: 30
     maxCandidatePairs: 1000
 

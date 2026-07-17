@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.ErrorCode;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.scan.DatabaseConnectionException;
 import com.relationdetector.core.scan.ScanConfig;
@@ -35,6 +36,9 @@ class CliErrorCodeContractTest {
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.DATABASE_CONNECTION_ERROR, runner((path) -> config(),
                 (config, adaptor) -> { throw new DatabaseConnectionException(new IOException(SECRET)); }, output -> { }),
+                "scan", "--config", "scan.yml");
+        assertResult(ErrorCode.CONFIG_FORMAT_ERROR, runner((path) -> config(),
+                (config, adaptor) -> { throw new LiveSourceConfigurationException(SECRET); }, output -> { }),
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.SCAN_RUNTIME_ERROR, runner((path) -> config(),
                 (config, adaptor) -> { throw new IllegalStateException(SECRET); }, output -> { }),
@@ -90,7 +94,8 @@ class CliErrorCodeContractTest {
     private ScanConfig config() {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
-        config.metadataEnabled = false;
+        config.jdbcUrl = "jdbc:test:cli-error-contract";
+        config.metadataEnabled = true;
         config.ddlEnabled = false;
         config.objectsEnabled = false;
         config.logsEnabled = false;

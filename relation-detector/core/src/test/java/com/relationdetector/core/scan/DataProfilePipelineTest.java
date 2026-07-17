@@ -2,6 +2,7 @@ package com.relationdetector.core.scan;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,7 +52,6 @@ import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.core.output.JsonResultWriter;
 
 class DataProfilePipelineTest {
@@ -85,6 +85,72 @@ class DataProfilePipelineTest {
 
         assertEquals(1, context.result.warnings().size());
         assertEquals("PROFILE_PERMISSION_DENIED", context.result.warnings().get(0).code());
+    }
+
+    @Test
+    void rejectsEvidenceFromNonSuccessOutcomeBeforeMutatingScanState() {
+        ScanPipelineContext context = contextReturning(new ProfileOutcome(
+                ProfileStatus.QUERY_FAILED,
+                List.of(evidence(EvidenceType.VALUE_CONTAINMENT_HIGH)),
+                List.of(com.relationdetector.contracts.model.WarningMessage.warn(
+                        WarningType.PROFILE_WARNING,
+                        "PROFILE_QUERY_FAILED",
+                        "safe warning",
+                        "test-profile",
+                        0))));
+
+        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), context));
+
+        assertTrue(context.relationshipCandidates.isEmpty());
+        assertTrue(context.result.warnings().isEmpty());
+    }
+
+    @Test
+    void rejectsNonProfileEvidenceAndNonProfileSourceTypes() {
+        ScanPipelineContext structural = contextReturning(ProfileOutcome.success(List.of(
+                evidence(EvidenceType.SQL_LOG_JOIN))));
+        Evidence wrongSource = new Evidence(
+                EvidenceType.VALUE_CONTAINMENT_HIGH,
+                BigDecimal.valueOf(0.20d),
+                EvidenceSourceType.PLAIN_SQL,
+                "test-profile",
+                "invalid source",
+                Map.of());
+        ScanPipelineContext sourceType = contextReturning(ProfileOutcome.success(List.of(wrongSource)));
+
+        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), structural));
+        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), sourceType));
+
+        assertTrue(structural.relationshipCandidates.isEmpty());
+        assertTrue(sourceType.relationshipCandidates.isEmpty());
+    }
+
+    @Test
+    void rejectsNegativeEvidenceWhenGuardExistsOnlyOnStructuralEvidence() {
+        RelationshipCandidate candidate = declaredCandidate(Map.of(
+                "conditional", true,
+                "conditions", List.of(Map.of(
+                        "discriminator", "orders.party_type",
+                        "operator", "EQUALS",
+                        "value", "customer"))));
+        ScanPipelineContext context = existingProfileContext(candidate,
+                ProfileOutcome.success(List.of(negativeEvidence())));
+
+        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), context));
+
+        assertEquals(1, candidate.evidence().size());
+    }
+
+    @Test
+    void acceptsNegativeEvidenceForUnconditionalDeclaredForeignKey() {
+        RelationshipCandidate candidate = declaredCandidate(Map.of());
+        ScanPipelineContext context = existingProfileContext(candidate,
+                ProfileOutcome.success(List.of(negativeEvidence())));
+
+        pipeline.profile(connection(), context);
+
+        assertEquals(List.of(EvidenceType.DDL_FOREIGN_KEY, EvidenceType.NEGATIVE_VALUE_MISMATCH),
+                candidate.evidence().stream().map(Evidence::type).toList());
     }
 
     @Test
@@ -212,6 +278,7 @@ class DataProfilePipelineTest {
     private ScanPipelineContext contextReturning(ProfileOutcome profileOutcome, EvidenceWeightAdjuster adjuster) {
         ScanConfig config = new ScanConfig();
         config.databaseType = com.relationdetector.contracts.Enums.DatabaseType.MYSQL;
+        config.jdbcUrl = "jdbc:test:data-profile-pipeline";
         config.dataProfileEnabled = true;
         config.discoverFromNamingEvidence = true;
         config.skipUnindexedLargeTargets = true;
@@ -240,6 +307,7 @@ class DataProfilePipelineTest {
             RelationshipCandidate candidate, AtomicInteger calls) {
         ScanConfig config = new ScanConfig();
         config.databaseType = databaseType;
+        config.jdbcUrl = "jdbc:test:data-profile-pipeline";
         config.dataProfileEnabled = true;
         config.skipUnindexedLargeTargets = false;
         candidate.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
@@ -257,6 +325,52 @@ class DataProfilePipelineTest {
                 new ArrayList<>());
         ctx.metadataSnapshot = new MetadataSnapshot();
         return ctx;
+    }
+
+    private ScanPipelineContext existingProfileContext(RelationshipCandidate candidate, ProfileOutcome outcome) {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = "jdbc:test:data-profile-pipeline";
+        config.dataProfileEnabled = true;
+        config.verifyDeclaredForeignKeys = true;
+        config.skipUnindexedLargeTargets = false;
+        ScanScope scope = new ScanScope(null, null, List.of(), List.of());
+        ScanResult result = new ScanResult("mysql", null, null);
+        ScanPipelineContext ctx = new ScanPipelineContext(
+                config.resolve(),
+                new TestAdaptor(DatabaseType.MYSQL, (connection, request) -> outcome,
+                        (evidence, ignored) -> evidence),
+                scope,
+                result,
+                new AdaptorContext(scope, Map.of(), result.warnings()::add),
+                new ArrayList<>(List.of(candidate)),
+                new ArrayList<>());
+        ctx.metadataSnapshot = metadata();
+        return ctx;
+    }
+
+    private RelationshipCandidate declaredCandidate(Map<String, Object> attributes) {
+        RelationshipCandidate candidate = relationship(null, null);
+        candidate.evidence().add(new Evidence(
+                EvidenceType.DDL_FOREIGN_KEY,
+                BigDecimal.valueOf(0.98d),
+                EvidenceSourceType.DDL_FILE,
+                "schema.sql",
+                "declared foreign key",
+                attributes));
+        return candidate;
+    }
+
+    private Evidence negativeEvidence() {
+        return new Evidence(
+                EvidenceType.NEGATIVE_VALUE_MISMATCH,
+                BigDecimal.valueOf(-0.20d),
+                EvidenceSourceType.DATA_PROFILE,
+                "test-profile",
+                "negative mismatch",
+                Map.of(
+                        "profileMode", "LIVE_DATABASE",
+                        "negativePolicy", "DECLARED_FOREIGN_KEY_ONLY"));
     }
 
     private RelationshipCandidate relationship(String catalog, String schema) {

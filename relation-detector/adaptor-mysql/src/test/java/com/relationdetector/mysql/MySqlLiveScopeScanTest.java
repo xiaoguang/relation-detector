@@ -8,11 +8,14 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.core.scan.ScanConfig;
@@ -21,6 +24,9 @@ import com.relationdetector.core.scan.ScanEngine;
 class MySqlLiveScopeScanTest {
     private static final String JDBC_URL = "jdbc:relation-test:mysql-live-scope";
     private Driver driver;
+
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void registerDriver() throws SQLException {
@@ -34,13 +40,15 @@ class MySqlLiveScopeScanTest {
     }
 
     @Test
-    void defaultsLiveCatalogFromConnectionWhenDatabaseIsNotConfigured() {
+    void defaultsLiveCatalogFromConnectionWhenDatabaseIsNotConfigured() throws Exception {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
         config.jdbcUrl = JDBC_URL;
         config.databaseVersion = "8.0";
         config.metadataEnabled = false;
         config.dataProfileEnabled = true;
+        config.logsEnabled = true;
+        config.logFiles.add(Files.writeString(tempDir.resolve("query.sql"), "SELECT 1;"));
 
         assertEquals("connected_db",
                 new ScanEngine().scan(config, new MySqlDatabaseAdaptor()).catalog());

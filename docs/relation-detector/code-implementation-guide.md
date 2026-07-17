@@ -179,7 +179,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - `correlated EXISTS` 是公共 SQL 关系语义，新增或维护这类能力时，公共层只能处理跨方言相关谓词抽取，例如 `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.user_id)` 生成 `SQL_LOG_EXISTS` evidence。EXISTS 子查询内部如果出现 MySQL/PostgreSQL/Oracle/SQL Server 专属 rowset、function table、hint、`ONLY`、`JSON_TABLE`、`CONNECT BY`、`APPLY` 等语法，必须下沉到对应方言 visitor，并配套反向负向测试。
 - SQL-only predicate 不能只靠“出现了 JOIN”直接定向成 FK-like。普通 JOIN、EXISTS、IN 和 tuple IN 都先证明列级谓词存在；如果 DDL/metadata/data-profile 在同一端点上提供方向，metadata/DDL index facts 证明一侧 unique、一侧 non-unique，或 `NamingMatchEvidenceEnhancer` 从 top-level `namingEvidence` 池里命中唯一 `_id/id` 方向提示，`RelationshipMerger` 才把关系定向为 FK-like。无法判断方向时保留 `CO_OCCURRENCE`。`NAMING_MATCH` 不能凭空创建 relation，也不能参与 SQL 结构判断；relationship 只能消费已经抽取出的 `namingEvidence`，不能自己重新计算命名规则。
 - `StructuredRelationshipExtractor` 消费结构事件并负责跨方言关系语义，不应重新承载数据库专属 rowset scanner。新增或修改方言 rowset/DDL 兼容逻辑必须进入对应 token-event typed grammar/visitor，并同时补 correctness fixture、更新 `docs/design/relation-detector/phase-06-parser-enhancement.md`。
-- `AdaptorParsers.scriptFramer()` 是 adaptor SPI v5 的必需 `DialectScriptFramer`。`ScriptFileExtractor` 对 DDL file、object file、plain SQL 和 native log 都先用方言 generated script lexeme 做 client-script framing，再把 parser-ready server statement 交给 SQL/DDL parser：MySQL 识别 `DELIMITER`，PostgreSQL 保留 dollar-quoted body，Oracle 用单行 `/` 结束 object block，SQL Server 用单行 `GO` 切 batch，common 使用 semicolon。`DDL_FILE` 不能绕过 script framer 直接进入 DDL runner。已移除 `PlainSqlLogExtractor` 与 `ObjectSqlFileExtractor`；不再以 raw SQL regex 推断 statement 或 object 结构。
+- `AdaptorParsers.scriptFramer()` 是 adaptor SPI v6 的必需 `DialectScriptFramer`。`ScriptFileExtractor` 对 DDL file、object file、plain SQL 和 native log 都先用方言 generated script lexeme 做 client-script framing，再把 parser-ready server statement 交给 SQL/DDL parser：MySQL 识别 `DELIMITER`，PostgreSQL 保留 dollar-quoted body，Oracle 用单行 `/` 结束 object block，SQL Server 用单行 `GO` 切 batch，common 使用 semicolon。`DDL_FILE` 不能绕过 script framer 直接进入 DDL runner。已移除 `PlainSqlLogExtractor` 与 `ObjectSqlFileExtractor`；不再以 raw SQL regex 推断 statement 或 object 结构。
 - `TypedLogNoiseClassifier` 只在 `SqlRelationParserRunner` 得到 `StructuredParseResult` 后过滤 native log 噪声。它根据 typed physical rowset 的精确 schema 分类系统 catalog；仅当没有 physical rowset 时才允许 `sources.logs.metadataQueryMarkers` 参与运营过滤。已移除 `SqlLogNoiseFilter`。
 - `TokenEventStructuredDdlParser`、`MySqlTokenEventStructuredDdlParser`、`PostgresTokenEventStructuredDdlParser`、`OracleTokenEventStructuredDdlParser`、`SqlServerTokenEventStructuredDdlParser` 通过 typed DDL grammar context 输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` / `DDL_COLUMN` 事件；`DdlRelationExtractionVisitor` 独立把这些事件转换成 DDL FK-like 关系，并用 source index / target unique evidence 增强关系。DDL relationship 结构判断不依赖 DDL cursor/scanner、regex 或名字白名单。
 - `ProjectionTraceResolver` 为 Data Lineage 写入映射提供保守列来源回溯，支持 CTE、派生表、多层嵌套 projection alias 和结构化表达式来源。它消费 `StructuredSqlEvent`，不重新解析 SQL 文本，也不保留 regex / token span fallback。裸列投影（例如 `SELECT user_id FROM orders`）只有在事件作用域和 fixture 覆盖证明安全时才回溯；复杂表达式的完整多源字段血缘由 `StructuredDataLineageExtractor` 通过 `ExpressionSourceSet`、`AssignmentMapping`、`ProjectionTrace` 输出。新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
@@ -300,7 +300,7 @@ VIEW/PROCEDURE JOIN  -> 当前复用 SQL_LOG_JOIN / SQL_LOG_EXISTS / SQL_LOG_SUB
 SQL log JOIN         -> SQL_LOG_JOIN
 SQL column predicate -> SQL_LOG_JOIN / SQL_LOG_EXISTS / SQL_LOG_SUBQUERY_IN；替代生产路径上的泛化 SQL_LOG_COLUMN_CO_OCCURRENCE
 SQL table co-occurrence -> RESERVED_COMPATIBILITY / NOT_PRODUCED；无等价现役替代，仅模型兼容 SQL_LOG_TABLE_CO_OCCURRENCE
-data profile         -> MySQL/PostgreSQL/Oracle/SQL Server live profiler 在 dataProfile.enabled=true 时可产出 VALUE_CONTAINMENT_HIGH / VALUE_OVERLAP_HIGH / NEGATIVE_VALUE_MISMATCH；离线 INSERT 样本等待 typed literal insert sample event
+data profile         -> MySQL/PostgreSQL/Oracle/SQL Server live profiler 在 dataProfile.enabled=true 时可产出 VALUE_CONTAINMENT_HIGH / VALUE_OVERLAP_HIGH；NEGATIVE_VALUE_MISMATCH 只用于 live、非条件声明 FK。离线 INSERT profiling 已从 runtime 和 SPI v6 删除
 derived path         -> derivedPaths.enabled=true 时，core 可从已定向关系、VALUE lineage、top-level namingEvidence 推导 TRANSITIVE_PATH / derived NAMING_MATCH；默认关闭，不改变直接事实层
 ```
 
@@ -533,7 +533,7 @@ database:
   jdbcUrl: jdbc:mysql://localhost:3306/shop
   username: readonly
   password: ${DB_PASSWORD}
-  schema: shop
+  catalog: shop
 
 sources:
   metadata:
@@ -687,8 +687,9 @@ PostgreSQL：
 - 10 万条 SQL 日志解析耗时。
 - 100 万条 SQL 日志解析耗时。
 - 10 万 candidate merge 内存占用。
-- live dataProfile 在 `timeoutSeconds`、`maxCandidatePairs` 下是否按预期停止；`sampleRows`和
-  `maxDistinctValues`只约束离线样本，不限制live exact query。
+- live dataProfile 在 `timeoutSeconds`、`maxCandidatePairs` 和
+  `maxTargetsPerSourceColumn` 下是否按预期停止。当前只执行 live exact aggregate query，
+  不存在离线 `sampleRows` 或 `maxDistinctValues` 预算。
 
 ### 5.5 稳定性和回归测试
 

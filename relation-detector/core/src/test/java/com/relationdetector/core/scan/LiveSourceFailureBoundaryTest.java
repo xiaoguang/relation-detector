@@ -67,7 +67,7 @@ class LiveSourceFailureBoundaryTest {
     private static final class MetadataFailureAdaptor implements DatabaseAdaptor {
         private final CommonDatabaseAdaptor delegate = new CommonDatabaseAdaptor();
 
-        @Override public int spiVersion() { return 5; }
+        @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override public String id() { return "metadata-failure"; }
         @Override public String displayName() { return "Metadata Failure"; }
         @Override public Set<DatabaseType> supportedDatabaseTypes() { return Set.of(DatabaseType.COMMON); }

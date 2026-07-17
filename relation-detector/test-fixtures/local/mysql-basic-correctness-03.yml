@@ -24,7 +24,6 @@ sources:
     files: []
   dataProfile:
     enabled: false
-    sampleRows: 1000
     timeoutSeconds: 10
     maxCandidatePairs: 1000
 

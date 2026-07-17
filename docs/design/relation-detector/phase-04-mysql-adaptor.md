@@ -10,7 +10,7 @@ token-event parser 位于 `com.relationdetector.mysql.tokenevent`，MySQL 5.7 / 
 所有 `.g4` 与 generated parser artifact 由 `relation-detector/grammar/*` 模块拥有，adaptor 只消费这些
 artifact；core 只通过 runner 和 `FullGrammarDialectModule` registry 调度。
 
-MySQL 同时实现当前 SPI v5 的 `MySqlScriptFramer`。它使用 MySQL generated script lexer 的 typed lexeme 识别 `DELIMITER` directive，并以当前 delimiter 切分 server statement；quoted text 与 comment 中的 delimiter 不参与分割。这个 framing 在 SQL/DDL grammar 之前完成，不再由 core raw-SQL splitter 猜测 routine 或 object 边界。
+MySQL 同时实现当前 SPI v6 的 `MySqlScriptFramer`。它使用 MySQL generated script lexer 的 typed lexeme 识别 `DELIMITER` directive，并以当前 delimiter 切分 server statement；quoted text 与 comment 中的 delimiter 不参与分割。这个 framing 在 SQL/DDL grammar 之前完成，不再由 core raw-SQL splitter 猜测 routine 或 object 边界。
 
 MySQL 目前有两个严格 full-grammar profile：`mysql/5.7` 和 `mysql/8.0`。二者使用 grammar 模块中
 固定的 grammars-v4 MySQL snapshot，以及 adaptor 内的 typed parse-tree visitor、expression analyzer
@@ -50,10 +50,11 @@ MySQL 特点：
 - `TableId.normalizedName` 只保存 schema/table 形式；MySQL schema 为空时就是 table name，不能重复
   拼入 catalog，也不能使用 `TableId.of(database, table)` 把 database 放到 schema 轴。
 
-当前实现仍为 `PARTIAL`：live metadata 已遵守上述 catalog 映射，但 token/full parser 发出的
-`database.table` 两段名进入通用 `CanonicalIdentifierResolver` 时仍按 `schema.table` 解释；relationship、
-lineage 和 naming 也有独立调用路径。修复必须由方言 namespace adapter 把两段名解析到 catalog，
-不能靠 endpoint 名称特例或把 metadata 重新降级到 schema。
+当前实现已统一这条映射。MySQL adaptor 的 `IdentifierRules` 声明
+`QualifiedNameSemantics.CATALOG_TABLE`，因此 token-event/full-grammar 中显式写出的
+`database.table` 由 `CanonicalIdentifierResolver` 解析为 catalog/table。relationship、lineage、
+naming、profile、known-physical inventory 和 live DDL qualification 复用同一 canonical endpoint
+provider；不使用 endpoint 名称特例，也不把 metadata 降级回 schema。
 
 ## 元数据采集
 
@@ -293,8 +294,8 @@ MySQL live 实现：
 - 对候选 source/target 列执行只读聚合，不返回业务值。
 - 精确返回 source 非空行数、source distinct、matched distinct 和 target distinct。
 - target unique/index gate 来自 metadata candidate selection，不由 profile SQL重新证明。
-- 使用 JDBC query timeout 控制单候选执行时间；`sampleRows/maxDistinctValues` 只属于离线样本配置，
-  不限制 live exact query。
+- 使用 JDBC query timeout 控制单候选执行时间；候选总量和每个 source 的 target 数由 live profile
+  配置限制。
 
 示意：
 

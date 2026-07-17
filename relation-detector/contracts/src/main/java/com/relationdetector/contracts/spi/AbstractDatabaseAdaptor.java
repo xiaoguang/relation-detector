@@ -10,7 +10,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * Small base class for adaptors that expose grouped collector/parser/profiling
  * capabilities.
  *
- * <p>SPI v5 exposes grouped optional collectors, typed parser capabilities,
+ * <p>SPI v6 exposes grouped optional collectors, typed parser capabilities,
  * profile outcomes, and a required dialect script framer. This base class
  * keeps the immutable assembly shared by built-in adaptors.
  */
