@@ -99,13 +99,8 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEve
             String table = baseName(qualified);
             String alias = ctx.as_table_alias() == null ? ""
                     : clean(ctx.as_table_alias().table_alias().getText());
-            if (isTemp(table)) {
-                emitter.addRowset(events, ctx, StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
-                        "", qualified, table, "", "", "", "");
-            } else {
-                emitter.addRowset(events, ctx, StructuredParseEventType.ROWSET_REFERENCE,
-                        "FROM", qualified, table, alias, "", "", "");
-            }
+            emitter.addRowset(events, ctx, StructuredParseEventType.ROWSET_REFERENCE,
+                    "FROM", qualified, table, alias, "", "", "");
             return null;
         }
         if (ctx.derived_table() != null) {

@@ -9,6 +9,7 @@ import com.relationdetector.postgres.fullgrammar.common.PostgresFullGrammarEvent
 import com.relationdetector.postgres.plpgsql.v16.GeneratedPlPgSqlBodyParser;
 import com.relationdetector.postgres.routine.PostgresRoutineLanguageDispatcher;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.CreatefunctionstmtContext;
+import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.CreatestmtContext;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.A_exprContext;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.A_expr_andContext;
@@ -82,6 +83,14 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
         warnings.addAll(outcome.warnings());
         sink.events().addAll(outcome.events());
         return null;
+    }
+    @Override
+    public Void visitCreatestmt(CreatestmtContext ctx) {
+        if (ctx.opttemp() != null && ctx.opttemp().UNLOGGED() == null && !ctx.qualified_name().isEmpty()) {
+            sink.localTempTable(ctx, ctx.qualified_name(0).getText());
+            return null;
+        }
+        return visitChildren(ctx);
     }
     @Override
     public Void visitTable_ref(Table_refContext ctx) {

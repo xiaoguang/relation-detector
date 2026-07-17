@@ -19,11 +19,15 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.PredicateEvent;
 import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
+import com.relationdetector.contracts.parse.WriteEvent;
 import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
@@ -39,6 +43,240 @@ import com.relationdetector.core.identity.NamespaceContext;
  * rescan or any removed parser.
  */
 class StructuredRelationshipExtractorIndependenceTest {
+
+    @Test
+    void foldsLocalTemporaryInSubqueryToUniqueDirectPhysicalSource() {
+        SqlStatementRecord statement = record(
+                "typed routine with local temporary bridge",
+                Map.of("localTempTables", List.of("tmp_available_categories")));
+        StructuredParseResult structured = structured(List.of(
+                new RowsetEvent(StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
+                        scopedProvenance(1, "declare"), "CREATE TEMPORARY TABLE",
+                        "tmp_available_categories", "tmp_available_categories", "",
+                        "tmp_available_categories", "", ""),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate"),
+                new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                        scopedProvenance(2, "populate"), "", "", "", "",
+                        "tmp_available_categories", "cat_id", "INSERT_SELECT",
+                        ExpressionTrace.of(List.of("m"), List.of("category_id"),
+                                LineageFlowKind.VALUE, LineageTransformType.DIRECT)),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 3, "consume"),
+                new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                        scopedProvenance(3, "consume"),
+                        new ExpressionSource("pdf", "id"),
+                        new ExpressionSource("", "cat_id"),
+                        List.of(new ExpressionSource("pdf", "id")),
+                        List.of(new ExpressionSource("", "cat_id")),
+                        "tmp_available_categories", "IN_SUBQUERY", List.of(), true)));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size(), () -> "Expected folded physical relation, got: " + relations);
+        assertEquals("jsh_material.category_id", relations.get(0).source().displayName());
+        assertEquals("jsh_temp_category_pdf.id", relations.get(0).target().displayName());
+        assertEquals(EvidenceType.SQL_LOG_SUBQUERY_IN, relations.get(0).evidence().get(0).type());
+    }
+
+    @Test
+    void foldsRecursiveDirectLocalTemporaryCopiesToPhysicalSource() {
+        SqlStatementRecord statement = record("typed recursive local bridge",
+                Map.of("localTempTables", List.of("tmp_first", "tmp_second")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_first", 1, "declare-first"),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate-first"),
+                directWrite("tmp_first", "category_id", "m", "category_id", 2, "populate-first"),
+                localTemp("tmp_second", 3, "declare-second"),
+                scopedTable("FROM", "tmp_first", "f", 4, "populate-second"),
+                directWrite("tmp_second", "category_id", "f", "category_id", 4, "populate-second"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 5, "consume"),
+                inPredicate("pdf", "id", "tmp_second", "category_id", 5, "consume")));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size(), () -> "Expected recursive folded relation, got: " + relations);
+        assertEquals("jsh_material.category_id", relations.get(0).source().displayName());
+        assertEquals("jsh_temp_category_pdf.id", relations.get(0).target().displayName());
+    }
+
+    @Test
+    void nonDirectWriteMakesLocalTemporaryColumnAmbiguous() {
+        SqlStatementRecord statement = record("typed mixed local bridge",
+                Map.of("localTempTables", List.of("tmp_ids")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_ids", 1, "declare"),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate-direct"),
+                directWrite("tmp_ids", "category_id", "m", "category_id", 2, "populate-direct"),
+                scopedTable("FROM", "jsh_material", "m", 3, "populate-expression"),
+                new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                        scopedProvenance(3, "populate-expression"), "", "", "", "",
+                        "tmp_ids", "category_id", "INSERT_SELECT",
+                        ExpressionTrace.of(List.of("m"), List.of("category_id"),
+                                LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC)),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 4, "consume"),
+                inPredicate("pdf", "id", "tmp_ids", "category_id", 4, "consume")));
+
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                "A transformed write must prevent direct local-rowset folding");
+    }
+
+    @Test
+    void redeclaringLocalTemporaryTableResetsEarlierProjectionSource() {
+        SqlStatementRecord statement = record("typed redeclared local bridge",
+                Map.of("localTempTables", List.of("tmp_ids")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_ids", 1, "declare-first"),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate-first"),
+                directWrite("tmp_ids", "category_id", "m", "category_id", 2, "populate-first"),
+                localTemp("tmp_ids", 3, "declare-second"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 4, "consume"),
+                inPredicate("pdf", "id", "tmp_ids", "category_id", 4, "consume")));
+
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                "A new local-table declaration must discard mappings from the previous lifetime");
+    }
+
+    @Test
+    void foldsTupleInLocalTemporaryColumnToPhysicalSource() {
+        SqlStatementRecord statement = record("typed tuple local bridge",
+                Map.of("localTempTables", List.of("tmp_ids")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_ids", 1, "declare"),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate"),
+                directWrite("tmp_ids", "category_id", "m", "category_id", 2, "populate"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 3, "consume"),
+                new PredicateEvent(StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE,
+                        scopedProvenance(3, "consume"), ExpressionSource.EMPTY, ExpressionSource.EMPTY,
+                        List.of(new ExpressionSource("pdf", "id")),
+                        List.of(new ExpressionSource("", "category_id")),
+                        "tmp_ids", "TUPLE_IN_SUBQUERY", List.of(), true)));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size(), () -> "Expected tuple-IN folded relation, got: " + relations);
+        assertEquals("jsh_material.category_id", relations.get(0).source().displayName());
+        assertEquals("jsh_temp_category_pdf.id", relations.get(0).target().displayName());
+    }
+
+    @Test
+    void multiplePhysicalSourcesMakeLocalTemporaryColumnAmbiguous() {
+        SqlStatementRecord statement = record("typed ambiguous local bridge",
+                Map.of("localTempTables", List.of("tmp_ids")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_ids", 1, "declare"),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate-material"),
+                directWrite("tmp_ids", "category_id", "m", "category_id", 2, "populate-material"),
+                scopedTable("FROM", "product_categories", "pc", 3, "populate-category"),
+                directWrite("tmp_ids", "category_id", "pc", "id", 3, "populate-category"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 4, "consume"),
+                inPredicate("pdf", "id", "tmp_ids", "category_id", 4, "consume")));
+
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                "Different physical VALUE sources must make the local projection ambiguous");
+    }
+
+    @Test
+    void writeAfterPredicateDoesNotBackfillLocalTemporarySource() {
+        SqlStatementRecord statement = record("typed future local bridge",
+                Map.of("localTempTables", List.of("tmp_ids")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_ids", 1, "declare"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 2, "consume"),
+                inPredicate("pdf", "id", "tmp_ids", "category_id", 2, "consume"),
+                scopedTable("FROM", "jsh_material", "m", 3, "populate-later"),
+                directWrite("tmp_ids", "category_id", "m", "category_id", 3, "populate-later")));
+
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                "A later write cannot establish the source of an earlier predicate");
+    }
+
+    @Test
+    void recursiveLocalCopyThatReturnsToSamePhysicalColumnStaysSuppressed() {
+        SqlStatementRecord statement = record("typed self local bridge",
+                Map.of("localTempTables", List.of("tmp_first", "tmp_second")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_first", 1, "declare-first"),
+                scopedTable("FROM", "jsh_material", "m", 2, "populate-first"),
+                directWrite("tmp_first", "material_id", "m", "id", 2, "populate-first"),
+                localTemp("tmp_second", 3, "declare-second"),
+                scopedTable("FROM", "tmp_first", "f", 4, "populate-second"),
+                directWrite("tmp_second", "material_id", "f", "material_id", 4, "populate-second"),
+                scopedTable("FROM", "jsh_material", "m2", 5, "consume"),
+                inPredicate("m2", "id", "tmp_second", "material_id", 5, "consume")));
+
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                "A folded physical self relation must remain suppressed");
+    }
+
+    @Test
+    void localProjectionCycleDoesNotProduceRelationship() {
+        SqlStatementRecord statement = record("typed cyclic local bridge",
+                Map.of("localTempTables", List.of("tmp_first", "tmp_second")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_first", 1, "declare-first"),
+                localTemp("tmp_second", 1, "declare-second"),
+                scopedTable("FROM", "tmp_second", "s", 2, "copy-to-first"),
+                directWrite("tmp_first", "id", "s", "id", 2, "copy-to-first"),
+                scopedTable("FROM", "tmp_first", "f", 3, "copy-to-second"),
+                directWrite("tmp_second", "id", "f", "id", 3, "copy-to-second"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 4, "consume"),
+                inPredicate("pdf", "id", "tmp_second", "id", 4, "consume")));
+
+        assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                "A local projection cycle must remain unresolved");
+    }
+
+    @Test
+    void transformedLocalWritesNeverBecomePhysicalRelationshipBridges() {
+        for (LineageTransformType transform : List.of(
+                LineageTransformType.FUNCTION_CALL,
+                LineageTransformType.ARITHMETIC,
+                LineageTransformType.AGGREGATE,
+                LineageTransformType.CASE_WHEN,
+                LineageTransformType.COALESCE)) {
+            SqlStatementRecord statement = record("typed transformed local bridge " + transform,
+                    Map.of("localTempTables", List.of("tmp_ids")));
+            StructuredParseResult structured = structured(List.of(
+                    localTemp("tmp_ids", 1, "declare"),
+                    scopedTable("FROM", "jsh_material", "m", 2, "populate"),
+                    new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                            scopedProvenance(2, "populate"), "", "", "", "",
+                            "tmp_ids", "category_id", "INSERT_SELECT",
+                            ExpressionTrace.of(List.of("m"), List.of("category_id"),
+                                    LineageFlowKind.VALUE, transform)),
+                    scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 3, "consume"),
+                    inPredicate("pdf", "id", "tmp_ids", "category_id", 3, "consume")));
+
+            assertTrue(new StructuredRelationshipExtractor().extract(statement, structured).isEmpty(),
+                    () -> transform + " must not be treated as a direct local-rowset projection");
+        }
+    }
+
+    @Test
+    void explicitlyNamespacedTableIsNotShadowedByBareLocalTemporaryName() {
+        SqlStatementRecord statement = record("typed namespaced physical table",
+                Map.of("localTempTables", List.of("tmp_ids")));
+        StructuredParseResult structured = structured(List.of(
+                localTemp("tmp_ids", 1, "declare"),
+                scopedTable("FROM", "jsh_temp_category_pdf", "pdf", 2, "consume"),
+                scopedTable("FROM", "shop.tmp_ids", "stored", 2, "consume"),
+                new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                        scopedProvenance(2, "consume"),
+                        new ExpressionSource("pdf", "id"),
+                        new ExpressionSource("stored", "category_id"),
+                        List.of(new ExpressionSource("pdf", "id")),
+                        List.of(new ExpressionSource("stored", "category_id")),
+                        "shop.tmp_ids", "IN_SUBQUERY", List.of(), true)));
+
+        List<RelationshipCandidate> relations = new StructuredRelationshipExtractor()
+                .extract(statement, structured);
+
+        assertEquals(1, relations.size());
+        assertEquals("jsh_temp_category_pdf.id", relations.get(0).source().displayName());
+        assertEquals("shop.tmp_ids.category_id", relations.get(0).target().displayName());
+    }
 
     @Test
     void resolvesTypedPredicateGuardIntoConditionalRelationshipEvidence() {
@@ -543,6 +781,44 @@ class StructuredRelationshipExtractorIndependenceTest {
                 keyword, table, table, alias, "", "", "");
     }
 
+    private StructuredSqlEvent localTemp(String table, long line, String statementScope) {
+        return new RowsetEvent(StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
+                scopedProvenance(line, statementScope), "CREATE TEMPORARY TABLE",
+                table, table, "", table, "", "");
+    }
+
+    private StructuredSqlEvent directWrite(
+            String targetTable,
+            String targetColumn,
+            String sourceAlias,
+            String sourceColumn,
+            long line,
+            String statementScope
+    ) {
+        return new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                scopedProvenance(line, statementScope), "", "", "", "",
+                targetTable, targetColumn, "INSERT_SELECT",
+                ExpressionTrace.of(List.of(sourceAlias), List.of(sourceColumn),
+                        LineageFlowKind.VALUE, LineageTransformType.DIRECT));
+    }
+
+    private StructuredSqlEvent inPredicate(
+            String outerAlias,
+            String outerColumn,
+            String innerTable,
+            String innerColumn,
+            long line,
+            String statementScope
+    ) {
+        return new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                scopedProvenance(line, statementScope),
+                new ExpressionSource(outerAlias, outerColumn),
+                new ExpressionSource("", innerColumn),
+                List.of(new ExpressionSource(outerAlias, outerColumn)),
+                List.of(new ExpressionSource("", innerColumn)),
+                innerTable, "IN_SUBQUERY", List.of(), true);
+    }
+
     private StructuredSqlEvent scopedTable(
             String keyword,
             String table,
@@ -550,11 +826,15 @@ class StructuredRelationshipExtractorIndependenceTest {
             long line,
             String statementScope
     ) {
-        SourceProvenance provenance = new SourceProvenance(
+        return new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE,
+                scopedProvenance(line, statementScope),
+                keyword, table, table, alias, "", "", "");
+    }
+
+    private SourceProvenance scopedProvenance(long line, String statementScope) {
+        return new SourceProvenance(
                 "independence.sql", line, statementScope, "", "", "", "", "",
                 false, false, "");
-        return new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance,
-                keyword, table, table, alias, "", "", "");
     }
 
     private StructuredSqlEvent equality(String leftAlias, String leftColumn, String rightAlias, String rightColumn, long line) {

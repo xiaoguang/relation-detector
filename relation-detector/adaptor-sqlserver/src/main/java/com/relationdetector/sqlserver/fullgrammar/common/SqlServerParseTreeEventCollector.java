@@ -90,7 +90,7 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
         } else if (hasRole(ctx, Role.DML_TRIGGER)) {
             visitDmlTrigger(ctx);
         } else if (hasRole(ctx, Role.CREATE_TABLE)) {
-            ddlCollector.visitCreateTable(ctx);
+            visitCreateTable(ctx);
         } else if (hasRole(ctx, Role.ALTER_TABLE)) {
             ddlCollector.visitAlterTable(ctx);
         } else if (hasRole(ctx, Role.CREATE_INDEX)) {
@@ -170,11 +170,7 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
             String table = clean(fullTableName.get().getText());
             String alias = firstDirect(ctx, Role.TABLE_ALIAS).flatMap(this::lastIdText).orElse("");
             rowsetOwners.put(normalize(alias.isBlank() ? baseName(table) : alias), normalize(table));
-            if (isLocalTemp(table)) {
-                sqlSink.localTempTable(ctx, table);
-            } else {
-                sqlSink.rowset(ctx, "FROM", table, alias);
-            }
+            sqlSink.rowset(ctx, "FROM", table, alias);
             return;
         }
         Optional<ParserRuleContext> derived = firstDirect(ctx, Role.DERIVED_TABLE);
@@ -239,11 +235,13 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
 
     private void visitInsert(ParserRuleContext ctx) {
         String targetTable = firstDirectText(ctx, Role.DDL_OBJECT).orElse("");
-        if (targetTable.isBlank() || isLocalTemp(targetTable)) {
+        if (targetTable.isBlank()) {
             visitChildren(ctx);
             return;
         }
-        sqlSink.writeTarget(ctx, qualifiedTable(targetTable), "");
+        if (!isLocalTemp(targetTable)) {
+            sqlSink.writeTarget(ctx, qualifiedTable(targetTable), "");
+        }
         List<String> columns = firstDirect(ctx, Role.INSERT_COLUMN_LIST)
                 .map(this::identifierList)
                 .orElse(List.of());
@@ -269,6 +267,15 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
             firstDescendant(item, Role.EXPRESSION).ifPresent(expression ->
                     writeControls.emitInsertSelect(item, target, column, expression, query.orElse(null)));
         }
+    }
+
+    private void visitCreateTable(ParserRuleContext ctx) {
+        String table = firstDirectText(ctx, Role.TABLE_NAME).orElse("");
+        if (isLocalTemp(table)) {
+            sqlSink.localTempTable(ctx, table);
+            return;
+        }
+        ddlCollector.visitCreateTable(ctx);
     }
 
     private void visitUpdate(ParserRuleContext ctx) {

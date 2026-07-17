@@ -35,6 +35,14 @@ abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
     protected RelationshipCandidate columnCoOccurrenceCandidate(SqlStatementRecord statement,
             ColumnRef left, ColumnRef right, EvidenceType evidenceType, String joinKind,
             String leftAlias, String rightAlias, AliasIndex aliases, StructuredSqlEvent event, String detail) {
+        return columnCoOccurrenceCandidate(statement, left, right, evidenceType, joinKind,
+                leftAlias, rightAlias, aliases, event, detail, Map.of());
+    }
+
+    protected RelationshipCandidate columnCoOccurrenceCandidate(SqlStatementRecord statement,
+            ColumnRef left, ColumnRef right, EvidenceType evidenceType, String joinKind,
+            String leftAlias, String rightAlias, AliasIndex aliases, StructuredSqlEvent event,
+            String detail, Map<String, Object> additionalAttributes) {
         ColumnRef first = left;
         ColumnRef second = right;
         if (outputOrderKey(left).compareTo(outputOrderKey(right)) > 0) {
@@ -48,6 +56,7 @@ abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
         attributes.put("joinKind", canonicalJoinKind(joinKind));
         EvidenceProvenanceMapper.copy(statement, event, attributes);
         copyPredicateGuardAttributes(event, aliases, attributes);
+        attributes.putAll(additionalAttributes);
         if (isExplicitSelfJoinRole(left, right, leftAlias, rightAlias)) {
             attributes.put("selfJoinRole", true);
             attributes.put("leftAlias", clean(leftAlias));

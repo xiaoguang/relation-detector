@@ -101,6 +101,24 @@ class MySqlTokenEventDialectBoundaryTest {
     }
 
     @Test
+    void mysqlTokenEventEmitsTypedLocalTemporaryDeclaration() {
+        var result = new MySqlTokenEventStructuredSqlParser().parseSql(new SqlStatementRecord(
+                "CREATE TEMPORARY TABLE tmp_ids (id BIGINT)",
+                StatementSourceType.PROCEDURE,
+                "mysql-local-temp.sql",
+                7,
+                7,
+                java.util.Map.of("localTempTables", java.util.List.of("tmp_ids"))), null);
+
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION
+                                && "tmp_ids".equals(event.qualifiedTable())
+                                && event.line() == 7),
+                () -> "Typed temporary declaration and source line are required for lifetime reset: "
+                        + result.events());
+    }
+
+    @Test
     void mysqlTokenEventSqlParserKeepsTypedEventsAfterUnsupportedFragment() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "SELECT * FROM (; SELECT * FROM orders o JOIN users u ON o.user_id = u.id",

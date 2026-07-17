@@ -845,6 +845,10 @@ FK-like 方向规则仍优先。无法可靠判断方向时才进入 column co-o
 
 当前 typed SQL parser 不再把 `EXISTS` / `IN` / 普通 equality 直接定向为 FK-like，但必须保留真实语法 evidence：JOIN / comma join 输出 `SQL_LOG_JOIN`，correlated `EXISTS` 输出 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 输出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 证明“SQL 中存在明确列级谓词”，不单独证明 FK-like 方向。FK-like 方向可以由 DDL、metadata、data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或“SQL 谓词 + top-level `namingEvidence` 中的唯一方向提示”推出；否则输出 `CO_OCCURRENCE`。`NAMING_MATCH` 不解析 SQL，也不凭表名/列名创建关系；`NamingEvidenceExtractor` 先通过 `NamingRuleEngine` 执行合并后的 `NamingRuleSet` 生成完整命名证据池，系统默认规则来自 `naming-rules/system-default.yml`，客户规则来自 YAML `namingMatch.ruleFiles` / inline `namingMatch.rules`。`NamingMatchEvidenceEnhancer` 只消费该证据池并在 relationship evidence 中写入 `evidenceRef`，不能本地重算命名规则。
 
+本地临时 rowset 本身始终不能成为 relationship endpoint。对于 `IN` / tuple-IN，`LocalRowsetProjectionIndex` 可以把它作为内部桥折叠：来源必须来自谓词之前的 typed `INSERT_SELECT_MAPPING`，并且整条递归复制链只能包含唯一的 `VALUE/DIRECT` 物理列来源。`DISTINCT` 不改变列值，可以穿透；函数、算术、聚合、CASE、CONTROL、循环、重声明前的旧写入或多个不同物理来源都会阻止折叠。折叠后两端相同仍按现有 self-relation gate 抑制。evidence 通过 `localRowsetBridge`、`localRowsetPath` 和 `localRowsetSourceLine` 记录桥路径，不新增顶层 JSON 字段，也不让临时表进入 naming 或 derived 图。
+
+该能力必须以端到端事件链验收，而不是只证明方言能接受临时表语法：MySQL、PostgreSQL 和 SQL Server parser 都要同时产生 typed declaration、临时目标的直接写入映射及消费端 IN predicate，最终只允许出现底层物理列关系，原临时 endpoint 必须为零。Oracle global temporary table 是持久 schema object，Common SQL 没有可移植的本地临时表声明；二者只验证不按表名误判为本地桥，不宣称具备不存在的 statement-local 折叠语义。
+
 Naming rule 执行前的 endpoint pair identity 必须有向：`source -> target` 与 `target -> source` 分别进入 `DirectionalEndpointPairKey`。同一方向的 candidates 只执行一次 `NamingRuleEngine`，但保留所有不同 file/object/statement/block/line observation；反向 candidate 必须独立匹配，只有生成同一稳定 naming fact 后才允许 merger 合并 provenance。
 
 `SQL_LOG_COLUMN_CO_OCCURRENCE` 和 `SQL_LOG_TABLE_CO_OCCURRENCE` 仍保留 enum、score 和 merger 兼容逻辑，但当前生产 parser / extractor 不主动产出。列级谓词共现由更具体的 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN` 代替；纯表级共现没有等价现役替代，默认不生成正式 relationship。
@@ -942,7 +946,7 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
   -> VALUE:AGGREGATE / ARITHMETIC / COALESCE according to reviewed fixture semantics
 ```
 
-`knownPhysicalTables` 当前作为 extractor 入参保留，用于未来 metadata-aware lineage。当前 v1 主要依据语法明确的 `LOCAL_TEMP_TABLE_DECLARATION` 过滤本对象 scope 内临时表，不按 `tmp_`、`temp_`、`jsh_temp_` 这类名字猜测临时表。
+`knownPhysicalTables` 当前作为 extractor 入参保留，用于未来 metadata-aware lineage。当前 v1 主要依据语法明确的 `LOCAL_TEMP_TABLE_DECLARATION` 过滤本对象 scope 内临时表，不按 `tmp_`、`temp_`、`jsh_temp_` 这类名字猜测临时表。上述 relationship 内部桥不会改变 Data Lineage v1：临时表写入与读取仍不作为物理 lineage endpoint，也不参与 derived lineage。
 
 ## ProjectionTraceResolver 与正式 Data Lineage 的区别
 

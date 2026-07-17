@@ -191,6 +191,7 @@ virtual generated column 与 temporal constraint。
 - v16 相对 v17 少 PostgreSQL 17 专属 fixture；版本差异继续按 SQL 资产和官方语法边界审计，而不是按 parser 总数判断。
 - v17 与 v18 的共同业务 fixture 输出一致；目录总量差异来自各自的 SQL/JSON、MERGE、DML RETURNING、temporal DDL 和 virtual generated-column fixture。
 - PostgreSQL 18 的 `UPDATE ... RETURNING old/new` 不再阻断非平凡 self-update assignment；`sales_amount -> sales_amount` 的 `VALUE/ARITHMETIC` lineage 已进入 golden。
+- token-event 与 v16/v17/v18 full parser 都从 typed `CREATE TEMP[TORARY] TABLE` 产生本地 rowset declaration，并保留后续 `INSERT ... SELECT` 与 `IN (SELECT ...)` 事件。只有唯一的 `VALUE/DIRECT` 投影链可以折叠成底层物理 relationship；最终 relationship、naming 和 derived 输出不得包含临时 endpoint。
 - 当前没有新的 `REVIEW_NEEDED` 项；如果后续出现无法用版本语法边界解释的缺失，应进入 `postgres-version-golden-diff.md`。
 
 ## 对象定义采集

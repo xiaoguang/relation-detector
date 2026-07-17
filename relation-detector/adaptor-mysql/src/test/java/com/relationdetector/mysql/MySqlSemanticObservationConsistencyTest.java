@@ -47,6 +47,40 @@ class MySqlSemanticObservationConsistencyTest {
     }
 
     @Test
+    void localTemporaryInBridgeMatchesTokenAndBothFullGrammarProfiles() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                CREATE PROCEDURE sp_local_bridge()
+                BEGIN
+                  CREATE TEMPORARY TABLE tmp_categories (category_id BIGINT);
+                  INSERT INTO tmp_categories (category_id)
+                  SELECT DISTINCT m.category_id FROM jsh_material m;
+                  SELECT pdf.id
+                  FROM jsh_temp_category_pdf pdf
+                  WHERE pdf.id IN (SELECT category_id FROM tmp_categories);
+                END
+                """, StatementSourceType.PROCEDURE, "mysql-local-rowset-bridge.sql", 1, 9,
+                Map.of("localTempTables", List.of("tmp_categories")));
+
+        for (StructuredSqlParser parser : List.of(
+                new MySqlTokenEventStructuredSqlParser(),
+                new com.relationdetector.mysql.fullgrammar.v5_7.FullGrammarDialectModule().sqlParser(),
+                new FullGrammarDialectModule().sqlParser())) {
+            var structured = parser.parseSql(statement, null);
+            var candidates = new StructuredRelationshipExtractor().extract(statement, structured);
+
+            assertEquals(1, candidates.size(), () -> parser.getClass().getName() + ": " + candidates
+                    + " events=" + structured.events());
+            var candidate = candidates.get(0);
+            assertEquals("jsh_material.category_id", candidate.source().displayName());
+            assertEquals("jsh_temp_category_pdf.id", candidate.target().displayName());
+            assertEquals("SQL_LOG_SUBQUERY_IN", candidate.evidence().get(0).type().name());
+            assertEquals(true, candidate.evidence().get(0).attributes().get("localRowsetBridge"));
+            assertEquals(List.of("tmp_categories.category_id"),
+                    candidate.evidence().get(0).attributes().get("localRowsetPath"));
+        }
+    }
+
+    @Test
     void siblingGuardAppliesToInSubqueryAndDirectEqualityInBothModes() {
         SqlStatementRecord inStatement = new SqlStatementRecord("""
                 SELECT cj.id FROM cashier_journals cj

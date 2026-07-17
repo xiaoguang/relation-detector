@@ -130,7 +130,13 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
 
     @Override
     public Void visitCreate_table(SqlServerRelationSqlParser.Create_tableContext ctx) {
-        ddlTables.push(qualifiedName(ctx.table_name().full_table_name()));
+        String table = qualifiedName(ctx.table_name().full_table_name());
+        if (isTemp(table)) {
+            emitter.addRowset(events, ctx, StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
+                    "", table, baseName(table), "", "", "", "");
+            return null;
+        }
+        ddlTables.push(table);
         ctx.table_element().forEach(this::visit);
         ddlTables.pop();
         return null;

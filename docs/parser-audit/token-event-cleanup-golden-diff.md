@@ -17,7 +17,7 @@
 - common token-event 只覆盖 portable SQL typed grammar。
 - MySQL/PostgreSQL token-event 只覆盖各自 fallback grammar 中已 typed 化的结构。
 - full-grammar 是配置明确时的 primary，token-event 是 fallback。
-- procedure-local temporary table、routine parameter、局部变量、literal、LIKE、函数行集、pseudo rowset 不作为物理 relation / lineage endpoint。
+- procedure-local temporary table、routine parameter、局部变量、literal、LIKE、函数行集、pseudo rowset 不作为物理 relation / lineage endpoint。临时 rowset 若有 typed、唯一、直接的物理列投影，可在 `IN` / tuple-IN 内部折叠为物理列关系；临时 endpoint 本身仍不输出。
 
 因此 root token-event golden 删除了部分旧 scanner 产物，尤其是复杂 procedure、嵌套 CTE、MERGE、方言扩展 DML 中尚未 typed 化的关系/血缘。
 

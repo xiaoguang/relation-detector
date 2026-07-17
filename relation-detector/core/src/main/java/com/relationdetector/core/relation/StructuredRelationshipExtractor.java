@@ -1,6 +1,4 @@
 package com.relationdetector.core.relation;
-
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,6 +19,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
@@ -72,8 +72,12 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
 
     private List<RelationshipCandidate> extractNative(SqlStatementRecord statement, StructuredParseResult structured) {
         List<RelationshipCandidate> candidates = new ArrayList<>();
-        for (List<StructuredSqlEvent> events : scopedEventGroups(structured.events())) {
-            candidates.addAll(extractFromEvents(statement, events));
+        List<List<StructuredSqlEvent>> eventGroups = scopedEventGroups(structured.events());
+        Set<String> localTempRowsets = localTempRowsets(statement, structured.events());
+        LocalRowsetProjectionIndex localProjections = localRowsetProjectionIndex(
+                statement, eventGroups, localTempRowsets);
+        for (List<StructuredSqlEvent> events : eventGroups) {
+            candidates.addAll(extractFromEvents(statement, events, localTempRowsets, localProjections));
         }
         // Ambient events are intentionally visible in every statement scope so aliases and
         // physical rowsets can be resolved. Deduplicate only after all scopes are assembled;
@@ -87,10 +91,12 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
      * EN: Resolves aliases and projections inside one typed statement scope and converts equality, EXISTS, USING,
      * and IN events into candidates; it neither runs naming rules nor infers direction from identifier spelling.
      */
-    private List<RelationshipCandidate> extractFromEvents(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
+    private List<RelationshipCandidate> extractFromEvents(SqlStatementRecord statement, List<StructuredSqlEvent> events,
+            Set<String> localTempRowsets, LocalRowsetProjectionIndex localProjections) {
         Set<String> ignoredRowsets = ignoredRowsets(statement, events);
         AliasIndex aliases = rowsetAliases(events, ignoredRowsets);
         Map<ColumnKey, ColumnRef> projections = projectedColumns(events, aliases, ignoredRowsets);
+        Map<String, String> localAliases = localRowsetAliases(events, localTempRowsets);
         List<RelationshipCandidate> candidates = new ArrayList<>();
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.PREDICATE_EQUALITY) {
@@ -156,9 +162,6 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                 if (!isVerifiedColumnSubquery(event)) {
                     continue;
                 }
-                if (isIgnoredRawRowset(event.innerTable(), ignoredRowsets)) {
-                    continue;
-                }
                 ColumnRef outer = resolveWithFallbackTable(
                         event.left().alias(),
                         event.left().column(),
@@ -166,7 +169,17 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                         aliases,
                         projections,
                         event.line());
-                ColumnRef inner = resolveInSubqueryColumn(event, aliases, projections);
+                String localInnerRowset = localPredicateRowset(
+                        event.innerTable(), event.right().alias(), localAliases, localTempRowsets);
+                LocalRowsetProjectionIndex.ResolvedSource bridge = null;
+                ColumnRef inner;
+                if (!localInnerRowset.isBlank()) {
+                    bridge = localProjections.resolve(
+                            localInnerRowset, event.right().column(), event.line()).orElse(null);
+                    inner = bridge == null ? null : bridge.column();
+                } else {
+                    inner = resolveInSubqueryColumn(event, aliases, projections);
+                }
                 if (outer == null || inner == null) {
                     continue;
                 }
@@ -174,6 +187,7 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                     continue;
                 }
                 if (shouldEmitColumnCoOccurrence(outer, inner, event.left().alias(), event.right().alias())) {
+                    Map<String, Object> bridgeAttributes = bridgeAttributes(bridge);
                     candidates.add(columnCoOccurrenceCandidate(statement, outer, inner,
                             relationshipEvidenceType(statement, EvidenceType.SQL_LOG_SUBQUERY_IN),
                             "IN_SUBQUERY",
@@ -181,13 +195,19 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                             event.right().alias(),
                             aliases,
                             event,
-                            "typed IN subquery column co-occurrence"));
+                            bridge == null ? "typed IN subquery column co-occurrence"
+                                    : "typed IN subquery through direct local-rowset projection",
+                            bridgeAttributes));
                 }
             } else if (event.type() == StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE) {
                 if (!isVerifiedColumnSubquery(event)) {
                     continue;
                 }
-                if (isIgnoredRawRowset(event.innerTable(), ignoredRowsets)) {
+                String firstInnerAlias = event.innerSources().isEmpty()
+                        ? event.right().alias() : event.innerSources().get(0).alias();
+                String localInnerRowset = localPredicateRowset(
+                        event.innerTable(), firstInnerAlias, localAliases, localTempRowsets);
+                if (localInnerRowset.isBlank() && isIgnoredRawRowset(event.innerTable(), ignoredRowsets)) {
                     continue;
                 }
                 List<String> outerAliases = event.outerSources().stream()
@@ -202,8 +222,13 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                         Math.min(innerAliases.size(), innerColumns.size()));
                 for (int index = 0; index < count; index++) {
                     ColumnRef outer = resolve(outerAliases.get(index), outerColumns.get(index), aliases, projections, event.line());
-                    ColumnRef inner = resolveTupleInSubqueryColumn(
-                            event, innerAliases.get(index), innerColumns.get(index), aliases, projections);
+                    LocalRowsetProjectionIndex.ResolvedSource bridge = !localInnerRowset.isBlank()
+                            ? localProjections.resolve(localInnerRowset, innerColumns.get(index), event.line()).orElse(null)
+                            : null;
+                    ColumnRef inner = !localInnerRowset.isBlank()
+                            ? bridge == null ? null : bridge.column()
+                            : resolveTupleInSubqueryColumn(
+                                    event, innerAliases.get(index), innerColumns.get(index), aliases, projections);
                     if (outer == null || inner == null) {
                         continue;
                     }
@@ -218,12 +243,138 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
                                 innerAliases.get(index),
                                 aliases,
                                 event,
-                                "typed tuple IN subquery column co-occurrence position " + (index + 1)));
+                                bridge == null
+                                        ? "typed tuple IN subquery column co-occurrence position " + (index + 1)
+                                        : "typed tuple IN subquery through direct local-rowset projection position "
+                                                + (index + 1),
+                                bridgeAttributes(bridge)));
                     }
                 }
             }
         }
         return candidates;
+    }
+
+    private LocalRowsetProjectionIndex localRowsetProjectionIndex(
+            SqlStatementRecord statement,
+            List<List<StructuredSqlEvent>> eventGroups,
+            Set<String> localTempRowsets
+    ) {
+        LocalRowsetProjectionIndex index = new LocalRowsetProjectionIndex(
+                this::normalize, column -> endpointIdentityKey(Endpoint.column(column)));
+        for (List<StructuredSqlEvent> events : eventGroups) {
+            for (StructuredSqlEvent event : events) {
+                if (event.type() == StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {
+                    String declared = localRowsetIdentity(event);
+                    if (!declared.isBlank()) {
+                        index.declare(declared, event.line());
+                    }
+                }
+            }
+        }
+        for (List<StructuredSqlEvent> events : eventGroups) {
+            Set<String> ignored = ignoredRowsets(statement, events);
+            AliasIndex aliases = rowsetAliases(events, ignored);
+            Map<ColumnKey, ColumnRef> projections = projectedColumns(events, aliases, ignored);
+            Map<String, String> localAliases = localRowsetAliases(events, localTempRowsets);
+            for (StructuredSqlEvent event : events) {
+                if (event.type() != StructuredParseEventType.INSERT_SELECT_MAPPING
+                        || !isIgnoredRawRowset(event.targetTable(), localTempRowsets)) {
+                    continue;
+                }
+                if (event.expression().flowKind() != LineageFlowKind.VALUE) {
+                    continue;
+                }
+                if (event.expression().transformType() != LineageTransformType.DIRECT
+                        || event.expression().sources().size() != 1) {
+                    index.block(event.targetTable(), event.targetColumn(), event.line());
+                    continue;
+                }
+                com.relationdetector.contracts.parse.ExpressionSource source = event.expression().sources().get(0);
+                ColumnRef physical = resolve(
+                        source.alias(), source.column(), aliases, projections, event.line());
+                if (physical != null && !isIgnored(physical.table(), ignored)) {
+                    index.addPhysicalSource(
+                            event.targetTable(), event.targetColumn(), physical, event.line());
+                    continue;
+                }
+                String localSource = localSourceRowset(source.alias(), localAliases);
+                if (!localSource.isBlank()) {
+                    index.addLocalSource(event.targetTable(), event.targetColumn(),
+                            localSource, source.column(), event.line());
+                } else {
+                    index.block(event.targetTable(), event.targetColumn(), event.line());
+                }
+            }
+        }
+        return index;
+    }
+
+    private Map<String, String> localRowsetAliases(
+            List<StructuredSqlEvent> events,
+            Set<String> localTempRowsets
+    ) {
+        Map<String, String> aliases = new LinkedHashMap<>();
+        Set<String> rowsets = new HashSet<>();
+        for (StructuredSqlEvent event : events) {
+            if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
+                continue;
+            }
+            String rowset = event.qualifiedTable().isBlank() ? event.table() : event.qualifiedTable();
+            if (!isIgnoredRawRowset(rowset, localTempRowsets)) {
+                continue;
+            }
+            rowsets.add(rowset);
+            putLocalAlias(aliases, event.qualifiedTable(), rowset);
+            putLocalAlias(aliases, event.table(), rowset);
+            putLocalAlias(aliases, event.alias(), rowset);
+        }
+        if (rowsets.size() == 1) {
+            aliases.put("", rowsets.iterator().next());
+        }
+        return aliases;
+    }
+
+    private void putLocalAlias(Map<String, String> aliases, String alias, String rowset) {
+        if (alias != null && !alias.isBlank()) {
+            aliases.putIfAbsent(normalize(alias), rowset);
+        }
+    }
+
+    private String localSourceRowset(String alias, Map<String, String> localAliases) {
+        return localAliases.getOrDefault(normalize(alias), "");
+    }
+
+    private String localPredicateRowset(
+            String innerTable,
+            String innerAlias,
+            Map<String, String> localAliases,
+            Set<String> localTempRowsets
+    ) {
+        if (isIgnoredRawRowset(innerTable, localTempRowsets)) {
+            return innerTable;
+        }
+        return localSourceRowset(innerAlias, localAliases);
+    }
+
+    private String localRowsetIdentity(StructuredSqlEvent event) {
+        if (!event.qualifiedTable().isBlank()) {
+            return event.qualifiedTable();
+        }
+        if (!event.table().isBlank()) {
+            return event.table();
+        }
+        return event.name();
+    }
+
+    private Map<String, Object> bridgeAttributes(LocalRowsetProjectionIndex.ResolvedSource bridge) {
+        if (bridge == null) {
+            return Map.of();
+        }
+        return Map.of(
+                "localRowsetBridge", true,
+                "localRowsetPath", bridge.path(),
+                "localRowsetSourceLine", bridge.sourceLine());
     }
 
     private List<List<StructuredSqlEvent>> scopedEventGroups(List<StructuredSqlEvent> events) {

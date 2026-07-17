@@ -160,8 +160,7 @@ abstract class RelationshipAliasSupport {
     }
 
     protected Set<String> ignoredRowsets(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
-        Set<String> ignored = new HashSet<>();
-        for (String table : stringList(statement.attributes().get("localTempTables"))) addIgnored(ignored, table);
+        Set<String> ignored = new HashSet<>(localTempRowsets(statement, events));
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
                 addIgnored(ignored, event.name());
@@ -176,6 +175,22 @@ abstract class RelationshipAliasSupport {
             }
         }
         return ignored;
+    }
+
+    protected Set<String> localTempRowsets(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
+        Set<String> local = new HashSet<>();
+        for (String table : stringList(statement.attributes().get("localTempTables"))) {
+            addIgnored(local, table);
+        }
+        for (StructuredSqlEvent event : events) {
+            if (event.type() != StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {
+                continue;
+            }
+            addIgnored(local, event.name());
+            addIgnored(local, event.table());
+            addIgnored(local, event.qualifiedTable());
+        }
+        return local;
     }
 
     private void addIgnored(Set<String> ignored, String raw) {

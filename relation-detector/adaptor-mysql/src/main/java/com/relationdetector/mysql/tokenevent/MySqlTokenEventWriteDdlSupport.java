@@ -103,7 +103,12 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
 
     @Override
     public Void visitCreateTableStatement(MySqlRelationSqlParser.CreateTableStatementContext ctx) {
-        ddlTables.push(qualifiedName(ctx.qualifiedName()));
+        String table = qualifiedName(ctx.qualifiedName());
+        if (ctx.tableModifier().stream().anyMatch(modifier -> modifier.TEMPORARY() != null)) {
+            emitter.addRowset(events, ctx, StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
+                    "", table, baseName(table), "", "", "", "");
+        }
+        ddlTables.push(table);
         ctx.tableElement().forEach(this::visit);
         ddlTables.pop();
         return null;

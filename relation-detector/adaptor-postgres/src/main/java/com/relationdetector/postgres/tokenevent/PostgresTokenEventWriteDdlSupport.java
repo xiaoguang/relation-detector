@@ -106,7 +106,14 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
 
     @Override
     public Void visitCreateTableStatement(PostgresRelationSqlParser.CreateTableStatementContext ctx) {
-        ddlTables.push(qualifiedName(ctx.qualifiedName()));
+        String table = qualifiedName(ctx.qualifiedName());
+        boolean temporary = ctx.tableModifier().stream().anyMatch(modifier -> modifier.TEMPORARY() != null);
+        if (temporary) {
+            emitter.addRowset(events, ctx, StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
+                    "", table, baseName(table), "", "", "", "");
+            return null;
+        }
+        ddlTables.push(table);
         ctx.tableElement().forEach(this::visit);
         ddlTables.pop();
         return null;
