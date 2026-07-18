@@ -8,8 +8,8 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
- *
- * Expression lineage summary shared by Oracle full-grammar version visitors.
+ * CN: 汇总 Oracle expression 的 physical reads、VALUE/CONTROL roles 和 transform 分类，供 version visitor 发射 lineage events；不包含 generated context 或 mutable state。
+ * EN: Summarizes physical reads, VALUE/CONTROL roles, and transform classification for an Oracle expression so version visitors can emit lineage events. It contains no generated context or mutable state.
  */
 public record OracleExpressionAnalysis(
         List<OracleColumnRead> sources,

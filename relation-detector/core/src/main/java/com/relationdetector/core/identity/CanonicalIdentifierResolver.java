@@ -8,8 +8,8 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
- *
- * Resolves identifiers only from explicit namespace context and exact dialect rules.
+ * CN: 仅根据显式 namespace context 与 dialect identifier rules 解析 TableId，不使用名字启发式。
+ * EN: Resolves TableId values only from explicit namespace context and dialect identifier rules, never naming heuristics.
  */
 public final class CanonicalIdentifierResolver {
     private final IdentifierRules rules;

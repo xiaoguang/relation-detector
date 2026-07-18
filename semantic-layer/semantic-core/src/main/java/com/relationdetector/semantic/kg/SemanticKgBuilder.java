@@ -11,11 +11,14 @@ import java.util.Map;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.EvidenceGraphFact;
 import com.relationdetector.semantic.graph.ReferenceIndex;
-import com.relationdetector.semantic.reader.EndpointRef;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
 import com.relationdetector.semantic.reader.SemanticInputPathCanonicalizer;
 
-/** Materializes an evidence graph into a JSON-friendly KG. */
+/**
+ * CN: 将 EvidenceGraph 的 physical endpoints、facts 与 event candidates 确定性 materialize 为 KG nodes/edges，并验证 evidence refs；Clock 只产生 build metadata，不参与 id。
+ * EN: Deterministically materializes physical endpoints, facts, and event candidates from EvidenceGraph into KG nodes and edges while validating evidence. Clock affects metadata only, never ids.
+ */
 public final class SemanticKgBuilder {
     private final Clock clock;
 
@@ -27,6 +30,10 @@ public final class SemanticKgBuilder {
         this.clock = java.util.Objects.requireNonNull(clock, "clock");
     }
 
+    /**
+     * CN: 先建立 endpoint evidence inventory，再创建 table/column/fact/event nodes 和 edges；重复 node 或冲突 edge 明确失败，返回不可变 KG，不覆盖先前对象。
+     * EN: Builds endpoint-evidence inventory before table, column, fact, and event nodes and edges. Duplicate nodes or conflicting edges fail; immutable assembly never overwrites objects.
+     */
     public SemanticKnowledgeGraph build(EvidenceGraph graph) {
         Map<String, SemanticNode> nodes = new LinkedHashMap<>();
         Map<String, SemanticEdge> edges = new LinkedHashMap<>();
@@ -35,14 +42,14 @@ public final class SemanticKgBuilder {
 
         for (EvidenceGraphFact fact : graph.facts()) {
             referenceIndex.requireResolvable(fact.id(), fact.evidenceRefs());
-            for (EndpointRef endpoint : fact.endpoints()) {
+            for (PhysicalEndpointRef endpoint : fact.endpoints()) {
                 String endpointKey = endpoint.displayName();
                 endpointEvidence.computeIfAbsent(endpointKey, ignored -> new ArrayList<>()).addAll(fact.evidenceRefs());
                 endpointEvidence.computeIfAbsent(endpoint.table(), ignored -> new ArrayList<>()).addAll(fact.evidenceRefs());
             }
         }
 
-        for (EndpointRef endpoint : graph.endpoints()) {
+        for (PhysicalEndpointRef endpoint : graph.endpoints()) {
             if (endpoint.isColumnLevel()) {
                 addNode(nodes, new SemanticNode(columnNodeId(endpoint), "PhysicalColumn", endpoint.displayName(),
                         BigDecimal.ONE, "EVIDENCE_SUPPORTED", refs(endpointEvidence, endpoint.displayName()),
@@ -96,9 +103,9 @@ public final class SemanticKgBuilder {
     }
 
     private void connectFact(Map<String, SemanticNode> nodes, Map<String, SemanticEdge> edges, EvidenceGraphFact fact) {
-        List<EndpointRef> endpoints = fact.endpoints();
+        List<PhysicalEndpointRef> endpoints = fact.endpoints();
         for (int i = 0; i < endpoints.size(); i++) {
-            EndpointRef endpoint = endpoints.get(i);
+            PhysicalEndpointRef endpoint = endpoints.get(i);
             String endpointNode = endpoint.isColumnLevel() ? columnNodeId(endpoint) : tableNodeId(endpoint.table());
             String type = switch (fact.type()) {
                 case "RelationshipFact", "DerivedRelationshipFact" -> i == 0 ? "RELATIONSHIP_SOURCE" : "RELATIONSHIP_TARGET";
@@ -122,7 +129,7 @@ public final class SemanticKgBuilder {
     }
 
     private void addJoinPath(Map<String, SemanticNode> nodes, Map<String, SemanticEdge> edges, EvidenceGraphFact fact) {
-        List<EndpointRef> endpoints = fact.endpoints();
+        List<PhysicalEndpointRef> endpoints = fact.endpoints();
         if (endpoints.size() < 2) {
             return;
         }
@@ -140,7 +147,7 @@ public final class SemanticKgBuilder {
         }
     }
 
-    private String endpointNodeId(EndpointRef endpoint) {
+    private String endpointNodeId(PhysicalEndpointRef endpoint) {
         return endpoint.isColumnLevel() ? columnNodeId(endpoint) : tableNodeId(endpoint.table());
     }
 
@@ -162,7 +169,7 @@ public final class SemanticKgBuilder {
         return "table:" + table;
     }
 
-    private String columnNodeId(EndpointRef endpoint) {
+    private String columnNodeId(PhysicalEndpointRef endpoint) {
         return "column:" + endpoint.displayName();
     }
 

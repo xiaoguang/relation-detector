@@ -21,3 +21,8 @@ Vendored base:
 Local 19c cut: inherits the 12c baseline and accepts the confirmed
 `MEMOPTIMIZE FOR READ` boundary while rejecting 21c `SQL_MACRO` and 26ai
 `VECTOR`.
+
+The adaptor keeps a 19c-local generated-context adapter and visitor. This
+duplication is intentional because generated contexts define the version
+boundary at compile time. Shared collectors accept typed adapter views and do
+not import another Oracle version's parser classes.

@@ -9,8 +9,8 @@ import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
 /**
- *
- * Typed traversal facade for the MySQL token-event structural grammar.
+ * CN: 遍历 MySQL compact grammar 的 typed contexts，将 rowset、predicate、write、DDL 和 routine scope 事件写入 per-parse collector；它不调用 full-grammar，也不从 raw SQL 猜测结构。
+ * EN: Traverses typed contexts from the compact MySQL grammar and records rowset, predicate, write, DDL, and routine-scope events in per-parse state. It never delegates to full-grammar or infers structure from raw SQL.
  */
 public final class MySqlTokenEventParseTreeVisitor extends MySqlTokenEventWriteDdlSupport {
     public MySqlTokenEventParseTreeVisitor(SqlStatementRecord statement) {

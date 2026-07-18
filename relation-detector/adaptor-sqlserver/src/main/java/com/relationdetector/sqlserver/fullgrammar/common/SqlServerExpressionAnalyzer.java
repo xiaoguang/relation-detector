@@ -16,8 +16,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Operato
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
- *
- * SQL Server expression analyzer.
+ * CN: 通过 SQL Server typed adapter 将 bracketed identifiers、CASE、functions、scalar subqueries 与 window controls 转为 ExpressionTrace；不读取 raw SQL 或共享 mutable state。
+ * EN: Converts bracketed identifiers, CASE, functions, scalar subqueries, and window controls into ExpressionTrace through the typed SQL Server adapter, without raw-SQL reads or shared mutable state.
  *
  * <p>The shared core expression analyzer already understands T-SQL bracketed
  * identifiers and, with the SQL Server grammar's {@code full_column_name}

@@ -14,8 +14,8 @@ import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
- *
- * Scan-level evidence enhancement shared by production scans and correctness.
+ * CN: 在 scan 级别按固定顺序应用 metadata、naming 和 derived enhancement，生产 scan 与 correctness 共用同一入口。
+ * EN: Applies metadata, naming, and derived enhancement in a fixed scan-level order shared by production scans and correctness tests.
  */
 public final class EvidenceEnhancementService {
     private final MetadataEvidenceEnhancer metadataEvidenceEnhancer = new MetadataEvidenceEnhancer();

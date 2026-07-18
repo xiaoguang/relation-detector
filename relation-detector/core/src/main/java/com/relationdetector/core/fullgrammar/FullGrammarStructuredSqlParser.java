@@ -9,8 +9,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 
 /**
- *
- * Parser entry point for versioned full-grammar SQL profiles.
+ * CN: 包装已选中的 versioned full-grammar parser，补充 profile diagnostics，不用 token-event 填补 partial events。
+ * EN: Wraps a selected versioned full-grammar parser with profile diagnostics and never fills partial events from token-event.
  *
  * <p>This class wraps the concrete profile parser and adds profile diagnostics.
  * Token-event fallback is selected by the parser factory before this wrapper is

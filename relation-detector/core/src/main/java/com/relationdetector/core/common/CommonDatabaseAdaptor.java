@@ -1,8 +1,6 @@
 package com.relationdetector.core.common;
 
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -14,14 +12,12 @@ import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AbstractDatabaseAdaptor;
 import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
-import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
@@ -29,13 +25,10 @@ import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 import com.relationdetector.core.script.CommonScriptFramer;
 
 /**
- *
- * Portable common SQL adaptor used when the CLI is explicitly configured with
- * {@code database.type: common}.
- *
- * <p>CN: 这个 adaptor 不是任何方言的 fallback facade。它把 core 中的 common
+ * CN: 这个 adaptor 不是任何方言的 fallback facade。它把 core 中的 common
  * portable typed grammar 暴露成一个正式 CLI parser category，让 sample-data/portable
  * 可以走完整 ScanEngine、naming evidence、lineage、derived path 和 JSON 输出链路。
+ * EN: Exposes the portable common typed grammar as an explicit CLI parser category; it is not a fallback facade and has no live-database capabilities.
  */
 public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public CommonDatabaseAdaptor() {
@@ -65,10 +58,6 @@ public final class CommonDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         Optional.of(structuredDdlParser),
                         scriptFramer),
                 new AdaptorProfiling(Optional.empty(), (evidence, context) -> evidence));
-    }
-
-    private static List<DatabaseObjectDefinition> emptyObjects(Connection connection, ScanScope scope) {
-        return List.of();
     }
 
     private static String normalizeIdentifier(String identifier) {

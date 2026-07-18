@@ -12,8 +12,8 @@ import com.relationdetector.postgres.routine.PlPgSqlStaticSqlFragment;
 import com.relationdetector.postgres.routine.PlPgSqlStaticSqlFragment.MaskRange;
 
 /**
- *
- * Collects procedural-shell symbols and typed embedded-SQL boundaries.
+ * CN: 遍历 compact PL/pgSQL shell contexts，收集 symbols、FOREACH/control blocks 和 static SQL boundaries；不解析内嵌 SQL，动态 EXECUTE 只产生 unsupported diagnostic。
+ * EN: Traverses compact PL/pgSQL shell contexts to collect symbols, control blocks, and static-SQL boundaries. Embedded SQL is not parsed here, and dynamic EXECUTE yields only an unsupported diagnostic.
  */
 final class PlPgSqlShellCollector extends PlPgSqlParserBaseVisitor<Void> {
     private final String source;

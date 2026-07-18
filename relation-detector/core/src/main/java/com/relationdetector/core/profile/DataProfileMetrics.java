@@ -1,8 +1,8 @@
 package com.relationdetector.core.profile;
 
 /**
- *
- * Aggregated, non-sensitive profiling metrics for one relationship candidate.
+ * CN: 承载一个 relationship candidate 的聚合、非敏感 live profiling metrics，不保留样本值或 SQL。
+ * EN: Carries aggregate, non-sensitive live profiling metrics for one relationship candidate without sample values or SQL.
  */
 public record DataProfileMetrics(
         String profileMode,

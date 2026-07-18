@@ -7,8 +7,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
- *
- * Copies typed event provenance into evidence attributes without changing semantic facts.
+ * CN: 把 typed event 的文件、statement、行号和 object provenance 复制到 evidence attributes，不改变语义 fact key。
+ * EN: Copies typed event file, statement, line, and object provenance into evidence attributes without changing semantic fact identity.
  */
 public final class EvidenceProvenanceMapper {
     private EvidenceProvenanceMapper() {

@@ -20,8 +20,8 @@ import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.postgres.script.PostgresScriptFramer;
 
 /**
- *
- * Extracts PostgreSQL log record payloads before typed SQL classification.
+ * CN: 从 plain 或 PostgreSQL CSV/text log 提取 statement payload 和来源位置，再交给 script framer；它不依据日志文本创建 relationship 或 lineage。
+ * EN: Extracts statement payloads and provenance from plain or PostgreSQL CSV/text logs before script framing. Log text never creates relationship or lineage facts directly.
  */
 public final class PostgresLogExtractor implements SqlLogExtractor {
     private final PostgresScriptFramer scriptFramer;

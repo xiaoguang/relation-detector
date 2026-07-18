@@ -35,12 +35,12 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
  * produce structured events, the relation extractor must preserve output, and
  * unresolved dynamic SQL must be visible to operators instead of disappearing.
  */
-class TokenEventStructuredSqlParserTest {
+class CommonTokenEventStructuredSqlParserAdditionalTest {
     @Test
     void antlrParserEmitsTableAndColumnEqualityEvents() {
         String sql = "SELECT * FROM orders o JOIN users u ON o.user_id = u.id";
 
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(record(sql, StatementSourceType.PLAIN_SQL), null);
 
         assertEquals("ANTLR_COMMON_TOKEN_EVENT", result.backend());
@@ -65,7 +65,7 @@ class TokenEventStructuredSqlParserTest {
                 JOIN users u ON o.user_id = u.id
                 """, StatementSourceType.VIEW);
 
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(statement, null);
         List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor().extract(statement, result);
 
@@ -108,7 +108,7 @@ class TokenEventStructuredSqlParserTest {
                 JOIN users u ON ro.user_id = u.id
                 """;
         SqlStatementRecord statement = record(sql, StatementSourceType.VIEW);
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null);
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null);
 
         List<RelationshipCandidate> relations = new StructuredRelationshipExtractor().extract(statement, result);
 
@@ -179,7 +179,7 @@ class TokenEventStructuredSqlParserTest {
                 END
                 """;
 
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(record(sql, StatementSourceType.PROCEDURE), null);
 
         WarningMessage warning = result.warnings().stream()
@@ -198,7 +198,7 @@ class TokenEventStructuredSqlParserTest {
                 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
                 """;
 
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES)
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.POSTGRES)
                 .parseSql(record(sql, StatementSourceType.TRIGGER), null);
 
         assertTrue(result.warnings().stream().noneMatch(w -> w.code().equals("DYNAMIC_SQL_UNRESOLVED")),
@@ -210,7 +210,7 @@ class TokenEventStructuredSqlParserTest {
     void unsupportedTokenEventStatementIsReportedAsSkipped() {
         String sql = "LOCK TABLES orders WRITE";
 
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(record(sql, StatementSourceType.NATIVE_LOG), null);
 
         WarningMessage warning = result.warnings().stream()
@@ -226,7 +226,7 @@ class TokenEventStructuredSqlParserTest {
         SqlStatementRecord statement = record(sql, StatementSourceType.NATIVE_LOG);
 
         StructuredSqlRelationshipParser parser = new StructuredSqlRelationshipParser(
-                new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
+                new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL),
                 new StructuredRelationshipExtractor());
 
         List<RelationshipCandidate> relationships = parser.parse(statement, null);
@@ -241,7 +241,7 @@ class TokenEventStructuredSqlParserTest {
     }
 
     private void assertTriggerReference(SqlStatementRecord statement) {
-        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES)
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.POSTGRES)
                 .parseSql(statement, null);
         List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor()
                 .extract(statement, result);

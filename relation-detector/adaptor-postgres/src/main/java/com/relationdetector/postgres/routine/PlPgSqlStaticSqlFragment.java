@@ -6,8 +6,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 /**
- *
- * Builds an embedded SQL fragment while preserving its original line layout.
+ * CN: 从 shell grammar 已 typed 分类的 static SQL span 构造嵌入 statement，并保留原始换行以对齐 sourceLine；它只提取边界，不解释 SQL 结构。
+ * EN: Builds an embedded statement from a static-SQL span already classified by the shell grammar while preserving line layout for sourceLine accuracy. It extracts boundaries without interpreting SQL structure.
  */
 public final class PlPgSqlStaticSqlFragment {
     private PlPgSqlStaticSqlFragment() {

@@ -12,7 +12,10 @@ import com.relationdetector.semantic.extract.model.SemanticItem;
 import com.relationdetector.semantic.extract.model.SemanticValidation;
 import com.relationdetector.semantic.extract.model.SemanticValidationIssue;
 
-/** Stateless factory for per-normalization ref-closure validation sessions. */
+/**
+ * CN: 为每次 normalization 创建独立 reference-validation session，检查 owner ids、physical tables/columns、evidence refs 和 semantic refs；factory 无共享状态。
+ * EN: Creates an isolated validation session per normalization for owner ids, physical tables and columns, evidence references, and semantic references. The factory has no shared state.
+ */
 final class SemanticReferenceValidator {
     Session newSession(SemanticReferenceIndex referenceIndex, SemanticPhysicalReferenceIndex physicalIndex) {
         return new Session(referenceIndex, physicalIndex);

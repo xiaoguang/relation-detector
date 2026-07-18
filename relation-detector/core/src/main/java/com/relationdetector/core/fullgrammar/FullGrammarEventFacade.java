@@ -12,8 +12,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
 /**
- *
- * Thin facade used by typed full-grammar visitors.
+ * CN: 为 typed full-grammar visitor 组装 per-parse rowset、projection、predicate、write 与 provenance sinks，不拥有 traversal。
+ * EN: Assembles per-parse rowset, projection, predicate, write, and provenance sinks for typed full-grammar visitors without owning traversal.
  *
  * <p>Traversal remains in dialect visitors. Per-parse helper instances own rowset,
  * projection, predicate, write and provenance state and never share mutable data.

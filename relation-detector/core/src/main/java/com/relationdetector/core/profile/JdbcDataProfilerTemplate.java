@@ -18,8 +18,8 @@ import com.relationdetector.core.diagnostics.JdbcExceptionClassifier;
 import com.relationdetector.core.diagnostics.JdbcFailureKind;
 
 /**
- *
- * Shared exact JDBC profiler. Dialect classes only render SQL.
+ * CN: 执行一条方言 renderer 产生的有界 profile query，只暴露聚合 metrics 与脱敏 diagnostics。
+ * EN: Executes one bounded dialect-rendered profile query and exposes only aggregate metrics and sanitized diagnostics.
  */
 public final class JdbcDataProfilerTemplate implements DataProfiler {
     private final DialectDataProfileQueryRenderer renderer;

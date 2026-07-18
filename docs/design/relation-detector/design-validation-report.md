@@ -55,45 +55,15 @@ full-grammar:
 
 ## Final Convergence Closure State
 
-This generated-free table records the frozen closure matrix from
-`docs/superpowers/specs/2026-07-16-relation-detector-final-convergence-design.md`.
-It is independent of the technical statuses below.
-
-| Closure ID | State |
-| --- | --- |
-| ID-01 | CLOSED |
-| ID-02 | CLOSED |
-| ID-03 | CLOSED |
-| ID-04 | CLOSED |
-| ID-05 | CLOSED |
-| EV-01 | CLOSED |
-| EV-02 | CLOSED |
-| EV-03 | CLOSED |
-| EV-04 | CLOSED |
-| EV-05 | CLOSED |
-| EV-06 | CLOSED |
-| CT-01 | CLOSED |
-| CT-02 | CLOSED |
-| CT-03 | CLOSED |
-| CT-04 | CLOSED |
-| CT-05 | CLOSED |
-| CT-06 | CLOSED |
-| TG-01 | CLOSED |
-| TG-02 | CLOSED |
-| TG-03 | CLOSED |
-
-All 20 frozen IDs are closed after focused and reverse-audit gates, isolated full correctness,
-the 19-category/38-JSON sample-data CLI matrix, semantic observation parity, and release-manifest
-integrity checks passed. Environment-dependent runtime smoke and explicitly out-of-scope parser or
-profiling improvements remain backlog items; they do not reopen this closure matrix.
+Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-traceability.md)。本报告只说明验证方法和证据边界，不复制 closure ID 或状态表，避免两份手工状态随实现分叉。
 
 ## 本轮代码结构注释审视
 
-生产代码结构注释的目标分成三层。package 契约强制中文 / English 双语；类和大型编排方法的自动门禁强制具体、非模板说明，但不强制所有符号双语：
+生产代码结构注释的目标分成三层。package 契约、手写 public/protected 顶层类型和编排类都强制中文 / English 双语、具体且非模板的设计说明：
 
-- package 层：每个生产 package 的 `package-info.java` 至少用中英双语标记说明主职责；输入输出、上游/下游和禁止承载的逻辑属于内容质量要求，需代码评审确认。
-- class 层：生产类 Javadoc 说明文件负责什么、不负责什么、位于哪条链路。
-- method 层：关键 public 方法、核心编排方法、复杂 private helper 说明调用意图和边界；简单 getter、record accessor 和显而易见的小工具方法不强制注释。
+- package 层：每个生产 package 的 `package-info.java` 用中英双语说明职责、输入输出、上游/下游和禁止承载的逻辑。
+- class 层：所有手写 public/protected 顶层类型和编排职责类使用 `CN:` / `EN:` 说明负责什么、不负责什么、位于哪条链路。
+- method 层：有效代码超过 40 行的非 override 编排方法说明输入效果、输出/副作用和失败边界；简单 getter、record accessor 和显而易见的小工具方法不强制注释。
 
 代表性检查范围包括（实际架构测试按 source roots 扫描，不以此列表作为穷举 allowlist）：
 
@@ -119,10 +89,10 @@ sqlserver / sqlserver.tokenevent / sqlserver.fullgrammar.common / sqlserver.full
 - 没有发现 core 直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar implementation 的职责倒置。
 - 没有发现 adaptor 侧重复实现 relationship / lineage semantic extractor。
 - 没有发现 contracts 反向依赖 core 的设计破坏。
-- 手写生产 package 已有中英双语契约；顶层 public/protected 类型与大型编排方法有具体 Javadoc。
-  `DialectGrammarArchitectureTest` 使用 JDK compiler/doc-tree API 验证 package 的 `CN:` / `EN:` 标记、
-  职责、输入、输出、上下游与禁止边界，并对类/大方法验证最小具体内容和泛化模板禁止；它不验证所有类/方法双语。generated Java、
-  record accessor 和显而易见的小方法按规则排除。结构覆盖和禁用模板状态为 `MATCHED`；
+- 手写生产 package、public/protected 顶层类型、编排类与大型编排方法已有中英双语契约。
+  `DialectGrammarArchitectureTest` 和 `SemanticDocumentationArchitectureTest` 使用 JDK compiler/doc-tree API 验证 package 的 `CN:` / `EN:` 标记、
+  职责、输入、输出、上下游与禁止边界，并对类/大方法验证最小具体内容和泛化模板禁止。generated Java、
+  record accessor、getter 和显而易见的小方法按规则排除。结构覆盖和禁用模板状态为 `MATCHED`；
   描述是否准确反映实际调用链仍由代码评审确认，不把架构测试扩大为语义正确性证明。
 
 本报告和 `phase-06-parser-enhancement.md` 已按上述代码注释刷新。若后续新增生产 package、核心类或跨链路调用，必须同步新增/校准代码注释，并在 Phase 6 的结构表与调用链中登记。

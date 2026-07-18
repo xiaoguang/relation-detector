@@ -790,7 +790,7 @@ class FullGrammarSqlBehaviorTest {
         return FullGrammarStructuredSqlParserFactory.create(
                         databaseType,
                         version,
-                        new TokenEventStructuredSqlParser(dialect))
+                        new CommonTokenEventStructuredSqlParser(dialect))
                 .parser()
                 .parseSql(statement, null);
     }

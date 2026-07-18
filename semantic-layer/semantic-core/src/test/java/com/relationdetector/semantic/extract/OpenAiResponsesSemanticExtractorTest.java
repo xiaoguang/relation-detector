@@ -1,6 +1,7 @@
 package com.relationdetector.semantic.extract;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ final class OpenAiResponsesSemanticExtractorTest {
         OpenAiResponsesSemanticExtractor extractor = new OpenAiResponsesSemanticExtractor(
                 request -> new OpenAiResponsesSemanticExtractor.TransportResponse(
                         401,
-                        "{\"error\":{\"message\":\"invalid api key\"}}"),
+                        "{\"error\":{\"message\":\"password=secret-value\"}}"),
                 "http://unit.test/v1",
                 "bad-key",
                 "gpt-5.5",
@@ -30,6 +31,7 @@ final class OpenAiResponsesSemanticExtractorTest {
                 () -> extractor.extract(prompt));
 
         assertTrue(error.getMessage().contains("HTTP 401"));
-        assertTrue(error.getMessage().contains("invalid api key"));
+        assertFalse(error.getMessage().contains("secret-value"));
+        assertFalse(error.getMessage().contains("password"));
     }
 }

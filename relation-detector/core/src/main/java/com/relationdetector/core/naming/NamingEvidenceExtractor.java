@@ -25,12 +25,10 @@ import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
- *
- * Extracts independent name-only evidence hints.
- *
- * <p>CN: 本类只生成 NAMING_MATCH evidence pool。它不会创建 RelationshipCandidate。
+ * CN: 本类按有向 endpoint pair 执行命名规则，只生成 NAMING_MATCH evidence pool，不创建 RelationshipCandidate。
  * 当同端点 relationship candidate 已由 SQL/DDL/metadata/profile 产生时，pool 中的
  * evidence 才会被 {@link NamingMatchEvidenceEnhancer} 合并进去。
+ * EN: Runs naming rules on directional endpoint pairs and emits only independent NAMING_MATCH evidence for existing candidates.
  */
 public final class NamingEvidenceExtractor {
     private final NamingRuleEngine namingRuleEngine;
@@ -199,6 +197,16 @@ public final class NamingEvidenceExtractor {
         return endpointKeys.sameTable(left, right);
     }
 
+    /**
+     * CN: 按 SQL 标识符引号和方括号边界拆分限定名，保留带点的 quoted 组件，供 naming
+     * identity 构造使用。空输入返回空列表；未闭合引号不会触发结构猜测，而按剩余文本
+     * 作为单个组件处理。
+     *
+     * EN: Splits a qualified identifier at unquoted dots while preserving quoted
+     * or bracketed components that contain dots. Empty input returns no parts;
+     * unmatched quoting is retained as one component rather than being interpreted
+     * as SQL structure.
+     */
     private List<String> identifierParts(String identifier) {
         List<String> parts = new ArrayList<>();
         if (identifier == null || identifier.isBlank()) {

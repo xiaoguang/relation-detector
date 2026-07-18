@@ -3,13 +3,10 @@ package com.relationdetector.contracts.model;
 import java.util.List;
 
 /**
- *
- * Name-only evidence hint extracted from catalog, DDL inventory, or an already
- * parsed SQL predicate.
- *
- * <p>CN: 这是命名证据，不是 relationship fact。它可以被输出给审计/语义层，也可以在
+ * CN: 这是从 catalog、DDL inventory 或 typed SQL predicate 提取的命名证据，不是 relationship fact。它可以被输出给审计/语义层，也可以在
  * 已有 SQL/DDL/metadata relationship candidate 上作为附加 evidence 参与定向和加分，
  * 但不能单独生成最终 relationship。
+ * EN: Represents name-only evidence from catalog, DDL, or typed SQL predicates; it may enrich an existing candidate but cannot create a relationship by itself.
  */
 public record NamingEvidenceCandidate(
         Endpoint source,

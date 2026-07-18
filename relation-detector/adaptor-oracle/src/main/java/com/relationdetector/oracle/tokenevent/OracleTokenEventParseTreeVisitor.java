@@ -9,8 +9,8 @@ import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
 /**
- *
- * Typed traversal facade for the Oracle token-event structural grammar.
+ * CN: 遍历 Oracle compact grammar 的 SQL、DDL、trigger 和 routine contexts，维护 per-parse routine scope 并发射 token events；不调用 full-grammar 或扫描 raw SQL。
+ * EN: Traverses SQL, DDL, trigger, and routine contexts from the compact Oracle grammar, maintains per-parse routine scope, and emits token events without full-grammar delegation or raw-SQL scanning.
  */
 public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWriteDdlSupport {
     public OracleTokenEventParseTreeVisitor(SqlStatementRecord statement) {

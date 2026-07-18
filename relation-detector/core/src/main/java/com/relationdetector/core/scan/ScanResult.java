@@ -11,8 +11,8 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 
 /**
- *
- * Public scan result passed to JSON/table writers.
+ * CN: 承载交给 JSON/table writers 的最终 direct/derived facts、naming evidence、warnings 与 source 清单。
+ * EN: Carries final direct/derived facts, naming evidence, warnings, and source inventory passed to JSON and table writers.
  */
 public final class ScanResult {
     private final String databaseType;

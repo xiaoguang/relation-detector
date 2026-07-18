@@ -13,8 +13,8 @@ import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryG
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
- *
- * Merges one naming fact per source-target-rule while preserving observations.
+ * CN: 每个 source-target-rule 合并为一个稳定 naming fact，保留不同 SQL 位置并折叠完全重复 observation。
+ * EN: Merges one stable naming fact per source-target-rule while preserving distinct SQL locations and folding exact duplicates.
  */
 public final class NamingEvidenceMerger {
     private final CanonicalEndpointKeyProvider endpointKeys;

@@ -24,3 +24,8 @@ Local changes:
 This grammar backs the versioned full-grammar profile. Runtime selection is
 controlled by `parser.mode`; token-event remains the fallback when the profile
 cannot be selected or parsing fails.
+
+The adaptor keeps a v8.0-local generated-context adapter and visitor. This
+duplication is intentional: generated context classes are version-specific and
+must produce compile-time failures when the grammar changes. Only stateless
+semantics that do not import generated classes may be shared.

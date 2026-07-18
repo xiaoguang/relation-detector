@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-/** Typed semantic extraction document used by normalization and KG preparation. */
+/**
+ * CN: 聚合模型输出的全部语义 section，作为 normalization 和 KG preparation 的唯一 typed document；ensureSections 只补可变空列表，不验证或发明内容。
+ * EN: Aggregates all model-produced semantic sections as the sole typed input to normalization and KG preparation. ensureSections only supplies mutable empty lists and never validates or invents content.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SemanticExtractionDocument {
     public List<SemanticEntity> entities;

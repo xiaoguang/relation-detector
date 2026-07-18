@@ -9,8 +9,8 @@ import com.relationdetector.core.profile.IdentifierQuoter;
 import com.relationdetector.core.profile.JdbcDataProfilerTemplate;
 
 /**
- *
- * Exact PostgreSQL data profiler.
+ * CN: 为已验证的 PostgreSQL physical column candidate 渲染 bounded live SQL，并把独立 row/distinct/match metrics 交给公共 evidence builder；不发现候选或执行离线采样。
+ * EN: Renders bounded live SQL for validated PostgreSQL physical-column candidates and delegates independent row, distinct, and match metrics to the shared evidence builder. It neither discovers candidates nor samples offline data.
  */
 public final class PostgresDataProfiler implements DataProfiler {
     private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(new PostgresProfileQueryRenderer());

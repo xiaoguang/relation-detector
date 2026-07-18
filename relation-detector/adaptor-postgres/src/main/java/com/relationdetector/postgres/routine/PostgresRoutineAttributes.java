@@ -10,8 +10,8 @@ import java.util.Set;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 /**
- *
- * Structured routine-scope attributes shared by PostgreSQL parser modes.
+ * CN: 定义 token/full parser 共享的 routine provenance attribute keys 和 immutable assembly helper；它只搬运 typed object/scope 信息，不推断 routine 类型。
+ * EN: Defines shared routine-provenance attribute keys and immutable assembly helpers for token and full parsers. It carries typed object and scope information without inferring routine kinds.
  */
 public final class PostgresRoutineAttributes {
     public static final String NON_COLUMN_IDENTIFIERS = "routineNonColumnIdentifiers";

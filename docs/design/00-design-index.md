@@ -11,9 +11,10 @@
 
 ## relation-detector 实施与验收入口
 
-- [代码实现说明与运维测试指南](../relation-detector/code-implementation-guide.md)
-- [测试资产地图与 Parser 验收矩阵](../relation-detector/test-assets-map.md)
-- [relation-detector 执行计划](../relation-detector/execution-plan.md)
+- [构建、测试与性能验收指南](../guides/relation-detector/build-and-test-performance.md)
+- [代码实现说明与运维测试指南](../guides/relation-detector/code-implementation-guide.md)
+- [测试资产地图与 Parser 验收矩阵](../guides/relation-detector/test-assets-map.md)
+- [历史执行计划快照](../archive/relation-detector/execution-plan.md)
 
 ## relation-detector 子模块设计
 
@@ -73,4 +74,4 @@
 - relation-detector 是更大语义层系统中的事实采集与证据生成子系统；业务语义、同义词、指标候选、自然语言问答和 SQL draft 由 Evidence-Grounded Semantic Layer 在事实层之上完成。
 - 数据画像默认关闭，只在用户显式开启时读取业务数据。
 - 每条输出关系必须保留 evidence，不能只输出最终 confidence。
-- 生产 package 必须以中英双语说明职责、输入输出、上下游和禁止边界；生产 class 与关键方法必须有具体、非模板的职责说明，但当前架构门禁不要求每个类和方法都双语。设计文档以当前代码、对应 contract tests 及已通过的 correctness/CLI E2E 为事实来源，并保留真实数据库 smoke 等环境边界。
+- 生产 package、所有手写 public/protected 顶层类型以及编排职责类必须以中英双语说明职责和禁止边界；有效代码超过 40 行的非 override 编排方法必须说明输入效果、输出/副作用与失败边界。generated Java、record accessor、getter 和显而易见的小方法不在该门禁范围。设计文档以当前代码、对应 contract tests 及已通过的 correctness/CLI E2E 为事实来源，并保留真实数据库 smoke 等环境边界。

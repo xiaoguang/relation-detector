@@ -9,8 +9,8 @@ import com.relationdetector.core.profile.IdentifierQuoter;
 import com.relationdetector.core.profile.JdbcDataProfilerTemplate;
 
 /**
- *
- * Exact SQL Server data profiler.
+ * CN: 对 catalog/schema 已验证的 SQL Server physical-column candidate 执行 bounded metrics SQL，并将结果交给公共 evidence builder；不发现候选或解释 driver message。
+ * EN: Executes bounded metric SQL for catalog/schema-validated SQL Server physical-column candidates and delegates results to the shared evidence builder. It neither discovers candidates nor exposes driver messages.
  */
 public final class SqlServerDataProfiler implements DataProfiler {
     private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(

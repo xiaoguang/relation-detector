@@ -7,8 +7,8 @@ import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.TableId;
 
 /**
- *
- * Dialect-aware identifier rendering for bounded profiling queries.
+ * CN: 按方言逐组件 quote TableId/ColumnRef，仅用于经 namespace 验证的有界 profiling SQL。
+ * EN: Quotes TableId and ColumnRef components for bounded profiling SQL after namespace validation.
  */
 public final class IdentifierQuoter {
     private final String openQuote;

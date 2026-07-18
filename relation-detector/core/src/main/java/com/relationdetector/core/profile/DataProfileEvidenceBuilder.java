@@ -14,12 +14,22 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.ProfileRequest;
 
 /**
- *
- * Converts bounded profiling metrics into explainable evidence.
+ * CN: 将脱敏的有界 profiling metrics 转换为 containment、overlap 或受策略约束的 negative evidence。
+ * EN: Converts sanitized bounded profiling metrics into containment, overlap, or policy-restricted negative evidence.
  */
 public final class DataProfileEvidenceBuilder {
     private final NegativeProfileEvidencePolicy negativePolicy = new NegativeProfileEvidencePolicy();
 
+    /**
+     * CN: 将一次完整 live profile 的计数按请求阈值转换为白名单 evidence；超时、权限失败、
+     * 空指标或零 distinct 返回空结果。负向 evidence 还必须通过声明式 FK 策略，且本方法
+     * 只返回不可变列表，不修改候选。
+     *
+     * EN: Converts one complete live-profile metric set into allowlisted evidence
+     * under the request thresholds. Timeout, permission failure, absent metrics,
+     * or zero distinct input yields no evidence; negative evidence additionally
+     * requires the declared-FK policy. The candidate is never mutated.
+     */
     public List<Evidence> build(ProfileRequest request, DataProfileMetrics metrics, String sourceName) {
         if (request == null || metrics == null || metrics.queryTimedOut() || metrics.permissionDenied()
                 || metrics.sourceDistinctValues() <= 0) {

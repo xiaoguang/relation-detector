@@ -1,8 +1,8 @@
 package com.relationdetector.core.scan;
 
 /**
- *
- * Immutable parser selection and discovered database-version configuration.
+ * CN: 承载 parser mode、grammar profile 与已配置/发现 database version 的不可变快照。
+ * EN: Carries an immutable snapshot of parser mode, grammar profile, and configured or discovered database version.
  */
 public record ParserConfig(
         String mode,

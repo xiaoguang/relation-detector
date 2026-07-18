@@ -34,3 +34,8 @@ Known boundary note:
 - PostgreSQL 17 must not accept PostgreSQL 18-only syntax in strict correctness
   fixtures. If it does, first inspect whether this grammar was accidentally
   widened beyond the official PostgreSQL 17 source grammar.
+
+The adaptor keeps v17-local generated-context adapters, visitors, and the v17
+PL/pgSQL shell bridge. This duplication is intentional: generated contexts are
+version contracts. Shared helpers must not import generated parser classes or
+delegate parsing to another PostgreSQL profile.

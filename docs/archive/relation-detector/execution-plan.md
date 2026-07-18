@@ -1,4 +1,8 @@
-# 数据库表关系探测工具执行计划
+# 数据库表关系探测工具执行计划（历史快照）
+
+> 本文记录当时的实施计划，不再作为当前运行手册。当前架构以
+> `docs/design/relation-detector/` 为准；可执行命令以
+> `docs/guides/relation-detector/` 为准。
 
 ## 1. 项目目标
 
@@ -6,7 +10,7 @@
 
 v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammar；SQL Server 已接入 adaptor、token-event baseline、2016/2017/2019/2022/2025 versioned full-grammar sample-data golden，以及首批 grammar-level 官方版本边界。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar、更多 SQL Server 官方逐版本 T-SQL family 和真实数据库 runtime smoke。
 
-本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。当前语义层代码已独立在 `semantic-layer/semantic-core` 和 `semantic-layer/semantic-cli` 中落地到离线 evidence graph / KG JSON 构建阶段；semantic catalog store、semantic search、question plan、SQL draft validation 和在线问答仍是后续阶段。语义层不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
+本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../../design/semantic-layer-overall-design.md)。当前语义层代码已独立在 `semantic-layer/semantic-core` 和 `semantic-layer/semantic-cli` 中落地到离线 evidence graph / KG JSON 构建阶段；semantic catalog store、semantic search、question plan、SQL draft validation 和在线问答仍是后续阶段。语义层不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
 
 工具需要综合分析以下数据来源：
 
@@ -596,7 +600,7 @@ PREPARE stmt FROM @sql;
 
 另外，`REPEATED_OBSERVATION` 是 core merge 阶段派生出来的重复观测增益，分值范围为 `0.00-0.10`，不是 parser、metadata collector 或 profiler 直接产出的原始证据源。
 
-详细解释见 [Phase 2：核心模型和评分详细设计](../design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现、重复观测和负向数据画像的完整 SQL 算例。
+详细解释见 [Phase 2：核心模型和评分详细设计](../../design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现、重复观测和负向数据画像的完整 SQL 算例。
 
 分数设计的核心原则：
 

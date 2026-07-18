@@ -16,8 +16,8 @@ import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryG
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
- *
- * Deduplicates field-level lineage without touching relationship confidence.
+ * CN: 按 dialect-aware source-set/target/flow/transform identity 合并字段血缘 observations，不修改 relationship confidence。
+ * EN: Merges field-level lineage observations by dialect-aware source-set, target, flow, and transform identity without touching relationship confidence.
  */
 public final class DataLineageMerger {
     private static final Set<String> SUMMARY_ATTRIBUTE_KEYS = Set.of(

@@ -4,7 +4,12 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 
-/** Builds deterministic, human-readable hints for event candidates before LLM extraction. */
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
+
+/**
+ * CN: 根据已提取 event kind、source object 和 typed endpoint tables 生成确定性中文 readable/action hints；只改善标签，不改变 candidate identity、事实或 evidence。
+ * EN: Produces deterministic readable and action hints from extracted event kind, source object, and typed endpoint tables. It improves labels only and never changes candidate identity, facts, or evidence.
+ */
 public final class EventReadableNameSuggester {
 
     public EventNameSuggestion suggest(
@@ -61,8 +66,7 @@ public final class EventReadableNameSuggester {
         if (endpoint == null || endpoint.isBlank()) {
             return "";
         }
-        int index = endpoint.lastIndexOf('.');
-        return index < 0 ? endpoint : endpoint.substring(0, index);
+        return PhysicalEndpointRef.column(endpoint).table();
     }
 
     private String tableLabel(String table) {
@@ -70,7 +74,7 @@ public final class EventReadableNameSuggester {
             return "数据";
         }
         String lower = table.toLowerCase(Locale.ROOT);
-        String bare = lower.contains(".") ? lower.substring(lower.lastIndexOf('.') + 1) : lower;
+        String bare = PhysicalEndpointRef.table(lower).bareTableName();
         return switch (bare) {
             case "sales_fact" -> "销售事实表";
             case "customer_dim", "customers" -> "客户数据";

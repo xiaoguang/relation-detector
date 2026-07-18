@@ -255,6 +255,16 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
         return candidates;
     }
 
+    /**
+     * CN: 从 routine 内已声明的本地 rowset 及其谓词前 VALUE/DIRECT 写入建立投影索引，
+     * 供 IN/tuple-IN 折叠到唯一物理列。歧义、变换、循环和重声明由索引保守拒绝，
+     * 本方法不把临时 rowset 发布为物理 endpoint。
+     *
+     * EN: Builds the routine-local projection index from typed declarations and
+     * pre-predicate VALUE/DIRECT writes so IN predicates can fold to one physical
+     * column. Ambiguous, transformed, cyclic, or redeclared mappings are rejected;
+     * local rowsets are never emitted as physical endpoints.
+     */
     private LocalRowsetProjectionIndex localRowsetProjectionIndex(
             SqlStatementRecord statement,
             List<List<StructuredSqlEvent>> eventGroups,

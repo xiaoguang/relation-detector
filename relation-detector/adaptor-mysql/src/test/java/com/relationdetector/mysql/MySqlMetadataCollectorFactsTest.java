@@ -10,6 +10,7 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -155,7 +156,26 @@ class MySqlMetadataCollectorFactsTest {
         assertEquals("users", snapshot.relationships().get(0).target().table().normalizedName());
     }
 
+    @Test
+    void keepsSuccessfulCatalogFamiliesWhenColumnInventoryFails() {
+        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
+                JdbcFake.connection(catalogRows(), "information_schema.COLUMNS"),
+                new ScanScope("shop", null, List.of("orders", "users"), List.of()));
+
+        assertEquals(2, snapshot.tableFacts().size());
+        assertTrue(snapshot.columnFacts().isEmpty());
+        assertFalse(snapshot.constraintFacts().isEmpty());
+        assertFalse(snapshot.indexFacts().isEmpty());
+        assertEquals(1, snapshot.relationships().size());
+        assertTrue(snapshot.warnings().stream().anyMatch(warning ->
+                warning.code().equals("MYSQL_METADATA_COLUMNS_FAILED")));
+    }
+
     private Connection catalogConnection() {
+        return JdbcFake.connection(catalogRows());
+    }
+
+    private Map<String, List<Map<String, Object>>> catalogRows() {
         Map<String, List<Map<String, Object>>> rows = new LinkedHashMap<>();
         rows.put("TABLES", List.of(
                 row("TABLE_SCHEMA", "shop", "TABLE_NAME", "orders", "TABLE_TYPE", "BASE TABLE", "ENGINE", "InnoDB", "TABLE_COMMENT", "sales orders"),
@@ -179,7 +199,7 @@ class MySqlMetadataCollectorFactsTest {
         rows.put("STATISTICS", List.of(
                 row("TABLE_SCHEMA", "shop", "TABLE_NAME", "orders", "INDEX_NAME", "idx_orders_user_id", "NON_UNIQUE", 1, "SEQ_IN_INDEX", 1, "COLUMN_NAME", "user_id", "INDEX_TYPE", "BTREE", "SUB_PART", null, "EXPRESSION", null, "IS_VISIBLE", "YES"),
                 row("TABLE_SCHEMA", "shop", "TABLE_NAME", "users", "INDEX_NAME", "PRIMARY", "NON_UNIQUE", 0, "SEQ_IN_INDEX", 1, "COLUMN_NAME", "id", "INDEX_TYPE", "BTREE", "SUB_PART", null, "EXPRESSION", null, "IS_VISIBLE", "YES")));
-        return JdbcFake.connection(rows);
+        return rows;
     }
 
     private static Map<String, Object> row(Object... values) {
@@ -192,9 +212,16 @@ class MySqlMetadataCollectorFactsTest {
 
     private static final class JdbcFake {
         static Connection connection(Map<String, List<Map<String, Object>>> rows) {
+            return connection(rows, null);
+        }
+
+        static Connection connection(Map<String, List<Map<String, Object>>> rows, String failingSqlFragment) {
             return (Connection) Proxy.newProxyInstance(JdbcFake.class.getClassLoader(), new Class<?>[] { Connection.class },
                     (proxy, method, args) -> {
                         if (method.getName().equals("prepareStatement")) {
+                            if (failingSqlFragment != null && String.valueOf(args[0]).contains(failingSqlFragment)) {
+                                throw new SQLException("catalog family unavailable", "42000", 1142);
+                            }
                             return preparedStatement(String.valueOf(args[0]), rows);
                         }
                         if (method.getName().equals("close")) {

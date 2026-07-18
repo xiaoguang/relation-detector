@@ -13,6 +13,10 @@ import com.relationdetector.core.profile.DataProfileCandidateGenerator;
 import com.relationdetector.core.profile.ProfileEvidenceContractValidator;
 import com.relationdetector.core.identity.NamespaceContext;
 
+/**
+ * CN: 选择有界 live profiling candidates，调用 adaptor profiler 并在增强前原子验证 evidence 契约。
+ * EN: Selects bounded live-profiling candidates, invokes the adaptor profiler, and atomically validates its evidence contract before enhancement.
+ */
 final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
     private final DataProfileNamespacePolicy namespacePolicy = new DataProfileNamespacePolicy();

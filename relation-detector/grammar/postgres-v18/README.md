@@ -32,3 +32,8 @@ Known boundary note:
 - PostgreSQL 18 is the latest strict profile in this repository. Newer-version
   syntax must not be added here unless PostgreSQL official sources classify it
   as PostgreSQL 18-compatible.
+
+The adaptor keeps v18-local generated-context adapters, visitors, and the v18
+PL/pgSQL shell bridge. This duplication is intentional: generated contexts are
+version contracts. Shared helpers must not import generated parser classes or
+delegate parsing to another PostgreSQL profile.

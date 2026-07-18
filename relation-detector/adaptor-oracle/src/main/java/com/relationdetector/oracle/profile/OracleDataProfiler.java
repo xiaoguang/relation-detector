@@ -9,8 +9,8 @@ import com.relationdetector.core.profile.IdentifierQuoter;
 import com.relationdetector.core.profile.JdbcDataProfilerTemplate;
 
 /**
- *
- * Exact Oracle data profiler.
+ * CN: 对已验证且 owner-compatible 的 Oracle physical-column candidate 执行 bounded live metrics query，并交给公共 builder 生成 profile evidence；不发现候选或渲染 catalog。
+ * EN: Executes bounded live metric queries for validated owner-compatible Oracle physical-column candidates and delegates evidence construction to the shared builder. It neither discovers candidates nor renders catalog qualifiers.
  */
 public final class OracleDataProfiler implements DataProfiler {
     private final JdbcDataProfilerTemplate delegate = new JdbcDataProfilerTemplate(

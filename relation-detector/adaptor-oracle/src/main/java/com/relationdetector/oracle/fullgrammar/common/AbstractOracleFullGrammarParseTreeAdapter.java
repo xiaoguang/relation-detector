@@ -9,8 +9,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
- *
- * Immutable class-literal role table shared by the four Oracle adapters.
+ * CN: 保存四个 Oracle version adapter 显式注册的 generated class literals 与 typed roles；查找只基于 class identity，实例不可变且不持有 parse state。
+ * EN: Stores generated class literals and typed roles explicitly registered by Oracle version adapters. Lookup uses class identity only; instances are immutable and retain no parse state.
  */
 public abstract class AbstractOracleFullGrammarParseTreeAdapter
         implements OracleFullGrammarParseTreeAdapter {

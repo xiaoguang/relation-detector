@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- *
- * Dialect-owned semantic view of generated ANTLR contexts.
+ * CN: 定义方言 version adapter 必须从 generated ANTLR contexts 暴露的 typed semantic view，使 core 不依赖 context 类名。
+ * EN: Defines the typed semantic view that dialect version adapters expose from generated ANTLR contexts so core never depends on context class names.
  *
  * <p>Core expression and event semantics depend on these roles instead of
  * generated context names. A version bridge binds its concrete generated

@@ -12,8 +12,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
- *
- * Runs deterministic token-event grammars in SLL first and retries safely in LL.
+ * CN: 对 deterministic token-event grammar 先使用 SLL，仅在 cancellation 或 lexer error 后以同一 token stream 安全重试 LL。
+ * EN: Runs deterministic token-event grammars in SLL first and safely retries the same token stream in LL when required.
  */
 public final class AntlrSllParseSupport {
     private AntlrSllParseSupport() {

@@ -43,7 +43,7 @@ public class CommonTokenEventStructuredSqlParser implements StructuredSqlParser 
         this(SqlDialect.GENERIC);
     }
 
-    protected CommonTokenEventStructuredSqlParser(SqlDialect dialect) {
+    public CommonTokenEventStructuredSqlParser(SqlDialect dialect) {
         this.dialect = dialect;
         this.antlrSupport = new AntlrSqlParseSupport(dialect);
     }

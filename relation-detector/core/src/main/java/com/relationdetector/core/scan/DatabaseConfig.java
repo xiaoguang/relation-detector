@@ -5,8 +5,8 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
- *
- * Immutable database identity, connection, and scan-scope configuration.
+ * CN: 承载不可变的 database identity、JDBC connection 与 table include/exclude scope 配置。
+ * EN: Carries immutable database identity, JDBC connection, and table include/exclude scope configuration.
  */
 public record DatabaseConfig(
         DatabaseType databaseType,

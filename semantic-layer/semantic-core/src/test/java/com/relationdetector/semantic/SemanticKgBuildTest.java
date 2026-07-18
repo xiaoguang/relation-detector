@@ -38,8 +38,8 @@ final class SemanticKgBuildTest {
         Files.writeString(input, sampleScanResult("mysql", "shop"));
 
         ScanBundle bundle = new ScanResultReader().read(input);
-        assertEquals("orders.customer_id", bundle.relationships().get(0).source());
-        assertEquals("payments.amount", bundle.dataLineages().get(0).sources().get(0));
+        assertEquals("orders.customer_id", bundle.relationships().get(0).source().displayName());
+        assertEquals("payments.amount", bundle.dataLineages().get(0).sources().get(0).displayName());
         assertEquals("TABLE_ID", bundle.namingEvidence().get(0).rule());
         EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(bundle);
         SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);

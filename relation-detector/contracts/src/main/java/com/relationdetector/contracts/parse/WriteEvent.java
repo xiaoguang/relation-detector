@@ -3,8 +3,8 @@ package com.relationdetector.contracts.parse;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- *
- * Write target or column assignment/mapping event.
+ * CN: 表示 typed SQL 中的写入目标、列赋值或写入映射，并携带表达式依赖。
+ * EN: Represents a typed write target, column assignment, or write mapping together with its expression dependencies.
  */
 public record WriteEvent(
         StructuredParseEventType type,

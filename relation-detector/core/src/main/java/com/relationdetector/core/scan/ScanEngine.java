@@ -46,8 +46,14 @@ public final class ScanEngine {
     }
 
     /**
+     * CN: 校验不可变运行配置和 adaptor 契约，解析一次 live namespace，并按 source、
+     * evidence、profiling、assembly 的固定顺序执行扫描。返回完整 ScanResult；配置或连接
+     * 失败直接抛出，已打开的连接和 pipeline 资源始终在 finally 中关闭。
      *
-     * Runs a scan from an immutable, fully resolved runtime snapshot.
+     * EN: Validates the immutable runtime configuration and adaptor contract,
+     * resolves the live namespace once, and executes source collection, evidence,
+     * profiling, and assembly in order. It returns the complete ScanResult, fails
+     * fast on configuration or connection errors, and always closes owned resources.
      */
     public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
         configurationValidator.validate(config);

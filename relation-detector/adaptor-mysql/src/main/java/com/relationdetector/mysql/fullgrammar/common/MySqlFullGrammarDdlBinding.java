@@ -6,8 +6,8 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
- *
- * Version bridge for MySQL full-grammar DDL parsing.
+ * CN: 定义 version package 到共享 full-grammar DDL 生命周期的 typed bridge；本版本 generated context 由绑定消费，输出仅为 DDL events，不承担 relationship 合并。
+ * EN: Defines the typed bridge from a version package to the shared full-grammar DDL lifecycle. The binding consumes only its generated contexts and emits DDL events without merging relationships.
  */
 public interface MySqlFullGrammarDdlBinding {
     String lexerName();

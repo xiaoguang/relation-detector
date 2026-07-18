@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 /**
- *
- * Version bridge for MySQL full-grammar SQL parsing.
+ * CN: 定义 version package 到共享 full-grammar SQL 生命周期的 typed bridge；输入 SQL 和本版本 generated root，输出 structured events，禁止跨版本或 token-event delegate。
+ * EN: Defines the typed bridge from a version package to the shared full-grammar SQL lifecycle. It accepts SQL and that version's generated root, emits structured events, and forbids cross-version or token-event delegation.
  */
 public interface MySqlFullGrammarSqlBinding {
     String lexerName();

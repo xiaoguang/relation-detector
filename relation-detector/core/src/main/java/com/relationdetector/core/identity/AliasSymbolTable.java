@@ -10,8 +10,8 @@ import java.util.Set;
 import com.relationdetector.contracts.model.TableId;
 
 /**
- *
- * Query-scope alias table with exact, shadowing-aware resolution.
+ * CN: 维护 query-scope alias symbol table，按完整 namespace identity 解析并处理内层 shadowing/ambiguity。
+ * EN: Maintains query-scoped aliases with full namespace identity, inner-scope shadowing, and ambiguity detection.
  */
 public final class AliasSymbolTable {
     private final CanonicalIdentifierResolver resolver;

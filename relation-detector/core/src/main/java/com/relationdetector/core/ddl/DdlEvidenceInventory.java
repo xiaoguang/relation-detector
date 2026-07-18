@@ -18,8 +18,8 @@ import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 import com.relationdetector.core.identity.NamespaceContext;
 
 /**
- *
- * Scan-level DDL index, uniqueness and column observations keyed by exact endpoint identity.
+ * CN: 在 scan 级别按精确 endpoint identity 汇总 DDL index、uniqueness 与 column observations，仅用于增强已有候选。
+ * EN: Aggregates scan-level DDL index, uniqueness, and column observations by exact endpoint identity to enrich existing candidates only.
  */
 public final class DdlEvidenceInventory {
     private final Map<CanonicalEndpointKey, List<Observation>> sourceIndexes = new LinkedHashMap<>();

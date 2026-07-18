@@ -3,8 +3,8 @@ package com.relationdetector.contracts.parse;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 
 /**
- *
- * Raw client script plus the provenance defaults used by a dialect script framer.
+ * CN: 为 dialect script framer 提供原始客户端脚本与默认来源 provenance。
+ * EN: Supplies raw client-script text and default source provenance to a dialect script framer.
  */
 public record ScriptFrameRequest(
         String text,

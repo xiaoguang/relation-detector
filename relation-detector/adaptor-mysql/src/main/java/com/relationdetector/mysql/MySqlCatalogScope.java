@@ -7,8 +7,8 @@ import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
 
 /**
- *
- * Canonicalizes MySQL's database namespace onto the catalog axis.
+ * CN: 将 MySQL database 唯一映射到 catalog 轴，并在 live 入口校验 connection catalog；输入是 ScanScope，输出保留过滤规则的 canonical scope，不把 database 填入 schema。
+ * EN: Maps the MySQL database exclusively onto the catalog axis and verifies it against the live connection. It preserves table filters while never copying the database into schema.
  */
 public final class MySqlCatalogScope {
     private MySqlCatalogScope() {

@@ -13,8 +13,8 @@ import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTree
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
 /**
- *
- * Collects physical Oracle column reads while excluding typed routine symbols.
+ * CN: 递归访问 adapter 提供的 typed expression children，收集 direct columns 并通过 OracleRoutineScope 排除参数/局部变量；歧义 context 不按 terminal text 回退。
+ * EN: Visits typed expression children supplied by the adapter, collecting direct columns while excluding parameters and locals through OracleRoutineScope. Ambiguous contexts never fall back to terminal text.
  */
 final class OracleColumnReadCollector extends OracleFullGrammarParseTreeSupport {
     private final Supplier<String> defaultAlias;

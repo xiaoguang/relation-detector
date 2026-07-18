@@ -16,8 +16,8 @@ import java.util.Optional;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- *
- * Shared state and sink helpers for MySQL full-grammar SQL visitors.
+ * CN: 保存一次 MySQL full-grammar traversal 的 alias、projection、routine scope 和 sink 协作状态；version visitor 决定 typed 结构，本类只规范化并合并事件。
+ * EN: Owns per-traversal alias, projection, routine-scope, and sink coordination for MySQL full-grammar. Version visitors decide typed structure; this core only normalizes and merges events.
  *
  * <p>Version visitors still decide structure from their generated contexts; this
  * core only owns common state and event merging.

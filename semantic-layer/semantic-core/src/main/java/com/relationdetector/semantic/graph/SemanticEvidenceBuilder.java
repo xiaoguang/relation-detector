@@ -14,7 +14,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.event.SemanticEventExtractor;
-import com.relationdetector.semantic.reader.EndpointRef;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
+import com.relationdetector.semantic.reader.PhysicalEndpointJsonReader;
 import com.relationdetector.semantic.reader.ScanBundle;
 import com.relationdetector.semantic.reader.ScanDiagnosticFact;
 import com.relationdetector.semantic.reader.ScanFact;
@@ -22,21 +23,28 @@ import com.relationdetector.semantic.reader.ScanLineageFact;
 import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
 import com.relationdetector.semantic.reader.ScanRelationshipFact;
 
-/** Builds a deterministic evidence graph from normalized scan records. */
+/**
+ * CN: 将 typed ScanBundle 的 direct/derived facts、naming、diagnostics 和 event candidates 一次性装配为确定性 EvidenceGraph；保留 evidence refs，不调用 LLM 或修改物理事实。
+ * EN: Deterministically assembles direct and derived facts, naming, diagnostics, and event candidates from a typed ScanBundle into EvidenceGraph while preserving evidence and physical facts.
+ */
 public final class SemanticEvidenceBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
     private final SemanticEventExtractor eventExtractor = new SemanticEventExtractor();
 
+    /**
+     * CN: 按固定 section 顺序建立 endpoint/fact/evidence inventories，并在返回前生成 event candidates 和 summary。非法 payload/evidence 引用直接失败，不返回部分 graph。
+     * EN: Builds endpoint, fact, and evidence inventories in stable section order, then adds event candidates and summary. Invalid payloads or references fail without returning a partial graph.
+     */
     public EvidenceGraph build(ScanBundle scanBundle) {
-        Map<String, EndpointRef> endpoints = new LinkedHashMap<>();
+        Map<String, PhysicalEndpointRef> endpoints = new LinkedHashMap<>();
         Map<String, EvidenceReference> evidenceRefs = new LinkedHashMap<>();
         List<EvidenceGraphFact> facts = new ArrayList<>();
 
         for (ScanRelationshipFact relationship : scanBundle.relationships()) {
-            EndpointRef source = endpoint(relationship.source());
-            EndpointRef target = endpoint(relationship.target());
+            PhysicalEndpointRef source = relationship.source();
+            PhysicalEndpointRef target = relationship.target();
             String id = relationship.id();
             JsonNode document = relationship.document();
             List<String> refs = evidenceRefs(id, document, evidenceRefs);
@@ -49,17 +57,16 @@ public final class SemanticEvidenceBuilder {
         }
 
         for (ScanLineageFact lineage : scanBundle.dataLineages()) {
-            List<EndpointRef> factEndpoints = new ArrayList<>();
-            for (String sourceName : lineage.sources()) {
-                EndpointRef endpoint = endpoint(sourceName);
+            List<PhysicalEndpointRef> factEndpoints = new ArrayList<>();
+            for (PhysicalEndpointRef endpoint : lineage.sources()) {
                 addEndpoint(endpoints, endpoint);
                 factEndpoints.add(endpoint);
             }
-            EndpointRef target = endpoint(lineage.target());
+            PhysicalEndpointRef target = lineage.target();
             addEndpoint(endpoints, target);
             factEndpoints.add(target);
             String sources = factEndpoints.subList(0, factEndpoints.size() - 1).stream()
-                    .map(EndpointRef::displayName)
+                    .map(PhysicalEndpointRef::displayName)
                     .reduce((left, right) -> left + "+" + right)
                     .orElse("unknown");
             String id = lineage.id();
@@ -70,8 +77,8 @@ public final class SemanticEvidenceBuilder {
         }
 
         for (ScanNamingEvidenceFact naming : scanBundle.namingEvidence()) {
-            EndpointRef source = endpoint(naming.source());
-            EndpointRef target = endpoint(naming.target());
+            PhysicalEndpointRef source = naming.source();
+            PhysicalEndpointRef target = naming.target();
             addEndpoint(endpoints, source);
             addEndpoint(endpoints, target);
             String id = naming.id();
@@ -86,7 +93,7 @@ public final class SemanticEvidenceBuilder {
                     derived.confidence(), endpoints, evidenceRefs, facts);
         }
         for (ScanLineageFact derived : scanBundle.derivedDataLineages()) {
-            String source = derived.sources().isEmpty() ? "" : derived.sources().get(0);
+            PhysicalEndpointRef source = derived.sources().isEmpty() ? derived.target() : derived.sources().get(0);
             addDerivedFact("DerivedLineageFact", derived, source, derived.target(), derived.confidence(),
                     endpoints, evidenceRefs, facts);
         }
@@ -114,18 +121,18 @@ public final class SemanticEvidenceBuilder {
 
     private void addEventFact(
             SemanticEventCandidate event,
-            Map<String, EndpointRef> endpoints,
+            Map<String, PhysicalEndpointRef> endpoints,
             Map<String, EvidenceReference> evidenceRefs,
             List<EvidenceGraphFact> facts
     ) {
-        List<EndpointRef> factEndpoints = new ArrayList<>();
+        List<PhysicalEndpointRef> factEndpoints = new ArrayList<>();
         for (String endpointName : event.inputEndpoints()) {
-            EndpointRef endpoint = endpoint(endpointName);
+            PhysicalEndpointRef endpoint = PhysicalEndpointRef.column(endpointName);
             addEndpoint(endpoints, endpoint);
             factEndpoints.add(endpoint);
         }
         for (String endpointName : event.outputEndpoints()) {
-            EndpointRef endpoint = endpoint(endpointName);
+            PhysicalEndpointRef endpoint = PhysicalEndpointRef.column(endpointName);
             addEndpoint(endpoints, endpoint);
             factEndpoints.add(endpoint);
         }
@@ -147,21 +154,19 @@ public final class SemanticEvidenceBuilder {
     private void addDerivedFact(
             String type,
             ScanFact fact,
-            String sourceName,
-            String targetName,
+            PhysicalEndpointRef source,
+            PhysicalEndpointRef target,
             double confidence,
-            Map<String, EndpointRef> endpoints,
+            Map<String, PhysicalEndpointRef> endpoints,
             Map<String, EvidenceReference> evidenceRefs,
             List<EvidenceGraphFact> facts
     ) {
         JsonNode derived = fact.document();
-        EndpointRef source = endpoint(sourceName);
-        EndpointRef target = endpoint(targetName);
         addEndpoint(endpoints, source);
         addEndpoint(endpoints, target);
-        List<EndpointRef> factEndpoints = new ArrayList<>();
+        List<PhysicalEndpointRef> factEndpoints = new ArrayList<>();
         for (JsonNode pathNode : derived.path("path")) {
-            EndpointRef step = endpoint(pathNode);
+            PhysicalEndpointRef step = PhysicalEndpointJsonReader.read(pathNode);
             addEndpoint(endpoints, step);
             factEndpoints.add(step);
         }
@@ -253,21 +258,9 @@ public final class SemanticEvidenceBuilder {
         return result;
     }
 
-    private EndpointRef endpoint(JsonNode node) {
-        return EndpointRef.fromJson(node);
-    }
-
-    private EndpointRef endpoint(String value) {
-        int index = value == null ? -1 : value.lastIndexOf('.');
-        if (index < 0) {
-            return new EndpointRef(value == null || value.isBlank() ? "unknown" : value, null);
-        }
-        return new EndpointRef(value.substring(0, index), value.substring(index + 1));
-    }
-
-    private void addEndpoint(Map<String, EndpointRef> endpoints, EndpointRef endpoint) {
+    private void addEndpoint(Map<String, PhysicalEndpointRef> endpoints, PhysicalEndpointRef endpoint) {
         endpoints.putIfAbsent(endpoint.displayName(), endpoint);
-        endpoints.putIfAbsent(endpoint.table(), new EndpointRef(endpoint.table(), null));
+        endpoints.putIfAbsent(endpoint.table(), PhysicalEndpointRef.table(endpoint.table()));
     }
 
     private Map<String, Object> attributes(JsonNode node) {

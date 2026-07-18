@@ -13,8 +13,8 @@ import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.sqlserver.script.SqlServerScriptFramer;
 
 /**
- *
- * SQL Server log extractor backed by plain SQL statement splitting.
+ * CN: 读取 plain T-SQL log 并通过 SQL Server script framer 识别 GO batches 与来源行；不从日志字符串推断 SQL 结构或事实。
+ * EN: Reads plain T-SQL logs and uses the SQL Server script framer to identify GO batches and source lines. It never infers SQL structure or facts from log strings.
  */
 public final class SqlServerLogExtractor implements SqlLogExtractor {
     private final SqlServerScriptFramer scriptFramer;

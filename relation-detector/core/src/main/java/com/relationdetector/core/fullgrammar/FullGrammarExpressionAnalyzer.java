@@ -13,10 +13,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.CaseParts;
 
 /**
+ * CN: 在方言提供的 typed context view 上合并 direct column、CASE、function 与 scalar-subquery 表达式语义，不扫描 terminal text。
+ * EN: Combines direct-column, CASE, function, and scalar-subquery semantics over dialect-owned typed context views without scanning terminal text.
  *
- * Shared full-grammar expression semantics over dialect-owned typed context views.
- *
- * <p>This class never interprets terminal text. Generated-context adapters expose
+ * <p>Generated-context adapters expose
  * physical columns, CASE branches, function symbols, operators, and scalar-query
  * boundaries; core only combines those typed facts into VALUE/CONTROL analyses.</p>
  */

@@ -19,8 +19,8 @@ import com.relationdetector.mysql.MySqlCatalogScope;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**
- *
- * Collects MySQL table DDL through SHOW CREATE TABLE.
+ * CN: 按 canonical catalog 枚举 in-scope base tables，并用 SHOW CREATE TABLE 读取 parser-grade 声明；输出按表稳定排序，单表失败产生脱敏 warning，不负责解析 DDL。
+ * EN: Enumerates in-scope base tables in the canonical catalog and reads parser-grade declarations with SHOW CREATE TABLE. Results are stable, per-table failures are sanitized, and DDL parsing remains downstream.
  */
 public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
     @Override

@@ -23,9 +23,8 @@ import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDd
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 /**
- *
- * SQL Server adaptor backed by typed T-SQL parsers, sys catalog metadata and
- * object readers, reconstructed live DDL, native logs, and bounded profiling.
+ * CN: 组装 SQL Server catalog/schema resolution、typed T-SQL parsers、sys catalog collectors、object/DDL/log readers 和 profiler，向 core 声明 SPI v6 能力；本类不解析 SQL 或合并事实。
+ * EN: Assembles SQL Server catalog/schema resolution, typed T-SQL parsers, sys-catalog collectors, object/DDL/log readers, and profiling behind SPI v6; it neither parses SQL nor merges facts.
  */
 public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public static final Set<Integer> PERMISSION_DENIED_VENDOR_CODES = Set.of(229, 916);

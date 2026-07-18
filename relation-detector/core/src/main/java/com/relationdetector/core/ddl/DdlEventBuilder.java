@@ -9,11 +9,9 @@ import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
- *
- * Shared builder for normalized DDL parser events.
- *
- * <p>CN: 方言 typed DDL visitor 后续可以只提交 table/column/constraint 结构，
+ * CN: 方言 typed DDL visitor 只提交 table/column/constraint 结构，
  * 由这个 builder 统一生成 DDL_FOREIGN_KEY 和 DDL_INDEX 事件。
+ * EN: Builds normalized DDL foreign-key, index, unique-key, and column events from structures supplied by dialect visitors.
  */
 public final class DdlEventBuilder {
     private final String sourceName;

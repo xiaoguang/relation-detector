@@ -24,8 +24,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.WriteEvent;
 
 /**
- *
- * Shared strongly typed event emission helper for token-event visitors.
+ * CN: 为 token-event visitors 统一构造 typed events 与 absolute provenance，并在 per-parse guard stack 中保存条件上下文。
+ * EN: Constructs typed events and absolute provenance for token-event visitors while retaining predicate guards in per-parse state.
  */
 public final class TokenEventEventEmitter {
     private final SqlStatementRecord statement;

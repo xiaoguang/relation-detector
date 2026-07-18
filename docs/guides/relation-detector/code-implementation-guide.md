@@ -43,9 +43,9 @@ repo-root/
 `semantic-layer/semantic-cli` 是独立语义层，只消费 relation-detector JSON，不依赖
 `core`、`cli` 或任何 `adaptor-*`。
 
-`relation-detector/grammar/` 是 29 个独立 generated grammar artifact 的聚合模块。
-common、四方言 token-event/script、14 套 versioned full grammar，以及 PostgreSQL compact
-和三套 versioned PL/pgSQL grammar 都在这里生成/编译；adaptor 只依赖对应
+`relation-detector/grammar/` 是 28 个独立 generated grammar artifact 的聚合模块。
+14 套 versioned full grammar、4 套 PL/pgSQL shell，以及 10 套 common/方言
+script 与 token-event grammar 都在这里生成/编译；adaptor 只依赖对应
 artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 
 已实现能力：
@@ -121,7 +121,8 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - `diagnostics/DiagnosticWarnings.java`
 - `parse/AntlrSqlParseSupport.java`
 - `tokenevent/TokenEventStructuredDdlParser.java`
-- `tokenevent/TokenEventStructuredSqlParser.java`
+- `tokenevent/CommonTokenEventStructuredSqlParser.java`
+- `tokenevent/TypedDialectTokenEventStructuredSqlParser.java`
 - `common/CommonDatabaseAdaptor.java`
 - `relation/StructuredRelationshipExtractor.java`
 - `parser/DdlRelationParserRunner.java`
@@ -171,7 +172,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - 不要混淆三类 mode：`parser.mode` 是系统运行模式，只允许 `auto|full-grammar|token-event`；MySQL `SQL_MODE` 是 MySQL full-grammar runtime 的语法开关，由 `MySqlGrammarSqlMode` / `MySqlGrammarSqlModes` 表达；ANTLR lexer mode 是 `.g4` 内部词法状态，例如 PostgreSQL 字符串或 meta-command 状态，不对应 Java parser mode 类。
 - typed token-event visitor 从 ANTLR parse tree 产出 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、DDL FK/index、写入映射和 projection 等结构化事件。`TABLE_REFERENCE` / `COLUMN_EQUALITY` 仍作为兼容/bootstrap event 类型存在，但当前 relation extractor 的主输入是归一后的 rowset/predicate/DDL 事件。
 - typed token-event visitor 区分 DML `USING table` 与 `JOIN USING (columns)`：前者可以产生 rowset，后者只能基于 `USING` 列名生成经过审核的弱共现证据，不能把列名当作 `ROWSET_REFERENCE`。
-- `TokenEventStructuredSqlParser` / `TypedDialectTokenEventStructuredSqlParser` / `TokenEventStructuredDdlParser` 共同构成 token-event fallback 层：无 profile、unsupported version、full-grammar hard failure 或显式 `parser.mode=token-event` 时使用。common token-event 直接使用 `CommonRelationSql.g4` typed visitor，并且通过 `CommonDatabaseAdaptor` 可被 CLI 显式选择为 `database.type: common`；MySQL/PostgreSQL/Oracle/SQL Server token-event 使用各自 adaptor 的方言 typed visitor。公共 relation、rowset/scope、DML 深水区、Data Lineage 写入映射和 derived aggregate projection 已经迁入 token-event 事件和抽取测试，覆盖 `JOIN USING`、raw equality、correlated `EXISTS`、scalar/tuple `IN`、列级弱共现、CTE/temp/trigger scope、MySQL multi-table `DELETE`、PostgreSQL `UPDATE FROM`、SQL Server `UPDATE FROM` / `APPLY`、`UPDATE SET`、derived aggregate、`INSERT SELECT`、`MERGE`；新增 MySQL/PostgreSQL/Oracle/SQL Server token-event 专属规则必须进入方言 typed grammar/visitor，不得放回公共万能层。
+- `CommonTokenEventStructuredSqlParser` / `TypedDialectTokenEventStructuredSqlParser` / `TokenEventStructuredDdlParser` 共同构成 token-event fallback 层。common parser 直接使用 `CommonRelationSql.g4` typed visitor；方言 parser 直接继承 common typed parser 生命周期，不再经过 legacy wrapper。公共 relation、rowset/scope、DML 深水区、Data Lineage 写入映射和 derived aggregate projection 已经迁入 typed 事件和抽取测试；方言专属规则必须进入对应 grammar/visitor，不得放回公共万能层。
 - `SqlGrammarProfile` / `SqlGrammarProfileRegistry` / `FullGrammarDialectModule` 是版本化 full-grammar 接入点。当前注册 `mysql-5.7`、`mysql-8.0`、`postgresql-16`、`postgresql-17`、`postgresql-18`、`oracle-12c`、`oracle-19c`、`oracle-21c`、`oracle-26ai` module；人工配置 `parser.grammarProfile` 优先，其次可用 `parser.databaseVersion` 或 JDBC `DatabaseMetaData` 选择 profile。同一 major 的 minor 默认复用该 major profile；如果请求版本只比最高已支持版本高 1 个 major，可以临时选择最近低版本 profile 并返回 diagnostic；超过 1 个 major 或没有方言/版本信息时，回退 token-event parser。
 - `FullGrammarParserBundleFactory` / `FullGrammarStructuredSqlParser` 是版本化 full-grammar 接入基础设施。所有 `.g4` 都位于 `relation-detector/grammar/*` 独立 Maven artifact；adaptor 只依赖 generated artifact，并保留 binding、profile module、version policy、typed context adapter 和 visitor。这使普通 visitor 修改不再触发 grammar 重生成，同时不合并不同版本 parser。full-grammar adapter 只消费 typed generated contexts，通过 typed accessor 取得 identifier、rowset、function、operator 和 constraint；禁止以 rule name、reflection、terminal/raw SQL 文本或 regex 推断 SQL 结构。PostgreSQL routine 保持两条独立链路：token-event 使用 compact PL/pgSQL 后回调 token-event SQL parser，v16/v17/v18 full profile 使用同版本 PL/pgSQL 后回调同版本 full SQL parser。已移除 Java 文本 version guard；版本边界由 `.g4` 或 typed token/context 表达。
 - `FullGrammarGeneratedParserSmokeTest` 验证 MySQL/PostgreSQL full-grammar generated lexer/parser 可实例化并解析基础 SQL；Oracle adaptor 由 `OracleAdaptorParserTest` 和 `OracleParserArchitectureTest` 验证 ServiceLoader、Oracle token-event grammar、`INCOMPLETE_VERSIONED` full-grammar generated parser attributes、“不得持有 token-event delegate”和 Oracle SQL 资产卫生边界。full-grammar 行为测试只验证具体 SQL/DDL 的关系、血缘、warning 行为；不再把内部事件来源标签作为默认测试目标，也不再用 token-event baseline 兜底验证 full-grammar。后续 profile 深化 parse-tree visitor 后，missing 必须修 visitor，extra 进入审核，不自动写入 golden。
@@ -590,7 +591,8 @@ sources:
 - `ConfidenceCalculator`
 - `RelationshipMerger`
 - `AntlrSqlParseSupport`
-- `TokenEventStructuredSqlParser`
+- `CommonTokenEventStructuredSqlParser`
+- `TypedDialectTokenEventStructuredSqlParser`
 - `TokenEventStructuredDdlParser`
 - `StructuredRelationshipExtractor`
 - `StructuredDataLineageExtractor`
@@ -710,14 +712,10 @@ PostgreSQL：
 - 日常开发按 `focused -> scope -> matrix-smoke -> acceptance` 四级门禁执行。
   `relation-detector/scripts/test-scope.sh <core|mysql|postgres|oracle|sqlserver|assets>`
   会在一次 reactor 中合并运行受影响模块测试和 dialect correctness；
-  `mvn -T 2 -Pmatrix-smoke verify` 覆盖全部 19 个 parser category 的代表 fixture。
-- 每个逻辑批次结束执行 `mvn -T 2 -Pacceptance verify`。该 profile 运行全部
-  1198 个 correctness fixture，使用 fixture parallelism 12、CLI test fork count 2，并显式验收
-  generated reports。结构重构期间不得使用 `updateCorrectnessGold` 掩盖差异。
-- 最终入口是 `bash relation-detector/scripts/verify-all.sh`。它只执行一次 Maven
-  acceptance reactor，然后复用已打包 CLI 的 `batch --manifest` 一次 JVM 并行生成
-  19 类 parser 的 38 份 direct/derived JSON，最后执行 summary、reference、absolute-path
-  和 canonical output 校验。
+  `mvn -T 2 -Pmatrix-smoke verify` 覆盖当前注册 parser category 的代表 fixture，实际数量从当次 summary 读取。
+- 每个逻辑批次结束使用 `relation-detector/scripts/run-correctness-isolated.sh`。它按 parser family 顺序启动有界 JVM，汇总全部 discovered fixture。结构重构期间不得使用 `updateCorrectnessGold` 掩盖差异。
+- sample-data 使用 `relation-detector/scripts/run-sample-data-isolated.sh`，按 parser case 隔离 JVM 并在全部 case 退出后汇总 direct/derived JSON。当前 parser category 和 JSON 数从 batch report 读取，不在指南中写死。
+- 发布入口 `bash relation-detector/scripts/verify-all.sh` 串联 acceptance、isolated sample-data、summary、reference、absolute-path 和 canonical output 校验；重型任务不得重叠。
 - 发布前另外执行一次无缓存参考构建：
   `mvn -T 2 -Pacceptance -Dmaven.build.cache.enabled=false clean verify`。Maven Build Cache
   只复用 generated/compiled artifact，Surefire/Failsafe 仍每次运行，不缓存测试结果。

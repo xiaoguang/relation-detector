@@ -13,7 +13,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-/** Minimal OpenAI Responses API client for semantic extraction. */
+/**
+ * CN: 将 evidence-grounded prompt 调用 OpenAI Responses API，并解析结构化输出与成功响应 artifact；HTTP/transport 失败只抛固定脱敏消息，不暴露 response body 或密钥。
+ * EN: Calls the OpenAI Responses API with an evidence-grounded prompt and parses structured output plus successful response artifacts. HTTP or transport failures expose only sanitized messages, never response bodies or secrets.
+ */
 public final class OpenAiResponsesSemanticExtractor {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final ResponsesTransport transport;
@@ -78,8 +81,8 @@ public final class OpenAiResponsesSemanticExtractor {
             TransportResponse response = transport.send(request);
             JsonNode responseJson = parseJson(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalArgumentException("OpenAI Responses API failed with HTTP " + response.statusCode()
-                        + ": " + response.body());
+                throw new IllegalArgumentException(
+                        "OpenAI Responses API failed with HTTP " + response.statusCode());
             }
             return new SemanticExtractionResult(requestBody, response.body(), outputText(responseJson), responseJson);
         } catch (IOException e) {

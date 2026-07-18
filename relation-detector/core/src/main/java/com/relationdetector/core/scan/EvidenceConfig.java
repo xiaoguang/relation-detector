@@ -8,8 +8,8 @@ import com.relationdetector.core.naming.NamingRule;
 import com.relationdetector.core.naming.NamingRuleSet;
 
 /**
- *
- * Immutable evidence extraction, profiling, and derived-path configuration.
+ * CN: 承载 naming、live profiling 与 derived-path 推导的不可变配置，其 rule files 已在 scan 前解析。
+ * EN: Carries immutable naming, live-profiling, and derived-path configuration after rule files have been resolved before scanning.
  */
 public record EvidenceConfig(
         boolean dataProfileEnabled,

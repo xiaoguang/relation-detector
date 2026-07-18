@@ -14,8 +14,8 @@ import com.relationdetector.contracts.spi.DialectScriptFramer;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
 /**
- *
- * Reads one file and delegates all client-script framing to the selected adaptor.
+ * CN: 读取一份 script file，将 client framing 完整委托给已选 adaptor，并转发 framing warnings。
+ * EN: Reads one script file, delegates all client framing to the selected adaptor, and forwards framing warnings.
  */
 public final class ScriptFileExtractor {
     public Stream<SqlStatementRecord> extract(

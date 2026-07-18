@@ -3,8 +3,8 @@ package com.relationdetector.contracts.parse;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- *
- * Projection item or standalone expression-source event.
+ * CN: 表示 projection 输出列及其 typed expression trace，也可承载独立表达式来源。
+ * EN: Represents a projection output and its typed expression trace, or a standalone expression-source event.
  */
 public record ProjectionEvent(
         StructuredParseEventType type,

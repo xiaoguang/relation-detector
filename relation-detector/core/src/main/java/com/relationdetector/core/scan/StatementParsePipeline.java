@@ -19,6 +19,10 @@ import com.relationdetector.core.parser.ParserBundleSelector;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 
+/**
+ * CN: 为 scan 选择一致的 SQL/DDL parser bundle，并将 framed statements 交给正式 statement execution service。
+ * EN: Selects one consistent SQL/DDL parser bundle for a scan and delegates framed statements to the production statement execution service.
+ */
 final class StatementParsePipeline {
     private final StatementExecutionService statementExecutionService = new StatementExecutionService();
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();

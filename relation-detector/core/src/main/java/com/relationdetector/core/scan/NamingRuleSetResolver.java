@@ -8,7 +8,10 @@ import com.relationdetector.core.naming.NamingRule;
 import com.relationdetector.core.naming.NamingRuleConfigLoader;
 import com.relationdetector.core.naming.NamingRuleSet;
 
-/** Resolves user rule files and builds the single immutable naming rule set for a scan. */
+/**
+ * CN: 解析 naming rule file 路径、加载用户规则并与 inline rules 合并为 scan 唯一不可变规则集。
+ * EN: Resolves rule-file paths and merges file and inline naming rules into the single immutable rule set for a scan.
+ */
 final class NamingRuleSetResolver {
     private final NamingRuleConfigLoader loader = new NamingRuleConfigLoader();
 

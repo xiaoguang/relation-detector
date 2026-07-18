@@ -20,8 +20,8 @@ import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.mysql.script.MySqlScriptFramer;
 
 /**
- *
- * Extracts MySQL log record payloads without classifying SQL by raw text.
+ * CN: 将 plain、general 和 slow log records 转换为带来源位置的 framed statements；SQL 结构由下游 typed parser 判定，读取失败只产生诊断，不在日志文本上生成事实。
+ * EN: Converts plain, general, and slow-log records into framed statements with source locations. Downstream typed parsers classify SQL structure; log text itself never creates facts.
  */
 public final class MySqlLogExtractor implements SqlLogExtractor {
     private final MySqlScriptFramer scriptFramer;

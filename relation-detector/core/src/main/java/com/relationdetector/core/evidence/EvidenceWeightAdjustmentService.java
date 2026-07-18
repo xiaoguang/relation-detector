@@ -10,7 +10,10 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.core.naming.NamingEvidencePool;
 
-/** Applies the adaptor weight hook once to relationship and naming observations before merge. */
+/**
+ * CN: 在 merger 前对 relationship 和 naming observations 各执行一次 adaptor evidence weight hook，不改变事实身份。
+ * EN: Applies an adaptor evidence-weight hook once to relationship and naming observations before merge without changing fact identity.
+ */
 public final class EvidenceWeightAdjustmentService {
     private static final BigDecimal MIN_SCORE = BigDecimal.ONE.negate();
     private static final BigDecimal MAX_SCORE = BigDecimal.ONE;

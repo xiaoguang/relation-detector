@@ -3,8 +3,8 @@ package com.relationdetector.core.metadata;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
 
 /**
- *
- * Defines when a multi-column index can support a single endpoint.
+ * CN: 明确组合索引对单 endpoint 的证据边界：首列可支持 lookup，但只有单列 unique 才证明单列唯一。
+ * EN: Defines single-endpoint index evidence: a leading column may support lookup, but only a single-column unique index proves uniqueness.
  */
 public final class IndexEvidencePolicy {
     public boolean provesSingleColumnUnique(MetadataIndexFact index, String column) {

@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
- * Shared MySQL full-grammar DDL parser lifecycle.
+ * CN: 编排 version binding 的 DDL parse、typed event collection 和诊断装配；返回 StructuredParseResult，不从 parser 文本补造 DDL 事实。
+ * EN: Orchestrates version-bound DDL parsing, typed event collection, and diagnostic assembly into StructuredParseResult. It never reconstructs DDL facts from parser text.
  */
 public abstract class AbstractMySqlFullGrammarStructuredDdlParser implements StructuredDdlParser {
     private final MySqlFullGrammarDdlBinding binding;

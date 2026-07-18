@@ -3,8 +3,8 @@ package com.relationdetector.contracts.parse;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- *
- * Rowset, CTE, temporary-table, trigger-rowset, or table-reference event.
+ * CN: 表示物理表、CTE、临时表、trigger pseudo-rowset 或其他 typed rowset 引用。
+ * EN: Represents a physical table, CTE, temporary table, trigger pseudo-rowset, or other typed rowset reference.
  */
 public record RowsetEvent(
         StructuredParseEventType type,

@@ -4,8 +4,8 @@ import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 
 /**
- *
- * Validates requested scan sources before any live database connection is opened.
+ * CN: 在 live JDBC 打开前确认每个请求的 source 都有 adaptor capability 与可调用 collector/parser。
+ * EN: Validates that every requested source has an adaptor capability and callable collector/parser before live JDBC is opened.
  */
 final class ScanCapabilityValidator {
     void validate(ResolvedScanConfig config, DatabaseAdaptor adaptor) {

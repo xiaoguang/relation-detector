@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- *
- * Stateless transform policy shared by version-specific MySQL context adapters.
+ * CN: 统一 MySQL 5.7/8.0 expression 的 transform 分类优先级，输入 typed expression flags，输出稳定 LineageTransformType；不遍历 parse tree 或持有状态。
+ * EN: Defines transform-classification precedence shared by MySQL 5.7 and 8.0. It maps typed expression flags to stable LineageTransformType values without traversing trees or retaining state.
  */
 public final class MySqlTransformSemantics {
     private MySqlTransformSemantics() {

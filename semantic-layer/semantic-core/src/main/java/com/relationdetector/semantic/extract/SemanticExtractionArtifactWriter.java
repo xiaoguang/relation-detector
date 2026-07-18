@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-/** Writes prompt, evidence bundle, request, response, and extracted semantic document artifacts. */
+/**
+ * CN: 按固定 filenames 写出 prompt、evidence bundle、request、成功 response 和 normalized document；正式 result 必须带 evidence bundle 并通过 normalizer，I/O 失败不留伪成功状态。
+ * EN: Writes prompt, evidence bundle, request, successful response, and normalized document under fixed filenames. Formal results require evidence-backed normalization, and I/O failure never becomes a successful artifact.
+ */
 public final class SemanticExtractionArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();

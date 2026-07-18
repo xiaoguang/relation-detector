@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -151,8 +153,8 @@ final class SemanticCandidateBackfill {
 
     private String entityName(String endpointOrTable, Map<String, String> namesByPhysical) {
         String table = firstPresent(endpointOrTable, "");
-        if (table.contains(".")) {
-            table = SemanticNormalizationSupport.tableOf(table);
+        if (!namesByPhysical.containsKey(table) && table.contains(".")) {
+            table = PhysicalEndpointRef.column(table).table();
         }
         return namesByPhysical.getOrDefault(table, table);
     }

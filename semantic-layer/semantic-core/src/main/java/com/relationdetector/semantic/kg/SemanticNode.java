@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-/** Materialized KG node. */
+/**
+ * CN: KG 中一个已 materialize 的 node，保存 stable id、type、confidence、review、evidence 和 attributes；构造器规范默认值并冻结集合。
+ * EN: One materialized KG node carrying stable identity, type, confidence, review status, evidence, and attributes. Construction normalizes defaults and freezes collections.
+ */
 public record SemanticNode(
         String id,
         String type,

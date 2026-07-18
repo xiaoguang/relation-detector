@@ -12,6 +12,8 @@ import java.util.*;
 
 
 /**
+ * CN: 为 MySQL 8.0 generated lexer actions 提供版本号、SQL mode、MLE、版本注释和复合 token 支持；它接收字符流并维护单次 lexer 状态，不生成结构化事实。
+ * EN: Supplies MySQL 8.0 generated lexer actions with server version, SQL modes, MLE, version-comment handling, and compound-token support; it owns per-lexer state and emits no structured facts.
  *
  * The base lexer class provides a number of functions needed in actions in the lexer (grammar).
  */

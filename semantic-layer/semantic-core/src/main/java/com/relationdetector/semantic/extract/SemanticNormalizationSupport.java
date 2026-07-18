@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
+
 final class SemanticNormalizationSupport {
     private SemanticNormalizationSupport() {
     }
@@ -18,8 +20,7 @@ final class SemanticNormalizationSupport {
         if (endpoint == null || endpoint.isBlank()) {
             return "";
         }
-        int index = endpoint.lastIndexOf('.');
-        return index < 0 ? endpoint : endpoint.substring(0, index);
+        return PhysicalEndpointRef.column(endpoint).table();
     }
 
     static String slug(String value) {

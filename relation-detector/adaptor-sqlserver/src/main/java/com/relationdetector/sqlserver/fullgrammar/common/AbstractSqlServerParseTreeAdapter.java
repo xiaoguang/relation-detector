@@ -13,8 +13,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
 import com.relationdetector.core.fullgrammar.FullGrammarIdentifiers;
 
 /**
- *
- * Shared typed identifier/function/rowset semantics for versioned T-SQL contexts.
+ * CN: 为 version-local T-SQL adapters 提供 identifier、function 和 rowset 的公共无状态规范化；generated context 分类仍由版本子类显式注册，不通过 rule name 或反射。
+ * EN: Provides parser-neutral identifier, function, and rowset normalization for version-local T-SQL adapters. Version subclasses still register generated contexts explicitly without rule-name lookup or reflection.
  */
 public abstract class AbstractSqlServerParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter {
     protected AbstractSqlServerParseTreeAdapter(RoleBinding... bindings) {

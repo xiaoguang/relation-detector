@@ -17,7 +17,10 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.WarningSeverity;
 import com.relationdetector.contracts.Enums.WarningType;
 
-/** Validates the current relation-detector JSON wire contract before typed facts are created. */
+/**
+ * CN: 严格校验 JsonResultWriter 当前输出的 timestamp、database、fact shape、enum、evidence 和 warning contract；允许 attributes 扩展，但未知 enum 或错置 derived shape 失败。
+ * EN: Strictly validates the current JsonResultWriter contract for timestamps, database identity, fact shapes, enums, evidence, and warnings. Attribute extensions are allowed, but unknown enums or misplaced derived shapes fail.
+ */
 final class ScanResultContractValidator {
     private static final List<String> REQUIRED_ARRAYS = List.of(
             "relationships", "dataLineages", "derivedRelationships", "derivedDataLineages",

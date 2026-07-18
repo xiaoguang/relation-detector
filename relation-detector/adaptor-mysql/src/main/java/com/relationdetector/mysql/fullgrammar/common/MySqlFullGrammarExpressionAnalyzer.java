@@ -15,8 +15,8 @@ import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter.QueryParts;
 
 /**
- *
- * Shared MySQL expression semantics; generated context access stays in version adapters.
+ * CN: 基于 MySqlExpressionContextAdapter 分析 direct column、CASE、aggregate、scalar subquery 和 transform；输入是 typed context，输出 ExpressionTrace，不访问 versioned parser 类。
+ * EN: Analyzes direct columns, CASE, aggregates, scalar subqueries, and transforms through MySqlExpressionContextAdapter. It emits ExpressionTrace values without importing versioned parser classes.
  */
 public class MySqlFullGrammarExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     private final MySqlExpressionContextAdapter contexts;

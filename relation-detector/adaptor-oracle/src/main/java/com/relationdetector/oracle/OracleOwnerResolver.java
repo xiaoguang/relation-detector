@@ -7,8 +7,8 @@ import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
 
 /**
- *
- * Resolves the Oracle owner consistently for every live catalog collector.
+ * CN: 为 Oracle metadata、object、DDL 和 profile 统一解析 executable owner；显式 catalog 直接拒绝，schema 缺省时读取 connection schema/user，输出不猜测跨库身份。
+ * EN: Resolves one executable Oracle owner for metadata, object, DDL, and profile operations. Explicit catalog is rejected; absent schema falls back to connection schema or user without cross-database inference.
  */
 public final class OracleOwnerResolver {
     private OracleOwnerResolver() {

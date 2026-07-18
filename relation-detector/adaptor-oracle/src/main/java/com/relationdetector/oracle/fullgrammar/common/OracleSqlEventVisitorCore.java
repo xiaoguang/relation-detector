@@ -23,8 +23,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.WriteEvent;
 
 /**
- *
- * Shared per-parse state and typed event factory for Oracle full grammar.
+ * CN: 保存一次 Oracle full-grammar traversal 的 aliases、projection owners、routine scope 和 event sink，并提供 typed event factory；version visitor 决定结构，本类不导入 generated parser。
+ * EN: Owns per-traversal aliases, projection owners, routine scope, and event sinks for Oracle full-grammar while providing typed event factories. Version visitors decide structure; this core imports no generated parser.
  */
 public final class OracleSqlEventVisitorCore {
     private final SqlStatementRecord statement;

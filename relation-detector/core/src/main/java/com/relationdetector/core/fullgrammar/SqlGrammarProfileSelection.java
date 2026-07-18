@@ -1,8 +1,8 @@
 package com.relationdetector.core.fullgrammar;
 
 /**
- *
- * Result of selecting a versioned SQL grammar profile.
+ * CN: 承载 versioned SQL grammar profile 选择结果、fallback 标记和安全诊断上下文。
+ * EN: Carries a versioned SQL grammar selection, fallback flag, and safe diagnostic context.
  */
 public record SqlGrammarProfileSelection(
         SqlGrammarProfile profile,

@@ -5,8 +5,8 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- *
- * Equality, USING, EXISTS, IN, or tuple-IN predicate event.
+ * CN: 保存等值、USING、EXISTS、IN 或 tuple-IN 的 typed predicate 结构与守卫条件。
+ * EN: Carries typed equality, USING, EXISTS, IN, or tuple-IN predicate structure and guards.
  */
 public record PredicateEvent(
         StructuredParseEventType type,

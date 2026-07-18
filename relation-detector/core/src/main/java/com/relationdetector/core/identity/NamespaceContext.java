@@ -3,8 +3,8 @@ package com.relationdetector.core.identity;
 import java.util.List;
 
 /**
- *
- * Explicit catalog/schema resolution context for one scan or statement.
+ * CN: 承载一次 scan 或 statement 的显式 catalog、current schema 与 search path 解析上下文。
+ * EN: Carries explicit catalog, current schema, and search-path context for one scan or statement.
  */
 public record NamespaceContext(String catalog, String currentSchema, List<String> searchPath) {
     public NamespaceContext {

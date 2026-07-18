@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-/** Deterministic semantic event candidate grounded in relation-detector evidence. */
+/**
+ * CN: 保存由 write lineage 和 supporting relationships 确定生成的 event candidate、provenance、input/output endpoints 和 evidence refs；构造器冻结全部集合。
+ * EN: Carries a deterministic event candidate grounded in write lineage and supporting relationships, including provenance, endpoints, and evidence references, with all collections frozen.
+ */
 public record SemanticEventCandidate(
         String id,
         String eventKind,

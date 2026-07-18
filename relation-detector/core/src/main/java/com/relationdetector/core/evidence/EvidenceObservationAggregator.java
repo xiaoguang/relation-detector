@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- *
- * Shared exact-folding and grouped-summary mechanics for evidence observations.
+ * CN: 统一完全重复 observation 折叠与证据摘要分组，保留不同 SQL 位置的审计身份。
+ * EN: Centralizes exact-observation folding and evidence summaries while preserving distinct SQL locations.
  */
 public final class EvidenceObservationAggregator<O> {
     private static final int MAX_SAMPLE_DETAILS = 5;

@@ -11,8 +11,8 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 
 /**
- *
- * Validates the absolute source-location contract shared by all parser frontends.
+ * CN: 验证所有 parser frontend 共用的 absolute source-line 契约，阻止越界行号和绝对路径进入 evidence。
+ * EN: Validates the absolute source-line contract shared by all parser frontends and rejects out-of-range lines or absolute paths.
  */
 public final class SourceProvenanceValidator {
     public List<WarningMessage> validate(SqlStatementRecord statement, StructuredParseResult result) {

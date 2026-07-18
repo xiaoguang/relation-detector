@@ -17,8 +17,8 @@ import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.mysql.MySqlCatalogScope;
 
 /**
- *
- * Collects complete MySQL object declarations through {@code SHOW CREATE}.
+ * CN: 枚举 MySQL routine、view、trigger 和 event，并通过对应 SHOW CREATE 获取完整对象声明；空定义或权限失败产生安全 warning，fragment 不会进入 object parser。
+ * EN: Enumerates MySQL routines, views, triggers, and events and retrieves complete declarations through the matching SHOW CREATE command. Missing or inaccessible definitions are warned and never passed downstream as fragments.
  */
 public final class MySqlObjectCollector implements ObjectDefinitionCollector {
     @Override

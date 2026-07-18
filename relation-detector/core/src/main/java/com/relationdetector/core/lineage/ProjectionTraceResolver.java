@@ -20,8 +20,8 @@ import com.relationdetector.core.identity.AliasSymbolTable;
 import com.relationdetector.core.lineage.model.ProjectionTrace;
 
 /**
- *
- * Resolves CTE / derived-table projection aliases from structured parser events.
+ * CN: 从 structured parser events 建立 CTE/derived projection traces，按 alias scope 把输出列回溯到物理 sources。
+ * EN: Builds CTE and derived projection traces from structured events and resolves output columns back to physical sources within alias scope.
  */
 final class ProjectionTraceResolver {
     private final Map<String, ProjectionTrace> traces;
@@ -44,6 +44,16 @@ final class ProjectionTraceResolver {
         this.declaredProjectionKeys = Set.copyOf(declaredProjectionKeys);
     }
 
+    /**
+     * CN: 对一个 statement 的 typed projection events 反复求不动点，把 CTE、derived
+     * table 和 wildcard 输出解析为物理 source trace。无法唯一解析的 anchor 保持未解析，
+     * 不做名称猜测；结果供 write mapping lineage 使用。
+     *
+     * EN: Computes a fixed point over one statement's typed projection events,
+     * resolving CTE, derived-table, and wildcard outputs to physical source traces.
+     * Ambiguous anchors stay unresolved without name guessing; write-lineage
+     * mapping consumes the immutable result.
+     */
     static ProjectionTraceResolver fromEvents(
             List<StructuredSqlEvent> events,
             AliasSymbolTable aliases,

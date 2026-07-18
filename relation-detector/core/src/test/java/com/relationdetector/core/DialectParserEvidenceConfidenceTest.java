@@ -43,7 +43,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
  */
 class DialectParserEvidenceConfidenceTest {
     private final StructuredSqlRelationshipParser parser = new StructuredSqlRelationshipParser(
-            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
+            new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL));
     private final RelationshipMerger merger = new RelationshipMerger();
 
     @Test

@@ -18,8 +18,8 @@ import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**
- *
- * Collects Oracle table DDL through DBMS_METADATA.
+ * CN: 在统一 owner 下枚举 in-scope tables，并用 DBMS_METADATA.GET_DDL 获取声明文本供 structured DDL parser 消费；空定义和查询失败产生脱敏 warning，不构造 null DDL。
+ * EN: Enumerates in-scope tables under the resolved owner and reads declarations with DBMS_METADATA.GET_DDL for the structured DDL parser. Missing definitions and query failures are sanitized; null DDL is never emitted.
  */
 public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
     @Override

@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * CN: 表示经配置的 naming rule、适用 scope、source/target matcher 与定向提示，本身不生成 relationship。
+ * EN: Represents a configured naming rule, scope, endpoint matchers, and direction hint without creating relationships by itself.
+ */
 public record NamingRule(
         String id,
         String rule,

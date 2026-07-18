@@ -9,12 +9,10 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
 
 /**
- *
- * Inferred transitive path fact.
- *
- * <p>CN: 这是由已确认的 relationship / Data Lineage / naming evidence 图推导出来的
+ * CN: 这是由已确认的 relationship / Data Lineage / naming evidence 图推导出来的
  * 可达事实，不代表直接物理约束或直接字段写入。完整路径必须保存在 path 和 evidence 中，
- * 方便审计。</p>
+ * 方便审计。
+ * EN: Represents an inferred transitive path over confirmed relationship, lineage, or naming facts; it is not a direct physical observation and retains its full audit path.
  */
 public final class DerivedPathCandidate {
     private final DerivedPathKind kind;

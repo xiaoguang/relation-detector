@@ -9,8 +9,8 @@ import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
 /**
- *
- * Typed traversal facade for the SQL Server token-event structural grammar.
+ * CN: 遍历 compact T-SQL grammar 的 rowset、predicate、write、trigger 和 DDL contexts 并发射 token events；inserted/deleted 通过 typed pseudo-rowset 解析，不调用 full-grammar。
+ * EN: Traverses rowset, predicate, write, trigger, and DDL contexts from the compact T-SQL grammar and emits token events. inserted/deleted are typed pseudo-rowsets, with no full-grammar delegation.
  */
 public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEventWriteDdlSupport {
     public SqlServerTokenEventParseTreeVisitor(SqlStatementRecord statement) {

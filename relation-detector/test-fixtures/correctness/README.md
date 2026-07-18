@@ -4,7 +4,7 @@ This directory is the shared baseline for parser and relationship correctness.
 Large SQL/DDL inputs and their expected relationship output should live here
 instead of being embedded as long Java strings.
 
-See `docs/relation-detector/test-assets-map.md` for the full test directory map, Java test
+See `docs/guides/relation-detector/test-assets-map.md` for the full test directory map, Java test
 classification, fixture classification, and parser primary acceptance matrix.
 
 ## Case Layout

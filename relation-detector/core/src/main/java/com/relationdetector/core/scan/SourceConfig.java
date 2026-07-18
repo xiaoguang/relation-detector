@@ -6,8 +6,8 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 
 /**
- *
- * Immutable source collection configuration.
+ * CN: 承载 metadata、DDL、database objects 与 logs 的不可变 source 开关及已解析文件列表。
+ * EN: Carries immutable metadata, DDL, database-object, and log source switches and resolved file lists.
  */
 public record SourceConfig(
         boolean metadataEnabled,

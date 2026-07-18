@@ -3,7 +3,10 @@ package com.relationdetector.semantic.graph;
 import java.math.BigDecimal;
 import java.util.Map;
 
-/** One resolved evidence observation copied from relation-detector output. */
+/**
+ * CN: 从 relation-detector fact 中解析的一条稳定 evidence observation，保存类型、来源、得分、detail 和 attributes；不会改变原始 evidence 分类。
+ * EN: One stable evidence observation resolved from relation-detector output with type, source, score, detail, and attributes. It never changes the original evidence classification.
+ */
 public record EvidenceReference(
         String id,
         String evidenceType,

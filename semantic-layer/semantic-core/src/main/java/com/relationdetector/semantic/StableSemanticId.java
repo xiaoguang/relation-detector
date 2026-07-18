@@ -9,7 +9,10 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/** Creates full-length content IDs from canonical semantic identity components. */
+/**
+ * CN: 对长度分隔的 canonical identity components 或排序 JSON 计算完整 SHA-256 content id；输出确定且无全局状态，不负责选择业务 identity 字段。
+ * EN: Computes full SHA-256 content ids from length-delimited canonical components or ordered JSON. Output is deterministic and stateless; callers choose the business identity fields.
+ */
 public final class StableSemanticId {
     private StableSemanticId() {
     }

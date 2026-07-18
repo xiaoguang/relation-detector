@@ -6,7 +6,10 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.graph.EvidenceReference;
 
-/** Evidence-backed semantic knowledge graph artifact. */
+/**
+ * CN: 最终 evidence-backed KG artifact，聚合 deterministic build metadata、summary、nodes、edges、evidence 和 diagnostics；所有集合在构造时冻结。
+ * EN: Final evidence-backed KG artifact containing deterministic build metadata, summary, nodes, edges, evidence, and diagnostics, with collections frozen at construction.
+ */
 public record SemanticKnowledgeGraph(
         Map<String, Object> buildRun,
         Map<String, Integer> summary,

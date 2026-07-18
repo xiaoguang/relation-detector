@@ -20,8 +20,8 @@ import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
- *
- * Builds immutable adjacency once and enumerates bounded, cycle-free paths.
+ * CN: 从已合并的 direct facts 构建不可变邻接表，并在配额内枚举无环 derived paths。
+ * EN: Builds immutable adjacency from merged direct facts and enumerates bounded, cycle-free derived paths.
  */
 final class DerivedPathGraphBuilder {
     private final ScanConfig config;

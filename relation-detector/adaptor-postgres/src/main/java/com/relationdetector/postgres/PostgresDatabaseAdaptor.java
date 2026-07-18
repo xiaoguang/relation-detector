@@ -23,8 +23,8 @@ import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlP
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 /**
- *
- * PostgreSQL 12+ adaptor implementing the Phase 5 design.
+ * CN: 组装 PostgreSQL catalog/schema resolution、token-event parser、v16/v17/v18 profiles、live collectors 与 profiler；它只声明 SPI v6 能力，不解析或合并事实。
+ * EN: Assembles PostgreSQL catalog/schema resolution, token-event parsing, v16/v17/v18 profiles, live collectors, and profiling behind SPI v6; it neither parses nor merges facts itself.
  */
 public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
     public PostgresDatabaseAdaptor() {

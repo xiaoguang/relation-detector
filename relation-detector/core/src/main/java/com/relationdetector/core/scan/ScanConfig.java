@@ -12,8 +12,8 @@ import com.relationdetector.core.naming.NamingRule;
 import com.relationdetector.core.naming.NamingRuleSet;
 
 /**
- *
- * Mutable YAML/CLI input DTO. Production scans immediately snapshot it into a
+ * CN: 这是 CLI/YAML 与 direct API 共用的可变输入 DTO；生产 scan 会立即将它快照为已验证的不可变配置。
+ * EN: Mutable YAML/CLI and direct-API input DTO. Production scans immediately snapshot it into a
  * {@link ResolvedScanConfig}; callers may keep using this class to assemble
  * configuration without exposing mutable state to a running scan.
  */

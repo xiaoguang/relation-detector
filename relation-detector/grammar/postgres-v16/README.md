@@ -31,3 +31,8 @@ Known boundary note:
 - PostgreSQL 16 must not accept PostgreSQL 17/18-only syntax in strict
   correctness fixtures. If this grammar accepts such syntax, treat it as a
   grammar pollution bug unless PostgreSQL official sources prove otherwise.
+
+The adaptor keeps v16-local generated-context adapters, visitors, and the v16
+PL/pgSQL shell bridge. This duplication is intentional: generated contexts are
+version contracts. Shared helpers must not import generated parser classes or
+delegate parsing to another PostgreSQL profile.

@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 
-/** Writes semantic-layer KG artifacts as stable pretty JSON. */
+/**
+ * CN: 将已构建的 KG、build-run 和 evidence graph 稳定序列化为 pretty JSON，并写入固定 filenames；I/O 失败明确抛出，不改变 graph。
+ * EN: Serializes built KG, build-run, and evidence graph artifacts as stable pretty JSON under fixed filenames. I/O failures propagate and graph content is never mutated.
+ */
 public final class JsonSemanticKgWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 

@@ -31,7 +31,7 @@ import com.relationdetector.core.parse.SqlDialect;
  * StructuredParseResult attributes.
  */
 public abstract class TypedDialectTokenEventStructuredSqlParser<R extends ParserRuleContext>
-        extends TokenEventStructuredSqlParser {
+        extends CommonTokenEventStructuredSqlParser {
     private final SqlDialect dialect;
     private final String grammarName;
     private final String lexerName;

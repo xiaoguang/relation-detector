@@ -26,7 +26,7 @@ class FullGrammarStructuredSqlParserFactoryTest {
                                 .databaseType(DatabaseType.MYSQL)
                                 .configuredVersion("9.0")
                                 .build(),
-                        new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
+                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL),
                         List.of(new FakeModule()));
 
         SqlStatementRecord statement = new SqlStatementRecord(

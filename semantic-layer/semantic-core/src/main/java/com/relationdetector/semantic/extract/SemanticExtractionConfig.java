@@ -3,7 +3,10 @@ package com.relationdetector.semantic.extract;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Runtime configuration for semantic extraction. */
+/**
+ * CN: semantic extraction command 的不可变 runtime config，规范 provider、inputs、model、limits 和 output defaults；不读取环境变量或执行请求。
+ * EN: Immutable runtime configuration for semantic extraction commands, normalizing provider, inputs, model, limits, and output defaults. It neither reads environment variables nor executes requests.
+ */
 public record SemanticExtractionConfig(
         String provider,
         List<Path> inputs,

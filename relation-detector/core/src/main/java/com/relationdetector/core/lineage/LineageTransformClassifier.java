@@ -7,8 +7,8 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
 /**
- *
- * Shared, stateless classification rules for expression lineage transforms.
+ * CN: 提供无状态、跨方言的 expression lineage transform 优先级与精确 function-symbol 分类。
+ * EN: Provides stateless cross-dialect expression-lineage transform priority and exact function-symbol classification.
  */
 public final class LineageTransformClassifier {
     private static final Map<String, LineageTransformType> COMMON_FUNCTIONS = Map.ofEntries(

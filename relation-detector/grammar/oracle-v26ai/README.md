@@ -19,3 +19,8 @@ Vendored base:
 
 Local 26ai cut: inherits 19c/21c boundaries and accepts the tested
 `VECTOR(dimension, element_type)` column type.
+
+The adaptor keeps a 26ai-local generated-context adapter and visitor. This
+duplication is intentional because generated contexts define the version
+boundary at compile time. Shared collectors accept typed adapter views and do
+not import another Oracle version's parser classes.

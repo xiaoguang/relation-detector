@@ -7,7 +7,10 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/** Immutable typed relation-detector scan result consumed by semantic-layer. */
+/**
+ * CN: 保存一个或多个已通过 wire-contract 校验的 relation-detector facts、namespace、sources 和 summary，作为 semantic-layer 的不可变输入；不重新解析 SQL。
+ * EN: Immutable semantic-layer input containing wire-contract-validated relation-detector facts, namespace, sources, and summary from one or more scans. It never reparses SQL.
+ */
 public final class ScanBundle {
     private final String databaseType;
     private final String catalog;

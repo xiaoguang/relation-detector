@@ -3,8 +3,8 @@ package com.relationdetector.postgres.common;
 import java.util.List;
 
 /**
- *
- * Canonical ordinal layout shared by typed PostgreSQL set-operation visitors.
+ * CN: 表示 PostgreSQL UNION/UNION ALL 各 branch 的 canonical output ordinal 布局；visitor 提供 typed projection names，结果告诉 lineage 是否可安全按位置合并，不解析 SQL 文本。
+ * EN: Represents the canonical output-ordinal layout for PostgreSQL UNION branches. Typed visitors provide projection names; the result tells lineage whether positional merging is safe without parsing SQL text.
  */
 public record PostgresSetProjectionLayout(List<String> columns, boolean arityMatches) {
     public PostgresSetProjectionLayout {

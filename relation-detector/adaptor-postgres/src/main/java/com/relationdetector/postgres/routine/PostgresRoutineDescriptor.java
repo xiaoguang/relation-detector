@@ -2,6 +2,10 @@ package com.relationdetector.postgres.routine;
 
 import java.util.Map;
 
+/**
+ * CN: 保存 typed routine declaration 的语言、body、对象 identity 和 source provenance，供 language dispatcher 选择当前 parser mode 的 body parser；不携带推测字段。
+ * EN: Carries the typed routine language, body, object identity, and source provenance used by the language dispatcher to select the current parser-mode body parser, with no inferred fields.
+ */
 public record PostgresRoutineDescriptor(
         String declaredLanguage,
         PostgresRoutineBody body,

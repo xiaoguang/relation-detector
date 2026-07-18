@@ -6,7 +6,10 @@ import com.relationdetector.semantic.extract.SemanticReferenceValidator.Session;
 import com.relationdetector.semantic.extract.SemanticSectionNormalizer.NormalizationResult;
 import com.relationdetector.semantic.extract.model.SemanticExtractionDocument;
 
-/** Coordinates typed, ref-closed normalization of LLM semantic extraction output. */
+/**
+ * CN: 编排 typed document decode、candidate backfill、section normalization、ID/reference/physical validation、review 和 graph assembly；缺少 evidence bundle 或 closure 失败时原子拒绝。
+ * EN: Orchestrates typed document decoding, candidate backfill, section normalization, id/reference/physical validation, review generation, and graph assembly. Missing evidence or failed closure rejects the result atomically.
+ */
 public final class SemanticExtractionDocumentNormalizer {
     private final SemanticExtractionDocumentCodec codec;
     private final SemanticCandidateBackfill candidateBackfill;

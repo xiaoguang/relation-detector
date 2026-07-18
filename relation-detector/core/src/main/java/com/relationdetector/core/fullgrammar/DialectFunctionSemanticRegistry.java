@@ -7,8 +7,8 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
 /**
- *
- * Immutable dialect function semantics keyed by exact parsed function symbols.
+ * CN: 按 typed parser 返回的精确 function symbol 查找不可变 transform 语义，不参与表列命名推测。
+ * EN: Resolves immutable transform semantics by exact parsed function symbol without participating in table or column naming inference.
  */
 public final class DialectFunctionSemanticRegistry {
     private static final Map<String, LineageTransformType> STANDARD = Map.ofEntries(

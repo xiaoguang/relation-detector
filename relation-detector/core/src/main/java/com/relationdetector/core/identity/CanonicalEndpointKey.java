@@ -7,8 +7,8 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
- *
- * Exact catalog/schema/table/column identity used for cross-source evidence lookup.
+ * CN: 表示跨 source evidence lookup 使用的精确 catalog/schema/table/column 身份，空 namespace 不自动降级。
+ * EN: Represents exact catalog/schema/table/column identity for cross-source evidence lookup without namespace fallback.
  */
 public record CanonicalEndpointKey(String catalog, String schema, String table, String column) {
     public CanonicalEndpointKey {

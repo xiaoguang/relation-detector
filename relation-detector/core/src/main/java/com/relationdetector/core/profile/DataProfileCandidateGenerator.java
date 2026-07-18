@@ -28,8 +28,8 @@ import com.relationdetector.core.metadata.IndexEvidencePolicy;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
- *
- * Selects bounded data-profile candidates without scanning arbitrary columns.
+ * CN: 从已有 relationship、naming 和 metadata 中选择有界 live profile candidates，不扫描任意列。
+ * EN: Selects bounded live-profile candidates from existing relationship, naming, and metadata facts without scanning arbitrary columns.
  */
 public final class DataProfileCandidateGenerator {
     private final IndexEvidencePolicy indexPolicy = new IndexEvidencePolicy();

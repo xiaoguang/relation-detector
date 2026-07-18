@@ -16,8 +16,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
- *
- * Shared Oracle full-grammar ANTLR lifecycle.
+ * CN: 创建一次 Oracle lexer/parser、安装 syntax counter 并返回 typed root；版本 binding 提供 constructors 和 entry rule，本类不缓存 parser state 或生成事实。
+ * EN: Creates one Oracle lexer/parser, installs syntax counting, and returns the typed root. Version bindings supply constructors and entry rules; this lifecycle neither caches parser state nor emits facts.
  */
 public final class OracleFullGrammarParseSupport {
     private OracleFullGrammarParseSupport() {

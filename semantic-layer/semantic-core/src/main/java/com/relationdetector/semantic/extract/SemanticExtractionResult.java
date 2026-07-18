@@ -2,7 +2,10 @@ package com.relationdetector.semantic.extract;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/** Result of an LLM semantic extraction request. */
+/**
+ * CN: 保存一次成功 LLM extraction 的 request JSON、response JSON、output text 和 parsed response，供 artifact writer 审计；失败请求不构造该对象。
+ * EN: Carries request JSON, response JSON, output text, and parsed response from one successful LLM extraction for artifact auditing. Failed requests do not construct this value.
+ */
 public record SemanticExtractionResult(
         String requestJson,
         String responseJson,

@@ -5,8 +5,8 @@ import java.sql.Connection;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
- *
- * Inputs used to select a versioned full-grammar profile.
+ * CN: 承载选择 versioned full-grammar profile 所需的 database type、配置版本与可选 JDBC metadata 输入。
+ * EN: Carries database, configured version/profile, and optional JDBC metadata inputs for versioned full-grammar selection.
  */
 public record FullGrammarProfileRequest(
         DatabaseType databaseType,

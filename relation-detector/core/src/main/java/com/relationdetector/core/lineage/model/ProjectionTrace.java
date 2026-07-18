@@ -7,8 +7,8 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.model.Endpoint;
 
 /**
- *
- * Projection alias/source trace used by CTE and derived-table lineage.
+ * CN: 承载 CTE/derived-table lineage 使用的 projection endpoint、物理 sources、flow 与 transform。
+ * EN: Carries projection endpoint, physical sources, flow, and transform for CTE and derived-table lineage.
  */
 public record ProjectionTrace(
         Endpoint projection,

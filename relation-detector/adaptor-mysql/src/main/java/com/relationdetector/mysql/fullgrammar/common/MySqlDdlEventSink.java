@@ -6,8 +6,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.ddl.DdlEventBuilder;
 
 /**
- *
- * Shared DDL event sink for MySQL full-grammar visitors.
+ * CN: 接收 version visitor 已 typed 提取的 table、column、constraint 和 index 信息，委托 DdlEventBuilder 形成稳定 events；它不访问 generated context 或推断约束。
+ * EN: Accepts typed table, column, constraint, and index data from version visitors and delegates stable event construction to DdlEventBuilder. It neither reads generated contexts nor infers constraints.
  */
 public final class MySqlDdlEventSink {
     private final DdlEventBuilder builder;

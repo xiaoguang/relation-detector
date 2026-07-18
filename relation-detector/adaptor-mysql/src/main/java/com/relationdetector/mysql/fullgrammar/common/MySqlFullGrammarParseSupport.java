@@ -12,8 +12,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 /**
- *
- * Shared MySQL full-grammar ANTLR parse lifecycle.
+ * CN: 创建一次 MySQL lexer/parser、安装 syntax counter 并返回 root 与 visible tokens；版本包提供构造器和 entry rule，本类不缓存 parser state 或解释语义。
+ * EN: Creates one MySQL lexer/parser, attaches syntax counting, and returns the root plus visible tokens. Version packages supply constructors and entry rules; this support neither caches parser state nor interprets semantics.
  *
  * <p>Version packages provide generated lexer/parser constructors and entry
  * rules; this support class owns error listener setup and visible-token extraction.

@@ -1,8 +1,8 @@
 package com.relationdetector.contracts.parse;
 
 /**
- *
- * Parser-event source location and object provenance.
+ * CN: 统一承载 parser event 的文件、statement、行号、object 与 parser-mode provenance。
+ * EN: Carries file, statement, line, object, and parser-mode provenance for one parser event.
  */
 public record SourceProvenance(
         String sourceName,

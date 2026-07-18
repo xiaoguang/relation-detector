@@ -6,8 +6,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- *
- * Oracle routine-scope state shared by token-event and full-grammar visitors.
+ * CN: 保存一次 Oracle PL/SQL parse 的参数、局部变量和 nested block symbols，供 token/full column-read collector 排除非物理 endpoint；声明必须来自 typed context，不按 p_/v_ 前缀猜测。
+ * EN: Maintains parameters, local variables, and nested-block symbols for one Oracle PL/SQL parse so token/full column readers can exclude non-physical endpoints. Declarations must come from typed contexts, never p_/v_ prefixes.
  *
  * <p>Oracle PL/SQL bodies are parsed by the outer Oracle grammar, unlike
  * PostgreSQL dollar-quoted bodies that need a second body parser. This class

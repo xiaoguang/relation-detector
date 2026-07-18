@@ -3,7 +3,10 @@ package com.relationdetector.core.scan;
 import com.relationdetector.contracts.spi.AdaptorApiVersion;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 
-/** Validates adaptor identity and SPI compatibility before a scan opens JDBC. */
+/**
+ * CN: 在 JDBC 打开前验证 adaptor id、database type 与 SPI v6 二进制契约，旧插件不进入 scan。
+ * EN: Validates adaptor id, database type, and the SPI v6 binary contract before JDBC is opened.
+ */
 public final class AdaptorContractValidator {
     public void validate(DatabaseConfig database, DatabaseAdaptor adaptor) {
         validateSpiVersion(adaptor);

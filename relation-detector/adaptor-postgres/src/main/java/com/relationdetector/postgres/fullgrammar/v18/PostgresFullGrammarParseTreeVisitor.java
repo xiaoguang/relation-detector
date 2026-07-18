@@ -40,8 +40,8 @@ import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParserBa
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- *
- * PostgreSQL 18 typed parse-tree traversal; shared semantics stay in core/common helpers.
+ * CN: 直接遍历 PostgreSQL 18 generated contexts 并调用 v18 PL/pgSQL shell；共享 helper 只处理无 generated 依赖语义，不跨版本或 token-event delegate。
+ * EN: Traverses PostgreSQL 18 generated contexts directly and invokes only the v18 PL/pgSQL shell. Shared helpers remain parser-neutral; no cross-version or token-event delegation occurs.
  */
 final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;

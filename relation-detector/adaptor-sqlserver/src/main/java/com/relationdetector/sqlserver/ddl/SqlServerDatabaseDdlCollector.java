@@ -21,8 +21,8 @@ import com.relationdetector.sqlserver.SqlServerCatalogResolver;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**
- *
- * Collects SQL Server table DDL from INFORMATION_SCHEMA views.
+ * CN: 从 INFORMATION_SCHEMA 与 sys catalogs 重建供 structured parser 消费的 table skeleton，按 ordinal 配对 PK/UK/FK；输出不是可执行原始 DDL，查询失败产生脱敏 warning。
+ * EN: Reconstructs table skeletons for the structured parser from INFORMATION_SCHEMA and sys catalogs, pairing PK/UK/FK columns by ordinal. Output is not executable source DDL, and query failures are sanitized.
  */
 public final class SqlServerDatabaseDdlCollector implements DatabaseDdlCollector {
     @Override
@@ -171,6 +171,16 @@ public final class SqlServerDatabaseDdlCollector implements DatabaseDdlCollector
                 .toList();
     }
 
+    /**
+     * CN: 从 sys.foreign_key_columns 按 constraint_column_id 配对组合外键的子列和父列，
+     * 输出保持 ordinal 顺序的约束定义。查询失败向调用方传播以生成 sanitized live warning；
+     * 这里不以名称或 CONSTRAINT_COLUMN_USAGE 猜测配对。
+     *
+     * EN: Reconstructs composite foreign keys from sys.foreign_key_columns by
+     * pairing child and referenced columns on constraint_column_id and preserving
+     * ordinal order. Query failures propagate for sanitized live diagnostics; no
+     * name-based or CONSTRAINT_COLUMN_USAGE pairing is attempted.
+     */
     private List<ConstraintDef> foreignKeys(Connection connection, String schema, String tableName)
             throws Exception {
         String sql = """

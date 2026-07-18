@@ -17,8 +17,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
 /**
- *
- * Shared typed SQL Server collector; token-event remains independent.
+ * CN: 在一次 full-grammar parse 内按 version adapter 的 typed roles 收集 SQL/DDL events，维护 alias、projection、EXISTS 和 write-control state；不调用 token-event 或扫描 raw SQL。
+ * EN: Collects SQL and DDL events for one full-grammar parse using typed roles from the version adapter while maintaining alias, projection, EXISTS, and write-control state. It never invokes token-event or scans raw SQL.
  */
 public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSupport {
     private final SqlServerExpressionAnalyzer expressionAnalyzer;
@@ -58,6 +58,16 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
         return events;
     }
 
+    /**
+     * CN: 按 version adapter 提供的 typed role 分发一个 T-SQL context，向 SQL/DDL sink
+     * 写入事件并递归访问未消费的子树。未知 role 只做 typed-child traversal；本方法不按
+     * rule 名或原始 SQL 猜测结构。
+     *
+     * EN: Dispatches one T-SQL context by typed roles supplied by the version
+     * adapter, records SQL or DDL events, and visits unconsumed typed children.
+     * Unknown roles fall back only to child traversal, never rule-name or raw-text
+     * inference.
+     */
     private void visit(ParseTree tree) {
         if (tree == null) {
             return;

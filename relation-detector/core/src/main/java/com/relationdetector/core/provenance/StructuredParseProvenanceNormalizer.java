@@ -11,8 +11,8 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
- *
- * Normalizes generic statement provenance from typed parse events.
+ * CN: 根据 typed write/DDL/query events 规范化普通 statement 的 QUERY/SQL_WRITE provenance，不覆盖显式 object type。
+ * EN: Normalizes generic statement provenance to QUERY or SQL_WRITE from typed events without overriding explicit object types.
  */
 public final class StructuredParseProvenanceNormalizer {
     private static final Set<StructuredParseEventType> WRITE_EVENTS = EnumSet.of(

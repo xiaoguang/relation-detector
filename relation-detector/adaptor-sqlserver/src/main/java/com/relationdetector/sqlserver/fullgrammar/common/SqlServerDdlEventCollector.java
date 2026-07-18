@@ -14,8 +14,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.DdlCons
 import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
 
 /**
- *
- * Per-parse DDL event collector used by the SQL Server full grammar.
+ * CN: 从 version adapter 已 typed 分类的 T-SQL DDL contexts 收集 columns、keys、FK 和 indexes，按组合 ordinal 发射 events；状态仅属于当前 parse。
+ * EN: Collects columns, keys, foreign keys, and indexes from typed T-SQL DDL contexts supplied by the version adapter and emits composite groups by ordinal. State is per parse only.
  */
 final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
     private final DdlEventBuilder builder;

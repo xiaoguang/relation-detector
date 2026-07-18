@@ -23,8 +23,8 @@ import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
 /**
- *
- * MySQL 5.7/8.0 adaptor implementing the Phase 4 design.
+ * CN: 组装 MySQL 的 catalog identity、token-event parser、script framer、live collectors 和 profiler，向 core 暴露 SPI v6 能力；版本 full-grammar 由 profile binding 选择，本类不解析 SQL 或合并事实。
+ * EN: Assembles MySQL catalog identity, token-event parsing, script framing, live collectors, and profiling behind SPI v6. Versioned full-grammar profiles are selected by bindings; this class neither parses SQL nor merges facts.
  */
 public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
     private static final IdentifierRules IDENTIFIER_RULES = new IdentifierRules() {

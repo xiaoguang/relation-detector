@@ -4,6 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /** Exact physical table and column registry derived from the supplied evidence bundle. */
 final class SemanticPhysicalReferenceIndex {
@@ -51,7 +52,7 @@ final class SemanticPhysicalReferenceIndex {
             if (tables.contains(endpoint)) {
                 continue;
             }
-            String table = tableOf(endpoint);
+            String table = PhysicalEndpointRef.column(endpoint).table();
             if (tables.contains(table)) {
                 columns.add(endpoint);
             }
@@ -73,8 +74,4 @@ final class SemanticPhysicalReferenceIndex {
         }
     }
 
-    private static String tableOf(String endpoint) {
-        int split = endpoint.lastIndexOf('.');
-        return split < 0 ? "" : endpoint.substring(0, split);
-    }
 }

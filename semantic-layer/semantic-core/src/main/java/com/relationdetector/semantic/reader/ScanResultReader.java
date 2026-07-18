@@ -13,7 +13,10 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/** Reads relation-detector JSON output into a semantic-layer ScanBundle. */
+/**
+ * CN: 读取并校验一个或多个 relation-detector JSON，转换 typed facts 后构造 ScanBundle；merge 要求 database identity 一致，任何 wire 错误整体失败。
+ * EN: Reads and validates one or more relation-detector JSON files, converts typed facts, and builds ScanBundle. Merging requires identical database identity and any wire error fails atomically.
+ */
 public final class ScanResultReader {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final ScanResultContractValidator contractValidator = new ScanResultContractValidator();

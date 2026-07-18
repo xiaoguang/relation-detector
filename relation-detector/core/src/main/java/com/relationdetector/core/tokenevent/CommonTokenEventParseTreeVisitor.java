@@ -12,8 +12,8 @@ import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
 /**
- *
- * Typed traversal facade for the portable common token-event grammar.
+ * CN: 遍历 portable common token-event parse tree，通过 emitter 产生 rowset、predicate、projection 和 write events，不承载方言专属规则。
+ * EN: Traverses the portable common token-event parse tree and emits rowset, predicate, projection, and write events without dialect-only rules.
  */
 public final class CommonTokenEventParseTreeVisitor extends CommonTokenEventWriteDdlSupport {
     public CommonTokenEventParseTreeVisitor(SqlStatementRecord statement) {

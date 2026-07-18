@@ -30,7 +30,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
  */
 class SqlParserAdditionalSourceTypesTest {
     private final StructuredSqlRelationshipParser parser = new StructuredSqlRelationshipParser(
-            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
+            new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL));
 
     @Test
     void materializedViewsAndRulesKeepDatabaseObjectSource() {

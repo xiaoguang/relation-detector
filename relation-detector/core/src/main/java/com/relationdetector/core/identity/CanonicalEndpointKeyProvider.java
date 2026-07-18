@@ -9,8 +9,8 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
- * Builds dialect-aware endpoint identities for internal fact aggregation.
- * Public endpoint display and reference strings remain owned by the model.
+ * CN: 使用 dialect rules 和 namespace 为内部 fact aggregation 生成 canonical endpoint keys，不改写公开显示名。
+ * EN: Builds dialect-aware canonical endpoint keys for internal fact aggregation without rewriting public display names.
  */
 public final class CanonicalEndpointKeyProvider {
     private static final IdentifierRules DEFAULT_RULES = value ->

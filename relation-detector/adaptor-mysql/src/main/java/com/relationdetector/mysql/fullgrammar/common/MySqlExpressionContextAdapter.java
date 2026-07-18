@@ -10,8 +10,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
 
 /**
- *
- * Version-owned typed access to generated MySQL expression contexts.
+ * CN: 将 version-local generated expression contexts 映射为共享 typed roles、columns 和 projection views；共享 analyzer 只依赖本接口，不接触 parser 类或 SQL 文本。
+ * EN: Maps version-local generated expression contexts to shared typed roles, columns, and projection views. Shared analyzers depend on this contract rather than parser classes or SQL text.
  */
 public interface MySqlExpressionContextAdapter extends FullGrammarParseTreeAdapter {
     boolean isArithmeticExpression(ParseTree tree);

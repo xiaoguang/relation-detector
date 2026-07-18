@@ -13,8 +13,8 @@ import com.relationdetector.core.script.ScriptFileExtractor;
 import com.relationdetector.oracle.script.OracleScriptFramer;
 
 /**
- *
- * Oracle log extractor backed by plain SQL statement splitting.
+ * CN: 读取 Oracle plain SQL log 并交给 Oracle script framer 生成带行号的 statements；不从 log 文本推断 relation，读取失败输出诊断。
+ * EN: Reads Oracle plain-SQL logs and delegates statement framing with source lines to the Oracle script framer. It does not infer relations from log text and reports read failures diagnostically.
  */
 public final class OracleLogExtractor implements SqlLogExtractor {
     private final OracleScriptFramer scriptFramer;

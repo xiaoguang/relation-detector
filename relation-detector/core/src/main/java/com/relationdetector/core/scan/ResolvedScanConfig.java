@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.nio.file.Path;
 
 /**
- *
- * Immutable runtime snapshot produced from the mutable YAML/CLI input DTO.
+ * CN: 将可变 YAML/CLI DTO 解析、合并并验证为 scan 使用的不可变 runtime snapshot。
+ * EN: Resolves, merges, and validates the mutable YAML/CLI DTO into the immutable runtime snapshot used by a scan.
  * JDBC discovery creates a new snapshot and never mutates the caller's DTO.
  */
 public record ResolvedScanConfig(

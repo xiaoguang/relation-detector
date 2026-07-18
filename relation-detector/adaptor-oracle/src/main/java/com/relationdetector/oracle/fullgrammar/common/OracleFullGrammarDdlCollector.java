@@ -11,8 +11,8 @@ import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTree
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Symbol;
 
 /**
- *
- * Per-parse Oracle DDL column, key, foreign-key and index collector.
+ * CN: 在一次 Oracle DDL parse 内遍历 adapter typed roles，按 ordinal 收集 columns、PK/UK/FK 和 indexes；输出交给 DDL core，不共享 mutable state。
+ * EN: Traverses adapter-provided typed roles during one Oracle DDL parse and collects columns, PK/UK/FK groups, and indexes by ordinal. Output goes to the DDL core with no shared mutable state.
  */
 final class OracleFullGrammarDdlCollector extends OracleFullGrammarParseTreeSupport {
     private final ArrayDeque<String> ddlTables = new ArrayDeque<>();

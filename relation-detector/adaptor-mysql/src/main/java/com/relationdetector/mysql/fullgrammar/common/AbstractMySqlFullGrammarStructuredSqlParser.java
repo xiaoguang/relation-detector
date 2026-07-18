@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
- * Shared MySQL full-grammar SQL parser lifecycle.
+ * CN: 编排 binding parse、event extraction、syntax warnings 和 result attributes；版本 binding 拥有 generated contexts，本类不修改 SQL 或回退到 token-event。
+ * EN: Orchestrates binding parse, event extraction, syntax warnings, and result attributes. Version bindings own generated contexts; this lifecycle neither rewrites SQL nor falls back to token-event.
  */
 public abstract class AbstractMySqlFullGrammarStructuredSqlParser implements StructuredSqlParser {
     private final MySqlFullGrammarSqlBinding binding;

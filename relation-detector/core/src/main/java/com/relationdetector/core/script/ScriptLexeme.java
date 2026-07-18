@@ -3,8 +3,8 @@ package com.relationdetector.core.script;
 import org.antlr.v4.runtime.Token;
 
 /**
- *
- * One generated-lexer token with its exact source interval.
+ * CN: 承载 generated script lexer token 的类别、原文与精确字符/行列区间。
+ * EN: Carries one generated script-lexer token with its category, text, and exact character and line/column interval.
  */
 public record ScriptLexeme(
         ScriptLexemeKind kind,

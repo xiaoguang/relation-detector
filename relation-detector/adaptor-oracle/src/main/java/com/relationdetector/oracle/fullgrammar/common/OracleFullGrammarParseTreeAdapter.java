@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- *
- * Version-owned typed classification of generated Oracle grammar contexts.
+ * CN: 由每个 Oracle version adapter 实现的 generated-context 分类契约，暴露 typed roles、columns 和 expression children；公共 collector 不通过 class name、反射或 SQL 文本判断结构。
+ * EN: Contract implemented by each Oracle version adapter to expose typed roles, columns, and expression children from generated contexts. Shared collectors use neither class names, reflection, nor SQL text.
  */
 public interface OracleFullGrammarParseTreeAdapter {
     enum Role {

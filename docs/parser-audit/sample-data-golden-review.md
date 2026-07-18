@@ -2,7 +2,7 @@
 
 > Historical audit snapshot. The fixture counts below describe the original sample-data import and
 > are intentionally retained as migration history. Current per-fixture totals live in
-> [`../relation-detector/test-assets-map.md`](../relation-detector/test-assets-map.md); current merged
+> [`../guides/relation-detector/test-assets-map.md`](../guides/relation-detector/test-assets-map.md); current merged
 > CLI totals live in [`parser-comparison-summary.md`](parser-comparison-summary.md).
 
 本文记录 `sample-data` ERP 样例 SQL 纳入 relation-detection correctness golden 的覆盖范围、解析结论和剩余差异。目标是让样例库同时承担两件事：

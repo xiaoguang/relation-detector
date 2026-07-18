@@ -13,12 +13,10 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
 /**
- *
- * Scan-scoped canonical naming evidence pool.
- *
- * <p>CN: namingEvidence 的唯一 scan 级证据池。调用方可以从 metadata、DDL
+ * CN: namingEvidence 的唯一 scan 级证据池。调用方可以从 metadata、DDL
  * inventory 或 SQL predicate 持续加入 observation；本类按稳定 id 合并，并为
- * relationship enhancer 提供 indexed lookup。</p>
+ * relationship enhancer 提供 indexed lookup。
+ * EN: Owns the scan-scoped canonical naming-evidence pool, merging observations by stable id and providing indexed lookup to relationship enhancement.
  */
 public final class NamingEvidencePool {
     private final CanonicalEndpointKeyProvider endpointKeys;

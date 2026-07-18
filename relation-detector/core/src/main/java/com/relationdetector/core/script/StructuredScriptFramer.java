@@ -9,8 +9,8 @@ import com.relationdetector.contracts.parse.ScriptFrameResult;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 /**
- *
- * Shared framing orchestrator fed exclusively by dialect-generated script lexer tokens.
+ * CN: 仅使用方言 generated script-lexer tokens 选择 planner 并装配 statements/provenance，不解析 server SQL 语义。
+ * EN: Selects a planner and assembles statements and provenance solely from dialect-generated script-lexer tokens without parsing server SQL semantics.
  */
 public final class StructuredScriptFramer extends ScriptFramingSupport {
     public ScriptFrameResult frame(

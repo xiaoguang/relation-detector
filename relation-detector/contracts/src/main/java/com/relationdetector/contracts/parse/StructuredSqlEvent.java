@@ -5,8 +5,8 @@ import java.util.List;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- *
- * Strongly typed parser fact shared by token-event and full-grammar frontends.
+ * CN: 定义 token-event 与 full-grammar 前端共用的 sealed typed parser 事件契约。
+ * EN: Defines the sealed typed parser-event contract shared by token-event and full-grammar frontends.
  */
 public sealed interface StructuredSqlEvent permits RowsetEvent, PredicateEvent,
         ProjectionEvent, WriteEvent, DdlEvent, DynamicSqlEvent {

@@ -7,6 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * CN: 将稳定排序后的 batch outcomes 汇总为 summary 和 case records，并通过 AtomicOutputWriter 写出 JSON；它保留 case error code，不执行或重试 scan。
+ * EN: Serializes ordered batch outcomes into summary and case records and writes JSON through AtomicOutputWriter. It preserves per-case error codes but never executes or retries scans.
+ */
 final class BatchReportWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final AtomicOutputWriter outputWriter = new AtomicOutputWriter();

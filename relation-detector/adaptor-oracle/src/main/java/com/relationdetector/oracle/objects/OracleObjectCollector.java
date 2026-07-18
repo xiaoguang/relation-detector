@@ -17,8 +17,8 @@ import com.relationdetector.oracle.OracleOwnerResolver;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
 /**
- *
- * Collects Oracle stored object declarations through ALL_OBJECTS and DBMS_METADATA.
+ * CN: 从 ALL_OBJECTS 枚举 routine、package、view、materialized view 和 trigger，并用 DBMS_METADATA 获取完整声明；partial success 保留已成功对象，空定义只产生安全 warning。
+ * EN: Enumerates routines, packages, views, materialized views, and triggers from ALL_OBJECTS and retrieves complete declarations through DBMS_METADATA. Partial success is preserved and blank definitions yield safe warnings only.
  */
 public final class OracleObjectCollector implements ObjectDefinitionCollector {
     @Override

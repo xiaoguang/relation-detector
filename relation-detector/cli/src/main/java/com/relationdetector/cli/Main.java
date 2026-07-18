@@ -6,8 +6,8 @@ import com.relationdetector.contracts.Enums.ErrorCode;
 import com.relationdetector.contracts.Enums.OutputFormat;
 
 /**
- *
- * CLI entry point. Kept dependency-free for the first implementation drop.
+ * CN: relation-detector CLI 的进程入口，只把参数交给 MainCommand 并映射退出码；scan、batch、配置加载和错误脱敏由专用组件负责，本类不执行业务扫描。
+ * EN: Process entry point for relation-detector CLI. It delegates arguments to MainCommand and applies the exit code; scanning, batching, configuration, and error sanitization remain in dedicated components.
  */
 public final class Main {
     private Main() {

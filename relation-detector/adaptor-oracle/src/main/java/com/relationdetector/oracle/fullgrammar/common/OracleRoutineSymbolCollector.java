@@ -6,8 +6,8 @@ import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTree
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
 /**
- *
- * Registers typed Oracle routine parameters and local variables.
+ * CN: 从 Oracle generated parameter/variable declaration contexts 登记当前 block symbols 到 OracleRoutineScope；只消费 typed declaration，不发现 column reads。
+ * EN: Registers symbols from typed Oracle parameter and variable-declaration contexts into the current OracleRoutineScope block. It consumes declarations only and does not discover column reads.
  */
 final class OracleRoutineSymbolCollector extends OracleFullGrammarParseTreeSupport {
     OracleRoutineSymbolCollector(

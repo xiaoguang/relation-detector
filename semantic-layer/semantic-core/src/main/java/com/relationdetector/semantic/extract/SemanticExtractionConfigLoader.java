@@ -9,7 +9,10 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
-/** Loads semantic extraction config from YAML or JSON. */
+/**
+ * CN: 从 YAML/JSON transport 读取 semantic extraction fields 并构造 typed config；文件/结构错误明确失败，不执行 scan、LLM 或 artifact writing。
+ * EN: Reads semantic extraction fields from YAML or JSON transport and creates typed configuration. File or shape errors fail explicitly; no scan, LLM call, or artifact writing occurs here.
+ */
 public final class SemanticExtractionConfigLoader {
     private static final YAMLMapper YAML = new YAMLMapper();
 

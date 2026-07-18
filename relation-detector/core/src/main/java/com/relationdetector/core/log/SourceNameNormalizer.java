@@ -3,8 +3,8 @@ package com.relationdetector.core.log;
 import java.nio.file.Path;
 
 /**
- *
- * Normalizes evidence source names without changing routine/object labels.
+ * CN: 将证据路径规范化为 repo-relative source name，同时保留 ROUTINE/object 等非路径标签。
+ * EN: Normalizes evidence paths to repository-relative source names while preserving ROUTINE and object labels.
  */
 public final class SourceNameNormalizer {
     private SourceNameNormalizer() {

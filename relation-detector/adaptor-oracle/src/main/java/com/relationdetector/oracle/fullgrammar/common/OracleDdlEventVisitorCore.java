@@ -7,8 +7,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
- *
- * Shared Oracle DDL event post-processing.
+ * CN: 将 Oracle DDL collector 的 typed table/column/key/index observations 规范化并写入 DdlEventBuilder；不读取 generated contexts，也不把组合键成员当单列唯一。
+ * EN: Normalizes typed Oracle table, column, key, and index observations into DdlEventBuilder. It does not read generated contexts or treat members of composite keys as individually unique.
  */
 public final class OracleDdlEventVisitorCore {
     private OracleDdlEventVisitorCore() {

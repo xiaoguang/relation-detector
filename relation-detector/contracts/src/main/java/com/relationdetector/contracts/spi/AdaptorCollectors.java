@@ -8,8 +8,8 @@ import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
 
 /**
- *
- * Grouped source collection capabilities exposed by a database adaptor.
+ * CN: 组装 database adaptor 可选的 metadata、object、database-DDL 与 log collectors。
+ * EN: Groups the optional metadata, object, database-DDL, and log collectors exposed by a database adaptor.
  *
  * <p>This is the only collector entry point in adaptor SPI v6. Optional
  * members make capability declarations executable: a declared live capability

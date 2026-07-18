@@ -38,8 +38,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- *
- * MySQL 5.7 typed parse-tree traversal; shared fact semantics remain in core.
+ * CN: 直接遍历 MySQL 5.7 generated contexts，提取 rowset、predicate、projection、write、routine 和 DDL events；公共无状态语义下沉到 common helper，但不跨版本 delegate。
+ * EN: Traverses MySQL 5.7 generated contexts directly to emit rowset, predicate, projection, write, routine, and DDL events. Stateless semantics may be shared, but parser traversal never delegates across versions.
  */
 final class MySqlFullGrammarParseTreeVisitor extends MySqlFullGrammarParserBaseVisitor<Void> {
     private final FullGrammarEventFacade sink;

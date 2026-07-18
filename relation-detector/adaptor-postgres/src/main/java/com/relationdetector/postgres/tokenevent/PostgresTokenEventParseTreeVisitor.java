@@ -24,8 +24,8 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.postgres.common.PostgresSetProjectionLayout;
 
 /**
- *
- * Typed traversal facade for the PostgreSQL token-event structural grammar.
+ * CN: 遍历 PostgreSQL compact grammar 的 typed SQL/DDL/routine declaration contexts 并发射 token-event；routine body 路由到 compact shell，绝不调用 versioned full parser。
+ * EN: Traverses typed SQL, DDL, and routine-declaration contexts from the compact PostgreSQL grammar and emits token events. Routine bodies route to the compact shell and never to versioned full parsers.
  */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEventWriteDdlSupport {
     private final boolean allowRoutineDispatch;

@@ -6,9 +6,8 @@ import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
- *
- * Small base class for adaptors that expose grouped collector/parser/profiling
- * capabilities.
+ * CN: 为内建 adaptor 固定组装不可变的 collector、parser、profiling 与 identifier 能力，不实现方言语义。
+ * EN: Assembles immutable collector, parser, profiling, and identifier capabilities for built-in adaptors without implementing dialect semantics.
  *
  * <p>SPI v6 exposes grouped optional collectors, typed parser capabilities,
  * profile outcomes, and a required dialect script framer. This base class

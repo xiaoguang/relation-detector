@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-/** Materialized KG edge. */
+/**
+ * CN: KG 中一个有向 materialized edge，保存 source/target、type、confidence 和 evidence refs；缺失 endpoint 明确失败，id 冲突由 builder 防御。
+ * EN: One directional materialized KG edge with source, target, type, confidence, and evidence references. Missing endpoints fail and builder checks defend against id conflicts.
+ */
 public record SemanticEdge(
         String id,
         String type,

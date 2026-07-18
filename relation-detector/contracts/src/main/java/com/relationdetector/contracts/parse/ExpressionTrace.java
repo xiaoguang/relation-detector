@@ -7,8 +7,8 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
 /**
- *
- * Typed expression dependency trace attached to projection and write events.
+ * CN: 保存 projection 或 write event 的 typed VALUE/CONTROL 来源、flow 与 transform 分类。
+ * EN: Carries typed VALUE/CONTROL sources, flow, and transform classification for projection and write events.
  */
 public record ExpressionTrace(
         List<ExpressionSource> sources,

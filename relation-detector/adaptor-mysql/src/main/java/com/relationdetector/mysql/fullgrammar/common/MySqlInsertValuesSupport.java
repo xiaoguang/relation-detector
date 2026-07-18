@@ -7,8 +7,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
 
 /**
- *
- * Emits typed INSERT VALUES mappings independently of versioned generated contexts.
+ * CN: 将 version visitor 提供的 typed INSERT target columns 与 VALUES expressions 按 ordinal 发射 write mappings；arity 不足时只处理可证明位置，不访问 generated parser。
+ * EN: Emits write mappings by ordinal from typed INSERT target columns and VALUES expressions supplied by version visitors. Only provable positions are used, with no generated-parser dependency.
  */
 public final class MySqlInsertValuesSupport {
     private MySqlInsertValuesSupport() {

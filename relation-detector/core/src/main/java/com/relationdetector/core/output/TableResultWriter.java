@@ -5,8 +5,8 @@ import java.util.stream.Collectors;
 import com.relationdetector.core.scan.ScanResult;
 
 /**
- *
- * Human-readable table writer for terminal use.
+ * CN: 将已合并 ScanResult 渲染为终端可读表格，不改变候选、证据或 confidence。
+ * EN: Renders a merged ScanResult as a terminal-readable table without changing candidates, evidence, or confidence.
  */
 public final class TableResultWriter {
     public String write(ScanResult result) {

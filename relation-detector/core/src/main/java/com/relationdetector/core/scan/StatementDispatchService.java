@@ -7,8 +7,8 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 /**
- *
- * Routes script-framed statements without inspecting SQL text.
+ * CN: 根据 Script Framer 给出的 typed source type 将 statements 分发到 DDL 与 query-body 链路，不检查 raw SQL text。
+ * EN: Routes framed statements to DDL and query-body paths from typed source metadata without inspecting raw SQL text.
  */
 final class StatementDispatchService {
     DdlFileDispatch dispatchDdlFile(List<SqlStatementRecord> statements, DatabaseType databaseType) {

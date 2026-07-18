@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.reader.ScanBundle;
 
-/** Creates the prompt used for LLM semantic extraction. */
+/**
+ * CN: 将 compact evidence bundle 装配为严格 evidence-grounded developer/user prompts；prompt 声明引用闭包与禁止发明规则，但不执行模型请求。
+ * EN: Assembles a compact evidence bundle into developer and user prompts that enforce evidence grounding and reference closure. It does not execute a model request.
+ */
 public final class SemanticExtractionPromptBuilder {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final SemanticExtractionBundleBuilder bundleBuilder;
@@ -30,6 +33,10 @@ public final class SemanticExtractionPromptBuilder {
         return new SemanticExtractionPrompt(developerPrompt(), userPrompt(evidenceBundle), evidenceBundle);
     }
 
+    /**
+     * CN: 返回固定 developer contract，约束模型只使用 bundle、保留 lineage、引用 event/triplet candidates 并输出 ref-closed document；无输入和副作用。
+     * EN: Returns the fixed developer contract requiring bundle-only reasoning, preserved lineage, candidate references, and ref-closed output. It has no input or side effects.
+     */
     private String developerPrompt() {
         return """
                 You are an Evidence-Grounded Semantic Extractor for enterprise database metadata.

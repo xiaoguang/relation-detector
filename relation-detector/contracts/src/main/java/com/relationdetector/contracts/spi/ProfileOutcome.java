@@ -6,8 +6,8 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.WarningMessage;
 
 /**
- *
- * Evidence and diagnostics produced by one live profiling request.
+ * CN: 承载一次有界 live profiling 请求的状态、证据和脱敏 warnings。
+ * EN: Carries status, evidence, and sanitized warnings from one bounded live profiling request.
  */
 public record ProfileOutcome(
         ProfileStatus status,

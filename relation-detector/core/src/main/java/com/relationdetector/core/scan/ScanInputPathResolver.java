@@ -10,7 +10,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Resolves configured file inputs once, before scan capability validation. */
+/**
+ * CN: 在 capability 验证前一次性展开 file/path/include 配置，为 direct API 与 CLI 提供相同输入语义。
+ * EN: Expands file/path/include configuration once before capability validation so direct API and CLI share input semantics.
+ */
 public final class ScanInputPathResolver {
     public List<Path> resolve(List<Path> files, List<Path> paths, List<String> includes, Path baseDirectory) {
         Path base = baseDirectory == null ? Path.of("") : baseDirectory;

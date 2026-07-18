@@ -15,8 +15,8 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
- *
- * Classifies native-log catalog noise from typed rowset events after parsing.
+ * CN: 仅根据 parse 后 typed physical rowset events 判断 native-log system-schema 噪声，structured parse 不可用时不猜测跳过。
+ * EN: Classifies native-log system-schema noise only from parsed typed physical rowsets and never guesses when structured parsing is unavailable.
  */
 public final class TypedLogNoiseClassifier {
     private TypedLogNoiseClassifier() {

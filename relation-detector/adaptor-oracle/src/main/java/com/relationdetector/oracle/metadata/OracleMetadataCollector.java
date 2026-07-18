@@ -32,8 +32,8 @@ import com.relationdetector.oracle.OracleOwnerResolver;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**
- *
- * Reads Oracle catalog facts with partial success for each catalog family.
+ * CN: 编排 Oracle table、column、constraint 和 index readers，按 family 保留 partial success 并稳定排序 facts/relationships；它不解析对象 DDL 或合并 evidence。
+ * EN: Orchestrates Oracle table, column, constraint, and index readers with per-family partial success and stable output ordering. It neither parses object DDL nor merges evidence.
  */
 public final class OracleMetadataCollector implements MetadataCollector {
     @Override

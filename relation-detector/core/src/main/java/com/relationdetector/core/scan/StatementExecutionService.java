@@ -25,8 +25,8 @@ import com.relationdetector.core.provenance.SourceProvenanceValidator;
 import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 
 /**
- *
- * Executes one SQL or DDL statement through the same structured parser,
+ * CN: 使一条 SQL 或 DDL statement 经过与生产 scan 相同的 structured parser、relationship 与 lineage 链路；naming 在 scan 级只运行一次。
+ * EN: Executes one SQL or DDL statement through the same structured parser,
  * relationship, and lineage path used by production scans. SQL naming rules run
  * once later in the scan-level evidence enhancement stage.
  */

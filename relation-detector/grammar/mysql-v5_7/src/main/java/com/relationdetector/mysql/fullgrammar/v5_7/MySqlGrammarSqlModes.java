@@ -10,6 +10,8 @@ package com.relationdetector.mysql.fullgrammar.v5_7;
 import java.util.*;
 
 /**
+ * CN: 将 MySQL 5.7 SQL_MODE 文本转换为生成 grammar actions 使用的运行标志；输入来自 lexer 配置，输出只影响该版本词法规则，不负责选择系统 parser mode 或推断 SQL 事实。
+ * EN: Converts MySQL 5.7 SQL_MODE text into flags consumed by generated grammar actions; the flags affect only this version's lexical behavior and never select parser modes or infer facts.
  *
  * Converts MySQL {@code SQL_MODE} strings into MySQL full-grammar runtime flags.
  *

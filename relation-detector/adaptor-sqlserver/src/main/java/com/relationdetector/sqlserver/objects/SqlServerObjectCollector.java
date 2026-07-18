@@ -17,8 +17,8 @@ import com.relationdetector.sqlserver.SqlServerCatalogResolver;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
 /**
- *
- * Collects SQL Server module declarations from sys.sql_modules.
+ * CN: 从 sys.sql_modules/sys.objects 读取 procedure、function、view 和 trigger 的完整 module definitions；null definition 产生安全 unavailable warning，不能进入 parser。
+ * EN: Reads complete procedure, function, view, and trigger module definitions from sys.sql_modules and sys.objects. Null definitions produce safe unavailable warnings and never reach parsers.
  */
 public final class SqlServerObjectCollector implements ObjectDefinitionCollector {
     @Override

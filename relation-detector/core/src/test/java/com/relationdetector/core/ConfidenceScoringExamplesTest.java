@@ -41,7 +41,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
  */
 class ConfidenceScoringExamplesTest {
     private final StructuredSqlRelationshipParser sqlParser = new StructuredSqlRelationshipParser(
-            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
+            new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL));
     private final TokenEventStructuredDdlParser ddlParser = new TokenEventStructuredDdlParser(SqlDialect.MYSQL);
     private final DdlRelationExtractionVisitor ddlVisitor = new DdlRelationExtractionVisitor();
     private final RelationshipMerger merger = new RelationshipMerger();

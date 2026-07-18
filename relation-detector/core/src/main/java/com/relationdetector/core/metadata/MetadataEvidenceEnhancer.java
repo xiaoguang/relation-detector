@@ -22,8 +22,8 @@ import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
 /**
- *
- * Adds catalog metadata evidence to already-discovered column relationships.
+ * CN: 仅向已发现的列关系增加 catalog metadata 证据，不从 index、unique key 或 type compatibility 凭空创建 relationship。
+ * EN: Adds catalog metadata evidence only to already discovered column relationships and never creates edges from indexes, uniqueness, or type compatibility alone.
  *
  * <p>This class is intentionally an enhancer, not a relationship generator.
  * Indexes, unique keys, and compatible types make an existing SQL/DDL/profile

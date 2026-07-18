@@ -7,8 +7,8 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeEventCollector;
 
 /**
- *
- * Oracle 12c generated-parser bridge to the shared full-grammar event collector.
+ * CN: 将 Oracle 12c generated root 与 12c typed adapter 交给共享 per-parse collector，返回 structured events；只桥接本版本，不解释 SQL 文本。
+ * EN: Connects an Oracle 12c generated root and 12c typed adapter to the shared per-parse collector and returns structured events, bridging only this version without interpreting SQL text.
  */
 public final class OracleFullGrammarParseTreeVisitor {
     private final OracleFullGrammarParseTreeEventCollector collector;

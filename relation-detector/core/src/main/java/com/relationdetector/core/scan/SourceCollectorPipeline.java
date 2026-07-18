@@ -23,6 +23,10 @@ import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.script.ScriptFileExtractor;
 
+/**
+ * CN: 按 metadata、DDL、object 与 log source 边界编排采集，对 live definition 做脱敏防御后才交给 statement parser。
+ * EN: Orchestrates metadata, DDL, object, and log collection and sanitizes live definitions before delegating them to statement parsing.
+ */
 final class SourceCollectorPipeline {
     private final ScriptFileExtractor scriptFileExtractor = new ScriptFileExtractor();
     private final StatementDispatchService statementDispatch = new StatementDispatchService();

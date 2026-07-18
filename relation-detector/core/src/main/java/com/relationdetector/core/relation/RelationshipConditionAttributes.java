@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Normalizes the complete typed guard array used by relationship observations.
+ * CN: 将 relationship observation 中的全部 typed guards 规范化为稳定 identity，同时保留首次输出顺序。
+ * EN: Normalizes the complete typed guard array used by relationship observations.
  * It preserves first-seen output order while producing an order-independent
  * identity. Legacy flattened fields are read only as a single-condition fallback.
  */

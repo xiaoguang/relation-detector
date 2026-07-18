@@ -4,7 +4,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Single immutable lookup used to validate semantic fact and evidence references. */
+/**
+ * CN: 从 EvidenceGraph 建立唯一不可变 id lookup，验证 semantic owners 的 fact/evidence refs 是否闭合；未解析引用明确失败，不按名称补全。
+ * EN: Builds one immutable id lookup from an EvidenceGraph to validate semantic fact and evidence-reference closure. Unresolved references fail without name-based completion.
+ */
 public final class ReferenceIndex {
     private final Set<String> resolvableIds;
 

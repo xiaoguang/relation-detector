@@ -7,8 +7,8 @@ import java.util.Map;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- *
- * Immutable class-to-role binding shared by version context adapters.
+ * CN: 为 version-local generated context adapter 保存不可变的 context-class 到 semantic-role 绑定，不使用反射名称。
+ * EN: Stores immutable generated-context-class to semantic-role bindings for version-local adapters without reflective names.
  */
 public abstract class AbstractFullGrammarParseTreeAdapter implements FullGrammarParseTreeAdapter {
     private final Map<Role, List<Class<?>>> roleTypes;

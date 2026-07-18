@@ -13,8 +13,8 @@ import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.relation.RelationshipConditionAttributes;
 
 /**
- *
- * Parser-neutral identity of one semantic relationship or lineage observation.
+ * CN: 定义一条 relationship/lineage observation 的 parser-neutral 语义身份，保留位置但忽略实现标记。
+ * EN: Defines parser-neutral identity for one relationship or lineage observation, retaining source position while ignoring implementation markers.
  */
 public record SemanticObservationFingerprint(
         String factKind,

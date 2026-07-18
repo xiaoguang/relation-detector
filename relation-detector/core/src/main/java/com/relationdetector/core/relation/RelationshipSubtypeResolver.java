@@ -6,8 +6,8 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 
 /**
- *
- * Resolves the strongest relationship subtype from merged evidence.
+ * CN: 按明确的 evidence 优先级为已合并 relationship 选择最强 subtype，不重新推断结构。
+ * EN: Resolves the strongest relationship subtype from merged evidence using explicit priority without re-inferring structure.
  */
 final class RelationshipSubtypeResolver {
     RelationSubType resolve(RelationshipCandidate candidate) {

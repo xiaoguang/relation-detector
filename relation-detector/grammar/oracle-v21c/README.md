@@ -20,3 +20,8 @@ Vendored base:
 
 Local 21c cut: inherits the 19c boundary and accepts `SQL_MACRO(SCALAR)` while
 rejecting 26ai `VECTOR`.
+
+The adaptor keeps a 21c-local generated-context adapter and visitor. This
+duplication is intentional because generated contexts define the version
+boundary at compile time. Shared collectors accept typed adapter views and do
+not import another Oracle version's parser classes.

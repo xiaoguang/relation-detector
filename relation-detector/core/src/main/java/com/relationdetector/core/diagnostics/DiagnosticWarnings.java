@@ -11,8 +11,8 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 
 /**
- *
- * Factory for operator-facing diagnostic warnings.
+ * CN: 为 parser、file 与 live-source failures 生成字段稳定、可审计且脱敏的 operator-facing warnings。
+ * EN: Builds stable, auditable, and sanitized operator-facing warnings for parser, file, and live-source failures.
  *
  * <p>Design mapping: parse/extraction failures are not relationship evidence,
  * but they are essential audit information. Keeping warning construction here

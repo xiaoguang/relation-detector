@@ -6,7 +6,10 @@ import java.util.Locale;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/** Stable ids for semantic-layer facts projected from relation-detector JSON. */
+/**
+ * CN: 从 relation-detector fact 的 canonical physical identity 和语义类型生成 semantic-layer stable ids；derived/direct 前缀分离，字段顺序固定，不使用运行路径或时间。
+ * EN: Produces stable semantic-layer ids from canonical physical identity and fact semantics, separating direct and derived prefixes with fixed field order and no runtime paths or timestamps.
+ */
 public final class SemanticFactIds {
     private SemanticFactIds() {
     }
@@ -80,14 +83,6 @@ public final class SemanticFactIds {
         }
         String tableName = schema.isBlank() ? table : schema + "." + table;
         return column.isBlank() ? tableName : tableName + "." + column;
-    }
-
-    public static String tableOfEndpoint(String endpoint) {
-        if (endpoint == null || endpoint.isBlank()) {
-            return "";
-        }
-        int index = endpoint.lastIndexOf('.');
-        return index < 0 ? endpoint : endpoint.substring(0, index);
     }
 
     public static String slug(String value) {

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.SemanticFactIds;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /** Converts raw JSON exactly once at the scan-result reader boundary. */
 final class ScanFactFactory {
@@ -17,8 +18,8 @@ final class ScanFactFactory {
             JsonNode node = document(value, "relationship");
             result.add(new ScanRelationshipFact(
                     SemanticFactIds.relationship(node, derived),
-                    SemanticFactIds.endpoint(node.path("source")),
-                    SemanticFactIds.endpoint(node.path("target")),
+                    PhysicalEndpointJsonReader.read(node.path("source")),
+                    PhysicalEndpointJsonReader.read(node.path("target")),
                     node.path("relationType").asText(node.path("kind").asText("")),
                     node.path("relationSubType").asText(""),
                     node.path("confidence").asDouble(0.0d),
@@ -34,8 +35,8 @@ final class ScanFactFactory {
             JsonNode node = document(value, "lineage");
             result.add(new ScanLineageFact(
                     SemanticFactIds.lineage(node, derived),
-                    SemanticFactIds.sources(node),
-                    SemanticFactIds.endpoint(node.path("target")),
+                    endpoints(node),
+                    PhysicalEndpointJsonReader.read(node.path("target")),
                     node.path("flowKind").asText(""),
                     node.path("transformType").asText(""),
                     node.path("confidence").asDouble(0.0d),
@@ -51,8 +52,8 @@ final class ScanFactFactory {
             JsonNode node = document(value, "naming evidence");
             result.add(new ScanNamingEvidenceFact(
                     SemanticFactIds.naming(node),
-                    SemanticFactIds.endpoint(node.path("source")),
-                    SemanticFactIds.endpoint(node.path("target")),
+                    PhysicalEndpointJsonReader.read(node.path("source")),
+                    PhysicalEndpointJsonReader.read(node.path("target")),
                     node.path("rule").asText(""),
                     node.path("directionHint").asBoolean(false),
                     node.path("confidence").asDouble(0.0d),
@@ -79,6 +80,18 @@ final class ScanFactFactory {
 
     private static List<?> safe(List<?> values) {
         return values == null ? List.of() : values;
+    }
+
+    private static List<PhysicalEndpointRef> endpoints(JsonNode lineage) {
+        List<PhysicalEndpointRef> result = new ArrayList<>();
+        JsonNode sources = lineage.path("sources");
+        if (sources.isArray()) {
+            sources.forEach(source -> result.add(PhysicalEndpointJsonReader.read(source)));
+        }
+        if (result.isEmpty() && lineage.path("source").isObject()) {
+            result.add(PhysicalEndpointJsonReader.read(lineage.path("source")));
+        }
+        return List.copyOf(result);
     }
 
     private static JsonNode document(Object value, String kind) {

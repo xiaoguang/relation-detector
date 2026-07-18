@@ -5,14 +5,17 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.relationdetector.semantic.reader.EndpointRef;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
-/** Semantic evidence graph fact derived directly from relation-detector records. */
+/**
+ * CN: relation-detector record 在 evidence graph 中的规范化 fact，保留 typed endpoints、confidence、payload 和 evidence refs；构造器只冻结数据，不推断业务语义。
+ * EN: Normalized evidence-graph fact derived directly from a relation-detector record, retaining typed endpoints, confidence, payload, and evidence references without business inference.
+ */
 public record EvidenceGraphFact(
         String id,
         String type,
         String label,
-        List<EndpointRef> endpoints,
+        List<PhysicalEndpointRef> endpoints,
         List<String> evidenceRefs,
         BigDecimal confidence,
         JsonNode payload,

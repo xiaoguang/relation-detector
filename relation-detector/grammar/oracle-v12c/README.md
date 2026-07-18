@@ -19,3 +19,8 @@ Vendored base:
 
 Local 12c cut: high-version boundaries currently covered by tests are rejected
 in grammar, including 19c `MEMOPTIMIZE`, 21c `SQL_MACRO`, and 26ai `VECTOR`.
+
+The adaptor keeps a 12c-local generated-context adapter and visitor. This
+duplication is intentional because generated contexts define the version
+boundary at compile time. Shared collectors accept typed adapter views and do
+not import another Oracle version's parser classes.

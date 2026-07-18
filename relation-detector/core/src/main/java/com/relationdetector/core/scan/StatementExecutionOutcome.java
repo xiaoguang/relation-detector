@@ -9,8 +9,8 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.ddl.DdlEvidenceInventory;
 
 /**
- *
- * Per-statement structured execution output before scan-level merge.
+ * CN: 承载 scan-level merge 前一条 statement 的 relationship、lineage、naming、warning 与 DDL inventory 输出。
+ * EN: Carries per-statement relationship, lineage, naming, warning, and DDL-inventory output before scan-level merge.
  */
 public record StatementExecutionOutcome(
         List<RelationshipCandidate> relationshipCandidates,

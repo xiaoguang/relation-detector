@@ -3,8 +3,8 @@ package com.relationdetector.contracts.parse;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- *
- * Foreign-key, index, unique-key, or column-inventory event.
+ * CN: 表示 typed DDL visitor 产生的外键、索引、唯一键或列清单事件。
+ * EN: Represents a foreign-key, index, unique-key, or column-inventory event emitted by a typed DDL visitor.
  */
 public record DdlEvent(
         StructuredParseEventType type,

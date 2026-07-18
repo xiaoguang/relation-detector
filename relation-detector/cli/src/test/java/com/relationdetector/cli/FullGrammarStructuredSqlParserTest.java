@@ -31,7 +31,7 @@ class FullGrammarStructuredSqlParserTest {
         StructuredParseResult result = FullGrammarStructuredSqlParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
-                        new TokenEventStructuredSqlParser(SqlDialect.MYSQL))
+                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL))
                 .parser()
                 .parseSql(statement, null);
 
@@ -59,7 +59,7 @@ class FullGrammarStructuredSqlParserTest {
         StructuredParseResult result = FullGrammarStructuredSqlParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
-                        new TokenEventStructuredSqlParser(SqlDialect.MYSQL))
+                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL))
                 .parser()
                 .parseSql(statement, null);
 
@@ -80,7 +80,7 @@ class FullGrammarStructuredSqlParserTest {
         StructuredParseResult result = FullGrammarStructuredSqlParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
-                        new TokenEventStructuredSqlParser(SqlDialect.MYSQL))
+                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL))
                 .parser()
                 .parseSql(statement, null);
 

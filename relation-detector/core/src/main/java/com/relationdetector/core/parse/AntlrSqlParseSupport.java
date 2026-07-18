@@ -24,11 +24,10 @@ import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
 /**
+ * CN: 负责 token-event parser 的 ANTLR lexer/parser 初始化、visible tokens 与 syntax diagnostics，不生成 relationship/lineage。
+ * EN: Owns ANTLR lexer/parser setup, visible tokens, and syntax diagnostics for token-event parsers without producing relationship or lineage facts.
  *
- * Low-level ANTLR SQL support for token-event parsers.
- *
- * <p>This class owns lexer/parser setup, visible token extraction, syntax
- * diagnostics, and dynamic SQL warning creation. It deliberately does not build
+ * <p>It also owns dynamic SQL warning creation. It deliberately does not build
  * relationship or lineage events; token-event builders consume the returned
  * tokens and own all business extraction semantics.
  */

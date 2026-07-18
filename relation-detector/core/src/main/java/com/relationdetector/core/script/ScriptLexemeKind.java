@@ -1,8 +1,8 @@
 package com.relationdetector.core.script;
 
 /**
- *
- * Structural token classes needed only for client-script framing.
+ * CN: 列举 client-script framing 使用的结构 token 类别，这些类别不生成 SQL 事实。
+ * EN: Enumerates structural token classes used only for client-script framing; they do not produce SQL facts.
  */
 public enum ScriptLexemeKind {
     WORD,

@@ -1,5 +1,9 @@
 package com.relationdetector.core.scan;
 
+/**
+ * CN: 编排 DDL inventory、scan-level enhancement 与 adaptor weight adjustment，保证一次 scan 只运行一套证据链路。
+ * EN: Orchestrates DDL inventory, scan-level enhancement, and adaptor weight adjustment so one scan uses a single evidence path.
+ */
 final class EvidenceEnhancementPipeline {
     private final EvidenceEnhancementService enhancementService = new EvidenceEnhancementService();
     private final com.relationdetector.core.evidence.EvidenceWeightAdjustmentService weightAdjustmentService =

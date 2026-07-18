@@ -20,11 +20,12 @@ import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 
 /**
- *
- * PostgreSQL DDL token-event parser backed by PostgresRelationSql.g4.
+ * CN: 使用 PostgreSQL compact grammar 直接生成 DDL events 和 diagnostics，供 root token-event profile 使用；不借用 common/full parser，也不做 scanner fallback。
+ * EN: Uses the PostgreSQL compact grammar to emit DDL events and diagnostics for the root token-event profile. It delegates to neither common/full parsers nor scanner fallbacks.
  *
  * <p>CN: root baseline DDL 走 PostgreSQL 自己的 typed grammar / visitor，
  * 不再借 common DDL parser，也不恢复 DDL cursor/scanner。
+ * EN: The root DDL baseline stays on its own typed grammar and visitor rather than common DDL parsing or cursor/scanner recovery.
  */
 public final class PostgresTokenEventStructuredDdlParser implements StructuredDdlParser {
     @Override

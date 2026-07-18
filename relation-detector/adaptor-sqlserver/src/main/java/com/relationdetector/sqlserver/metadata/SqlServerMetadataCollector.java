@@ -32,8 +32,8 @@ import com.relationdetector.sqlserver.SqlServerCatalogResolver;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**
- *
- * Reads SQL Server sys catalog facts with partial success for each family.
+ * CN: 编排 SQL Server table、column、constraint 与 index readers，保留每个 catalog family 的 partial success 并稳定排序 inventory/relationships；不重建 DDL 文本。
+ * EN: Orchestrates SQL Server table, column, constraint, and index readers with per-family partial success and stable inventory and relationship ordering. It does not reconstruct DDL text.
  */
 public final class SqlServerMetadataCollector implements MetadataCollector {
     @Override

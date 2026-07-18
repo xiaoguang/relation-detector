@@ -278,6 +278,18 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void removedLegacyAndDeadHelpersStayAbsent() throws IOException {
+        Path root = repoRoot();
+        assertFalse(Files.exists(root.resolve(
+                "core/src/main/java/com/relationdetector/core/tokenevent/TokenEventStructuredSqlParser.java")));
+        assertFalse(Files.exists(root.resolve(
+                "core/src/main/java/com/relationdetector/core/ddl/DdlColumnListExtractor.java")));
+        assertFalse(Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/common/CommonDatabaseAdaptor.java"))
+                .contains("emptyObjects("));
+    }
+
+    @Test
     void fullGrammarSqlParserFactoryIsNotNamedTokenEvent() throws IOException {
         Path root = repoRoot();
         String legacyFactoryName = "FullGrammar" + "TokenEventParserFactory";
@@ -1415,7 +1427,7 @@ class DialectGrammarArchitectureTest {
     private static final class ProductionJavadocScanner extends TreePathScanner<Void, Void> {
         private static final Set<String> ORCHESTRATION_SUFFIXES = Set.of(
                 "Engine", "Pipeline", "Service", "Collector", "Extractor", "Resolver", "Merger",
-                "Framer", "Analyzer", "Visitor", "Writer");
+                "Framer", "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Facade");
 
         private final Path root;
         private final CompilationUnitTree unit;
@@ -1439,8 +1451,10 @@ class DialectGrammarArchitectureTest {
                 boolean topLevel = enclosingTypes.isEmpty();
                 boolean publicBoundary = node.getModifiers().getFlags().contains(Modifier.PUBLIC)
                         || node.getModifiers().getFlags().contains(Modifier.PROTECTED);
-                if (topLevel && publicBoundary && node.getKind() != com.sun.source.tree.Tree.Kind.RECORD) {
-                    requireConcrete(node.getSimpleName().toString(), getCurrentPath());
+                boolean orchestrationBoundary = topLevel && ORCHESTRATION_SUFFIXES.stream()
+                        .anyMatch(node.getSimpleName().toString()::endsWith);
+                if (topLevel && (publicBoundary || orchestrationBoundary)) {
+                    requireBilingual(node.getSimpleName().toString(), getCurrentPath());
                 }
                 enclosingTypes.add(node.getSimpleName().toString());
                 try {
@@ -1454,10 +1468,10 @@ class DialectGrammarArchitectureTest {
 
         @Override
         public Void visitMethod(MethodTree node, Void unused) {
-            boolean criticalHelper = isOrchestrationType() && bodyLines(node) >= 60;
+            boolean criticalHelper = isOrchestrationType() && bodyLines(node) > 40;
             if (criticalHelper && !isOverride(node)) {
                 TreePath path = new TreePath(getCurrentPath(), node);
-                requireConcrete(node.getName().toString() + "()", path);
+                requireBilingual(node.getName().toString() + "()", path);
             }
             return super.visitMethod(node, unused);
         }

@@ -1,8 +1,11 @@
 package com.relationdetector.semantic.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -17,6 +20,42 @@ final class SemanticCliIntegrationTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void buildAndE2eHandlersShareTheOnlyKgBuildService() throws Exception {
+        Path sourceRoot = Path.of("src/main/java/com/relationdetector/semantic/cli");
+        String buildHandler = Files.readString(sourceRoot.resolve("SemanticBuildCommandHandler.java"));
+        String e2eHandler = Files.readString(sourceRoot.resolve("SemanticE2eCommandHandler.java"));
+        String buildService = Files.readString(sourceRoot.resolve("SemanticKgBuildService.java"));
+
+        assertTrue(buildHandler.contains("new SemanticKgBuildService().build("));
+        assertTrue(e2eHandler.contains("new SemanticKgBuildService().build("));
+        assertFalse(buildHandler.contains("new SemanticEvidenceBuilder"));
+        assertFalse(e2eHandler.contains("new SemanticEvidenceBuilder"));
+        assertTrue(buildService.contains("new SemanticEvidenceBuilder().build("));
+        assertTrue(buildService.contains("new SemanticKgBuilder().build("));
+    }
+
+    @Test
+    void semanticCliDoesNotEchoArgumentDetailsOnFailure() {
+        PrintStream original = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured));
+        try {
+            Path sensitiveInput = tempDir.resolve("customer-secret-value.json");
+            int exit = Main.run(new String[] {
+                    "build",
+                    "--input", sensitiveInput.toString(),
+                    "--output", tempDir.resolve("output").toString()
+            });
+
+            assertEquals(2, exit);
+            assertTrue(captured.toString().contains("Semantic command error"));
+            assertFalse(captured.toString().contains("customer-secret-value"));
+        } finally {
+            System.setErr(original);
+        }
+    }
 
     @Test
     void semanticBuildWritesKgBuildRunAndEvidenceGraph() throws Exception {

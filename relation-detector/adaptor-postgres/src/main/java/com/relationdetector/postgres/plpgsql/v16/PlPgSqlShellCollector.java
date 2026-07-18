@@ -12,8 +12,8 @@ import com.relationdetector.postgres.routine.PlPgSqlStaticSqlFragment;
 import com.relationdetector.postgres.routine.PlPgSqlStaticSqlFragment.MaskRange;
 
 /**
- *
- * Collects procedural-shell symbols and typed embedded-SQL boundaries.
+ * CN: 遍历 PostgreSQL 16 PL/pgSQL shell contexts，输出 symbols 和 static SQL boundaries 给 v16 SQL parser；不复制 SQL 子语法或调用其它版本。
+ * EN: Traverses PostgreSQL 16 PL/pgSQL shell contexts and returns symbols plus static-SQL boundaries to the v16 SQL parser, without duplicating SQL grammar or invoking another version.
  */
 final class PlPgSqlShellCollector extends PlPgSqlParserBaseVisitor<Void> {
     private final String source;

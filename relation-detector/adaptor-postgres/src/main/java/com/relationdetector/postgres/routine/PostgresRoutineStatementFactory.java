@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 /**
- *
- * Creates an embedded SQL statement from a typed outer-grammar context span.
+ * CN: 把 outer grammar 已 typed 定位的 SQL context span 转成带绝对行号和 routine provenance 的 SqlStatementRecord；非法 span 明确失败，不搜索 SQL 文本。
+ * EN: Converts a SQL context span located by the typed outer grammar into a SqlStatementRecord with absolute lines and routine provenance. Invalid spans fail explicitly without text searching.
  */
 public final class PostgresRoutineStatementFactory {
     private PostgresRoutineStatementFactory() {
