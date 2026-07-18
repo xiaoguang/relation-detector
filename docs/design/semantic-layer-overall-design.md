@@ -56,7 +56,7 @@ relation-detector JSON
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
-也就是说，当前已实现的是 evidence-backed KG 生成，不是完整 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator 或 Answer Composer。`SemanticEventExtractor` 已从 direct non-control write lineage 生成 deterministic event candidates；derived lineage 只作为 supporting refs，不单独造 event。当前 KG 节点包括 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和由 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 join path step。这里的 `Event` 是 evidence-backed candidate，不等于已经审核通过的正式业务事件。后续章节描述的是目标架构和后续阶段设计；如果某节没有明确说明“当前代码已实现”，默认按设计目标或后续能力理解。
+也就是说，当前已实现的是 evidence-backed KG 生成，不是完整 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator 或 Answer Composer。`SemanticEventExtractor` 已从 direct non-control write lineage 生成 deterministic event candidates；derived lineage 只作为 supporting refs，不单独造 event。当前 KG 节点包括 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和由 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 join path step。这里的 `Event` 是 evidence-backed candidate，不等于已经审核通过的正式业务事件。reader/bundle 保留完整 `database.type/catalog/schema`，对外 artifact 统一使用不含本机绝对路径的 portable input label；正式 semantic normalization 必须携带 evidence bundle，并形成 evidence/fact/candidate ID 与文档内 entity 引用闭包。物理 endpoint 是否真实存在于 bundle、semantic owner id 是否跨 section 唯一，尚未逐项校验。后续章节描述的是目标架构和后续阶段设计；如果某节没有明确说明“当前代码已实现”，默认按设计目标或后续能力理解。
 
 ### 1.2 事件的意义与边界
 
@@ -656,7 +656,10 @@ Phase 1 Scope 必备字段建议：
 
 `payloadSnapshot` 用于保存当时用于语义判断的最小事实切片。后续重新扫描后即使 fingerprint 仍然相似，也能回放当时语义对象为何成立。
 
-当前 artifact stage 只实现了该模型的子集：EvidenceGraph 保存 payload snapshot 和 evidence records，但 fact/evidence id 仍含数组 index，尚无 `scanRunId/sourceHash/detectorVersion/reviewDecisionId`；semantic extraction bundle 还混用 object-form provenance snapshot 与字符串 candidate id。所以上述字段仍是 Phase 1 Scope 契约，不是当前 JSON 已全部具备的字段。
+当前 artifact stage 只实现了该模型的子集：EvidenceGraph 保存 payload snapshot 和 evidence records，
+fact/evidence/candidate 使用内容稳定 ID，semantic extraction bundle 通过顶层 evidence registry 与字符串
+refs 形成闭包；但尚无 `scanRunId/sourceHash/detectorVersion/reviewDecisionId`。这些跨运行和治理字段仍是
+Phase 1 后续契约，不是当前 JSON 已全部具备的字段。
 
 ### 4.2 字段 evidence 示例
 

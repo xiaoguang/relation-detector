@@ -19,11 +19,13 @@
 - 候选生成不会做全库列两两比较；只选择已有结构候选，或在 `discoverFromNamingEvidence=true` 时选择 top-level `namingEvidence` + target unique + type compatible 的命名候选。
 - profiling 只支持 live JDBC exact aggregate query。未实现的离线 `INSERT` 样本配置已从 runtime、SPI v6、示例和文档中删除；YAML transport 仅保留同名拒绝哨兵，旧字段会明确报配置错误。
 
-实现复核边界：内置四方言 profiler 都通过 `DataProfileEvidenceBuilder` 执行下述负向 policy；但
-`DataProfilePipeline` 当前会直接接受外部 SPI profiler 返回的 evidence，尚未在 consumer 边界拒绝
-越界的 `NEGATIVE_VALUE_MISMATCH`。另外，typed predicate guard 在 final relationship merge 前主要
-存在于 structural evidence attributes，不能只依赖 candidate summary attributes 判断 conditional。
-因此“全局只允许非条件声明 FK 负向 evidence”当前为 `PARTIAL`，不是已完全闭环状态。
+实现复核边界：内置四方言 profiler 通过 `DataProfileEvidenceBuilder` 执行下述负向 policy；core 的
+`ProfileEvidenceContractValidator` 还会在 `DataProfilePipeline` 修改 candidate 或 warning 前原子校验
+外部 SPI outcome。只有 `SUCCESS` 可携带 evidence，且 evidence 只能是三类 data-profile evidence；
+`NEGATIVE_VALUE_MISMATCH` 还必须重新通过 core-owned declared-FK policy。conditional/polymorphic
+判断同时读取 candidate summary、structural evidence 和 raw evidence attributes。因此“全局只允许
+非条件声明 FK 产生负向 evidence”在代码和 focused contract tests 中已经闭环。真实数据库 driver、
+权限与 optimizer 组合仍属于环境性 smoke 边界，不能由 fake-JDBC 测试替代。
 
 ## 设计原则
 

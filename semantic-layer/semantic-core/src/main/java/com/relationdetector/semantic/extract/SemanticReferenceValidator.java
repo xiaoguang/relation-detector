@@ -14,22 +14,60 @@ import com.relationdetector.semantic.extract.model.SemanticValidationIssue;
 
 /** Stateless factory for per-normalization ref-closure validation sessions. */
 final class SemanticReferenceValidator {
-    Session newSession() {
-        return new Session();
+    Session newSession(SemanticReferenceIndex referenceIndex, SemanticPhysicalReferenceIndex physicalIndex) {
+        return new Session(referenceIndex, physicalIndex);
     }
 
     static final class Session {
         private final Map<String, SemanticValidationIssue> unresolvedReferences = new LinkedHashMap<>();
         private final Map<String, SemanticValidationIssue> missingEvidenceRefs = new LinkedHashMap<>();
+        private final SemanticReferenceIndex referenceIndex;
+        private final SemanticPhysicalReferenceIndex physicalIndex;
+        private final SemanticOwnerIdRegistry ownerIds = new SemanticOwnerIdRegistry();
         private int generatedReviewItemCount;
 
+        private Session(SemanticReferenceIndex referenceIndex, SemanticPhysicalReferenceIndex physicalIndex) {
+            this.referenceIndex = java.util.Objects.requireNonNull(referenceIndex, "referenceIndex");
+            this.physicalIndex = java.util.Objects.requireNonNull(physicalIndex, "physicalIndex");
+        }
+
+        void registerOwner(String section, String id) {
+            ownerIds.register(section, id);
+        }
+
+        void requirePhysicalTable(String section, String ownerId, String field, String table) {
+            if (!blank(table) && !physicalIndex.containsTable(table)) {
+                throw new SemanticExtractionValidationException(
+                        section + " " + ownerId + " references unknown physical table in " + field + ": " + table);
+            }
+        }
+
+        void requirePhysicalColumn(String section, String ownerId, String field, String column) {
+            if (!blank(column) && !physicalIndex.containsColumn(column)) {
+                throw new SemanticExtractionValidationException(
+                        section + " " + ownerId + " references unknown physical column in " + field + ": " + column);
+            }
+        }
+
         void requireEvidence(String section, String id, SemanticItem item) {
-            if (!item.evidenceRefs().isEmpty()) {
+            if ("BUSINESS_APPROVED".equalsIgnoreCase(item.reviewStatus())) {
+                throw new SemanticExtractionValidationException(
+                        "BUSINESS_APPROVED is reserved for the governance workflow: " + id);
+            }
+            if (item.evidenceRefs().isEmpty()) {
+                String key = section + ":" + id;
+                missingEvidenceRefs.putIfAbsent(key, new SemanticValidationIssue(
+                        section, id, null, null, null, "Semantic item has no evidenceRefs."));
                 return;
             }
-            String key = section + ":" + id;
-            missingEvidenceRefs.putIfAbsent(key, new SemanticValidationIssue(
-                    section, id, null, null, null, "Semantic item has no evidenceRefs."));
+            for (String reference : item.evidenceRefs()) {
+                if (!referenceIndex.contains(reference)) {
+                    String key = section + ":" + id + ":evidenceRefs:" + reference;
+                    unresolvedReferences.putIfAbsent(key, new SemanticValidationIssue(
+                            section, id, "evidenceRefs", reference, "evidence",
+                            "Evidence reference does not exist in the supplied bundle."));
+                }
+            }
         }
 
         void requireEventCandidateRef(String id, String candidateRef) {
@@ -81,12 +119,12 @@ final class SemanticReferenceValidator {
         }
 
         private void requireCandidateRef(String id, String field, String value, String kind, String reason) {
-            if (!blank(value)) {
+            if (!blank(value) && referenceIndex.isCandidate(value, kind)) {
                 return;
             }
             String key = field + ":" + id;
             unresolvedReferences.putIfAbsent(key, new SemanticValidationIssue(
-                    null, id, field, "", kind, reason));
+                    null, id, field, text(value), kind, reason));
         }
 
         private String text(String value) {

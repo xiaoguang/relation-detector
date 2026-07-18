@@ -270,8 +270,11 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     `ScanConfig.resolve(baseDirectory)`，direct API 无参调用以当前工作目录为 base。运行态仅消费稳定排序、
     规范绝对路径且去重的 `*Files`，missing、non-regular 和 unreadable 输入均在 scan 前明确失败。
 12. `ScanConfigurationValidator` 是 YAML/CLI override、`ScanConfig.resolve()`、手工
-    `ResolvedScanConfig` 和 `ScanEngine.scan()` 的共用行为边界；live source 缺 JDBC、无可执行
+    `ResolvedScanConfig` 和 `ScanEngine.scan()` 的主要行为边界；live source 缺 JDBC、无可执行
     source、非法 parser mode、derived limit 或 confidence 在 adaptor capability 检查和 JDBC 前失败。
+    naming rule file 由 core `NamingRuleSetResolver` 统一加载。CLI 只负责相对路径解析；direct API、CLI
+    与 batch 在 JDBC 前合并 system/file/inline typed rules 并拒绝 duplicate rule id，parser compatibility
+    view 只复制最终 typed rules，避免二次加载。
 13. 内置 `JdbcDataProfilerTemplate` / `DataProfileEvidenceBuilder` 只对 live database、非条件
     `DDL_FOREIGN_KEY` / `METADATA_FOREIGN_KEY` 产生 `NEGATIVE_VALUE_MISMATCH`。`DataProfilePipeline`
     通过 `ProfileEvidenceContractValidator` 重验 status、evidence allowlist、source type和负向策略；
@@ -311,9 +314,9 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - offline literal-INSERT profiling 仍未实现，也不再是公开配置或 SPI 承诺。如未来重新引入，
   必须同时提供 typed producer、sample completeness 契约、资源边界和独立 SPI 升级。
 - CLI argument、config file、config format、adaptor、input、connection、runtime 和 output write
-  failure 的静态 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
-  脱敏文本。仍缺 live namespace resolver 配置错误的执行期 mapping：当前它会落入
-  `ARGUMENT_ERROR`，而设计要求单次与 batch 都归入配置错误。
+  failure 的 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
+  脱敏文本。live namespace resolver 的 `LiveSourceConfigurationException` 已在 single-scan 映射为
+  `CONFIG_FORMAT_ERROR`，batch case 保留同一 typed code，整体仍返回 `BATCH_PARTIAL_FAILURE`。
 - `DirectionConfidence` 和保留 error/evidence enum 继续作为 compatibility contract；所有 public production
   enum value 已由 AST discovery gate 逐值执行 Jackson serializer/deserializer round-trip，冻结的 CLI
   `ErrorCode` matrix 另有穷举集合断言和路径测试。

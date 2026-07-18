@@ -31,6 +31,9 @@ public record ResolvedScanConfig(
         ScanConfigurationValidator configurationValidator = new ScanConfigurationValidator();
         configurationValidator.validate(input);
         ScanInputPathResolver pathResolver = new ScanInputPathResolver();
+        NamingRuleSetResolver namingResolver = new NamingRuleSetResolver();
+        java.util.List<Path> namingRuleFiles = namingResolver.resolvePaths(
+                input.namingMatchRuleFiles, baseDirectory);
         return new ResolvedScanConfig(
                 new DatabaseConfig(input.databaseType, input.adaptorId, input.jdbcUrl, input.username, input.password,
                         input.catalog, input.schema, input.includeTables, input.excludeTables),
@@ -57,7 +60,7 @@ public record ResolvedScanConfig(
                         input.databaseVersionSource),
                 new EvidenceConfig(input.dataProfileEnabled, input.dataProfileOptions(),
                         input.namingMatchEnabled, input.namingMatchSystemRulesEnabled,
-                        input.namingMatchRuleFiles, input.namingMatchRules,
+                        namingRuleFiles, input.namingMatchRules,
                         input.derivedPathsEnabled, input.derivedRelationshipsEnabled,
                         input.derivedDataLineageEnabled, input.derivedNamingEvidenceEnabled,
                         input.derivedIncludeNamingEdgesInRelationshipPaths, input.derivedMaxPathLength,
@@ -111,7 +114,7 @@ public record ResolvedScanConfig(
         applyProfileOptions(copy, evidence.dataProfileOptions());
         copy.namingMatchEnabled = evidence.namingMatchEnabled();
         copy.namingMatchSystemRulesEnabled = evidence.namingMatchSystemRulesEnabled();
-        copy.namingMatchRuleFiles = new ArrayList<>(evidence.namingMatchRuleFiles());
+        copy.namingMatchRuleFiles = new ArrayList<>();
         copy.namingMatchRules = new ArrayList<>(evidence.namingMatchRules());
         copy.derivedPathsEnabled = evidence.derivedPathsEnabled();
         copy.derivedRelationshipsEnabled = evidence.derivedRelationshipsEnabled();

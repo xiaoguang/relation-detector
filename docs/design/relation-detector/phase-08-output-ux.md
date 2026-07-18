@@ -162,8 +162,12 @@ derivedPaths:
 - `timeoutSeconds`、execution 和 profiling 数量限制必须为正数；derived path length 必须大于零，
   其它 derived 数量上限不得为负数。
 - `output.minConfidence`、derived confidence/decay 和 profiling ratio 必须是 `[0,1]` 内有限数。
-- `ScanConfigurationValidator` 是 YAML override 后、batch 和 direct API 共用的行为校验入口；
-  `ScanConfig.resolve()`、`ResolvedScanConfig` 构造与 `ScanEngine.scan()` 都执行同一规则。
+- `ScanConfigurationValidator` 是 YAML override 后、batch 和 direct API 共用的主要行为校验入口；
+  `ScanConfig.resolve()`、`ResolvedScanConfig` 构造与 `ScanEngine.scan()` 都会调用它。数值/source/parser
+  约束同时由 immutable config record 构造器防守。`NamingRuleSetResolver` 由 core 统一拥有 rule-file
+  加载：CLI 只解析相对路径，direct API 按显式 base directory 或当前工作目录解析；system、file、inline
+  typed rules 在 JDBC 前合并并检查重复 ID。parser compatibility view 只复制最终 typed rules，不再保留
+  rule-file 路径，因此同一文件不会二次加载。
 - PostgreSQL/SQL Server live scope resolver 为验证 connection catalog 而在连接建立后抛出的
   `LiveSourceConfigurationException` 仍属于不可恢复配置错误。direct API 原样抛出；single-scan 和
   batch CLI 都必须映射为 `CONFIG_FORMAT_ERROR`，不能降级 warning 或归入通用 argument/runtime error。

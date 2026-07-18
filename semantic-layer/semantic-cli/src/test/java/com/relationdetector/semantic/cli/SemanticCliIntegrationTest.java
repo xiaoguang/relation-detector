@@ -62,9 +62,11 @@ final class SemanticCliIntegrationTest {
                     "source": {"table": "sales_fact", "column": "order_id"},
                     "target": {"table": "sales_orders", "column": "id"},
                     "relationType": "FK_LIKE",
+                    "relationSubType": "DECLARED_FK",
                     "confidence": 0.9,
-                    "evidence": [{"type": "DDL_FOREIGN_KEY", "source": "schema.sql", "detail": "fk"}],
-                    "rawEvidence": []
+                    "evidence": [{"type": "DDL_FOREIGN_KEY", "sourceType": "DDL_FILE", "score": 0.9, "source": "schema.sql", "detail": "fk", "attributes": {}}],
+                    "rawEvidence": [],
+                    "warnings": []
                   }],
                   "dataLineages": [{
                     "sources": [{"table": "sales_orders", "column": "id"}],
@@ -72,8 +74,10 @@ final class SemanticCliIntegrationTest {
                     "flowKind": "VALUE",
                     "transformType": "DIRECT",
                     "confidence": 0.9,
-                    "evidence": [{"transformType": "DIRECT", "source": "ROUTINE:shop.sp_rebuild_sales_fact", "detail": "insert select"}],
-                    "rawEvidence": []
+                    "evidence": [{"type": "DATA_LINEAGE", "transformType": "DIRECT", "sourceType": "DATABASE_OBJECT", "score": 0.9, "source": "ROUTINE:shop.sp_rebuild_sales_fact", "detail": "insert select", "attributes": {}}],
+                    "rawEvidence": [],
+                    "warnings": [],
+                    "attributes": {}
                   }],
                   "derivedRelationships": [],
                   "derivedDataLineages": [],
@@ -115,9 +119,11 @@ final class SemanticCliIntegrationTest {
                     "source": {"table": "sales_fact", "column": "order_id"},
                     "target": {"table": "sales_orders", "column": "id"},
                     "relationType": "FK_LIKE",
+                    "relationSubType": "DECLARED_FK",
                     "confidence": 0.9,
-                    "evidence": [{"type": "DDL_FOREIGN_KEY", "source": "schema.sql", "detail": "fk"}],
-                    "rawEvidence": []
+                    "evidence": [{"type": "DDL_FOREIGN_KEY", "sourceType": "DDL_FILE", "score": 0.9, "source": "schema.sql", "detail": "fk", "attributes": {}}],
+                    "rawEvidence": [],
+                    "warnings": []
                   }],
                   "dataLineages": [],
                   "derivedRelationships": [],
@@ -187,9 +193,11 @@ final class SemanticCliIntegrationTest {
                     "source": {"table": "inventory_transactions", "column": "order_id"},
                     "target": {"table": "sales_orders", "column": "id"},
                     "relationType": "FK_LIKE",
+                    "relationSubType": "DECLARED_FK",
                     "confidence": 0.9,
-                    "evidence": [{"type": "DDL_FOREIGN_KEY", "source": "schema.sql", "detail": "fk"}],
-                    "rawEvidence": []
+                    "evidence": [{"type": "DDL_FOREIGN_KEY", "sourceType": "DDL_FILE", "score": 0.9, "source": "schema.sql", "detail": "fk", "attributes": {}}],
+                    "rawEvidence": [],
+                    "warnings": []
                   }],
                   "dataLineages": [{
                     "sources": [{"table": "sales_orders", "column": "id"}],
@@ -198,7 +206,10 @@ final class SemanticCliIntegrationTest {
                     "transformType": "DIRECT",
                     "confidence": 0.9,
                     "evidence": [{
+                      "type": "DATA_LINEAGE",
                       "transformType": "DIRECT",
+                      "sourceType": "DATABASE_OBJECT",
+                      "score": 0.9,
                       "source": "TRIGGER:trg_sales_order_delivered",
                       "detail": "insert transaction",
                       "attributes": {
@@ -208,7 +219,9 @@ final class SemanticCliIntegrationTest {
                         "sourceStatementId": "TRIGGER:trg_sales_order_delivered"
                       }
                     }],
-                    "rawEvidence": []
+                    "rawEvidence": [],
+                    "warnings": [],
+                    "attributes": {}
                   }],
                   "derivedRelationships": [],
                   "derivedDataLineages": [],
@@ -297,6 +310,7 @@ final class SemanticCliIntegrationTest {
     @Test
     void semanticNormalizeExtractionWritesRefClosedDocument() throws Exception {
         Path input = tempDir.resolve("semantic-extraction-result-raw.json");
+        Path evidenceBundle = tempDir.resolve("semantic-extraction-evidence-bundle.json");
         Path output = tempDir.resolve("semantic-extraction-result.json");
         Files.writeString(input, """
                 {
@@ -315,10 +329,21 @@ final class SemanticCliIntegrationTest {
                   "reviewItems": []
                 }
                 """);
+        Files.writeString(evidenceBundle, """
+                {
+                  "tables": ["sales_fact", "sales_orders"],
+                  "evidence": [{"id": "sales_orders.id -> sales_fact.order_id"}],
+                  "relationships": [], "lineage": [], "derivedRelationships": [], "derivedLineage": [],
+                  "namingEvidence": [], "diagnostics": [],
+                  "eventCandidates": [{"id": "event-candidate:routine:erp.sp_rebuild_sales_fact"}],
+                  "tripletCandidates": [], "reviewItemCandidates": []
+                }
+                """);
 
         int exit = Main.run(new String[] {
                 "normalize-extraction",
                 "--input", input.toString(),
+                "--evidence-bundle", evidenceBundle.toString(),
                 "--output", output.toString()
         });
 
@@ -328,5 +353,24 @@ final class SemanticCliIntegrationTest {
         assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
         assertTrue(normalized.path("semanticGraph").path("nodes").isArray());
         assertTrue(normalized.path("validation").path("isRefClosed").isBoolean());
+    }
+
+    @Test
+    void semanticNormalizeExtractionRejectsMissingEvidenceBundle() throws Exception {
+        Path input = tempDir.resolve("semantic-extraction-result-raw.json");
+        Path output = tempDir.resolve("semantic-extraction-result.json");
+        Files.writeString(input, """
+                {"entities": [], "events": [], "relations": [], "lineage": [], "metrics": [],
+                 "dimensions": [], "triplets": [], "reviewItems": []}
+                """);
+
+        int exit = Main.run(new String[] {
+                "normalize-extraction",
+                "--input", input.toString(),
+                "--output", output.toString()
+        });
+
+        assertEquals(2, exit);
+        assertTrue(Files.notExists(output));
     }
 }

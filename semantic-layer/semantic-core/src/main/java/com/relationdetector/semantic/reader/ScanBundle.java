@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 /** Immutable typed relation-detector scan result consumed by semantic-layer. */
 public final class ScanBundle {
     private final String databaseType;
+    private final String catalog;
     private final String schema;
     private final String generatedAt;
     private final List<String> sources;
@@ -36,10 +37,30 @@ public final class ScanBundle {
             List<?> namingEvidence,
             List<?> diagnostics
     ) {
+        this(databaseType, "", schema, generatedAt, sources, inputFiles, summary, relationships, dataLineages,
+                derivedRelationships, derivedDataLineages, namingEvidence, diagnostics);
+    }
+
+    public ScanBundle(
+            String databaseType,
+            String catalog,
+            String schema,
+            String generatedAt,
+            List<String> sources,
+            List<Path> inputFiles,
+            Map<String, Integer> summary,
+            List<?> relationships,
+            List<?> dataLineages,
+            List<?> derivedRelationships,
+            List<?> derivedDataLineages,
+            List<?> namingEvidence,
+            List<?> diagnostics
+    ) {
         if (databaseType == null || databaseType.isBlank()) {
             throw new IllegalArgumentException("database type is required");
         }
         this.databaseType = databaseType;
+        this.catalog = catalog == null ? "" : catalog;
         this.schema = schema == null ? "" : schema;
         this.generatedAt = generatedAt == null ? "" : generatedAt;
         this.sources = List.copyOf(sources == null ? List.of() : sources);
@@ -51,9 +72,16 @@ public final class ScanBundle {
         this.derivedDataLineages = ScanFactFactory.lineages(derivedDataLineages, true);
         this.namingEvidence = ScanFactFactory.naming(namingEvidence);
         this.diagnostics = ScanFactFactory.diagnostics(diagnostics);
+        requireUniqueIds(this.relationships, "relationships");
+        requireUniqueIds(this.dataLineages, "dataLineages");
+        requireUniqueIds(this.derivedRelationships, "derivedRelationships");
+        requireUniqueIds(this.derivedDataLineages, "derivedDataLineages");
+        requireUniqueIds(this.namingEvidence, "namingEvidence");
+        requireUniqueIds(this.diagnostics, "diagnostics");
     }
 
     public String databaseType() { return databaseType; }
+    public String catalog() { return catalog; }
     public String schema() { return schema; }
     public String generatedAt() { return generatedAt; }
     public List<String> sources() { return sources; }
@@ -71,10 +99,11 @@ public final class ScanBundle {
     public Map<String, Object> jsonView() {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("databaseType", databaseType);
+        view.put("catalog", catalog);
         view.put("schema", schema);
         view.put("generatedAt", generatedAt);
         view.put("sources", sources);
-        view.put("inputFiles", inputFiles);
+        view.put("inputFiles", inputFiles.stream().map(SemanticInputPathCanonicalizer::canonicalize).toList());
         view.put("summary", summary);
         view.put("relationships", relationships.stream().map(ScanFact::document).toList());
         view.put("dataLineages", dataLineages.stream().map(ScanFact::document).toList());
@@ -83,5 +112,15 @@ public final class ScanBundle {
         view.put("namingEvidence", namingEvidence.stream().map(ScanFact::document).toList());
         view.put("diagnostics", diagnostics.stream().map(ScanFact::document).toList());
         return java.util.Collections.unmodifiableMap(view);
+    }
+
+    private void requireUniqueIds(List<? extends ScanFact> facts, String section) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (ScanFact fact : facts) {
+            if (!ids.add(fact.id())) {
+                throw new ScanResultContractException(
+                        section + " contains duplicate semantic fact identity: " + fact.id());
+            }
+        }
     }
 }

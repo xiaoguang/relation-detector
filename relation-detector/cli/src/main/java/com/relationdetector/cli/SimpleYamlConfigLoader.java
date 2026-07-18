@@ -175,7 +175,6 @@ public final class SimpleYamlConfigLoader {
         for (Path path : paths(namingMatch.ruleFiles)) {
             Path resolved = path.isAbsolute() || baseDir == null ? path : baseDir.resolve(path).normalize();
             config.namingMatchRuleFiles.add(resolved);
-            config.namingMatchRules.addAll(namingRuleConfigLoader.loadRuleFile(resolved));
         }
         if (namingMatch.rules != null) {
             config.namingMatchRules.addAll(namingRuleConfigLoader.readInlineRules(namingMatch.rules));

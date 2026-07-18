@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.extract.SemanticReferenceValidator.Session;
 import com.relationdetector.semantic.extract.model.SemanticDimension;
 import com.relationdetector.semantic.extract.model.SemanticEntity;
@@ -44,12 +45,12 @@ final class SemanticSectionNormalizer {
             SemanticGraphAssembler graph,
             Session validator
     ) {
-        int index = 0;
         for (SemanticReviewItem item : reviewItems) {
             String targetRef = SemanticNormalizationSupport.nonBlank(item.targetRef, item.target);
             item.id = SemanticNormalizationSupport.nonBlank(
                     item.id,
-                    "review:" + SemanticNormalizationSupport.slug(targetRef) + ":" + index);
+                    StableSemanticId.of("review", targetRef, item.targetSection, item.type, item.reason));
+            validator.registerOwner("reviewItem", item.id);
             if (!blank(targetRef)) {
                 item.targetRef = targetRef;
             }
@@ -59,7 +60,6 @@ final class SemanticSectionNormalizer {
             validator.requireEvidence("reviewItem", item.id, item);
             graph.addNode(item.id, "ReviewItem", targetRef, "REVIEW_NEEDED", item.evidenceRefs());
             graph.addEdge("review-target", item.id, targetRef, "REVIEW_TARGET", item.evidenceRefs());
-            index++;
         }
     }
 
@@ -74,6 +74,8 @@ final class SemanticSectionNormalizer {
             String key = blank(entity.physicalName) ? SemanticNormalizationSupport.nonBlank(entity.name, "entity")
                     : entity.physicalName;
             entity.id = SemanticNormalizationSupport.nonBlank(entity.id, "entity:" + SemanticNormalizationSupport.slug(key));
+            validator.registerOwner("entity", entity.id);
+            validator.requirePhysicalTable("entity", entity.id, "physicalName", entity.physicalName);
             validator.requireEvidence("entity", entity.id, entity);
             entityByName.put(text(entity.name), entity.id);
             entityByPhysical.put(text(entity.physicalName), entity.id);
@@ -95,6 +97,7 @@ final class SemanticSectionNormalizer {
                     : event.physicalName.replace("ROUTINE:", "");
             event.id = SemanticNormalizationSupport.nonBlank(event.id,
                     "event:" + SemanticNormalizationSupport.slug(eventKey));
+            validator.registerOwner("event", event.id);
             validator.requireEvidence("event", event.id, event);
             validator.requireEventCandidateRef(event.id, event.eventCandidateRef);
             graph.addNode(event.id, "Event", event.name, event.type, event.evidenceRefs());
@@ -138,13 +141,12 @@ final class SemanticSectionNormalizer {
             SemanticGraphAssembler graph,
             Session validator
     ) {
-        int index = 0;
         for (SemanticRelation relation : relations) {
             String fromRef = entityByName.get(text(relation.from));
             String toRef = entityByName.get(text(relation.to));
             relation.id = SemanticNormalizationSupport.nonBlank(relation.id,
-                    "relation:" + SemanticNormalizationSupport.slug(relation.from) + ":"
-                            + SemanticNormalizationSupport.slug(relation.to) + ":" + index);
+                    StableSemanticId.of("relation", relation.from, relation.to, relation.type, relation.machineType));
+            validator.registerOwner("relation", relation.id);
             validator.requireEvidence("relation", relation.id, relation);
             relation.fromEntityRef = present(fromRef) ? fromRef : relation.fromEntityRef;
             relation.toEntityRef = present(toRef) ? toRef : relation.toEntityRef;
@@ -156,7 +158,6 @@ final class SemanticSectionNormalizer {
             graph.addEdge("relation", fromRef, toRef,
                     SemanticNormalizationSupport.nonBlank(relation.type, "RELATES_TO"), relation.evidenceRefs());
             addLinked(linkedEntities, fromRef, toRef);
-            index++;
         }
     }
 
@@ -167,20 +168,28 @@ final class SemanticSectionNormalizer {
             SemanticGraphAssembler graph,
             Session validator
     ) {
-        int index = 0;
         for (SemanticLineage lineage : lineages) {
             String targetKey = SemanticNormalizationSupport.nonBlank(lineage.toPhysical, lineage.to);
+            List<String> sourceKeys = new ArrayList<>(values(lineage.fromPhysical));
+            if (sourceKeys.isEmpty()) {
+                sourceKeys.addAll(values(lineage.from));
+            }
+            sourceKeys.sort(String::compareTo);
             lineage.id = SemanticNormalizationSupport.nonBlank(lineage.id,
-                    "lineage:" + SemanticNormalizationSupport.slug(targetKey) + ":" + index);
+                    StableSemanticId.of("semantic-lineage", String.join("\u001f", sourceKeys), targetKey,
+                            lineage.transform));
+            validator.registerOwner("lineage", lineage.id);
             validator.requireEvidence("lineage", lineage.id, lineage);
             graph.addNode(lineage.id, "Lineage", lineage.to, lineage.transform, lineage.evidenceRefs());
             lineage.sourceEntityRefs = new ArrayList<>();
             for (String source : values(lineage.fromPhysical)) {
+                validator.requirePhysicalColumn("lineage", lineage.id, "fromPhysical", source);
                 String sourceRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(source));
                 SemanticNormalizationSupport.addIfAbsent(lineage.sourceEntityRefs, sourceRef, linkedEntities);
                 graph.addEdge("lineage-source", lineage.id, sourceRef, "LINEAGE_SOURCE", lineage.evidenceRefs());
                 validator.requireResolved(lineage.id, "fromPhysical", source, sourceRef, "entity");
             }
+            validator.requirePhysicalColumn("lineage", lineage.id, "toPhysical", lineage.toPhysical);
             String targetRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(lineage.toPhysical));
             if (present(targetRef)) {
                 lineage.targetEntityRef = targetRef;
@@ -188,7 +197,6 @@ final class SemanticSectionNormalizer {
             }
             graph.addEdge("lineage-target", lineage.id, targetRef, "LINEAGE_TARGET", lineage.evidenceRefs());
             validator.requireResolved(lineage.id, "toPhysical", lineage.toPhysical, targetRef, "entity");
-            index++;
         }
     }
 
@@ -203,6 +211,8 @@ final class SemanticSectionNormalizer {
             String key = SemanticNormalizationSupport.nonBlank(metric.physicalField, metric.name);
             metric.id = SemanticNormalizationSupport.nonBlank(metric.id,
                     "metric:" + SemanticNormalizationSupport.slug(key));
+            validator.registerOwner("metric", metric.id);
+            validator.requirePhysicalColumn("metric", metric.id, "physicalField", metric.physicalField);
             validator.requireEvidence("metric", metric.id, metric);
             String ownerRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(metric.physicalField));
             if (present(ownerRef)) {
@@ -212,6 +222,7 @@ final class SemanticSectionNormalizer {
             validator.requireResolved(metric.id, "physicalField", metric.physicalField, ownerRef, "entity");
             metric.sourceEntityRefs = new ArrayList<>();
             for (String source : values(metric.sourceFields)) {
+                validator.requirePhysicalColumn("metric", metric.id, "sourceFields", source);
                 String sourceRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(source));
                 SemanticNormalizationSupport.addIfAbsent(metric.sourceEntityRefs, sourceRef, linkedEntities);
                 validator.requireResolved(metric.id, "sourceFields", source, sourceRef, "entity");
@@ -233,6 +244,9 @@ final class SemanticSectionNormalizer {
             String key = SemanticNormalizationSupport.nonBlank(dimension.physicalField, dimension.name);
             dimension.id = SemanticNormalizationSupport.nonBlank(dimension.id,
                     "dimension:" + SemanticNormalizationSupport.slug(key));
+            validator.registerOwner("dimension", dimension.id);
+            validator.requirePhysicalColumn("dimension", dimension.id, "physicalField", dimension.physicalField);
+            validator.requirePhysicalTable("dimension", dimension.id, "dimensionTable", dimension.dimensionTable);
             validator.requireEvidence("dimension", dimension.id, dimension);
             String ownerRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(dimension.physicalField));
             String dimensionRef = entityByPhysical.get(text(dimension.dimensionTable));
@@ -261,12 +275,11 @@ final class SemanticSectionNormalizer {
             SemanticGraphAssembler graph,
             Session validator
     ) {
-        int index = 0;
         for (SemanticTriplet triplet : triplets) {
             triplet.id = SemanticNormalizationSupport.nonBlank(triplet.id,
-                    "triplet:" + SemanticNormalizationSupport.slug(triplet.subject) + ":"
-                            + SemanticNormalizationSupport.slug(triplet.predicate) + ":"
-                            + SemanticNormalizationSupport.slug(triplet.object) + ":" + index);
+                    StableSemanticId.of("triplet", triplet.candidateRef, triplet.subject, triplet.predicate,
+                            triplet.object, triplet.machineType));
+            validator.registerOwner("triplet", triplet.id);
             validator.requireEvidence("triplet", triplet.id, triplet);
             validator.requireTripletCandidateRef(triplet.id, triplet.candidateRef);
             String subjectRef = entityByName.get(text(triplet.subject));
@@ -283,7 +296,6 @@ final class SemanticSectionNormalizer {
             graph.addNode(triplet.id, "Triplet", triplet.readable, triplet.predicate, triplet.evidenceRefs());
             graph.addEdge("triplet-subject", triplet.id, subjectRef, "TRIPLET_SUBJECT", triplet.evidenceRefs());
             graph.addEdge("triplet-object", triplet.id, objectRef, "TRIPLET_OBJECT", triplet.evidenceRefs());
-            index++;
         }
     }
 

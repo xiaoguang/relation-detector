@@ -133,7 +133,7 @@ final class SemanticExtractionBundleBuilderTest {
         ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 50, 50, 50);
 
         assertFalse(evidenceBundle.path("reviewItemCandidates").isEmpty());
-        assertEquals("diagnostic:0:SEMANTIC_REVIEW_NEEDED",
+        assertEquals(evidenceBundle.path("diagnostics").get(0).path("id").asText(),
                 evidenceBundle.path("reviewItemCandidates").get(0).path("targetRef").asText());
 
         JsonNode triplets = evidenceBundle.path("tripletCandidates");
@@ -143,6 +143,20 @@ final class SemanticExtractionBundleBuilderTest {
         assertTrue(hasTripletType(triplets, "METRIC_SOURCE"), triplets::toPrettyString);
         assertTrue(hasTripletType(triplets, "DIMENSION_OF"), triplets::toPrettyString);
         assertTrue(hasTripletType(triplets, "NAMING_ALIAS"), triplets::toPrettyString);
+    }
+
+    @Test
+    void emitsStableEvidenceRegistryAndStringReferences() {
+        ScanBundle bundle = new ScanBundle("mysql", "shop", "", "", List.of("logs"), List.of(), Map.of(),
+                List.of(relationship("orders", "customer_id", "customers", "id")),
+                List.of(), List.of(), List.of(), List.of(), List.of());
+
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 10, 10, 10);
+
+        assertEquals(1, evidenceBundle.path("evidence").size());
+        JsonNode evidenceRef = evidenceBundle.path("relationships").get(0).path("evidenceRefs").get(0);
+        assertTrue(evidenceRef.isTextual());
+        assertEquals(evidenceBundle.path("evidence").get(0).path("id").asText(), evidenceRef.asText());
     }
 
     private JsonNode relationship(String sourceTable, String sourceColumn, String targetTable, String targetColumn) {

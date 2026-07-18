@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.event.SemanticEventExtractor;
 import com.relationdetector.semantic.reader.EndpointRef;
@@ -185,9 +186,8 @@ public final class SemanticEvidenceBuilder {
                 : record.path("evidence");
         List<String> result = new ArrayList<>();
         if (sourceArray.isArray()) {
-            int index = 0;
             for (JsonNode evidence : sourceArray) {
-                EvidenceReference ref = evidenceRef(ownerId, index++, evidence);
+                EvidenceReference ref = evidenceRef(ownerId, evidence);
                 evidenceRefs.putIfAbsent(ref.id(), ref);
                 result.add(ref.id());
             }
@@ -195,8 +195,8 @@ public final class SemanticEvidenceBuilder {
         return result;
     }
 
-    private EvidenceReference evidenceRef(String ownerId, int index, JsonNode evidence) {
-        String id = "evidence:" + ownerId + ":" + index;
+    private EvidenceReference evidenceRef(String ownerId, JsonNode evidence) {
+        String id = StableSemanticId.of("evidence", ownerId, StableSemanticId.canonicalJson(evidence));
         String evidenceType = evidence.path("type").asText(evidence.path("transformType").asText("UNKNOWN"));
         return new EvidenceReference(
                 id,

@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /** Reads relation-detector JSON output into a semantic-layer ScanBundle. */
 public final class ScanResultReader {
     private static final ObjectMapper JSON = new ObjectMapper();
+    private final ScanResultContractValidator contractValidator = new ScanResultContractValidator();
 
     public ScanBundle read(Path scanResultPath) {
         if (scanResultPath == null || !Files.isRegularFile(scanResultPath)) {
@@ -35,10 +36,13 @@ public final class ScanResultReader {
         }
         List<ScanBundle> bundles = scanResultPaths.stream().map(this::read).toList();
         String databaseType = bundles.get(0).databaseType();
+        String catalog = bundles.get(0).catalog();
         String schema = bundles.get(0).schema();
         for (ScanBundle bundle : bundles) {
-            if (!databaseType.equals(bundle.databaseType()) || !schema.equals(bundle.schema())) {
-                throw new IllegalArgumentException("merged scan results must use the same database type and schema");
+            if (!databaseType.equals(bundle.databaseType())
+                    || !catalog.equals(bundle.catalog())
+                    || !schema.equals(bundle.schema())) {
+                throw new IllegalArgumentException("merged scan results must use the same database identity");
             }
         }
 
@@ -62,26 +66,23 @@ public final class ScanResultReader {
             namingEvidence.addAll(bundle.namingEvidence());
             diagnostics.addAll(bundle.diagnostics());
         }
-        return new ScanBundle(databaseType, schema, bundles.get(0).generatedAt(), List.copyOf(sources), inputFiles,
+        return new ScanBundle(databaseType, catalog, schema, bundles.get(0).generatedAt(), List.copyOf(sources), inputFiles,
                 summary, relationships, dataLineages, derivedRelationships, derivedDataLineages, namingEvidence,
                 diagnostics);
     }
 
     private ScanBundle bundleFrom(JsonNode root, List<Path> inputFiles) {
-        if (root == null || !root.isObject()) {
-            throw new IllegalArgumentException("scan result JSON root must be an object");
-        }
+        contractValidator.validate(root);
         JsonNode database = root.path("database");
         String databaseType = database.path("type").asText("");
+        String catalog = database.path("catalog").asText("");
         String schema = database.path("schema").asText("");
-        if (databaseType.isBlank()) {
-            throw new IllegalArgumentException("database.type is required");
-        }
         Map<String, Integer> summary = summary(root.path("summary"));
         List<String> sources = new ArrayList<>();
         root.path("summary").path("sources").forEach(source -> sources.add(source.asText()));
         return new ScanBundle(
                 databaseType,
+                catalog,
                 schema,
                 root.path("generatedAt").asText(""),
                 sources,

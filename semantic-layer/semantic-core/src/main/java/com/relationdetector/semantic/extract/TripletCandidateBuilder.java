@@ -8,7 +8,7 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.relationdetector.semantic.SemanticFactIds;
+import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.reader.ScanBundle;
 import com.relationdetector.semantic.reader.ScanLineageFact;
@@ -44,9 +44,9 @@ final class TripletCandidateBuilder {
                 continue;
             }
             String ref = relationship.id();
-            add(result, "triplet-candidate:relationship:" + SemanticFactIds.slug(ref), "ENTITY_RELATION",
+            add(result, StableSemanticId.of("triplet-candidate", "relationship", ref), "ENTITY_RELATION",
                     tableOf(source), "引用", tableOf(target), ref, List.of(ref));
-            add(result, "triplet-candidate:dimension:" + SemanticFactIds.slug(ref), "DIMENSION_OF",
+            add(result, StableSemanticId.of("triplet-candidate", "dimension", ref), "DIMENSION_OF",
                     tableOf(target), "可作为维度分析", tableOf(source), ref, List.of(ref));
             added++;
             if (reachedLimit(added, limit)) {
@@ -63,7 +63,7 @@ final class TripletCandidateBuilder {
             List<String> outputs = tables(event.outputEndpoints(), focusTables);
             for (String input : inputs) {
                 for (String output : outputs) {
-                    String id = "triplet-candidate:event:" + SemanticFactIds.slug(event.id()) + ":" + added;
+                    String id = StableSemanticId.of("triplet-candidate", "event", event.id(), input, output);
                     ObjectNode item = add(result, id, "EVENT_INPUT_OUTPUT", input,
                             event.readableNameHint().isBlank() ? "写入" : "通过" + event.readableNameHint() + "写入",
                             output, event.id(), event.evidenceRefs());
@@ -87,12 +87,12 @@ final class TripletCandidateBuilder {
             }
             String ref = lineage.id();
             for (String source : sources) {
-                add(result, "triplet-candidate:lineage:" + SemanticFactIds.slug(ref) + ":" + added,
+                add(result, StableSemanticId.of("triplet-candidate", "lineage", ref, source, target),
                         "LINEAGE_TRANSFORM",
                         source, "加工为", target, ref, List.of(ref));
                 added++;
                 if (isMetricTarget(target)) {
-                    add(result, "triplet-candidate:metric-source:" + SemanticFactIds.slug(ref) + ":" + added,
+                    add(result, StableSemanticId.of("triplet-candidate", "metric-source", ref, target, source),
                             "METRIC_SOURCE",
                             target, "来源于", source, ref, List.of(ref));
                     added++;
@@ -113,7 +113,7 @@ final class TripletCandidateBuilder {
                 continue;
             }
             String ref = naming.id();
-            add(result, "triplet-candidate:naming:" + SemanticFactIds.slug(ref), "NAMING_ALIAS",
+            add(result, StableSemanticId.of("triplet-candidate", "naming", ref), "NAMING_ALIAS",
                     source, "命名指向", target, ref, List.of(ref));
             added++;
             if (reachedLimit(added, limit)) {

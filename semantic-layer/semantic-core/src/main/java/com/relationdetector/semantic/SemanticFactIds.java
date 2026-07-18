@@ -11,33 +11,41 @@ public final class SemanticFactIds {
     private SemanticFactIds() {
     }
 
-    public static String relationship(JsonNode relationship, boolean derived, int index) {
+    public static String relationship(JsonNode relationship, boolean derived) {
         String prefix = derived ? "derivedRelationship" : "relationship";
-        return prefix + ":" + endpoint(relationship.path("source")) + "->"
-                + endpoint(relationship.path("target")) + ":"
-                + relationship.path("relationType").asText(relationship.path("kind").asText("UNKNOWN")) + ":"
-                + index;
+        return StableSemanticId.of(prefix,
+                endpoint(relationship.path("source")),
+                endpoint(relationship.path("target")),
+                relationship.path("relationType").asText(relationship.path("kind").asText("UNKNOWN")),
+                relationship.path("relationSubType").asText(""));
     }
 
-    public static String lineage(JsonNode lineage, boolean derived, int index) {
+    public static String lineage(JsonNode lineage, boolean derived) {
         String prefix = derived ? "derivedLineage" : "lineage";
-        String source = sources(lineage).stream().reduce((left, right) -> left + "+" + right).orElse("unknown");
-        return prefix + ":" + source + "->" + endpoint(lineage.path("target")) + ":"
-                + lineage.path("flowKind").asText(lineage.path("kind").asText("UNKNOWN")) + ":"
-                + lineage.path("transformType").asText("UNKNOWN") + ":" + index;
+        String source = sources(lineage).stream().distinct().sorted()
+                .reduce((left, right) -> left + "+" + right).orElse("unknown");
+        return StableSemanticId.of(prefix,
+                source,
+                endpoint(lineage.path("target")),
+                lineage.path("flowKind").asText(lineage.path("kind").asText("UNKNOWN")),
+                lineage.path("transformType").asText("UNKNOWN"));
     }
 
-    public static String naming(JsonNode naming, int index) {
-        String id = naming.path("id").asText("");
-        if (!id.isBlank()) {
-            return id.startsWith("naming:") ? id : "naming:" + id;
-        }
-        return "naming:" + endpoint(naming.path("source")) + "->" + endpoint(naming.path("target")) + ":"
-                + naming.path("rule").asText("UNKNOWN") + ":" + index;
+    public static String naming(JsonNode naming) {
+        return StableSemanticId.of("naming",
+                endpoint(naming.path("source")),
+                endpoint(naming.path("target")),
+                naming.path("rule").asText("UNKNOWN"),
+                naming.path("directionHint").asText("false"));
     }
 
-    public static String diagnostic(JsonNode diagnostic, int index) {
-        return "diagnostic:" + index + ":" + diagnostic.path("code").asText(diagnostic.path("type").asText("UNKNOWN"));
+    public static String diagnostic(JsonNode diagnostic) {
+        return StableSemanticId.of("diagnostic",
+                diagnostic.path("code").asText(diagnostic.path("type").asText("UNKNOWN")),
+                diagnostic.path("severity").asText(""),
+                diagnostic.path("source").asText(""),
+                diagnostic.path("line").asText("0"),
+                diagnostic.path("message").asText(""));
     }
 
     public static List<String> sources(JsonNode lineage) {

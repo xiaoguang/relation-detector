@@ -73,4 +73,4 @@
 - relation-detector 是更大语义层系统中的事实采集与证据生成子系统；业务语义、同义词、指标候选、自然语言问答和 SQL draft 由 Evidence-Grounded Semantic Layer 在事实层之上完成。
 - 数据画像默认关闭，只在用户显式开启时读取业务数据。
 - 每条输出关系必须保留 evidence，不能只输出最终 confidence。
-- 生产代码需要通过 package/class/关键方法的中英双语注释说明职责边界；设计文档以当前已通过 correctness/CLI E2E 的代码行为为事实来源。
+- 生产 package 必须以中英双语说明职责、输入输出、上下游和禁止边界；生产 class 与关键方法必须有具体、非模板的职责说明，但当前架构门禁不要求每个类和方法都双语。设计文档以当前代码、对应 contract tests 及已通过的 correctness/CLI E2E 为事实来源，并保留真实数据库 smoke 等环境边界。

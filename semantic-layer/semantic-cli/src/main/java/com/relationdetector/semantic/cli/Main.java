@@ -136,7 +136,8 @@ public final class Main {
         }
         try {
             JsonNode raw = JSON.readTree(arguments.inputs.get(0).toFile());
-            JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw);
+            JsonNode evidenceBundle = JSON.readTree(arguments.evidenceBundle.toFile());
+            JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle);
             Path parent = arguments.output.getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
@@ -154,7 +155,8 @@ public final class Main {
                 semantic extract --config <semantic-extraction.yml>
                 semantic extract --input <scan-result.json> --output <dir> [--focus <source>] [--request-only]
                 semantic e2e --input <scan-result.json> --output <dir> [--name <case-name>]
-                semantic normalize-extraction --input <raw-result.json> --output <normalized-result.json>
+                semantic normalize-extraction --input <raw-result.json> --evidence-bundle <bundle.json>
+                                              --output <normalized-result.json>
 
                 Commands:
                   build                 Build evidence-backed semantic KG JSON from relation-detector JSON.
@@ -184,6 +186,7 @@ public final class Main {
                   --max-lineage <n>      Evidence lineage cap. Defaults to 0 (unlimited).
                   --max-naming <n>       Evidence naming cap. Defaults to 0 (unlimited).
                   --request-only         Write prompt/evidence/request artifacts but do not call the model.
+                  --evidence-bundle <f>  Required evidence bundle for normalize-extraction.
                   --help                 Show this help.
                 """;
     }
@@ -225,7 +228,8 @@ public final class Main {
             int maxLineage,
             int maxNamingEvidence,
             boolean requestOnly,
-            String name
+            String name,
+            Path evidenceBundle
     ) {
         static Arguments parse(String[] args) {
             if (args == null || args.length == 0) {
@@ -271,6 +275,7 @@ public final class Main {
             int maxNamingEvidence = 0;
             boolean requestOnly = false;
             String name = "";
+            Path evidenceBundle = null;
             boolean providerSet = false;
             boolean focusSet = false;
             boolean modelSet = false;
@@ -334,6 +339,7 @@ public final class Main {
                         requestOnlySet = true;
                     }
                     case "--name" -> name = requireValue(args, index++, arg);
+                    case "--evidence-bundle" -> evidenceBundle = Path.of(requireValue(args, index++, arg));
                     default -> throw new IllegalArgumentException("unknown argument: " + arg);
                 }
             }
@@ -385,9 +391,12 @@ public final class Main {
             if (!help && output == null) {
                 throw new IllegalArgumentException("--output is required");
             }
+            if (!help && command == Command.NORMALIZE_EXTRACTION && evidenceBundle == null) {
+                throw new IllegalArgumentException("--evidence-bundle is required for normalize-extraction");
+            }
             return new Arguments(command, List.copyOf(inputs), output, help, provider, focus, model, reasoningEffort,
                     maxOutputTokens, baseUrl, apiKeyEnv, maxRelationships, maxLineage, maxNamingEvidence, requestOnly,
-                    name);
+                    name, evidenceBundle);
         }
 
         String apiKey() {

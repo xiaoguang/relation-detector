@@ -3,7 +3,6 @@ package com.relationdetector.semantic.kg;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.Clock;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +13,7 @@ import com.relationdetector.semantic.graph.EvidenceGraphFact;
 import com.relationdetector.semantic.graph.ReferenceIndex;
 import com.relationdetector.semantic.reader.EndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.reader.SemanticInputPathCanonicalizer;
 
 /** Materializes an evidence graph into a JSON-friendly KG. */
 public final class SemanticKgBuilder {
@@ -173,23 +173,10 @@ public final class SemanticKgBuilder {
     private Map<String, Object> buildRun(ScanBundle bundle) {
         return Map.of(
                 "builtAt", Instant.now(clock).toString(),
-                "database", Map.of("type", bundle.databaseType(), "schema", bundle.schema()),
+                "database", Map.of("type", bundle.databaseType(), "catalog", bundle.catalog(), "schema", bundle.schema()),
                 "generatedAt", bundle.generatedAt(),
                 "sources", bundle.sources(),
-                "inputFiles", bundle.inputFiles().stream().map(this::canonicalInputPath).toList()
+                "inputFiles", bundle.inputFiles().stream().map(SemanticInputPathCanonicalizer::canonicalize).toList()
         );
-    }
-
-    private String canonicalInputPath(Path input) {
-        Path normalized = input.normalize();
-        if (!normalized.isAbsolute()) {
-            return normalized.toString().replace('\\', '/');
-        }
-        Path workspace = Path.of("").toAbsolutePath().normalize();
-        if (normalized.startsWith(workspace)) {
-            return workspace.relativize(normalized).toString().replace('\\', '/');
-        }
-        Path filename = normalized.getFileName();
-        return filename == null ? "external-input" : filename.toString();
     }
 }

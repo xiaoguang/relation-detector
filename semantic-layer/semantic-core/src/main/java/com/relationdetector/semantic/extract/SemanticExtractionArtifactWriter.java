@@ -40,14 +40,10 @@ public final class SemanticExtractionArtifactWriter {
                 pretty(normalizeResult(result.outputText(), prompt.evidenceBundle())));
     }
 
-    public ObjectNode normalizeResult(String outputText) {
-        return normalizeResult(outputText, null);
-    }
-
     public ObjectNode normalizeResult(String outputText, JsonNode evidenceBundle) {
         try {
             JsonNode raw = JSON.readTree(outputText);
-            return evidenceBundle == null ? normalizer.normalize(raw) : normalizer.normalize(raw, evidenceBundle);
+            return normalizer.normalize(raw, evidenceBundle);
         } catch (IOException e) {
             throw new IllegalArgumentException("semantic extraction result must be valid JSON", e);
         }

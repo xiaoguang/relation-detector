@@ -13,7 +13,7 @@
 - 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> NoopSemanticEnricher -> SemanticKgBuilder -> JSON artifacts`。
 - 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
-- 已实现 `semantic normalize-extraction`：把已有 JSON semantic extraction output 规范化为 document-local graph，补齐 `semanticGraph` 与 `validation`。当前 CLI 入口是 raw-only normalization，不接收 evidence bundle，因此不会做 event/triplet/review 候选 backfill 或 bundle fact id 全量解析。当前 `validation.isRefClosed` 只是内部 entity/candidate 字段/非空 evidence 的轻量检查，不是严格 bundle provenance closure。
+- 已实现 `semantic normalize-extraction`：输入 raw semantic output 和必需 evidence bundle，执行候选回填、typed reference/physical endpoint 校验、semantic owner-id 全局唯一性校验，并补齐 `semanticGraph` 与 `validation`。任一闭包失败时命令失败，不输出半闭合正式结果。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
 
@@ -99,16 +99,20 @@ Step 2: ScanBundle（当前内存对象）
 ─────────────────────────────────────────
 ScanBundle {
   databaseType: "mysql",
-  schema: "shop",
+  catalog: "sample",
+  schema: "",
   summary: {directRelationshipCount: 5, ...},
   sources: ["ddl", "logs"],
-  relationships: [JsonNode, ...],
-  dataLineages: [JsonNode, ...],
-  derivedRelationships: [JsonNode, ...],
-  derivedDataLineages: [JsonNode, ...],
-  namingEvidence: [JsonNode, ...],
-  diagnostics: [JsonNode, ...] // 来自 relation-detector 顶层 warnings
+  relationships: [ScanRelationshipFact, ...],
+  dataLineages: [ScanLineageFact, ...],
+  derivedRelationships: [ScanRelationshipFact, ...],
+  derivedDataLineages: [ScanLineageFact, ...],
+  namingEvidence: [ScanNamingEvidenceFact, ...],
+  diagnostics: [ScanDiagnosticFact, ...] // 来自 relation-detector 顶层 warnings
 }
+
+当前模型保存 relation-detector 顶层 `database.catalog`，并按完整
+`database.type + catalog + schema` 身份约束 multi-input merge。
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
         ↓ [当前: 把 relationship / lineage / naming / derived / diagnostic / eventCandidate materialize 为 EvidenceGraph facts]
@@ -167,7 +171,7 @@ EvidenceGraph {
         ↓ [codex-session: 写本地 prompt artifacts，不调用模型]
         ↓ [openai-api: 可调用大模型，并使用 bundle-aware normalization]
         ↓ [LLM 任务: 业务名/描述/同义词/实体/事件/指标/维度/lineage 解释/triplet]
-        ↓ [normalize-extraction: raw-only 生成 normalized semantic document 与轻量 document-local validation]
+        ↓ [normalize-extraction: raw result + evidence bundle，生成 ID/internal-ref-closed semantic document]
 
 Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extraction` 输出；Catalog 写入仍未实现）
 ─────────────────────────────────────────
@@ -179,7 +183,7 @@ Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extr
       "physicalName": "orders",
       "machineType": "BusinessDataEntity",
       "type": "业务单据实体",
-      "evidenceRefs": ["relationship:orders.customer_id->customers.id:FK_LIKE:0"]
+      "evidenceRefs": ["evidence:<sha256>"]
     }
   ],
   "events": [
@@ -189,7 +193,7 @@ Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extr
       "eventCandidateRef": "event-candidate:routine:sp_rebuild_sales_fact",
       "inputs": ["sales_orders", "payments"],
       "outputs": ["sales_fact"],
-      "evidenceRefs": ["lineage:payments.amount->sales_fact.amount:VALUE:AGGREGATE:0"]
+      "evidenceRefs": ["evidence:<sha256>"]
     }
   ],
   "relations": [],
@@ -204,7 +208,7 @@ Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extr
       "grain": ["customers.id"],
       "timeField": "payments.paid_at",
       "reviewStatus": "SYSTEM_PROPOSED",
-      "evidenceRefs": ["lineage:payments.amount->sales_fact.paid_amount:VALUE:AGGREGATE:0"]
+      "evidenceRefs": ["evidence:<sha256>"]
     }
   ],
   "reviewItems": [
@@ -215,7 +219,7 @@ Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extr
       "type": "REVIEW_NEEDED",
       "severity": "MEDIUM",
       "reason": "新指标候选，需要确认支付金额口径",
-      "evidenceRefs": ["lineage:payments.amount->sales_fact.paid_amount:VALUE:AGGREGATE:0"]
+      "evidenceRefs": ["evidence:<sha256>"]
     }
   ],
   "semanticGraph": {"nodes": [], "edges": []},
@@ -441,7 +445,8 @@ Step 7: Answer（最终输出）
     ↓ codex-session: 只写 prompt / bundle / session 说明
     ↓ openai-api: 调用 Responses API，写 raw result / bundle-aware normalized result
 [semantic normalize-extraction]
-    ↓ 输出: raw-only normalized semantic document + document-local validation
+    ↓ 输入: raw result + evidence bundle
+    ↓ 输出: ID/internal-ref-closed normalized semantic document
 ```
 
 **目标完整治理链路：**
@@ -575,7 +580,8 @@ Step 7: Answer（最终输出）
 - `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json` 均生成且为合法 JSON
 - KG 中所有 fact / edge 都能回溯到 relation-detector JSON payload 或 evidenceRef
 - `NoopSemanticEnricher` 不创造新 fact
-- 多 input 只允许同一 `database.type` 与 `database.schema` 合并
+- 只允许同一 `database.type`、`database.catalog` 与 `database.schema` 合并
+- 所有 fact/evidence/candidate 引用使用内容稳定 ID；正式 normalization 必须同时通过 bundle ID、物理 endpoint、文档内 entity 引用和 semantic owner-id closure
 
 **目标完整链路验收标准（后续阶段）：**
 - 所有语义对象有 evidenceRefs
@@ -595,8 +601,9 @@ Step 7: Answer（最终输出）
   - 目标 SqlValidator: 校验失败 → FAILED，AnswerComposer 不输出 SQL
 
 不可恢复错误 → 抛出异常 → 终止当前链路
-  - 当前 ScanResultReader: 文件不存在、JSON 非对象、database.type 缺失 → 终止
-  - 当前 ScanResultReader: 多 input 的 database.type/schema 不一致 → 终止
+  - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
+  - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
+  - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
   - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
   - 目标 CatalogStore: 磁盘写入失败 → 终止
   - 目标 SqlGenerator: plan 无表 → 终止

@@ -94,13 +94,16 @@ Evidence 可以来自 metadata、DDL、SQL、procedure、trigger、comment、sca
 
 EvidenceRef 建议包含 scanRunId、scanVersion、parserMode、grammarProfile、sourceHash、detectorVersion、payloadSnapshot、reviewDecisionId 等字段，用于复现语义对象的来源。
 
-当前 artifact 实现还没有达到这一完整定义：KG evidence id 由 owner fact id 和数组 index 组成；semantic extraction bundle 中 relationship/lineage/naming 的 `evidenceRefs` 当前是 `{source,type,detail}` provenance snapshot，而 event/triplet candidate 使用字符串 fact id。它们可用于当前文件内审计，但不保证跨重排、跨 scan 稳定。该差异属于实现缺口，不改变 EvidenceRef 的目标定义。
+当前 artifact 使用内容稳定 ID：fact id 由规范化语义身份生成，evidence id 由 owner fact id 与 canonical
+evidence JSON 生成，均不包含数组位置。semantic extraction bundle 顶层 `evidence` registry 与各 section
+的字符串 `evidenceRefs` 构成文件内完整引用图。scanRunId、sourceHash、reviewDecisionId 等跨运行治理元数据
+仍是后续 Catalog Store 扩展，不影响当前 ref closure。
 
 ### ScanBundle
 
 语义层消费 relation-detector 输出前的标准化事实包。
 
-ScanBundle 对应 Semantica 架构中 Raw Documents / Records 的角色，但它的内容是数据库事实记录而不是任意文档。当前代码已把 relationship、lineage、naming evidence 和 diagnostic 转为 typed fact，在 reader 边界固化 stable id、endpoint、confidence 和 flow kind；每个 fact 仍保留原始 JSON payload 用于 evidence/provenance 展示。它不负责业务语义确认，metadata/source-hash/catalog index 仍属后续范围。
+ScanBundle 对应 Semantica 架构中 Raw Documents / Records 的角色，但它的内容是数据库事实记录而不是任意文档。当前代码已把 relationship、lineage、naming evidence 和 diagnostic 转为 typed fact，在 reader 边界固化内容稳定 id、endpoint、confidence 和 flow kind；数组重排不会改变 id 集合。每个 fact仍保留原始 JSON payload 用于 evidence/provenance 展示。reader 验证必需结构、endpoint、confidence、summary 计数和完整 type/catalog/schema identity；`generatedAt` 格式、relation/evidence 枚举和嵌套 evidence schema 尚未逐项验证。它不负责业务语义确认；source-hash、scan-run catalog index 和持久化治理仍属后续范围。
 
 ### Provenance
 

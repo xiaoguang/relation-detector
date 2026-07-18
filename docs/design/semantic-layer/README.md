@@ -17,6 +17,10 @@ Relation Detector
 
 这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与可审计 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。EvidenceGraph 中的事件事实类型是 `SemanticEventCandidate`，KG 渲染为 `Event` 节点；它只来自 direct non-control write lineage，derived lineage 仅作 supporting evidence。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。
 
+`ScanResultReader` / `ScanBundle` 保留完整 `database.type + catalog + schema` 身份；多 input 合并会拒绝
+任一 identity 轴不同的输入。所有 semantic artifact 使用同一个 portable path renderer：工作目录内路径
+相对化，外部绝对路径只保留文件名；它用于防止本机绝对路径泄漏，不是跨仓库的持久 source identity。
+
 当前还实现了语义抽取 artifact 链路：
 
 ```text
@@ -28,12 +32,28 @@ Relation Detector JSON
        -> codex-session: 写 prompt / evidence bundle / 会话说明，不调用外部模型
        -> openai-api: 调用 OpenAI-compatible Responses API，通过 bundle-aware normalizer 写 raw response 与 normalized semantic document
   -> semantic normalize-extraction
-       -> raw-only 规范化 JSON semantic extraction output，补齐 semanticGraph / validation
+       -> raw result + evidence bundle
+       -> 严格验证 evidence/candidate refs，补齐 semanticGraph / validation
 ```
 
 `semantic e2e` 是 deterministic 验证入口：同一次读取 scan result 后同时写 `semantic-kg/<case-name>/` 和 `semantic-extraction/<case-name>/` 的 evidence bundle / prompt artifacts，但不调用模型。当前不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答；这些仍是后续阶段。
 
-`semantic normalize-extraction` 当前不接收 evidence bundle，因此不能补齐 LLM 漏掉的全部 event / triplet / review 候选，也不能逐条验证 `evidenceRefs` 是否解析回 bundle fact id；这类 bundle-aware backfill 当前只在 `openai-api` 写出结果的代码路径中执行。即使走 bundle-aware 路径，当前 normalizer 也只做候选回填，不校验每个 candidate/evidence ref 确实存在于 bundle；`validation.isRefClosed` 目前只表示 normalized document 内部 entity 引用、必填 candidate ref 和非空 evidence 数组通过轻量检查。
+`semantic normalize-extraction` 强制接收 `--evidence-bundle`。openai-api 与独立 CLI 使用相同的 bundle-aware
+normalizer：候选回填后建立统一 reference index，验证每个 evidence/candidate ref、文档内 entity 引用和
+governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对象引用的表列存在于 evidence bundle，
+`SemanticOwnerIdRegistry` 保证所有 semantic section 的 owner ID 全局唯一。任一闭包失败都直接拒绝，不输出
+部分 artifact。
+
+### 当前实现差异矩阵
+
+| ID | 状态 | 当前边界 |
+| --- | --- | --- |
+| `SEM-WIRE-01` | `MATCHED` | reader 校验必需结构、ISO-8601 `generatedAt`、endpoint、confidence、summary/数组计数、relation/lineage/evidence/warning 枚举及嵌套 evidence；非空 derived relationship/lineage 使用 writer 的统一 path contract。 |
+| `SEM-REF-01` | `MATCHED` | evidence/fact/candidate ID、文档内 entity 引用和 bundle 物理表列引用均执行精确闭包校验，不降级 catalog/schema。 |
+| `SEM-ID-01` | `MATCHED` | bundle fact ID 与 normalized semantic owner ID 均拒绝同 section 和跨 section 重复；graph assembler 拒绝 node 覆盖与冲突 edge。 |
+
+这三项当前已闭环。Catalog Store、search、planner 等目标能力继续按各自 backlog 管理，不因本矩阵状态
+变化而归类为当前实现。
 
 ### 目标离线构建链路
 

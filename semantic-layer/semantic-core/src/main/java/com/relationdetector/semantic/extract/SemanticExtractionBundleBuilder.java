@@ -2,7 +2,9 @@ package com.relationdetector.semantic.extract;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,7 +13,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.event.SemanticEventExtractor;
+import com.relationdetector.semantic.graph.EvidenceGraph;
+import com.relationdetector.semantic.graph.EvidenceGraphFact;
+import com.relationdetector.semantic.graph.EvidenceReference;
+import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
 import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.reader.SemanticInputPathCanonicalizer;
 import com.relationdetector.semantic.reader.ScanDiagnosticFact;
 import com.relationdetector.semantic.reader.ScanLineageFact;
 import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
@@ -21,6 +28,7 @@ import com.relationdetector.semantic.reader.ScanRelationshipFact;
 public final class SemanticExtractionBundleBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final SemanticEventExtractor eventExtractor = new SemanticEventExtractor();
+    private final SemanticEvidenceBuilder evidenceBuilder = new SemanticEvidenceBuilder();
     private final ReviewItemCandidateGenerator reviewItemCandidateGenerator = new ReviewItemCandidateGenerator();
     private final TripletCandidateBuilder tripletCandidateBuilder = new TripletCandidateBuilder();
 
@@ -30,21 +38,32 @@ public final class SemanticExtractionBundleBuilder {
         }
         String normalizedFocus = focus == null ? "" : focus.trim();
         Set<String> focusTables = focusTables(bundle, normalizedFocus);
+        EvidenceGraph evidenceGraph = evidenceBuilder.build(bundle);
+        Map<String, List<String>> evidenceRefsByFact = evidenceRefsByFact(evidenceGraph);
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");
         database.put("type", bundle.databaseType());
+        database.put("catalog", bundle.catalog());
         database.put("schema", bundle.schema());
         root.put("focus", normalizedFocus);
         List<SemanticEventCandidate> events = eventExtractor.extract(bundle);
-        root.set("inputFiles", strings(bundle.inputFiles().stream().map(Object::toString).toList()));
+        root.set("inputFiles", strings(bundle.inputFiles().stream()
+                .map(SemanticInputPathCanonicalizer::canonicalize)
+                .toList()));
         root.set("sources", strings(bundle.sources()));
         root.set("tables", strings(new ArrayList<>(focusTables)));
-        root.set("relationships", relationships(bundle.relationships(), focusTables, maxRelationships, false));
-        root.set("lineage", lineages(bundle.dataLineages(), normalizedFocus, focusTables, maxLineage, false));
+        root.set("evidence", evidence(evidenceGraph.evidenceRefs()));
+        root.set("relationships", relationships(bundle.relationships(), focusTables, maxRelationships, false,
+                evidenceRefsByFact));
+        root.set("lineage", lineages(bundle.dataLineages(), normalizedFocus, focusTables, maxLineage, false,
+                evidenceRefsByFact));
         root.set("eventCandidates", eventCandidates(events, focusTables, maxLineage));
-        root.set("derivedRelationships", relationships(bundle.derivedRelationships(), focusTables, maxRelationships, true));
-        root.set("derivedLineage", lineages(bundle.derivedDataLineages(), normalizedFocus, focusTables, maxLineage, true));
-        root.set("namingEvidence", namingEvidence(bundle.namingEvidence(), focusTables, maxNamingEvidence));
+        root.set("derivedRelationships", relationships(bundle.derivedRelationships(), focusTables, maxRelationships, true,
+                evidenceRefsByFact));
+        root.set("derivedLineage", lineages(bundle.derivedDataLineages(), normalizedFocus, focusTables, maxLineage, true,
+                evidenceRefsByFact));
+        root.set("namingEvidence", namingEvidence(bundle.namingEvidence(), focusTables, maxNamingEvidence,
+                evidenceRefsByFact));
         root.set("reviewItemCandidates", reviewItemCandidateGenerator.build(bundle, 0));
         root.set("tripletCandidates", tripletCandidateBuilder.build(bundle, events, focusTables,
                 maxRelationships, maxLineage, maxNamingEvidence));
@@ -95,7 +114,7 @@ public final class SemanticExtractionBundleBuilder {
     }
 
     private ArrayNode relationships(List<ScanRelationshipFact> relationships, Set<String> focusTables, int limit,
-            boolean derived) {
+            boolean derived, Map<String, List<String>> evidenceRefsByFact) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanRelationshipFact relationship : relationships) {
             String source = relationship.source();
@@ -111,7 +130,7 @@ public final class SemanticExtractionBundleBuilder {
             item.put("type", relationship.relationType());
             item.put("subType", relationship.relationSubType());
             item.put("confidence", relationship.confidence());
-            item.set("evidenceRefs", evidenceRefs(document));
+            item.set("evidenceRefs", strings(evidenceRefsByFact.getOrDefault(relationship.id(), List.of())));
             item.set("evidenceTypes", evidenceTypes(document.path("evidence")));
             if (limited(limit) && result.size() >= limit) {
                 break;
@@ -121,7 +140,7 @@ public final class SemanticExtractionBundleBuilder {
     }
 
     private ArrayNode lineages(List<ScanLineageFact> lineages, String focus, Set<String> focusTables, int limit,
-            boolean derived) {
+            boolean derived, Map<String, List<String>> evidenceRefsByFact) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanLineageFact lineage : lineages) {
             List<String> sources = new ArrayList<>(lineage.sources());
@@ -140,7 +159,7 @@ public final class SemanticExtractionBundleBuilder {
             item.put("flowKind", lineage.flowKind());
             item.put("transformType", lineage.transformType());
             item.put("confidence", lineage.confidence());
-            item.set("evidenceRefs", evidenceRefs(document));
+            item.set("evidenceRefs", strings(evidenceRefsByFact.getOrDefault(lineage.id(), List.of())));
             item.set("evidenceSources", evidenceSources(document.path("evidence")));
             if (limited(limit) && result.size() >= limit) {
                 break;
@@ -185,7 +204,8 @@ public final class SemanticExtractionBundleBuilder {
         return result;
     }
 
-    private ArrayNode namingEvidence(List<ScanNamingEvidenceFact> namingEvidence, Set<String> focusTables, int limit) {
+    private ArrayNode namingEvidence(List<ScanNamingEvidenceFact> namingEvidence, Set<String> focusTables, int limit,
+            Map<String, List<String>> evidenceRefsByFact) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanNamingEvidenceFact naming : namingEvidence) {
             String source = naming.source();
@@ -199,7 +219,7 @@ public final class SemanticExtractionBundleBuilder {
             item.put("target", target);
             item.put("rule", naming.rule());
             item.put("directionHint", naming.directionHint());
-            item.set("evidenceRefs", evidenceRefs(naming.document()));
+            item.set("evidenceRefs", strings(evidenceRefsByFact.getOrDefault(naming.id(), List.of())));
             if (limited(limit) && result.size() >= limit) {
                 break;
             }
@@ -267,29 +287,27 @@ public final class SemanticExtractionBundleBuilder {
         return lastDot < 0 ? endpoint : endpoint.substring(0, lastDot);
     }
 
-    private ArrayNode evidenceRefs(JsonNode node) {
-        ArrayNode result = JSON.createArrayNode();
-        for (JsonNode evidence : node.path("rawEvidence")) {
-            addEvidenceRef(result, evidence);
-        }
-        if (result.isEmpty()) {
-            for (JsonNode evidence : node.path("evidence")) {
-                addEvidenceRef(result, evidence);
-            }
+    private Map<String, List<String>> evidenceRefsByFact(EvidenceGraph graph) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        for (EvidenceGraphFact fact : graph.facts()) {
+            result.put(fact.id(), fact.evidenceRefs());
         }
         return result;
     }
 
-    private void addEvidenceRef(ArrayNode result, JsonNode evidence) {
-        String source = evidence.path("source").asText("");
-        String detail = evidence.path("detail").asText("");
-        String type = evidence.path("type").asText(evidence.path("transformType").asText(""));
-        if (!source.isBlank() || !detail.isBlank() || !type.isBlank()) {
-            ObjectNode ref = result.addObject();
-            ref.put("source", source);
-            ref.put("type", type);
-            ref.put("detail", detail);
+    private ArrayNode evidence(List<EvidenceReference> references) {
+        ArrayNode result = JSON.createArrayNode();
+        for (EvidenceReference reference : references) {
+            ObjectNode item = result.addObject();
+            item.put("id", reference.id());
+            item.put("type", reference.evidenceType());
+            item.put("sourceType", reference.sourceType());
+            item.put("score", reference.score());
+            item.put("source", reference.source());
+            item.put("detail", reference.detail());
+            item.set("attributes", JSON.valueToTree(reference.attributes()));
         }
+        return result;
     }
 
     private ArrayNode evidenceTypes(JsonNode evidenceArray) {

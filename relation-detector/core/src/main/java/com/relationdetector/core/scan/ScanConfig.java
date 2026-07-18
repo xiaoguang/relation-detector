@@ -100,7 +100,9 @@ public final class ScanConfig {
     }
 
     public NamingRuleSet namingRuleSet() {
-        return NamingRuleSet.fromConfig(namingMatchEnabled, namingMatchSystemRulesEnabled, namingMatchRules);
+        return new NamingRuleSetResolver().ruleSet(
+                namingMatchEnabled, namingMatchSystemRulesEnabled,
+                namingMatchRuleFiles, namingMatchRules);
     }
 
     public ResolvedScanConfig resolve() {

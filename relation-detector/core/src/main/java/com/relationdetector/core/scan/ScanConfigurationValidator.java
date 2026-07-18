@@ -52,8 +52,19 @@ final class ScanConfigurationValidator {
         }
         validateRatio(input.derivedConfidenceDecay, "derivedPaths.confidenceDecay");
         validateRatio(input.derivedMinConfidence, "derivedPaths.minConfidence");
-        input.namingRuleSet();
+        validateInlineNamingRules(input);
         validateRequestedSources(input);
+    }
+
+    private void validateInlineNamingRules(ScanConfig input) {
+        try {
+            com.relationdetector.core.naming.NamingRuleSet.fromConfig(
+                    input.namingMatchEnabled,
+                    input.namingMatchSystemRulesEnabled,
+                    input.namingMatchRules);
+        } catch (IllegalArgumentException ex) {
+            throw new ScanConfigurationException("invalid namingMatch rules: " + ex.getMessage(), ex);
+        }
     }
 
     void validate(

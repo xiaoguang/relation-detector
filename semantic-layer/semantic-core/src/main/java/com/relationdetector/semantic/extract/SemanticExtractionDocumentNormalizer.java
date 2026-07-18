@@ -34,19 +34,25 @@ public final class SemanticExtractionDocumentNormalizer {
     }
 
     public ObjectNode normalize(JsonNode rawDocument) {
-        return normalize(rawDocument, null);
+        throw new IllegalArgumentException("semantic evidence bundle is required for formal normalization");
     }
 
     public ObjectNode normalize(JsonNode rawDocument, JsonNode evidenceBundle) {
+        SemanticReferenceIndex referenceIndex = SemanticReferenceIndex.from(evidenceBundle);
+        SemanticPhysicalReferenceIndex physicalIndex = SemanticPhysicalReferenceIndex.from(evidenceBundle);
         SemanticExtractionDocument document = codec.read(rawDocument);
         candidateBackfill.apply(document, evidenceBundle);
         SemanticGraphAssembler graph = new SemanticGraphAssembler();
-        Session validation = referenceValidator.newSession();
+        Session validation = referenceValidator.newSession(referenceIndex, physicalIndex);
         NormalizationResult normalized = sectionNormalizer.normalizeFacts(document, graph, validation);
         validation.addGeneratedReviewItems(reviewGenerator.generate(document));
         sectionNormalizer.normalizeReviewItems(document.reviewItems, graph, validation);
         document.semanticGraph = graph.build();
         document.validation = validation.build(document.entities, normalized.linkedEntities());
+        if (!document.validation.isRefClosed()) {
+            throw new SemanticExtractionValidationException(
+                    "semantic extraction contains unresolved references: " + document.validation);
+        }
         return codec.write(document);
     }
 }

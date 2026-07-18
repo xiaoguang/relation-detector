@@ -117,14 +117,10 @@ final class SemanticEventExtractorTest {
 
         assertEquals(1, events.size());
         assertEquals(1, events.get(0).relationshipRefs().size());
-        assertTrue(events.get(0).relationshipRefs().get(0).startsWith("relationship:"));
-        assertTrue(events.get(0).relationshipRefs().stream()
-                .anyMatch(ref -> ref.contains("sales_fact.order_id->orders.id")));
-        assertFalse(events.get(0).relationshipRefs().stream()
-                .anyMatch(ref -> ref.contains("orders.customer_id->customers.id")));
-        assertFalse(events.get(0).relationshipRefs().stream().anyMatch(ref -> ref.startsWith("derivedRelationship:")));
-        assertFalse(events.get(0).relationshipRefs().stream()
-                .anyMatch(ref -> ref.contains("sales_fact.sales_rep_id->employees.id")));
+        assertEquals(bundle.relationships().get(1).id(), events.get(0).relationshipRefs().get(0));
+        assertFalse(events.get(0).relationshipRefs().contains(bundle.relationships().get(0).id()));
+        assertFalse(events.get(0).relationshipRefs().contains(bundle.relationships().get(2).id()));
+        assertFalse(events.get(0).relationshipRefs().contains(bundle.derivedRelationships().get(0).id()));
     }
 
     private JsonNode lineage(

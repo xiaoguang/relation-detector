@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
+import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
 import com.relationdetector.semantic.kg.JsonSemanticKgWriter;
 import com.relationdetector.semantic.kg.SemanticKgBuilder;
 import com.relationdetector.semantic.kg.SemanticKnowledgeGraph;
@@ -56,9 +57,9 @@ final class SemanticKgBuildTest {
                 .collect(Collectors.toSet());
         assertTrue(nodeIds.contains("table:orders"));
         assertTrue(nodeIds.contains("column:orders.customer_id"));
-        assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("relationship:orders.customer_id->customers.id")));
-        assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("lineage:payments.amount->customer_rollups.total_paid")));
-        assertTrue(nodeIds.contains("naming:orders.customer_id->customers.id:TABLE_ID"));
+        assertTrue(nodeIds.contains(bundle.relationships().get(0).id()));
+        assertTrue(nodeIds.contains(bundle.dataLineages().get(0).id()));
+        assertTrue(nodeIds.contains(bundle.namingEvidence().get(0).id()));
         assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("event-candidate:sql-write:rollup.sql:customer_rollups")));
 
         Set<String> evidenceIds = JSON.readerForListOf(JsonNode.class)
@@ -93,7 +94,21 @@ final class SemanticKgBuildTest {
                 IllegalArgumentException.class,
                 () -> new ScanResultReader().readMerged(java.util.List.of(first, second)));
 
-        assertTrue(error.getMessage().contains("same database type and schema"));
+        assertTrue(error.getMessage().contains("same database identity"));
+    }
+
+    @Test
+    void rejectsMergedScanResultsFromDifferentCatalogs() throws Exception {
+        Path first = tempDir.resolve("first.json");
+        Path second = tempDir.resolve("second.json");
+        Files.writeString(first, sampleScanResult("mysql", "catalog_a", ""));
+        Files.writeString(second, sampleScanResult("mysql", "catalog_b", ""));
+
+        IllegalArgumentException error = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new ScanResultReader().readMerged(java.util.List.of(first, second)));
+
+        assertTrue(error.getMessage().contains("same database identity"));
     }
 
     @Test
@@ -116,10 +131,35 @@ final class SemanticKgBuildTest {
         }
     }
 
+    @Test
+    void preservesCatalogAndCanonicalizesPathsInEverySemanticArtifact() throws Exception {
+        Path input = tempDir.resolve("scan-result.json").toAbsolutePath();
+        Files.writeString(input, sampleScanResult("mysql", "shop_catalog", ""));
+        ScanBundle bundle = new ScanResultReader().read(input);
+        EvidenceGraph graph = new SemanticEvidenceBuilder().build(bundle);
+        SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(graph);
+        JsonSemanticKgWriter writer = new JsonSemanticKgWriter();
+
+        JsonNode kgJson = JSON.readTree(writer.writeKg(kg));
+        JsonNode evidenceJson = JSON.readTree(writer.writeEvidenceGraph(graph));
+        JsonNode extractionJson = new SemanticExtractionBundleBuilder().build(bundle, "", 10, 10, 10);
+
+        assertEquals("shop_catalog", bundle.catalog());
+        assertEquals("shop_catalog", kgJson.path("buildRun").path("database").path("catalog").asText());
+        assertEquals("shop_catalog", evidenceJson.path("scanBundle").path("catalog").asText());
+        assertEquals("shop_catalog", extractionJson.path("database").path("catalog").asText());
+        assertFalse(Path.of(evidenceJson.path("scanBundle").path("inputFiles").get(0).asText()).isAbsolute());
+        assertFalse(Path.of(extractionJson.path("inputFiles").get(0).asText()).isAbsolute());
+    }
+
     private static String sampleScanResult(String databaseType, String schema) {
+        return sampleScanResult(databaseType, "", schema);
+    }
+
+    private static String sampleScanResult(String databaseType, String catalog, String schema) {
         return """
                 {
-                  "database": {"type": "%s", "schema": "%s"},
+                  "database": {"type": "%s", "catalog": "%s", "schema": "%s"},
                   "generatedAt": "2026-07-05T00:00:00Z",
                   "summary": {
                     "directRelationshipCount": 1,
@@ -150,7 +190,7 @@ final class SemanticKgBuildTest {
                     "flowKind": "VALUE",
                     "transformType": "AGGREGATE",
                     "confidence": 0.80,
-                    "evidence": [{"transformType": "AGGREGATE", "sourceType": "PLAIN_SQL", "score": 0.80, "source": "rollup.sql", "detail": "SUM(payments.amount)", "attributes": {}}],
+                    "evidence": [{"type": "DATA_LINEAGE", "transformType": "AGGREGATE", "sourceType": "PLAIN_SQL", "score": 0.80, "source": "rollup.sql", "detail": "SUM(payments.amount)", "attributes": {}}],
                     "rawEvidence": [],
                     "warnings": [],
                     "attributes": {"mappingKind": "INSERT_SELECT"}
@@ -183,6 +223,6 @@ final class SemanticKgBuildTest {
                   "derivedNamingEvidence": [],
                   "warnings": [{"type": "PARSE_WARNING", "severity": "WARN", "code": "FULL_GRAMMAR_SQL_PARSE_WARNING", "message": "sample warning", "source": "query.sql", "line": 7, "attributes": {}}]
                 }
-                """.formatted(databaseType, schema);
+                """.formatted(databaseType, catalog, schema);
     }
 }

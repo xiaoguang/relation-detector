@@ -331,7 +331,7 @@ class ParserConfigRemovalTest {
         assertTrue(config.namingMatchEnabled);
         assertEquals(false, config.namingMatchSystemRulesEnabled);
         assertEquals(List.of(ruleFile), config.namingMatchRuleFiles);
-        assertEquals(2, config.namingMatchRules.size());
+        assertEquals(1, config.namingMatchRules.size());
         assertEquals(2, config.namingRuleSet().rules().size());
     }
 

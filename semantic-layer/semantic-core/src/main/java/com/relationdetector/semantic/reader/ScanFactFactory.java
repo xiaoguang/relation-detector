@@ -13,11 +13,10 @@ final class ScanFactFactory {
 
     static List<ScanRelationshipFact> relationships(List<?> values, boolean derived) {
         List<ScanRelationshipFact> result = new ArrayList<>();
-        int index = 0;
         for (Object value : safe(values)) {
             JsonNode node = document(value, "relationship");
             result.add(new ScanRelationshipFact(
-                    SemanticFactIds.relationship(node, derived, index++),
+                    SemanticFactIds.relationship(node, derived),
                     SemanticFactIds.endpoint(node.path("source")),
                     SemanticFactIds.endpoint(node.path("target")),
                     node.path("relationType").asText(node.path("kind").asText("")),
@@ -31,11 +30,10 @@ final class ScanFactFactory {
 
     static List<ScanLineageFact> lineages(List<?> values, boolean derived) {
         List<ScanLineageFact> result = new ArrayList<>();
-        int index = 0;
         for (Object value : safe(values)) {
             JsonNode node = document(value, "lineage");
             result.add(new ScanLineageFact(
-                    SemanticFactIds.lineage(node, derived, index++),
+                    SemanticFactIds.lineage(node, derived),
                     SemanticFactIds.sources(node),
                     SemanticFactIds.endpoint(node.path("target")),
                     node.path("flowKind").asText(""),
@@ -49,11 +47,10 @@ final class ScanFactFactory {
 
     static List<ScanNamingEvidenceFact> naming(List<?> values) {
         List<ScanNamingEvidenceFact> result = new ArrayList<>();
-        int index = 0;
         for (Object value : safe(values)) {
             JsonNode node = document(value, "naming evidence");
             result.add(new ScanNamingEvidenceFact(
-                    SemanticFactIds.naming(node, index++),
+                    SemanticFactIds.naming(node),
                     SemanticFactIds.endpoint(node.path("source")),
                     SemanticFactIds.endpoint(node.path("target")),
                     node.path("rule").asText(""),
@@ -66,11 +63,10 @@ final class ScanFactFactory {
 
     static List<ScanDiagnosticFact> diagnostics(List<?> values) {
         List<ScanDiagnosticFact> result = new ArrayList<>();
-        int index = 0;
         for (Object value : safe(values)) {
             JsonNode node = document(value, "diagnostic");
             result.add(new ScanDiagnosticFact(
-                    SemanticFactIds.diagnostic(node, index++),
+                    SemanticFactIds.diagnostic(node),
                     node.path("code").asText(""),
                     node.path("severity").asText(""),
                     node.path("message").asText(""),

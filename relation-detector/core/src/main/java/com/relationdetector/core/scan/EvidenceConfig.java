@@ -31,7 +31,9 @@ public record EvidenceConfig(
 ) {
     public EvidenceConfig {
         namingMatchRuleFiles = List.copyOf(namingMatchRuleFiles == null ? List.of() : namingMatchRuleFiles);
-        namingMatchRules = List.copyOf(namingMatchRules == null ? List.of() : namingMatchRules);
+        namingMatchRules = new NamingRuleSetResolver().configuredRules(
+                namingMatchRuleFiles, namingMatchRules == null ? List.of() : namingMatchRules);
+        NamingRuleSet.fromConfig(namingMatchEnabled, namingMatchSystemRulesEnabled, namingMatchRules);
     }
 
     public NamingRuleSet namingRuleSet() {
