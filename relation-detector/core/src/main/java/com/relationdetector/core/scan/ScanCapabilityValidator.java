@@ -52,8 +52,8 @@ final class ScanCapabilityValidator {
         }
     }
 
-    private IllegalArgumentException unsupported(DatabaseAdaptor adaptor, String source, String requirement) {
-        return new IllegalArgumentException("adaptor=" + adaptor.id()
+    private AdaptorContractException unsupported(DatabaseAdaptor adaptor, String source, String requirement) {
+        return new AdaptorContractException("adaptor=" + adaptor.id()
                 + " requestedSource=" + source
                 + " required=" + requirement);
     }

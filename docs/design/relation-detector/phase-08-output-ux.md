@@ -171,6 +171,8 @@ derivedPaths:
 - PostgreSQL/SQL Server live scope resolver 为验证 connection catalog 而在连接建立后抛出的
   `LiveSourceConfigurationException` 仍属于不可恢复配置错误。direct API 原样抛出；single-scan 和
   batch CLI 都必须映射为 `CONFIG_FORMAT_ERROR`，不能降级 warning 或归入通用 argument/runtime error。
+- capability preflight 缺少请求的 producer/consumer 时统一抛 `AdaptorContractException`；single-scan
+  映射为 `ADAPTOR_ERROR`，batch case 保留同一 code，batch 整体仍返回 `BATCH_PARTIAL_FAILURE`。
 - YAML 中旧的离线画像字段会返回 `CONFIG_FORMAT_ERROR`，不会被未知字段策略静默忽略。
 
 MySQL namespace兼容说明：live collector内部把database统一规范到catalog轴；旧
@@ -229,6 +231,8 @@ endpoint与scan summary使用同一canonical database。
 summary 只保留三段式字段：`direct*Count`、`derived*Count`、`total*Count`，relationship、dataLineage、namingEvidence 三类事实保持一致。
 
 Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。它统计 merged fact 背后的真实 occurrence：不同位置分别计数，同一位置折叠的 `occurrenceCount` 也累加。relationship、lineage、naming 和 derived path 都通过统一 occurrence helper 计算。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
+
+`output.includeWarnings` 控制一个完整的公开输出视图。为 `true` 时保留根、relationship 和 lineage warning；为 `false` 时三处 warning 数组均为空，且 `summary.warningCount=0`。该选项不会删除 `ScanResult` 内部 warning，也不会改变 CLI 根据真实 warning 数得出的退出状态。semantic-layer 严格 reader 因而可以同时消费完整 warning 输出和由 writer 生成的完整 suppressed 输出；人工拼接出 warning 数组与 count 不一致的 JSON 仍会被拒绝。
 
 关系：
 

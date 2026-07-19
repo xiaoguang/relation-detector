@@ -11,7 +11,7 @@
 - 从 top-level `namingEvidence` 构建 `NamingEvidenceFact`，其中包含 direct 和 derived naming evidence。
 - 从 `derivedRelationships` / `derivedDataLineages` 构建 `DerivedRelationshipFact` / `DerivedLineageFact`。
 - 从 `warnings` 构建 `Diagnostic` fact。
-- 从 deterministic `SemanticEventExtractor` 输出构建 `SemanticEventCandidate` fact；KG writer 将它渲染为 `Event` 节点。eventCandidates 只来自 direct non-control write lineage，derived lineage 只能作为 supporting evidence。
+- 从 deterministic `SemanticEventExtractor` 输出构建 `SemanticEventCandidate` fact；KG writer 将它渲染为 `Event` 节点。eventCandidates 只来自 direct non-control write lineage，derived lineage 只能作为 supporting evidence。event source/operation 只读取 typed provenance 与 `mappingKind`；缺失时使用 `SQL_WRITE/WRITE`，event kind 固定为 `SQL_WRITE_OPERATION`，不读取 detail、路径、source 前缀或表列名推断结构。
 - 从每条记录的 `rawEvidence` 优先抽取 `EvidenceReference`；没有 `rawEvidence` 时回退 grouped `evidence`。
 - 保存原始 relation-detector JSON payload snapshot，供后续审计和 KG materialization 使用。
 
@@ -33,7 +33,7 @@ Semantica 官方 ARCHITECTURE 在 semantic extract 之后显式设置 conflict d
 | --- | --- | --- |
 | semantic extract 输出结构化知识候选 | 当前消费 relation-detector 已抽取的 relationship、lineage、namingEvidence、derived facts。 | 不重新解析 SQL，不发明新的物理事实。 |
 | conflict detection | 后续规则初筛字段含义、指标来源、同义词映射和 join path 冲突。 | 当前代码未实现 conflict detection。 |
-| deduplication | 后续对同 key evidence、field evidence、path evidence 做 fingerprint 去重和 observation 合并。 | 当前代码只按 `EvidenceReference.id` 和 KG node/edge id 做轻量去重。 |
+| deduplication | 后续对同 key field/path evidence 做更丰富的 semantic dedup。 | 当前 evidence builder 按 `EvidenceReference.id` materialize；KG identity registry 只允许 ID 与完整内容都相同的幂等重复，冲突 node/edge 明确失败。 |
 | provenance | 为每个 evidence graph node / edge 保留原始 evidenceRef、source location、payload snapshot。 | compact bundle 可以裁剪文本，但不能丢失可回溯引用。 |
 
 ## 2. 上游与下游
@@ -56,7 +56,7 @@ Semantica 官方 ARCHITECTURE 在 semantic extract 之后显式设置 conflict d
   当前实现: 直接返回 EvidenceGraph，不创造事实
 
 下游: SemanticKgBuilder
-  消费: EvidenceGraph，输出 JSON-friendly SemanticKnowledgeGraph
+  消费: EvidenceGraph，输出 JSON-friendly SemanticKnowledgeGraph；要求非 diagnostic fact/event、endpoint node 与 edge evidence 非空可解析，并原子拒绝冲突 ID
 
 旁路下游: SemanticExtractionBundleBuilder
   消费: ScanBundle 与 SemanticEventExtractor 输出，构造 semantic extract 的 evidence bundle / prompt
@@ -72,7 +72,7 @@ public final class SemanticEvidenceBuilder {
 }
 ```
 
-当前没有 `compact(...)` 和 `resolveEvidenceRef(...)` Java API；完整 evidence 通过 `semantic-evidence-graph.json` / `semantic-kg.json` 中的 `evidenceRefs` 按 id 查询。用于 LLM 的 compact 输入由 `SemanticExtractionBundleBuilder` 单独构造。
+当前没有 `compact(...)` 和 `resolveEvidenceRef(...)` Java API；完整 evidence 通过 `semantic-evidence-graph.json` / `semantic-kg.json` 中的 `evidenceRefs` 按 id 查询。用于 LLM 的 compact 输入由 `SemanticExtractionBundleBuilder` 单独构造。`SemanticEvidenceBuilder` 只负责 materialization；KG 路径由 `SemanticKgBuilder/ReferenceIndex` 执行 evidence/identity closure，正式抽取路径由 `SemanticReferenceIndex` 执行 normalized document closure。
 
 ### 3.2 精确输入 Schema（来自 ScanBundle）
 
@@ -832,7 +832,7 @@ String generateFingerprint(EvidenceRef ref) {
 | derived relationship / lineage | relation-detector derived arrays | 建立 derived fact；不在 semantic builder 内重新运行路径搜索。 |
 | write lineage event | direct non-control write lineage | 建立 deterministic `SemanticEventCandidate`；derived lineage只作为 supporting ref。 |
 | diagnostic | relation-detector 顶层 warning | 建立 `Diagnostic` fact 和 diagnostic evidence ref。 |
-| reference closure | fact/edge evidence refs | `SemanticKgBuilder` 拒绝无法解析到当前 graph fact/evidence 的引用。 |
+| reference closure | fact/node/edge evidence refs | `SemanticKgBuilder` 拒绝非 diagnostic 空 evidence、无法解析引用和冲突 node/edge ID；失败不返回部分 KG。 |
 | fixed clock | 相同 graph 和固定 Clock | KG JSON byte-stable，且 build-run 不泄漏绝对输入路径。 |
 | 空输入 | 空 fact arrays | 返回没有 fact 的薄 `EvidenceGraph`。 |
 

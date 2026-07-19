@@ -46,7 +46,7 @@ import com.relationdetector.core.provenance.EvidenceProvenanceMapper;
  * co-occurrence, JOIN USING, and self-join weak relations are handled here
  * rather than in dialect parsers.
  */
-public final class StructuredRelationshipExtractor extends RelationshipCandidateSupport {
+public final class StructuredRelationshipExtractor extends RelationshipCandidateFactory {
 
     public StructuredRelationshipExtractor() {
         this(value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT), NamespaceContext.empty());

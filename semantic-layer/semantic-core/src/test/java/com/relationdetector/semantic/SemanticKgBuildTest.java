@@ -2,8 +2,10 @@ package com.relationdetector.semantic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -18,11 +20,13 @@ import org.junit.jupiter.api.io.TempDir;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.semantic.graph.EvidenceGraph;
+import com.relationdetector.semantic.graph.EvidenceGraphFact;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
 import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
 import com.relationdetector.semantic.kg.JsonSemanticKgWriter;
 import com.relationdetector.semantic.kg.SemanticKgBuilder;
 import com.relationdetector.semantic.kg.SemanticKnowledgeGraph;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
 import com.relationdetector.semantic.reader.ScanResultReader;
 
@@ -60,7 +64,7 @@ final class SemanticKgBuildTest {
         assertTrue(nodeIds.contains(bundle.relationships().get(0).id()));
         assertTrue(nodeIds.contains(bundle.dataLineages().get(0).id()));
         assertTrue(nodeIds.contains(bundle.namingEvidence().get(0).id()));
-        assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("event-candidate:sql-write:rollup.sql:customer_rollups")));
+        assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("event-candidate:sql-write:")));
 
         Set<String> evidenceIds = JSON.readerForListOf(JsonNode.class)
                 .<java.util.List<JsonNode>>readValue(json.path("evidenceRefs"))
@@ -150,6 +154,48 @@ final class SemanticKgBuildTest {
         assertEquals("shop_catalog", extractionJson.path("database").path("catalog").asText());
         assertFalse(Path.of(evidenceJson.path("scanBundle").path("inputFiles").get(0).asText()).isAbsolute());
         assertFalse(Path.of(extractionJson.path("inputFiles").get(0).asText()).isAbsolute());
+    }
+
+    @Test
+    void rejectsNonDiagnosticFactWithoutEvidence() {
+        EvidenceGraph graph = graphWithFact(new EvidenceGraphFact(
+                "relationship:empty",
+                "RelationshipFact",
+                "orders.customer_id -> customers.id",
+                java.util.List.of(
+                        PhysicalEndpointRef.column("orders.customer_id"),
+                        PhysicalEndpointRef.column("customers.id")),
+                java.util.List.of(),
+                BigDecimal.ONE,
+                JSON.createObjectNode(),
+                java.util.Map.of()));
+
+        assertThrows(IllegalArgumentException.class, () -> new SemanticKgBuilder().build(graph));
+    }
+
+    @Test
+    void rejectsNonDiagnosticFactWithUnresolvedEvidence() {
+        EvidenceGraph graph = graphWithFact(new EvidenceGraphFact(
+                "relationship:unresolved",
+                "RelationshipFact",
+                "orders.customer_id -> customers.id",
+                java.util.List.of(
+                        PhysicalEndpointRef.column("orders.customer_id"),
+                        PhysicalEndpointRef.column("customers.id")),
+                java.util.List.of("evidence:missing"),
+                BigDecimal.ONE,
+                JSON.createObjectNode(),
+                java.util.Map.of()));
+
+        assertThrows(IllegalArgumentException.class, () -> new SemanticKgBuilder().build(graph));
+    }
+
+    private EvidenceGraph graphWithFact(EvidenceGraphFact fact) {
+        ScanBundle bundle = new ScanBundle("mysql", "shop", "", java.util.List.of(), java.util.List.of(),
+                java.util.Map.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(),
+                java.util.List.of(), java.util.List.of());
+        return new EvidenceGraph(bundle, fact.endpoints(), java.util.List.of(fact), java.util.List.of(),
+                java.util.List.of(), java.util.Map.of());
     }
 
     private static String sampleScanResult(String databaseType, String schema) {

@@ -24,11 +24,14 @@ import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.provenance.EvidenceProvenanceMapper;
 
 /**
- *
- * Builds relationship candidates and evidence after typed endpoints have been resolved.
+ * CN: 在 typed endpoints 已解析后创建 relationship candidate、方向稳定的 evidence 与 guard attributes；上游是
+ * relationship extractor，下游是 relationship merger，本类不解析 SQL、不执行 naming rule，也不合并最终事实。
+ * EN: Creates relationship candidates, direction-stable evidence, and guard attributes after typed endpoints have
+ * been resolved. It connects the relationship extractor to the merger and never parses SQL, executes naming rules,
+ * or merges final facts.
  */
-abstract class RelationshipCandidateSupport extends RelationshipAliasSupport {
-    protected RelationshipCandidateSupport(IdentifierRules identifierRules, NamespaceContext namespace) {
+abstract class RelationshipCandidateFactory extends RelationshipAliasResolver {
+    protected RelationshipCandidateFactory(IdentifierRules identifierRules, NamespaceContext namespace) {
         super(identifierRules, namespace);
     }
 

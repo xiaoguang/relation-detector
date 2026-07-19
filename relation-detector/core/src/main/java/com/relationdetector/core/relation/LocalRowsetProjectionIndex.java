@@ -13,7 +13,14 @@ import java.util.function.UnaryOperator;
 import com.relationdetector.contracts.model.ColumnRef;
 
 /**
- * Resolves uniquely copied physical columns behind procedure-local rowset columns.
+ * CN: 在一次 routine 关系提取中登记本地临时 rowset 的声明和 typed 直接投影写入，并把谓词使用的
+ * 临时列解析为唯一物理列。输入来自 statement 事件清单，输出供 IN/tuple-IN relationship collector
+ * 折叠内部桥接；它不解析 SQL 文本、不推断 transformed source，也不把临时 rowset 暴露为物理 endpoint。
+ *
+ * EN: Indexes declarations and typed direct projection writes for routine-local rowsets during one relationship
+ * extraction, then resolves a predicate's local column to one unique physical column. Statement event inventory is
+ * the upstream input and IN/tuple-IN relationship collection is the downstream consumer; this index does not parse
+ * SQL text, infer transformed sources, or expose local rowsets as physical endpoints.
  */
 final class LocalRowsetProjectionIndex {
     private final UnaryOperator<String> normalize;

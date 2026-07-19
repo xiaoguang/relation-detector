@@ -5,7 +5,14 @@ import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.RelationshipMerger;
 
-final class ResultAssembly {
+/**
+ * CN: 将一次 scan context 中已提取的 relationship、lineage、naming pool 与 derived inference 按固定顺序装配为
+ * 最终 ScanResult；上游是 scan pipeline，下游是 result writer，本类不解析 SQL、不创建直接 evidence，也不修改配置。
+ * EN: Assembles extracted relationships, lineage, the naming pool, and derived inference from one scan context into
+ * the final ScanResult in a fixed order. It sits between the scan pipeline and result writers, and never parses SQL,
+ * creates direct evidence, or mutates configuration.
+ */
+final class ResultAssembler {
     ScanResult assemble(ScanPipelineContext ctx) {
         RelationshipMerger relationshipMerger = new RelationshipMerger(ctx.endpointKeys);
         DataLineageMerger dataLineageMerger = new DataLineageMerger(ctx.endpointKeys);

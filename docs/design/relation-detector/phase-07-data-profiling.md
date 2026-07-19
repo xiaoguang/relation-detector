@@ -20,12 +20,14 @@
 - profiling 只支持 live JDBC exact aggregate query。未实现的离线 `INSERT` 样本配置已从 runtime、SPI v6、示例和文档中删除；YAML transport 仅保留同名拒绝哨兵，旧字段会明确报配置错误。
 
 实现复核边界：内置四方言 profiler 通过 `DataProfileEvidenceBuilder` 执行下述负向 policy；core 的
-`ProfileEvidenceContractValidator` 还会在 `DataProfilePipeline` 修改 candidate 或 warning 前原子校验
-外部 SPI outcome。只有 `SUCCESS` 可携带 evidence，且 evidence 只能是三类 data-profile evidence；
+`ProfileOutcomeContractValidator` 会在 `DataProfilePipeline` 修改 candidate 前原子校验全部外部 SPI
+outcome。只有 `SUCCESS` 可携带非空 evidence 且不能携带 warning；evidence 只能是三类 data-profile evidence；
 `NEGATIVE_VALUE_MISMATCH` 还必须重新通过 core-owned declared-FK policy。conditional/polymorphic
 判断同时读取 candidate summary、structural evidence 和 raw evidence attributes。因此“全局只允许
 非条件声明 FK 产生负向 evidence”在代码和 focused contract tests 中已经闭环。真实数据库 driver、
-权限与 optimizer 组合仍属于环境性 smoke 边界，不能由 fake-JDBC 测试替代。
+权限与 optimizer 组合仍属于环境性 smoke 边界，不能由 fake-JDBC 测试替代。failure outcome 不得携带
+evidence；plugin warning 的 message/source/attributes 不受信任，core 只按已验证 status、adaptor id 与
+candidate endpoints 重建固定脱敏 warning。全部 bounded outcomes 通过后才统一写入，违规时无部分修改。
 
 ## 设计原则
 
@@ -37,7 +39,9 @@
 - 不输出真实业务值，也不输出可逆 hash；只输出 exact aggregate 统计量、阈值、统计规模和跳过原因。
 - live 查询受候选数量、每个 source 的 target 数、超时和权限控制。
 - 生产库读权限不足时降级为 skip/warning，不影响静态关系抽取。
-  `DataProfiler` 返回 `ProfileOutcome`，区分 success、no evidence、invalid endpoint、permission denied、timeout 和 query failed；`DataProfilePipeline` 把 warning 并入最终 scan result。
+  `DataProfiler` 返回 `ProfileOutcome`，区分 success、no evidence、invalid endpoint、permission denied、timeout 和 query failed；`DataProfilePipeline` 验证全批 outcome 后由 core 重建 warning。
+- 外部 `ProfileOutcome` 的 warning 只能在 core 校验 status 对应 type/code 后，由 core 重建固定安全消息进入
+  scan result；plugin message、source、attributes、SQL、URL 或业务值不会进入结果。
 
 ### 标识符渲染边界
 
@@ -465,8 +469,8 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 `ProfileOutcome` 不是 adaptor 的任意 evidence 注入口。生产契约只允许
 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`；只有 `SUCCESS`
 可以携带非空 evidence。core 必须在 `DataProfilePipeline` 再验证一次，避免第三方 v6 adaptor 绕过
-candidate selection、conditional guard 或负向 evidence policy。当前 `ProfileEvidenceContractValidator` 在
-写入 warning 或 candidate 前原子校验 status、evidence allowlist、`DATA_PROFILE` source type 和负向策略；
+candidate selection、conditional guard 或负向 evidence policy。当前 `ProfileOutcomeContractValidator` 在
+写入 warning 或 candidate 前原子校验全部 outcome 的 status、evidence allowlist、`DATA_PROFILE` source type 和负向策略；
 pre-merge conditional/polymorphic 判断同时读取 candidate、structural evidence 与 raw evidence attributes。
 
 ## 测试设计

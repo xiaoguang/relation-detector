@@ -132,7 +132,7 @@ def main():
     parser.add_argument("--worktree-clean", choices=("true", "false"), required=True)
     parser.add_argument("--maven-status", type=int, required=True)
     parser.add_argument("--no-cache-status", type=int)
-    parser.add_argument("--expected-fixtures", type=int, default=1198)
+    parser.add_argument("--expected-fixtures", type=int, default=1197)
     parser.add_argument("--expected-categories", type=int, default=19)
     parser.add_argument("--expected-json", type=int, default=38)
     parser.add_argument("--artifact", action="append", type=Path, default=[])

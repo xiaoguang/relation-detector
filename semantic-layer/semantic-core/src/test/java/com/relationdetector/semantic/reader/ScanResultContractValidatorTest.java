@@ -35,6 +35,16 @@ final class ScanResultContractValidatorTest {
     }
 
     @Test
+    void acceptsFullySuppressedWarningsAndRejectsHiddenCountMismatch() throws Exception {
+        ObjectNode suppressed = validRoot();
+        assertDoesNotThrow(() -> read(suppressed));
+
+        ObjectNode inconsistent = validRoot();
+        ((ObjectNode) inconsistent.path("summary")).put("warningCount", 1);
+        assertThrows(IllegalArgumentException.class, () -> read(inconsistent));
+    }
+
+    @Test
     void rejectsRelationshipWithMissingEndpointTable() throws Exception {
         ObjectNode root = validRoot();
         ((ObjectNode) root.path("relationships").get(0).path("source")).put("table", "");

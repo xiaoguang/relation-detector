@@ -57,9 +57,10 @@ PostgreSQL 特点：
 
 - adaptor 负责解析和规范化双引号标识符。
 - 未引用标识符 normalized 为小写。
-- SQL 中 schema 缺省时，输出 endpoint 仍保持裸表名；配置 schema 或可唯一确定的
-  `search_path` 仅作为 scan 内部 `CanonicalEndpointKey` 的 namespace context，用于跨
-  SQL、DDL 与 metadata 精确对齐，不回写或改名可读 endpoint。
+- SQL 中显式写出的 schema/quote 必须保留。SQL 使用裸表名时，如果 scan scope 已经提供唯一、
+  规范的 schema，生产 scan 可以把该 schema 物化到 endpoint；没有唯一 schema 时保持裸表名。
+  当前实现不查询或猜测 `search_path`，也不按同名表搜索 namespace。物化后的 endpoint 与
+  `CanonicalEndpointKey` 一同用于 SQL、DDL 与 metadata 精确对齐。
 - core 不自行处理 PostgreSQL 大小写规则。
 
 ## 元数据采集

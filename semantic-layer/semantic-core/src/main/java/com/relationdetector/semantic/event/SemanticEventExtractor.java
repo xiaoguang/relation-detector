@@ -2,6 +2,8 @@ package com.relationdetector.semantic.event;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -13,16 +15,17 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.SemanticFactIds;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
-import com.relationdetector.semantic.reader.PhysicalEndpointJsonReader;
 import com.relationdetector.semantic.reader.ScanBundle;
 import com.relationdetector.semantic.reader.ScanLineageFact;
 import com.relationdetector.semantic.reader.ScanRelationshipFact;
+import com.relationdetector.semantic.reader.SemanticInputPathCanonicalizer;
 
 /**
  * CN: 按 source object 与 target table 聚合 direct VALUE write lineage，附加 touching relationships 和仅作支持的 derived lineage，生成 deterministic event candidates；不从 derived 单独创建事件。
  * EN: Groups direct VALUE write lineage by source object and target table, attaching touching relationships and supporting-only derived lineage to create deterministic event candidates. Derived lineage alone never creates an event.
  */
 public final class SemanticEventExtractor {
+    private final TypedSemanticEventClassifier classifier = new TypedSemanticEventClassifier();
 
     public List<SemanticEventCandidate> extract(ScanBundle bundle) {
         if (bundle == null) {
@@ -46,15 +49,15 @@ public final class SemanticEventExtractor {
             }
             String target = lineage.target().displayName();
             JsonNode document = lineage.document();
-            EvidenceSource source = sourceOf(document);
+            EvidenceSource source = sourceOf(lineage);
             String targetTable = lineage.target().table();
             String groupKey = groupKey(source, targetTable);
             MutableEvent event = events.computeIfAbsent(groupKey,
-                    ignored -> new MutableEvent(source, eventKind(document, targetTable), idFor(source, targetTable)));
+                    ignored -> new MutableEvent(source, classifier.eventKind(), idFor(source, targetTable)));
             String lineageRef = lineage.id();
             event.lineageRefs.add(lineageRef);
             event.evidenceRefs.add(lineageRef);
-            event.operationKinds.add(operationKind(document));
+            event.operationKinds.add(classifier.operationKind(mappingKind(document)));
             event.outputEndpoints.add(target);
             for (PhysicalEndpointRef inputEndpoint : lineage.sources()) {
                 event.inputEndpoints.add(inputEndpoint.displayName());
@@ -130,27 +133,23 @@ public final class SemanticEventExtractor {
         return tables;
     }
 
-    private EvidenceSource sourceOf(JsonNode lineage) {
-        for (JsonNode evidence : evidenceArray(lineage)) {
-            String source = evidence.path("source").asText("");
+    private EvidenceSource sourceOf(ScanLineageFact lineage) {
+        JsonNode document = lineage.document();
+        for (JsonNode evidence : evidenceArray(document)) {
             String sourceObjectType = text(evidence.path("attributes"), "sourceObjectType");
             String sourceObjectName = text(evidence.path("attributes"), "sourceObjectName");
             String sourceFile = text(evidence.path("attributes"), "sourceFile");
             String sourceStatementId = text(evidence.path("attributes"), "sourceStatementId");
-            String sourceBlockId = text(evidence.path("attributes"), "sourceBlockId");
-            if (sourceStatementId.isBlank()) {
-                sourceStatementId = sourceBlockId;
-            }
-            if (!source.isBlank() || !sourceObjectName.isBlank() || !sourceFile.isBlank()) {
-                String sourceType = sourceType(source, sourceObjectType, sourceFile);
-                String objectName = !sourceObjectName.isBlank() ? sourceObjectName : objectNameFromSource(source);
-                String canonical = !objectName.isBlank() ? objectName : canonicalSourceFile(sourceFile, source);
-                return new EvidenceSource(sourceType, canonical, sourceType, objectName, canonicalSourceFile(sourceFile, ""),
-                        sourceStatementId);
+            if (!sourceObjectType.isBlank() || !sourceObjectName.isBlank() || !sourceFile.isBlank()
+                    || !sourceStatementId.isBlank()) {
+                String sourceType = classifier.sourceType(sourceObjectType);
+                String canonicalFile = canonicalSourceFile(sourceFile);
+                String canonical = firstNonBlank(sourceObjectName, sourceStatementId, canonicalFile, lineage.id());
+                return new EvidenceSource(sourceType, canonical, classifier.sourceObjectType(sourceObjectType),
+                        sourceObjectName, canonicalFile, sourceStatementId);
             }
         }
-        return new EvidenceSource("SQL_WRITE", "lineage:" + endpoint(lineage.path("target")),
-                "SQL_WRITE", "", "", "");
+        return new EvidenceSource("SQL_WRITE", lineage.id(), "SQL_WRITE", "", "", "");
     }
 
     private Iterable<JsonNode> evidenceArray(JsonNode node) {
@@ -160,43 +159,6 @@ public final class SemanticEventExtractor {
         }
         JsonNode evidence = node.path("evidence");
         return evidence.isArray() ? evidence : List.of();
-    }
-
-    private String sourceType(String source, String sourceObjectType, String sourceFile) {
-        if (!sourceObjectType.isBlank()) {
-            String upperType = sourceObjectType.toUpperCase(Locale.ROOT);
-            if ("ROUTINE".equals(upperType) || "PROCEDURE".equals(upperType) || "FUNCTION".equals(upperType)
-                    || "PACKAGE".equals(upperType) || "PACKAGE_BODY".equals(upperType)) {
-                return "ROUTINE";
-            }
-            if ("TRIGGER".equals(upperType)) {
-                return "TRIGGER";
-            }
-            if ("DATA_LOAD".equals(upperType) || "QUERY".equals(upperType) || "SQL_WRITE".equals(upperType)) {
-                return upperType;
-            }
-        }
-        String upper = source.toUpperCase(Locale.ROOT);
-        if (upper.startsWith("ROUTINE:")) {
-            return "ROUTINE";
-        }
-        if (upper.startsWith("TRIGGER:")) {
-            return "TRIGGER";
-        }
-        String lowerFile = sourceFile.toLowerCase(Locale.ROOT);
-        if (lowerFile.contains("/02-procedures/") || lowerFile.contains("\\02-procedures\\")) {
-            return "ROUTINE";
-        }
-        if (lowerFile.contains("trigger")) {
-            return "TRIGGER";
-        }
-        if (lowerFile.contains("/03-data/") || lowerFile.contains("\\03-data\\")) {
-            return "DATA_LOAD";
-        }
-        if (lowerFile.contains("/04-queries/") || lowerFile.contains("\\04-queries\\")) {
-            return "QUERY";
-        }
-        return "SQL_WRITE";
     }
 
     private String groupKey(EvidenceSource source, String targetTable) {
@@ -215,60 +177,18 @@ public final class SemanticEventExtractor {
                 + SemanticFactIds.slug(targetTable);
     }
 
-    private String eventKind(JsonNode lineage, String targetTable) {
-        String target = targetTable.toLowerCase(Locale.ROOT);
-        String targetColumn = lineage.path("target").path("column").asText("").toLowerCase(Locale.ROOT);
-        if (target.endsWith("_fact") || target.contains("_fact_") || target.contains("fact")) {
-            return "FACT_REFRESH";
-        }
-        if (target.endsWith("_dim") || target.contains("_dim_") || target.contains("dimension")) {
-            return "DIMENSION_REFRESH";
-        }
-        if (target.contains("inventory") || target.contains("stock")) {
-            return "INVENTORY_MOVEMENT";
-        }
-        if (target.contains("cashier") || target.contains("reconciliation")) {
-            return "CASH_RECONCILIATION";
-        }
-        if (target.contains("account") || target.contains("payment") || target.contains("voucher")) {
-            return "ACCOUNTING_POSTING";
-        }
-        if (targetColumn.contains("status") || targetColumn.contains("approved") || targetColumn.contains("closed")) {
-            return "STATE_CHANGE";
-        }
-        return "SQL_WRITE_OPERATION";
-    }
-
-    private String operationKind(JsonNode lineage) {
+    private String mappingKind(JsonNode lineage) {
         String mappingKind = lineage.path("attributes").path("mappingKind").asText("");
         if (!mappingKind.isBlank()) {
             return mappingKind;
         }
-        String detail = "";
         for (JsonNode evidence : evidenceArray(lineage)) {
-            detail = evidence.path("detail").asText("");
-            if (!detail.isBlank()) {
-                break;
+            String evidenceMappingKind = text(evidence.path("attributes"), "mappingKind");
+            if (!evidenceMappingKind.isBlank()) {
+                return evidenceMappingKind;
             }
         }
-        String upper = detail.toUpperCase(Locale.ROOT);
-        if (upper.contains("MERGE")) {
-            return "MERGE";
-        }
-        if (upper.contains("UPDATE")) {
-            return "UPDATE";
-        }
-        if (upper.contains("DELETE")) {
-            return "DELETE";
-        }
-        if (upper.contains("INSERT")) {
-            return "INSERT";
-        }
-        return lineage.path("transformType").asText("WRITE");
-    }
-
-    private String endpoint(JsonNode endpoint) {
-        return PhysicalEndpointJsonReader.read(endpoint).displayName();
+        return "";
     }
 
     private String tableOf(String endpoint) {
@@ -303,25 +223,24 @@ public final class SemanticEventExtractor {
         return node == null || !node.isObject() ? "" : node.path(field).asText("");
     }
 
-    private String objectNameFromSource(String source) {
-        if (source == null || source.isBlank()) {
+    private String canonicalSourceFile(String sourceFile) {
+        if (sourceFile == null || sourceFile.isBlank()) {
             return "";
         }
-        String value = source;
-        if (value.regionMatches(true, 0, "ROUTINE:", 0, "ROUTINE:".length())) {
-            value = value.substring("ROUTINE:".length());
-        } else if (value.regionMatches(true, 0, "TRIGGER:", 0, "TRIGGER:".length())) {
-            value = value.substring("TRIGGER:".length());
+        try {
+            return SemanticInputPathCanonicalizer.canonicalize(Path.of(sourceFile));
+        } catch (InvalidPathException ignored) {
+            return "";
         }
-        return value.contains("/") || value.contains("\\") ? "" : value;
     }
 
-    private String canonicalSourceFile(String sourceFile, String fallback) {
-        String value = !sourceFile.isBlank() ? sourceFile : fallback;
-        if (value == null || value.isBlank()) {
-            return "";
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
         }
-        return value.replace('\\', '/').replaceFirst("^.*/(relation-detector|semantic-layer)/", "$1/");
+        return "";
     }
 
     private record EvidenceSource(

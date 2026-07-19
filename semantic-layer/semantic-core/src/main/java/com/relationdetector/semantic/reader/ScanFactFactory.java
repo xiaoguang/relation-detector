@@ -7,7 +7,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.SemanticFactIds;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
-/** Converts raw JSON exactly once at the scan-result reader boundary. */
+/**
+ * CN: 在 ScanResult reader 边界将已验证 JSON section 一次性转换为 typed relationship、lineage、naming 与
+ * diagnostic facts；下游 semantic graph 只消费 typed model，本类不推断缺失 endpoint、业务语义或 evidence。
+ * EN: Converts validated ScanResult JSON sections exactly once into typed relationship, lineage, naming, and
+ * diagnostic facts at the reader boundary. Downstream semantic graphs consume only typed models; this factory never
+ * infers missing endpoints, business meaning, or evidence.
+ */
 final class ScanFactFactory {
     private ScanFactFactory() {
     }

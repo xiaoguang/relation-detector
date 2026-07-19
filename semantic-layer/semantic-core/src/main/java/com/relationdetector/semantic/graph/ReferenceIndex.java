@@ -5,8 +5,12 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * CN: 从 EvidenceGraph 建立唯一不可变 id lookup，验证 semantic owners 的 fact/evidence refs 是否闭合；未解析引用明确失败，不按名称补全。
- * EN: Builds one immutable id lookup from an EvidenceGraph to validate semantic fact and evidence-reference closure. Unresolved references fail without name-based completion.
+ * CN: 从已构建的 EvidenceGraph 收集 fact 与 evidence ID，形成 KG 构建阶段使用的唯一不可变 lookup。
+ * semantic owner validator 是上游调用方，KG assembler 消费其闭合校验结果；未解析引用明确失败，本类不读取
+ * 原始 ScanResult、不按名称补全，也不创建缺失节点。
+ * EN: Collects fact and evidence IDs from an assembled EvidenceGraph into the single immutable lookup used during
+ * KG construction. Semantic owner validation supplies requests and the KG assembler consumes the closure result;
+ * unresolved references fail, while this index never reads raw ScanResult data, completes names, or creates nodes.
  */
 public final class ReferenceIndex {
     private final Set<String> resolvableIds;
@@ -32,5 +36,12 @@ public final class ReferenceIndex {
             throw new IllegalArgumentException(
                     "semantic fact " + ownerId + " has unresolved evidence refs: " + unresolved);
         }
+    }
+
+    public void requireEvidence(String ownerId, List<String> refs) {
+        if (refs == null || refs.isEmpty()) {
+            throw new IllegalArgumentException("semantic owner " + ownerId + " requires evidence");
+        }
+        requireResolvable(ownerId, refs);
     }
 }

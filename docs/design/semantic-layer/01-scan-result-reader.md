@@ -317,7 +317,10 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | 必需 fact 数组缺失 | ERROR | 抛出 `ScanResultContractException` |
 | summary 与数组计数不一致 | ERROR | 抛出 `ScanResultContractException` |
 | 重复 stable fact id | ERROR | 拒绝存在重复语义身份的 bundle |
-| generatedAt 不是 ISO 8601、未知 relation/evidence enum、嵌套 evidence 字段不完整 | 当前未校验 | 保留原始 payload；进入后续 wire schema 硬化 backlog |
+| generatedAt 不是 ISO 8601 | ERROR | 抛出 `ScanResultContractException` |
+| 未知 relation/lineage/evidence/warning enum | ERROR | 抛出 `ScanResultContractException` |
+| 嵌套 evidence、warning 或 derived path 不符合当前 writer shape | ERROR | 抛出 `ScanResultContractException` |
+| `summary.warningCount` 与根 `warnings` 数组不一致 | ERROR | 抛出 `ScanResultContractException`；writer 的 `includeWarnings=false` 会同步清空根/fact warnings并把 count 置零，因此其 suppressed output 合法 |
 
 ## 5. 测试验收
 
@@ -338,6 +341,7 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | 合并重复事实 | 2 个文件含相同 stable fact id | 拒绝合并，不择优去重 |
 | 跨 catalog 合并 | type/schema 相同，catalog 不同 | 拒绝合并 |
 | 输入重排 | 相同 facts 使用不同数组顺序 | stable fact/evidence/candidate id 集合不变 |
+| warning suppression | writer 隐藏内部非空 warning | 根/fact warning 数组为空且 count 为 0，可正常读取；人工构造的不一致 count/array 仍拒绝 |
 
 ### 5.2 集成测试
 

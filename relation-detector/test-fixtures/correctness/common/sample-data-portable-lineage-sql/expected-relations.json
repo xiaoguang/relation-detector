@@ -16,5 +16,7 @@
     "FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_EXISTS",
     "FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_EXISTS"
   ],
-  "forbiddenTables": []
+  "forbiddenTables": [
+    "LIKE"
+  ]
 }

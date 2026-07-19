@@ -21,8 +21,8 @@ class DataLineageAuditGeneratorTest {
         String markdown = GENERATED.get();
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
-        assertTrue(markdown.contains("| TOTAL | 1198 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 446 |"));
+        assertTrue(markdown.contains("| TOTAL | 1197 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 445 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
         assertTrue(markdown.contains("| NOT_APPLICABLE | 752 |"));

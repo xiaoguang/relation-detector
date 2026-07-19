@@ -5,12 +5,13 @@ import java.util.List;
 
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.core.profile.DataProfileCandidateGenerator;
-import com.relationdetector.core.profile.ProfileEvidenceContractValidator;
+import com.relationdetector.core.profile.ProfileOutcomeContractValidator;
 import com.relationdetector.core.identity.NamespaceContext;
 
 /**
@@ -20,8 +21,15 @@ import com.relationdetector.core.identity.NamespaceContext;
 final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
     private final DataProfileNamespacePolicy namespacePolicy = new DataProfileNamespacePolicy();
-    private final ProfileEvidenceContractValidator evidenceContract = new ProfileEvidenceContractValidator();
+    private final ProfileOutcomeContractValidator outcomeContract = new ProfileOutcomeContractValidator();
 
+    /**
+     * CN: 对当前 scan 的有界 candidates 完成全部 adaptor profile 调用和契约校验后，再统一写入 evidence、warning
+     * 与新增 candidate；无 JDBC/未启用时返回空，任一 outcome 违规时抛错且本阶段不产生部分修改。
+     * EN: Profiles bounded candidates for the current scan, validates every adaptor outcome, and only then applies
+     * evidence, warnings, and new candidates. Missing JDBC or disabled profiling returns empty; any contract violation
+     * fails before this stage mutates scan state.
+     */
     List<RelationshipCandidate> profile(Connection connection, ScanPipelineContext ctx) {
         EvidenceConfig evidenceConfig = ctx.config.evidence();
         if (connection == null || !evidenceConfig.dataProfileEnabled()) {
@@ -29,7 +37,6 @@ final class DataProfilePipeline {
         }
         List<RelationshipCandidate> added = new java.util.ArrayList<>();
         ctx.adaptor.profiling().dataProfiler().ifPresent(profiler -> {
-            ctx.result.sources().add("data-profile");
             List<RelationshipCandidate> selected = candidateGenerator.select(
                     ctx.relationshipCandidates,
                     ctx.metadataSnapshot,
@@ -37,30 +44,57 @@ final class DataProfilePipeline {
                     evidenceConfig.dataProfileOptions(),
                     ctx.adaptor.identifierRules(),
                     new NamespaceContext(ctx.scope.catalog(), ctx.scope.schema(), List.of()));
+            List<ProfileApplication> applications = new java.util.ArrayList<>();
             for (RelationshipCandidate candidate : selected) {
                 if (!namespacePolicy.supports(ctx.config.database().databaseType(), ctx.scope,
                         ctx.adaptor.identifierRules(), candidate)) {
                     continue;
                 }
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
-                ProfileRequest request = new ProfileRequest(candidate, evidenceConfig.dataProfileOptions());
+                ProfileRequest request = new ProfileRequest(profileView(candidate), evidenceConfig.dataProfileOptions());
                 ProfileOutcome outcome = profiler.profile(connection, request);
-                List<Evidence> evidence = evidenceContract.validate(request, outcome);
-                ctx.result.warnings().addAll(outcome.warnings());
+                var validated = outcomeContract.validate(request, outcome, ctx.adaptor.id());
+                applications.add(new ProfileApplication(candidate, existingCandidate,
+                        validated.evidence(), validated.warnings()));
+            }
+            ctx.result.sources().add("data-profile");
+            for (ProfileApplication application : applications) {
+                RelationshipCandidate candidate = application.candidate();
+                List<Evidence> evidence = application.evidence();
+                ctx.result.warnings().addAll(application.warnings());
                 if (evidence.isEmpty()) {
                     continue;
                 }
-                if (!existingCandidate && !profileCanCreateRelationship(candidate, evidence)) {
+                if (!application.existingCandidate() && !profileCanCreateRelationship(candidate, evidence)) {
                     continue;
                 }
                 candidate.evidence().addAll(evidence);
-                if (!existingCandidate) {
+                if (!application.existingCandidate()) {
                     ctx.relationshipCandidates.add(candidate);
                     added.add(candidate);
                 }
             }
         });
         return List.copyOf(added);
+    }
+
+    private RelationshipCandidate profileView(RelationshipCandidate source) {
+        RelationshipCandidate copy = new RelationshipCandidate(
+                source.source(), source.target(), source.relationType(), source.relationSubType());
+        copy.confidence(source.confidence());
+        copy.evidence().addAll(source.evidence());
+        copy.rawEvidence().addAll(source.rawEvidence());
+        copy.warnings().addAll(source.warnings());
+        copy.attributes().putAll(source.attributes());
+        return copy;
+    }
+
+    private record ProfileApplication(
+            RelationshipCandidate candidate,
+            boolean existingCandidate,
+            List<Evidence> evidence,
+            List<WarningMessage> warnings
+    ) {
     }
 
     private boolean profileCanCreateRelationship(RelationshipCandidate candidate, List<Evidence> evidence) {

@@ -29,7 +29,7 @@ public final class ScanEngine {
     private final SourceCollectorPipeline sourceCollectorPipeline = new SourceCollectorPipeline(statementParsePipeline);
     private final EvidenceEnhancementPipeline evidenceEnhancementPipeline = new EvidenceEnhancementPipeline();
     private final DataProfilePipeline dataProfilePipeline = new DataProfilePipeline();
-    private final ResultAssembly resultAssembly = new ResultAssembly();
+    private final ResultAssembler resultAssembler = new ResultAssembler();
     private final AdaptorContractValidator adaptorContractValidator = new AdaptorContractValidator();
     private final ScanCapabilityValidator capabilityValidator = new ScanCapabilityValidator();
     private final ScanConfigurationValidator configurationValidator = new ScanConfigurationValidator();
@@ -101,7 +101,7 @@ public final class ScanEngine {
             List<RelationshipCandidate> profiledCandidates = dataProfilePipeline.profile(connection, pipelineContext);
             evidenceEnhancementPipeline.enhanceProfiledCandidates(pipelineContext, profiledCandidates);
             evidenceEnhancementPipeline.adjustWeights(pipelineContext);
-            return resultAssembly.assemble(pipelineContext);
+            return resultAssembler.assemble(pipelineContext);
         } finally {
             pipelineContext.close();
             closeQuietly(connection);

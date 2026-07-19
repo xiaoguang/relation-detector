@@ -14,6 +14,7 @@
 - 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
 - 已实现 `semantic normalize-extraction`：输入 raw semantic output 和必需 evidence bundle，执行候选回填、typed reference/physical endpoint 校验、semantic owner-id 全局唯一性校验，并补齐 `semanticGraph` 与 `validation`。任一闭包失败时命令失败，不输出半闭合正式结果。
+- `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链。前者目前不拒绝重复 node/冲突 edge，也不要求 evidence refs 非空；这些是已知实现缺口，不能由后者的严格测试代替。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
 
@@ -486,7 +487,7 @@ Step 7: Answer（最终输出）
 
 | 契约 | 不可变规则 |
 | --- | --- |
-| 所有语义对象必须带 evidenceRefs | 当前 normalizer 只报告缺失；未来 Catalog Store 必须拒绝缺失或无法解析到 bundle fact/candidate id 的引用 |
+| 所有正式语义对象必须带 evidenceRefs | formal normalizer 与离线 KG builder 均原子拒绝缺失或无法解析的引用；KG endpoint node/edge 同样必须有 evidence，冲突 ID 不会静默覆盖。未来 Catalog Store 必须继续保持该契约。 |
 | 物理名必须来自 catalog | SQL Generator 只能引用 catalog 中的表名和列名 |
 | 指标默认 SYSTEM_PROPOSED | LLM Enricher 生成的指标 reviewStatus 必须为 SYSTEM_PROPOSED |
 | SQL 必须校验 | Answer Composer 不能输出未经 Validator 校验的 SQL |
@@ -578,7 +579,7 @@ Step 7: Answer（最终输出）
 
 **当前验收标准：**
 - `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json` 均生成且为合法 JSON
-- KG 中所有 fact / edge 都能回溯到 relation-detector JSON payload 或 evidenceRef
+- EvidenceGraph fact 保留 relation-detector payload；KG 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析。相同 ID/content 幂等复用，冲突 ID 原子失败。
 - `NoopSemanticEnricher` 不创造新 fact
 - 只允许同一 `database.type`、`database.catalog` 与 `database.schema` 合并
 - 所有 fact/evidence/candidate 引用使用内容稳定 ID；正式 normalization 必须同时通过 bundle ID、物理 endpoint、文档内 entity 引用和 semantic owner-id closure
@@ -604,6 +605,7 @@ Step 7: Answer（最终输出）
   - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
   - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
   - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
+  - 当前 SemanticKgBuilder: 非空但无法解析的 evidence ref → 终止；空 ref、重复 node 与冲突 edge 目前尚未进入同一失败契约
   - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
   - 目标 CatalogStore: 磁盘写入失败 → 终止
   - 目标 SqlGenerator: plan 无表 → 终止

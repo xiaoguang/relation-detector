@@ -40,7 +40,7 @@ class ScanCapabilityValidatorTest {
         config.jdbcUrl = "jdbc:must-not-open:metadata";
         config.metadataEnabled = true;
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        AdaptorContractException error = assertThrows(AdaptorContractException.class,
                 () -> new ScanEngine().scan(config, new CommonDatabaseAdaptor()));
 
         assertTrue(error.getMessage().contains("common"));
@@ -80,7 +80,7 @@ class ScanCapabilityValidatorTest {
         config.adaptorId = "configured";
 
         DriverManager.registerDriver(driver);
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        AdaptorContractException error = assertThrows(AdaptorContractException.class,
                 () -> new ScanEngine().scan(config, new CommonDatabaseAdaptor()));
 
         assertTrue(error.getMessage().contains("adaptor id"));
@@ -107,7 +107,7 @@ class ScanCapabilityValidatorTest {
         config.objectsEnabled = true;
         config.objectsFromDatabase = true;
         DriverManager.registerDriver(driver);
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        AdaptorContractException error = assertThrows(AdaptorContractException.class,
                 () -> new ScanEngine().scan(config, new TestAdaptor(AdaptorApiVersion.CURRENT, "common",
                         Set.of(DatabaseType.COMMON), Set.of(AdaptorCapability.DATABASE_OBJECTS),
                         new AdaptorCollectors(null, Optional.of((connection, scope) -> java.util.List.of()), null, null), parsers)));
@@ -118,7 +118,7 @@ class ScanCapabilityValidatorTest {
 
     private void assertRejectedBeforeConnection(DatabaseAdaptor adaptor, String expectedMessage) throws Exception {
         DriverManager.registerDriver(driver);
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        AdaptorContractException error = assertThrows(AdaptorContractException.class,
                 () -> new ScanEngine().scan(liveConfig(), adaptor));
 
         assertTrue(error.getMessage().contains(expectedMessage));

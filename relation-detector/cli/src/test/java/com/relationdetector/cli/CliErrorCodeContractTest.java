@@ -9,6 +9,7 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.scan.DatabaseConnectionException;
+import com.relationdetector.core.scan.AdaptorContractException;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.scan.ScanResult;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +40,9 @@ class CliErrorCodeContractTest {
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.CONFIG_FORMAT_ERROR, runner((path) -> config(),
                 (config, adaptor) -> { throw new LiveSourceConfigurationException(SECRET); }, output -> { }),
+                "scan", "--config", "scan.yml");
+        assertResult(ErrorCode.ADAPTOR_ERROR, runner((path) -> config(),
+                (config, adaptor) -> { throw new AdaptorContractException(SECRET); }, output -> { }),
                 "scan", "--config", "scan.yml");
         assertResult(ErrorCode.SCAN_RUNTIME_ERROR, runner((path) -> config(),
                 (config, adaptor) -> { throw new IllegalStateException(SECRET); }, output -> { }),

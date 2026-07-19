@@ -1,16 +1,19 @@
 package com.relationdetector.oracle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.rowset.RowSetMetaDataImpl;
 import javax.sql.rowset.RowSetProvider;
@@ -18,7 +21,9 @@ import javax.sql.rowset.RowSetProvider;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
 
@@ -75,6 +80,21 @@ class OracleLiveCollectorsTest {
         assertEquals(4, snapshot.warnings().size());
     }
 
+    @Test
+    void unresolvedOwnerStopsEveryLiveCollectorBeforeCatalogSql() {
+        AtomicInteger preparedStatements = new AtomicInteger();
+        Connection connection = ownerlessConnection(preparedStatements);
+        ScanScope scope = new ScanScope(null, null, List.of(), List.of());
+
+        assertThrows(LiveSourceConfigurationException.class,
+                () -> new OracleMetadataCollector().collect(connection, scope));
+        assertThrows(LiveSourceConfigurationException.class,
+                () -> new OracleObjectCollector().collect(connection, scope));
+        assertThrows(LiveSourceConfigurationException.class,
+                () -> new OracleDatabaseDdlCollector().collect(connection, scope));
+        assertEquals(0, preparedStatements.get());
+    }
+
     private Connection connection() {
         return connection(false);
     }
@@ -87,6 +107,24 @@ class OracleLiveCollectorsTest {
                     }
                     if (method.getName().equals("getSchema")) return "ERP";
                     throw new UnsupportedOperationException(method.getName());
+                });
+    }
+
+    private Connection ownerlessConnection(AtomicInteger preparedStatements) {
+        DatabaseMetaData metadata = (DatabaseMetaData) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {DatabaseMetaData.class}, (proxy, method, args) -> switch (method.getName()) {
+                    case "getUserName" -> " ";
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+        return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {Connection.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getSchema" -> null;
+                    case "getMetaData" -> metadata;
+                    case "prepareStatement" -> {
+                        preparedStatements.incrementAndGet();
+                        throw new AssertionError("catalog SQL must not run without a proven owner");
+                    }
+                    default -> throw new UnsupportedOperationException(method.getName());
                 });
     }
 

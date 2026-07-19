@@ -191,17 +191,17 @@ public final class JsonResultWriter {
             summary.put("derivedNamingEvidenceObservationCount", derivedNamingObservations);
             summary.put("totalNamingEvidenceObservationCount", directNamingObservations + derivedNamingObservations);
         }
-        summary.put("warningCount", result.warnings().size());
+        summary.put("warningCount", includeWarnings ? result.warnings().size() : 0);
         ArrayNode sources = summary.putArray("sources");
         result.sources().forEach(sources::add);
 
         ArrayNode relationships = root.putArray("relationships");
         result.relationships().forEach(relation ->
-                relationships.add(relationshipNode(relation, includeEvidence)));
+                relationships.add(relationshipNode(relation, includeEvidence, includeWarnings)));
 
         ArrayNode dataLineages = root.putArray("dataLineages");
         result.dataLineages().forEach(lineage ->
-                dataLineages.add(dataLineageNode(lineage, includeEvidence)));
+                dataLineages.add(dataLineageNode(lineage, includeEvidence, includeWarnings)));
 
         ArrayNode derivedRelationships = root.putArray("derivedRelationships");
         derivedRelationshipFacts.forEach(candidate ->
@@ -282,7 +282,11 @@ public final class JsonResultWriter {
         return TRANSITIVE_NAMING_PATH.equals(candidate.rule());
     }
 
-    private ObjectNode relationshipNode(RelationshipCandidate relation, boolean includeEvidence) {
+    private ObjectNode relationshipNode(
+            RelationshipCandidate relation,
+            boolean includeEvidence,
+            boolean includeWarnings
+    ) {
         ObjectNode node = JSON.createObjectNode();
         node.set("source", endpointNode(relation.source()));
         node.set("target", endpointNode(relation.target()));
@@ -295,14 +299,18 @@ public final class JsonResultWriter {
         node.set("evidence", includeEvidence
                 ? evidenceNode(relation.evidence())
                 : JSON.createArrayNode());
-        node.set("warnings", warningsNode(relation.warnings()));
+        node.set("warnings", includeWarnings ? warningsNode(relation.warnings()) : JSON.createArrayNode());
         if (!relation.attributes().isEmpty()) {
             node.set("attributes", attributesNode(relation.attributes()));
         }
         return node;
     }
 
-    private ObjectNode dataLineageNode(DataLineageCandidate lineage, boolean includeEvidence) {
+    private ObjectNode dataLineageNode(
+            DataLineageCandidate lineage,
+            boolean includeEvidence,
+            boolean includeWarnings
+    ) {
         ObjectNode node = JSON.createObjectNode();
         ArrayNode sources = node.putArray("sources");
         lineage.sources().forEach(source -> sources.add(endpointNode(source)));
@@ -316,7 +324,7 @@ public final class JsonResultWriter {
         node.set("evidence", includeEvidence
                 ? dataLineageEvidenceNode(lineage.evidence())
                 : JSON.createArrayNode());
-        node.set("warnings", warningsNode(lineage.warnings()));
+        node.set("warnings", includeWarnings ? warningsNode(lineage.warnings()) : JSON.createArrayNode());
         node.set("attributes", attributesNode(lineage.attributes()));
         return node;
     }

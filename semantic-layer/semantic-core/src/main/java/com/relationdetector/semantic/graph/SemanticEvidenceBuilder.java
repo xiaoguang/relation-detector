@@ -34,8 +34,11 @@ public final class SemanticEvidenceBuilder {
     private final SemanticEventExtractor eventExtractor = new SemanticEventExtractor();
 
     /**
-     * CN: 按固定 section 顺序建立 endpoint/fact/evidence inventories，并在返回前生成 event candidates 和 summary。非法 payload/evidence 引用直接失败，不返回部分 graph。
-     * EN: Builds endpoint, fact, and evidence inventories in stable section order, then adds event candidates and summary. Invalid payloads or references fail without returning a partial graph.
+     * CN: 按固定 section 顺序将 typed facts 和 event candidates materialize 为 endpoint/fact/evidence inventories。
+     * evidence 闭合由下游 SemanticKgBuilder/ReferenceIndex 验证；本方法不补造引用或返回 KG。
+     * EN: Materializes typed facts and event candidates into endpoint, fact, and evidence inventories in stable
+     * section order. Downstream SemanticKgBuilder/ReferenceIndex owns evidence-closure validation; this method never
+     * invents references or returns a KG.
      */
     public EvidenceGraph build(ScanBundle scanBundle) {
         Map<String, PhysicalEndpointRef> endpoints = new LinkedHashMap<>();

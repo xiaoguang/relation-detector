@@ -33,6 +33,7 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
@@ -40,6 +41,7 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.contracts.Enums.WarningType;
 
 /**
  * Verifies the public JSON contract for evidence explanation.
@@ -73,6 +75,35 @@ class JsonResultWriterEvidenceOutputTest {
         writer.write(result, output, true, true, true);
 
         assertEquals(writer.write(result, true, true, true), output.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void warningSuppressionHidesRootAndFactWarningsAndResetsVisibleCount() {
+        ScanResult result = new ScanResult("mysql", "public");
+        RelationshipCandidate relationship = sqlLogJoin("warning relationship");
+        DataLineageCandidate lineage = aggregateLineage("warning lineage");
+        WarningMessage warning = WarningMessage.warn(
+                WarningType.PARSE_WARNING, "TEST_WARNING", "visible only when requested", "fixture.sql", 7L);
+        result.warnings().add(warning);
+        relationship.warnings().add(warning);
+        lineage.warnings().add(warning);
+        result.relationships().add(relationship);
+        result.dataLineages().add(lineage);
+
+        JsonNode visible = readTree(new JsonResultWriter().write(result, true, true));
+        assertEquals(1, visible.path("summary").path("warningCount").asInt());
+        assertEquals(1, visible.path("warnings").size());
+        assertEquals(1, visible.path("relationships").get(0).path("warnings").size());
+        assertEquals(1, visible.path("dataLineages").get(0).path("warnings").size());
+
+        JsonNode suppressed = readTree(new JsonResultWriter().write(result, true, false));
+        assertEquals(0, suppressed.path("summary").path("warningCount").asInt());
+        assertTrue(suppressed.path("warnings").isEmpty());
+        assertTrue(suppressed.path("relationships").get(0).path("warnings").isEmpty());
+        assertTrue(suppressed.path("dataLineages").get(0).path("warnings").isEmpty());
+        assertEquals(1, result.warnings().size(), "Rendering must not mutate the scan result");
+        assertEquals(1, relationship.warnings().size(), "Rendering must not mutate relationship warnings");
+        assertEquals(1, lineage.warnings().size(), "Rendering must not mutate lineage warnings");
     }
 
     @Test

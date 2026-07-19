@@ -11,6 +11,7 @@ import com.relationdetector.core.scan.ScanResult;
 import com.relationdetector.core.scan.ResolvedScanConfig;
 import com.relationdetector.core.scan.DatabaseConnectionException;
 import com.relationdetector.core.scan.ScanInputException;
+import com.relationdetector.core.scan.AdaptorContractException;
 import java.nio.file.Path;
 import java.io.IOException;
 
@@ -66,6 +67,8 @@ final class SingleScanRunner {
         ScanResult result;
         try {
             result = scanExecutor.scan(config, prepared.adaptor());
+        } catch (AdaptorContractException ex) {
+            throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.ADAPTOR_ERROR);
         } catch (LiveSourceConfigurationException ex) {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         } catch (DatabaseConnectionException ex) {

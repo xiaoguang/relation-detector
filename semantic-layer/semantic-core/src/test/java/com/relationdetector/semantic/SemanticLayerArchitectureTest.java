@@ -38,4 +38,22 @@ final class SemanticLayerArchitectureTest {
             }
         }
     }
+
+    @Test
+    void semanticEventClassificationDoesNotUseRegexOrUntypedSqlDetail() throws Exception {
+        Path root = Path.of("src/main/java/com/relationdetector/semantic/event");
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+                String text = Files.readString(file);
+                assertFalse(text.contains("java.util.regex"), file + " imports regex API");
+                assertFalse(text.contains(".matches("), file + " uses regex matching");
+                assertFalse(text.contains(".replaceAll("), file + " uses regex replacement");
+                assertFalse(text.contains(".replaceFirst("), file + " uses regex replacement");
+                assertFalse(text.contains("path(\"detail\")"), file + " reads evidence detail for classification");
+            }
+        }
+        String classifier = Files.readString(root.resolve("TypedSemanticEventClassifier.java"));
+        assertFalse(classifier.contains("JsonNode"), "typed classifier must not read raw evidence documents");
+        assertFalse(classifier.contains("sourceFile"), "typed classifier must not classify from file paths");
+    }
 }

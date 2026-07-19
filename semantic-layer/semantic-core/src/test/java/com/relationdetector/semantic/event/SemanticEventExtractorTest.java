@@ -22,9 +22,9 @@ final class SemanticEventExtractorTest {
         ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(
                 lineage("sales_orders", "id", "sales_fact", "order_id", "ROUTINE:erp.sp_rebuild_sales_fact",
-                        "INSERT SELECT", "DIRECT"),
+                        "INSERT_SELECT", "INSERT SELECT", "DIRECT"),
                 lineage("payments", "amount", "sales_fact", "paid_amount", "ROUTINE:erp.sp_rebuild_sales_fact",
-                        "INSERT SELECT", "AGGREGATE")
+                        "INSERT_SELECT", "INSERT SELECT", "AGGREGATE")
         ), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -33,7 +33,8 @@ final class SemanticEventExtractorTest {
         SemanticEventCandidate event = events.get(0);
         assertEquals("event-candidate:routine:erp.sp_rebuild_sales_fact", event.id());
         assertEquals("ROUTINE", event.sourceType());
-        assertEquals("FACT_REFRESH", event.eventKind());
+        assertEquals("SQL_WRITE_OPERATION", event.eventKind());
+        assertEquals(List.of("INSERT"), event.operationKinds());
         assertEquals("erp.sp_rebuild_sales_fact", event.sourceObject());
         assertEquals("ROUTINE", event.sourceObjectType());
         assertEquals("erp.sp_rebuild_sales_fact", event.sourceObjectName());
@@ -50,18 +51,21 @@ final class SemanticEventExtractorTest {
         ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(relationship("orders", "customer_id", "customers", "id")), List.of(
                 lineage("inventory_transactions", "quantity", "inventory", "quantity", "04-queries/stock.sql",
-                        "UPDATE inventory SET quantity = quantity - x.quantity", "ARITHMETIC"),
+                        "UPDATE_SET", "UPDATE inventory SET quantity = quantity - x.quantity", "ARITHMETIC"),
                 lineage("orders", "status", "order_audit", "status", "TRIGGER:erp.trg_orders_audit",
-                        "INSERT audit row", "DIRECT")
+                        "INSERT_SELECT", "INSERT audit row", "DIRECT")
         ), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
 
         assertEquals(2, events.size());
         assertTrue(events.stream().anyMatch(event -> event.sourceType().equals("SQL_WRITE")
-                && event.eventKind().equals("INVENTORY_MOVEMENT")
+                && event.eventKind().equals("SQL_WRITE_OPERATION")
+                && event.operationKinds().equals(List.of("UPDATE"))
                 && event.outputEndpoints().contains("inventory.quantity")));
         assertTrue(events.stream().anyMatch(event -> event.sourceType().equals("TRIGGER")
+                && event.eventKind().equals("SQL_WRITE_OPERATION")
+                && event.operationKinds().equals(List.of("INSERT"))
                 && event.sourceObject().equals("erp.trg_orders_audit")));
     }
 
@@ -77,7 +81,7 @@ final class SemanticEventExtractorTest {
     @Test
     void derivedLineageDoesNotCreateStandaloneEventButCanSupportDirectEvent() {
         JsonNode direct = lineage("orders", "amount", "sales_fact", "gross_amount",
-                "ROUTINE:erp.sp_rebuild_sales_fact", "INSERT SELECT", "DIRECT");
+                "ROUTINE:erp.sp_rebuild_sales_fact", "INSERT_SELECT", "INSERT SELECT", "DIRECT");
         JsonNode derived = derivedLineage("payments.amount", "sales_fact.net_amount");
         ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(direct), List.of(), List.of(derived), List.of(), List.of());
@@ -109,7 +113,7 @@ final class SemanticEventExtractorTest {
                         relationship("unrelated", "owner_id", "users", "id")
                 ),
                 List.of(lineage("orders", "customer_id", "sales_fact", "customer_id",
-                        "04-queries/fact.sql", "INSERT SELECT", "DIRECT")),
+                        "04-queries/fact.sql", "INSERT_SELECT", "INSERT SELECT", "DIRECT")),
                 List.of(relationship("sales_fact", "customer_id", "customers", "id")),
                 List.of(), List.of(), List.of());
 
@@ -123,12 +127,67 @@ final class SemanticEventExtractorTest {
         assertFalse(events.get(0).relationshipRefs().contains(bundle.derivedRelationships().get(0).id()));
     }
 
+    @Test
+    void usesOnlyTypedProvenanceAndMappingForStructuralClassification() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "sales_fact",
+                "status",
+                "inventory_dimension",
+                "approved_status",
+                "ROUTINE:misleading_trigger",
+                "UPDATE_SET",
+                "MERGE INSERT DELETE from /02-procedures/trigger.sql",
+                "DIRECT");
+        ObjectNode evidenceAttributes = (ObjectNode) lineage.path("evidence").get(0).path("attributes");
+        evidenceAttributes.put("sourceObjectType", "SQL_WRITE");
+        evidenceAttributes.put("sourceObjectName", "typed_write");
+        evidenceAttributes.put("sourceFile", "02-procedures/trigger.sql");
+
+        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        SemanticEventCandidate event = new SemanticEventExtractor().extract(bundle).get(0);
+
+        assertEquals("SQL_WRITE", event.sourceType());
+        assertEquals("SQL_WRITE_OPERATION", event.eventKind());
+        assertEquals(List.of("UPDATE"), event.operationKinds());
+        assertEquals("typed_write", event.sourceObject());
+    }
+
+    @Test
+    void missingTypedClassificationUsesNeutralWriteDefaults() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "sales_fact",
+                "status",
+                "inventory_dimension",
+                "approved_status",
+                "TRIGGER:misleading_routine",
+                "",
+                "MERGE DELETE INSERT UPDATE",
+                "DIRECT");
+        ObjectNode evidenceAttributes = (ObjectNode) lineage.path("evidence").get(0).path("attributes");
+        evidenceAttributes.remove(List.of("sourceObjectType", "sourceObjectName", "sourceStatementId"));
+        evidenceAttributes.put("sourceFile", "02-procedures/trigger.sql");
+        evidenceAttributes.put("sourceBlockId", "TRIGGER:must-not-be-used");
+
+        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        SemanticEventCandidate event = new SemanticEventExtractor().extract(bundle).get(0);
+
+        assertEquals("SQL_WRITE", event.sourceType());
+        assertEquals("SQL_WRITE_OPERATION", event.eventKind());
+        assertEquals(List.of("WRITE"), event.operationKinds());
+        assertEquals("02-procedures/trigger.sql", event.sourceObject());
+    }
+
     private JsonNode lineage(
             String sourceTable,
             String sourceColumn,
             String targetTable,
             String targetColumn,
             String evidenceSource,
+            String mappingKind,
             String detail,
             String transformType
     ) {
@@ -138,6 +197,9 @@ final class SemanticEventExtractorTest {
         lineage.put("flowKind", "VALUE");
         lineage.put("transformType", transformType);
         lineage.put("confidence", 0.82);
+        if (!mappingKind.isBlank()) {
+            lineage.putObject("attributes").put("mappingKind", mappingKind);
+        }
         lineage.putArray("evidence").addObject()
                 .put("transformType", transformType)
                 .put("sourceType", "PLAIN_SQL")

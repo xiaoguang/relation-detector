@@ -1,6 +1,8 @@
 package com.relationdetector.oracle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
@@ -10,6 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 
 class OracleOwnerResolverTest {
     @Test
@@ -30,6 +33,34 @@ class OracleOwnerResolverTest {
                 new ScanScope(null, null, List.of(), List.of())));
         assertEquals("MetadataOwner", OracleOwnerResolver.resolve(connection(null, "MetadataOwner"),
                 new ScanScope(null, null, List.of(), List.of())));
+    }
+
+    @Test
+    void rejectsConnectionThatCannotProveAnOwner() {
+        LiveSourceConfigurationException error = assertThrows(
+                LiveSourceConfigurationException.class,
+                () -> OracleOwnerResolver.resolve(connection(" ", null),
+                        new ScanScope(null, null, List.of(), List.of())));
+
+        assertFalse(error.getMessage().contains("jdbc:"));
+        assertFalse(error.getMessage().contains("null"));
+    }
+
+    @Test
+    void rejectsConnectionWhenSchemaAndMetadataLookupsFail() {
+        Connection connection = (Connection) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {Connection.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("getSchema") || method.getName().equals("getMetaData")) {
+                        throw new java.sql.SQLException("sensitive driver detail");
+                    }
+                    throw new UnsupportedOperationException(method.getName());
+                });
+
+        LiveSourceConfigurationException error = assertThrows(
+                LiveSourceConfigurationException.class,
+                () -> OracleOwnerResolver.resolve(connection,
+                        new ScanScope(null, null, List.of(), List.of())));
+        assertFalse(error.getMessage().contains("sensitive driver detail"));
     }
 
     private Connection connection(String schema, String user) {

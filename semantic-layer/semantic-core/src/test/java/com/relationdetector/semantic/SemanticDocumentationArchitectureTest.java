@@ -35,7 +35,8 @@ import org.junit.jupiter.api.Test;
 final class SemanticDocumentationArchitectureTest {
     private static final Set<String> ORCHESTRATION_SUFFIXES = Set.of(
             "Engine", "Pipeline", "Service", "Collector", "Extractor", "Resolver", "Merger", "Framer",
-            "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Facade", "Handler");
+            "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Assembler", "Assembly",
+            "Factory", "Index", "Facade", "Handler");
 
     @Test
     void productionTypesAndOrchestrationMethodsHaveBilingualDesignJavadoc() throws Exception {

@@ -64,6 +64,9 @@ public interface DatabaseAdaptor {
   capability、collector/profiler 以及下游 parser；live database DDL 同时要求 structured DDL parser，
   live database objects 同时要求 structured SQL parser。纯文件 scan 不会因 live metadata 默认值被拒绝，
   custom adaptor 缺少任一生产者或消费者时也会在 JDBC 前失败。
+- capability preflight failure 统一使用 `AdaptorContractException`，在 single-scan 映射为
+  `ADAPTOR_ERROR`；batch case 保留同一 code，batch 整体仍返回 `BATCH_PARTIAL_FAILURE`。catalog/source
+  等用户配置错误继续使用 `CONFIG_FORMAT_ERROR`，两类边界不会经通用异常混合。
 - `ScanConfigurationValidator` 在 `ScanConfig.resolve()`、`ResolvedScanConfig` 构造和
   `ScanEngine.scan()` 三个边界执行统一规则。metadata、database-DDL、database-object 或 profiling
   任一 live 功能启用但缺少 JDBC URL 时会在 capability 检查及连接前失败；`ScanCapabilityValidator`
@@ -251,9 +254,11 @@ lexeme，不能按 rule name、反射或 raw SQL 文本作结构推断。
 这些 planner 是 core 内部职责类，不改变 `DialectScriptFramer` SPI。
 
 script framer 不改变 server SQL 内显式写出的 catalog、schema、quote 或标识符拼写。后续
-SQL/DDL parser 也必须把这些原始可读 endpoint 写入 `TableId` / `ColumnRef` / `Endpoint` 和
-输出；`ScanScope` 的 catalog/schema 只可传给内部 `CanonicalEndpointKey` 解析，用于跨 source
-evidence lookup，不能作为输出端点的补写、重命名或显示等价规则。
+SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipeline 可以使用已经规范化且
+唯一的 `ScanScope` / object definition namespace 构造 `TableId` / `ColumnRef` / `Endpoint`，使
+生产输出与 live metadata、database DDL 精确对齐。没有唯一 namespace 时保持 bare，且不得按名称
+搜索、降级或把 bare 与任意 qualified endpoint 等价。该 materialization 是 identifier resolution，
+不是 script framing 或 naming inference。
 
 | Dialect | Client-script framing |
 | --- | --- |
@@ -326,6 +331,9 @@ public interface DataProfiler {
 - 只有 `SUCCESS` 可携带非空 evidence；`NO_EVIDENCE`、skip 和 failure status 必须返回空 evidence。
 - core consumer 必须重验上述 allowlist/status invariant，并对 `NEGATIVE_VALUE_MISMATCH` 再执行
   声明 FK、live mode 和 conditional/polymorphic policy，不能把外部 adaptor 视为可信边界。
+- `ProfileOutcome.warnings` 同样属于不可信 SPI 输入。core 只验证 status 对应的 warning type/code；
+  plugin message/source/attributes 不进入 `ScanResult`，固定安全 warning 由 core 按 status、adaptor id 与
+  candidate endpoints 重建。所有 bounded outcomes 先完整验证再统一应用，任一违规不会留下部分结果。
 - 默认关闭。
 
 ## 权重修正接口

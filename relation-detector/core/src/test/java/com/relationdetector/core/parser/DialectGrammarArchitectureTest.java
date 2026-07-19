@@ -820,7 +820,7 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void databaseAdaptorV5ExposesOnlyGroupedCapabilitiesAndScriptFraming() throws IOException {
+    void databaseAdaptorV6ExposesOnlyGroupedCapabilitiesAndScriptFraming() throws IOException {
         Path root = repoRoot();
         String adaptor = Files.readString(root.resolve(
                 "contracts/src/main/java/com/relationdetector/contracts/spi/DatabaseAdaptor.java"));
@@ -1427,7 +1427,8 @@ class DialectGrammarArchitectureTest {
     private static final class ProductionJavadocScanner extends TreePathScanner<Void, Void> {
         private static final Set<String> ORCHESTRATION_SUFFIXES = Set.of(
                 "Engine", "Pipeline", "Service", "Collector", "Extractor", "Resolver", "Merger",
-                "Framer", "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Facade");
+                "Framer", "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Assembler",
+                "Assembly", "Factory", "Index", "Facade");
 
         private final Path root;
         private final CompilationUnitTree unit;

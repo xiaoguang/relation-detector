@@ -131,12 +131,15 @@ naming:<source-normalized-key>-><target-normalized-key>:<rule>
 可读 endpoint 与 canonical endpoint key 是两个层次：
 
 - `source` / `target`、`suggestedSourceEndpoint` / `suggestedTargetEndpoint` 用于输出、审计和
-  人工阅读，保持 parser 捕获的显式拼写。
+  人工阅读。SQL 中显式写出的 catalog/schema/quote 不得被覆盖；裸表在已有唯一、规范的
+  scan/object namespace 时可以物化该 catalog/schema，作为生产 scan 的精确物理身份。
 - `suggestedSourceEndpointKey` / `suggestedTargetEndpointKey` 与内部
   `CanonicalEndpointKey` 用于 scan 内的精确匹配、去重和 `NamingMatchEvidenceEnhancer` lookup；
   它们不替代 display endpoint，也不属于 naming rule 的猜测结果。
-- `ScanScope` namespace 只作为 canonical key 跨 metadata、DDL、SQL source 对齐时的内部解析
-  上下文。它不改变输出 endpoint；bare 与 schema-qualified endpoint 不会因同名自动等价。
+- `ScanScope` namespace 是 bare identifier 的显式解析上下文，也用于 canonical key 跨 metadata、
+  DDL、SQL source 对齐。没有唯一 namespace 时 endpoint 必须保持 bare；不能按名称搜索或把 bare
+  与任意 schema-qualified endpoint 等价。namespace materialization 属于 exact identifier resolution，
+  不是 naming rule。
 
 输出边界：
 

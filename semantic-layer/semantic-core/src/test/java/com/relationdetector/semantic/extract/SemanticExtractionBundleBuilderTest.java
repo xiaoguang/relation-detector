@@ -45,7 +45,7 @@ final class SemanticExtractionBundleBuilderTest {
         for (int i = 0; i < 6; i++) {
             relationships.add(relationship("orders_" + i, "customer_id", "customers_" + i, "id"));
             lineage.add(lineage("payments_" + i, "amount", "sales_fact_" + i, "paid_amount",
-                    "ROUTINE:erp.sp_rebuild_sales_fact_" + i));
+                    "erp.sp_rebuild_sales_fact_" + i));
             ObjectNode naming = JSON.createObjectNode();
             naming.put("id", "naming:orders_" + i + ".customer_id->customers_" + i + ".id:TABLE_ID");
             naming.set("source", endpoint("orders_" + i, "customer_id"));
@@ -85,7 +85,7 @@ final class SemanticExtractionBundleBuilderTest {
     @Test
     void includesDeterministicEventCandidatesForWriteLineage() {
         JsonNode lineage = lineage("sales_orders", "id", "sales_fact", "order_id",
-                "ROUTINE:erp.sp_rebuild_sales_fact");
+                "erp.sp_rebuild_sales_fact");
         ScanBundle bundle = new ScanBundle("mysql", "sample_data", "", List.of("object-files"), List.of(),
                 Map.of(), List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
@@ -94,14 +94,14 @@ final class SemanticExtractionBundleBuilderTest {
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
         JsonNode event = evidenceBundle.path("eventCandidates").get(0);
         assertEquals("event-candidate:routine:erp.sp_rebuild_sales_fact", event.path("id").asText());
-        assertEquals("FACT_REFRESH", event.path("eventKind").asText());
+        assertEquals("SQL_WRITE_OPERATION", event.path("eventKind").asText());
         assertEquals("ROUTINE", event.path("sourceType").asText());
         assertEquals("ROUTINE", event.path("sourceObjectType").asText());
         assertEquals("erp.sp_rebuild_sales_fact", event.path("sourceObject").asText());
         assertEquals("erp.sp_rebuild_sales_fact", event.path("sourceObjectName").asText());
         assertEquals("sales_orders.id", event.path("inputEndpoints").get(0).asText());
         assertEquals("sales_fact.order_id", event.path("outputEndpoints").get(0).asText());
-        assertEquals("重建销售事实表", event.path("readableNameHint").asText());
+        assertEquals("写入销售事实表", event.path("readableNameHint").asText());
         assertTrue(event.path("businessActionHint").asText().contains("sales_fact"));
         assertEquals("EVENT_KIND_AND_OUTPUT_TABLE", event.path("eventNameBasis").asText());
         assertFalse(event.path("evidenceRefs").isEmpty());
@@ -113,7 +113,7 @@ final class SemanticExtractionBundleBuilderTest {
     void exposesReviewAndTripletCandidatesForPromptGrounding() {
         JsonNode relationship = relationship("orders", "customer_id", "customers", "id");
         JsonNode lineage = lineage("payments", "amount", "sales_fact", "paid_amount",
-                "ROUTINE:erp.sp_rebuild_sales_fact");
+                "erp.sp_rebuild_sales_fact");
         ObjectNode naming = JSON.createObjectNode();
         naming.put("id", "naming:orders.customer_id->customers.id:TABLE_ID");
         naming.set("source", endpoint("orders", "customer_id"));
@@ -174,17 +174,22 @@ final class SemanticExtractionBundleBuilderTest {
     }
 
     private JsonNode lineage(String sourceTable, String sourceColumn, String targetTable, String targetColumn,
-            String evidenceSource) {
+            String sourceObjectName) {
         ObjectNode lineage = JSON.createObjectNode();
         lineage.putArray("sources").add(endpoint(sourceTable, sourceColumn));
         lineage.set("target", endpoint(targetTable, targetColumn));
         lineage.put("flowKind", "VALUE");
         lineage.put("transformType", "DIRECT");
         lineage.put("confidence", 0.9);
-        lineage.putArray("evidence").addObject()
+        lineage.putObject("attributes").put("mappingKind", "INSERT_SELECT");
+        ObjectNode evidence = lineage.putArray("evidence").addObject()
                 .put("transformType", "DIRECT")
-                .put("source", evidenceSource)
+                .put("source", "routine.sql")
                 .put("detail", "insert select");
+        evidence.putObject("attributes")
+                .put("sourceObjectType", "ROUTINE")
+                .put("sourceObjectName", sourceObjectName)
+                .put("sourceStatementId", sourceObjectName + ":1-1");
         lineage.putArray("rawEvidence");
         return lineage;
     }

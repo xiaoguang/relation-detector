@@ -6,7 +6,16 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
-/** Exact physical table and column registry derived from the supplied evidence bundle. */
+/**
+ * CN: 从本次提示所使用的 typed evidence bundle 建立精确物理表和列集合，供 semantic section normalizer
+ * 校验模型输出中的 physicalName、metric 和 lineage endpoint。输入保持 bundle 中的完整标识符，输出仅提供
+ * 精确 membership 查询；本索引不降级 catalog/schema、不按名称补全，也不把 evidenceRef 当作物理身份依据。
+ *
+ * EN: Builds exact physical table and column sets from the typed evidence bundle used for the model prompt so
+ * semantic section normalizers can validate physical names, metrics, and lineage endpoints. It preserves complete
+ * bundle identifiers and exposes exact membership only; it neither drops catalog/schema components, completes names,
+ * nor treats an evidence reference as proof of physical identity.
+ */
 final class SemanticPhysicalReferenceIndex {
     private static final Set<String> ENDPOINT_SECTIONS = Set.of(
             "relationships", "derivedRelationships", "namingEvidence");
@@ -20,6 +29,12 @@ final class SemanticPhysicalReferenceIndex {
         this.columns = Set.copyOf(columns);
     }
 
+    /**
+     * CN: 读取 bundle 的物理事实 section并生成不可变索引；缺少必需数组或非法列 endpoint时原子失败，
+     * 不返回部分 registry。
+     * EN: Reads physical fact sections from the bundle into an immutable index; missing required arrays or invalid
+     * column endpoints fail atomically without returning a partial registry.
+     */
     static SemanticPhysicalReferenceIndex from(JsonNode bundle) {
         Set<String> tables = new LinkedHashSet<>();
         JsonNode tableValues = bundle.path("tables");

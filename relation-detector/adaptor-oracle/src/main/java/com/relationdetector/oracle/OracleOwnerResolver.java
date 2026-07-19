@@ -32,10 +32,14 @@ public final class OracleOwnerResolver {
         }
         try {
             String userName = connection.getMetaData().getUserName();
-            return userName == null ? "" : userName;
+            if (userName != null && !userName.isBlank()) {
+                return userName;
+            }
         } catch (Exception ignored) {
-            return "";
+            // The caller receives a fixed configuration error below; driver details stay private.
         }
+        throw new LiveSourceConfigurationException(
+                "Oracle live owner cannot be resolved from database.schema or the current connection");
     }
 
     private static String normalizeExplicit(String owner) {

@@ -123,6 +123,7 @@ public final class Main {
                 case CONFIG_FORMAT_ERROR -> "Configuration format is invalid.";
                 case INPUT_FILE_ERROR -> "Configured input file cannot be read.";
                 case DATABASE_CONNECTION_ERROR -> "Database connection failed.";
+                case ADAPTOR_ERROR -> "Requested database adaptor is unavailable.";
                 case OUTPUT_WRITE_ERROR -> "Output file cannot be written.";
                 default -> "Scan execution failed.";
             };

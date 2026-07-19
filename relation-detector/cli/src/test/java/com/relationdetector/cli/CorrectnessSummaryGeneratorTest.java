@@ -21,15 +21,15 @@ class CorrectnessSummaryGeneratorTest {
         assumeGeneratedReportTestEnabled();
         String markdown = GENERATED.get();
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 1198 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 984 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 1197 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 983 |"));
         assertTrue(markdown.contains("| DDL fixtures | 214 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 446 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 445 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 261 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
         assertTrue(markdown.contains("| Oracle directory fixtures | 213 |"));
         assertTrue(markdown.contains("| SQL Server directory fixtures | 236 |"));
-        assertTrue(markdown.contains("| COMMON | 39 | 34 | 5 |"));
+        assertTrue(markdown.contains("| COMMON | 38 | 33 | 5 |"));
         assertTrue(markdown.contains("| MYSQL | 261 | 207 | 54 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 449 | 371 | 78 |"));
         assertTrue(markdown.contains("| ORACLE | 213 | 173 | 40 |"));

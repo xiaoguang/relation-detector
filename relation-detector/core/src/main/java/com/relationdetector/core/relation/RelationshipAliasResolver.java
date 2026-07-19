@@ -21,15 +21,18 @@ import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.identity.NamespaceContext;
 
 /**
- *
- * Resolves typed rowset aliases and direct projection aliases for relationship extraction.
+ * CN: 从 typed rowset、projection 与当前 namespace 构建 statement-scope alias/column resolution；上游是
+ * structured relationship extractor，下游是 candidate factory，本类不读取 raw SQL、不猜测物理表，也不跨 scope 复用 alias。
+ * EN: Resolves statement-scoped rowset and projection aliases from typed events and the active namespace for the
+ * relationship extractor and candidate factory. It never reads raw SQL, guesses physical tables, or reuses aliases
+ * across scopes.
  */
-abstract class RelationshipAliasSupport {
+abstract class RelationshipAliasResolver {
     private final CanonicalIdentifierResolver identifiers;
     private final CanonicalEndpointKeyProvider endpointKeys;
     private final NamespaceContext namespace;
 
-    protected RelationshipAliasSupport(IdentifierRules identifierRules, NamespaceContext namespace) {
+    protected RelationshipAliasResolver(IdentifierRules identifierRules, NamespaceContext namespace) {
         this.identifiers = new CanonicalIdentifierResolver(identifierRules);
         this.namespace = namespace == null ? NamespaceContext.empty() : namespace;
         this.endpointKeys = new CanonicalEndpointKeyProvider(identifierRules, this.namespace);

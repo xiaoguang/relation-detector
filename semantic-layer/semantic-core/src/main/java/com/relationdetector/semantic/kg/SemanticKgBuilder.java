@@ -35,13 +35,16 @@ public final class SemanticKgBuilder {
      * EN: Builds endpoint-evidence inventory before table, column, fact, and event nodes and edges. Duplicate nodes or conflicting edges fail; immutable assembly never overwrites objects.
      */
     public SemanticKnowledgeGraph build(EvidenceGraph graph) {
-        Map<String, SemanticNode> nodes = new LinkedHashMap<>();
-        Map<String, SemanticEdge> edges = new LinkedHashMap<>();
+        SemanticKgIdentityRegistry identity = new SemanticKgIdentityRegistry();
         Map<String, List<String>> endpointEvidence = new LinkedHashMap<>();
         ReferenceIndex referenceIndex = ReferenceIndex.from(graph);
 
         for (EvidenceGraphFact fact : graph.facts()) {
-            referenceIndex.requireResolvable(fact.id(), fact.evidenceRefs());
+            if ("Diagnostic".equals(fact.type())) {
+                referenceIndex.requireResolvable(fact.id(), fact.evidenceRefs());
+            } else {
+                referenceIndex.requireEvidence(fact.id(), fact.evidenceRefs());
+            }
             for (PhysicalEndpointRef endpoint : fact.endpoints()) {
                 String endpointKey = endpoint.displayName();
                 endpointEvidence.computeIfAbsent(endpointKey, ignored -> new ArrayList<>()).addAll(fact.evidenceRefs());
@@ -51,18 +54,25 @@ public final class SemanticKgBuilder {
 
         for (PhysicalEndpointRef endpoint : graph.endpoints()) {
             if (endpoint.isColumnLevel()) {
-                addNode(nodes, new SemanticNode(columnNodeId(endpoint), "PhysicalColumn", endpoint.displayName(),
-                        BigDecimal.ONE, "EVIDENCE_SUPPORTED", refs(endpointEvidence, endpoint.displayName()),
+                List<String> columnRefs = refs(endpointEvidence, endpoint.displayName());
+                List<String> tableRefs = refs(endpointEvidence, endpoint.table());
+                referenceIndex.requireEvidence(columnNodeId(endpoint), columnRefs);
+                referenceIndex.requireEvidence(tableNodeId(endpoint.table()), tableRefs);
+                identity.addNode(new SemanticNode(columnNodeId(endpoint), "PhysicalColumn", endpoint.displayName(),
+                        BigDecimal.ONE, "EVIDENCE_SUPPORTED", columnRefs,
                         Map.of("table", endpoint.table(), "column", endpoint.column())));
-                addNode(nodes, new SemanticNode(tableNodeId(endpoint.table()), "PhysicalTable", endpoint.table(),
-                        BigDecimal.ONE, "EVIDENCE_SUPPORTED", refs(endpointEvidence, endpoint.table()),
+                identity.addNode(new SemanticNode(tableNodeId(endpoint.table()), "PhysicalTable", endpoint.table(),
+                        BigDecimal.ONE, "EVIDENCE_SUPPORTED", tableRefs,
                         Map.of("table", endpoint.table())));
-                addEdge(edges, new SemanticEdge("edge:table-column:" + endpoint.displayName(), "TABLE_COLUMN",
+                addEdge(identity, referenceIndex, new SemanticEdge(
+                        "edge:table-column:" + endpoint.displayName(), "TABLE_COLUMN",
                         tableNodeId(endpoint.table()), columnNodeId(endpoint), BigDecimal.ONE,
-                        refs(endpointEvidence, endpoint.displayName()), Map.of()));
+                        columnRefs, Map.of()));
             } else {
-                addNode(nodes, new SemanticNode(tableNodeId(endpoint.table()), "PhysicalTable", endpoint.table(),
-                        BigDecimal.ONE, "EVIDENCE_SUPPORTED", refs(endpointEvidence, endpoint.table()),
+                List<String> tableRefs = refs(endpointEvidence, endpoint.table());
+                referenceIndex.requireEvidence(tableNodeId(endpoint.table()), tableRefs);
+                identity.addNode(new SemanticNode(tableNodeId(endpoint.table()), "PhysicalTable", endpoint.table(),
+                        BigDecimal.ONE, "EVIDENCE_SUPPORTED", tableRefs,
                         Map.of("table", endpoint.table())));
             }
         }
@@ -76,17 +86,17 @@ public final class SemanticKgBuilder {
                 case "Diagnostic" -> "Diagnostic";
                 default -> fact.type();
             };
-            addNode(nodes, new SemanticNode(fact.id(), nodeType, fact.label(), fact.confidence(),
+            identity.addNode(new SemanticNode(fact.id(), nodeType, fact.label(), fact.confidence(),
                     reviewStatus(fact), fact.evidenceRefs(), fact.attributes()));
-            connectFact(nodes, edges, fact);
+            connectFact(identity, referenceIndex, fact);
             if ("RelationshipFact".equals(fact.type()) || "DerivedRelationshipFact".equals(fact.type())) {
-                addJoinPath(nodes, edges, fact);
+                addJoinPath(identity, referenceIndex, fact);
             }
         }
 
         Map<String, Integer> summary = new LinkedHashMap<>();
-        summary.put("nodeCount", nodes.size());
-        summary.put("edgeCount", edges.size());
+        summary.put("nodeCount", identity.nodeCount());
+        summary.put("edgeCount", identity.edgeCount());
         summary.put("evidenceRefCount", graph.evidenceRefs().size());
         summary.put("diagnosticCount", graph.diagnostics().size());
         summary.put("inputRelationshipCount", graph.scanBundle().relationships().size());
@@ -98,11 +108,15 @@ public final class SemanticKgBuilder {
                 .filter(fact -> "SemanticEventCandidate".equals(fact.type()))
                 .count());
 
-        return new SemanticKnowledgeGraph(buildRun(graph.scanBundle()), summary, List.copyOf(nodes.values()),
-                List.copyOf(edges.values()), graph.evidenceRefs(), graph.diagnostics());
+        return new SemanticKnowledgeGraph(buildRun(graph.scanBundle()), summary, identity.nodes(),
+                identity.edges(), graph.evidenceRefs(), graph.diagnostics());
     }
 
-    private void connectFact(Map<String, SemanticNode> nodes, Map<String, SemanticEdge> edges, EvidenceGraphFact fact) {
+    private void connectFact(
+            SemanticKgIdentityRegistry identity,
+            ReferenceIndex referenceIndex,
+            EvidenceGraphFact fact
+    ) {
         List<PhysicalEndpointRef> endpoints = fact.endpoints();
         for (int i = 0; i < endpoints.size(); i++) {
             PhysicalEndpointRef endpoint = endpoints.get(i);
@@ -114,11 +128,13 @@ public final class SemanticKgBuilder {
                 case "SemanticEventCandidate" -> i < eventInputEndpointCount(fact) ? "EVENT_INPUT" : "EVENT_OUTPUT";
                 default -> "FACT_ENDPOINT";
             };
-            addEdge(edges, new SemanticEdge("edge:" + type + ":" + fact.id() + ":" + endpoint.displayName() + ":" + i,
+            addEdge(identity, referenceIndex, new SemanticEdge(
+                    "edge:" + type + ":" + fact.id() + ":" + endpoint.displayName() + ":" + i,
                     type, fact.id(), endpointNode, fact.confidence(), fact.evidenceRefs(), Map.of("ordinal", i)));
         }
         for (String evidenceRef : fact.evidenceRefs()) {
-            addEdge(edges, new SemanticEdge("edge:supported-by:" + fact.id() + ":" + evidenceRef,
+            addEdge(identity, referenceIndex, new SemanticEdge(
+                    "edge:supported-by:" + fact.id() + ":" + evidenceRef,
                     "SUPPORTED_BY_EVIDENCE", fact.id(), evidenceRef, fact.confidence(), List.of(evidenceRef), Map.of()));
         }
     }
@@ -128,20 +144,24 @@ public final class SemanticKgBuilder {
         return value instanceof Number number ? number.intValue() : 0;
     }
 
-    private void addJoinPath(Map<String, SemanticNode> nodes, Map<String, SemanticEdge> edges, EvidenceGraphFact fact) {
+    private void addJoinPath(
+            SemanticKgIdentityRegistry identity,
+            ReferenceIndex referenceIndex,
+            EvidenceGraphFact fact
+    ) {
         List<PhysicalEndpointRef> endpoints = fact.endpoints();
         if (endpoints.size() < 2) {
             return;
         }
         String pathId = "joinpath:" + fact.id().replaceFirst("^(derived-relationship:|relationship:)", "");
-        addNode(nodes, new SemanticNode(pathId, "JoinPath", fact.label(), fact.confidence(), "EVIDENCE_SUPPORTED",
+        identity.addNode(new SemanticNode(pathId, "JoinPath", fact.label(), fact.confidence(), "EVIDENCE_SUPPORTED",
                 fact.evidenceRefs(), Map.of("sourceFact", fact.id(), "hopCount", Math.max(1, endpoints.size() - 1))));
-        addEdge(edges, new SemanticEdge("edge:joinpath-source:" + pathId, "JOIN_PATH_SOURCE",
+        addEdge(identity, referenceIndex, new SemanticEdge("edge:joinpath-source:" + pathId, "JOIN_PATH_SOURCE",
                 pathId, endpointNodeId(endpoints.get(0)), fact.confidence(), fact.evidenceRefs(), Map.of()));
-        addEdge(edges, new SemanticEdge("edge:joinpath-target:" + pathId, "JOIN_PATH_TARGET",
+        addEdge(identity, referenceIndex, new SemanticEdge("edge:joinpath-target:" + pathId, "JOIN_PATH_TARGET",
                 pathId, endpointNodeId(endpoints.get(endpoints.size() - 1)), fact.confidence(), fact.evidenceRefs(), Map.of()));
         for (int i = 0; i < endpoints.size() - 1; i++) {
-            addEdge(edges, new SemanticEdge("edge:joinpath-step:" + pathId + ":" + i,
+            addEdge(identity, referenceIndex, new SemanticEdge("edge:joinpath-step:" + pathId + ":" + i,
                     "JOIN_PATH_STEP", endpointNodeId(endpoints.get(i)), endpointNodeId(endpoints.get(i + 1)),
                     fact.confidence(), fact.evidenceRefs(), Map.of("joinPath", pathId, "ordinal", i)));
         }
@@ -151,14 +171,13 @@ public final class SemanticKgBuilder {
         return endpoint.isColumnLevel() ? columnNodeId(endpoint) : tableNodeId(endpoint.table());
     }
 
-    private void addNode(Map<String, SemanticNode> nodes, SemanticNode node) {
-        nodes.putIfAbsent(node.id(), node);
-    }
-
-    private void addEdge(Map<String, SemanticEdge> edges, SemanticEdge edge) {
-        if (!edge.evidenceRefs().isEmpty()) {
-            edges.putIfAbsent(edge.id(), edge);
-        }
+    private void addEdge(
+            SemanticKgIdentityRegistry identity,
+            ReferenceIndex referenceIndex,
+            SemanticEdge edge
+    ) {
+        referenceIndex.requireEvidence(edge.id(), edge.evidenceRefs());
+        identity.addEdge(edge);
     }
 
     private List<String> refs(Map<String, List<String>> refsByEndpoint, String key) {

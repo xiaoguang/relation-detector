@@ -105,6 +105,24 @@ class BatchSchedulerTest {
         assertEquals(ErrorCode.BATCH_PARTIAL_FAILURE.code(), BatchCommand.exitCode(outcomes));
     }
 
+    @Test
+    void preservesAdaptorErrorForAFailedBatchCase() throws Exception {
+        List<BatchCaseOutcome> outcomes = new BatchScheduler().run(
+                List.of(prepared("fails", 1)),
+                1,
+                1,
+                BatchFailurePolicy.CONTINUE,
+                item -> { throw new Main.CliFailure(ErrorCode.ADAPTOR_ERROR); });
+        Path report = tempDir.resolve("adaptor-report.json");
+
+        new BatchReportWriter().write(report, outcomes);
+
+        JsonNode failed = new ObjectMapper().readTree(report.toFile()).path("cases").get(0);
+        assertEquals(ErrorCode.ADAPTOR_ERROR.name(), failed.path("errorCode").asText());
+        assertEquals("Requested database adaptor is unavailable.", failed.path("error").asText());
+        assertEquals(ErrorCode.BATCH_PARTIAL_FAILURE.code(), BatchCommand.exitCode(outcomes));
+    }
+
     private PreparedBatchCase prepared(String id, int workers) {
         BatchCase batchCase = new BatchCase(id, Path.of(id + ".yml"), Path.of(id + ".json"), null);
         return new PreparedBatchCase(batchCase, null, null, workers);

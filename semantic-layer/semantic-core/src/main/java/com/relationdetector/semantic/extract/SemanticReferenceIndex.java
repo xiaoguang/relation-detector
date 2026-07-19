@@ -7,7 +7,16 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/** Indexes every stable fact, evidence, and candidate id exposed to semantic extraction. */
+/**
+ * CN: 从 semantic evidence bundle 的事实、证据和候选 section 建立全局稳定引用索引，供 normalizer 校验
+ * evidenceRefs 及 candidateRef 的类型。输入是 reader 已验证的 bundle，输出是不可变引用和候选类别查询；
+ * 本类不修复缺失 ID、不按内容猜引用，也不拥有物理 endpoint 校验。
+ *
+ * EN: Builds a global stable-reference index over fact, evidence, and candidate sections in a semantic evidence
+ * bundle so normalizers can validate evidence references and candidate-reference kinds. Its input is a reader-validated
+ * bundle and its output is immutable reference membership; it does not repair missing IDs, infer references from
+ * content, or own physical endpoint validation.
+ */
 final class SemanticReferenceIndex {
     private static final Map<String, String> SECTIONS = Map.ofEntries(
             Map.entry("evidence", "evidence"),

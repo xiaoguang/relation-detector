@@ -21,20 +21,7 @@ public final class EventReadableNameSuggester {
         String outputTable = primaryTable(outputEndpoints);
         String inputTables = tableList(inputEndpoints);
         String outputLabel = tableLabel(outputTable);
-        String normalizedKind = eventKind == null ? "" : eventKind.toUpperCase(Locale.ROOT);
-        String source = sourceObject == null ? "" : sourceObject.toLowerCase(Locale.ROOT);
-        String verb = source.contains("rebuild") || source.contains("refresh") || source.contains("recalc")
-                ? "重建"
-                : "刷新";
-        String readable = switch (normalizedKind) {
-            case "FACT_REFRESH" -> verb + outputLabel;
-            case "DIMENSION_REFRESH" -> "刷新" + outputLabel;
-            case "INVENTORY_MOVEMENT" -> "更新" + outputLabel;
-            case "CASH_RECONCILIATION" -> "生成" + outputLabel;
-            case "ACCOUNTING_POSTING" -> "登记" + outputLabel;
-            case "STATE_CHANGE" -> "更新" + outputLabel + "状态";
-            default -> outputTable.isBlank() ? readableSource(sourceObject) : "写入" + outputLabel;
-        };
+        String readable = outputTable.isBlank() ? readableSource(sourceObject) : "写入" + outputLabel;
         String action = "从 " + (inputTables.isBlank() ? "上游数据" : inputTables)
                 + " 写入/更新 " + (outputTable.isBlank() ? "目标数据" : outputTable);
         String basis = outputTable.isBlank() ? "EVENT_KIND_AND_SOURCE_OBJECT" : "EVENT_KIND_AND_OUTPUT_TABLE";

@@ -2,6 +2,7 @@ package com.relationdetector.core.scan;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,6 +28,7 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.contracts.Enums.WarningSeverity;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
@@ -71,20 +73,56 @@ class DataProfilePipelineTest {
 
     @Test
     void forwardsProfilerFailuresToScanWarnings() {
+        String secret = "jdbc:mysql://db?password=secret SQL=SELECT credential";
         ScanPipelineContext context = contextReturning(new ProfileOutcome(
                 ProfileStatus.PERMISSION_DENIED,
                 List.of(),
-                List.of(com.relationdetector.contracts.model.WarningMessage.warn(
+                List.of(new com.relationdetector.contracts.model.WarningMessage(
                         WarningType.PROFILE_WARNING,
+                        WarningSeverity.ERROR,
                         "PROFILE_PERMISSION_DENIED",
-                        "denied",
-                        "test-profile",
-                        0))));
+                        secret,
+                        secret,
+                        0,
+                        Map.of("sql", secret, "password", secret)))));
 
         pipeline.profile(connection(), context);
 
         assertEquals(1, context.result.warnings().size());
-        assertEquals("PROFILE_PERMISSION_DENIED", context.result.warnings().get(0).code());
+        var warning = context.result.warnings().get(0);
+        assertEquals("PROFILE_PERMISSION_DENIED", warning.code());
+        assertEquals(WarningSeverity.WARN, warning.severity());
+        assertEquals("Data profiling query permission denied", warning.message());
+        assertEquals("data-profile:test", warning.source());
+        assertFalse(warning.toString().contains(secret));
+        assertFalse(warning.attributes().containsKey("sql"));
+        assertFalse(warning.attributes().containsKey("password"));
+    }
+
+    @Test
+    void validatesEveryOutcomeBeforeApplyingAnyProfileResult() {
+        RelationshipCandidate first = relationship(null, null);
+        first.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        RelationshipCandidate second = relationshipTables("archive_orders", "archive_customers");
+        second.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        AtomicInteger calls = new AtomicInteger();
+        ScanPipelineContext context = contextReturningCandidates(List.of(first, second), (connection, request) -> {
+            if (calls.incrementAndGet() == 1) {
+                return ProfileOutcome.success(List.of(evidence(EvidenceType.VALUE_CONTAINMENT_HIGH)));
+            }
+            request.candidate().evidence().add(evidence(EvidenceType.VALUE_OVERLAP_HIGH));
+            return ProfileOutcome.success(List.of(evidence(EvidenceType.SQL_LOG_JOIN)));
+        });
+
+        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), context));
+
+        assertEquals(2, calls.get());
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                first.evidence().stream().map(Evidence::type).toList());
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                second.evidence().stream().map(Evidence::type).toList());
+        assertTrue(context.result.warnings().isEmpty());
+        assertTrue(context.result.sources().isEmpty());
     }
 
     @Test
@@ -226,7 +264,7 @@ class DataProfilePipelineTest {
                             .sum();
 
             new EvidenceEnhancementPipeline().adjustWeights(context);
-            ScanResult result = new ResultAssembly().assemble(context);
+            ScanResult result = new ResultAssembler().assemble(context);
 
             assertEquals(expectedCalls, calls.get());
             assertEquals(List.of(BigDecimal.valueOf(0.3d)), result.relationships().get(0).rawEvidence().stream()
@@ -244,7 +282,7 @@ class DataProfilePipelineTest {
         if (adjustWeights) {
             new EvidenceEnhancementPipeline().adjustWeights(context);
         }
-        return new ResultAssembly().assemble(context);
+        return new ResultAssembler().assemble(context);
     }
 
     private byte[] canonicalJson(ScanResult result) throws Exception {
@@ -349,6 +387,29 @@ class DataProfilePipelineTest {
         return ctx;
     }
 
+    private ScanPipelineContext contextReturningCandidates(
+            List<RelationshipCandidate> candidates,
+            DataProfiler profiler
+    ) {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = "jdbc:test:data-profile-pipeline";
+        config.dataProfileEnabled = true;
+        config.skipUnindexedLargeTargets = false;
+        ScanScope scope = new ScanScope(null, null, List.of(), List.of());
+        ScanResult result = new ScanResult("mysql", null, null);
+        ScanPipelineContext ctx = new ScanPipelineContext(
+                config.resolve(),
+                new TestAdaptor(DatabaseType.MYSQL, profiler, (evidence, ignored) -> evidence),
+                scope,
+                result,
+                new AdaptorContext(scope, Map.of(), result.warnings()::add),
+                new ArrayList<>(candidates),
+                new ArrayList<>());
+        ctx.metadataSnapshot = new MetadataSnapshot();
+        return ctx;
+    }
+
     private RelationshipCandidate declaredCandidate(Map<String, Object> attributes) {
         RelationshipCandidate candidate = relationship(null, null);
         candidate.evidence().add(new Evidence(
@@ -376,6 +437,16 @@ class DataProfilePipelineTest {
     private RelationshipCandidate relationship(String catalog, String schema) {
         TableId source = new TableId(catalog, schema, "orders", "orders");
         TableId target = new TableId(catalog, schema, "customers", "customers");
+        return new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(source, "customer_id")),
+                Endpoint.column(ColumnRef.of(target, "id")),
+                com.relationdetector.contracts.Enums.RelationType.FK_LIKE,
+                com.relationdetector.contracts.Enums.RelationSubType.INFERRED_JOIN_FK);
+    }
+
+    private RelationshipCandidate relationshipTables(String sourceTable, String targetTable) {
+        TableId source = TableId.of(null, sourceTable);
+        TableId target = TableId.of(null, targetTable);
         return new RelationshipCandidate(
                 Endpoint.column(ColumnRef.of(source, "customer_id")),
                 Endpoint.column(ColumnRef.of(target, "id")),

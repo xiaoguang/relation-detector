@@ -39,7 +39,7 @@ Semantica 官方 README 将 Semantica 定位为 LLM 旁边的 Context and Accoun
 
 - LLM 可以把已有 evidence 翻译成业务可读说明。
 - LLM 可以归纳业务域、实体候选、指标候选、同义词候选和冲突解释。
-- LLM 输出必须引用 evidenceRefs；无法引用 evidence 的内容在当前 normalized artifact 中成为 validation issue，后续 catalog/governance 阶段再转为 warning 或 review item。
+- LLM 输出必须引用 evidenceRefs；无法引用 evidence 的内容会使当前 formal normalization 原子失败，不会产生带 validation issue 的正式 artifact。后续 catalog/governance 阶段可以在独立的候选摄取流程中转为 warning 或 review item。
 - LLM 不能确认 conflict，不能合并重复对象，不能写入 `BUSINESS_APPROVED`，不能绕过 SQL Validator。
 
 因此 LLM Enricher 的输出是 semantic candidates，不是 catalog truth。Catalog Store 和 Review Queue 负责持久化、状态保护和治理决策。
@@ -253,8 +253,8 @@ LLM 返回 JSON semantic document，系统再做 deterministic normalization / v
 `SemanticExtractionDocumentNormalizer` 会补齐内容稳定 id、entity refs、`semanticGraph` 和 `validation`。
 正式输出只在当前实现的 ID/内部语义引用闭包满足 `validation.isRefClosed=true` 时返回；未知 evidence、
 错误 candidate 类型、孤立 entity、缺失 evidence，或无法解析到本次 semantic document entity 的物理引用
-都会抛出 `SemanticExtractionValidationException`。它尚未拒绝“模型新建 entity，同时填写 bundle 中不存在的
-physicalName/physicalField”这一类输入。
+都会抛出 `SemanticExtractionValidationException`。`SemanticPhysicalReferenceIndex` 还会逐项拒绝 bundle 中不存在的
+`physicalName`、lineage field、metric field 和 dimension field；有效 evidenceRef 不能替虚构物理 endpoint 背书。
 
 ## 6. 输出校验
 
@@ -265,7 +265,7 @@ LLM 输出进入 catalog 前必须校验。当前代码已实现的是 normalize
 - event 必须带 `eventCandidateRef`，不能从 derived-only lineage 单独创造 event。
 - derived lineage 只能作为 eventCandidate 上的 `supportingDerivedLineageRefs` 辅助解释。
 - normalizer 拒绝模型输出的 `reviewStatus=BUSINESS_APPROVED`，不把越权状态静默降级为另一个状态。
-- 无 evidence 的 metric/entity 当前进入 `validation.missingEvidenceRefs`；自动改写为 `NEEDS_MORE_EVIDENCE` 是后续 catalog/review 阶段增强项。
+- 无 evidence 的 metric/entity 当前使 formal normalization 失败；不会返回 `validation.missingEvidenceRefs` 部分结果。转成 `NEEDS_MORE_EVIDENCE` 必须由后续 catalog/review 候选流程显式完成。
 - join path explanation 只能引用已有 relationship path，不能产生新的 path step。
 
 ## 7. 流程图
@@ -280,9 +280,9 @@ flowchart TD
   C --> D["校验 evidence/candidate ID 与文档内 entity 引用"]
   D --> E{"证据是否有效?"}
   E -- "是" --> F["写入 SYSTEM_PROPOSED 语义对象"]
-  E -- "否" --> G["生成警告 / 审核项"]
+  E -- "否" --> G["formal normalization 失败"]
   F --> H["normalized semantic document"]
-  G --> I["validation / review item candidates"]
+  G --> I["不输出部分 artifact；后续治理可单独接收候选"]
 ```
 
 </details>
@@ -297,9 +297,9 @@ flowchart TD
   C --> D["Validate evidence/candidate IDs and document-local entity refs"]
   D --> E{"Valid evidence?"}
   E -- "yes" --> F["Write SYSTEM_PROPOSED semantic objects"]
-  E -- "no" --> G["Create warning / review item"]
+  E -- "no" --> G["Fail formal normalization"]
   F --> H["Normalized semantic document"]
-  G --> I["Validation / review item candidates"]
+  G --> I["No partial artifact; governance may ingest a separate candidate"]
 ```
 
 </details>
@@ -325,8 +325,8 @@ flowchart TD
 建议覆盖的行为：
 
 - LLM 返回无法解析到本次 semantic document entity 的 `physicalRef` 时，normalizer 必须拒绝正式输出并给出 unresolved reference。
-- LLM 新建 entity 并引用 bundle 中不存在的物理 endpoint，目前不会被 bundle reference index 拒绝；后续应增加 endpoint registry 负向校验。
-- LLM 为多个 semantic object 提供相同 id 时，后续应在 graph assembly 前拒绝；不能依赖 map 覆盖或 `putIfAbsent` 选择任一项。
+- LLM 新建 entity 并引用 bundle 中不存在的物理 endpoint 时，`SemanticPhysicalReferenceIndex` 必须拒绝正式输出；有效 evidenceRef 不能替不存在的表列背书。
+- LLM 为多个 semantic object 提供相同 id 时，`SemanticOwnerIdRegistry` 必须在同 section 或跨 section 冲突处拒绝；`SemanticGraphAssembler` 继续作为 node/edge 冲突的第二道防御，不能依赖 map 覆盖或 `putIfAbsent` 选择任一项。
 - LLM 返回不存在的 `evidenceFingerprint` 时，bundle reference index 必须拒绝该引用。
 - LLM 返回 `BUSINESS_APPROVED` 时，normalizer 必须拒绝，不静默改写模型输出。
 - LLM 生成的 metric、entity、synonym 默认是 `SYSTEM_PROPOSED`，只有治理流程可以提升为 `BUSINESS_APPROVED`。

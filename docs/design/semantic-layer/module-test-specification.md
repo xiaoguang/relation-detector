@@ -24,9 +24,9 @@
 
 | 场景 | 示例输入 | 期望行为 |
 | --- | --- | --- |
-| LLM 编造字段 | `customers.full_name` 不存在 | 当前 normalizer 应在 `validation.unresolvedReferences` 中暴露；正式拒绝或标记 `NEEDS_MORE_EVIDENCE` 属于后续 catalog gate。 |
-| LLM 编造 evidenceRef | fingerprint 无法解析 | 当前要求 `evidenceRefs` 非空并保留回溯字段；逐条解析回 bundle fact id、写 warning / review item 属于后续增强。 |
-| LLM 返回 `BUSINESS_APPROVED` | metric reviewStatus 被 LLM 设置为 `BUSINESS_APPROVED` | 当前由 prompt / review gate 禁止采纳；自动降级为 `SYSTEM_PROPOSED` 属于后续增强。 |
+| LLM 编造字段 | `customers.full_name` 不存在 | `SemanticPhysicalReferenceIndex` 拒绝正式 normalization，不输出部分 artifact。 |
+| LLM 编造 evidenceRef | fingerprint 无法解析 | `SemanticReferenceIndex` 逐条解析 bundle fact/evidence/candidate ID；任一引用无法闭包时拒绝。 |
+| LLM 返回 `BUSINESS_APPROVED` | metric reviewStatus 被 LLM 设置为 `BUSINESS_APPROVED` | 正式 normalization 直接拒绝；不能静默降级或把治理状态交给模型决定。 |
 | LLM 解释 join path | 引用已有 `orders.customer_id -> customers.id` | 可生成解释文本；不能新增 path step。 |
 | 同义词扩展 | `customer`、`客户编号` | 生成 SYSTEM_PROPOSED lexicon entry，等待审核或后续证据支持。 |
 
@@ -86,3 +86,10 @@
 4. Planner 能产出 answer plan 或澄清问题。
 5. SQL Draft Generator 只在 answerable 时生成 SELECT draft。
 6. Validator 只基于 structured draft elements、catalog 和 evidence 做 Phase 1 校验。
+
+## 9. 当前代码结构门禁
+
+`SemanticDocumentationArchitectureTest` 对所有手写 public/protected 顶层类型以及名称以
+`Engine/Pipeline/Service/Collector/Extractor/Resolver/Merger/Framer/Analyzer/Visitor/Writer/Validator/Registry/Builder/Assembler/Index/Facade/Handler`
+结尾的编排类型执行双语设计说明检查。说明必须交代职责、输入、输出、上下游和禁止边界；generated Java、
+record accessor、getter 与显而易见的小方法排除。该门禁能证明结构和禁用模板，但不能代替调用链内容评审。

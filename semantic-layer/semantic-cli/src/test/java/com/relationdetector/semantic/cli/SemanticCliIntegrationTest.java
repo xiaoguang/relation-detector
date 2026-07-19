@@ -113,7 +113,7 @@ final class SemanticCliIntegrationTest {
                     "flowKind": "VALUE",
                     "transformType": "DIRECT",
                     "confidence": 0.9,
-                    "evidence": [{"type": "DATA_LINEAGE", "transformType": "DIRECT", "sourceType": "DATABASE_OBJECT", "score": 0.9, "source": "ROUTINE:shop.sp_rebuild_sales_fact", "detail": "insert select", "attributes": {}}],
+                    "evidence": [{"type": "DATA_LINEAGE", "transformType": "DIRECT", "sourceType": "DATABASE_OBJECT", "score": 0.9, "source": "routine.sql", "detail": "insert select", "attributes": {"sourceObjectType": "ROUTINE", "sourceObjectName": "shop.sp_rebuild_sales_fact", "sourceStatementId": "shop.sp_rebuild_sales_fact:1-1", "mappingKind": "INSERT_SELECT"}}],
                     "rawEvidence": [],
                     "warnings": [],
                     "attributes": {}
@@ -255,7 +255,8 @@ final class SemanticCliIntegrationTest {
                         "sourceObjectType": "TRIGGER",
                         "sourceObjectName": "trg_sales_order_delivered",
                         "sourceFile": "relation-detector/sample-data/mysql/8.0/01-schema/03-triggers.sql",
-                        "sourceStatementId": "TRIGGER:trg_sales_order_delivered"
+                        "sourceStatementId": "TRIGGER:trg_sales_order_delivered",
+                        "mappingKind": "INSERT_SELECT"
                       }
                     }],
                     "rawEvidence": [],
@@ -284,7 +285,7 @@ final class SemanticCliIntegrationTest {
         assertTrue(Files.exists(bundlePath));
         JsonNode kg = JSON.readTree(kgPath.toFile());
         JsonNode event = firstNodeOfType(kg, "Event");
-        assertEquals("更新库存数据", event.path("label").asText());
+        assertEquals("写入库存数据", event.path("label").asText());
         assertTrue(event.path("evidenceRefs").isArray());
         assertTrue(event.path("evidenceRefs").size() > 0);
         assertTrue(hasEdgeType(kg, "EVENT_INPUT"));
@@ -292,7 +293,7 @@ final class SemanticCliIntegrationTest {
         JsonNode bundle = JSON.readTree(bundlePath.toFile());
         assertEquals("TRIGGER", bundle.path("eventCandidates").get(0).path("sourceType").asText());
         assertEquals("trg_sales_order_delivered", bundle.path("eventCandidates").get(0).path("sourceObjectName").asText());
-        assertEquals("更新库存数据", bundle.path("eventCandidates").get(0).path("readableNameHint").asText());
+        assertEquals("写入库存数据", bundle.path("eventCandidates").get(0).path("readableNameHint").asText());
     }
 
     @Test
