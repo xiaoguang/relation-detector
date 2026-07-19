@@ -121,8 +121,8 @@ flowchart TD
 ## Correctness 范围
 
 SQL Server correctness 覆盖 root token-event 与五个 versioned full-grammar 的 ERP sample-data、
-profile smoke 和版本边界 fixture。当前 fixture/fingerprint 数量只维护在
-[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)；本 Phase 文档不复制统计。
+profile smoke 和版本边界 fixture。当前 fixture/fingerprint 数量只维护在 verification session 的
+`reports/correctness-test-summary.md`；本 Phase 文档不复制统计。
 
 当前 fixture 语义：
 

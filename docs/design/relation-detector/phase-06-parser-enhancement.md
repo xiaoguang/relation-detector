@@ -751,12 +751,12 @@ full-grammar SQL 直接通过对应 versioned golden 验收，不再拿 token-ev
 ### 当前 parser golden 统计与差异审计
 
 当前 correctness 的 fixture、SQL/DDL、relationship、lineage、diagnostic 与 naming 数量只维护在
-生成报告 [`correctness-test-summary.md`](../../generated/correctness-test-summary.md)。自然 sample-data
+verification session 的 `reports/correctness-test-summary.md`。自然 sample-data
 的 direct/derived 与 observation 统计只维护在
 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。Phase 文档不复制这些
 易变数字；relationship 仍只能引用 top-level `namingEvidence`，不能自己重新计算 `NAMING_MATCH`。
 
-root token-event 与对应 full-grammar 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 分别记录在 `docs/parser-audit/all-golden-semantic-review.md`、`parser-comparison-summary.md` 与 `sample-data-output-audit-backlog.md`。Golden review 只覆盖 fixture 基线；sample-data JSON/SQL 审计仍可能发现未进入 golden 分类的 parser gap：
+root token-event 与对应 full-grammar 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 统计和 follow-up backlog 分别记录在 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)。Golden review 只覆盖 fixture 基线；sample-data JSON/SQL 审计仍可能发现未进入 golden 分类的 parser gap：
 
 - `EXPECTED_VERSION_DELTA`：PostgreSQL 17/18 版本专属语法导致的合理差异。
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammar 已能确认的结构。
@@ -1214,13 +1214,13 @@ bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sam
 
 ```text
 CorrectnessSummaryGeneratorTest
-  -> docs/generated/correctness-test-summary.md
+  -> relation-detector/target/generated-reports/correctness-test-summary.md
 
 DataLineageAuditGeneratorTest
-  -> docs/parser-audit/data-lineage-full-audit.md
+  -> relation-detector/target/generated-reports/data-lineage-full-audit.md
 ```
 
-生成报告不进入默认 `mvn test` 的长耗时路径。需要验收生成文件是否最新时传 `-DrunGeneratedReportTests=true`；需要刷新时分别传 `-DupdateCorrectnessSummary=true` 或 `-DupdateDataLineageAudit=true`。
+生成报告不进入默认 `mvn test` 的长耗时路径。传 `-DrunGeneratedReportTests=true` 时生成本地 artifact；`verify-all.sh` 将其复制到当前 verification session 并登记 SHA-256 与大小。完整报告不提交到 Git。
 
 full-grammar versioned correctness：
 
@@ -1253,12 +1253,12 @@ ParserConfigRemovalTest
   -> parser.mode CLI/YAML parsing
 ```
 
-当前测试资产统计以 [`correctness-test-summary.md`](../../generated/correctness-test-summary.md) 为唯一
-生成源；sample-data parser/category 统计以
+当前测试资产统计以 verification session 的 `reports/correctness-test-summary.md` 为唯一生成源；
+sample-data parser/category 统计以
 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 为唯一生成源。
 
 验证要求：代码或 fixture 变化后应至少运行 full correctness golden；需要刷新统计时只运行其所属
-generator，并随后在无 update 参数下做 freshness check。Phase 文档和 validation 文档不得复制一份
+generator，并由 verification manifest 记录产物摘要。Phase 文档和 validation 文档不得复制一份
 需要人工同步的当前计数表。
 
 维护规则：

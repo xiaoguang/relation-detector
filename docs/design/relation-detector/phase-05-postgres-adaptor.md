@@ -176,8 +176,8 @@ full-grammar module 由 `META-INF/services/com.relationdetector.core.fullgrammar
 ## PostgreSQL versioned correctness golden
 
 PostgreSQL 有 root token-event baseline 和 v16/v17/v18 三组 strict full-grammar correctness 资产。
-当前 fixture 与 fingerprint 数量只维护在
-[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)；本 Phase 文档不复制当前计数。
+当前 fixture 与 fingerprint 数量只维护在 verification session 的
+`reports/correctness-test-summary.md`；本 Phase 文档不复制当前计数。
 v17 额外覆盖 SQL/JSON、`JSON_TABLE` 和 MERGE 扩展，v18 额外覆盖 DML `RETURNING old/new`、
 virtual generated column 与 temporal constraint。
 

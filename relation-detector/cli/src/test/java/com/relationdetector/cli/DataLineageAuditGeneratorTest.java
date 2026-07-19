@@ -1,6 +1,5 @@
 package com.relationdetector.cli;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -11,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 class DataLineageAuditGeneratorTest {
     private static final Path RELATION_DETECTOR_ROOT = TestWorkspacePaths.relationDetectorRoot();
-    private static final Path AUDIT = TestWorkspacePaths.repositoryRoot()
-            .resolve("docs/parser-audit/data-lineage-full-audit.md");
+    private static final Path AUDIT = RELATION_DETECTOR_ROOT
+            .resolve("target/generated-reports/data-lineage-full-audit.md");
     private static final GeneratedReportMemoizer GENERATED = new GeneratedReportMemoizer(
             () -> DataLineageAuditGenerator.generate(RELATION_DETECTOR_ROOT));
 
@@ -88,25 +87,19 @@ class DataLineageAuditGeneratorTest {
     }
 
     @Test
-    void generatedAuditFileIsUpToDate() throws Exception {
+    void generatedAuditIsWrittenAsVerificationArtifact() throws Exception {
         assumeGeneratedReportTestEnabled();
         String markdown = GENERATED.get();
-        if (Boolean.getBoolean("updateDataLineageAudit")) {
-            Files.createDirectories(AUDIT.getParent());
-            Files.writeString(AUDIT, markdown);
-        }
+        Files.createDirectories(AUDIT.getParent());
+        Files.writeString(AUDIT, markdown);
 
-        assertEquals(markdown, Files.readString(AUDIT),
-                "Generated Data Lineage audit is stale. Refresh it with: "
-                        + "mvn -pl cli -Dtest=DataLineageAuditGeneratorTest "
-                        + "-DupdateDataLineageAudit=true test");
+        assertTrue(Files.isRegularFile(AUDIT));
+        assertTrue(Files.size(AUDIT) > 0L);
     }
 
     private static void assumeGeneratedReportTestEnabled() {
-        assumeTrue(Boolean.getBoolean("runGeneratedReportTests")
-                        || Boolean.getBoolean("updateDataLineageAudit"),
+        assumeTrue(Boolean.getBoolean("runGeneratedReportTests"),
                 "Data Lineage audit checks are explicit. Run with "
-                        + "-DrunGeneratedReportTests=true for validation or "
-                        + "-DupdateDataLineageAudit=true to refresh.");
+                        + "-DrunGeneratedReportTests=true to create the verification artifact.");
     }
 }

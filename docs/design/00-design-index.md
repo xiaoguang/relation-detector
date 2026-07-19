@@ -14,7 +14,6 @@
 - [构建、测试与性能验收指南](../guides/relation-detector/build-and-test-performance.md)
 - [代码实现说明与运维测试指南](../guides/relation-detector/code-implementation-guide.md)
 - [测试资产地图与 Parser 验收矩阵](../guides/relation-detector/test-assets-map.md)
-- [历史执行计划快照](../archive/relation-detector/execution-plan.md)
 
 ## relation-detector 子模块设计
 
@@ -30,7 +29,7 @@
 - [Phase 8：输出和用户体验](relation-detector/phase-08-output-ux.md)
 - [Phase 9：Oracle adaptor](relation-detector/phase-09-oracle-adaptor.md)
 - [Phase 10：SQL Server adaptor](relation-detector/phase-10-sqlserver-adaptor.md)
-- [Grammar、Script Framing 与 Routine Parser 架构迁移设计](relation-detector/grammar-parser-architecture-migration.md)
+- [Grammar、Script Framing 与 Routine Parser 架构](relation-detector/grammar-parser-architecture.md)
 - [PostgreSQL PL/pgSQL 版本与双路径审计](../parser-audit/postgres-plpgsql-version-review.md)
 - [ENUM 详细说明](relation-detector/enum-reference.md)
 - [设计一致性检查报告](relation-detector/design-validation-report.md)

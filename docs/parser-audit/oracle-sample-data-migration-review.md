@@ -8,51 +8,37 @@ This audit records the Oracle sample-data and correctness-golden state after the
 
 Oracle support matrix:
 
-| Profile | Sample-data directory | Correctness directory | Fixture count |
-| --- | --- | --- | ---: |
-| root token-event | `sample-data/oracle/26ai` as root fixture source pattern | `test-fixtures/correctness/oracle` | 41 |
-| `oracle/12c` | `sample-data/oracle/12c` + profile smoke | `test-fixtures/correctness/oracle/v12c` | 42 |
-| `oracle/19c` | `sample-data/oracle/19c` + profile smoke + 19c-only syntax | `test-fixtures/correctness/oracle/v19c` | 43 |
-| `oracle/21c` | `sample-data/oracle/21c` + profile smoke + 21c-only syntax | `test-fixtures/correctness/oracle/v21c` | 43 |
-| `oracle/26ai` | `sample-data/oracle/26ai` + profile smoke + 26ai-only syntax | `test-fixtures/correctness/oracle/v26ai` | 43 |
-
-Total Oracle correctness fixtures: 212.
+| Profile | Sample-data directory | Correctness directory |
+| --- | --- | --- |
+| root token-event | `sample-data/oracle/26ai` as root fixture source pattern | `test-fixtures/correctness/oracle` |
+| `oracle/12c` | `sample-data/oracle/12c` + profile smoke | `test-fixtures/correctness/oracle/v12c` |
+| `oracle/19c` | `sample-data/oracle/19c` + profile smoke + 19c-only syntax | `test-fixtures/correctness/oracle/v19c` |
+| `oracle/21c` | `sample-data/oracle/21c` + profile smoke + 21c-only syntax | `test-fixtures/correctness/oracle/v21c` |
+| `oracle/26ai` | `sample-data/oracle/26ai` + profile smoke + 26ai-only syntax | `test-fixtures/correctness/oracle/v26ai` |
 
 Each versioned `sample-data/oracle/<version>` directory still contains the translated ERP SQL assets for future runtime and parser work:
 
-| Area | Files | Notes |
-| --- | ---: | --- |
-| `01-schema` | 7 | ERP schema, indexes, views and semantic-layer supporting tables. |
-| `02-procedures` | 13 | Procedure/trigger/package-like business logic translated from the PostgreSQL sample. |
-| `03-data` | 5 | Seed and business data. |
-| `04-queries` | 12 | Business queries, DML examples and version-specific file. |
+| Area | Notes |
+| --- | --- |
+| `01-schema` | ERP schema, indexes, views and semantic-layer supporting tables. |
+| `02-procedures` | Procedure/trigger/package-like business logic translated from the PostgreSQL sample. |
+| `03-data` | Seed and business data. |
+| `04-queries` | Business queries, DML examples and version-specific files. |
 
 These files feed both the root Oracle token-event baseline and the four Oracle versioned full-grammar golden directories. The versioned full-grammar path is independent: it uses each version's generated lexer/parser and typed visitor, not the Oracle token-event parser.
 
 The source `sample-data/oracle/<version>` directories remain complete ERP sample assets. The correctness directories are now a pruned execution set: they keep fixtures that produce relationship / lineage / diagnostics, plus fixtures needed for DDL parsing, version-only syntax and profile smoke. Pure seed-data, routine/function and metadata-only DDL slices that produce no relation, no lineage, and no diagnostic were removed from correctness to keep runtime manageable.
 
-## Current Golden Statistics
+## Current Golden Status
 
-| Golden group | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 41 | 33 / 8 | 716 | 285 | 0 | 324 | 392 |
-| Oracle full-grammar v12c | 42 | 34 / 8 | 714 | 282 | 0 | 323 | 391 |
-| Oracle full-grammar v19c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v21c | 43 | 35 / 8 | 714 | 281 | 0 | 323 | 391 |
-| Oracle full-grammar v26ai | 44 | 36 / 8 | 717 | 287 | 0 | 325 | 393 |
+Current per-fixture counts are generated into the verification session's
+`reports/correctness-test-summary.md`. The canonical merged sample-data comparison lives in
+[`parser-comparison-summary.md`](parser-comparison-summary.md). This audit does not duplicate either
+snapshot.
 
-The versioned full-grammar counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
-
-The current Oracle-only sample-data comparison is below. The complete cross-dialect table has a
-single canonical home in [`parser-comparison-summary.md`](parser-comparison-summary.md).
-
-| Parser family | Fixture | SQL / DDL | Rel | Lin | Direct Name | Diag |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle token-event root | 38 | 32 / 6 | 366 | 259 | 248 | 0 |
-| Oracle full-grammar v12c | 38 | 32 / 6 | 366 | 257 | 248 | 0 |
-| Oracle full-grammar v19c | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
-| Oracle full-grammar v21c | 38 | 32 / 6 | 366 | 256 | 248 | 0 |
-| Oracle full-grammar v26ai | 38 | 32 / 6 | 366 | 259 | 248 | 0 |
+Each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for
+sample-data correctness and the confirmed official grammar boundaries. The versioned paths do not
+reuse the Oracle token-event parser, but they still do not prove complete Oracle SQL/PLSQL coverage.
 
 The Oracle full-grammar sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 
@@ -89,7 +75,7 @@ synced into correctness fixtures:
 | PostgreSQL casts / intervals | Rewrote common casts to `CAST(...)` and interval arithmetic to `NUMTODSINTERVAL(...)` or Oracle interval literals. | Procedure and query files. |
 | PostgreSQL aggregates / row limiting | Rewrote aggregate comments and executable SQL to Oracle `LISTAGG` / `FETCH FIRST ... ROWS ONLY` forms. | Query files. |
 | SQL/JSON access | Rewrote parser-facing JSON loops and field access to Oracle SQL/JSON style (`JSON_TABLE`, `JSON_VALUE`, `JSON_QUERY`) where used by sample routines. | Procedure files. |
-| Fixture source sync | Regenerated Oracle correctness `input.sql` files from `sample-data/oracle/<version>`. | 185 sample-data-backed fixtures. |
+| Fixture source sync | Regenerated Oracle correctness `input.sql` files from `sample-data/oracle/<version>`. | All sample-data-backed Oracle fixtures. |
 | Full-grammar non-Oracle syntax cleanup | Removed PostgreSQL/MySQL structural grammar from Oracle full-grammar: `LIMIT`, `UNLOGGED`, `CONCURRENTLY`, PostgreSQL casts/arrows, `TABLESAMPLE`, `WITH ORDINALITY`, `DO NOTHING`, and materialized CTE syntax are no longer legal in versioned Oracle full-grammar. | `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai`. |
 
 The current Oracle sample-data is still **parser correctness coverage**, not a proven loadable Oracle
@@ -106,7 +92,7 @@ carry known PostgreSQL/MySQL executable syntax residue.
 | `OFFICIAL_GRAMMAR_BACKLOG` | Open | `oracle/12c|19c|21c|26ai` `.g4` files now include official version-boundary rules for selected 19c/21c/26ai syntax, but they are not complete Oracle grammar conversions. Official strict full-grammar still needs broader source-of-truth conversion from Oracle SQL/PLSQL documentation. |
 | `RUNTIME_SQL_DIALECT_BACKLOG` | Narrowed | Known PostgreSQL/MySQL executable syntax residues are now blocked by the hygiene test. Real Oracle database loading and deeper PL/SQL/runtime behavior still need external smoke validation. |
 | `RUNTIME_SMOKE_PENDING` | Open | `sample-data/oracle/19c` and `sample-data/oracle/26ai` have not yet been loaded into a real Oracle instance in this environment. |
-| `REVIEW_NEEDED` | Closed | `docs/parser-audit/data-lineage-full-audit.md` now reports `PENDING_REVIEW | 0`. The reviewed Oracle procedure lineage candidates have been promoted into correctness golden after the SQL was rewritten into Oracle syntax. |
+| `REVIEW_NEEDED` | Closed | The latest verification lineage report records no pending review. The reviewed Oracle procedure lineage candidates have been promoted into correctness golden after the SQL was rewritten into Oracle syntax. |
 
 ## Rules For Future Oracle Work
 

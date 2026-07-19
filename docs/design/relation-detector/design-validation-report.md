@@ -175,9 +175,8 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ### 当前 golden 与验证结果
 
-当前 correctness 数量只维护在生成报告
-[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)；sample-data parser/category、
-direct/derived 和 observation 数量只维护在
+当前 correctness 数量只维护在 verification session 的
+`reports/correctness-test-summary.md`；sample-data parser/category、direct/derived 和 observation 数量只维护在
 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。本 validation 文档不再
 复制易漂移的计数表。
 
@@ -188,7 +187,7 @@ direct/derived 和 observation 数量只维护在
 - 最终 parser CLI 矩阵与 canonical output 验收：`bash relation-detector/scripts/verify-all.sh`。
 - 无缓存参考验收：`mvn -T 2 -Pacceptance -Dmaven.build.cache.enabled=false clean verify`。
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
-- 跨 parser 差异需联合阅读 `docs/parser-audit/all-golden-semantic-review.md`、`parser-comparison-summary.md` 与 sample-data JSON/SQL 审计；它们不只包含 root token-event coverage 和 expected version delta，也包含 transform/source-role、provenance、derived dedupe 与版本资产真实性问题。
+- 跨 parser 差异需联合阅读 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)、各版本边界审计与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)；它们分别维护当前统计、确认的版本差异和未关闭问题。
 
 ### DDL
 

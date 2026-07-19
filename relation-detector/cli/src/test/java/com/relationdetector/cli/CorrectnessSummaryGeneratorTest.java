@@ -1,6 +1,5 @@
 package com.relationdetector.cli;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -12,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 class CorrectnessSummaryGeneratorTest {
     private static final Path RELATION_DETECTOR_ROOT = TestWorkspacePaths.relationDetectorRoot();
-    private static final Path SUMMARY = TestWorkspacePaths.repositoryRoot()
-            .resolve("docs/generated/correctness-test-summary.md");
+    private static final Path SUMMARY = RELATION_DETECTOR_ROOT
+            .resolve("target/generated-reports/correctness-test-summary.md");
     private static final GeneratedReportMemoizer GENERATED = new GeneratedReportMemoizer(
             () -> CorrectnessSummaryGenerator.generate(RELATION_DETECTOR_ROOT));
 
@@ -88,25 +87,19 @@ class CorrectnessSummaryGeneratorTest {
     }
 
     @Test
-    void generatedSummaryFileIsUpToDate() throws Exception {
+    void generatedSummaryIsWrittenAsVerificationArtifact() throws Exception {
         assumeGeneratedReportTestEnabled();
         String markdown = GENERATED.get();
-        if (Boolean.getBoolean("updateCorrectnessSummary")) {
-            Files.createDirectories(SUMMARY.getParent());
-            Files.writeString(SUMMARY, markdown);
-        }
+        Files.createDirectories(SUMMARY.getParent());
+        Files.writeString(SUMMARY, markdown);
 
-        assertEquals(markdown, Files.readString(SUMMARY),
-                "Generated correctness summary is stale. Refresh it with: "
-                        + "mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest "
-                        + "-DupdateCorrectnessSummary=true test");
+        assertTrue(Files.isRegularFile(SUMMARY));
+        assertTrue(Files.size(SUMMARY) > 0L);
     }
 
     private static void assumeGeneratedReportTestEnabled() {
-        assumeTrue(Boolean.getBoolean("runGeneratedReportTests")
-                        || Boolean.getBoolean("updateCorrectnessSummary"),
+        assumeTrue(Boolean.getBoolean("runGeneratedReportTests"),
                 "Generated correctness summary checks are explicit. Run with "
-                        + "-DrunGeneratedReportTests=true for validation or "
-                        + "-DupdateCorrectnessSummary=true to refresh.");
+                        + "-DrunGeneratedReportTests=true to create the verification artifact.");
     }
 }

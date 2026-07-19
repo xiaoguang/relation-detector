@@ -7,6 +7,10 @@ target/
 /relation-detector/AGENTS.md
 /relation-detector/demo/
 /.mvn/
+/docs/superpowers/
+/docs/archive/
+/docs/generated/
+/docs/parser-audit/archive/
 test-fixtures/local/
 亿问/
 mysql80-sample-data-provenance.ttl

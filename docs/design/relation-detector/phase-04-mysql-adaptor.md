@@ -185,8 +185,8 @@ parser.mode = auto | full-grammar | token-event
 ## Correctness 与 golden 状态
 
 当前 MySQL correctness golden 分三类：root token-event baseline、MySQL 5.7 strict full-grammar 和
-MySQL 8.0 strict full-grammar。三者路径和当前数量以
-[`correctness-test-summary.md`](../../generated/correctness-test-summary.md) 为唯一生成源；本 Phase 文档
+MySQL 8.0 strict full-grammar。三者路径和当前数量以 verification session 的
+`reports/correctness-test-summary.md` 为唯一生成源；本 Phase 文档
 只维护版本职责，不复制会漂移的计数。5.7 资产分为原样兼容、5.7 语义等价改写和 8.0-only
 版本边界负向 fixture。
 

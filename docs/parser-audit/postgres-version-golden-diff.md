@@ -11,14 +11,10 @@ baseline and is not treated as a strict version grammar proof.
 
 ## Summary
 
-| Category | Result | Classification |
-| --- | --- | --- |
-| Common fixture count | 55 fixtures in v16/v17/v18 | MATCHED |
-| Relation differences on common fixtures | 0 | MATCHED |
-| Data Lineage differences on common fixtures | 0 | MATCHED |
-| Diagnostic differences on common fixtures | 0 | MATCHED |
-| v17-only fixtures absent from v16 | 2 | EXPECTED_VERSION_GAP |
-| v18-only fixtures absent from v16/v17 | 3 | EXPECTED_VERSION_GAP |
+The current fixture and fact counts are generated into the verification session's
+`reports/correctness-test-summary.md`. Common fixtures must retain exact relationship, lineage and
+diagnostic parity across v16/v17/v18. The version-only fixture identities below are the durable
+`EXPECTED_VERSION_GAP` contract.
 
 ## v17-only Fixtures
 

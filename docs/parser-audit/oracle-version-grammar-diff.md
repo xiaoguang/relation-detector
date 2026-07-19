@@ -105,15 +105,10 @@ This prevents high-version syntax from being accepted as a generic identifier.
 | `oracle/21c` | `INCOMPLETE_VERSIONED` projection | Accepts `SQL_MACRO` and inherited 19c feature; rejects 26ai `VECTOR`. |
 | `oracle/26ai` | `INCOMPLETE_VERSIONED` projection | Accepts `VECTOR` and inherited 19c/21c feature syntax. |
 
-Current versioned full-grammar correctness totals after the grammars-v4
-migration:
-
-| Profile | Fixtures | Relationship fingerprints | Lineage fingerprints |
-| --- | ---: | ---: | ---: |
-| `oracle/12c` | 30 | 525 | 75 |
-| `oracle/19c` | 31 | 525 | 75 |
-| `oracle/21c` | 31 | 525 | 75 |
-| `oracle/26ai` | 31 | 525 | 75 |
+Current versioned full-grammar correctness totals are generated into the verification session's
+`reports/correctness-test-summary.md`; merged sample-data totals are maintained in
+[`parser-comparison-summary.md`](parser-comparison-summary.md). This source audit does not copy
+volatile counts.
 
 This is not yet a complete, runtime-validated Oracle grammar for every SQL and
 PL/SQL production in the official manuals. Future work should continue replacing

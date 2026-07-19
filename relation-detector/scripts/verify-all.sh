@@ -82,6 +82,11 @@ cp relation-detector/target/sample-data-parser-cli/observation-parity.tsv \
   "$VERIFY_DIR/observation-parity.tsv"
 cp relation-detector/target/sample-data-parser-cli/batch-report.json "$VERIFY_DIR/batch-report.json"
 cp relation-detector/target/correctness-run-summary.json "$VERIFY_DIR/correctness-run-summary.json"
+mkdir -p "$VERIFY_DIR/reports"
+cp relation-detector/target/generated-reports/correctness-test-summary.md \
+  "$VERIFY_DIR/reports/correctness-test-summary.md"
+cp relation-detector/target/generated-reports/data-lineage-full-audit.md \
+  "$VERIFY_DIR/reports/data-lineage-full-audit.md"
 
 MANIFEST_OPTIONAL_ARGS=(--artifact "$VERIFY_DIR/environment.json")
 if [[ -n "${VERIFY_NO_CACHE_STATUS:-}" ]]; then
@@ -121,6 +126,8 @@ python3 relation-detector/scripts/build-verification-manifest.py \
   --artifact "$VERIFY_DIR/summary.tsv" \
   --artifact "$VERIFY_DIR/summary-with-derived.tsv" \
   --artifact "$VERIFY_DIR/batch-report.json" \
+  --artifact "$VERIFY_DIR/reports/correctness-test-summary.md" \
+  --artifact "$VERIFY_DIR/reports/data-lineage-full-audit.md" \
   --artifact "$VERIFY_DIR/performance-report.json" \
   --output "$VERIFY_DIR/verification-manifest.json"
 

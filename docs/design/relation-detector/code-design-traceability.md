@@ -11,9 +11,9 @@
 
 ## Final Convergence Closure State
 
-This generated-free table records the frozen closure matrix from
-`docs/superpowers/specs/2026-07-16-relation-detector-final-convergence-design.md`.
-It is independent of the technical statuses below.
+This generated-free table records the repository's current frozen closure matrix. Historical
+implementation plans remain available through Git history and are not copied into the current
+documentation tree. The matrix is independent of the technical statuses below.
 
 | Closure ID | State |
 | --- | --- |
@@ -89,7 +89,7 @@ profiling outcome 的关键入口 Javadoc 已同步。架构测试使用 JDK com
 | SQL Server versioned golden | `test-fixtures/correctness/sqlserver/v2016|v2017|v2019|v2022|v2025`, SQL Server `FullGrammarDialectModule` | `phase-10 SQL Server adaptor`, `phase-06 Parser mode 和 profile 选择` | `CorrectnessFixtureRunnerTest`, `SqlServerParserArchitectureTest`, `SqlServerTokenEventParserTest` | DOC_UPDATED | root `sqlserver` 是 token-event baseline；versioned directories 强制 SQL Server full-grammar profile。当前 sample-data 使用保守 T-SQL 子集；2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES`、2025 `VECTOR(...)` 已有 grammar-level version boundary，更多 T-SQL family 仍是 backlog。 |
 | 代码结构注释 | `**/package-info.java`, production class/method Javadocs | `phase-06 代码结构注释索引`, `code-implementation-guide` | `DialectGrammarArchitectureTest`, `SemanticDocumentationArchitectureTest` | MATCHED | relation-detector 与 semantic-layer 均要求双语 package、public/protected 顶层类型、编排类及大型编排方法；泛化模板为零。门禁仍只能证明结构和已知模板，不能替代调用链语义评审。 |
 | 大型语义类职责门禁 | parser semantic analyzers/support/extractors/resolvers/mergers/framers | `phase-06 Visitor 与语义 helper 职责边界` | `DialectGrammarArchitectureTest` semantic/framer gates | MATCHED | 400/450、framer 200 和 planner 250 的有效代码行门禁已覆盖目标职责且无永久 allowlist。top-level record 排除通过 JDK compiler AST 检查真实顶层声明；普通类注释或字符串中的伪 `record` 不能绕过门禁。 |
-| repository documentation / reachability | `docs/design`, `docs/guides`, `docs/archive`, `audit-java-reachability.sh` | design index and repository guide contracts | `RepositoryDocumentationContractTest`, reachability report review | MATCHED | 架构设计、运行指南和历史执行快照分目录维护；旧路径为零、相对链接可解析。reachability 脚本覆盖 relation-detector、semantic-layer 与 grammar 手写 Java，仅报告候选，不自动删除 SPI、ServiceLoader、generated 或模型容器。 |
+| repository documentation / reachability | `docs/design`, `docs/guides`, `docs/parser-audit`, `audit-java-reachability.sh` | design index, guide and current-audit contracts | `RepositoryDocumentationContractTest`, reachability report review | MATCHED | 当前 HEAD 只维护设计、运行指南和登记过的现行 parser 审计；历史计划与快照仅保留在 Git 历史，完整生成报告属于 verification artifact。reachability 脚本覆盖 relation-detector、semantic-layer 与 grammar 手写 Java，仅报告候选，不自动删除 SPI、ServiceLoader、generated 或模型容器。 |
 
 ## 已知实现事实
 

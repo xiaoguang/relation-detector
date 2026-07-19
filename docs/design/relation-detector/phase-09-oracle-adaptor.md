@@ -174,8 +174,8 @@ sample-data/oracle/26ai
 - `03-data`：6 个 seed / business data 文件。
 - `04-queries`：12 个业务查询和写入样例。
 
-Oracle correctness 当前统计只维护在
-[`correctness-test-summary.md`](../../generated/correctness-test-summary.md)。
+Oracle correctness 当前统计只维护在 verification session 的
+`reports/correctness-test-summary.md`。
 
 `sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
 

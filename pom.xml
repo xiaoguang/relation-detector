@@ -35,8 +35,6 @@
     <cliTestForkCount>1</cliTestForkCount>
     <updateCorrectnessGold>false</updateCorrectnessGold>
     <runGeneratedReportTests>false</runGeneratedReportTests>
-    <updateCorrectnessSummary>false</updateCorrectnessSummary>
-    <updateDataLineageAudit>false</updateDataLineageAudit>
     <runSqlServerSampleDataIntegration>false</runSqlServerSampleDataIntegration>
     <sqlserverSampleDataJdbcUrl></sqlserverSampleDataJdbcUrl>
     <sqlserverSampleDataJdbcUser></sqlserverSampleDataJdbcUser>

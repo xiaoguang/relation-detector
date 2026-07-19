@@ -85,8 +85,6 @@
             <correctnessFixtureTimingTop>${correctnessFixtureTimingTop}</correctnessFixtureTimingTop>
             <updateCorrectnessGold>${updateCorrectnessGold}</updateCorrectnessGold>
             <runGeneratedReportTests>${runGeneratedReportTests}</runGeneratedReportTests>
-            <updateCorrectnessSummary>${updateCorrectnessSummary}</updateCorrectnessSummary>
-            <updateDataLineageAudit>${updateDataLineageAudit}</updateDataLineageAudit>
             <runSqlServerSampleDataIntegration>${runSqlServerSampleDataIntegration}</runSqlServerSampleDataIntegration>
             <sqlserverSampleDataJdbcUrl>${sqlserverSampleDataJdbcUrl}</sqlserverSampleDataJdbcUrl>
             <sqlserverSampleDataJdbcUser>${sqlserverSampleDataJdbcUser}</sqlserverSampleDataJdbcUser>

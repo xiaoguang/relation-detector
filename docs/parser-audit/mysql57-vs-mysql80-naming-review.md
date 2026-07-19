@@ -21,21 +21,11 @@ MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 
 
 当前结论：不要求 5.7 与 8.0 数量 parity；只要求所有差异能落入上述分类，且 `MYSQL57_PARSER_GAP` / `MYSQL80_FALSE_POSITIVE` 不能残留。
 
-## 当前统计
+## 当前统计入口
 
-| Parser | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL full-grammar v5_7 | 38 | 32 / 6 | 330 | 290 | 971 | 0 | 999 | 74 | 727 |
-| MySQL full-grammar v8_0 | 38 | 32 / 6 | 361 | 288 | 1019 | 0 | 1077 | 63 | 771 |
-
-集合去重后：
-
-| Set | v5_7 | v8_0 | Intersection | v5_7 only | v8_0 only |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| direct relationships | 330 | 361 | 328 | 2 | 33 |
-| direct lineage source-target pairs | 381 | 410 | 365 | 16 | 45 |
-| top-level namingEvidence total | 971 | 1019 | 971 | 0 | 48 |
-| top-level namingEvidence direct only | 244 | 248 | 244 | 0 | 4 |
+当前 direct/derived、observation 和 diagnostics 数量只维护在
+[`parser-comparison-summary.md`](parser-comparison-summary.md)。本审计不复制运行快照，只保留经 SQL
+回读确认的差异分类。
 
 ## 本轮确认并修复的 false positive
 
@@ -52,22 +42,23 @@ SQL 上下文在 `relation-detector/sample-data/mysql/8.0/04-queries/09-real-wor
 - `RowsetScopeSink` 在恢复 rowset scope 时同步恢复 alias index。
 - `StructuredRelationshipExtractor` 对同一事件组内指向不同物理表的重复 alias 标记为 ambiguous，并拒绝用该 alias 解析关系。
 
-修复后 `positions.id -> sales_order_items.product_id` 数量为 0；`mysql-v8_0-full` `Diag` 仍为 0。
+修复后 `positions.id -> sales_order_items.product_id` 不再输出；diagnostics 状态以当前 parser
+comparison summary 为准。
 
 ## v5_7-only 差异判断
 
-v5_7 direct naming evidence is now a complete subset of v8_0: there are no v5_7-only direct naming facts. The two v5_7-only direct relationships are natural compatibility-query equalities:
+The confirmed v5_7-only direct relationships are natural compatibility-query equalities:
 
 | Relationship | 判断 |
 | --- | --- |
 | `employee_roles.role_id -> role_permissions.role_id` | `EXPECTED_SQL_ASSET_DELTA`: the 5.7 compatibility query joins the two role-assignment tables directly. |
 | `product_batches.product_id -> purchase_order_items.product_id` | `EXPECTED_SQL_ASSET_DELTA`: the 5.7 return/batch rewrite uses this direct typed equality instead of the 8.0 statement shape. |
 
-The 16 v5_7-only lineage source-target pairs come from natural 5.7 compatibility processes: payroll voucher creation, return voucher creation, commission period projection, and locked-inventory updates. Each is backed by a typed `INSERT ... SELECT` or `UPDATE` expression and is classified as `EXPECTED_SQL_ASSET_DELTA`, not a parser gap.
+The confirmed v5_7-only lineage source-target pairs come from natural 5.7 compatibility processes such as payroll voucher creation, return voucher creation, commission period projection, and locked-inventory updates. Each reviewed item is backed by a typed `INSERT ... SELECT` or `UPDATE` expression and is classified as `EXPECTED_SQL_ASSET_DELTA`, not a parser gap.
 
 ## v8_0-only 差异判断
 
-v8_0-only direct naming evidence has 4 entries:
+Confirmed v8_0-only direct naming evidence includes:
 
 | Evidence | 判断 |
 | --- | --- |
@@ -76,9 +67,9 @@ v8_0-only direct naming evidence has 4 entries:
 | `serial_numbers.return_id -> sales_returns.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号退货来源。 |
 | `serial_numbers.sales_order_id -> sales_orders.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号销售来源。 |
 
-v8_0-only relationship has 33 entries. They are primarily natural-query/routine `CO_OCCURRENCE` facts from 8.0 statement shapes, including polymorphic `reference_id` / `party_id`, BOM parent/child, workflow, supplier-quality, and return analysis. They are not promoted to `NAMING_MATCH` without a matching top-level naming-evidence fact.
+Reviewed v8_0-only relationships are primarily natural-query/routine `CO_OCCURRENCE` facts from 8.0 statement shapes, including polymorphic `reference_id` / `party_id`, BOM parent/child, workflow, supplier-quality, and return analysis. They are not promoted to `NAMING_MATCH` without a matching top-level naming-evidence fact.
 
-v8_0-only lineage source-target pair has 45 entries, concentrated in supplier-quality/procurement-performance updates, serial/return provenance, and natural 8.0 derived writes:
+Reviewed v8_0-only lineage source-target pairs are concentrated in supplier-quality/procurement-performance updates, serial/return provenance, and natural 8.0 derived writes:
 
 - `inspection_reports.inspection_result -> supplier_products.quality_score`
 - `purchase_order_items` / `purchase_orders` / `supplier_products` / `purchase_returns` 聚合到 `supplier_products.return_rate`
@@ -91,7 +82,7 @@ v8_0-only lineage source-target pair has 45 entries, concentrated in supplier-qu
 
 ## 结论
 
-- `MYSQL80_FALSE_POSITIVE`：已确认并修复 1 条 alias shadowing 造成的 `positions.id -> sales_order_items.product_id` 误识别。
+- `MYSQL80_FALSE_POSITIVE`：已确认并修复 alias shadowing 造成的 `positions.id -> sales_order_items.product_id` 误识别。
 - `MYSQL57_PARSER_GAP`：当前未确认。
 - `MYSQL80_FALSE_POSITIVE`：修复后未发现新的 confirmed false positive。
 - `EXPECTED_SQL_ASSET_DELTA` / `EXPECTED_VERSION_DELTA`：解释当前剩余差异。
