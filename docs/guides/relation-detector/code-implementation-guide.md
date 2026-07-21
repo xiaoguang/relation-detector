@@ -460,6 +460,11 @@ order_items.order_id      orders.id                 FK_LIKE         INFERRED_JOI
 Warnings: 0
 ```
 
+`TableResultWriter` 只是 relationship/warning 的轻量终端视图。relationship 顺序由上游
+`RelationshipMerger` 确定，writer 不重排；列宽是最小宽度，长 endpoint 或 evidence 会扩展行宽，
+不做窄终端自适应。`includeEvidence` / `includeWarnings` / `includeObservationCounts` 的结构化
+隐藏契约属于 JSON 输出；table 当前始终显示 evidence type 和根 warning 摘要。
+
 ### 4.5 写入输出文件
 
 ```bash

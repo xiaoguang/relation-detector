@@ -307,8 +307,11 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - `JsonResultWriter` 的 `includeWarnings=false` 已定义为完整公开隐藏：根和 fact-level warning 数组均为空，
   `summary.warningCount=0`；内部 warning 与 CLI 退出判断不变，semantic strict reader 可消费该输出。
 - 生产 Javadoc 已清除已知泛化模板，`Assembly` / `Factory` / `Assembler` / `Resolver` / `Index` 已进入
-  门禁；重命名后的 `ResultAssembler`、`RelationshipAliasResolver` 和 `RelationshipCandidateFactory` 具备
-  具体双语职责说明。
+  门禁；但内容反向审计仍发现 `ProfileOutcome` 把 plugin warning 误写为已脱敏，以及
+  `core.diagnostics` package 把可保留 raw SQL/异常文本的 parser/file warning 也笼统写成脱敏输出。
+  这两处属于代码注释缺口，不改变已正确落地的 core consumer/live sanitizer 运行契约。
+- `TableResultWriter` 保留 relationship merger 顺序，但没有终端宽度探测、折行/截断或独立
+  writer 契约测试。当前只承诺轻量 table 视图，不承诺窄终端自适应。
 - formal semantic normalization 与离线 `SemanticKgBuilder` 均拒绝无证据/不可解析 evidence 及冲突
   node/edge ID；完全相同 ID/content 仅做幂等去重。`SemanticEventExtractor` 的结构分类只消费 typed
   `sourceObjectType` / `mappingKind`，缺失时使用中性默认值，不读取 detail/path/source 前缀。

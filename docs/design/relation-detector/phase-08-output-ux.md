@@ -394,9 +394,13 @@ Warnings: 2
 
 规则：
 
-- 默认按 confidence 降序。
-- 同分时按 source table、target table 排序。
+- `TableResultWriter` 保留 `RelationshipMerger` 已经产生的顺序：confidence 降序，同分时按
+  source endpoint、target endpoint 排序。writer 本身不重新排序。
 - table 输出仍受 `minConfidence` 过滤。
+- 当前列宽是最小宽度，长 endpoint/evidence 会扩展行宽；writer 不做终端宽度探测、折行或
+  截断。因此 table 是轻量人工阅读视图，不是窄终端自适应报表。
+- `includeEvidence` / `includeWarnings` / `includeObservationCounts` 的结构化隐藏契约属于
+  JSON writer；当前 table 始终显示 relationship evidence type 和根 warning 摘要。
 - `SQL_LOG_TABLE_CO_OCCURRENCE` / `SQL_LOG_COLUMN_CO_OCCURRENCE` 是兼容保留 evidence；当前生产 parser 默认不主动输出，普通 table 输出示例不再把它们作为现行关系来源展示。
 
 ## Warning 设计
@@ -538,14 +542,16 @@ README 至少包含：
 - 用户能根据 README 跑通 MySQL 示例。
 - 用户能根据 README 跑通 PostgreSQL 示例。
 - JSON 输出遵守稳定 schema，可被标准 JSON parser 稳定反序列化；当前实现由 Jackson `ObjectMapper` 生成。
-- table 输出在窄终端中仍可读。
+- table 输出稳定保留已合并 relationship 的顺序、confidence 和 evidence type；
+  窄终端自适应不是当前能力。
 - warning 摘要能帮助定位输入问题。
 - 错误码稳定且有文档说明。
 
 ## 测试设计
 
 - JSON schema 兼容性测试。
-- table 排序测试。
+- table 对已排序 `ScanResult` 的顺序保留测试。
+- table 长 endpoint/evidence 的固定宽度边界测试；如果未来引入折行/截断，再增加终端宽度契约。
 - `minConfidence` 过滤测试。
 - `--format` 覆盖配置测试。
 - `--output` 写文件测试。

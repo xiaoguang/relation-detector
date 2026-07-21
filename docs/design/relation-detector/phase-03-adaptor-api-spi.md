@@ -30,6 +30,7 @@ public interface DatabaseAdaptor {
   IdentifierRules identifierRules();
 
   default ScanScope canonicalizeScope(ScanScope scope) { return scope; }
+  default ScanScope resolveLiveScope(Connection connection, ScanScope scope) { return scope; }
   default Set<Integer> permissionDeniedVendorCodes() { return Set.of(); }
 
   AdaptorCollectors collectors();
@@ -47,6 +48,12 @@ public interface DatabaseAdaptor {
   `ScanScope` 转成方言内部的 namespace 语义。默认不改动；MySQL 用它把
   database 统一放到 catalog 轴。该方法只做配置级规范化，不能用未打开的
   connection 猜测 live catalog。
+- `resolveLiveScope()` 在 JDBC 连接建立后、任何 metadata、object、database-DDL 或
+  profiling 查询之前由 `ScanEngine` 在生产 scan 边界调用一次。它用当前 connection
+  证明并返回真正可执行的 catalog/schema；默认不改动，需要 current-database/owner
+  校验或 fallback 的内置 adaptor 会覆盖。collector 的直接 SPI 入口仍可复用同一 resolver
+  做幂等防御，但不得建立竞争的 namespace 契约。无法证明显式 catalog/owner 时抛出
+  `LiveSourceConfigurationException`，不得把当前连接的结果重标为另一个 namespace。
 - `permissionDeniedVendorCodes()` 是二进制兼容的方言诊断策略，默认空集合。共享层只识别 JDBC
   异常类型和 SQLState；Oracle 1031、SQL Server 229/916 等 vendor code 由拥有它们的 adaptor
   明确返回，不能全局应用到其他方言。
