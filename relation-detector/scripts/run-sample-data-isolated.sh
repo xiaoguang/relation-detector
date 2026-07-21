@@ -4,12 +4,15 @@ set -m
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 RELATION_ROOT="$ROOT/relation-detector"
+# shellcheck source=heavy-job-lock.sh
+source "$RELATION_ROOT/scripts/heavy-job-lock.sh"
 GROUP_RUNNER="${SAMPLE_DATA_PARSER_CLI_GROUP_RUNNER:-$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
 AGGREGATOR="$RELATION_ROOT/scripts/aggregate-sample-data-batch-reports.py"
 OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-cli}"
-LOCK_DIR="${SAMPLE_DATA_PARSER_CLI_LOCK_DIR:-$RELATION_ROOT/target/.sample-data-parser-cli.lock}"
+LOCK_DIR="${SAMPLE_DATA_PARSER_CLI_LOCK_DIR:-${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$RELATION_ROOT/target/.relation-detector-heavy-job.lock}}"
+LOCK_JOB="sample-data"
 HEAP="${SAMPLE_DATA_PARSER_CLI_HEAP:-6g}"
-CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-4}"
+CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1}"
 SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}"
 MAX_WORKER_THREADS="${SAMPLE_DATA_PARSER_CLI_MAX_WORKER_THREADS:-8}"
 SESSION_ID="${SAMPLE_DATA_PARSER_CLI_SESSION_ID:-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
@@ -37,7 +40,6 @@ KNOWN_CASES=(
 )
 
 ACTIVE_GROUP_PID=""
-LOCK_OWNED=false
 
 if ! [[ "$HEAP" =~ ^[1-9][0-9]*[gG]$ ]]; then
   echo "SAMPLE_DATA_PARSER_CLI_HEAP must be a positive gigabyte value such as 6g: $HEAP" >&2
@@ -74,47 +76,17 @@ terminate_active_group() {
   ACTIVE_GROUP_PID=""
 }
 
-release_lock() {
-  [[ "$LOCK_OWNED" == true ]] || return 0
-  rm -f "$LOCK_DIR/pid"
-  rmdir "$LOCK_DIR" 2>/dev/null || true
-  LOCK_OWNED=false
-}
-
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
   terminate_active_group
-  release_lock
+  heavy_job_lock_release || true
   exit "$status"
 }
 
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-
-acquire_lock() {
-  mkdir -p "$(dirname "$LOCK_DIR")"
-  if mkdir "$LOCK_DIR" 2>/dev/null; then
-    LOCK_OWNED=true
-    printf '%s\n' "$$" >"$LOCK_DIR/pid"
-    return 0
-  fi
-
-  local owner="unknown"
-  [[ -r "$LOCK_DIR/pid" ]] && owner="$(cat "$LOCK_DIR/pid")"
-  if [[ "$owner" != "unknown" ]] && kill -0 "$owner" 2>/dev/null; then
-    echo "sample-data parser CLI is already running or requires cleanup (pid=$owner, lock=$LOCK_DIR)" >&2
-    exit 73
-  fi
-  rm -f "$LOCK_DIR/pid"
-  if ! rmdir "$LOCK_DIR" 2>/dev/null || ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    echo "sample-data parser CLI stale lock requires manual cleanup: $LOCK_DIR" >&2
-    exit 73
-  fi
-  LOCK_OWNED=true
-  printf '%s\n' "$$" >"$LOCK_DIR/pid"
-}
 
 guard_against_existing_batch() {
   [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_PROCESS_GUARD:-false}" == true ]] && return 0
@@ -184,7 +156,9 @@ run_group() {
   fi
 }
 
-acquire_lock
+if ! heavy_job_lock_acquire "$LOCK_DIR" "$LOCK_JOB"; then
+  exit 73
+fi
 guard_against_existing_batch
 
 REQUESTED_INPUT=()

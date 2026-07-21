@@ -13,6 +13,8 @@ trap cleanup EXIT
 
 mkdir "$LOCK_DIR"
 printf '%s\n' "$$" >"$LOCK_DIR/pid"
+printf '%s\n' test-owner >"$LOCK_DIR/job"
+printf '%s\n' test-token >"$LOCK_DIR/token"
 
 if SAMPLE_DATA_PARSER_CLI_LOCK_DIR="$LOCK_DIR" \
     SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE=true \
@@ -22,10 +24,11 @@ if SAMPLE_DATA_PARSER_CLI_LOCK_DIR="$LOCK_DIR" \
   exit 1
 fi
 
-grep -q 'sample-data parser CLI is already running or requires cleanup' "$TMP_DIR/duplicate.err"
+grep -q 'relation-detector heavy job is already running' "$TMP_DIR/duplicate.err"
+grep -q 'job=test-owner' "$TMP_DIR/duplicate.err"
 grep -q "pid=$$" "$TMP_DIR/duplicate.err"
 
-rm -f "$LOCK_DIR/pid"
+rm -f "$LOCK_DIR/pid" "$LOCK_DIR/job" "$LOCK_DIR/token"
 rmdir "$LOCK_DIR"
 
 if SAMPLE_DATA_PARSER_CLI_LOCK_DIR="$LOCK_DIR" \

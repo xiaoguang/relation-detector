@@ -1,8 +1,74 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -m
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=heavy-job-lock.sh
+source "$ROOT/relation-detector/scripts/heavy-job-lock.sh"
 cd "$ROOT"
+
+LOCK_DIR="${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$ROOT/relation-detector/target/.relation-detector-heavy-job.lock}"
+LOCK_JOB="verify-all"
+MVN_BIN="${VERIFY_ALL_MVN:-mvn}"
+CORRECTNESS_RUNNER="${VERIFY_ALL_CORRECTNESS_RUNNER:-$ROOT/relation-detector/scripts/run-correctness-isolated.sh}"
+SAMPLE_DATA_RUNNER="${VERIFY_ALL_SAMPLE_DATA_RUNNER:-$ROOT/relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
+STALE_SUMMARY="${VERIFY_ALL_STALE_SUMMARY:-$ROOT/relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv}"
+ACTIVE_CHILD_PID=""
+
+terminate_active_process_tree() {
+  local root_pid="${ACTIVE_CHILD_PID:-}"
+  [[ -n "$root_pid" ]] || return 0
+  kill -TERM -- "-$root_pid" 2>/dev/null || true
+  local attempt
+  for attempt in 1 2 3; do
+    kill -0 -- "-$root_pid" 2>/dev/null || break
+    sleep 1
+  done
+  kill -KILL -- "-$root_pid" 2>/dev/null || true
+  wait "$root_pid" 2>/dev/null || true
+  ACTIVE_CHILD_PID=""
+}
+
+wait_for_active_child() {
+  local status=0
+  wait "$ACTIVE_CHILD_PID" || status=$?
+  ACTIVE_CHILD_PID=""
+  return "$status"
+}
+
+run_active_child() {
+  "$@" &
+  ACTIVE_CHILD_PID=$!
+  wait_for_active_child
+}
+
+run_acceptance_smoke() {
+  (
+    set -o pipefail
+    "$MVN_BIN" -T 2 -Pacceptance \
+      -DcorrectnessFixtureProfile=smoke \
+      -DcorrectnessFixtureParallelism=6 \
+      verify 2>&1 | tee "$MAVEN_LOG"
+  ) &
+  ACTIVE_CHILD_PID=$!
+  wait_for_active_child
+}
+
+cleanup() {
+  status=$?
+  trap - EXIT INT TERM
+  terminate_active_process_tree
+  heavy_job_lock_release || true
+  exit "$status"
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if ! heavy_job_lock_acquire "$LOCK_DIR" "$LOCK_JOB"; then
+  exit 1
+fi
 
 SESSION_ID="${VERIFY_SESSION_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 SESSION_START="$(date +%s)"
@@ -20,13 +86,13 @@ else
   WORKTREE_CLEAN=false
 fi
 
-python3 - "$VERIFY_DIR/environment.json" "$COMMIT" "$BRANCH" "$ORIGIN_MAIN" <<'PY'
+python3 - "$VERIFY_DIR/environment.json" "$COMMIT" "$BRANCH" "$ORIGIN_MAIN" "$MVN_BIN" <<'PY'
 import json
 import platform
 import subprocess
 import sys
 
-output, commit, branch, origin_main = sys.argv[1:]
+output, commit, branch, origin_main, maven_bin = sys.argv[1:]
 
 def command(*args):
     return subprocess.run(args, check=True, text=True, stdout=subprocess.PIPE).stdout.strip()
@@ -35,7 +101,7 @@ data = {
     "commit": commit,
     "branch": branch,
     "originMain": origin_main,
-    "maven": command("mvn", "-version"),
+    "maven": command(maven_bin, "-version"),
     "platform": platform.platform(),
     "python": platform.python_version(),
 }
@@ -49,19 +115,17 @@ PY
 
 # The comparison test must not consume a summary left by an older or subset CLI run.
 # The complete sample-data phase below recreates this file before final validation.
-rm -f relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv
+rm -f "$STALE_SUMMARY"
 
-mvn -T 2 -Pacceptance \
-  -DcorrectnessFixtureProfile=smoke \
-  -DcorrectnessFixtureParallelism=6 \
-  verify 2>&1 | tee "$MAVEN_LOG"
+run_acceptance_smoke
 
-bash relation-detector/scripts/run-correctness-isolated.sh
+run_active_child bash "$CORRECTNESS_RUNNER"
 
-SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE=true \
-SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-3}" \
-SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}" \
-  bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh
+run_active_child env \
+  SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE=true \
+  SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1}" \
+  SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}" \
+  bash "$SAMPLE_DATA_RUNNER"
 
 python3 relation-detector/scripts/sync-parser-comparison-summary.py
 

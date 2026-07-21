@@ -9,10 +9,12 @@ production fallback behavior.
 - `RESOLVED`: `FullGrammarTypedParseTreeEventEmitter.java` has been removed.
   SQL events are now emitted directly from MySQL/PostgreSQL full-grammar
   visitors and the shared typed event sink.
-- `MySqlTokenEventParseTreeVisitor.java` and
-  `PostgresTokenEventParseTreeVisitor.java` now own full-grammar event
-  emission directly; the previous context-name collector and separate relation
-  scanner have been removed.
+- MySQL full-grammar events are emitted by the version-local
+  `MySqlFullGrammarParseTreeVisitor`; PostgreSQL full-grammar events are emitted
+  by the version-local `PostgresFullGrammarParseTreeVisitor`. The similarly
+  named token-event visitors belong only to the independent fallback parsers.
+  The previous context-name collector and separate relation scanner have been
+  removed.
 
 Implemented typed contexts:
 
@@ -47,12 +49,13 @@ Implemented typed context recursion:
   `columnref`, `func_application`, `func_expr`, `case_expr`, and window
   contexts.
 
-Future hardening:
+Current typed boundary:
 
-- The analyzer still uses context names and terminal values to map grammar
-  contexts to existing transform enums. A deeper version can override each
-  expression rule explicitly per dialect, but it no longer depends on token
-  sequence scanning.
+- Version-local `MySqlParseTreeAdapter` and `PostgresParseTreeAdapter` map
+  generated context classes to typed expression roles. Shared analyzers consume
+  those roles and typed accessors; they do not inspect grammar rule-name strings
+  or scan terminal text to infer expression structure. Identifier text is read
+  only after a generated context has established its syntactic role.
 
 ## DDL Event Generation
 
@@ -82,13 +85,12 @@ Typed coverage:
   listed here with the grammar limitation and a concrete SQL/DDL sample before
   it can remain unsupported or future-scoped.
 
-## Current Typed Predicate Gap
+## Resolved Typed Predicate Gap
 
-- SQL Server full-grammar still has one observed weak relation candidate that
-  should be tightened if `CO_OCCURRENCE` is limited to direct column equality:
+- The former SQL Server full-grammar candidate
   `dbo.accounting_periods.period_code -> dbo.sales_orders.order_date` from
-  `period_code = CONVERT(NVARCHAR(7), order_date, 120)` in
-  `sample-data/sqlserver/2025/03-data/07-erp-deep-scenario-data.sql`.
-  The predicate is typed, but the collector currently treats the
-  column-to-function comparison as column co-occurrence. This is not a SQL
-  asset gap and should be fixed in the full-grammar predicate collector.
+  `period_code = CONVERT(NVARCHAR(7), order_date, 120)` has been removed.
+  Direct relationship equality now requires two typed physical columns, or a
+  projection alias whose trace resolves to one direct physical column. The same
+  columns may still appear as scoped CONTROL lineage for the fiscal-calendar
+  write; that does not recreate the removed relationship.

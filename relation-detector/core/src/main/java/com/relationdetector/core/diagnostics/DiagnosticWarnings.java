@@ -11,8 +11,11 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 
 /**
- * CN: 为 parser、file 与 live-source failures 生成字段稳定、可审计且脱敏的 operator-facing warnings。
- * EN: Builds stable, auditable, and sanitized operator-facing warnings for parser, file, and live-source failures.
+ * CN: 统一构造 parser、file 与 live-source failures 的 operator-facing warnings。parser/file warning
+ * 为审计可保留原始 SQL 与异常文本；live JDBC warning 必须委托 {@link LiveDiagnosticSanitizer} 脱敏。
+ * EN: Builds operator-facing warnings for parser, file, and live-source failures. Parser/file warnings may
+ * retain raw SQL and exception text for audit, while live JDBC warnings must delegate sanitization to
+ * {@link LiveDiagnosticSanitizer}.
  *
  * <p>Design mapping: parse/extraction failures are not relationship evidence,
  * but they are essential audit information. Keeping warning construction here
@@ -27,7 +30,8 @@ import com.relationdetector.contracts.Enums.DatabaseObjectType;
  * }</pre>
  *
  * <p>Callers should prefer these helpers over ad-hoc warning strings so JSON
- * output stays stable for operations tooling and future tests.
+ * output stays stable. This class standardizes warning structure; it does not
+ * apply one sensitivity policy to every source family.
  */
 public final class DiagnosticWarnings {
     private DiagnosticWarnings() {

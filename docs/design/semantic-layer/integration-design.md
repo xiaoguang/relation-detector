@@ -14,7 +14,7 @@
 - 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
 - 已实现 `semantic normalize-extraction`：输入 raw semantic output 和必需 evidence bundle，执行候选回填、typed reference/physical endpoint 校验、semantic owner-id 全局唯一性校验，并补齐 `semanticGraph` 与 `validation`。任一闭包失败时命令失败，不输出半闭合正式结果。
-- `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链。前者目前不拒绝重复 node/冲突 edge，也不要求 evidence refs 非空；这些是已知实现缺口，不能由后者的严格测试代替。
+- `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链，两者各自守住证据和身份边界。`SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、physical endpoint node 和 edge 的 evidence 非空且可解析；`SemanticKgIdentityRegistry` 只允许 ID 与完整内容均相同的幂等重复，冲突 node/edge 使整个 build 原子失败。这些保证不能从 `SemanticGraphAssembler` 的测试外推，也不能反向外推到 formal normalization。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
 
@@ -36,7 +36,7 @@ Semantica 官方 README 把 accountability、provenance、reasoning 和 governan
 | 模块 | 使用 LLM？ | 原因 |
 | --- | --- | --- |
 | **Scan Result Reader** | 否 | 纯数据解析和校验。JSON 解析 + 字段校验是确定性规则操作。LLM 反而会引入错误 |
-| **Semantic Evidence Builder** | 否 | 纯图构建。BFS join path 发现、注释提取、冲突检测是确定性算法。LLM 无法可靠地遍历图结构 |
+| **Semantic Evidence Builder** | 否 | 当前只把 relationship、lineage、naming、derived、diagnostic 和 deterministic event candidate 确定性 materialize 为 `EvidenceGraph`。BFS join-path discovery、comment extraction 和 semantic conflict detection 是后续 catalog/search 层的确定性目标，不是当前 builder 能力；两者都不需要 LLM。 |
 | **LLM Semantic Enricher / Semantic Extraction** | **可选** | `semantic extract --provider codex-session` 只生成 prompt/bundle；`--provider openai-api` 才调用 LLM。LLM 用于从 evidence 推断业务实体名、生成描述、扩展同义词、识别指标候选；输出必须经过 normalizer/ref-closure 校验 |
 | **Semantic Catalog Store** | 否 | 纯 CRUD 存储。确定性读写，不需要 AI |
 | **Lexicon Manager** | 否 | 规则驱动的文本归一化和索引。列名拆分、注释提取是规则操作。同义词候选来自 LLM Enricher，Manager 只做存储和检索 |
@@ -605,7 +605,7 @@ Step 7: Answer（最终输出）
   - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
   - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
   - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
-  - 当前 SemanticKgBuilder: 非空但无法解析的 evidence ref → 终止；空 ref、重复 node 与冲突 edge 目前尚未进入同一失败契约
+  - 当前 SemanticKgBuilder: 非 diagnostic fact/event、physical endpoint node 或 edge 的 evidence 为空/无法解析，或相同 ID 的 node/edge 完整内容冲突 → 原子终止；完全相同的 ID/content 可幂等复用
   - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
   - 目标 CatalogStore: 磁盘写入失败 → 终止
   - 目标 SqlGenerator: plan 无表 → 终止

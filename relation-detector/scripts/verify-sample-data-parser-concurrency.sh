@@ -8,6 +8,9 @@ SERIAL_OUT="$OUT_ROOT/serial"
 PARALLEL_OUT="$OUT_ROOT/parallel"
 RUNNER="$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh"
 
+# This check proves canonical output parity only. It does not measure wall time,
+# retained heap, or GC pressure and therefore cannot approve a higher release default.
+
 if ! command -v jq >/dev/null 2>&1; then
   echo "jq is required to compare canonical JSON outputs" >&2
   exit 2
@@ -45,6 +48,7 @@ if [[ "$checked" -ne 38 ]]; then
   exit 1
 fi
 
-echo "sample-data parser concurrency verified: $checked JSON files"
+echo "sample-data parser concurrency output parity verified: $checked JSON files"
+echo "this result is not a performance or memory-safety benchmark"
 echo "serial outputs: $SERIAL_OUT"
 echo "parallel outputs: $PARALLEL_OUT"

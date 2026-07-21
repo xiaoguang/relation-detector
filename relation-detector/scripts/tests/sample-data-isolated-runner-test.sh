@@ -90,8 +90,8 @@ finalize
 EOF
 cmp "$TMP_DIR/expected-groups.txt" "$TMP_DIR/group-order.txt"
 
-if head -9 "$TMP_DIR/invocations.txt" | grep -v '|-Xms1g -Xmx6g -XX:+UseG1GC|4|' | grep -q .; then
-  echo "group runner did not receive the 6g heap and bounded case parallelism" >&2
+if head -9 "$TMP_DIR/invocations.txt" | grep -v '|-Xms1g -Xmx6g -XX:+UseG1GC|1|' | grep -q .; then
+  echo "group runner did not receive the 6g heap and safe default case parallelism" >&2
   exit 1
 fi
 

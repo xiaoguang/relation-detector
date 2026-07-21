@@ -60,7 +60,7 @@ CORRECTNESS_HEAP=6g CORRECTNESS_PARALLELISM=6 \
 
 ### 隔离 sample-data CLI
 
-发布验收默认每个隔离组顺序执行 parser case；只有固定 heap 下的同配置 A/B 证明更高并发更快且无 GC 风险时，才能提高 case parallelism：
+发布验收按 parser family 分组顺序启动 JVM，Oracle root 和各 versioned profile 单独分组。发布默认 case parallelism 为 1。只有固定 heap、相同输入的 A/B 同时记录 wall time、峰值内存与 GC，并证明更高并发更快且安全时，才能显式调高：
 
 ```bash
 SAMPLE_DATA_PARSER_CLI_HEAP=6g \
@@ -71,6 +71,16 @@ SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM=2 \
 
 验证 `relation-detector/target/sample-data-parser-cli/batch-report.json`、`summary-with-derived.tsv` 和 `observation-parity.tsv`。
 
+full correctness 与 sample-data isolated runner 默认共用
+`target/.relation-detector-heavy-job.lock`。直接分别启动两个脚本时，后启动者必须在创建 Maven、Surefire 或 batch JVM 前失败；`RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR` 只用于受控测试或隔离运行。
+
+`verify-all.sh` 与 `verify-release.sh` 也使用同一锁：最外层 owner 从 smoke 阶段持锁到最终
+manifest，内部 correctness/sample-data 只验证并借用 owner token。锁目录存在但 PID/job/token
+尚不完整时按占用处理并要求人工清理，不能被 contender 误删；只有完整 owner PID 已死亡时才通过
+原子 quarantine 恢复 stale lock。发布脚本退出或收到 INT/TERM 后仅由最外层 owner 释放锁。
+收到 INT/TERM 时，最外层入口会先终止并等待当前 Maven 或 runner 进程组，再释放锁，避免留下仍在
+工作的无 owner 子进程。
+
 ## 发布入口
 
 ```bash
@@ -79,11 +89,13 @@ bash relation-detector/scripts/verify-all.sh
 
 该脚本先运行 matrix/模块验收，再调用隔离 correctness，最后复用已打包 CLI 生成 sample-data 结果并建立 verification manifest。它不是“单一 Maven reactor”，也不能以中途的 smoke summary 代替完整隔离结果。
 
-需要排除构建缓存时，使用 release wrapper 的 no-cache 阶段或显式运行：
+需要排除构建缓存时，使用 release wrapper：
 
 ```bash
-mvn -T 2 -Pacceptance -Dmaven.build.cache.enabled=false clean verify
+bash relation-detector/scripts/verify-release.sh
 ```
+
+wrapper 先运行无缓存 clean smoke reactor，再调用 `verify-all.sh` 的分组 full correctness 和 sample-data。单 JVM `-Pacceptance` full profile 可用于受控诊断，不是发布验收入口。
 
 ## 本地 Maven 配置
 

@@ -3,13 +3,16 @@ set -euo pipefail
 set -m
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=heavy-job-lock.sh
+source "$ROOT/relation-detector/scripts/heavy-job-lock.sh"
 MVN_BIN="${CORRECTNESS_MVN:-mvn}"
 PARALLELISM="${CORRECTNESS_PARALLELISM:-6}"
 HEAP="${CORRECTNESS_HEAP:-6g}"
 SESSION_ID="${CORRECTNESS_SESSION_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 OUTPUT_DIR="${CORRECTNESS_OUTPUT_DIR:-$ROOT/relation-detector/target/correctness-isolated/$SESSION_ID}"
 RUN_SUMMARY="${CORRECTNESS_RUN_SUMMARY:-$ROOT/relation-detector/target/correctness-run-summary.json}"
-LOCK_DIR="${CORRECTNESS_LOCK_DIR:-$ROOT/relation-detector/target/correctness-isolated.lock}"
+LOCK_DIR="${CORRECTNESS_LOCK_DIR:-${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$ROOT/relation-detector/target/.relation-detector-heavy-job.lock}}"
+LOCK_JOB="correctness"
 AGGREGATOR="$ROOT/relation-detector/scripts/aggregate-correctness-summaries.py"
 
 GROUP_IDS=(common mysql postgres oracle-root oracle-v12c oracle-v19c oracle-v21c oracle-v26ai sqlserver)
@@ -23,7 +26,6 @@ EXPECTED_CATEGORIES=(
 )
 
 ACTIVE_MAVEN_PID=""
-LOCK_OWNED=false
 
 if ! [[ "$PARALLELISM" =~ ^[0-9]+$ ]] || (( PARALLELISM < 4 || PARALLELISM > 8 )); then
   echo "CORRECTNESS_PARALLELISM must be between 4 and 8: $PARALLELISM" >&2
@@ -49,46 +51,17 @@ terminate_active_process_tree() {
   ACTIVE_MAVEN_PID=""
 }
 
-release_lock() {
-  [[ "$LOCK_OWNED" == true ]] || return 0
-  rm -f "$LOCK_DIR/pid"
-  rmdir "$LOCK_DIR" 2>/dev/null || true
-  LOCK_OWNED=false
-}
-
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
   terminate_active_process_tree
-  release_lock
+  heavy_job_lock_release || true
   exit "$status"
 }
 
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-
-acquire_lock() {
-  if mkdir "$LOCK_DIR" 2>/dev/null; then
-    LOCK_OWNED=true
-    printf '%s\n' "$$" >"$LOCK_DIR/pid"
-    return 0
-  fi
-
-  local owner=""
-  [[ -f "$LOCK_DIR/pid" ]] && owner="$(cat "$LOCK_DIR/pid")"
-  if [[ -n "$owner" ]] && kill -0 "$owner" 2>/dev/null; then
-    echo "isolated correctness is already running: pid=$owner" >&2
-    exit 1
-  fi
-  rm -f "$LOCK_DIR/pid"
-  if ! rmdir "$LOCK_DIR" 2>/dev/null || ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    echo "stale correctness lock requires manual cleanup: $LOCK_DIR" >&2
-    exit 1
-  fi
-  LOCK_OWNED=true
-  printf '%s\n' "$$" >"$LOCK_DIR/pid"
-}
 
 guard_against_existing_surefire() {
   [[ "${CORRECTNESS_SKIP_PROCESS_GUARD:-false}" == true ]] && return 0
@@ -135,7 +108,9 @@ run_group() {
   cp "$RUN_SUMMARY" "$summary_file"
 }
 
-acquire_lock
+if ! heavy_job_lock_acquire "$LOCK_DIR" "$LOCK_JOB"; then
+  exit 1
+fi
 guard_against_existing_surefire
 mkdir -p "$OUTPUT_DIR"
 

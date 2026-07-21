@@ -185,9 +185,9 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 验证入口：
 
 - 日常 smoke：`mvn test`。
-- 全量 correctness golden 与 generated report：`mvn -T 2 -Pacceptance verify`。
-- 最终 parser CLI 矩阵与 canonical output 验收：`bash relation-detector/scripts/verify-all.sh`。
-- 无缓存参考验收：`mvn -T 2 -Pacceptance -Dmaven.build.cache.enabled=false clean verify`。
+- 全量 correctness golden：`bash relation-detector/scripts/run-correctness-isolated.sh`，必须检查聚合 run summary 而不只看 Maven exit code。
+- 最终 parser CLI 矩阵、generated report 与 canonical output 验收：`bash relation-detector/scripts/verify-all.sh`。
+- 无缓存 clean 复验：`bash relation-detector/scripts/verify-release.sh`；它先运行 no-cache smoke reactor，再进入隔离 full correctness 和 sample-data。
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
 - 跨 parser 差异需联合阅读 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)、各版本边界审计与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)；它们分别维护当前统计、确认的版本差异和未关闭问题。
 
@@ -293,7 +293,7 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - `DirectionConfidence` 和保留 error/evidence enum 继续作为 compatibility contract；所有 public production
   enum value 已由 AST discovery gate 逐值执行 Jackson serializer/deserializer round-trip，冻结的 CLI
   `ErrorCode` matrix 另有穷举集合断言和路径测试。
-- root token-event 虽已使用 typed structural grammar/visitor，但复杂 routine、业务查询和部分 DDL evidence coverage 仍弱于对应 full-grammar；后续应继续扩展 typed grammar/visitor，不能恢复 scanner、regex 或名字过滤。
+- 当前 natural corpus 与 semantic-equivalent benchmark 没有暴露未分类的 token/full parser gap。未进入 corpus 的官方 statement family 仍是 coverage backlog；只有具体同语义 SQL 和 exact observation 证明差异时，才能记为 typed visitor gap，不能以笼统“root 更弱”或数量差代替审计，也不能恢复 scanner、regex 或名字过滤。
 - full-grammar profile 当前覆盖 MySQL 5.7/8.0、PostgreSQL 16/17/18、Oracle 12c/19c/21c/26ai 与 SQL Server 2016/2017/2019/2022/2025；新增大版本需新增 adaptor module、严格 versioned fixture 和版本边界测试。
 - Oracle/SQL Server permission vendor code 已从 adaptor 边界传入共享 classifier；单测验证不替代真实 driver/version smoke。
 - PostgreSQL/SQL Server database-DDL 当前明确保持“关系解析骨架”；只有产品引入数据库回放需求时，
@@ -314,6 +314,10 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   `sourceObjectType` / `mappingKind`，缺失时使用中性默认值，不读取 detail/path/source 前缀。
 - correctness fixture 唯一性已闭环：fixture-local input 在相同执行配置下按 content hash 去重，
   correctness tree 外的 tracked sample-data 以规范 repo-relative path 作为独立 source-asset identity。Common 重复 fixture 已合并，MySQL 5.7 三个独立资产路径继续分别验收。
+- release、correctness 与 sample-data 已共享 `heavy-job-lock.sh`。最外层 owner 从 smoke 开始持锁到
+  manifest 完成，嵌套入口验证并借用同一 token；不完整 owner 元数据 fail-closed，完整 dead owner
+  通过原子 quarantine 回收。并发首次抢锁、双向 active owner、stale owner、borrower 与错误 token
+  均有 shell contract test，sample-data 发布默认 case parallelism 继续为 1。
 - 双语 package Javadoc 和具体类/大方法 Javadoc 架构门禁能验证结构类别和禁用模板，但不能自动证明每句话与调用链一致；内容准确性仍需代码评审。
 - 更广泛的 Oracle 官方语法覆盖仍需要补齐；当前 versioned sample-data golden 不能替代官方版本边界测试。
 - SQL Server 已有独立 adaptor，不回退到 MySQL/PostgreSQL/Oracle parser；后续需要补更多 Microsoft 官方逐版本 T-SQL family 和 runtime smoke。

@@ -55,7 +55,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - Common portable SQL 已作为正式 CLI parser category 接入；MySQL/PostgreSQL 内置成熟 adaptor；Oracle 与 SQL Server 已有 adaptor、token-event baseline 和 versioned full-grammar sample-data golden。
 - DDL 外键解析，包括 inline references、ALTER TABLE FK、复合 FK、quoted schema-qualified 名称，以及 PK/unique/index 辅助 evidence。
 - 纯 SQL 文本、MySQL 日志、PostgreSQL statement log 的 SQL 抽取。
-- SQL/DML relationship 抽取，包括 JOIN、comma rowset、EXISTS、IN/tuple IN、CTE/derived 回溯、列级/表级共现、自连接弱共现，以及 MySQL/PostgreSQL 多表 DML；Oracle 当前覆盖 portable typed subset。
+- SQL/DML relationship 抽取，包括 JOIN、comma rowset、EXISTS、IN/tuple IN、CTE/derived 回溯、明确列谓词与自连接弱共现，以及 MySQL/PostgreSQL 多表 DML；无列谓词的纯表级同现不生成正式 relationship，Oracle 当前覆盖 portable typed subset。
 - Data Lineage v1，包括 `UPDATE SET`、`INSERT SELECT`、基础 `MERGE`、projection alias、derived aggregate、CASE/control flow、COALESCE、算术、函数和 CUMULATIVE transform。
 - 关系证据合并和置信度计算。
 - JSON/table 输出，以及 top-level `namingEvidence` 命名证据池。
@@ -148,7 +148,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - 每个生产 package 都有中英双语 `package-info.java`，用于说明该包在当前 parser / relationship / lineage / DDL 架构中的职责边界。
 - `docs/design/relation-detector/phase-06-parser-enhancement.md` 的“代码结构注释索引”和“详细函数级调用结构”是这些 package 注释的设计展开。
 - 新增 package 时必须同步新增 `package-info.java`；新增跨包调用路径时必须同步刷新 Phase 6 详细设计。
-- 每个生产 package 需要中英双语 `package-info.java`，说明职责、输入输出、上下游和禁止边界。顶层 public/protected 手写类型需要具体类级 Javadoc；编排类中的大方法需要说明输入效果、输出/副作用或失败边界。当前自动门禁不要求所有类/方法双语，并且尚未覆盖 `Assembly` 及承担编排职责的包可见 `Support`；代码评审必须补足这类职责，不能把门禁通过等同于覆盖完整。禁止通用模板和空泛复述。
+- 每个生产 package 需要中英双语 `package-info.java`，说明职责、输入输出、上下游和禁止边界。顶层 public/protected 手写类型需要具体类级 Javadoc；编排类中的大方法需要说明输入效果、输出/副作用或失败边界。当前自动门禁已覆盖 `Assembler`、`Assembly`、`Factory`、`Resolver`、`Index` 等已登记编排 suffix；包可见 `Support` 只在属于 public/protected 边界或其类名命中已登记 suffix 时自动进入类级 Javadoc 门禁，其余 helper 仍需代码评审核对职责。不能把门禁通过等同于说明内容已自动验真，也不得使用通用模板和空泛复述。
 - 不强制给 record accessor、简单 getter、显而易见的小工具方法写注释；避免把注释变成逐行翻译或噪声。
 
 设计对应：
@@ -192,7 +192,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - `DataLineageMerger` 只按 `sources + target + flowKind + transformType` 去重字段血缘，并与 relationship / naming evidence 一样保留 `rawEvidence` 与 grouped `evidence` 双层模型；不要把它接入 `RelationshipMerger`。
 - `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` / `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` / `oracle.tokenevent.OracleTokenEventStructuredDdlParser` / `sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser` 是 adaptor DDL 入口，内部共享 token-event DDL event pipeline。数据库私有 DDL 写法应进入对应方言 `.g4` 和 typed visitor，不应回流为一个跨库万能 parser。
 - `JsonResultWriter` 使用 Jackson `ObjectMapper` 输出稳定 JSON。顶层包含 `relationships`、`dataLineages`、`derivedRelationships`、`derivedDataLineages`、`namingEvidence`、`derivedNamingEvidence`、`warnings`；relationship / lineage / naming evidence / derived path 都使用 `rawEvidence` + grouped `evidence` 双层结构，`NAMING_MATCH` 在 relationship 里只保存 `evidenceRef` 和轻量摘要。`derivedNamingEvidence` 只是 `TRANSITIVE_NAMING_PATH` 的阅读/统计视图，只输出 `id/source/target/rule/directionHint`，完整 evidence 仍通过相同 id 到 top-level `namingEvidence` 查询。summary 对 relationship、dataLineage、namingEvidence 都只提供统一的 `direct*Count`、`derived*Count`、`total*Count` 和对应 observation count，不再输出重复的旧别名字段。Observation count 是可通过 `output.includeObservationCounts` 关闭的调试字段，只统计 raw observation 数量，不参与 confidence 或事实判断。
-- `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。full-grammar profile 选不中时由 parser selection 层 fallback 到 token-event；full-grammar 或 token-event 已选中后的硬失败只影响当前 statement/source，不回退旧 parser，也不混合另一条 parser 的事件。
+- `DiagnosticWarnings` 集中构造 parser/file 与 live-source warning 的统一字段，但两类输入采用不同敏感信息策略。parser/file warning 为本地审计可保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`；live JDBC warning 必须委托 `LiveDiagnosticSanitizer`，只输出固定消息和白名单上下文，不能包含 SQL、JDBC URL、driver message 或业务值。full-grammar profile 选不中，或已选中的 full-grammar parser 对当前 statement/source 抛出硬失败时，`ParserBundleSelector` 在该 statement/source 边界回退到 token-event 并记录 `PARSER_MODE_FALLBACK`；两条 parser 的 structured events 不在同一结果中拼接。
 - core 根包不再放生产 Java 类。公共能力按职责分到 `scan`、`parser`、`relation`、`lineage`、`ddl`、`tokenevent`、`fullgrammar`、`parse`、`output`、`diagnostics`、`metadata`、`log`、`scoring` 等子包。新增公共类时必须先判断职责归属，不能重新平铺到 `com.relationdetector.core`。
 
 ### 2.3 cli
@@ -231,7 +231,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 
 职责：
 
-- 通过 `information_schema.KEY_COLUMN_USAGE` 读取显式 FK。
+- 通过 `information_schema` 读取 table/column、PK/UNIQUE/FK 和 index inventory，并按 ordinal 保留组合约束与索引。
 - 读取 MySQL routine、view、trigger 定义。
 - 从 MySQL general/slow log 中抽取 SQL。
 - 提供 MySQL 数据画像钩子。
@@ -243,8 +243,8 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 
 维护注意：
 
-- 当前元数据采集先实现显式 FK，unique/index 采集可以按 Phase 4 继续补。
-- 当前数据画像只做轻量匹配 evidence，后续应补包含率、重合率、负向证据等完整指标。
+- `MySqlMetadataCollector` 只负责编排 table、column、constraint 和 index reader；四类 catalog 查询分别支持 partial success，组合 constraint/index 必须保持 ordinal，不能退化成单列唯一性。
+- MySQL live profiler 与其他内置方言一样独立测量 source non-null rows、source distinct、matched distinct 和 target distinct；由 core 生成 containment/overlap evidence，且只允许非条件声明 FK 通过负向 policy 生成 `NEGATIVE_VALUE_MISMATCH`。
 - MySQL adaptor 已声明 `mysql-connector-j` runtime 依赖；使用 Maven 构建出的运行 classpath 连接真实 MySQL 时会自动包含 Connector/J。
 
 ### 2.5 adaptor-postgres
@@ -404,8 +404,9 @@ relation-detector/scripts/check-no-jls-bad-classes.sh
 ```
 
 如果检查失败，先执行 Maven clean build，并在 VS Code 中运行
-`Java: Clean Java Language Server Workspace`。仓库的 `.vscode/settings.json` 已关闭
-`java.autobuild.enabled`，避免 JLS 自动把坏 class 写入 Maven `target/classes`。
+`Java: Clean Java Language Server Workspace`。本地工作区可在未跟踪的
+`.vscode/settings.json` 中关闭 `java.autobuild.enabled`，避免 JLS 自动把坏 class
+写入 Maven `target/classes`；该 IDE 配置不是仓库交付物。
 
 运行时建议使用仓库脚本。脚本会先构建 Maven main jar，执行坏 class 检查，再组装运行
 classpath：
@@ -431,13 +432,6 @@ relation-detector/scripts/run-cli.sh scan \
       "relationType": "FK_LIKE",
       "relationSubType": "DDL_DECLARED_FK",
       "confidence": 0.9550
-    },
-    {
-      "source": { "table": "users", "column": null },
-      "target": { "table": "audit_logs", "column": null },
-      "relationType": "CO_OCCURRENCE",
-      "relationSubType": "TABLE_CO_OCCURRENCE",
-      "confidence": 0.2500
     }
   ]
 }
@@ -446,7 +440,7 @@ relation-detector/scripts/run-cli.sh scan \
 说明：
 
 - `orders.user_id -> users.id` 同时来自 DDL FK 和 SQL JOIN，所以 confidence 高于单独 DDL FK。
-- `users -> audit_logs` 只有共现证据，因此是表级弱关系。
+- `FROM users, audit_logs` 只有表同现而没有 typed 列谓词，因此不生成正式 relationship。
 
 ### 4.4 运行 table 输出
 
@@ -607,7 +601,7 @@ sources:
 - `NEGATIVE_VALUE_MISMATCH` 会降低分数。
 - 多 evidence 下 `DECLARED_FK` subtype 不被覆盖。
 - JOIN `orders.user_id = users.id` 输出列级 `FK_LIKE`。
-- `FROM users, audit_logs` 无连接条件时输出 `CO_OCCURRENCE`。
+- `FROM users, audit_logs` 无连接条件时不输出正式 relationship。
 - `IN (SELECT ...)` 输出 `SUBQUERY_INFERRED_FK`。
 - 方言复杂 SQL 矩阵：
   - MySQL backtick、multi-table `UPDATE`、multi-table `DELETE ... LEFT JOIN`、derived table column alias、recursive CTE。
@@ -714,11 +708,9 @@ PostgreSQL：
   会在一次 reactor 中合并运行受影响模块测试和 dialect correctness；
   `mvn -T 2 -Pmatrix-smoke verify` 覆盖当前注册 parser category 的代表 fixture，实际数量从当次 summary 读取。
 - 每个逻辑批次结束使用 `relation-detector/scripts/run-correctness-isolated.sh`。它按 parser family 顺序启动有界 JVM，汇总全部 discovered fixture。结构重构期间不得使用 `updateCorrectnessGold` 掩盖差异。
-- sample-data 使用 `relation-detector/scripts/run-sample-data-isolated.sh`，按 parser case 隔离 JVM 并在全部 case 退出后汇总 direct/derived JSON。当前 parser category 和 JSON 数从 batch report 读取，不在指南中写死。
-- 发布入口 `bash relation-detector/scripts/verify-all.sh` 串联 acceptance、isolated sample-data、summary、reference、absolute-path 和 canonical output 校验；重型任务不得重叠。
-- 发布前另外执行一次无缓存参考构建：
-  `mvn -T 2 -Pacceptance -Dmaven.build.cache.enabled=false clean verify`。Maven Build Cache
-  只复用 generated/compiled artifact，Surefire/Failsafe 仍每次运行，不缓存测试结果。
+- sample-data 使用 `relation-detector/scripts/run-sample-data-isolated.sh`，按 parser family 分组顺序启动 JVM，Oracle root 和各 versioned profile 单独分组。发布默认 case parallelism 为 1；更高值只允许在固定 heap、相同输入的 wall-time、峰值内存和 GC A/B 证明更快且安全后显式启用。全部组退出后才汇总 direct/derived JSON。当前 parser category 和 JSON 数从 batch report 读取，不在指南中写死。
+- 发布入口 `bash relation-detector/scripts/verify-all.sh` 串联 acceptance、isolated sample-data、summary、reference、absolute-path 和 canonical output 校验。full correctness 与 sample-data runner 共用 `target/.relation-detector-heavy-job.lock`，后启动者必须在创建重型 JVM 前失败；进程扫描只作为 orphan 防线，不能替代共享锁。
+- 发布前使用 `bash relation-detector/scripts/verify-release.sh`。它先做无缓存 clean smoke reactor，再调用 `verify-all.sh` 完成分组 full correctness 和 sample-data。Maven Build Cache 只复用 generated/compiled artifact，Surefire/Failsafe 仍每次运行，不缓存测试结果。不把单 JVM `-Pacceptance` full profile 当作发布路径。
 - `relation-detector/scripts/benchmark-build.sh` 记录 clean/warm/focused/full/CLI 时间；
   report 只读本次 session 的 Surefire XML，包含 module timing、ANTLR timing、测试 Top 20、
   fixture Top 20、CLI case timing 和忽略生成时间的 canonical JSON hash。
@@ -737,8 +729,8 @@ PostgreSQL：
 上线前建议按以下清单验证：
 
 - `mvn test` 成功。该命令运行 correctness smoke，不代表全量 golden 验收；
-  合并前必须执行 `mvn -T 2 -Pacceptance verify`，最终执行
-  `bash relation-detector/scripts/verify-all.sh`。
+  合并前执行 `bash relation-detector/scripts/run-correctness-isolated.sh`，最终执行
+  `bash relation-detector/scripts/verify-all.sh`，发布级 clean 复验使用 `bash relation-detector/scripts/verify-release.sh`。
 - file-only 示例成功。
 - MySQL 只读账号能读取 metadata。
 - PostgreSQL 只读账号能读取 metadata。

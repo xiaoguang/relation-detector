@@ -709,7 +709,7 @@ Oracle 初始边界示例：
 - Oracle sample-data 中的 PL/SQL object block 通过 `grammar/oracle-token-event` 的 `OracleRelationSql.g4` 和 Oracle token-event visitor 形成 root correctness baseline
 - `CONNECT BY`、`MODEL`、package spec/body、更多 version-specific syntax 和完整 PL/SQL control flow 属于后续 Oracle typed grammar / full-grammar backlog
 
-公共语义必须留在 shared extractor：raw equality、`JOIN USING`、correlated `EXISTS`、scalar `IN`、tuple `IN`、FK-like 方向、列级/表级共现、重复证据去重。
+公共语义必须留在 shared extractor：raw equality、`JOIN USING`、correlated `EXISTS`、scalar `IN`、tuple `IN`、FK-like 方向、有 typed 列谓词的列级弱共现与重复证据去重。纯表级同现只保留兼容模型，不是当前 extractor 的生产职责。
 
 ## SQL / DML full-grammar 链路
 
@@ -770,18 +770,18 @@ verification session 的 `reports/correctness-test-summary.md`。自然 sample-d
 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。Phase 文档不复制这些
 易变数字；relationship 仍只能引用 top-level `namingEvidence`，不能自己重新计算 `NAMING_MATCH`。
 
-root token-event 与对应 full-grammar 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 统计和 follow-up backlog 分别记录在 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)。Golden review 只覆盖 fixture 基线；sample-data JSON/SQL 审计仍可能发现未进入 golden 分类的 parser gap：
+root token-event 与对应 full-grammar 数量不作为普遍等价条件：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 统计和 follow-up backlog 分别记录在 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)。当前 natural corpus 与 semantic-equivalent benchmark 没有暴露未分类的 token/full parser gap；未覆盖的官方 statement family 仍是 coverage backlog，日后如出现差异必须按以下类别记录：
 
 - `EXPECTED_VERSION_DELTA`：PostgreSQL 17/18 版本专属语法导致的合理差异。
-- `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammar 已能确认的结构。
-- `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
+- `PARSER_GAP_TYPED_VISITOR_COVERAGE`：新增同语义 fixture 证明 root token-event 缺少 full-grammar 已能确认的 typed 结构时使用。
+- `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：新增 routine、trigger 或复杂业务查询经 SQL 审计确认为 parser 遗漏时使用。
 
 2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery
 source role、trigger provenance和非平凡 self-update已有定向测试。MySQL catalog 轴、dialect canonical
 fact key、`TableId` 模型不变量、derived identity bridge、profile-only catalog 校验、relationship
 conditional/consensus merge，以及 direct `ScanConfig.*Paths` 已由统一底层原语和负向测试闭环。
-仍存在的 parser backlog 是 root token-event 对复杂 routine/业务查询的 typed visitor coverage、Oracle
-更广泛官方语法和 SQL Server 更多版本化 T-SQL family；它们不能因 sample-data 数量稳定而被写成完整覆盖。
+仍存在的 parser coverage backlog 是尚未进入当前 corpus 的官方 statement family，尤其是 Oracle
+更广泛官方语法和 SQL Server 更多版本化 T-SQL family；它们不能因 sample-data 数量稳定而被写成完整覆盖，也不能在没有具体 SQL 差异的情况下笼统声称 root token-event 比 full-grammar 弱。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -960,7 +960,7 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
   -> VALUE:AGGREGATE / ARITHMETIC / COALESCE according to reviewed fixture semantics
 ```
 
-`knownPhysicalTables` 当前作为 extractor 入参保留，用于未来 metadata-aware lineage。当前 v1 主要依据语法明确的 `LOCAL_TEMP_TABLE_DECLARATION` 过滤本对象 scope 内临时表，不按 `tmp_`、`temp_`、`jsh_temp_` 这类名字猜测临时表。上述 relationship 内部桥不会改变 Data Lineage v1：临时表写入与读取仍不作为物理 lineage endpoint，也不参与 derived lineage。
+`knownPhysicalTables` 是当前 extractor 的现役 metadata-aware gate：当 scan 已有 table/column inventory 时，write target 和 source 必须按完整 catalog/schema/table identity 命中已知物理表；没有 inventory 时保留 file-only 的 typed SQL 行为。此外，v1 依据语法明确的 `LOCAL_TEMP_TABLE_DECLARATION` 过滤本对象 scope 内临时表，不按 `tmp_`、`temp_`、`jsh_temp_` 这类名字猜测临时表。上述 relationship 内部桥不会改变 Data Lineage v1：临时表写入与读取仍不作为物理 lineage endpoint，也不参与 derived lineage。
 
 ## ProjectionTraceResolver 与正式 Data Lineage 的区别
 
@@ -1219,11 +1219,19 @@ bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sam
 ```
 
 该入口先编译一次，再由 `run-sample-data-isolated.sh` 按与 correctness 相同的九组顺序启动
-独立 CLI JVM。默认每组 `-Xmx6g`，case 并发 4、scan 并发 2、scan worker 总预算 8；同一时间
+独立 CLI JVM。默认每组 `-Xmx6g`，case 并发 1、scan 并发 2、scan worker 总预算 8；同一时间
 只能存在一个组。每组退出后才启动下一组，Oracle root 和四个 versioned profile 分别隔离。
 最终聚合器要求请求的 case 全部成功且无重复、每个报告引用的 direct/derived 输出真实存在，
 然后在原位置生成统一 `batch-report.json`、summary、observation parity 和 38 份全量 JSON。
 进程布局是验收实现细节，不改变 CLI JSON 或报告契约。
+
+`verify-release.sh`、`verify-all.sh`、`run-correctness-isolated.sh` 与
+`run-sample-data-isolated.sh` 默认使用同一个 heavy-job lock。最外层入口写入 `pid/job/token` 并从
+smoke 阶段持锁到最终 manifest；嵌套入口必须验证并借用同一 token，borrower 不负责释放。
+锁目录存在但 owner 元数据不完整时 fail-closed，不能当作 stale 删除；只有元数据完整且 PID 已死亡
+时，才把整个目录原子重命名到 quarantine 后回收。并发首次抢锁、active/stale owner、错误 token
+和 nested release chain 均由 shell contract test 覆盖；INT/TERM 会先终止当前 Maven/runner 进程组，
+确认其退出后再释放最外层 owner lock。
 
 生成报告：
 
