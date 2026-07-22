@@ -12,6 +12,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * CN: 在全局 worker 预算内调度已准备的 batch cases，并按 manifest 输入顺序返回每个 case 的结果。
+ * 上游 {@link BatchCommand} 提供 case、并发度和失败策略，下游 {@link BatchCaseExecutor} 执行单个 scan。
+ * 本类只管理 case 并发、worker 配额和 fail-fast 状态，不解析 manifest、不打开 JDBC，也不改变错误类别。
+ *
+ * <p>EN: Schedules prepared batch cases under one global worker budget and returns outcomes in manifest order.
+ * {@link BatchCommand} supplies cases, concurrency, and failure policy; {@link BatchCaseExecutor} performs each scan.
+ * This class owns case concurrency, worker permits, and fail-fast state only. It does not parse manifests, open JDBC,
+ * or reclassify a case's CLI failure.
+ */
 final class BatchScheduler {
     List<BatchCaseOutcome> run(
             List<PreparedBatchCase> cases,
@@ -91,6 +101,14 @@ record PreparedBatchCase(
 ) {
 }
 
+/**
+ * CN: 接收一个已经完成配置和 adaptor 解析的 batch case，并执行其单次 scan；由 BatchScheduler 调用，
+ * 实现负责把失败作为异常返回。该边界不负责 case 调度、worker 配额或错误码重写。
+ *
+ * <p>EN: Executes one batch case whose configuration and adaptor are already resolved. BatchScheduler invokes this
+ * boundary and implementations report failures by exception. It does not schedule cases, manage worker permits, or
+ * rewrite error codes.
+ */
 @FunctionalInterface
 interface BatchCaseExecutor {
     void execute(PreparedBatchCase item) throws Exception;

@@ -19,7 +19,19 @@ import com.relationdetector.semantic.extract.model.SemanticRelation;
 import com.relationdetector.semantic.extract.model.SemanticReviewItem;
 import com.relationdetector.semantic.extract.model.SemanticTriplet;
 
-/** Normalizes typed semantic sections and emits graph facts through dedicated collaborators. */
+/**
+ * CN: 将已 decode 的 typed semantic sections 规范化为稳定 ID、显式引用和 graph node/edge，并通过
+ * {@link SemanticReferenceValidator.Session} 同步验证 evidence、physical endpoint 与跨 section 引用。
+ * 上游是 SemanticExtractionDocumentNormalizer，下游是 SemanticGraphAssembler 和 review normalization；
+ * 输出是 linked entity 集合及对 document 的规范化修改。它不读取 relation-detector JSON、不调用模型，
+ * 也不在 reference/evidence 失败时返回部分 semantic artifact。
+ *
+ * <p>EN: Normalizes decoded typed semantic sections into stable ids, explicit references, and graph nodes/edges
+ * while {@link SemanticReferenceValidator.Session} validates evidence, physical endpoints, and cross-section links.
+ * SemanticExtractionDocumentNormalizer is upstream; SemanticGraphAssembler and review normalization are downstream.
+ * The output is the linked-entity set plus normalized document state. This class does not ingest relation-detector
+ * JSON, invoke a model, or return a partial semantic artifact after reference or evidence failure.
+ */
 final class SemanticSectionNormalizer {
     NormalizationResult normalizeFacts(
             SemanticExtractionDocument document,
@@ -83,6 +95,18 @@ final class SemanticSectionNormalizer {
         }
     }
 
+    /**
+     * CN: 规范化所有 typed semantic events，并把输入/输出 entity 引用和 graph edges 作为一个 validation
+     * session 的变更写入。输入是 event 列表、已建立的 entity name index、共享 linked-entity 集合以及 graph
+     * 和 validator；成功时更新 event IDs/reference lists 并追加节点与边。未知 entity、candidate 或 evidence
+     * 由 validator 记录并使最终 normalization 原子失败。本方法不从文件名、SQL 文本或 endpoint 名推断事件类型。
+     *
+     * <p>EN: Normalizes all typed semantic events and records their input/output entity references and graph edges
+     * in one validation session. Inputs are the event list, established entity-name index, shared linked-entity set,
+     * graph assembler, and validator; success updates event ids/reference lists and appends nodes and edges. Unknown
+     * entities, candidates, or evidence make final normalization fail atomically through the validator. This method
+     * does not infer event type from filenames, SQL text, or endpoint names.
+     */
     private void normalizeEvents(
             List<SemanticEvent> events,
             Map<String, String> entityByName,

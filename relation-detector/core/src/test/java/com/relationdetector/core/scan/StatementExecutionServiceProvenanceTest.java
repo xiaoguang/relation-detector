@@ -35,8 +35,7 @@ class StatementExecutionServiceProvenanceTest {
                 new CommonTokenEventStructuredSqlParser(),
                 statement,
                 null,
-                Set.of(),
-                new ScanConfig());
+                Set.of());
 
         assertFalse(outcome.relationshipCandidates().isEmpty());
         assertEquals(Set.of("QUERY"), outcome.relationshipCandidates().stream()
@@ -57,7 +56,7 @@ class StatementExecutionServiceProvenanceTest {
         ScanConfig config = new ScanConfig();
 
         StatementExecutionOutcome outcome = new StatementExecutionService().executeSql(
-                new CommonTokenEventStructuredSqlParser(), statement, null, Set.of(), config);
+                new CommonTokenEventStructuredSqlParser(), statement, null, Set.of());
 
         assertEquals(0, outcome.namingEvidence().size(),
                 "Statement execution must not run SQL naming rules");

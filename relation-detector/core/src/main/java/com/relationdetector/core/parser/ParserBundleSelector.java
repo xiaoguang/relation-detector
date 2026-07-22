@@ -1,6 +1,7 @@
 package com.relationdetector.core.parser;
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -19,6 +20,8 @@ import com.relationdetector.core.fullgrammar.FullGrammarParserBundleFactory;
 import com.relationdetector.core.fullgrammar.FullGrammarProfileRequest;
 import com.relationdetector.core.fullgrammar.SqlGrammarProfileSelection;
 import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
 
 /**
  * Runtime parser bundle selector.
@@ -31,6 +34,7 @@ import com.relationdetector.core.scan.ScanConfig;
  * centralizes diagnostics for full-grammar primary plus token-event fallback.
  */
 public final class ParserBundleSelector {
+    private static final AdaptorResultDetachmentSupport DETACHMENT = new AdaptorResultDetachmentSupport();
     private final Collection<FullGrammarDialectModule> modules;
 
     public ParserBundleSelector() {
@@ -139,12 +143,14 @@ public final class ParserBundleSelector {
     ) {
         return (statement, context) -> {
             try {
-                return withAttributes(fullGrammar.parseSql(statement, context), fullSelection);
+                return invokeSql(fullGrammar, statement, context, fullSelection);
+            } catch (AdaptorContractException ex) {
+                throw ex;
             } catch (RuntimeException ex) {
-                String reason = "Full-grammar SQL parser failed; using token-event parser: " + message(ex);
+                String reason = "Full-grammar SQL parser failed; using token-event parser";
                 ParserSelectionResult fallback = fullSelection.runtimeFallback(reason);
                 warn(context, "PARSER_MODE_FALLBACK", reason, statement.sourceName(), statement.startLine());
-                return withAttributes(tokenEvent.parseSql(statement, context), fallback);
+                return invokeSql(tokenEvent, statement, context, fallback);
             }
         };
     }
@@ -156,25 +162,71 @@ public final class ParserBundleSelector {
     ) {
         return (ddl, sourceName, context) -> {
             try {
-                return withAttributes(fullGrammar.parseDdl(ddl, sourceName, context), fullSelection);
+                return invokeDdl(fullGrammar, ddl, sourceName, context, fullSelection);
+            } catch (AdaptorContractException ex) {
+                throw ex;
             } catch (RuntimeException ex) {
-                String reason = "Full-grammar DDL parser failed; using token-event parser: " + message(ex);
+                String reason = "Full-grammar DDL parser failed; using token-event parser";
                 ParserSelectionResult fallback = fullSelection.runtimeFallback(reason);
                 warn(context, "PARSER_MODE_FALLBACK", reason, sourceName, 0);
-                return withAttributes(tokenEvent.parseDdl(ddl, sourceName, context), fallback);
+                return invokeDdl(tokenEvent, ddl, sourceName, context, fallback);
             }
         };
     }
 
     private static StructuredSqlParser attributeSqlParser(StructuredSqlParser parser, ParserSelectionResult selection) {
-        return (statement, context) -> withAttributes(parser.parseSql(statement, context), selection);
+        return (statement, context) -> invokeSql(parser, statement, context, selection);
     }
 
     private static StructuredDdlParser attributeDdlParser(StructuredDdlParser parser, ParserSelectionResult selection) {
-        return (ddl, sourceName, context) -> withAttributes(parser.parseDdl(ddl, sourceName, context), selection);
+        return (ddl, sourceName, context) -> invokeDdl(parser, ddl, sourceName, context, selection);
+    }
+
+    private static StructuredParseResult invokeSql(
+            StructuredSqlParser parser,
+            SqlStatementRecord statement,
+            AdaptorContext context,
+            ParserSelectionResult selection
+    ) {
+        List<WarningMessage> warnings = new ArrayList<>();
+        StructuredParseResult result = withAttributes(
+                parser.parseSql(statement, attemptContext(context, warnings)), selection);
+        forwardWarnings(context, warnings);
+        return result;
+    }
+
+    private static StructuredParseResult invokeDdl(
+            StructuredDdlParser parser,
+            String ddl,
+            String sourceName,
+            AdaptorContext context,
+            ParserSelectionResult selection
+    ) {
+        List<WarningMessage> warnings = new ArrayList<>();
+        StructuredParseResult result = withAttributes(
+                parser.parseDdl(ddl, sourceName, attemptContext(context, warnings)), selection);
+        forwardWarnings(context, warnings);
+        return result;
+    }
+
+    private static AdaptorContext attemptContext(AdaptorContext context, List<WarningMessage> warnings) {
+        return context == null
+                ? new AdaptorContext(null, Map.of(), warnings::add)
+                : new AdaptorContext(context.scope(),
+                        DETACHMENT.attributes(context.options(), "parser attempt options"), warnings::add);
+    }
+
+    private static void forwardWarnings(AdaptorContext context, List<WarningMessage> warnings) {
+        if (context != null) {
+            warnings.forEach(context::warn);
+        }
     }
 
     private static StructuredParseResult withAttributes(StructuredParseResult parsed, ParserSelectionResult selection) {
+        if (parsed == null) {
+            throw new AdaptorContractException(
+                    "adaptor parse-result contract violation: structured parser result is null");
+        }
         Map<String, Object> attributes = new LinkedHashMap<>(parsed.attributes());
         attributes.putAll(selection.attributes());
         if (attributes.get("selectedGrammarProfile") == null
@@ -212,9 +264,4 @@ public final class ParserBundleSelector {
         }
     }
 
-    private static String message(RuntimeException ex) {
-        return ex.getMessage() == null || ex.getMessage().isBlank()
-                ? ex.getClass().getSimpleName()
-                : ex.getMessage();
-    }
 }

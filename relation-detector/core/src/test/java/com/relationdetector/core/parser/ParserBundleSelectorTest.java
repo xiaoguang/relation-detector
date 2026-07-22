@@ -1,6 +1,7 @@
 package com.relationdetector.core.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -33,6 +34,7 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
 import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
 import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.scan.AdaptorContractException;
 
 class ParserBundleSelectorTest {
     @Test
@@ -110,6 +112,42 @@ class ParserBundleSelectorTest {
         assertTrue(String.valueOf(parsed.attributes().get("parserFallbackReason"))
                 .contains("Full-grammar SQL parser failed"));
         assertTrue(warnings.stream().anyMatch(warning -> warning.code().equals("PARSER_MODE_FALLBACK")));
+    }
+
+    @Test
+    void failedFullGrammarAttemptDoesNotLeakPluginWarnings() {
+        List<WarningMessage> warnings = new java.util.ArrayList<>();
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
+        StructuredSqlParser failing = (statement, context) -> {
+            context.warn(WarningMessage.warn(
+                    com.relationdetector.contracts.Enums.WarningType.PARSE_WARNING,
+                    "PLUGIN_PARTIAL", "must be discarded", statement.sourceName(), statement.startLine()));
+            throw new IllegalStateException("sensitive plugin failure");
+        };
+        ParserBundle bundle = new ParserBundleSelector(List.of(customSqlModule(
+                        "postgresql-18", DatabaseType.POSTGRESQL, 18, 0, failing)))
+                .select(new TestAdaptor(DatabaseType.POSTGRESQL), config, context(warnings));
+
+        StructuredParseResult parsed = bundle.sqlParser().parseSql(statement(), context(warnings));
+
+        assertEquals("token-sql", parsed.backend());
+        assertEquals(List.of("PARSER_MODE_FALLBACK"), warnings.stream().map(WarningMessage::code).toList());
+        assertTrue(warnings.get(0).message().contains("using token-event parser"));
+        assertTrue(!warnings.get(0).message().contains("sensitive plugin failure"));
+    }
+
+    @Test
+    void nullFullGrammarResultIsAContractFailureAndDoesNotFallback() {
+        List<WarningMessage> warnings = new java.util.ArrayList<>();
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
+        ParserBundle bundle = new ParserBundleSelector(List.of(customSqlModule(
+                        "postgresql-18", DatabaseType.POSTGRESQL, 18, 0,
+                        (statement, context) -> null)))
+                .select(new TestAdaptor(DatabaseType.POSTGRESQL), config, context(warnings));
+
+        assertThrows(AdaptorContractException.class,
+                () -> bundle.sqlParser().parseSql(statement(), context(warnings)));
+        assertTrue(warnings.isEmpty());
     }
 
     private ScanConfig config(DatabaseType databaseType, String mode, String profile, String version) {
@@ -202,6 +240,25 @@ class ParserBundleSelectorTest {
             public StructuredDdlParser structuredDdlParser() {
                 return (ddl, sourceName, context) -> new StructuredParseResult("pg18-ddl", databaseType.name(),
                         sourceName, List.of(), List.of(), Map.of());
+            }
+        };
+    }
+
+    private FullGrammarDialectModule customSqlModule(
+            String id,
+            DatabaseType databaseType,
+            int major,
+            int minor,
+            StructuredSqlParser sqlParser
+    ) {
+        SqlGrammarProfile profile = new SqlGrammarProfile(id, databaseType, major, minor, Set.of());
+        return new FullGrammarDialectModule() {
+            @Override public SqlGrammarProfile profile() { return profile; }
+            @Override public String implementationName() { return id + "-custom-test"; }
+            @Override public StructuredSqlParser sqlParser() { return sqlParser; }
+            @Override public StructuredDdlParser structuredDdlParser() {
+                return (ddl, sourceName, context) -> new StructuredParseResult(
+                        "full-ddl", databaseType.name(), sourceName, List.of(), List.of(), Map.of());
             }
         };
     }

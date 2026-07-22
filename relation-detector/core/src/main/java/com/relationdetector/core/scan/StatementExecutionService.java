@@ -75,16 +75,6 @@ public final class StatementExecutionService {
             AdaptorContext context,
             Set<TableId> knownPhysicalTables
     ) {
-        return executeSql(parser, statement, context, knownPhysicalTables, null);
-    }
-
-    public StatementExecutionOutcome executeSql(
-            StructuredSqlParser parser,
-            SqlStatementRecord statement,
-            AdaptorContext context,
-            Set<TableId> knownPhysicalTables,
-            ScanConfig config
-    ) {
         StructuredParseResult structured = provenanceNormalizer.normalize(
                 statement, parser.parseSql(statement, context));
         IdentifierRules identifierRules = value ->

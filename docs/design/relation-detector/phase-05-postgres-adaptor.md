@@ -334,14 +334,19 @@ PostgreSQL adaptor 可以修正：
 
 ## 测试设计
 
-- Testcontainers PostgreSQL 12+ 集成测试。
+当前仓库内已实现的是 fake-JDBC/contract、parser/correctness 和 sample-data 测试。
+下列除明确标记为环境性的项外，均应由当前自动化测试维护：
+
+- 环境性待办：Testcontainers 或外部 PostgreSQL 12+ 真实数据库集成测试；
+  当前 POM 未引入 Testcontainers。
 - 显式 FK 元数据采集测试。
 - unique/index 采集测试。
 - quoted identifier 测试。
 - view definition 采集测试。
 - materialized view definition 采集测试。
 - rule definition 采集测试。
-- trigger function 关联测试。
+- trigger declaration 与 trigger function 独立定义采集测试；当前不生成
+  trigger-to-function 物理 relationship。
 - statement log 提取测试。
 - 权限不足 warning 测试。
 - include/exclude 过滤测试。

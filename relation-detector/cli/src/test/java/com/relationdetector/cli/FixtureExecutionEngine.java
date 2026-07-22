@@ -168,7 +168,7 @@ final class FixtureExecutionEngine {
         AdaptorContext statementContext = context(fixture, warnings);
         StatementExecutionService service = statementExecutionServices.get();
         StatementExecutionOutcome outcome = commonParser != null
-                ? service.executeSql(commonParser, statement, statementContext, NO_KNOWN_PHYSICAL_TABLES, config)
+                ? service.executeSql(commonParser, statement, statementContext, NO_KNOWN_PHYSICAL_TABLES)
                 : service.executeSql(adaptor, config, statement, statementContext, NO_KNOWN_PHYSICAL_TABLES, parserBundle);
         return new SqlTaskResult(outcome, warnings);
     }

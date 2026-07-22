@@ -67,6 +67,33 @@ public final class LiveDiagnosticSanitizer {
                 operation.definitionUnavailableMessage(), source, null, context);
     }
 
+    /**
+     * CN: 以 core 固定消息和固定 source 重建已通过结构校验的外部 adaptor warning；输入中的
+     * message、source 与 line 均不会进入输出，本方法也不负责判断 warning envelope 是否合规。
+     *
+     * <p>EN: Rebuilds a structurally validated external-adaptor warning with a core-owned message and source.
+     * Plugin message, source, and line are never retained; envelope validation remains the caller's responsibility.
+     */
+    public static WarningMessage rebuildAdaptorWarning(
+            WarningType type,
+            String code,
+            Operation operation,
+            String source,
+            Map<String, ?> context
+    ) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        copyAllowedContext(context, attributes);
+        attributes.put("sqlState", stringValue(context, "sqlState"));
+        attributes.put("vendorCode", intValue(context, "vendorCode"));
+        attributes.put("exceptionClass", stringValue(context, "exceptionClass"));
+        String message = "DEFINITION_UNAVAILABLE".equals(code)
+                ? operation.definitionUnavailableMessage()
+                : type == WarningType.PERMISSION_WARNING
+                        ? operation.message(JdbcFailureKind.PERMISSION)
+                        : operation.message();
+        return WarningMessage.warn(type, code, message, safeSource(source), 0, attributes);
+    }
+
     public static WarningMessage warning(
             WarningType type,
             String code,
@@ -102,19 +129,34 @@ public final class LiveDiagnosticSanitizer {
             Map<String, ?> context
     ) {
         Map<String, Object> attributes = new LinkedHashMap<>();
-        if (context != null) {
-            context.forEach((key, value) -> {
-                if (ALLOWED_ATTRIBUTES.contains(key) && value != null) {
-                    attributes.put(key, value);
-                }
-            });
-        }
+        copyAllowedContext(context, attributes);
         SQLException sqlFailure = findSqlException(failure);
         attributes.put("sqlState", sqlFailure == null || sqlFailure.getSQLState() == null
                 ? "" : sqlFailure.getSQLState());
         attributes.put("vendorCode", sqlFailure == null ? 0 : sqlFailure.getErrorCode());
         attributes.put("exceptionClass", failure == null ? "" : failure.getClass().getName());
         return WarningMessage.warn(type, code, message, safeSource(source), 0, attributes);
+    }
+
+    private static void copyAllowedContext(Map<String, ?> context, Map<String, Object> target) {
+        if (context == null) {
+            return;
+        }
+        context.forEach((key, value) -> {
+            if (ALLOWED_ATTRIBUTES.contains(key) && value != null) {
+                target.put(key, value);
+            }
+        });
+    }
+
+    private static String stringValue(Map<String, ?> context, String key) {
+        Object value = context == null ? null : context.get(key);
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private static int intValue(Map<String, ?> context, String key) {
+        Object value = context == null ? null : context.get(key);
+        return value instanceof Number number ? number.intValue() : 0;
     }
 
     private static SQLException findSqlException(Throwable failure) {

@@ -134,6 +134,7 @@ final class StatementParsePipeline {
         qualified.evidence().addAll(candidate.evidence());
         qualified.rawEvidence().addAll(candidate.rawEvidence());
         qualified.warnings().addAll(candidate.warnings());
+        qualified.attributes().putAll(candidate.attributes());
         return qualified;
     }
 

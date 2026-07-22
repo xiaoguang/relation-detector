@@ -110,8 +110,11 @@ class ScanExecutionParallelismTest {
                     Optional.empty(),
                     Optional.of((file, hint) -> {
                         try {
+                            String source = com.relationdetector.core.log.SourceNameNormalizer.normalize(file);
                             return Stream.of(new SqlStatementRecord(Files.readString(file), StatementSourceType.NATIVE_LOG,
-                                    file.toString(), 1, 1, Map.of()));
+                                    source, 1, 1, Map.of(
+                                            "sourceFile", source,
+                                            "sourceStatementId", source + ":1-1")));
                         } catch (Exception ex) {
                             throw new IllegalStateException(ex);
                         }

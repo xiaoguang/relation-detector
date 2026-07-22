@@ -9,6 +9,7 @@ import com.relationdetector.core.relation.*;
 import com.relationdetector.core.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.model.ColumnRef;
+import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.spi.IdentifierRules;
@@ -46,11 +48,14 @@ import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.EvidenceSourceType;
+import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.core.scan.AdaptorContractException;
 
 /**
  * Tests SQL parser dispatch without running a full scan.
@@ -74,6 +79,57 @@ class SqlRelationParserRunnerTest {
 
         assertTrue(relations.isEmpty());
         assertEquals(1, parserCalls.get(), "runner should call the adaptor's token-event parser exactly once");
+    }
+
+    @Test
+    void fallbackParserRejectsIllegalEvidenceWithoutForwardingEarlierWarnings() {
+        ScanConfig config = new ScanConfig();
+        List<WarningMessage> warnings = new ArrayList<>();
+        RelationshipCandidate candidate = fkLike("orders", "customer_id", "customers", "id");
+        candidate.evidence().add(Evidence.of(
+                EvidenceType.DDL_FOREIGN_KEY, 0.9d, EvidenceSourceType.DDL_FILE,
+                "plugin.sql", "not SQL relationship evidence"));
+
+        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+                new TestAdaptor((statement, context) -> {
+                    context.warn(WarningMessage.warn(WarningType.PARSE_WARNING,
+                            "PLUGIN_WARNING", "must remain detached", statement.sourceName(), statement.startLine()));
+                    return List.of(candidate);
+                }), config, statement(), context(warnings)));
+
+        assertTrue(warnings.isEmpty(), "fallback warnings must be forwarded only after the whole result is valid");
+    }
+
+    @Test
+    void fallbackParserRejectsNullCollectionsAndElementsAtomically() {
+        ScanConfig config = new ScanConfig();
+        List<WarningMessage> nullListWarnings = new ArrayList<>();
+        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+                new TestAdaptor((statement, context) -> {
+                    context.warn(WarningMessage.warn(WarningType.PARSE_WARNING,
+                            "PLUGIN_WARNING", "must remain detached", statement.sourceName(), statement.startLine()));
+                    return null;
+                }), config, statement(), context(nullListWarnings)));
+        assertTrue(nullListWarnings.isEmpty());
+
+        List<WarningMessage> nullElementWarnings = new ArrayList<>();
+        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+                new TestAdaptor((statement, context) -> java.util.Arrays.asList((RelationshipCandidate) null)),
+                config, statement(), context(nullElementWarnings)));
+        assertTrue(nullElementWarnings.isEmpty());
+    }
+
+    @Test
+    void fallbackParserRejectsEvidenceSourceThatDoesNotMatchStatementSource() {
+        ScanConfig config = new ScanConfig();
+        RelationshipCandidate candidate = fkLike("orders", "customer_id", "customers", "id");
+        candidate.evidence().add(Evidence.of(
+                EvidenceType.SQL_LOG_JOIN, 0.6d, EvidenceSourceType.NATIVE_LOG,
+                "runner.sql", "join"));
+
+        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+                new TestAdaptor((statement, context) -> List.of(candidate)),
+                config, statement(), context(new ArrayList<>())));
     }
 
     @Test
@@ -119,6 +175,32 @@ class SqlRelationParserRunnerTest {
 
         assertEquals(List.of("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
                 warnings.stream().map(WarningMessage::code).toList());
+    }
+
+    @Test
+    void structuredParserContractFailureDoesNotForwardCallbackWarnings() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        List<WarningMessage> warnings = new ArrayList<>();
+
+        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner()
+                .parseStructuredAndRelations(new TestAdaptor((statement, context) -> List.of(),
+                                (statement, context) -> {
+                                    context.warn(WarningMessage.warn(
+                                            WarningType.PARSE_WARNING, "PLUGIN_WARNING", "partial",
+                                            statement.sourceName(), statement.startLine()));
+                                    return new StructuredParseResult(
+                                            "token-event", "mysql", statement.sourceName(),
+                                            List.of(new RowsetEvent(
+                                                    StructuredParseEventType.WRITE_TARGET,
+                                                    SourceProvenance.tokenEvent(
+                                                            statement, statement.startLine(), ""),
+                                                    "FROM", "orders", "orders", "o", "", "", "")),
+                                            List.of(), Map.of());
+                                }),
+                        config, statement(), context(warnings)));
+
+        assertTrue(warnings.isEmpty(), "callback warnings must commit only after the full result is valid");
     }
 
     @Test

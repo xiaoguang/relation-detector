@@ -1,6 +1,7 @@
 package com.relationdetector.core.parser;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
@@ -12,6 +13,9 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.scan.AdaptorParseResultContractValidator;
+import com.relationdetector.core.scan.AdaptorResultContractValidator;
+import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
 import com.relationdetector.core.log.TypedLogNoiseClassifier;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
@@ -21,13 +25,13 @@ import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 /**
  * SQL parser mode 选择与运行入口。
  *
- * <p>CN: runner 负责 SQL log noise 过滤、parser policy attributes 注入、
- * full-grammar/profile 选择和 token-event fallback。它不直接抽取关系；关系抽取由
+ * <p>CN: runner 负责 SQL log noise 过滤、full-grammar/profile 选择和 token-event fallback，
+ * 并在接受外部 fallback parser 结果前执行原子契约校验。它不直接抽取关系；关系抽取由
  * StructuredSqlRelationshipParser / StructuredRelationshipExtractor 完成。
  *
  * <p>EN: SQL parser-mode selection and execution entry point. The runner owns
- * SQL log noise filtering, parser policy attributes, full-grammar/profile
- * selection, and token-event fallback. It does not extract relationships directly.
+ * SQL log noise filtering, full-grammar/profile selection, token-event fallback,
+ * and atomic validation of external fallback-parser results. It does not extract relationships directly.
  */
 public final class SqlRelationParserRunner {
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
@@ -35,6 +39,11 @@ public final class SqlRelationParserRunner {
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
     private final StructuredParseProvenanceNormalizer provenanceNormalizer =
             new StructuredParseProvenanceNormalizer();
+    private final AdaptorResultContractValidator resultContractValidator =
+            new AdaptorResultContractValidator();
+    private final AdaptorParseResultContractValidator parseResultContractValidator =
+            new AdaptorParseResultContractValidator();
+    private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
     /**
      *
@@ -82,15 +91,21 @@ public final class SqlRelationParserRunner {
             AdaptorContext context,
             NamespaceContext namespace
     ) {
-        SqlStatementRecord effectiveStatement = withParserPolicyAttributes(config, statement);
         if (adaptor.parsers().structuredSql().isEmpty()) {
+            SqlRelationParser parser = adaptor.parsers().sqlRelations();
+            List<WarningMessage> parserWarnings = new ArrayList<>();
+            AdaptorContext detached = detachedContext(context, parserWarnings);
+            var validated = resultContractValidator.validateSqlRelations(
+                    statement, parser.parse(statement, detached), parserWarnings);
             warn(context, statement, "PARSER_MODE_FALLBACK",
                     "Adaptor has no structured SQL parser; using adaptor SQL relation parser");
-            SqlRelationParser parser = adaptor.parsers().sqlRelations();
-            return new ParsedSqlRelations(java.util.Optional.empty(), parser.parse(effectiveStatement, context));
+            if (context != null) {
+                validated.warnings().forEach(context::warn);
+            }
+            return new ParsedSqlRelations(java.util.Optional.empty(), validated.candidates());
         }
         ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);
-        return parseStructuredAndRelations(config, effectiveStatement, context, bundle,
+        return parseStructuredAndRelations(config, statement, context, bundle,
                 adaptor.identifierRules(), namespace);
     }
 
@@ -100,13 +115,12 @@ public final class SqlRelationParserRunner {
             AdaptorContext context,
             ParserBundle bundle
     ) {
-        SqlStatementRecord effective = withParserPolicyAttributes(config, statement);
-        StructuredParseResult structured = validated(effective, bundle.sqlParser().parseSql(effective, context));
+        StructuredParseResult structured = parseStructuredResult(statement, context, bundle.sqlParser());
         forwardWarnings(context, structured);
-        if (TypedLogNoiseClassifier.shouldSkip(config, effective, structured)) {
+        if (TypedLogNoiseClassifier.shouldSkip(config, statement, structured)) {
             return ParsedSqlRelations.empty();
         }
-        return parsed(effective, structured);
+        return parsed(statement, structured);
     }
 
     public ParsedSqlRelations parseStructuredAndRelations(
@@ -128,13 +142,12 @@ public final class SqlRelationParserRunner {
             IdentifierRules identifierRules,
             NamespaceContext namespace
     ) {
-        SqlStatementRecord effective = withParserPolicyAttributes(config, statement);
-        StructuredParseResult structured = validated(effective, bundle.sqlParser().parseSql(effective, context));
+        StructuredParseResult structured = parseStructuredResult(statement, context, bundle.sqlParser());
         forwardWarnings(context, structured);
-        if (TypedLogNoiseClassifier.shouldSkip(config, effective, structured)) {
+        if (TypedLogNoiseClassifier.shouldSkip(config, statement, structured)) {
             return ParsedSqlRelations.empty();
         }
-        return parsed(effective, structured, new StructuredRelationshipExtractor(identifierRules, namespace));
+        return parsed(statement, structured, new StructuredRelationshipExtractor(identifierRules, namespace));
     }
 
     public ParsedSqlRelations parseStructuredAndRelations(
@@ -142,14 +155,26 @@ public final class SqlRelationParserRunner {
             AdaptorContext context,
             ParserBundle bundle
     ) {
-        StructuredParseResult structured = validated(
-                effectiveStatement, bundle.sqlParser().parseSql(effectiveStatement, context));
+        StructuredParseResult structured = parseStructuredResult(
+                effectiveStatement, context, bundle.sqlParser());
         forwardWarnings(context, structured);
         return parsed(effectiveStatement, structured);
     }
 
     private ParsedSqlRelations parsed(SqlStatementRecord statement, StructuredParseResult structured) {
         return parsed(statement, structured, relationExtractor);
+    }
+
+    private StructuredParseResult parseStructuredResult(
+            SqlStatementRecord statement,
+            AdaptorContext context,
+            com.relationdetector.contracts.spi.Collectors.StructuredSqlParser parser
+    ) {
+        List<WarningMessage> callbackWarnings = new ArrayList<>();
+        AdaptorContext detached = detachedContext(context, callbackWarnings);
+        StructuredParseResult raw = parser.parseSql(statement, detached);
+        return validated(statement,
+                parseResultContractValidator.validateSql(statement, raw, callbackWarnings));
     }
 
     private StructuredParseResult validated(SqlStatementRecord statement, StructuredParseResult structured) {
@@ -175,10 +200,6 @@ public final class SqlRelationParserRunner {
                 relationships);
     }
 
-    private SqlStatementRecord withParserPolicyAttributes(ScanConfig config, SqlStatementRecord statement) {
-        return statement;
-    }
-
     private static NamespaceContext namespace(AdaptorContext context) {
         if (context == null || context.scope() == null) {
             return NamespaceContext.empty();
@@ -198,6 +219,16 @@ public final class SqlRelationParserRunner {
             return;
         }
         structured.warnings().forEach(context::warn);
+    }
+
+    private AdaptorContext detachedContext(
+            AdaptorContext context,
+            List<WarningMessage> warnings
+    ) {
+        return context == null
+                ? new AdaptorContext(null, java.util.Map.of(), warnings::add)
+                : new AdaptorContext(context.scope(),
+                        detachment.attributes(context.options(), "adaptor context options"), warnings::add);
     }
 
     public record ParsedSqlRelations(

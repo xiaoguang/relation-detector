@@ -18,6 +18,8 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.scan.AdaptorParseResultContractValidator;
+import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
@@ -55,6 +57,9 @@ public final class DdlRelationParserRunner {
     private final DdlRelationExtractionVisitor visitor = new DdlRelationExtractionVisitor();
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
     private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
+    private final AdaptorParseResultContractValidator parseResultContractValidator =
+            new AdaptorParseResultContractValidator();
+    private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
     /**
      *
@@ -163,7 +168,12 @@ public final class DdlRelationParserRunner {
             NamespaceContext namespace
     ) {
         String normalizedSourceName = SourceNameNormalizer.normalize(sourceName);
-        StructuredParseResult structured = parser.parseDdl(ddl, normalizedSourceName, context);
+        List<WarningMessage> callbackWarnings = new ArrayList<>();
+        StructuredParseResult structured = parseResultContractValidator.validateDdl(
+                ddl,
+                normalizedSourceName,
+                parser.parseDdl(ddl, normalizedSourceName, detachedContext(context, callbackWarnings)),
+                callbackWarnings);
         forwardWarnings(context, structured);
         var inventory = visitor.inventory(
                 structured.events(), sourceType, normalizedSourceName, identifierRules, namespace);
@@ -228,6 +238,17 @@ public final class DdlRelationParserRunner {
                 defaultIdentifierRules(), namespace(context));
     }
 
+    /**
+     * CN: 原子解析一组已 framing 的 DDL statement。输入是同一脚本的 statement、选定 parser、namespace
+     * 与 evidence source；本方法先在隔离 warning buffer 中校验每个 adaptor 结果，再统一 rebase provenance、
+     * 构建 DDL inventory、relationship 和 naming evidence。任一 statement 违反 SPI 契约时不转发此前 warning
+     * 或事实。本方法不负责脚本切分，也不从原始文本猜测 DDL 结构。
+     *
+     * <p>EN: Atomically parses one framed DDL statement batch. Given statements from one script, the selected
+     * parser, namespace, and evidence source, it validates every adaptor result in isolated warning buffers before
+     * rebasing provenance and producing the DDL inventory, relationships, and naming evidence. A contract failure
+     * commits no preceding warning or fact. Script framing and raw-text structural inference are outside this method.
+     */
     public DdlParseOutcome parseStatementsWithEvidence(
             StructuredDdlParser parser,
             List<SqlStatementRecord> statements,
@@ -245,8 +266,14 @@ public final class DdlRelationParserRunner {
         List<WarningMessage> parserWarnings = new ArrayList<>();
         List<WarningMessage> provenanceWarnings = new ArrayList<>();
         for (SqlStatementRecord statement : statements) {
-            StructuredParseResult parsed = parser.parseDdl(
-                    statement.sql(), SourceNameNormalizer.normalize(statement.sourceName()), context);
+            String normalizedSource = SourceNameNormalizer.normalize(statement.sourceName());
+            List<WarningMessage> callbackWarnings = new ArrayList<>();
+            StructuredParseResult parsed = parseResultContractValidator.validateDdl(
+                    statement.sql(),
+                    normalizedSource,
+                    parser.parseDdl(statement.sql(), normalizedSource,
+                            detachedContext(context, callbackWarnings)),
+                    callbackWarnings);
             List<StructuredSqlEvent> rebasedEvents = parsed.events().stream()
                     .map(event -> event.withProvenance(event.provenance().rebase(statement)))
                     .toList();
@@ -259,7 +286,7 @@ public final class DdlRelationParserRunner {
         }
         List<WarningMessage> warnings = new ArrayList<>(mergeScriptWarnings(parserWarnings));
         warnings.addAll(provenanceWarnings);
-        warnings.forEach(context::warn);
+        forwardWarnings(context, warnings);
         String sourceName = sourceFileOrName(statements.get(0));
         StructuredParseResult combined = new StructuredParseResult(
                 "SCRIPT_FRAMED_DDL", "", sourceName, events, warnings, java.util.Map.of());
@@ -332,6 +359,19 @@ public final class DdlRelationParserRunner {
             return;
         }
         structured.warnings().forEach(context::warn);
+    }
+
+    private static void forwardWarnings(AdaptorContext context, List<WarningMessage> warnings) {
+        if (context != null && warnings != null) {
+            warnings.forEach(context::warn);
+        }
+    }
+
+    private AdaptorContext detachedContext(AdaptorContext context, List<WarningMessage> warnings) {
+        return context == null
+                ? new AdaptorContext(null, Map.of(), warnings::add)
+                : new AdaptorContext(context.scope(),
+                        detachment.attributes(context.options(), "adaptor context options"), warnings::add);
     }
 
     private static NamespaceContext namespace(AdaptorContext context) {

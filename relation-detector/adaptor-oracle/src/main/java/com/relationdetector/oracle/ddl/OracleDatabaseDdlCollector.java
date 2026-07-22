@@ -94,6 +94,9 @@ public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
                         definitions.add(new DatabaseDdlDefinition(null, owner, tableName,
                                 ddl, "DBMS_METADATA.GET_DDL"));
                     }
+                } else {
+                    warnings.accept(DiagnosticWarnings.databaseDdlDefinitionUnavailable(
+                            "DBMS_METADATA.GET_DDL", null, owner, tableName));
                 }
             }
         } catch (Exception ex) {

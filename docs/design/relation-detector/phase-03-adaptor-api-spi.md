@@ -137,6 +137,26 @@ public interface ObjectDefinitionCollector {
 - 如果 routine/view/trigger 中某一类对象读取失败，应记录对应 warning code，而不是吞掉异常。
 - 已经读到的对象定义仍应返回，保持部分成功。
 
+### SPI 返回值信任边界
+
+`DataProfiler` 以及下列已接入契约验证器的 adaptor SPI 结果按不可信输入处理：
+
+- `AdaptorResultContractValidator` 对 metadata、object、database-DDL 和 fallback
+  relationship parser 的结果先做 detached copy，再验证 inventory、endpoint、evidence
+  family/source、definition identity 和 warning envelope。
+- `SourceCollectorPipeline` 只在整个对应 outcome 通过后写入 scan。null list、null element
+  以及 null/blank SQL/DDL body 继续按 recoverable `DEFINITION_UNAVAILABLE` 处理；其余违约
+  统一抛 `AdaptorContractException`，不会留下部分 fact、candidate 或 warning。
+- snapshot/callback warning 的 plugin message、source 和 line 不被信任；core 只保留受限的
+  SQLState、vendorCode、exceptionClass 和对象身份属性，并由 `LiveDiagnosticSanitizer`
+  按 operation 重建固定消息与 source。
+
+其余 parser-facing SPI 由 `AdaptorParseResultContractValidator` 闭环：
+`SqlLogExtractor` 的 stream 在提交前完整 materialize，`DialectScriptFramer`、
+`StructuredSqlParser` 与 `StructuredDdlParser` 的 statement/event/provenance/attributes/warnings
+先 deep-detach，再执行类型、来源和 warning allowlist 校验。任一元素违约都会使该次 outcome
+整体失败，前序 statement、event 和 warning 均不会进入 scan。
+
 ### SqlLogExtractor
 
 ```java
@@ -260,6 +280,11 @@ lexeme，不能按 rule name、反射或 raw SQL 文本作结构推断。
 `SqlServerScriptSlicePlanner`、`CommonScriptSlicePlanner` 分别拥有各自方言的 slice 算法。
 这些 planner 是 core 内部职责类，不改变 `DialectScriptFramer` SPI。
 
+当前 `ScriptFileExtractor` 直接转发 `ScriptFrameResult.statements/warnings`，尚未对外部
+framer 返回的 null result、statement provenance、warning envelope 和嵌套 attributes 做原子契约校验。
+record 构造器的顶层 `List.copyOf` 只防止列表结构被后续改写，不能证明其元素语义合法。
+这是实现缺口，不是 framer 可以生成事实或修改 server SQL 的授权。
+
 script framer 不改变 server SQL 内显式写出的 catalog、schema、quote 或标识符拼写。后续
 SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipeline 可以使用已经规范化且
 唯一的 `ScanScope` / object definition namespace 构造 `TableId` / `ColumnRef` / `Endpoint`，使
@@ -297,6 +322,13 @@ SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipe
 - `FullGrammarDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammar.FullGrammarDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle/SQL Server adaptor。
 - 版本化 full-grammar module 与 token-event parser 的职责不同：token-event 是 adaptor 暴露的宽松生产 parser / fallback；full-grammar 是 adaptor jar 额外注册的严格版本 grammar profile。parser selection 可以在两者之间选择，但 full-grammar parser 内部不再委托 token-event 生成事件。
 
+`SqlRelationParserRunner` 与 `DdlRelationParserRunner` 使用独立的 warning buffer 和 detached
+`AdaptorContext`。整个 `StructuredParseResult` 及 callback warning 通过
+`AdaptorParseResultContractValidator` 后，runner 才执行 provenance/fact 提取并一次提交 warning。
+`ParserBundleSelector` 允许普通 full-grammar runtime failure 回退到 token-event，但会丢弃失败尝试的
+warning，并使用不含插件异常消息的固定 fallback 文本；`AdaptorContractException` 表示 SPI 契约违约，
+必须原样上抛，禁止通过 fallback 掩盖。
+
 ### DatabaseDdlCollector
 
 ```java
@@ -318,6 +350,10 @@ Optional<DatabaseDdlCollector> ddl = adaptor.collectors().databaseDdl();
 - `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 `parser.mode` 选择后的 DDL extraction；默认无 profile/version 时使用 token-event DDL。
 - 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
 - collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。当前这两个字段是经 adaptor identifier rules 规范化后的精确表名列表，不是 glob 或正则；文件输入的 `paths + include` 才是路径 glob 契约。
+- 已枚举表身份后，definition query 返回 null/blank body 或成功但零行都表示
+  definition unavailable，并输出带 catalog/schema/name 的安全 `DEFINITION_UNAVAILABLE`。
+  MySQL `SHOW CREATE TABLE` 和 Oracle `DBMS_METADATA.GET_DDL` 的 null/blank 与零行路径均不构造
+  空 `DatabaseDdlDefinition`。
 
 ## 数据画像接口
 
@@ -359,8 +395,18 @@ public interface EvidenceWeightAdjuster {
 
 约束：
 
-- 修正后 evidence score 仍必须在合理范围内。
+- 该 hook 只允许替换 evidence score；`type`、`sourceType`、`source`、`detail`
+  和 `attributes` 必须与输入完全相同。
+- 修正后 evidence score 仍必须在 `[-1, 1]` 范围内。
+- 应先校验本轮全部调整结果，再原子替换 relationship/naming observations；
+  任一返回值违约时不得留下前序部分修改。
 - core 负责最终合并和封顶。
+
+`EvidenceWeightAdjustmentService` 向 adjuster 提供拒绝 warning 的 detached context、
+deep-immutable options 和 deep-detached evidence baseline。service 先计算全部 relationship
+replacement，再完成 naming raw-evidence 转换；返回值相对 baseline 只允许 score 变化，core 使用
+baseline identity/attributes 与新 score 重建 evidence。relationship、naming 和 warning 只有整批成功后
+才替换，因此 hook 修改嵌套 list/map、保留插件容器引用或在最后一项违约都不会留下部分状态。
 
 ## Java SPI 注册
 

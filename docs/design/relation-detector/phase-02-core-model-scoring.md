@@ -67,6 +67,7 @@ public final class RelationshipCandidate {
   private List<Evidence> evidence;
   private List<Evidence> rawEvidence;
   private List<WarningMessage> warnings;
+  private Map<String, Object> attributes;
 }
 ```
 
@@ -83,7 +84,13 @@ known-physical inventory 和 derived graph 都使用同一 catalog/schema/table 
 
 `StatementParsePipeline` 的 known-physical inventory 与 live DDL candidate qualification 必须保留
 `MetadataTableFact` / `DatabaseDdlDefinition` 的 catalog，不能重新退化为只含 schema/table 的
-`TableId`。
+`TableId`。namespace qualification 只允许改写 endpoint 的 catalog/schema/table 身份；
+confidence、evidence、rawEvidence、warning 和 candidate-level attributes 都必须原样保留。
+
+`StatementParsePipeline.qualifyDatabaseDdlCandidate(...)` 只负责补全 endpoint namespace；重建
+candidate 时完整复制 confidence、evidence、rawEvidence、warnings 和顶层 `attributes`。
+`StatementParsePipelineCandidateStateTest` 通过直接 API 锁定该状态保真边界，避免 live DDL 或
+第三方 structured DDL 的 candidate-level audit attributes 在 namespace materialization 时丢失。
 
 方向规则：
 

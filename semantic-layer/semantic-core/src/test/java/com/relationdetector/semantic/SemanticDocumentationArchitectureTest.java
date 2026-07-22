@@ -36,7 +36,8 @@ final class SemanticDocumentationArchitectureTest {
     private static final Set<String> ORCHESTRATION_SUFFIXES = Set.of(
             "Engine", "Pipeline", "Service", "Collector", "Extractor", "Resolver", "Merger", "Framer",
             "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Assembler", "Assembly",
-            "Factory", "Index", "Facade", "Handler");
+            "Factory", "Index", "Facade", "Handler", "Executor", "Runner", "Scheduler", "Loader",
+            "Normalizer", "Dispatcher", "Selector");
 
     @Test
     void productionTypesAndOrchestrationMethodsHaveBilingualDesignJavadoc() throws Exception {

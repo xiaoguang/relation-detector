@@ -60,6 +60,41 @@ class MySqlDatabaseDdlCollectorTest {
         assertFalse(warning.toString().contains("SHOW CREATE TABLE `shop`.`users`"));
     }
 
+    @Test
+    void zeroRowShowCreateProducesDefinitionUnavailableWarning() {
+        List<WarningMessage> warnings = new ArrayList<>();
+        ScanScope scope = new ScanScope(null, "shop", List.of("orders"), List.of());
+
+        List<DatabaseDdlDefinition> definitions = new MySqlDatabaseDdlCollector()
+                .collect(emptyShowCreateConnection(), scope, warnings::add);
+
+        assertTrue(definitions.isEmpty());
+        assertEquals(1, warnings.size());
+        assertEquals("DEFINITION_UNAVAILABLE", warnings.get(0).code());
+        assertEquals("shop", warnings.get(0).attributes().get("objectCatalog"));
+        assertEquals("orders", warnings.get(0).attributes().get("objectName"));
+    }
+
+    private Connection emptyShowCreateConnection() {
+        return (Connection) Proxy.newProxyInstance(
+                Connection.class.getClassLoader(),
+                new Class<?>[]{Connection.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "prepareStatement" -> preparedStatement();
+                    case "createStatement" -> (Statement) Proxy.newProxyInstance(
+                            Statement.class.getClassLoader(),
+                            new Class<?>[]{Statement.class},
+                            (statement, statementMethod, statementArgs) -> switch (statementMethod.getName()) {
+                                case "executeQuery" -> resultSet(List.of());
+                                case "close" -> null;
+                                default -> throw new UnsupportedOperationException(statementMethod.getName());
+                            });
+                    case "close" -> null;
+                    case "isClosed" -> false;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+    }
+
     private Connection connection(List<String> showCreateSql) {
         return (Connection) Proxy.newProxyInstance(
                 Connection.class.getClassLoader(),

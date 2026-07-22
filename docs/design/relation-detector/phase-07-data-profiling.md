@@ -382,7 +382,7 @@ subtype 规则：
 
 - 不输出真实值。
 - 不输出 SQL 参数值。
-- 不记录完整 profiling SQL，除非 debug 模式且脱敏。
+- 不记录或输出完整 profiling SQL；当前没有可绕过该边界的 debug 例外。
 - 权限错误只记录 table/column 和错误类型。
 - 默认不读取业务数据。
 

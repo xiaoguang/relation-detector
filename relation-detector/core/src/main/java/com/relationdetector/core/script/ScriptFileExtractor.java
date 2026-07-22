@@ -12,12 +12,16 @@ import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DialectScriptFramer;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
+import com.relationdetector.core.scan.AdaptorParseResultContractValidator;
 
 /**
  * CN: 读取一份 script file，将 client framing 完整委托给已选 adaptor，并转发 framing warnings。
  * EN: Reads one script file, delegates all client framing to the selected adaptor, and forwards framing warnings.
  */
 public final class ScriptFileExtractor {
+    private final AdaptorParseResultContractValidator resultValidator =
+            new AdaptorParseResultContractValidator();
+
     public Stream<SqlStatementRecord> extract(
             Path file,
             StatementSourceType sourceType,
@@ -25,7 +29,8 @@ public final class ScriptFileExtractor {
             Consumer<WarningMessage> warnings
     ) {
         try {
-            var result = parser.frame(new ScriptFrameRequest(Files.readString(file), file.toString(), sourceType));
+            var request = new ScriptFrameRequest(Files.readString(file), file.toString(), sourceType);
+            var result = resultValidator.validateFrame(request, parser.frame(request));
             result.warnings().forEach(warnings);
             return result.statements().stream();
         } catch (IOException ex) {

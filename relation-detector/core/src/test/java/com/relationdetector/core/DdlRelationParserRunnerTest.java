@@ -1,6 +1,7 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.scan.AdaptorContractException;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;
 import com.relationdetector.core.relation.*;
@@ -9,6 +10,7 @@ import com.relationdetector.core.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -102,6 +104,30 @@ class DdlRelationParserRunnerTest {
 
         assertEquals(List.of("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
                 warnings.stream().map(WarningMessage::code).toList());
+    }
+
+    @Test
+    void structuredDdlContractFailureDoesNotForwardCallbackWarnings() {
+        List<WarningMessage> warnings = new ArrayList<>();
+        StructuredDdlParser parser = (ddl, sourceName, context) -> {
+            context.warn(WarningMessage.warn(
+                    WarningType.PARSE_WARNING, "PLUGIN_WARNING", "partial", sourceName, 1));
+            return new StructuredParseResult(
+                    "ANTLR", "MYSQL", sourceName,
+                    List.of(new DdlEvent(
+                            StructuredParseEventType.ROWSET_REFERENCE,
+                            SourceProvenance.source(sourceName, 1),
+                            "orders", "customer_id", "customers", "id",
+                            "", "", "", "", 1, 1)),
+                    List.of(), Map.of());
+        };
+
+        assertThrows(AdaptorContractException.class,
+                () -> new DdlRelationParserRunner().parseTextWithEvidence(
+                        parser, "CREATE TABLE orders(id BIGINT)", "schema.sql",
+                        EvidenceSourceType.DDL_FILE, context(warnings), new ScanConfig()));
+
+        assertTrue(warnings.isEmpty(), "callback warnings must commit only after the DDL result is valid");
     }
 
     @Test

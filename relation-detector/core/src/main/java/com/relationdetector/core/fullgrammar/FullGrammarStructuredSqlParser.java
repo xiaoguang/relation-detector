@@ -7,6 +7,7 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.core.scan.AdaptorContractException;
 
 /**
  * CN: 包装已选中的 versioned full-grammar parser，补充 profile diagnostics，不用 token-event 填补 partial events。
@@ -60,6 +61,10 @@ public final class FullGrammarStructuredSqlParser implements StructuredSqlParser
     @Override
     public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
         StructuredParseResult result = fullGrammarParser.parseSql(statement, context);
+        if (result == null) {
+            throw new AdaptorContractException(
+                    "adaptor parse-result contract violation: full-grammar SQL result is null");
+        }
         Map<String, Object> attributes = new LinkedHashMap<>(result.attributes());
         SqlGrammarProfile profile = profileSelection.profile();
         attributes.put("grammarProfile", profile.id());

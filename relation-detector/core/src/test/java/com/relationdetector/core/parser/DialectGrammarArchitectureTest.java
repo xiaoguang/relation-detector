@@ -575,9 +575,25 @@ class DialectGrammarArchitectureTest {
 
         assertFalse(runnerText.contains("SqlLogNoiseFilter"),
                 "Raw SQL text must not be filtered before structured parsing");
+        assertFalse(runnerText.contains("withParserPolicyAttributes"),
+                "SQL runner must not retain a no-op parser-policy statement wrapper");
         assertTrue(Files.exists(root.resolve(
                         "core/src/main/java/com/relationdetector/core/log/TypedLogNoiseClassifier.java")),
                 "Native log noise must be classified from typed ROWSET_REFERENCE events");
+    }
+
+    @Test
+    void directStructuredParserExecutionDoesNotAcceptUnusedScanConfig() throws IOException {
+        Path root = repoRoot();
+        String service = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java"));
+        String fixtureEngine = Files.readString(root.resolve(
+                "cli/src/test/java/com/relationdetector/cli/FixtureExecutionEngine.java"));
+
+        assertEquals(1, occurrences(service, "StructuredSqlParser parser"),
+                "Direct structured parser execution must expose only the config-free overload");
+        assertFalse(fixtureEngine.contains("NO_KNOWN_PHYSICAL_TABLES, config"),
+                "Correctness execution must not pass unused scan config to the direct parser path");
     }
 
     @Test
@@ -1448,11 +1464,22 @@ class DialectGrammarArchitectureTest {
         }
     }
 
+    private static int occurrences(String text, String needle) {
+        int count = 0;
+        int offset = 0;
+        while ((offset = text.indexOf(needle, offset)) >= 0) {
+            count++;
+            offset += needle.length();
+        }
+        return count;
+    }
+
     private static final class ProductionJavadocScanner extends TreePathScanner<Void, Void> {
         private static final Set<String> ORCHESTRATION_SUFFIXES = Set.of(
                 "Engine", "Pipeline", "Service", "Collector", "Extractor", "Resolver", "Merger",
                 "Framer", "Analyzer", "Visitor", "Writer", "Validator", "Registry", "Builder", "Assembler",
-                "Assembly", "Factory", "Index", "Facade");
+                "Assembly", "Factory", "Index", "Facade", "Executor", "Runner", "Scheduler", "Loader",
+                "Normalizer", "Dispatcher", "Selector");
 
         private final Path root;
         private final CompilationUnitTree unit;

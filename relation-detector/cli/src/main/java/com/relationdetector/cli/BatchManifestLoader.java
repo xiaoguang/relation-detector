@@ -13,12 +13,31 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+/**
+ * CN: 将一个 batch YAML manifest 转换为路径规范化、case id 唯一且输出互不冲突的 {@link BatchManifest}。
+ * 上游是 batch CLI command，输出交给 BatchScheduler；本类负责 transport 结构、路径和执行上限校验，
+ * 不读取每个 scan config、不选择 adaptor，也不启动 scan。
+ *
+ * <p>EN: Converts one batch YAML manifest into a {@link BatchManifest} with normalized paths, unique case ids, and
+ * non-conflicting outputs. Its upstream is the batch CLI command and its output feeds BatchScheduler. It validates
+ * transport shape, paths, and execution bounds but does not load case scan configurations, select adaptors, or run scans.
+ */
 final class BatchManifestLoader {
     private static final Pattern CASE_ID = Pattern.compile("[a-z0-9][a-z0-9._-]*");
     private static final YAMLMapper YAML = YAMLMapper.builder()
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .build();
 
+    /**
+     * CN: 读取并完整验证 manifest 后一次性返回 typed model。输入路径先绝对化，所有相对 config/output
+     * 路径均以 manifest 目录为基准；版本、并发、失败策略、case id 和输出冲突任一非法即失败且不返回部分
+     * case 列表。I/O 错误保持 IOException，结构错误保持 IllegalArgumentException。
+     *
+     * <p>EN: Reads and fully validates a manifest before returning the typed model. The input is normalized to an
+     * absolute path and relative config/output paths resolve against its directory. Invalid version, concurrency,
+     * failure policy, case id, or output collision rejects the whole manifest without a partial case list. I/O failures
+     * remain {@link IOException}; structural failures remain {@link IllegalArgumentException}.
+     */
     BatchManifest load(Path manifestFile) throws IOException {
         Path manifest = manifestFile.toAbsolutePath().normalize();
         if (!Files.isRegularFile(manifest)) {

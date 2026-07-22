@@ -258,8 +258,11 @@ class ScanEngineDiagnosticsTest {
         public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
             try {
                 String sql = Files.readString(file).replaceFirst("(?s).* Query ", "").trim();
+                String source = com.relationdetector.core.log.SourceNameNormalizer.normalize(file);
                 return Stream.of(new SqlStatementRecord(sql, com.relationdetector.contracts.Enums.StatementSourceType.NATIVE_LOG,
-                        file.toString(), 1, 1, java.util.Map.of()));
+                        source, 1, 1, java.util.Map.of(
+                                "sourceFile", source,
+                                "sourceStatementId", source + ":1-1")));
             } catch (Exception ex) {
                 return Stream.empty();
             }

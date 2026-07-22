@@ -10,8 +10,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * CN: 在一次 scan 内以一个有界线程池执行已编排的 source 任务，并按输入顺序返回完整结果列表。
+ * 输入由 {@link SourceCollectorPipeline} 等上游提供的无共享状态 {@link Callable} 及 scan 并发度组成；
+ * 输出交回调用方合并。串行和并行路径都保留 {@link AdaptorContractException} 的错误类别。本类不解析
+ * SQL、不合并事实，也不在任务失败后提交部分结果。
  *
- * One bounded worker pool shared by every source group in a scan.
+ * <p>EN: Executes already-planned source tasks in one bounded pool per scan and returns a complete result list
+ * in input order. Upstream scan coordinators provide stateless callables and the scan parallelism; downstream
+ * callers perform fact assembly. Serial and parallel paths preserve {@link AdaptorContractException}. This class
+ * does not parse SQL, merge facts, or commit partial task results after a failure.
  */
 final class ScanTaskExecutor implements AutoCloseable {
     private static final AtomicInteger POOL_IDS = new AtomicInteger();
@@ -52,6 +59,9 @@ final class ScanTaskExecutor implements AutoCloseable {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while executing scan tasks", ex);
         } catch (ExecutionException ex) {
+            if (ex.getCause() instanceof AdaptorContractException contractFailure) {
+                throw contractFailure;
+            }
             throw new IllegalStateException("Unexpected scan worker failure", ex.getCause());
         }
     }

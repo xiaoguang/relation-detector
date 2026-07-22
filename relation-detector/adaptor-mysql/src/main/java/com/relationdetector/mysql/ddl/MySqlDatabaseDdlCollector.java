@@ -89,6 +89,9 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
                     definitions.add(new DatabaseDdlDefinition(catalog, null, tableName,
                             ddl, "SHOW CREATE TABLE"));
                 }
+            } else {
+                warnings.accept(com.relationdetector.core.diagnostics.DiagnosticWarnings
+                        .databaseDdlDefinitionUnavailable("SHOW CREATE TABLE", catalog, null, tableName));
             }
         } catch (Exception ex) {
             warnings.accept(LiveDiagnosticSanitizer.jdbcWarning(

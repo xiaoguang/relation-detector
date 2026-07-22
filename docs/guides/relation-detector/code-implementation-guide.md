@@ -148,7 +148,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - 每个生产 package 都有中英双语 `package-info.java`，用于说明该包在当前 parser / relationship / lineage / DDL 架构中的职责边界。
 - `docs/design/relation-detector/phase-06-parser-enhancement.md` 的“代码结构注释索引”和“详细函数级调用结构”是这些 package 注释的设计展开。
 - 新增 package 时必须同步新增 `package-info.java`；新增跨包调用路径时必须同步刷新 Phase 6 详细设计。
-- 每个生产 package 需要中英双语 `package-info.java`，说明职责、输入输出、上下游和禁止边界。顶层 public/protected 手写类型需要具体类级 Javadoc；编排类中的大方法需要说明输入效果、输出/副作用或失败边界。当前自动门禁已覆盖 `Assembler`、`Assembly`、`Factory`、`Resolver`、`Index` 等已登记编排 suffix；包可见 `Support` 只在属于 public/protected 边界或其类名命中已登记 suffix 时自动进入类级 Javadoc 门禁，其余 helper 仍需代码评审核对职责。不能把门禁通过等同于说明内容已自动验真，也不得使用通用模板和空泛复述。
+- 每个生产 package 需要中英双语 `package-info.java`，说明职责、输入输出、上下游和禁止边界。顶层 public/protected 手写类型需要具体类级 Javadoc；编排类中的大方法需要说明输入效果、输出/副作用或失败边界。当前自动门禁已覆盖 `Assembler/Assembly/Factory/Resolver/Index/Executor/Runner/Scheduler/Loader/Normalizer/Dispatcher/Selector` 等已登记编排 suffix；`ScanTaskExecutor`、`SingleScanRunner`、`BatchScheduler`、`BatchManifestLoader` 和 `SemanticSectionNormalizer` 及其大型方法已进入门禁。包可见 `Support` 只在属于 public/protected 边界或其类名命中已登记 suffix 时自动进入类级 Javadoc 门禁，其余 helper 仍需代码评审核对职责。不能把门禁通过等同于说明内容已自动验真，也不得使用通用模板和空泛复述。
 - 不强制给 record accessor、简单 getter、显而易见的小工具方法写注释；避免把注释变成逐行翻译或噪声。
 
 设计对应：
@@ -161,7 +161,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 
 - `ConfidenceCalculator` 是置信度公式的唯一默认实现。
 - `RelationshipMerger` 负责 `relationSubType` 主导证据优先级。
-- SQL/DDL parser 由 `ParserBundleSelector` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。运行模式是 `parser.mode: auto|full-grammar|token-event`：profile/version/JDBC metadata 足够时可使用版本化 full-grammar；无法选择 profile、版本不支持或 full-grammar hard failure 时 fallback 到 adaptor 暴露的 token-event parser，并输出 `PARSER_MODE_FALLBACK` warning。profile 已选中后的 syntax warning / partial events 属于 full-grammar 结果，不触发 fallback；fallback 只发生在 profile selection 或 hard failure 边界，不在 event 层混入 token-event 补齐。`parser.sql.mode`、`parser.ddl.mode`、`simple`、`antlr-shadow`、`simple-ddl` 和旧 simple fallback 已移除。
+- SQL/DDL parser 由 `ParserBundleSelector` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。运行模式是 `parser.mode: auto|full-grammar|token-event`：profile/version/JDBC metadata 足够时可使用版本化 full-grammar；无法选择 profile、版本不支持或普通 full-grammar runtime hard failure 时 fallback 到 adaptor 暴露的 token-event parser，并输出固定、脱敏的 `PARSER_MODE_FALLBACK` warning。profile 已选中后的 syntax warning / partial events 属于 full-grammar 结果，不触发 fallback；`AdaptorContractException` 表示 parser 返回值违约，必须直接失败且禁止 fallback。失败尝试的 callback warning 不得进入最终结果。`parser.sql.mode`、`parser.ddl.mode`、`simple`、`antlr-shadow`、`simple-ddl` 和旧 simple fallback 已移除。
 - `SqlRelationParserRunner` 与 `DdlRelationParserRunner` 不再各自重复 profile selection。SQL 链路通过同一个 structured parse result 同时服务 relationship extraction 与 Data Lineage extraction，避免同一条 SQL 在正常路径上重复解析。
 - `AntlrSqlParseSupport` 是 ANTLR parse support 的通用骨架，负责动态 SQL warning、统一 diagnostics attributes 和 `StructuredParseResult`。
 - `CommonRelationSql.g4` 是 core portable SQL subset typed grammar；公共 common token-event visitor 只覆盖跨 MySQL/PostgreSQL/Oracle/SQL Server 稳定的 `SELECT`、CTE、derived table、`JOIN ... ON/USING`、comma join、`EXISTS`、scalar/tuple `IN (SELECT ...)`、`INSERT ... SELECT`、基础 `UPDATE SET` / `DELETE WHERE` 和 DDL FK/index context。MySQL/PostgreSQL/Oracle/SQL Server 的 `MySqlRelationSql.g4` / `PostgresRelationSql.g4` / `OracleRelationSql.g4` / `SqlServerRelationSql.g4` 都归属各自 adaptor，并作为方言 token-event typed structural grammar：先覆盖 common portable subset，再保留方言 lexer/rowset/DDL 差异。adaptor 子包里的 `com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser` / `com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser` / `com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser` / `com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser` 和对应 DDL parser 直接运行 typed parse-tree visitor；当前生产事件不再通过 token-span scanner、旧补充路径或 DDL cursor/scanner 补齐。
@@ -574,7 +574,7 @@ sources:
 注意：
 
 - MySQL adaptor 已内置 Connector/J runtime 依赖。PostgreSQL 真实数据库运行时仍需要把 PostgreSQL JDBC driver 放到 classpath，或在 `adaptor-postgres` 中补 runtime dependency。
-- MySQL `sources.ddl.fromDatabase: true` 会对 scope 内表执行 `SHOW CREATE TABLE`，解析出的外键/索引 evidence 使用 `DATABASE_DDL`，不同于用户提供的 DDL 文件 `DDL_FILE`。
+- MySQL `sources.ddl.fromDatabase: true` 会对 scope 内表执行 `SHOW CREATE TABLE`，解析出的外键/索引 evidence 使用 `DATABASE_DDL`，不同于用户提供的 DDL 文件 `DDL_FILE`。MySQL `SHOW CREATE TABLE` 和 Oracle `DBMS_METADATA.GET_DDL` 在表已枚举但 definition 查询返回零行时输出带表身份的 `DEFINITION_UNAVAILABLE`，不会构造空 definition。
 - 生产环境建议默认关闭 `dataProfile`。
 - 如果 `${DB_PASSWORD}` 环境变量不存在，CLI 会失败并提示缺少环境变量。
 
@@ -634,8 +634,9 @@ sources:
 - MySQL/PostgreSQL/Oracle/SQL Server parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventBuilder` 或 profile attributes，证明 adaptor 选择了自己的方言 parser/event builder。
   - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
 - token-event / full-grammar 行为测试：
-  - `SqlRelationParserRunnerTest` 覆盖 `parser.mode`、profile/version 选择、unsupported version fallback、SQL log noise filter 和 warning 行为。
-  - `DdlRelationParserRunnerTest` 覆盖同一 parser mode 策略下的 DDL relationship 抽取和 failure warning。
+  - `SqlRelationParserRunnerTest` 覆盖 `parser.mode`、profile/version 选择、unsupported version fallback、SQL log noise filter，以及完整 structured-result/warning 契约。
+  - `DdlRelationParserRunnerTest` 覆盖同一 parser mode 策略下的 DDL relationship 抽取、failure warning 和 structured-result 原子校验。
+  - `ParserBundleSelectorTest` 必须区分普通 runtime failure 与 `AdaptorContractException`：前者允许安全 fallback，后者直接上抛；失败尝试 warning 不得泄漏。
   - full-grammar 测试只断言 SQL/DDL relationship、Data Lineage、warning 和具体方言行为，不断言内部 native/delegate/bridge 过程属性。
 - 重复 SQL 日志 JOIN 输出两份证据：`rawEvidence` 保留每次观测，`evidence` 聚合为一条基础 evidence 加一条 `REPEATED_OBSERVATION`。
 - YAML 中环境变量缺失时报错。
@@ -655,7 +656,11 @@ sources:
 - 配置 `database.type: sqlserver` 但无 adaptor 时失败；如果 `adaptor-oracle` 不在 classpath，`database.type: oracle` 也应失败。
 - `--output target/result.json` 能写文件。
 
-### 5.3 集成测试
+### 5.3 环境性集成验收（当前仓库未内置）
+
+以下是需要提供真实 driver/version/permission 组合时的目标验收，不是当前
+Maven 默认测试集的已实现清单。当前 POM 没有 Testcontainers 依赖，日常测试
+使用 fake-JDBC/proxy contract 保护 catalog 查询和 typed result，但不能代替真实库验收。
 
 MySQL：
 
@@ -673,8 +678,8 @@ PostgreSQL：
 - 创建 view、function、trigger function。
 - 投喂 statement log fixture。
 - 验证 schema、quoted identifier 和 FK 方向。
-- 上述 Testcontainers 项是环境性验收要求；当前 proxy/contract tests 已覆盖 metadata inventory、trigger
-  definition、catalog 和 ordinal-safe composite FK 的代码契约，但不能替代真实权限、版本与 driver 组合验证。
+- 当前 proxy/contract tests 已覆盖 metadata inventory、trigger definition、catalog 和
+  ordinal-safe composite FK 的代码契约，但不能替代真实权限、版本与 driver 组合验证。
 
 ### 5.4 性能测试
 

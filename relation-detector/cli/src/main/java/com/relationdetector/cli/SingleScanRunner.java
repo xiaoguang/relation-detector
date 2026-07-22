@@ -15,6 +15,16 @@ import com.relationdetector.core.scan.AdaptorContractException;
 import java.nio.file.Path;
 import java.io.IOException;
 
+/**
+ * CN: 编排一个 CLI scan 的配置装载、override、adaptor 选择、scan 执行和原子输出。上游是 single-scan
+ * command 或 batch case，下游是 {@link ScanEngine} 及 JSON/table writer；输出为 warning 数和指定 artifact。
+ * 本类只映射稳定 CLI 错误类别，不实现 parser、事实抽取或数据库采集语义，也不暴露底层异常正文。
+ *
+ * <p>EN: Orchestrates configuration loading, overrides, adaptor selection, scan execution, and atomic output for
+ * one CLI scan. Its upstream is a single-scan command or batch case; downstream collaborators are {@link ScanEngine}
+ * and the JSON/table writers. It returns the warning count and writes requested artifacts. It maps stable CLI error
+ * categories but does not implement parsing, fact extraction, live collection, or expose underlying exception text.
+ */
 final class SingleScanRunner {
     private final ConfigLoader configLoader;
     private final ScanExecutor scanExecutor;
@@ -62,6 +72,16 @@ final class SingleScanRunner {
         return new PreparedScan(request, resolved, adaptor);
     }
 
+    /**
+     * CN: 执行一个已经完成配置和 adaptor 解析的 scan，并按 output contract 写入 table、direct JSON 或
+     * derived JSON。成功返回真实 scan warning 数；输出失败或 adaptor/live 配置失败映射为稳定 CLI code。
+     * 写入采用原子 writer，失败时不保留半个 artifact。本方法不重新解释配置或修改 ScanResult 事实。
+     *
+     * <p>EN: Executes one fully prepared scan and writes table, direct JSON, or derived JSON according to the output
+     * contract. It returns the real scan warning count, maps output/adaptor/live-configuration failures to stable CLI
+     * codes, and uses atomic writers so failed writes do not leave partial artifacts. It neither reinterprets the
+     * configuration nor mutates facts in the returned {@link ScanResult}.
+     */
     SingleScanOutcome execute(PreparedScan prepared) throws Exception {
         ResolvedScanConfig config = prepared.config();
         ScanResult result;

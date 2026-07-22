@@ -30,7 +30,7 @@ full-grammar:
   -> same semantic extractor
 ```
 
-代码中的主要行为与设计一致：
+代码中的主链行为与设计一致，但本轮反向审计又确认了四个有边界的实现缺口：
 
 - MySQL/PostgreSQL 是当前工程覆盖最广的 parser 与 sample-data 支持目标。MySQL live object 使用
   `SHOW CREATE`，四方言 live profiler 返回四项独立 exact metrics。PostgreSQL live metadata 已覆盖
@@ -56,6 +56,38 @@ full-grammar:
 ## 当前收敛状态来源
 
 Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-traceability.md)。本报告只说明验证方法和证据边界，不复制 closure ID 或状态表，避免两份手工状态随实现分叉。
+
+### 本轮反向审计复核结论
+
+上一轮冻结的四项实现已经按其当时的测试边界闭合：
+
+1. `AdaptorResultContractValidator` 对 metadata、object、database-DDL 和 fallback
+   relationship parser 的外部结果执行 detached copy、全批校验和延迟提交；callback warning
+   由 core 丢弃 plugin 文本后重建。
+2. `EvidenceWeightAdjustmentService` 对 hook 返回的 evidence 校验 identity/provenance，只允许修改范围内
+   score；relationship 与 naming 的列表 replacement 全部成功后才应用，warning 副作用会拒绝。
+3. live database-DDL namespace qualification 现在复制完整 candidate attributes，并由直接 API
+   测试锁定 confidence、evidence、rawEvidence、warnings 和 attributes 状态。
+4. SQL runner 的空 policy helper、误导 Javadoc 和 direct execution 无效 config overload 已删除；
+   fallback parser 通过 detached context 与统一结果契约后才转发。
+
+这些修改收紧了外部 v6 adaptor 边界，不改变内置 parser 主事实语义或 golden。冻结的五项矩阵现已闭环：
+
+1. `AdaptorParseResultContractValidator` 对 `SqlLogExtractor`、`DialectScriptFramer`、
+   `StructuredSqlParser` 和 `StructuredDdlParser` 的完整 stream/result/warning 执行 detached、allowlist
+   和延迟提交校验。普通 full-grammar runtime failure 可以 fallback，但失败尝试 warning 被丢弃且固定脱敏；
+   `AdaptorContractException` 不允许 fallback。
+2. `EvidenceWeightAdjustmentService` 向外部 hook 提供 deep-detached evidence 与 deep-immutable
+   `AdaptorContext.options`，只接受 score 变化，并由 core 从 baseline 重建返回 evidence。
+3. `ScanTaskExecutor` 在串行和并行路径原样保留 `AdaptorContractException`，CLI 均归类为
+   `ADAPTOR_ERROR`。
+4. MySQL `SHOW CREATE TABLE` 与 Oracle `DBMS_METADATA.GET_DDL` 成功但零行时生成带表身份的
+   `DEFINITION_UNAVAILABLE`，不构造空 definition。
+5. 双语 Javadoc 门禁已包含 `Executor/Runner/Scheduler/Loader/Normalizer/Dispatcher/Selector`，
+   并补齐本轮实际命中的编排类和大型方法。
+
+fake JDBC 和 adversarial unit tests 可以证明已覆盖的 core 合约；真实数据库驱动版本、权限行为与网络故障仍属于环境 smoke，
+不能由上述单元测试替代。
 
 ## 本轮代码结构注释审视
 
@@ -93,7 +125,8 @@ sqlserver / sqlserver.tokenevent / sqlserver.fullgrammar.common / sqlserver.full
   `DialectGrammarArchitectureTest` 和 `SemanticDocumentationArchitectureTest` 使用 JDK compiler/doc-tree API 验证 package 的 `CN:` / `EN:` 标记、
   职责、输入、输出、上下游与禁止边界，并对公开类型、当前登记的编排 suffix 和大方法验证最小具体内容及泛化模板禁止。generated Java、
   record accessor、getter 和显而易见的小方法按规则排除。当前 suffix 已覆盖 `Assembly`、`Factory`、
-  `Assembler`、`Resolver` 与 `Index`；`ResultAssembler`、`RelationshipAliasResolver`、
+  `Assembler`、`Resolver`、`Index`、`Executor`、`Runner`、`Scheduler`、`Loader`、`Normalizer`、
+  `Dispatcher` 与 `Selector`；`ResultAssembler`、`RelationshipAliasResolver`、
   `RelationshipCandidateFactory` 和 semantic factories/registries 具备完整双语设计说明。描述是否准确
   反映实际调用链继续由代码评审确认。
 
@@ -233,10 +266,13 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 7. SPI v6、Oracle/SQL Server live 能力和 `contracts.Enums` 设计真源链接的生产 Javadoc 已同步。
 8. Metadata/DDL observation 不再在 merger 前仅按 type 丢弃；merger 按完整 observation identity 折叠精确重复并记录 `occurrenceCount`。
 9. MySQL live object collector 只用 `information_schema` 枚举身份，parser 输入由对应 `SHOW CREATE` 返回的完整 declaration 提供。
-10. Connection、metadata、object、database-DDL 和 profiler 的 SQLException failure 共用
+10. 内置 connection、metadata、object、database-DDL 和 profiler 的 SQLException failure 共用
     `JdbcExceptionClassifier` 与 `LiveDiagnosticSanitizer`，且不输出 JDBC URL、rendered SQL 或 driver message。
     共享 classifier 只识别 JDBC 类型和 SQLState；Oracle 1031、SQL Server 229/916 由对应 adaptor 显式提供。
     Pipeline 对第三方 collector 返回的 null/blank definition、null element 或 null list 统一输出 `DEFINITION_UNAVAILABLE` 并跳过解析。
+    metadata snapshot 和 object/database-DDL warning callback 已经 core 重验与重建；log extractor、
+    script framer 与 structured parser 的 statement/event/warning 则由独立的
+    `AdaptorParseResultContractValidator` 全批校验并延迟提交。
 11. `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner；CLI 以配置文件父目录调用
     `ScanConfig.resolve(baseDirectory)`，direct API 无参调用以当前工作目录为 base。运行态仅消费稳定排序、
     规范绝对路径且去重的 `*Files`，missing、non-regular 和 unreadable 输入均在 scan 前明确失败。
@@ -289,7 +325,8 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   failure 的 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
   脱敏文本。live namespace resolver 的 `LiveSourceConfigurationException` 已在 single-scan 映射为
   `CONFIG_FORMAT_ERROR`，batch case 保留同一 typed code，整体仍返回 `BATCH_PARTIAL_FAILURE`。adaptor
-  SPI/type/id/capability/implementation failure 则统一使用 `AdaptorContractException` 和 `ADAPTOR_ERROR`。
+  SPI/type/id/capability/implementation/result-contract failure 则统一使用 `AdaptorContractException` 和
+  `ADAPTOR_ERROR`；`ScanTaskExecutor` 在串行和并行路径保留同一异常类型。
 - `DirectionConfidence` 和保留 error/evidence enum 继续作为 compatibility contract；所有 public production
   enum value 已由 AST discovery gate 逐值执行 Jackson serializer/deserializer round-trip，冻结的 CLI
   `ErrorCode` matrix 另有穷举集合断言和路径测试。
@@ -306,8 +343,10 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   都不可用时在首条 catalog SQL 前抛出脱敏 `LiveSourceConfigurationException`，不会用空 owner 查询。
 - `JsonResultWriter` 的 `includeWarnings=false` 已定义为完整公开隐藏：根和 fact-level warning 数组均为空，
   `summary.warningCount=0`；内部 warning 与 CLI 退出判断不变，semantic strict reader 可消费该输出。
-- 生产 Javadoc 已清除已知泛化模板，`Assembly` / `Factory` / `Assembler` / `Resolver` / `Index` 已进入
-  门禁。`DialectGrammarArchitectureTest` 还直接验证 warning 内容边界：`ProfileOutcome` 是不可信 plugin
+- 生产 Javadoc 已清除已知泛化模板，`Assembly` / `Factory` / `Assembler` / `Resolver` / `Index` 以及
+  `Executor/Runner/Scheduler/Loader/Normalizer/Dispatcher/Selector` 均已进入门禁；本轮命中的
+  package-private 编排类和超过 40 行方法已补齐具体双语设计说明。
+  `DialectGrammarArchitectureTest` 还直接验证 warning 内容边界：`ProfileOutcome` 是不可信 plugin
   envelope，core 仅验证 failure type/code 并重建固定 warning；parser/file warning 可为本地审计保留
   raw SQL/DDL/异常文本，live JDBC warning 必须经过 `LiveDiagnosticSanitizer`。
 - `TableResultWriterTest` 固定 relationship 输入顺序、evidence 首次出现去重、长文本完整输出、空关系

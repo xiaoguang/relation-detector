@@ -173,6 +173,10 @@ derivedPaths:
   batch CLI 都必须映射为 `CONFIG_FORMAT_ERROR`，不能降级 warning 或归入通用 argument/runtime error。
 - capability preflight 缺少请求的 producer/consumer 时统一抛 `AdaptorContractException`；single-scan
   映射为 `ADAPTOR_ERROR`，batch case 保留同一 code，batch 整体仍返回 `BATCH_PARTIAL_FAILURE`。
+- 上述 adaptor error 分类与 `execution.parallelism` 无关。串行 statement task 直接传播
+  `AdaptorContractException`；并行 task 的 `ScanTaskExecutor` 从 `ExecutionException.cause`
+  识别并原样传播同一异常。single 与 batch 因此都稳定映射为 `ADAPTOR_ERROR`，不按 message
+  字符串重新分类。
 - YAML 中旧的离线画像字段会返回 `CONFIG_FORMAT_ERROR`，不会被未知字段策略静默忽略。
 
 MySQL namespace兼容说明：live collector内部把database统一规范到catalog轴；旧
@@ -486,10 +490,22 @@ warning 字段：
   definition。能取得对象身份时，输出 `LIVE_SOURCE_WARNING` / `DEFINITION_UNAVAILABLE`
   以及 catalog/schema/name/type；第三方 collector 如果返回 null 元素或 null list，pipeline
   也必须产生安全 warning，不得静默丢弃或调用下游 parser。
+- 已枚举对象身份后，definition query 成功但返回零行也是 unavailable-result，
+  必须使用同一 `DEFINITION_UNAVAILABLE` 契约。MySQL `SHOW CREATE TABLE`
+  和 Oracle `DBMS_METADATA.GET_DDL` 的零行分支均输出带表身份的安全 warning，并跳过空
+  `DatabaseDdlDefinition`。
 - profiler 与普通 metadata/object/database-DDL collector 共用 `JdbcExceptionClassifier`的标准
   timeout、SQLState permission 和 query-failure 分类。Oracle 1031、SQL Server 229/916 必须由
   对应 adaptor 的调用边界传入，不能在共享 classifier 默认应用到其它方言。
   `LiveDiagnosticSanitizer` 统一输出固定消息及 SQLState/vendorCode/exceptionClass，不保留原始异常文本。
+- `MetadataSnapshot.warnings()` 和 object/database-DDL callback warning 先进入临时 outcome。
+  `AdaptorResultContractValidator` 只接受受限 type、severity、code 与安全属性，丢弃 plugin
+  message/source/line，再由 `LiveDiagnosticSanitizer` 按 operation 重建固定内容。任一 warning
+  envelope 非法时整个对应 SPI outcome 原子失败，不会把先前 fact 或 warning 写入 `ScanResult`。
+  真实 driver/version 的 permission、timeout 与连接行为仍需环境 smoke 验证。
+- `SqlLogExtractor`、`DialectScriptFramer` 与 structured parser 的 callback/result warning
+  由 `AdaptorParseResultContractValidator` 使用独立 buffer、allowlist 和全批延迟提交闭环；
+  任一 contract violation 不会泄漏前序 warning，也不能触发 token-event fallback。
 
 严重程度：
 

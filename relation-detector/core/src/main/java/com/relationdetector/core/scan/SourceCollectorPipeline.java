@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
@@ -30,6 +31,10 @@ import com.relationdetector.core.script.ScriptFileExtractor;
 final class SourceCollectorPipeline {
     private final ScriptFileExtractor scriptFileExtractor = new ScriptFileExtractor();
     private final StatementDispatchService statementDispatch = new StatementDispatchService();
+    private final AdaptorResultContractValidator resultContractValidator =
+            new AdaptorResultContractValidator();
+    private final AdaptorParseResultContractValidator parseResultContractValidator =
+            new AdaptorParseResultContractValidator();
     private final StatementParsePipeline statementParser;
 
     SourceCollectorPipeline(StatementParsePipeline statementParser) {
@@ -73,13 +78,13 @@ final class SourceCollectorPipeline {
     private void collectMetadata(Connection connection, ScanPipelineContext ctx) {
         ctx.result.sources().add("metadata");
         try {
-            ctx.metadataSnapshot = ctx.adaptor.collectors().metadata().orElseThrow()
+            var raw = ctx.adaptor.collectors().metadata().orElseThrow()
                     .collect(connection, ctx.scope);
-            if (ctx.metadataSnapshot != null) {
-                ctx.relationshipCandidates.addAll(ctx.metadataSnapshot.relationships());
-                ctx.result.warnings().addAll(ctx.metadataSnapshot.warnings());
-            }
-        } catch (LiveSourceConfigurationException ex) {
+            MetadataSnapshot validated = resultContractValidator.validateMetadata(raw);
+            ctx.metadataSnapshot = validated;
+            ctx.relationshipCandidates.addAll(validated.relationships());
+            ctx.result.warnings().addAll(validated.warnings());
+        } catch (LiveSourceConfigurationException | AdaptorContractException ex) {
             throw ex;
         } catch (Exception ex) {
             ctx.result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
@@ -182,6 +187,8 @@ final class SourceCollectorPipeline {
         AdaptorContext context = new AdaptorContext(ctx.scope, ctx.adaptorContext.options(), warnings::add);
         try {
             return new TaskResult(task.action().execute(context), warnings);
+        } catch (AdaptorContractException ex) {
+            throw ex;
         } catch (Exception ex) {
             warnings.add(task.failureWarning().apply(ex));
             return new TaskResult(StatementExecutionOutcome.empty(), warnings);
@@ -200,8 +207,21 @@ final class SourceCollectorPipeline {
 
     private Stream<SqlStatementRecord> extractLog(Path file, ScanPipelineContext ctx) {
         try {
-            return ctx.adaptor.collectors().logs().orElseThrow().extract(file, ctx.config.sources().logFormatHint(),
-                    ctx.result.warnings()::add);
+            List<WarningMessage> callbackWarnings = new ArrayList<>();
+            Stream<SqlStatementRecord> raw = ctx.adaptor.collectors().logs().orElseThrow()
+                    .extract(file, ctx.config.sources().logFormatHint(), callbackWarnings::add);
+            if (raw == null) {
+                throw new AdaptorContractException("adaptor parse-result contract violation: log stream is null");
+            }
+            List<SqlStatementRecord> statements;
+            try (raw) {
+                statements = raw.toList();
+            }
+            var validated = parseResultContractValidator.validateLog(file, statements, callbackWarnings);
+            ctx.result.warnings().addAll(validated.warnings());
+            return validated.statements().stream();
+        } catch (AdaptorContractException ex) {
+            throw ex;
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.logExtractFailed(file, ex));
             return Stream.empty();
@@ -210,16 +230,13 @@ final class SourceCollectorPipeline {
 
     private List<DatabaseObjectDefinition> collectDatabaseObjects(Connection connection, ScanPipelineContext ctx) {
         try {
+            List<WarningMessage> callbackWarnings = new ArrayList<>();
             List<DatabaseObjectDefinition> definitions = ctx.adaptor.collectors().objects().orElseThrow()
-                    .collect(connection, ctx.scope, ctx.result.warnings()::add);
-            if (definitions == null) {
-                warnUnavailableObject(ctx);
-                return List.of();
-            }
-            return definitions.stream()
-                    .filter(definition -> validObjectDefinition(definition, ctx))
-                    .toList();
-        } catch (LiveSourceConfigurationException ex) {
+                    .collect(connection, ctx.scope, callbackWarnings::add);
+            var validated = resultContractValidator.validateObjects(definitions, callbackWarnings);
+            ctx.result.warnings().addAll(validated.warnings());
+            return validated.definitions();
+        } catch (LiveSourceConfigurationException | AdaptorContractException ex) {
             throw ex;
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.objectCollectFailed(
@@ -235,16 +252,13 @@ final class SourceCollectorPipeline {
             if (collector.isEmpty()) {
                 return List.of();
             }
+            List<WarningMessage> callbackWarnings = new ArrayList<>();
             List<DatabaseDdlDefinition> definitions = collector.orElseThrow()
-                    .collect(connection, ctx.scope, ctx.result.warnings()::add);
-            if (definitions == null) {
-                warnUnavailableDdl(ctx);
-                return List.of();
-            }
-            return definitions.stream()
-                    .filter(definition -> validDdlDefinition(definition, ctx))
-                    .toList();
-        } catch (LiveSourceConfigurationException ex) {
+                    .collect(connection, ctx.scope, callbackWarnings::add);
+            var validated = resultContractValidator.validateDatabaseDdl(definitions, callbackWarnings);
+            ctx.result.warnings().addAll(validated.warnings());
+            return validated.definitions();
+        } catch (LiveSourceConfigurationException | AdaptorContractException ex) {
             throw ex;
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.databaseDdlCollectFailed(
@@ -252,43 +266,6 @@ final class SourceCollectorPipeline {
                     ctx.adaptor.permissionDeniedVendorCodes()));
             return List.of();
         }
-    }
-
-    private boolean validObjectDefinition(DatabaseObjectDefinition definition, ScanPipelineContext ctx) {
-        if (definition != null && definition.sql() != null && !definition.sql().isBlank()) {
-            return true;
-        }
-        if (definition != null) {
-            ctx.result.warnings().add(DiagnosticWarnings.objectDefinitionUnavailable(
-                    definition.source(), definition.catalog(), definition.schema(), definition.name(),
-                    definition.type() == null ? null : definition.type().name()));
-        } else {
-            warnUnavailableObject(ctx);
-        }
-        return false;
-    }
-
-    private boolean validDdlDefinition(DatabaseDdlDefinition definition, ScanPipelineContext ctx) {
-        if (definition != null && definition.ddl() != null && !definition.ddl().isBlank()) {
-            return true;
-        }
-        if (definition != null) {
-            ctx.result.warnings().add(DiagnosticWarnings.databaseDdlDefinitionUnavailable(
-                    definition.source(), definition.catalog(), definition.schema(), definition.name()));
-        } else {
-            warnUnavailableDdl(ctx);
-        }
-        return false;
-    }
-
-    private void warnUnavailableObject(ScanPipelineContext ctx) {
-        ctx.result.warnings().add(DiagnosticWarnings.objectDefinitionUnavailable(
-                "database-objects", null, null, null, null));
-    }
-
-    private void warnUnavailableDdl(ScanPipelineContext ctx) {
-        ctx.result.warnings().add(DiagnosticWarnings.databaseDdlDefinitionUnavailable(
-                "database-ddl", null, null, null));
     }
 
     private SqlStatementRecord objectStatement(DatabaseObjectDefinition definition) {
