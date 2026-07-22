@@ -83,6 +83,30 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void warningDocumentationPreservesPluginAndLiveDiagnosticTrustBoundaries() throws IOException {
+        Path root = repoRoot();
+        String profileOutcome = Files.readString(root.resolve(
+                "contracts/src/main/java/com/relationdetector/contracts/spi/ProfileOutcome.java"));
+        String diagnosticsPackage = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/diagnostics/package-info.java"));
+
+        assertTrue(profileOutcome.contains("不可信") && profileOutcome.contains("untrusted"),
+                "ProfileOutcome must identify adaptor warnings as untrusted input");
+        assertTrue(profileOutcome.contains("type/code") && profileOutcome.contains("message/source/attributes"),
+                "ProfileOutcome must describe the fields core validates and discards");
+        assertFalse(profileOutcome.contains("sanitized warnings from one bounded live profiling request"),
+                "ProfileOutcome must not describe plugin warnings as already sanitized");
+
+        assertTrue(diagnosticsPackage.contains("parser/file") && diagnosticsPackage.contains("raw SQL"),
+                "Diagnostics package must preserve the parser/file audit boundary");
+        assertTrue(diagnosticsPackage.contains("LiveDiagnosticSanitizer")
+                        && diagnosticsPackage.contains("JDBC URL"),
+                "Diagnostics package must state the live JDBC sanitizer boundary");
+        assertFalse(diagnosticsPackage.contains("Constructs and sanitizes parser and live warnings"),
+                "Diagnostics package must not claim one sanitization policy for every warning family");
+    }
+
+    @Test
     void handwrittenProductionBoundariesHaveConcreteJavadoc() throws Exception {
         Path root = repoRoot();
         List<Path> sources;

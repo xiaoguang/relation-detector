@@ -34,7 +34,8 @@ Oracle 的 SPI v6 `OracleScriptFramer` 使用 generated script lexer 的 typed t
   生成的 parser artifact，并由 adaptor typed visitor 生成事件。
 - token-event DDL：`OracleTokenEventStructuredDdlParser` 消费同一 grammar artifact 的 typed DDL context。
 - full-grammar module：`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` 通过 `FullGrammarDialectModule` 注册；每个版本使用自己的 split lexer/parser grammar，并带有首批官方版本边界差异，运行属性 `grammarCoverage=INCOMPLETE_VERSIONED`。
-- sample-data：`sample-data/oracle/12c|19c|21c|26ai`，每版 38 个 SQL 文件。
+- sample-data：`sample-data/oracle/12c|19c|21c|26ai`；当前文件与 parser case 数量由
+  [Parser 能力与统计摘要](../../parser-audit/parser-comparison-summary.md)和 verification manifest 维护。
 - correctness golden：root token-event 保留会产生 relationship / lineage / diagnostics、或承载 Oracle DDL / 版本边界语法的 sample-data fixture；四个 versioned full-grammar 目录覆盖对应 `sample-data/oracle/<version>` 的保留 fixture，并保留 profile smoke / version-only fixture。
 - live catalog：`OracleMetadataCollector` 读取 `ALL_TABLES` / `ALL_TAB_COLUMNS` / `ALL_CONSTRAINTS` / `ALL_CONS_COLUMNS` / `ALL_INDEXES` / `ALL_IND_COLUMNS`，保留组合列序和 child-to-parent FK。`OracleObjectCollector` 通过 `ALL_OBJECTS` + `DBMS_METADATA.GET_DDL` 读取 procedure/function/package/view/materialized view/trigger。`OracleDatabaseDdlCollector` 读取 table DDL；三者共用 `OracleOwnerResolver`，按显式 scope schema、connection schema、metadata username 的顺序解析 owner。Oracle 没有本工具可执行的 catalog 轴；非空 `scope.catalog` 会在任何 catalog SQL/profile 前作为不可恢复配置错误拒绝，不能写入 scan summary。owner 的三个来源都不可用，或 JDBC lookup 无法证明 owner 时，resolver 会在首条 catalog SQL 前 fail-fast，不会使用空 owner 继续扫描。`OracleDataProfiler` 执行 exact aggregate query，独立返回四项 profile metrics。
 

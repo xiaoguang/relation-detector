@@ -293,7 +293,7 @@ evidence JSON 生成，同样不使用数组位置。scanRunId/sourceHash 等跨
 }
 ```
 
-### 3.4 紧凑版输出 Schema（目标设计 / 历史 CompactEvidenceBundle）
+### 3.5 紧凑版输出 Schema（目标设计 / 历史 CompactEvidenceBundle）
 
 本节以及后续关于 graph search、comment evidence、candidate conflict、compact bundle 的内容是后续 Catalog Store / governance 阶段的目标设计。当前代码不会在 `SemanticEvidenceBuilder` 内生成 `CompactEvidenceBundle`，也不会在这里执行 graph search 或 conflict detection。
 
@@ -488,7 +488,7 @@ sequenceDiagram
 
 ## 6. 核心算法
 
-### 4.1 BFS Join Path 发现
+### 6.1 BFS Join Path 发现
 
 ```java
 List<JoinPathEvidence> discoverJoinPaths(MetadataIndex metadata, RelationshipIndex relIndex) {
@@ -540,7 +540,7 @@ List<JoinPathEvidence> discoverJoinPaths(MetadataIndex metadata, RelationshipInd
 }
 ```
 
-### 4.2 冲突检测算法
+### 6.2 冲突检测算法
 
 ```java
 List<ConflictEvidence> detectConflicts(Map<String, FieldEvidence> fieldEvidences) {
@@ -581,7 +581,7 @@ List<ConflictEvidence> detectConflicts(Map<String, FieldEvidence> fieldEvidences
 }
 ```
 
-### 4.3 注释提取规则
+### 6.3 注释提取规则
 
 ```java
 // DDL 注释提取
@@ -602,7 +602,7 @@ Pattern SQL_BLOCK_COMMENT = Pattern.compile(
 // 3. 注释中包含已知表名/列名 → 关联到对应物理引用
 ```
 
-### 4.4 businessRole 确定性推断（P0：从 LLM 移出）
+### 6.4 businessRole 确定性推断（P0：从 LLM 移出）
 
 **决策：** `businessRole` 不交给 LLM 推断。它是确定性规则，所有判断依据已在 evidence 中。
 
@@ -658,7 +658,7 @@ String inferBusinessRole(FieldEvidence field) {
 }
 ```
 
-### 4.5 置信度 heuristic（P0：从 LLM 移出）
+### 6.5 置信度 heuristic（P0：从 LLM 移出）
 
 **决策：** `confidence` 不交给 LLM 生成。Phase 1 可以使用可配置 heuristic 对 evidence 质量做排序辅助，但不把某一组权重或小数写成不可变 contract。
 
@@ -684,7 +684,7 @@ String inferBusinessRole(FieldEvidence field) {
 
 **注意：** confidence 只表示 evidence 支撑强度，不表示业务正确性。业务口径正确性需要 Review Queue；具体权重需要通过 question trace、离线评测和人工审核迭代。
 
-### 4.6 冲突检测改为两阶段：规则初筛 + LLM 解释建议
+### 6.6 冲突检测改为两阶段：规则初筛 + LLM 解释建议
 
 **决策：** 冲突检测分为两个阶段。阶段一在 Evidence Builder 中做规则初筛，阶段二在 LLM Enricher 中生成冲突解释、影响范围和审核建议。最终是否确认冲突由 Review Queue / governance workflow 决定。
 
@@ -790,7 +790,7 @@ List<CandidateConflict> preFilterConflicts(Map<String, FieldEvidence> fieldEvide
 
 **阶段二在 LLM Enricher 中生成解释材料；最终确认在 Review Queue / governance workflow 中完成。**
 
-### 4.7 evidenceFingerprint 统一生成（P1）
+### 6.7 evidenceFingerprint 统一生成（P1）
 
 **决策：** 所有 `evidenceFingerprint` 由 Evidence Builder 统一生成，LLM 只引用，不自己编造。
 
@@ -822,9 +822,9 @@ String generateFingerprint(EvidenceRef ref) {
 }
 ```
 
-## 5. 测试验收
+## 7. 测试验收
 
-### 5.1 当前实现测试
+### 7.1 当前实现测试
 
 | 测试场景 | 输入 | 当前预期输出 |
 | --- | --- | --- |
@@ -836,7 +836,7 @@ String generateFingerprint(EvidenceRef ref) {
 | fixed clock | 相同 graph 和固定 Clock | KG JSON byte-stable，且 build-run 不泄漏绝对输入路径。 |
 | 空输入 | 空 fact arrays | 返回没有 fact 的薄 `EvidenceGraph`。 |
 
-### 5.2 后续 enriched catalog/search 测试建议
+### 7.2 后续 enriched catalog/search 测试建议
 
 下表对应尚未实现的 FieldEvidence、CommentEvidence、ConflictEvidence、bounded BFS 和 compact bundle
 目标，不能用作当前 `SemanticEvidenceBuilder` 已通过能力清单。

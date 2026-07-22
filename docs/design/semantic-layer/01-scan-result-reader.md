@@ -248,7 +248,7 @@ sequenceDiagram
 
 ## 6. 处理逻辑详解
 
-### 4.1 当前读取流程（伪代码）
+### 6.1 当前读取流程（伪代码）
 
 ```java
 ScanBundle read(Path path) {
@@ -283,7 +283,7 @@ ScanBundle read(Path path) {
 }
 ```
 
-### 4.2 目标去重算法（未来 Catalog/Search 阶段）
+### 6.2 目标去重算法（未来 Catalog/Search 阶段）
 
 当前 reader 不执行 relationship / lineage 去重；它保留 relation-detector JSON 中的数组顺序。以下算法只描述未来如果在 Semantic Catalog 或 Search 层需要合并多批事实时的目标方向，不是当前 `ScanResultReader` 代码。
 
@@ -305,7 +305,7 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 }
 ```
 
-### 4.3 校验规则
+### 6.3 校验规则
 
 | 校验项 | 失败级别 | 处理 |
 | --- | --- | --- |
@@ -322,9 +322,9 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | 嵌套 evidence、warning 或 derived path 不符合当前 writer shape | ERROR | 抛出 `ScanResultContractException` |
 | `summary.warningCount` 与根 `warnings` 数组不一致 | ERROR | 抛出 `ScanResultContractException`；writer 的 `includeWarnings=false` 会同步清空根/fact warnings并把 count 置零，因此其 suppressed output 合法 |
 
-## 5. 测试验收
+## 7. 测试验收
 
-### 5.1 单元测试
+### 7.1 单元测试
 
 | 测试场景 | 输入 | 预期输出 |
 | --- | --- | --- |
@@ -343,7 +343,7 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | 输入重排 | 相同 facts 使用不同数组顺序 | stable fact/evidence/candidate id 集合不变 |
 | warning suppression | writer 隐藏内部非空 warning | 根/fact warning 数组为空且 count 为 0，可正常读取；人工构造的不一致 count/array 仍拒绝 |
 
-### 5.2 集成测试
+### 7.2 集成测试
 
 ```java
 // 端到端：从 relation-detector 输出到 ScanBundle
@@ -368,7 +368,7 @@ void endToEndFromRelationDetectorOutput() {
 catalog 负向 contract test 已覆盖不同 catalog 拒绝合并；artifact test 验证 `ScanBundle`、extraction bundle
 和 build-run 均保留 catalog 并输出 canonical input path。
 
-### 5.3 性能测试
+### 7.3 性能测试
 
 | 场景 | 数据量 | 预算 |
 | --- | --- | --- |

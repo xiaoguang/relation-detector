@@ -9,7 +9,7 @@
 **存储分层：**
 
 - Prototype / dev：可以使用 JSON 文件，便于调试和版本化。
-- Production-ready Phase 1 profile profile：推荐 PostgreSQL + JSONB + pgvector，支持并发、增量查询、审核审计和向量检索。
+- Production-ready Phase 1 profile：推荐 PostgreSQL + JSONB + pgvector，支持并发、增量查询、审核审计和向量检索。
 - Future Capability：按服务边界拆分或引入消息队列，但不是第一版要求。
 
 Catalog Store 不调用 LLM，也不做语义判断。

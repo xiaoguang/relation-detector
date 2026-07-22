@@ -463,7 +463,8 @@ Warnings: 0
 `TableResultWriter` 只是 relationship/warning 的轻量终端视图。relationship 顺序由上游
 `RelationshipMerger` 确定，writer 不重排；列宽是最小宽度，长 endpoint 或 evidence 会扩展行宽，
 不做窄终端自适应。`includeEvidence` / `includeWarnings` / `includeObservationCounts` 的结构化
-隐藏契约属于 JSON 输出；table 当前始终显示 evidence type 和根 warning 摘要。
+隐藏契约属于 JSON 输出；table 当前始终显示 evidence type 和根 warning 摘要。没有 relationship
+时仍会输出 `No relationships detected.`、warning 数量以及每条根 warning 的 source、line 和 message。
 
 ### 4.5 写入输出文件
 

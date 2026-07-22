@@ -1,5 +1,10 @@
 # 技术选型文档
 
+> 当前实现边界：本文件同时记录已落地技术和后续目标 profile。当前代码只使用 Java 17、Maven、
+> Jackson/JDK HTTP client 生成离线 JSON KG 与 semantic extraction artifacts；没有 PostgreSQL/JSONB/
+> pgvector catalog、lexicon/embedding search、在线 planner 或 SQL draft/validator。下文标为
+> `Production-ready Phase 1 profile` 和 `Phase 2+` 的内容是选型方向，不是现有运行能力。
+
 ## 1. 选型原则
 
 | 原则 | 说明 |
@@ -90,18 +95,18 @@ SQL Validator 优先校验 structured elements
 | --- | --- |
 | 语言 | Java 17 |
 | 构建 | Maven |
-| JSON | Jackson 或 relation-detector 兼容 writer |
-| HTTP client | JDK HttpClient 或 OkHttp |
+| JSON | 当前使用 Jackson；relation-detector 继续拥有自己的兼容 writer |
+| HTTP client | 当前 OpenAI-compatible extraction 使用 JDK HttpClient；其他客户端仍是后续接口选择 |
 | 测试 | JUnit 5 + fixture golden |
 | 依赖注入 | 构造函数手动注入；Phase 2+ 可考虑 DI 框架 |
 
 ## 7. 总结
 
-| 维度 | Prototype | Production-ready Phase 1 profile | Phase 2+ / Future Capability |
+| 维度 | 当前离线 prototype / 近期目标 | Production-ready Phase 1 目标 profile | Phase 2+ / Future Capability |
 | --- | --- | --- | --- |
 | 存储 | JSON 文件 | PostgreSQL + JSONB + pgvector | 服务化/分库/消息队列 |
 | 通信 | Java interface | Java interface + job status | HTTP/gRPC |
-| 搜索 | Lexicon + in-memory vector | Lexicon + pgvector | 在线学习/评测调参 |
-| LLM | 可配置模型 | 可配置模型 + promptVersion | 多模型评测/路由 |
-| SQL 校验 | Draft elements + parser sanity | relation-detector parser integration | 深层语义/成本/安全审计 |
-| SQL 生成 | 模板 draft | 模板 draft | 只允许受控润色，不让 LLM 改事实 |
+| 搜索 | 尚未实现；目标为 Lexicon + in-memory vector | Lexicon + pgvector | 在线学习/评测调参 |
+| LLM | 已有可配置 OpenAI-compatible extraction；catalog enrichment 尚未实现 | 可配置模型 + promptVersion | 多模型评测/路由 |
+| SQL 校验 | 尚未实现；目标为 Draft elements + parser sanity | relation-detector parser integration | 深层语义/成本/安全审计 |
+| SQL 生成 | 尚未实现；目标为模板 draft | 模板 draft | 只允许受控润色，不让 LLM 改事实 |

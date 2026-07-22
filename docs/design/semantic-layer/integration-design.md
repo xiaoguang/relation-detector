@@ -40,7 +40,7 @@ Semantica 官方 README 把 accountability、provenance、reasoning 和 governan
 | **LLM Semantic Enricher / Semantic Extraction** | **可选** | `semantic extract --provider codex-session` 只生成 prompt/bundle；`--provider openai-api` 才调用 LLM。LLM 用于从 evidence 推断业务实体名、生成描述、扩展同义词、识别指标候选；输出必须经过 normalizer/ref-closure 校验 |
 | **Semantic Catalog Store** | 否 | 纯 CRUD 存储。确定性读写，不需要 AI |
 | **Lexicon Manager** | 否 | 规则驱动的文本归一化和索引。列名拆分、注释提取是规则操作。同义词候选来自 LLM Enricher，Manager 只做存储和检索 |
-| **Embedding Indexer** | 否（但用 Embedding API） | 调用 Embedding API（如 text-embedding-3-small）生成向量。这不是 LLM 调用，不涉及文本生成。文本构造是模板化的 |
+| **Embedding Indexer** | 否（但用 Embedding API） | 调用配置选择的 Embedding provider/model 生成向量。这不是 LLM 调用，不涉及文本生成；文本构造保持模板化，model、dimensions 与输入预算写入索引元数据。 |
 | **Semantic Search** | 否 | 纯数学计算。cosine similarity + 加权求和是确定性公式。不需要 LLM |
 | **Question Understanding** | **是** | 核心 LLM 使用点。用户问题是自由形式的自然语言，必须用 LLM 提取实体、指标、时间范围、过滤条件。规则 NER 无法覆盖业务术语的多样性 |
 | **Query Planner** | 否（可选辅助） | 核心逻辑是图算法（join path 选择）和规则匹配。歧义消解时可选调用 LLM 做语义判断，但 Phase 1 Scope 用规则即可 |

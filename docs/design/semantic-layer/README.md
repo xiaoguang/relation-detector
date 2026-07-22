@@ -100,7 +100,7 @@ Question
 | 序号 | 子系统 | 文档 | 职责 |
 | --- | --- | --- | --- |
 | 1 | Scan Result Reader | [01-scan-result-reader.md](01-scan-result-reader.md) | 读取 relation-detector 输出，归一化为 ScanBundle。 |
-| 2 | Semantic Evidence Builder | [02-semantic-evidence-builder.md](02-semantic-evidence-builder.md) | 组织 relationship、lineage、metadata、注释 evidence graph。 |
+| 2 | Semantic Evidence Builder | [02-semantic-evidence-builder.md](02-semantic-evidence-builder.md) | 将 direct/derived relationship、lineage、naming、diagnostic 和 typed event candidate 物化为 evidence graph；metadata/comment 索引仍是后续能力。 |
 | 3 | LLM Semantic Enricher / Semantic Extraction | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 构造 evidence bundle / prompt，支持 codex-session、openai-api 和 normalized extraction result。 |
 | 4 | Semantic Catalog Store | [04-semantic-catalog-store.md](04-semantic-catalog-store.md) | 持久化 semantic objects、edges、evidence refs、review decisions。 |
 | 5 | Lexicon Manager | [05-lexicon-manager.md](05-lexicon-manager.md) | 管理业务词、同义词和对象映射。 |

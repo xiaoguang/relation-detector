@@ -1212,7 +1212,8 @@ SLL 路径在该压力下减少约 25% 墙钟时间。随后全量 sample-data C
 隔离运行约7分39秒，慢于并发8的6分54秒；当前机器的CPU超额订阅已经抵消额外并发。
 因此发布验收的并发上限继续为8，除非在固定代码、堆和工作负载的新A/B中证明墙钟时间明显下降。
 
-sample-data CLI 同样不能把 19 个 parser case 放入一个长生命周期 batch JVM。正式入口仍是：
+sample-data CLI 同样不能把全部 parser case 放入一个长生命周期 batch JVM；当前 case 数量以
+[Parser 能力与统计摘要](../../parser-audit/parser-comparison-summary.md)和当次 verification manifest 为准。正式入口仍是：
 
 ```bash
 bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh
@@ -1222,7 +1223,8 @@ bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sam
 独立 CLI JVM。默认每组 `-Xmx6g`，case 并发 1、scan 并发 2、scan worker 总预算 8；同一时间
 只能存在一个组。每组退出后才启动下一组，Oracle root 和四个 versioned profile 分别隔离。
 最终聚合器要求请求的 case 全部成功且无重复、每个报告引用的 direct/derived 输出真实存在，
-然后在原位置生成统一 `batch-report.json`、summary、observation parity 和 38 份全量 JSON。
+然后在原位置生成统一 `batch-report.json`、summary、observation parity 和每个请求 case 对应的
+direct/derived JSON；当前文件数量由 verification manifest 校验，不在本文复制。
 进程布局是验收实现细节，不改变 CLI JSON 或报告契约。
 
 `verify-release.sh`、`verify-all.sh`、`run-correctness-isolated.sh` 与

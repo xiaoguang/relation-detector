@@ -6,8 +6,13 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.WarningMessage;
 
 /**
- * CN: 承载一次有界 live profiling 请求的状态、证据和脱敏 warnings。
- * EN: Carries status, evidence, and sanitized warnings from one bounded live profiling request.
+ * CN: 承载外部 adaptor 对一次有界 live profiling 请求返回的不可信 status/evidence/warning
+ * envelope。core 只校验 failure warning 的 type/code，丢弃 plugin 的
+ * message/source/attributes，并按已验证状态重建固定脱敏 warning。
+ * EN: Carries the untrusted status/evidence/warning envelope returned by an external adaptor
+ * for one bounded live profiling request. Core validates only failure-warning type/code,
+ * discards plugin message/source/attributes, and rebuilds a fixed sanitized warning from the
+ * validated status.
  */
 public record ProfileOutcome(
         ProfileStatus status,

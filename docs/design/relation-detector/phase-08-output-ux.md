@@ -401,6 +401,8 @@ Warnings: 2
   截断。因此 table 是轻量人工阅读视图，不是窄终端自适应报表。
 - `includeEvidence` / `includeWarnings` / `includeObservationCounts` 的结构化隐藏契约属于
   JSON writer；当前 table 始终显示 relationship evidence type 和根 warning 摘要。
+- 没有 relationship 时输出 `No relationships detected.`，随后仍输出统一 warning 数量和每条根
+  warning 的 source、line、message；空结果不能丢失诊断明细。
 - `SQL_LOG_TABLE_CO_OCCURRENCE` / `SQL_LOG_COLUMN_CO_OCCURRENCE` 是兼容保留 evidence；当前生产 parser 默认不主动输出，普通 table 输出示例不再把它们作为现行关系来源展示。
 
 ## Warning 设计
@@ -550,11 +552,12 @@ README 至少包含：
 ## 测试设计
 
 - JSON schema 兼容性测试。
-- table 对已排序 `ScanResult` 的顺序保留测试。
-- table 长 endpoint/evidence 的固定宽度边界测试；如果未来引入折行/截断，再增加终端宽度契约。
+- `TableResultWriterTest` 验证已排序 `ScanResult` 的顺序保留、evidence 首次出现去重、长
+  endpoint/evidence 完整输出、空关系 warning 明细和无副作用。
+- 如果未来引入折行/截断，再增加终端宽度契约。
 - `minConfidence` 过滤测试。
-- `--format` 覆盖配置测试。
-- `--output` 写文件测试。
+- `TableOutputCliTest` 验证 `--format table` 覆盖 YAML、`--output` 写文件和
+  `--direct-output` 仅支持 JSON。
 - warning 摘要测试。
 - 错误码测试。
 - README 示例命令 smoke test。

@@ -6,7 +6,7 @@
 
 **职责：** 为语义对象构造 embedding 文本并写入向量索引，供 Semantic Search 做语义相似度召回。
 
-**LLM 依赖：** 否。但使用 Embedding API（如 text-embedding-3-small）。
+**LLM 依赖：** 否。但使用由配置选择的 Embedding API/provider；模型名、向量维度和输入预算不是固定架构常量。
 
 **为什么不是 LLM：** Embedding API 和 LLM API 是不同的能力。Embedding 是将文本转为向量，不涉及文本生成。文本构造是模板化的确定性操作。
 
@@ -19,7 +19,7 @@
   ↓ 输入: SemanticCatalog.getFullCatalog() → 所有语义对象
 
 [Embedding Indexer]
-  ↓ 调用 Embedding API: text-embedding-3-small
+  ↓ 调用配置的 Embedding API / model
   ↓ 持久化: semantic-embeddings.jsonl
 
 下游: Semantic Search
@@ -70,18 +70,18 @@ flowchart TD
     D3 --> E
     D4 --> E
     D5 --> E
-    E --> F{文本长度 > 2048?}
+    E --> F{文本超过 provider 输入预算?}
     F -- 是 --> G[截断 + 记录 truncated=true]
     F -- 否 --> H[保留完整文本]
     G --> I[加入 batch]
     H --> I
-    I --> J{batch 满 2048 条?}
+    I --> J{达到配置或 provider batch 上限?}
     J -- 是 --> K[调用 Embedding API]
     J -- 否 --> L{还有更多对象?}
     L -- 是 --> B
     L -- 否 --> K
     K --> M{API 调用成功?}
-    M -- 否 --> N[重试 3 次]
+    M -- 否 --> N[按配置的有限重试策略处理]
     N --> M
     M -- 是 --> O[组装 EmbeddingRecord]
     O --> P[持久化 semantic-embeddings.jsonl]
@@ -112,13 +112,13 @@ flowchart TD
     F -- no --> H[keep full text]
     G --> I[add to batch]
     H --> I
-    I --> J{batch full at 2048 items?}
+    I --> J{batch reached configured or provider limit?}
     J -- yes --> K[Call Embedding API]
     J -- no --> L{More objects?}
     L -- yes --> B
     L -- no --> K
     K --> M{API call succeeded?}
-    M -- no --> N[Retry 3 times]
+    M -- no --> N[Retry with configured finite policy]
     N --> M
     M -- yes --> O[Assemble EmbeddingRecord]
     O --> P[persist semantic-embeddings.jsonl]
@@ -142,12 +142,12 @@ sequenceDiagram
     CS->>EI: 语义目录
     EI->>EI: 遍历所有语义对象
     EI->>EI: 构造 embedding 文本（模板化）
-    loop 每 2048 条一批
+    loop 按配置或 provider 上限分批
         EI->>API: embed(batch_texts)
         alt API 失败
-            API-->>EI: 重试 3 次（指数退避）
+            API-->>EI: 按配置执行有限重试与退避
         end
-        API-->>EI: batch_embeddings[2048][1536]
+        API-->>EI: batch_embeddings[batchSize][configuredDimensions]
     end
     EI->>EI: 持久化 semantic-embeddings.jsonl
     SS->>EI: getEmbeddings(allObjectIds)
@@ -169,12 +169,12 @@ sequenceDiagram
     CS->>EI: Semantic Catalog
     EI->>EI: Iterate all semantic objects
     EI->>EI: build embedding text from templates
-    loop batch every 2048 items
+    loop batch by configured or provider limit
         EI->>API: embed(batch_texts)
         alt API failed
-            API-->>EI: Retry 3 times with exponential backoff
+            API-->>EI: Retry with configured finite attempts and backoff
         end
-        API-->>EI: batch_embeddings[2048][1536]
+        API-->>EI: batch_embeddings[batchSize][configuredDimensions]
     end
     EI->>EI: persist semantic-embeddings.jsonl
     SS->>EI: getEmbeddings(allObjectIds)
@@ -257,11 +257,11 @@ void embeddingQualitySelfTest() {
 
 **自测通过标准：** 至少 80% 的已知查询 top 1 召回正确对象。低于 80% 时检查 embedding 模板、lexicon 覆盖或模型选择。
 
-## 5. LLM 决策
+## 8. LLM 决策
 
-**不使用 LLM。** 使用 Embedding API（text-embedding-3-small），这是 ML 推理而非 LLM 文本生成。文本构造是模板化规则。
+**不使用 LLM。** 使用配置选择的 Embedding API，这是向量推理而非 LLM 文本生成。文本构造是模板化规则，provider/model 及维度必须写入索引元数据以支持重建和审计。
 
-## 6. 测试验收
+## 9. 测试验收
 
 | 测试场景 | 预期 |
 | --- | --- |
@@ -269,4 +269,4 @@ void embeddingQualitySelfTest() {
 | 增量索引 | 只对变化对象重新生成 embedding |
 | 维度一致 | 所有 embedding 维度 = config.dimensions |
 | 文本模板一致性 | 同一对象多次生成相同的 textForEmbedding |
-| API 失败重试 | 重试 3 次，仍失败跳过该 batch |
+| API 失败重试 | 只执行配置的有限重试；耗尽后记录失败，不把缺失向量伪装成成功索引 |

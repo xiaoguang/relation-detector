@@ -1132,7 +1132,8 @@ CREATE TABLE semantic_embedding (
   object_id text PRIMARY KEY,
   object_type text,
   text_for_embedding text,
-  embedding vector(1536),
+  embedding vector,
+  embedding_dimensions int,
   model text,
   updated_at timestamp
 );
