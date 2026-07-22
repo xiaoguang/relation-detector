@@ -2,8 +2,11 @@ package com.relationdetector.core.scan;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,8 +15,14 @@ import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
@@ -21,6 +30,54 @@ import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
 
 class StatementExecutionServiceProvenanceTest {
+    @Test
+    void directStructuredParserAcceptsAbsoluteSourceOwnedByInputStatement() {
+        String source = Path.of("target", "external-input", "query.sql")
+                .toAbsolutePath().normalize().toString();
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT o.id FROM orders o JOIN customers c ON c.id = o.customer_id",
+                StatementSourceType.PLAIN_SQL,
+                source,
+                1,
+                1,
+                Map.of("sourceFile", source, "sourceFileLineCount", 1L));
+
+        StatementExecutionOutcome outcome = new StatementExecutionService().executeSql(
+                new CommonTokenEventStructuredSqlParser(),
+                statement,
+                null,
+                Set.of());
+
+        assertFalse(outcome.relationshipCandidates().isEmpty());
+    }
+
+    @Test
+    void directStructuredParserPathRejectsInvalidResultAtomically() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT * FROM orders", StatementSourceType.PLAIN_SQL,
+                "query.sql", 1, 1, Map.of());
+        List<WarningMessage> warnings = new ArrayList<>();
+        AdaptorContext context = new AdaptorContext(null, Map.of(), warnings::add);
+
+        assertThrows(AdaptorContractException.class, () -> new StatementExecutionService().executeSql(
+                (record, parserContext) -> {
+                    parserContext.warn(WarningMessage.warn(
+                            WarningType.PARSE_WARNING, "PLUGIN_WARNING", "must remain detached",
+                            record.sourceName(), record.startLine()));
+                    return new StructuredParseResult(
+                            "plugin", "common", record.sourceName(),
+                            List.of(new RowsetEvent(
+                                    StructuredParseEventType.ROWSET_REFERENCE,
+                                    SourceProvenance.source(record.sourceName(), record.startLine()),
+                                    "FROM", "", "", "", "", "", "")),
+                            List.of(), Map.of());
+                },
+                statement,
+                context,
+                Set.of()));
+        assertTrue(warnings.isEmpty());
+    }
+
     @Test
     void directStructuredParserPathUsesNormalizedQueryProvenance() {
         SqlStatementRecord statement = new SqlStatementRecord(

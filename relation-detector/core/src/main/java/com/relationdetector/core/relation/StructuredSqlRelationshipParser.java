@@ -9,22 +9,22 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.core.parser.StructuredSqlParseExecutor;
 
 /**
  * 基于结构事件的 SQL relationship parser facade。
  *
- * <p>CN: 它把 StructuredSqlParser 产出的事件交给 StructuredRelationshipExtractor。名字中
- * 的 token-event 表示统一事件模型；当 StructuredSqlParser 是 full-grammar 时也走同一
- * 语义抽取器。
+ * <p>CN: 它先通过共享执行边界校验StructuredSqlParser的typed result与provenance，再把可信事件交给
+ * StructuredRelationshipExtractor。它不选择parser、不执行fallback，也不拥有token/full模式语义。
  *
  * <p>EN: SQL relationship parser facade backed by structured events. It feeds
- * events from a StructuredSqlParser into StructuredRelationshipExtractor. The
- * token-event name refers to the shared event model; full-grammar parsers use
- * the same semantic extractor.
+ * a StructuredSqlParser through the shared validated execution boundary before feeding trusted events into
+ * StructuredRelationshipExtractor. It does not select parsers, perform fallback, or own token/full mode semantics.
  */
 public final class StructuredSqlRelationshipParser implements SqlRelationParser {
     private final StructuredSqlParser structuredParser;
     private final StructuredRelationshipExtractor relationVisitor;
+    private final StructuredSqlParseExecutor parseExecutor = new StructuredSqlParseExecutor();
 
     public StructuredSqlRelationshipParser(StructuredSqlParser structuredParser) {
         this(structuredParser, new StructuredRelationshipExtractor());
@@ -44,7 +44,7 @@ public final class StructuredSqlRelationshipParser implements SqlRelationParser 
 
     @Override
     public List<RelationshipCandidate> parse(SqlStatementRecord statement, AdaptorContext context) {
-        StructuredParseResult structured = structuredParser.parseSql(statement, context);
+        StructuredParseResult structured = parseExecutor.parse(structuredParser, statement, context);
         return relationVisitor.extract(statement, structured);
     }
 }

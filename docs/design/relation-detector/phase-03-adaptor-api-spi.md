@@ -151,11 +151,19 @@ public interface ObjectDefinitionCollector {
   SQLState、vendorCode、exceptionClass 和对象身份属性，并由 `LiveDiagnosticSanitizer`
   按 operation 重建固定消息与 source。
 
-其余 parser-facing SPI 由 `AdaptorParseResultContractValidator` 闭环：
-`SqlLogExtractor` 的 stream 在提交前完整 materialize，`DialectScriptFramer`、
-`StructuredSqlParser` 与 `StructuredDdlParser` 的 statement/event/provenance/attributes/warnings
-先 deep-detach，再执行类型、来源和 warning allowlist 校验。任一元素违约都会使该次 outcome
-整体失败，前序 statement、event 和 warning 均不会进入 scan。
+其余 parser-facing SPI 也按完整 outcome 处理。`SqlLogExtractor` 的 stream 在提交前完整 materialize；
+`DialectScriptFramer` 与 `StructuredDdlParser` 的 statement/event/provenance/attributes/warnings 先
+deep-detach，再执行类型、来源和 warning allowlist 校验。任一元素违约都会使该次 outcome 整体失败，
+前序 statement、event 和 warning 均不会进入 scan。
+
+`StructuredSqlParser` 的所有 core consumer 共用 `StructuredSqlParseExecutor`：production runner、
+`StatementExecutionService` direct overload 和 `StructuredSqlRelationshipParser` facade 都先使用 detached
+context，再由 `AdaptorParseResultContractValidator` 校验完整 typed result。边界按 sealed event family
+验证必需 payload，并在事实抽取前拒绝 statement 行范围、source/object/block identity 或 parser-origin
+不一致的 provenance。common correctness 的 direct 路径因此与 production runner 具有相同 SPI isolation；
+普通 runtime failure 仍只能在 parser selection 层触发 fallback，contract violation 不得被 fallback 掩盖。
+该边界校验 parser 输出是否与输入 statement 的 source 一致，不把输入本身拥有的本地绝对路径
+重新分类为 adaptor 违约；公开 artifact 的路径可移植性仍由 output / verification 契约独立检查。
 
 ### SqlLogExtractor
 
@@ -280,10 +288,10 @@ lexeme，不能按 rule name、反射或 raw SQL 文本作结构推断。
 `SqlServerScriptSlicePlanner`、`CommonScriptSlicePlanner` 分别拥有各自方言的 slice 算法。
 这些 planner 是 core 内部职责类，不改变 `DialectScriptFramer` SPI。
 
-当前 `ScriptFileExtractor` 直接转发 `ScriptFrameResult.statements/warnings`，尚未对外部
-framer 返回的 null result、statement provenance、warning envelope 和嵌套 attributes 做原子契约校验。
-record 构造器的顶层 `List.copyOf` 只防止列表结构被后续改写，不能证明其元素语义合法。
-这是实现缺口，不是 framer 可以生成事实或修改 server SQL 的授权。
+当前 `ScriptFileExtractor` 已通过 `AdaptorParseResultContractValidator.validateFrame(...)` 对完整
+`ScriptFrameResult` 做原子校验：null result、statement line/source/provenance、warning envelope 和嵌套
+attributes 全部通过后才转发。该校验只保护 framing 结果的结构与来源，不授权 framer 生成事实、解释
+SQL 结构或修改 server SQL。
 
 script framer 不改变 server SQL 内显式写出的 catalog、schema、quote 或标识符拼写。后续
 SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipeline 可以使用已经规范化且
@@ -328,6 +336,10 @@ SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipe
 `ParserBundleSelector` 允许普通 full-grammar runtime failure 回退到 token-event，但会丢弃失败尝试的
 warning，并使用不含插件异常消息的固定 fallback 文本；`AdaptorContractException` 表示 SPI 契约违约，
 必须原样上抛，禁止通过 fallback 掩盖。
+
+fallback `SqlRelationParser` 的 candidate/evidence 由 `AdaptorResultContractValidator` 校验 family、
+source type、endpoint 和 score；每条 evidence 的规范化 `source` 还必须等于输入 statement 的规范化
+source name。任何跨 source 注入会使整个 fallback outcome 原子失败，前序 candidate 与 warning 均不提交。
 
 ### DatabaseDdlCollector
 

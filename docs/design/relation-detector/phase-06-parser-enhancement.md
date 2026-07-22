@@ -357,18 +357,24 @@ flowchart TD
   namingEnhancer --> relMerge["RelationshipMerger"]
 ```
 
-当前 `ScanEngine.scan(...)` 只保留对外编排入口；source collection 进入 `SourceCollectorPipeline`，单条 SQL/DDL 进入 `StatementParsePipeline`，再由 `StatementExecutionService` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)` 或 DDL runner。SQL 语句只做一次结构化解析，同时得到 relationship candidates 和可供 Data Lineage 使用的 `StructuredParseResult`。SQL naming rule 在 statement 层不执行，只在 scan-level relationship merge 后由 `EvidenceEnhancementService` 统一生成 top-level naming evidence。这样 SQL/DML 的 parser mode、profile selection、fallback warning 和 diagnostics 在同一条语句内保持一致。
+当前生产 `ScanEngine.scan(...)` 只保留对外编排入口；source collection 进入 `SourceCollectorPipeline`，单条 SQL/DDL 进入 `StatementParsePipeline`，再由 `StatementExecutionService` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)` 或 DDL runner。生产 SQL 语句只做一次结构化解析，同时得到 relationship candidates 和可供 Data Lineage 使用的 `StructuredParseResult`。SQL naming rule 在 statement 层不执行，只在 scan-level relationship merge 后由 `EvidenceEnhancementService` 统一生成 top-level naming evidence。这样生产 scan 中 SQL/DML 的 parser mode、profile selection、fallback warning 和 diagnostics 在同一条语句内保持一致。
 
 `ScanConfig` 只在 parser bundle 选择和 typed log-noise policy 的实际拥有者路径中使用；SQL runner
-直接把原始 `SqlStatementRecord` 交给 parser。迁移期的空 policy-attribute helper 与 direct SQL
-execution 无效 config overload 已删除，correctness 也调用同一无 config direct API。fallback
-relationship parser 获得 detached context，其 candidate 与 warning 全批通过
+直接把原始 `SqlStatementRecord` 交给共享 parser 执行边界。迁移期的空 policy-attribute helper 与 direct SQL
+execution 无效 config overload 已删除。correctness 的 common fixture 调用无 config direct API，
+其它方言/profile fixture 调用 production adaptor/runner API；两类入口都复用
+`StructuredSqlParseExecutor`。fallback relationship parser 获得 detached context，其 candidate 与 warning 全批通过
 `AdaptorResultContractValidator` 后才转发，因此 parser 失败或 SPI 违约不会留下前序部分状态。
 
-`StructuredSqlParser` 与 `StructuredDdlParser` 也经过独立的全批契约边界：runner 使用 detached
-context 和临时 warning buffer，`AdaptorParseResultContractValidator` 校验整个
-`StructuredParseResult` 的 event/provenance/attributes/warnings 后，才提取事实并提交 warning。
-任何契约违约均不会留下前序部分状态。
+所有 `StructuredSqlParser` consumer 与 `StructuredDdlParser` runner 都经过独立的全批契约边界：
+SQL 的 production runner、direct statement service 和 relationship facade 共用 `StructuredSqlParseExecutor`，
+使用 detached context 和临时 warning buffer；DDL runner 使用相同 validator 的 DDL 入口。
+`AdaptorParseResultContractValidator` 校验整个 `StructuredParseResult` 的 event family、必需 typed payload、
+statement source/line/object/block provenance、attributes 与 warnings 后，才允许事实抽取和 warning 提交。
+任何 contract violation 都不会留下前序部分状态，也不得触发 token-event fallback。
+对外部文件，parser event 可以保留输入 statement 已声明的绝对 `sourceFile`；validator 要求两者精确
+绑定，但不在 parser trust boundary 把输入路径当作插件伪造。公开 JSON / verification artifact 的绝对路径
+禁止仍是独立的输出契约。
 
 `SourceCollectorPipeline` 在 statement task 内让 `AdaptorContractException` 越过普通 parse warning
 recovery；`ScanTaskExecutor` 在串行路径直接传播，在并行 `Future.get()` 路径识别 cause 后原样传播。
@@ -600,7 +606,7 @@ CorrectnessFixtureExecutor
   -> GoldenWriter             // only writes expected JSON when updateCorrectnessGold=true
 ```
 
-SQL correctness fixture 通过 `StatementExecutionService` 执行，与生产 scan 使用同一 structured parser、relationship 和 lineage 抽取入口。SQL naming rule 不在 statement 层提前执行；correctness 与正式 scan 都在合并 relationship candidates 后，由 scan-level `EvidenceEnhancementService` 调用 `NamingEvidenceExtractor` 一次生成 `NamingEvidencePool`。DDL fixture 仍通过 `StatementExecutionService` 执行，保持 parser-outcome 验收语义，其 typed DDL inventory 可产生 DDL naming observation，但不额外引入 scan-level metadata enhancement。
+SQL correctness fixture 通过 `StatementExecutionService` 执行，并复用 structured parser、relationship、lineage 与 naming enhancement 语义。方言/profile fixture 进入 production runner；common fixture 使用 direct structured-parser overload，但该入口与 runner 共用 `StructuredSqlParseExecutor` 的 detached context、完整 result validator 和延迟 warning 提交边界。因此 common correctness 可同时保护 parser facts/golden 与 direct SPI trust boundary。SQL naming rule 不在 statement 层提前执行；correctness 与正式 scan 都在合并 relationship candidates 后，由 scan-level `EvidenceEnhancementService` 调用 `NamingEvidenceExtractor` 一次生成 `NamingEvidencePool`。DDL fixture 仍通过 `StatementExecutionService` 和 DDL runner 执行，保持 parser-outcome 验收语义，其 typed DDL inventory 可产生 DDL naming observation，但不额外引入 scan-level metadata enhancement。
 
 structured parse 完成后统一执行 `StructuredParseProvenanceNormalizer`：显式 routine/trigger/rule/DDL/view 对象类型保持不变；有 typed write event 的普通 statement 是 `SQL_WRITE`；只有 rowset/projection/predicate 的普通 statement 是 `QUERY`；无 typed 证据时为 `UNKNOWN`。Script Framer 只负责 statement/object framing，不把 `PLAIN_SQL` / `NATIVE_LOG` / `MIGRATION` 预设为写入。
 
@@ -680,9 +686,14 @@ sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser
 ```text
 SqlRelationParserRunner
   -> selected StructuredSqlParser
-  -> StructuredSqlRelationshipParser
-  -> StructuredSqlParser.parseSql(...)
+  -> StructuredSqlParseExecutor
+  -> StructuredSqlParser.parseSql(...), detached validation
   -> StructuredRelationshipExtractor.extract(...)
+
+StructuredSqlRelationshipParser / StatementExecutionService direct overload
+  -> StructuredSqlParseExecutor
+  -> StructuredSqlParser.parseSql(...), detached validation
+  -> StructuredRelationshipExtractor / StructuredDataLineageExtractor
 ```
 
 token-event SQL parser 内部：

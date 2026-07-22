@@ -149,6 +149,7 @@ abstract class ScriptFramingSupport {
 
     private StatementSourceType markerSourceType(String source, StatementSourceType fallback) {
         if (startsWithIgnoreCase(source, "TRIGGER:")) return StatementSourceType.TRIGGER;
+        if (startsWithIgnoreCase(source, "FUNCTION:")) return StatementSourceType.FUNCTION;
         if (startsWithIgnoreCase(source, "ROUTINE:") || startsWithIgnoreCase(source, "PROCEDURE:")) {
             return StatementSourceType.PROCEDURE;
         }
@@ -157,7 +158,7 @@ abstract class ScriptFramingSupport {
 
     private String markerBlockId(String source) {
         if (source == null) return "";
-        for (String prefix : List.of("ROUTINE:", "TRIGGER:", "PROCEDURE:")) {
+        for (String prefix : List.of("ROUTINE:", "TRIGGER:", "PROCEDURE:", "FUNCTION:")) {
             if (startsWithIgnoreCase(source, prefix)) return source.substring(prefix.length()).trim();
         }
         return source.trim();

@@ -11,7 +11,7 @@
 - 从 top-level `namingEvidence` 构建 `NamingEvidenceFact`，其中包含 direct 和 derived naming evidence。
 - 从 `derivedRelationships` / `derivedDataLineages` 构建 `DerivedRelationshipFact` / `DerivedLineageFact`。
 - 从 `warnings` 构建 `Diagnostic` fact。
-- 从 deterministic `SemanticEventExtractor` 输出构建 `SemanticEventCandidate` fact；KG writer 将它渲染为 `Event` 节点。eventCandidates 只来自 direct non-control write lineage，derived lineage 只能作为 supporting evidence。event source/operation 只读取 typed provenance 与 `mappingKind`；缺失时使用 `SQL_WRITE/WRITE`，event kind 固定为 `SQL_WRITE_OPERATION`，不读取 detail、路径、source 前缀或表列名推断结构。
+- 从 deterministic `SemanticEventExtractor` 输出构建 `SemanticEventCandidate` fact；KG writer 将它渲染为 `Event` 节点。eventCandidates 只来自 direct non-control write lineage，derived lineage 只能作为 supporting evidence。event source/operation 只读取 typed provenance 与 `mappingKind`；缺失时使用 `SQL_WRITE/WRITE`，event kind 固定为 `SQL_WRITE_OPERATION`，不读取 detail、路径、source 前缀或表列名推断结构。一个 merged lineage 的 raw observations 按完整 typed source identity 分组：不同 source 拆成独立 event，同一 source 的多个 mapping kind 聚合到同一 event；排序和稳定 ID 不依赖 observation 输入顺序。
 - 从每条记录的 `rawEvidence` 优先抽取 `EvidenceReference`；没有 `rawEvidence` 时回退 grouped `evidence`。
 - 保存原始 relation-detector JSON payload snapshot，供后续审计和 KG materialization 使用。
 

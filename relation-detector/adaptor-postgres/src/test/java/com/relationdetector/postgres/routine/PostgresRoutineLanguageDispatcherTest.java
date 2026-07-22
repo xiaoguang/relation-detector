@@ -16,6 +16,16 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 
 class PostgresRoutineLanguageDispatcherTest {
     @Test
+    void descriptorKeepsInputOwnedQualifiedObjectProvenance() {
+        PostgresRoutineDescriptor descriptor = new PostgresRoutineDescriptor(
+                "plpgsql", new PlPgSqlStringBody("BEGIN RETURN; END;", 4),
+                "FUNCTION", "reconcile_orders",
+                Map.of("sourceObjectName", "finance.reconcile_orders"));
+
+        assertEquals("finance.reconcile_orders", descriptor.sourceObjectName());
+    }
+
+    @Test
     void plPgSqlBodyUsesInclusiveAbsoluteLineRange() {
         List<SqlStatementRecord> captured = new ArrayList<>();
         PlPgSqlBodyParser bodyParser = (body, context, embedded) -> {

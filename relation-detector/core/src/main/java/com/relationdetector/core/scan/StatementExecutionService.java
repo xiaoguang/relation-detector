@@ -19,10 +19,9 @@ import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.parser.StructuredSqlParseExecutor;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
-import com.relationdetector.core.provenance.SourceProvenanceValidator;
-import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 
 /**
  * CN: 使一条 SQL 或 DDL statement 经过与生产 scan 相同的 structured parser、relationship 与 lineage 链路；naming 在 scan 级只运行一次。
@@ -33,9 +32,7 @@ import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 public final class StatementExecutionService {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
-    private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
-    private final StructuredParseProvenanceNormalizer provenanceNormalizer =
-            new StructuredParseProvenanceNormalizer();
+    private final StructuredSqlParseExecutor structuredParseExecutor = new StructuredSqlParseExecutor();
 
     public StatementExecutionOutcome executeSql(
             DatabaseAdaptor adaptor,
@@ -75,8 +72,7 @@ public final class StatementExecutionService {
             AdaptorContext context,
             Set<TableId> knownPhysicalTables
     ) {
-        StructuredParseResult structured = provenanceNormalizer.normalize(
-                statement, parser.parseSql(statement, context));
+        StructuredParseResult structured = structuredParseExecutor.parse(parser, statement, context);
         IdentifierRules identifierRules = value ->
                 value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT);
         NamespaceContext namespace = namespace(statement, context);
@@ -84,8 +80,7 @@ public final class StatementExecutionService {
                 .extract(statement, structured);
         List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor(identifierRules, namespace)
                 .extract(statement, structured, knownPhysicalTables);
-        return new StatementExecutionOutcome(
-                relationships, lineages, List.of(), provenanceValidator.validate(statement, structured));
+        return new StatementExecutionOutcome(relationships, lineages, List.of(), List.of());
     }
 
     public StatementExecutionOutcome executeDdlText(

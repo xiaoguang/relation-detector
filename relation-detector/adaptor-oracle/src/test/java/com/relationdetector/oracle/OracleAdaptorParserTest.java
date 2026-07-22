@@ -1481,7 +1481,8 @@ class OracleAdaptorParserTest {
     }
 
     private SqlStatementRecord statement(String sql) {
-        return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "oracle-test.sql", 1, 1,
+        return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "oracle-test.sql", 1,
+                sql.lines().count(),
                 java.util.Map.of());
     }
 

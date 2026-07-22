@@ -13,7 +13,10 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.DynamicSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.PredicateGuard;
 import com.relationdetector.contracts.parse.ProjectionEvent;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.ScriptFrameRequest;
@@ -64,6 +67,8 @@ public final class AdaptorParseResultContractValidator {
             StructuredParseEventType.DDL_COLUMN);
     private static final Set<StructuredParseEventType> DYNAMIC_EVENTS = EnumSet.of(
             StructuredParseEventType.DYNAMIC_SQL);
+    private static final Set<String> ROUTINE_OBJECT_SUBTYPES = Set.of(
+            "PROCEDURE", "FUNCTION", "PACKAGE", "PACKAGE_BODY", "EVENT");
 
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
@@ -98,7 +103,8 @@ public final class AdaptorParseResultContractValidator {
             List<WarningMessage> callbackWarnings
     ) {
         require(statement != null, "structured SQL statement is null");
-        return validateStructured(raw, statement.sourceName(), callbackWarnings, "structured SQL result");
+        return validateStructured(raw, statement.sourceName(), callbackWarnings,
+                "structured SQL result", statement, statement.endLine());
     }
 
     public StructuredParseResult validateDdl(
@@ -108,7 +114,8 @@ public final class AdaptorParseResultContractValidator {
             List<WarningMessage> callbackWarnings
     ) {
         require(ddl != null, "structured DDL text is null");
-        return validateStructured(raw, sourceName, callbackWarnings, "structured DDL result");
+        return validateStructured(raw, sourceName, callbackWarnings,
+                "structured DDL result", null, Long.MAX_VALUE);
     }
 
     List<WarningMessage> validateParserWarnings(
@@ -123,7 +130,9 @@ public final class AdaptorParseResultContractValidator {
             StructuredParseResult raw,
             String expectedSource,
             List<WarningMessage> callbackWarnings,
-            String boundary
+            String boundary,
+            SqlStatementRecord statement,
+            long maximumLine
     ) {
         require(raw != null, boundary + " is null");
         requireText(raw.backend(), boundary + " backend");
@@ -133,7 +142,7 @@ public final class AdaptorParseResultContractValidator {
                 boundary + " source name does not match the input");
         require(raw.events() != null, boundary + " event list is null");
         List<StructuredSqlEvent> events = raw.events().stream()
-                .map(event -> copyEvent(event, expectedSource, boundary + " event"))
+                .map(event -> copyEvent(event, expectedSource, boundary + " event", statement, maximumLine))
                 .toList();
         List<WarningMessage> warnings = new ArrayList<>();
         warnings.addAll(validateWarnings(callbackWarnings, expectedSource, boundary + " callback warning"));
@@ -182,21 +191,208 @@ public final class AdaptorParseResultContractValidator {
     private StructuredSqlEvent copyEvent(
             StructuredSqlEvent event,
             String expectedSource,
-            String boundary
+            String boundary,
+            SqlStatementRecord statement,
+            long maximumLine
     ) {
         require(event != null, boundary + " is null");
         require(event.type() != null, boundary + " type is missing");
         require(event.provenance() != null, boundary + " provenance is missing");
         require(eventTypeMatchesRecord(event), boundary + " type does not match its sealed record");
+        validateEventPayload(event, boundary);
         SourceProvenance provenance = event.provenance();
-        require(java.util.Objects.equals(provenance.sourceName(), expectedSource),
+        require(java.util.Objects.equals(
+                        SourceNameNormalizer.normalize(provenance.sourceName()),
+                        SourceNameNormalizer.normalize(expectedSource)),
                 boundary + " source name does not match the input");
+        validateProvenance(provenance, statement, maximumLine, boundary);
         SourceProvenance detached = new SourceProvenance(
                 provenance.sourceName(), provenance.line(), provenance.statementScope(),
                 provenance.sourceFile(), provenance.sourceStatementId(), provenance.sourceBlockId(),
                 provenance.sourceObjectType(), provenance.sourceObjectName(), provenance.tokenEventNative(),
                 provenance.fullGrammarNative(), provenance.fullGrammarContextSource());
         return event.withProvenance(detached);
+    }
+
+    /**
+     * CN: 按sealed event类型验证事实消费者真正依赖的typed payload；输入是尚未信任的event，成功时无
+     * 副作用，字段缺失或类型组合冲突时抛出AdaptorContractException，且不会提交部分parser结果。
+     *
+     * <p>EN: Validates the typed payload required by downstream fact consumers for one untrusted sealed event.
+     * It has no success-side effects and throws AdaptorContractException on missing fields or incompatible shapes,
+     * before any partial parser result can be committed.
+     */
+    private void validateEventPayload(StructuredSqlEvent event, String boundary) {
+        switch (event.type()) {
+            case TABLE_REFERENCE, ROWSET_REFERENCE ->
+                    require(anyText(event.qualifiedTable(), event.table()), boundary + " rowset table is missing");
+            case CTE_DECLARATION, IGNORED_ROWSET ->
+                    requireText(event.name(), boundary + " local rowset name");
+            case LOCAL_TEMP_TABLE_DECLARATION ->
+                    require(anyText(event.qualifiedTable(), event.table(), event.name()),
+                            boundary + " local temporary table is missing");
+            case TRIGGER_TARGET_TABLE ->
+                    require(anyText(event.qualifiedTable(), event.table()), boundary + " trigger table is missing");
+            case TRIGGER_PSEUDO_ROWSET -> {
+                requireText(event.name(), boundary + " trigger pseudo-rowset name");
+                requireText(event.targetTable(), boundary + " trigger pseudo-rowset target");
+            }
+            case COLUMN_EQUALITY, PREDICATE_EQUALITY, EXISTS_PREDICATE -> {
+                requireExpressionSource(event.left(), boundary + " left source");
+                requireExpressionSource(event.right(), boundary + " right source");
+                validateGuards(event.predicateGuards(), boundary);
+            }
+            case JOIN_USING_COLUMNS -> {
+                requireText(event.left().alias(), boundary + " USING left alias");
+                requireText(event.right().alias(), boundary + " USING right alias");
+                require(!event.usingColumns().isEmpty(), boundary + " USING columns are empty");
+                event.usingColumns().forEach(column -> requireText(column, boundary + " USING column"));
+                validateGuards(event.predicateGuards(), boundary);
+            }
+            case IN_SUBQUERY_PREDICATE -> {
+                require(event.verifiedColumnSubquery(), boundary + " IN subquery is not verified");
+                validateSources(event.outerSources(), boundary + " IN outer sources", true);
+                validateSources(event.innerSources(), boundary + " IN inner sources", true);
+                validateGuards(event.predicateGuards(), boundary);
+            }
+            case TUPLE_IN_SUBQUERY_PREDICATE -> {
+                require(event.verifiedColumnSubquery(), boundary + " tuple-IN subquery is not verified");
+                validateSources(event.outerSources(), boundary + " tuple-IN outer sources", true);
+                validateSources(event.innerSources(), boundary + " tuple-IN inner sources", true);
+                require(event.outerSources().size() == event.innerSources().size(),
+                        boundary + " tuple-IN arity does not match");
+                validateGuards(event.predicateGuards(), boundary);
+            }
+            case WRITE_TARGET ->
+                    require(anyText(event.qualifiedTable(), event.table()), boundary + " write target is missing");
+            case UPDATE_ASSIGNMENT, INSERT_SELECT_MAPPING, MERGE_WRITE_MAPPING -> {
+                require(anyText(event.targetTable(), event.targetAlias()), boundary + " write owner is missing");
+                requireText(event.targetColumn(), boundary + " write target column");
+                requireText(event.mappingKind(), boundary + " write mapping kind");
+                validateTrace(event.expression(), boundary + " write expression", false);
+            }
+            case PROJECTION_ITEM -> {
+                require(anyText(event.outputColumn(), event.outputAlias()), boundary + " projection output is missing");
+                validateTrace(event.expression(), boundary + " projection expression", false);
+            }
+            case EXPRESSION_SOURCE -> validateTrace(event.expression(), boundary + " expression source", true);
+            case DDL_FOREIGN_KEY -> {
+                requireText(event.sourceTable(), boundary + " foreign-key source table");
+                requireText(event.sourceColumn(), boundary + " foreign-key source column");
+                requireText(event.targetTable(), boundary + " foreign-key target table");
+                requireText(event.targetColumn(), boundary + " foreign-key target column");
+                validateComposite(event, boundary);
+            }
+            case DDL_INDEX -> {
+                requireText(event.table(), boundary + " index table");
+                requireText(event.column(), boundary + " index column");
+                requireText(event.role(), boundary + " index role");
+                requireText(event.kind(), boundary + " index kind");
+                validateComposite(event, boundary);
+            }
+            case DDL_COLUMN -> {
+                requireText(event.table(), boundary + " DDL column table");
+                requireText(event.column(), boundary + " DDL column");
+                validateComposite(event, boundary);
+            }
+            case DYNAMIC_SQL -> requireText(event.reason(), boundary + " dynamic SQL reason");
+        }
+    }
+
+    private void validateProvenance(
+            SourceProvenance provenance,
+            SqlStatementRecord statement,
+            long maximumLine,
+            String boundary
+    ) {
+        long minimumLine = statement == null ? 1L : statement.startLine();
+        require(provenance.line() >= minimumLine && provenance.line() <= maximumLine,
+                boundary + " source line is outside the input");
+        require(!(provenance.tokenEventNative() && provenance.fullGrammarNative()),
+                boundary + " parser origin is contradictory");
+        if (provenance.fullGrammarNative()) {
+            requireText(provenance.fullGrammarContextSource(), boundary + " full-grammar context source");
+        }
+        if (statement == null) {
+            return;
+        }
+        requireMatchesStatement(provenance.sourceFile(), statement, "sourceFile", true, boundary);
+        requireMatchesStatement(provenance.sourceStatementId(), statement, "sourceStatementId", false, boundary);
+        requireMatchesStatement(provenance.sourceBlockId(), statement, "sourceBlockId", false, boundary);
+        requireSourceObjectTypeMatchesStatement(provenance.sourceObjectType(), statement, boundary);
+        requireMatchesStatement(provenance.sourceObjectName(), statement, "sourceObjectName", false, boundary);
+    }
+
+    private void requireSourceObjectTypeMatchesStatement(
+            String actual,
+            SqlStatementRecord statement,
+            String boundary
+    ) {
+        if (blank(actual)) {
+            return;
+        }
+        String expected = text(statement.attributes().get("sourceObjectType"));
+        require(!blank(expected), boundary + " sourceObjectType is not declared by the input");
+        require(java.util.Objects.equals(actual, expected)
+                        || ("ROUTINE".equals(expected) && ROUTINE_OBJECT_SUBTYPES.contains(actual)),
+                boundary + " sourceObjectType does not match the input");
+    }
+
+    private void requireMatchesStatement(
+            String actual,
+            SqlStatementRecord statement,
+            String key,
+            boolean normalizePath,
+            String boundary
+    ) {
+        if (blank(actual)) {
+            return;
+        }
+        String expected = text(statement.attributes().get(key));
+        require(!blank(expected), boundary + " " + key + " is not declared by the input");
+        String comparedActual = normalizePath ? SourceNameNormalizer.normalize(actual) : actual;
+        String comparedExpected = normalizePath ? SourceNameNormalizer.normalize(expected) : expected;
+        require(java.util.Objects.equals(comparedActual, comparedExpected),
+                boundary + " " + key + " does not match the input");
+    }
+
+    private void validateTrace(ExpressionTrace trace, String boundary, boolean requireSources) {
+        require(trace != null, boundary + " is null");
+        require(trace.flowKind() != null, boundary + " flow kind is missing");
+        require(trace.transformType() != null, boundary + " transform type is missing");
+        validateSources(trace.sources(), boundary + " sources", requireSources);
+    }
+
+    private void validateSources(List<ExpressionSource> sources, String boundary, boolean requireSources) {
+        require(sources != null, boundary + " are null");
+        if (requireSources) {
+            require(!sources.isEmpty(), boundary + " are empty");
+        }
+        sources.forEach(source -> requireExpressionSource(source, boundary + " item"));
+    }
+
+    private void requireExpressionSource(ExpressionSource source, String boundary) {
+        require(source != null, boundary + " is null");
+        requireText(source.column(), boundary + " column");
+    }
+
+    private void validateGuards(List<PredicateGuard> guards, String boundary) {
+        require(guards != null, boundary + " guards are null");
+        for (PredicateGuard guard : guards) {
+            require(guard != null, boundary + " guard is null");
+            requireExpressionSource(guard.discriminator(), boundary + " guard discriminator");
+            require("EQUALS".equals(guard.operator()), boundary + " guard operator is invalid");
+        }
+    }
+
+    private void validateComposite(StructuredSqlEvent event, String boundary) {
+        require(event.compositePosition() >= 1 && event.compositeSize() >= 1
+                        && event.compositePosition() <= event.compositeSize(),
+                boundary + " composite position is invalid");
+    }
+
+    private boolean anyText(String... values) {
+        return java.util.Arrays.stream(values).anyMatch(value -> !blank(value));
     }
 
     private boolean eventTypeMatchesRecord(StructuredSqlEvent event) {

@@ -503,9 +503,11 @@ warning 字段：
   message/source/line，再由 `LiveDiagnosticSanitizer` 按 operation 重建固定内容。任一 warning
   envelope 非法时整个对应 SPI outcome 原子失败，不会把先前 fact 或 warning 写入 `ScanResult`。
   真实 driver/version 的 permission、timeout 与连接行为仍需环境 smoke 验证。
-- `SqlLogExtractor`、`DialectScriptFramer` 与 structured parser 的 callback/result warning
-  由 `AdaptorParseResultContractValidator` 使用独立 buffer、allowlist 和全批延迟提交闭环；
-  任一 contract violation 不会泄漏前序 warning，也不能触发 token-event fallback。
+- `SqlLogExtractor`、`DialectScriptFramer` 与 structured SQL/DDL parser 的 callback/result warning
+  由 `AdaptorParseResultContractValidator` 使用独立 buffer、allowlist 和全批延迟提交保护。production
+  runner、direct `StatementExecutionService` overload 和 `StructuredSqlRelationshipParser` facade 共用
+  `StructuredSqlParseExecutor`；任一 contract violation 不会泄漏前序 warning，也不能触发
+  token-event fallback。
 
 严重程度：
 

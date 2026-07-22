@@ -269,6 +269,7 @@ class MySqlFullGrammarVersionBoundaryTest {
     }
 
     private SqlStatementRecord statement(String sql) {
-        return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "mysql57-boundary.sql", 1, 1, java.util.Map.of());
+        return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "mysql57-boundary.sql", 1,
+                sql.lines().count(), java.util.Map.of());
     }
 }

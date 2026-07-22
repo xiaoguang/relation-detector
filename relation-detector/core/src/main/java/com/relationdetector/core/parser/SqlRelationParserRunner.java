@@ -13,36 +13,30 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.scan.AdaptorParseResultContractValidator;
 import com.relationdetector.core.scan.AdaptorResultContractValidator;
 import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
 import com.relationdetector.core.log.TypedLogNoiseClassifier;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.core.identity.NamespaceContext;
-import com.relationdetector.core.provenance.SourceProvenanceValidator;
-import com.relationdetector.core.provenance.StructuredParseProvenanceNormalizer;
 
 /**
  * SQL parser mode 选择与运行入口。
  *
  * <p>CN: runner 负责 SQL log noise 过滤、full-grammar/profile 选择和 token-event fallback，
- * 并在接受外部 fallback parser 结果前执行原子契约校验。它不直接抽取关系；关系抽取由
- * StructuredSqlRelationshipParser / StructuredRelationshipExtractor 完成。
+ * 并在接受 structured 或 fallback parser 结果前执行原子契约校验。校验成功后由
+ * StructuredRelationshipExtractor 抽取关系；本类不实现 typed visitor 或命名推断。
  *
  * <p>EN: SQL parser-mode selection and execution entry point. The runner owns
  * SQL log noise filtering, full-grammar/profile selection, token-event fallback,
- * and atomic validation of external fallback-parser results. It does not extract relationships directly.
+ * and atomic validation of structured and fallback-parser results. After validation it delegates relationship
+ * extraction to StructuredRelationshipExtractor; it implements neither typed visitors nor naming inference.
  */
 public final class SqlRelationParserRunner {
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
     private final StructuredRelationshipExtractor relationExtractor = new StructuredRelationshipExtractor();
-    private final SourceProvenanceValidator provenanceValidator = new SourceProvenanceValidator();
-    private final StructuredParseProvenanceNormalizer provenanceNormalizer =
-            new StructuredParseProvenanceNormalizer();
+    private final StructuredSqlParseExecutor structuredParseExecutor = new StructuredSqlParseExecutor();
     private final AdaptorResultContractValidator resultContractValidator =
             new AdaptorResultContractValidator();
-    private final AdaptorParseResultContractValidator parseResultContractValidator =
-            new AdaptorParseResultContractValidator();
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
     /**
@@ -116,7 +110,6 @@ public final class SqlRelationParserRunner {
             ParserBundle bundle
     ) {
         StructuredParseResult structured = parseStructuredResult(statement, context, bundle.sqlParser());
-        forwardWarnings(context, structured);
         if (TypedLogNoiseClassifier.shouldSkip(config, statement, structured)) {
             return ParsedSqlRelations.empty();
         }
@@ -143,7 +136,6 @@ public final class SqlRelationParserRunner {
             NamespaceContext namespace
     ) {
         StructuredParseResult structured = parseStructuredResult(statement, context, bundle.sqlParser());
-        forwardWarnings(context, structured);
         if (TypedLogNoiseClassifier.shouldSkip(config, statement, structured)) {
             return ParsedSqlRelations.empty();
         }
@@ -157,7 +149,6 @@ public final class SqlRelationParserRunner {
     ) {
         StructuredParseResult structured = parseStructuredResult(
                 effectiveStatement, context, bundle.sqlParser());
-        forwardWarnings(context, structured);
         return parsed(effectiveStatement, structured);
     }
 
@@ -170,23 +161,7 @@ public final class SqlRelationParserRunner {
             AdaptorContext context,
             com.relationdetector.contracts.spi.Collectors.StructuredSqlParser parser
     ) {
-        List<WarningMessage> callbackWarnings = new ArrayList<>();
-        AdaptorContext detached = detachedContext(context, callbackWarnings);
-        StructuredParseResult raw = parser.parseSql(statement, detached);
-        return validated(statement,
-                parseResultContractValidator.validateSql(statement, raw, callbackWarnings));
-    }
-
-    private StructuredParseResult validated(SqlStatementRecord statement, StructuredParseResult structured) {
-        structured = provenanceNormalizer.normalize(statement, structured);
-        List<WarningMessage> violations = provenanceValidator.validate(statement, structured);
-        if (violations.isEmpty()) {
-            return structured;
-        }
-        List<WarningMessage> warnings = new java.util.ArrayList<>(structured.warnings());
-        warnings.addAll(violations);
-        return new StructuredParseResult(structured.backend(), structured.dialect(), structured.sourceName(),
-                structured.events(), warnings, structured.attributes());
+        return structuredParseExecutor.parse(parser, statement, context);
     }
 
     private ParsedSqlRelations parsed(
@@ -212,13 +187,6 @@ public final class SqlRelationParserRunner {
             context.warn(WarningMessage.warn(WarningType.PARSE_WARNING, code, message,
                     statement.sourceName(), statement.startLine()));
         }
-    }
-
-    private static void forwardWarnings(AdaptorContext context, StructuredParseResult structured) {
-        if (context == null || structured == null || structured.warnings().isEmpty()) {
-            return;
-        }
-        structured.warnings().forEach(context::warn);
     }
 
     private AdaptorContext detachedContext(

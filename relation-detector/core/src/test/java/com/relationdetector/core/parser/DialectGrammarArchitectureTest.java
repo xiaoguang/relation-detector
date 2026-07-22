@@ -597,6 +597,21 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void everyCoreStructuredSqlConsumerUsesTheSharedValidatedExecutor() throws IOException {
+        Path root = repoRoot();
+        for (String consumer : List.of(
+                "core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java",
+                "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java",
+                "core/src/main/java/com/relationdetector/core/relation/StructuredSqlRelationshipParser.java")) {
+            String text = Files.readString(root.resolve(consumer));
+            assertTrue(text.contains("StructuredSqlParseExecutor"),
+                    consumer + " must use the shared structured-parser trust boundary");
+            assertFalse(text.contains("parser.parseSql(") || text.contains("structuredParser.parseSql("),
+                    consumer + " must not invoke an untrusted structured parser directly");
+        }
+    }
+
+    @Test
     void nativeLogExtractorsDoNotFilterSqlByKeywordText() throws IOException {
         Path root = repoRoot();
         for (String extractor : List.of(

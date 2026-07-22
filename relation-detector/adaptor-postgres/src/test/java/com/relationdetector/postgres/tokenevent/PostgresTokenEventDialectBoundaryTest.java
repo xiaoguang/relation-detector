@@ -718,7 +718,7 @@ class PostgresTokenEventDialectBoundaryTest {
 
     @Test
     void postgresTokenEventParsesCteWithWindowFunctionJoinPredicates() {
-        SqlStatementRecord statement = new SqlStatementRecord("""
+        String sql = """
                 WITH monthly_customer_sales AS (
                     SELECT
                         so.customer_id,
@@ -763,7 +763,10 @@ class PostgresTokenEventDialectBoundaryTest {
                 FROM customer_with_lag
                 WHERE month_rank <= 3
                 ORDER BY customer_id, sale_month DESC
-                """, StatementSourceType.PLAIN_SQL, "postgres-cte-window.sql", 1, 1, java.util.Map.of());
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(
+                sql, StatementSourceType.PLAIN_SQL, "postgres-cte-window.sql", 1,
+                sql.lines().count(), java.util.Map.of());
         var structured = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
         java.util.List<RelationshipCandidate> relations =
                 new StructuredSqlRelationshipParser(new PostgresTokenEventStructuredSqlParser()).parse(statement);
@@ -936,7 +939,8 @@ class PostgresTokenEventDialectBoundaryTest {
 
     private java.util.List<RelationshipCandidate> postgresRelations(String sql) {
         SqlStatementRecord statement = new SqlStatementRecord(
-                sql, StatementSourceType.PLAIN_SQL, "postgres-dialect-boundary.sql", 1, 1, java.util.Map.of());
+                sql, StatementSourceType.PLAIN_SQL, "postgres-dialect-boundary.sql", 1,
+                sql.lines().count(), java.util.Map.of());
         return new StructuredSqlRelationshipParser(new PostgresTokenEventStructuredSqlParser()).parse(statement);
     }
 

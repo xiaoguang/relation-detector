@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -179,6 +181,92 @@ final class SemanticEventExtractorTest {
         assertEquals("SQL_WRITE_OPERATION", event.eventKind());
         assertEquals(List.of("WRITE"), event.operationKinds());
         assertEquals("02-procedures/trigger.sql", event.sourceObject());
+    }
+
+    @Test
+    void splitsMergedLineageByTypedSourceAndIgnoresObservationOrder() {
+        List<SemanticEventCandidate> forward = new SemanticEventExtractor().extract(
+                bundleWithMultiSourceLineage(false));
+        List<SemanticEventCandidate> reversed = new SemanticEventExtractor().extract(
+                bundleWithMultiSourceLineage(true));
+
+        assertEquals(2, forward.size());
+        assertEquals(Set.of("ROUTINE", "SQL_WRITE"), forward.stream()
+                .map(SemanticEventCandidate::sourceType)
+                .collect(Collectors.toSet()));
+        assertTrue(forward.stream().filter(event -> event.sourceType().equals("ROUTINE"))
+                .allMatch(event -> event.operationKinds().equals(List.of("INSERT"))));
+        assertTrue(forward.stream().filter(event -> event.sourceType().equals("SQL_WRITE"))
+                .allMatch(event -> event.operationKinds().equals(List.of("UPDATE"))));
+        assertEquals(eventFingerprints(forward), eventFingerprints(reversed));
+        assertTrue(forward.stream().allMatch(event -> event.lineageRefs().size() == 1));
+    }
+
+    @Test
+    void aggregatesAllTypedMappingKindsForOneSource() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "write.sql", "", "typed write", "DIRECT");
+        lineage.remove("attributes");
+        var raw = lineage.putArray("rawEvidence");
+        raw.add(typedEvidence("SQL_WRITE", "refresh.sql", "refresh.sql:1-3", "INSERT_SELECT"));
+        raw.add(typedEvidence("SQL_WRITE", "refresh.sql", "refresh.sql:1-3", "UPDATE_SET"));
+        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        SemanticEventCandidate event = new SemanticEventExtractor().extract(bundle).get(0);
+
+        assertEquals(List.of("INSERT", "UPDATE"), event.operationKinds());
+    }
+
+    private ScanBundle bundleWithMultiSourceLineage(boolean reverse) {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "write.sql", "", "typed write", "DIRECT");
+        lineage.remove("attributes");
+        JsonNode routine = typedEvidence("ROUTINE", "sp_refresh_sales", "sp_refresh_sales", "INSERT_SELECT");
+        JsonNode write = typedEvidence("SQL_WRITE", "refresh.sql", "refresh.sql:20-24", "UPDATE_SET");
+        var raw = lineage.putArray("rawEvidence");
+        if (reverse) {
+            raw.add(write);
+            raw.add(routine);
+        } else {
+            raw.add(routine);
+            raw.add(write);
+        }
+        return new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+    }
+
+    private ObjectNode typedEvidence(
+            String sourceObjectType,
+            String sourceObjectNameOrFile,
+            String sourceStatementId,
+            String mappingKind
+    ) {
+        ObjectNode evidence = JSON.createObjectNode();
+        evidence.put("transformType", "DIRECT");
+        evidence.put("sourceType", "PLAIN_SQL");
+        evidence.put("score", 0.82);
+        evidence.put("source", sourceObjectNameOrFile);
+        evidence.put("detail", "typed observation");
+        ObjectNode attributes = evidence.putObject("attributes");
+        attributes.put("sourceObjectType", sourceObjectType);
+        if ("ROUTINE".equals(sourceObjectType)) {
+            attributes.put("sourceObjectName", sourceObjectNameOrFile);
+        } else {
+            attributes.put("sourceFile", sourceObjectNameOrFile);
+        }
+        attributes.put("sourceStatementId", sourceStatementId);
+        attributes.put("mappingKind", mappingKind);
+        return evidence;
+    }
+
+    private Set<String> eventFingerprints(List<SemanticEventCandidate> events) {
+        return events.stream()
+                .map(event -> event.id() + "|" + event.sourceType() + "|" + event.sourceObject()
+                        + "|" + event.operationKinds() + "|" + event.lineageRefs())
+                .collect(Collectors.toSet());
     }
 
     private JsonNode lineage(

@@ -374,7 +374,8 @@ class MySqlTokenEventDialectBoundaryTest {
 
     private java.util.List<RelationshipCandidate> mysqlRelations(String sql) {
         SqlStatementRecord statement = new SqlStatementRecord(
-                sql, StatementSourceType.PLAIN_SQL, "mysql-dialect-boundary.sql", 1, 1, java.util.Map.of());
+                sql, StatementSourceType.PLAIN_SQL, "mysql-dialect-boundary.sql", 1,
+                sql.lines().count(), java.util.Map.of());
         return new StructuredSqlRelationshipParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
     }
 

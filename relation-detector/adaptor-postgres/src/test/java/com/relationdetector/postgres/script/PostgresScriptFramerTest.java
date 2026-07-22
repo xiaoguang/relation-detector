@@ -61,4 +61,26 @@ class PostgresScriptFramerTest {
         assertEquals(true, result.statements().get(2).attributes().get("routineReturnsTrigger"));
         assertEquals("trg_second", result.statements().get(2).attributes().get("sourceObjectName"));
     }
+
+    @Test
+    void functionMarkerSuppliesTypedObjectIdentityWhenBlockStartsWithSupportingDdl() {
+        var result = new PostgresScriptFramer().frame(new ScriptFrameRequest("""
+                -- relation-detector-fixture-source: FUNCTION:finance.reconcile_orders
+                CREATE TYPE reconciliation_row AS (order_id bigint);
+                CREATE FUNCTION reconcile_orders()
+                RETURNS SETOF reconciliation_row AS $$
+                BEGIN
+                  RETURN QUERY SELECT 1;
+                END;
+                $$ LANGUAGE plpgsql;
+                -- relation-detector-fixture-end
+                """, "fixtures/reconcile-orders.sql", StatementSourceType.FUNCTION));
+
+        assertEquals(1, result.statements().size());
+        assertEquals(StatementSourceType.FUNCTION, result.statements().get(0).sourceType());
+        assertEquals("FUNCTION:finance.reconcile_orders", result.statements().get(0).sourceName());
+        assertEquals("ROUTINE", result.statements().get(0).attributes().get("sourceObjectType"));
+        assertEquals("finance.reconcile_orders", result.statements().get(0).attributes().get("sourceObjectName"));
+        assertEquals("finance.reconcile_orders", result.statements().get(0).attributes().get("sourceStatementId"));
+    }
 }

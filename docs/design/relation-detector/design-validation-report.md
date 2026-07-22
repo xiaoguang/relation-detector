@@ -30,7 +30,7 @@ full-grammar:
   -> same semantic extractor
 ```
 
-代码中的主链行为与设计一致，但本轮反向审计又确认了四个有边界的实现缺口：
+代码中的主链行为与设计基本一致。以下是当前能力事实与明确保留的版本/环境边界，不应误写成四个实现缺口：
 
 - MySQL/PostgreSQL 是当前工程覆盖最广的 parser 与 sample-data 支持目标。MySQL live object 使用
   `SHOW CREATE`，四方言 live profiler 返回四项独立 exact metrics。PostgreSQL live metadata 已覆盖
@@ -48,7 +48,7 @@ full-grammar:
 | 层级 | 能证明什么 | 不能证明什么 |
 | --- | --- | --- |
 | 架构测试 | parser ownership、token-event/full-grammar 独立、regex 边界、SPI 依赖方向。 | 某条 SQL 的 relation/lineage 一定正确。 |
-| correctness golden | 当前 parser 输出与已保存 fingerprint 一致；生产与 correctness 共用 execution service。 | golden 本身没有 false positive/false negative；目标数据库 runtime 一定接受 SQL。 |
+| correctness golden | 当前 parser 输出与已保存 fingerprint 一致；生产与 correctness 共用 execution service 和事实抽取器。 | common fixture 当前没有覆盖 production runner 的 SPI result isolation；golden 本身没有 false positive/false negative；目标数据库 runtime 一定接受 SQL。 |
 | SQL/版本/语义审计 | 具体 SQL、官方版本文档和 parser output 可以互相解释。 | 未审计 statement family 的完整覆盖。 |
 
 本报告中的“通过”默认只表示对应层级通过；不得把 zero diagnostics 或 count parity 升格为 SQL/语义正确性证明。
@@ -71,11 +71,11 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 4. SQL runner 的空 policy helper、误导 Javadoc 和 direct execution 无效 config overload 已删除；
    fallback parser 通过 detached context 与统一结果契约后才转发。
 
-这些修改收紧了外部 v6 adaptor 边界，不改变内置 parser 主事实语义或 golden。冻结的五项矩阵现已闭环：
+这些修改收紧了外部 v6 adaptor 的**生产主链**，不改变内置 parser 主事实语义或 golden。上一轮冻结的五项矩阵在其 runner/consumer 测试范围内已闭合：
 
-1. `AdaptorParseResultContractValidator` 对 `SqlLogExtractor`、`DialectScriptFramer`、
-   `StructuredSqlParser` 和 `StructuredDdlParser` 的完整 stream/result/warning 执行 detached、allowlist
-   和延迟提交校验。普通 full-grammar runtime failure 可以 fallback，但失败尝试 warning 被丢弃且固定脱敏；
+1. `AdaptorParseResultContractValidator` 对 `SqlLogExtractor`、`DialectScriptFramer` 以及生产 runner 中的
+   `StructuredSqlParser` / `StructuredDdlParser` stream/result/warning 执行 detached、allowlist 和延迟提交
+   校验。普通 full-grammar runtime failure 可以 fallback，但失败尝试 warning 被丢弃且固定脱敏；
    `AdaptorContractException` 不允许 fallback。
 2. `EvidenceWeightAdjustmentService` 向外部 hook 提供 deep-detached evidence 与 deep-immutable
    `AdaptorContext.options`，只接受 score 变化，并由 core 从 baseline 重建返回 evidence。
@@ -88,6 +88,23 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 
 fake JDBC 和 adversarial unit tests 可以证明已覆盖的 core 合约；真实数据库驱动版本、权限行为与网络故障仍属于环境 smoke，
 不能由上述单元测试替代。
+
+本轮从 public/direct API、correctness 和 semantic consumer 反向追踪后，已闭合上一轮发现的五个相邻边界：
+
+1. `StatementExecutionService.executeSql(StructuredSqlParser, ...)`、production runner 与
+   `StructuredSqlRelationshipParser.parse(...)` 共用 `StructuredSqlParseExecutor`，在 detached context 中
+   原子校验完整结果后才提交 warning 或抽取事实；common correctness direct 路径不再绕过该边界。
+2. `AdaptorParseResultContractValidator` 按 sealed event family 验证必需 typed payload，并把 statement
+   行范围、source/object/block identity 和 parser-origin provenance 作为事实抽取前的硬契约。
+3. fallback `SqlRelationParser` evidence 的规范化 `source` 必须等于输入 statement source name；跨 source
+   注入会使整个 fallback outcome 失败。
+4. `SemanticEventExtractor` 对 merged lineage 的全部 raw observations 按完整 typed source identity 分组；
+   不同 source 拆成独立 event，同一 source 聚合多个 mapping kind，结果不依赖 observation 顺序。
+5. `StructuredSqlRelationshipParser`、`StructuredSqlParseExecutor` 与 `SqlRelationParserRunner` 的双语说明已按
+   当前 facade、trust boundary 和 extractor delegation 职责校准，并由架构测试锁定 direct consumer。
+
+这些闭环只证明 typed result/provenance 与 event grouping 契约；未审计 SQL statement family 和真实数据库
+runtime smoke 继续按各自 backlog/环境边界管理，不因本轮状态变化而宣称完成。
 
 ## 本轮代码结构注释审视
 
@@ -144,7 +161,7 @@ sqlserver / sqlserver.tokenevent / sqlserver.fullgrammar.common / sqlserver.full
 
 ### 2. SQL relationship 与 Data Lineage 共享 structured result
 
-`ScanEngine.scan(...)` 当前通过 `SourceCollectorPipeline` 和 `StatementParsePipeline` 进入 `StatementExecutionService`。单条 SQL 由 `StatementExecutionService.executeSql(...)` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后生成 relationship candidates，并把同一个 `StructuredParseResult` 交给 Data Lineage extractor。SQL naming rule 不在 statement 层执行；它随后由 scan-level `EvidenceEnhancementService` 对合并后的 relationship candidates 执行一次。
+生产 `ScanEngine.scan(...)` 当前通过 `SourceCollectorPipeline` 和 `StatementParsePipeline` 进入 `StatementExecutionService`。单条 SQL 由 `StatementExecutionService.executeSql(...)` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后生成 relationship candidates，并把同一个 `StructuredParseResult` 交给 Data Lineage extractor。SQL naming rule 不在 statement 层执行；它随后由 scan-level `EvidenceEnhancementService` 对合并后的 relationship candidates 执行一次。direct structured-parser overload 不经过 runner，但与 runner 共用 `StructuredSqlParseExecutor`，因此 detached context、result validation 和 warning 延迟提交契约一致。
 
 这是当前实现事实，不改变 relationship / Data Lineage JSON schema，也不改变 semantic extractor 的职责边界。
 
@@ -271,8 +288,10 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     共享 classifier 只识别 JDBC 类型和 SQLState；Oracle 1031、SQL Server 229/916 由对应 adaptor 显式提供。
     Pipeline 对第三方 collector 返回的 null/blank definition、null element 或 null list 统一输出 `DEFINITION_UNAVAILABLE` 并跳过解析。
     metadata snapshot 和 object/database-DDL warning callback 已经 core 重验与重建；log extractor、
-    script framer 与 structured parser 的 statement/event/warning 则由独立的
-    `AdaptorParseResultContractValidator` 全批校验并延迟提交。
+    script framer 与 SQL/DDL parser 的 statement/event/warning 由独立的
+    `AdaptorParseResultContractValidator` 全批校验并延迟提交。production runner、direct
+    statement overload 与 relationship facade 共用 `StructuredSqlParseExecutor`，不再存在
+    structured SQL result 绕过契约边界的 core 旁路。
 11. `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner；CLI 以配置文件父目录调用
     `ScanConfig.resolve(baseDirectory)`，direct API 无参调用以当前工作目录为 base。运行态仅消费稳定排序、
     规范绝对路径且去重的 `*Files`，missing、non-regular 和 unreadable 输入均在 scan 前明确失败。

@@ -124,12 +124,27 @@ class SqlRelationParserRunnerTest {
         ScanConfig config = new ScanConfig();
         RelationshipCandidate candidate = fkLike("orders", "customer_id", "customers", "id");
         candidate.evidence().add(Evidence.of(
-                EvidenceType.SQL_LOG_JOIN, 0.6d, EvidenceSourceType.NATIVE_LOG,
-                "runner.sql", "join"));
+                EvidenceType.SQL_LOG_JOIN, 0.6d, EvidenceSourceType.PLAIN_SQL,
+                "other.sql", "join"));
 
         assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
                 new TestAdaptor((statement, context) -> List.of(candidate)),
                 config, statement(), context(new ArrayList<>())));
+    }
+
+    @Test
+    void fallbackParserAcceptsNormalizedEvidenceSourceForCurrentStatement() {
+        ScanConfig config = new ScanConfig();
+        RelationshipCandidate candidate = fkLike("orders", "customer_id", "customers", "id");
+        candidate.evidence().add(Evidence.of(
+                EvidenceType.SQL_LOG_JOIN, 0.6d, EvidenceSourceType.PLAIN_SQL,
+                System.getProperty("user.dir") + "/runner.sql", "join"));
+
+        List<RelationshipCandidate> result = new SqlRelationParserRunner().parse(
+                new TestAdaptor((statement, context) -> List.of(candidate)),
+                config, statement(), context(new ArrayList<>()));
+
+        assertEquals(1, result.size());
     }
 
     @Test

@@ -24,5 +24,9 @@ public record PostgresRoutineDescriptor(
         sourceObjectType = sourceObjectType == null ? "" : sourceObjectType;
         sourceObjectName = sourceObjectName == null ? "" : sourceObjectName;
         provenance = provenance == null ? Map.of() : Map.copyOf(provenance);
+        Object inputObjectName = provenance.get("sourceObjectName");
+        if (inputObjectName != null && !String.valueOf(inputObjectName).isBlank()) {
+            sourceObjectName = String.valueOf(inputObjectName);
+        }
     }
 }

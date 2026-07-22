@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -47,24 +48,35 @@ public final class SemanticEventExtractor {
             if (!isWriteValueLineage(lineage)) {
                 continue;
             }
-            String target = lineage.target().displayName();
-            JsonNode document = lineage.document();
-            EvidenceSource source = sourceOf(lineage);
             String targetTable = lineage.target().table();
-            String groupKey = groupKey(source, targetTable);
-            MutableEvent event = events.computeIfAbsent(groupKey,
-                    ignored -> new MutableEvent(source, classifier.eventKind(), idFor(source, targetTable)));
-            String lineageRef = lineage.id();
-            event.lineageRefs.add(lineageRef);
-            event.evidenceRefs.add(lineageRef);
-            event.operationKinds.add(classifier.operationKind(mappingKind(document)));
-            event.outputEndpoints.add(target);
-            for (PhysicalEndpointRef inputEndpoint : lineage.sources()) {
-                event.inputEndpoints.add(inputEndpoint.displayName());
+            Map<String, SourceContributionGroup> contributionGroups = new LinkedHashMap<>();
+            for (SourceContribution contribution : sourceContributions(lineage)) {
+                String key = groupKey(contribution.source(), targetTable);
+                SourceContributionGroup group = contributionGroups.computeIfAbsent(
+                        key, ignored -> new SourceContributionGroup(contribution.source()));
+                group.mappingKinds.add(contribution.mappingKind());
             }
-            event.confidenceSum = event.confidenceSum.add(BigDecimal.valueOf(lineage.confidence()));
-            event.confidenceCount++;
-            addTouchingRelationshipRefs(event, relationships);
+            for (Map.Entry<String, SourceContributionGroup> entry : contributionGroups.entrySet()) {
+                SourceContributionGroup contribution = entry.getValue();
+                MutableEvent event = events.computeIfAbsent(entry.getKey(),
+                        ignored -> new MutableEvent(contribution.source, classifier.eventKind(),
+                                idFor(contribution.source, targetTable)));
+                contribution.mappingKinds.stream()
+                        .map(classifier::operationKind)
+                        .forEach(event.operationKinds::add);
+                String lineageRef = lineage.id();
+                if (!event.lineageRefs.add(lineageRef)) {
+                    continue;
+                }
+                event.evidenceRefs.add(lineageRef);
+                event.outputEndpoints.add(lineage.target().displayName());
+                for (PhysicalEndpointRef inputEndpoint : lineage.sources()) {
+                    event.inputEndpoints.add(inputEndpoint.displayName());
+                }
+                event.confidenceSum = event.confidenceSum.add(BigDecimal.valueOf(lineage.confidence()));
+                event.confidenceCount++;
+                addTouchingRelationshipRefs(event, relationships);
+            }
         }
     }
 
@@ -133,23 +145,43 @@ public final class SemanticEventExtractor {
         return tables;
     }
 
-    private EvidenceSource sourceOf(ScanLineageFact lineage) {
+    private List<SourceContribution> sourceContributions(ScanLineageFact lineage) {
         JsonNode document = lineage.document();
+        String consensusMappingKind = document.path("attributes").path("mappingKind").asText("");
+        List<SourceContribution> contributions = new ArrayList<>();
         for (JsonNode evidence : evidenceArray(document)) {
-            String sourceObjectType = text(evidence.path("attributes"), "sourceObjectType");
-            String sourceObjectName = text(evidence.path("attributes"), "sourceObjectName");
-            String sourceFile = text(evidence.path("attributes"), "sourceFile");
-            String sourceStatementId = text(evidence.path("attributes"), "sourceStatementId");
-            if (!sourceObjectType.isBlank() || !sourceObjectName.isBlank() || !sourceFile.isBlank()
-                    || !sourceStatementId.isBlank()) {
-                String sourceType = classifier.sourceType(sourceObjectType);
-                String canonicalFile = canonicalSourceFile(sourceFile);
-                String canonical = firstNonBlank(sourceObjectName, sourceStatementId, canonicalFile, lineage.id());
-                return new EvidenceSource(sourceType, canonical, classifier.sourceObjectType(sourceObjectType),
-                        sourceObjectName, canonicalFile, sourceStatementId);
+            EvidenceSource source = typedSource(evidence, lineage);
+            if (source != null) {
+                String mappingKind = firstNonBlank(
+                        text(evidence.path("attributes"), "mappingKind"), consensusMappingKind);
+                contributions.add(new SourceContribution(source, mappingKind));
             }
         }
-        return new EvidenceSource("SQL_WRITE", lineage.id(), "SQL_WRITE", "", "", "");
+        if (contributions.isEmpty()) {
+            contributions.add(new SourceContribution(
+                    new EvidenceSource("SQL_WRITE", lineage.id(), "SQL_WRITE", "", "", ""),
+                    consensusMappingKind));
+        }
+        return contributions.stream()
+                .distinct()
+                .sorted(Comparator.comparing(SourceContribution::identityKey))
+                .toList();
+    }
+
+    private EvidenceSource typedSource(JsonNode evidence, ScanLineageFact lineage) {
+        String sourceObjectType = text(evidence.path("attributes"), "sourceObjectType");
+        String sourceObjectName = text(evidence.path("attributes"), "sourceObjectName");
+        String sourceFile = text(evidence.path("attributes"), "sourceFile");
+        String sourceStatementId = text(evidence.path("attributes"), "sourceStatementId");
+        if (sourceObjectType.isBlank() && sourceObjectName.isBlank() && sourceFile.isBlank()
+                && sourceStatementId.isBlank()) {
+            return null;
+        }
+        String sourceType = classifier.sourceType(sourceObjectType);
+        String canonicalFile = canonicalSourceFile(sourceFile);
+        String canonical = firstNonBlank(sourceObjectName, sourceStatementId, canonicalFile, lineage.id());
+        return new EvidenceSource(sourceType, canonical, classifier.sourceObjectType(sourceObjectType),
+                sourceObjectName, canonicalFile, sourceStatementId);
     }
 
     private Iterable<JsonNode> evidenceArray(JsonNode node) {
@@ -175,20 +207,6 @@ public final class SemanticEventExtractor {
         }
         return "event-candidate:sql-write:" + SemanticFactIds.slug(source.sourceObject()) + ":"
                 + SemanticFactIds.slug(targetTable);
-    }
-
-    private String mappingKind(JsonNode lineage) {
-        String mappingKind = lineage.path("attributes").path("mappingKind").asText("");
-        if (!mappingKind.isBlank()) {
-            return mappingKind;
-        }
-        for (JsonNode evidence : evidenceArray(lineage)) {
-            String evidenceMappingKind = text(evidence.path("attributes"), "mappingKind");
-            if (!evidenceMappingKind.isBlank()) {
-                return evidenceMappingKind;
-            }
-        }
-        return "";
     }
 
     private String tableOf(String endpoint) {
@@ -251,6 +269,23 @@ public final class SemanticEventExtractor {
             String sourceFile,
             String sourceStatementId
     ) {
+    }
+
+    private record SourceContribution(EvidenceSource source, String mappingKind) {
+        private String identityKey() {
+            return source.sourceType() + "|" + source.sourceObjectType() + "|" + source.sourceObject()
+                    + "|" + source.sourceObjectName() + "|" + source.sourceFile()
+                    + "|" + source.sourceStatementId() + "|" + mappingKind;
+        }
+    }
+
+    private static final class SourceContributionGroup {
+        private final EvidenceSource source;
+        private final Set<String> mappingKinds = new LinkedHashSet<>();
+
+        private SourceContributionGroup(EvidenceSource source) {
+            this.source = source;
+        }
     }
 
     private static final class MutableEvent {

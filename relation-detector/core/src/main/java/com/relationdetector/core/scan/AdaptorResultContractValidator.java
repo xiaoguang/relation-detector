@@ -29,6 +29,7 @@ import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
+import com.relationdetector.core.log.SourceNameNormalizer;
 
 /**
  * CN: 在 core 接纳外部 adaptor 的 metadata、definition 与 fallback parser 结果前执行完整、原子校验；
@@ -173,7 +174,8 @@ public final class AdaptorResultContractValidator {
             SqlStatementRecord statement
     ) {
         RelationshipCandidate copy = copyCandidateShell(candidate, false, "fallback relationship");
-        copyEvidenceLists(candidate, copy, SQL_RELATIONSHIP_EVIDENCE, expectedSource, "fallback relationship");
+        copyEvidenceLists(candidate, copy, SQL_RELATIONSHIP_EVIDENCE, expectedSource,
+                SourceNameNormalizer.normalize(statement.sourceName()), "fallback relationship");
         copy.warnings().addAll(validateParserWarnings(candidate.warnings(), statement));
         return copy;
     }
@@ -204,10 +206,23 @@ public final class AdaptorResultContractValidator {
             EvidenceSourceType expectedSource,
             String boundary
     ) {
+        copyEvidenceLists(source, target, allowed, expectedSource, null, boundary);
+    }
+
+    private void copyEvidenceLists(
+            RelationshipCandidate source,
+            RelationshipCandidate target,
+            Set<EvidenceType> allowed,
+            EvidenceSourceType expectedSource,
+            String expectedEvidenceSource,
+            String boundary
+    ) {
         source.evidence().forEach(evidence -> target.evidence().add(
-                copyEvidence(evidence, allowed, expectedSource, boundary + " evidence")));
+                copyEvidence(evidence, allowed, expectedSource, expectedEvidenceSource,
+                        boundary + " evidence")));
         source.rawEvidence().forEach(evidence -> target.rawEvidence().add(
-                copyEvidence(evidence, allowed, expectedSource, boundary + " raw evidence")));
+                copyEvidence(evidence, allowed, expectedSource, expectedEvidenceSource,
+                        boundary + " raw evidence")));
     }
 
     private Evidence copyEvidence(
@@ -216,11 +231,26 @@ public final class AdaptorResultContractValidator {
             EvidenceSourceType expectedSource,
             String boundary
     ) {
+        return copyEvidence(evidence, allowed, expectedSource, null, boundary);
+    }
+
+    private Evidence copyEvidence(
+            Evidence evidence,
+            Set<EvidenceType> allowed,
+            EvidenceSourceType expectedSource,
+            String expectedEvidenceSource,
+            String boundary
+    ) {
         require(evidence != null, boundary + " is null");
         require(allowed.contains(evidence.type()), boundary + " type is not allowed");
         require(evidence.sourceType() == expectedSource, boundary + " source type is invalid");
         requireScore(evidence.score(), BigDecimal.ONE.negate(), ONE, boundary + " score");
         requireText(evidence.source(), boundary + " source");
+        if (expectedEvidenceSource != null) {
+            require(java.util.Objects.equals(
+                            SourceNameNormalizer.normalize(evidence.source()), expectedEvidenceSource),
+                    boundary + " source does not match the input statement");
+        }
         return new Evidence(evidence.type(), evidence.score(), evidence.sourceType(), evidence.source(),
                 evidence.detail(), detachment.attributes(evidence.attributes(), boundary + " attributes"));
     }
