@@ -77,7 +77,7 @@ public final class PostgresTokenEventStructuredSqlParser
         PostgresTokenEventParseTreeVisitor visitor = new PostgresTokenEventParseTreeVisitor(
                 statement, allowRoutineDispatch);
         List<StructuredSqlEvent> events = visitor.collect(root);
-        return new TypedEventCollection(events, visitor.warnings());
+        return new TypedEventCollection(events, visitor.warnings(), visitor.resultAttributes());
     }
 
     @Override

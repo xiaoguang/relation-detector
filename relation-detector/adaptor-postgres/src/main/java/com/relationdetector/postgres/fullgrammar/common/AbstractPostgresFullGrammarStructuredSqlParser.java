@@ -33,12 +33,14 @@ public abstract class AbstractPostgresFullGrammarStructuredSqlParser implements 
         FullGrammarSqlParse parse = parseFullGrammar(statement.sql());
         List<StructuredSqlEvent> nativeEvents = List.of();
         List<WarningMessage> warnings = new java.util.ArrayList<>();
+        Map<String, Object> visitorAttributes = Map.of();
         if (parse.root() != null && parse.syntaxErrors() == 0) {
             try {
                 PostgresFullGrammarEventOutcome outcome = extractEvents(
                         statement, parse.visibleTokens(), parse.root());
                 nativeEvents = outcome.events();
                 warnings.addAll(outcome.warnings());
+                visitorAttributes = outcome.attributes();
             } catch (RuntimeException ex) {
                 warnings.add(fullGrammarWarning(statement, "full-grammar SQL visitor failed: " + ex.getMessage(),
                         parse.syntaxErrors()));
@@ -57,6 +59,7 @@ public abstract class AbstractPostgresFullGrammarStructuredSqlParser implements 
         attributes.put("fullGrammarParseTreeRoot", parse.root() == null ? "" : parse.root().getClass().getSimpleName());
         attributes.put("fullGrammarNativeEventTypes",
                 FullGrammarEventMerger.eventTypeNames(FullGrammarNativeEventTypes.POSTGRES_NATIVE_EVENTS));
+        attributes.putAll(visitorAttributes);
         return new StructuredParseResult("POSTGRES_FULL_GRAMMAR_PARSE_TREE", "POSTGRES", statement.sourceName(),
                 nativeEvents, warnings, attributes);
     }

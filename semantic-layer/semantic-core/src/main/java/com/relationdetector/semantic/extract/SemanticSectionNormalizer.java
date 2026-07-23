@@ -116,9 +116,9 @@ final class SemanticSectionNormalizer {
     ) {
         Set<String> knownEntityIds = new LinkedHashSet<>(entityByName.values());
         for (SemanticEvent event : events) {
-            String eventKey = blank(event.physicalName)
-                    ? SemanticNormalizationSupport.nonBlank(event.name, "event")
-                    : event.physicalName.replace("ROUTINE:", "");
+            String eventKey = SemanticNormalizationSupport.nonBlank(
+                    event.eventCandidateRef,
+                    SemanticNormalizationSupport.nonBlank(event.name, "event"));
             event.id = SemanticNormalizationSupport.nonBlank(event.id,
                     "event:" + SemanticNormalizationSupport.slug(eventKey));
             validator.registerOwner("event", event.id);

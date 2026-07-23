@@ -47,13 +47,14 @@ public final class PostgresObjectCollector implements ObjectDefinitionCollector 
             List<DatabaseObjectDefinition> definitions, Consumer<WarningMessage> warnings) {
         String sql = """
                 SELECT n.nspname AS schema_name, p.proname AS object_name, p.prokind,
+                       pg_get_function_identity_arguments(p.oid) AS identity_arguments,
                        pg_get_functiondef(p.oid) AS definition
                 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = ?
                 """;
         collect(connection, schema, sql, definitions, warnings, "POSTGRES_FUNCTION_COLLECT_FAILED", "pg_proc",
                 rs -> new DatabaseObjectDefinition("p".equals(rs.getString("prokind"))
                         ? DatabaseObjectType.PROCEDURE : DatabaseObjectType.FUNCTION,
-                        catalog, rs.getString("schema_name"), rs.getString("object_name"),
+                        catalog, rs.getString("schema_name"), routineIdentity(rs),
                         rs.getString("definition"), "pg_proc"));
     }
 
@@ -118,6 +119,11 @@ public final class PostgresObjectCollector implements ObjectDefinitionCollector 
             throws Exception {
         return new DatabaseObjectDefinition(type, catalog, rs.getString("schema_name"),
                 rs.getString("object_name"), rs.getString("definition"), source);
+    }
+
+    private String routineIdentity(ResultSet resultSet) throws Exception {
+        String arguments = resultSet.getString("identity_arguments");
+        return resultSet.getString("object_name") + "(" + (arguments == null ? "" : arguments.trim()) + ")";
     }
 
     private String safe(String value) {

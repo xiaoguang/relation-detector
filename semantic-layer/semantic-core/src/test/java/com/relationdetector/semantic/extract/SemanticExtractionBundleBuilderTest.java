@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.reader.ScanBundle;
 
 final class SemanticExtractionBundleBuilderTest {
@@ -93,11 +94,13 @@ final class SemanticExtractionBundleBuilderTest {
 
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
         JsonNode event = evidenceBundle.path("eventCandidates").get(0);
-        assertEquals("event-candidate:routine:erp.sp_rebuild_sales_fact", event.path("id").asText());
+        assertEquals(StableSemanticId.of(
+                "event-candidate:routine", "ROUTINE", "erp.sp_rebuild_sales_fact:1-1"),
+                event.path("id").asText());
         assertEquals("SQL_WRITE_OPERATION", event.path("eventKind").asText());
         assertEquals("ROUTINE", event.path("sourceType").asText());
         assertEquals("ROUTINE", event.path("sourceObjectType").asText());
-        assertEquals("erp.sp_rebuild_sales_fact", event.path("sourceObject").asText());
+        assertEquals("erp.sp_rebuild_sales_fact:1-1", event.path("sourceObject").asText());
         assertEquals("erp.sp_rebuild_sales_fact", event.path("sourceObjectName").asText());
         assertEquals("sales_orders.id", event.path("inputEndpoints").get(0).asText());
         assertEquals("sales_fact.order_id", event.path("outputEndpoints").get(0).asText());

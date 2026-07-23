@@ -14,6 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.relationdetector.semantic.StableSemanticId;
 
 final class SemanticCliIntegrationTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -34,6 +35,8 @@ final class SemanticCliIntegrationTest {
         assertFalse(e2eHandler.contains("new SemanticEvidenceBuilder"));
         assertTrue(buildService.contains("new SemanticEvidenceBuilder().build("));
         assertTrue(buildService.contains("new SemanticKgBuilder().build("));
+        assertFalse(buildService.contains("SemanticEnricher"));
+        assertFalse(buildService.contains(".enrich("));
     }
 
     @Test
@@ -141,7 +144,8 @@ final class SemanticCliIntegrationTest {
         assertEquals("ROUTINE:shop.sp_rebuild_sales_fact", evidenceBundle.path("focus").asText());
         assertTrue(evidenceBundle.path("lineage").isArray());
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
-        assertEquals("event-candidate:routine:shop.sp_rebuild_sales_fact",
+        assertEquals(StableSemanticId.of(
+                        "event-candidate:routine", "ROUTINE", "shop.sp_rebuild_sales_fact:1-1"),
                 evidenceBundle.path("eventCandidates").get(0).path("id").asText());
     }
 

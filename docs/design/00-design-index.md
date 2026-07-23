@@ -44,23 +44,11 @@
 
 - [01 - Scan Result Reader](semantic-layer/01-scan-result-reader.md)
 - [02 - Semantic Evidence Builder](semantic-layer/02-semantic-evidence-builder.md)
-- [03 - LLM Semantic Enricher](semantic-layer/03-llm-semantic-enricher.md)
-- [04 - Semantic Catalog Store](semantic-layer/04-semantic-catalog-store.md)
-- [05 - Lexicon Manager](semantic-layer/05-lexicon-manager.md)
-- [06 - Embedding Indexer](semantic-layer/06-embedding-indexer.md)
+- [03 - LLM Semantic Extraction](semantic-layer/03-llm-semantic-enricher.md)
 
-### 在线问答链路
+### 未来能力
 
-- [07 - Semantic Search](semantic-layer/07-semantic-search.md)
-- [08 - Question Understanding](semantic-layer/08-question-understanding.md)
-- [09 - Query Planner](semantic-layer/09-query-planner.md)
-- [10 - SQL Draft Generator](semantic-layer/10-sql-draft-generator.md)
-- [11 - SQL Validator](semantic-layer/11-sql-validator.md)
-- [12 - Answer Composer](semantic-layer/12-answer-composer.md)
-
-### 治理
-
-- [13 - Review Queue](semantic-layer/13-review-queue.md)
+- [Future Capabilities Roadmap](semantic-layer/future-capabilities-roadmap.md)
 
 ## 全局约束
 

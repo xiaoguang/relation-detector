@@ -47,7 +47,12 @@ abstract class ScriptFramingSupport {
         if (!localTempTables.isEmpty()) attributes.put("localTempTables", localTempTables);
         attributes.put("sourceFile", normalizedFile);
         attributes.put("sourceFileLineCount", lines.lineCount());
-        String objectType = semanticObjectType(sourceType);
+        String objectType = switch (sourceType) {
+            case VIEW, MATERIALIZED_VIEW -> "QUERY";
+            case DDL_FILE -> "DDL";
+            case NATIVE_LOG, PLAIN_SQL, MIGRATION -> "";
+            default -> sourceType.name();
+        };
         if (!objectType.isBlank()) attributes.put("sourceObjectType", objectType);
         if (descriptor.routineReturnsTrigger()) {
             attributes.put("sourceObjectType", "FUNCTION");
@@ -60,7 +65,10 @@ abstract class ScriptFramingSupport {
             sourceName = slice.explicitSource().isBlank() ? sourceName(sourceType, objectName) : slice.explicitSource();
             String blockId = explicitBlock.isBlank() ? objectName : explicitBlock;
             attributes.put("sourceBlockId", blockId);
-            if (!objectName.isBlank()) attributes.put("sourceObjectName", objectName);
+            if (!objectName.isBlank()) {
+                attributes.put("sourceObjectName", objectName);
+                attributes.put("sourceObjectIdentity", objectName);
+            }
             attributes.put("sourceStatementId", blockId);
         } else {
             attributes.put("sourceStatementId", normalizedFile + ":" + startLine + "-" + endLine);
@@ -261,17 +269,6 @@ abstract class ScriptFramingSupport {
 
     private boolean kindAt(List<ScriptLexeme> tokens, int index, ScriptLexemeKind kind) {
         return index >= 0 && index < tokens.size() && tokens.get(index).kind() == kind;
-    }
-
-    private String semanticObjectType(StatementSourceType type) {
-        return switch (type) {
-            case PROCEDURE, FUNCTION, PACKAGE, PACKAGE_BODY, EVENT -> "ROUTINE";
-            case TRIGGER -> "TRIGGER";
-            case VIEW, MATERIALIZED_VIEW -> "QUERY";
-            case DDL_FILE -> "DDL";
-            case RULE -> "RULE";
-            case NATIVE_LOG, PLAIN_SQL, MIGRATION -> "";
-        };
     }
 
     private String sourceName(StatementSourceType type, String objectName) {

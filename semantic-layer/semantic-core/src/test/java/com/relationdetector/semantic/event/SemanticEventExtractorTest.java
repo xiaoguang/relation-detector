@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.reader.ScanBundle;
 
 final class SemanticEventExtractorTest {
@@ -33,7 +34,8 @@ final class SemanticEventExtractorTest {
 
         assertEquals(1, events.size());
         SemanticEventCandidate event = events.get(0);
-        assertEquals("event-candidate:routine:erp.sp_rebuild_sales_fact", event.id());
+        assertEquals(StableSemanticId.of(
+                "event-candidate:routine", "ROUTINE", "erp.sp_rebuild_sales_fact"), event.id());
         assertEquals("ROUTINE", event.sourceType());
         assertEquals("SQL_WRITE_OPERATION", event.eventKind());
         assertEquals(List.of("INSERT"), event.operationKinds());
@@ -143,6 +145,7 @@ final class SemanticEventExtractorTest {
         ObjectNode evidenceAttributes = (ObjectNode) lineage.path("evidence").get(0).path("attributes");
         evidenceAttributes.put("sourceObjectType", "SQL_WRITE");
         evidenceAttributes.put("sourceObjectName", "typed_write");
+        evidenceAttributes.put("sourceStatementId", "typed_write");
         evidenceAttributes.put("sourceFile", "02-procedures/trigger.sql");
 
         ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
@@ -219,6 +222,107 @@ final class SemanticEventExtractorTest {
         assertEquals(List.of("INSERT", "UPDATE"), event.operationKinds());
     }
 
+    @Test
+    void separatesSameNamedFunctionAndProcedureByExactTypedIdentity() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "routine.sql", "", "typed routine writes", "DIRECT");
+        lineage.remove("attributes");
+        var raw = lineage.putArray("rawEvidence");
+        raw.add(typedRoutineEvidence(
+                "FUNCTION", "public.refresh_sales", "public.refresh_sales(bigint)",
+                "public.refresh_sales", "INSERT_SELECT"));
+        raw.add(typedRoutineEvidence(
+                "PROCEDURE", "public.refresh_sales", "public.refresh_sales(bigint)",
+                "public.refresh_sales", "UPDATE_SET"));
+        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
+
+        assertEquals(2, events.size());
+        assertEquals(Set.of("FUNCTION", "PROCEDURE"), events.stream()
+                .map(SemanticEventCandidate::sourceObjectType)
+                .collect(Collectors.toSet()));
+        assertEquals(2, events.stream().map(SemanticEventCandidate::id).distinct().count());
+    }
+
+    @Test
+    void separatesPostgresOverloadsAndKeepsMappingsForOneOverloadTogether() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "routine.sql", "", "typed overload writes", "DIRECT");
+        lineage.remove("attributes");
+        var raw = lineage.putArray("rawEvidence");
+        raw.add(typedRoutineEvidence(
+                "FUNCTION", "public.refresh_sales", "public.refresh_sales(bigint)",
+                "public.refresh_sales", "INSERT_SELECT"));
+        raw.add(typedRoutineEvidence(
+                "FUNCTION", "public.refresh_sales", "public.refresh_sales(bigint)",
+                "public.refresh_sales", "UPDATE_SET"));
+        raw.add(typedRoutineEvidence(
+                "FUNCTION", "public.refresh_sales", "public.refresh_sales(text)",
+                "public.refresh_sales", "MERGE_UPDATE"));
+        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
+
+        assertEquals(2, events.size());
+        assertTrue(events.stream().anyMatch(event ->
+                "public.refresh_sales(bigint)".equals(event.sourceObject())
+                        && event.operationKinds().equals(List.of("INSERT", "UPDATE"))));
+        assertTrue(events.stream().anyMatch(event ->
+                "public.refresh_sales(text)".equals(event.sourceObject())
+                        && event.operationKinds().equals(List.of("MERGE"))));
+    }
+
+    @Test
+    void routineIdsRemainDistinctWhenReadableSlugsCollide() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "routine.sql", "", "typed overload writes", "DIRECT");
+        lineage.remove("attributes");
+        var raw = lineage.putArray("rawEvidence");
+        raw.add(typedRoutineEvidence(
+                "FUNCTION", "public.f", "public.f(a, b)",
+                "public.f", "INSERT_SELECT"));
+        raw.add(typedRoutineEvidence(
+                "FUNCTION", "public.f", "public.f(a_b)",
+                "public.f", "UPDATE_SET"));
+        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
+
+        assertEquals(2, events.size());
+        assertEquals(2, events.stream().map(SemanticEventCandidate::id).distinct().count());
+    }
+
+    @Test
+    void typedDatabaseEventUsesRoutineObjectIdentity() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "event.sql", "", "typed event writes", "DIRECT");
+        lineage.remove("attributes");
+        var raw = lineage.putArray("rawEvidence");
+        raw.add(typedRoutineEvidence(
+                "EVENT", "nightly_rollup", "nightly_rollup",
+                "nightly_rollup", "INSERT_SELECT"));
+        raw.add(typedRoutineEvidence(
+                "EVENT", "nightly_rollup", "nightly_rollup",
+                "nightly_rollup", "UPDATE_SET"));
+        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
+
+        assertEquals(1, events.size());
+        assertEquals("ROUTINE", events.get(0).sourceType());
+        assertEquals("EVENT", events.get(0).sourceObjectType());
+        assertEquals(List.of("INSERT", "UPDATE"), events.get(0).operationKinds());
+    }
+
     private ScanBundle bundleWithMultiSourceLineage(boolean reverse) {
         ObjectNode lineage = (ObjectNode) lineage(
                 "orders", "id", "sales_fact", "order_id",
@@ -259,6 +363,19 @@ final class SemanticEventExtractorTest {
         }
         attributes.put("sourceStatementId", sourceStatementId);
         attributes.put("mappingKind", mappingKind);
+        return evidence;
+    }
+
+    private ObjectNode typedRoutineEvidence(
+            String sourceObjectType,
+            String sourceObjectName,
+            String sourceObjectIdentity,
+            String sourceStatementId,
+            String mappingKind
+    ) {
+        ObjectNode evidence = typedEvidence(sourceObjectType, sourceObjectName, sourceStatementId, mappingKind);
+        evidence.withObject("/attributes").put("sourceObjectName", sourceObjectName);
+        evidence.withObject("/attributes").put("sourceObjectIdentity", sourceObjectIdentity);
         return evidence;
     }
 

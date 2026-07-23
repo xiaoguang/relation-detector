@@ -211,7 +211,8 @@ final class SemanticExtractionDocumentNormalizerTest {
         JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle);
 
         assertEquals("entity:sales_fact", normalized.path("entities").get(0).path("id").asText());
-        assertEquals("event:erp.sp_rebuild_sales_fact", normalized.path("events").get(0).path("id").asText());
+        assertEquals("event:event-candidate_routine_erp.sp_rebuild_sales_fact",
+                normalized.path("events").get(0).path("id").asText());
         assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
         assertEquals("entity:sales_fact", normalized.path("events").get(0).path("outputEntityRefs").get(0).asText());
         assertEquals("entity:sales_fact", normalized.path("relations").get(0).path("fromEntityRef").asText());
@@ -290,6 +291,42 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
         assertEquals("entity:sales_fact", normalized.path("events").get(0).path("outputEntityRefs").get(0).asText());
         assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
+    }
+
+    @Test
+    void derivesDefaultEventIdFromValidatedCandidateInsteadOfRoutinePrefix() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"name": "销售事实表", "physicalName": "sales_fact", "type": "分析事实表",
+                     "evidenceRefs": ["event-support"]}
+                  ],
+                  "events": [
+                    {
+                      "name": "刷新销售事实",
+                      "physicalName": "ROUTINE:public.refresh_sales",
+                      "type": "SQL_WRITE_OPERATION",
+                      "eventCandidateRef": "event-candidate:routine:function:public.refresh_sales-bigint",
+                      "outputs": ["销售事实表"],
+                      "evidenceRefs": ["event-candidate:routine:function:public.refresh_sales-bigint"]
+                    }
+                  ],
+                  "relations": [],
+                  "lineage": [],
+                  "metrics": [],
+                  "dimensions": [],
+                  "triplets": [],
+                  "reviewItems": []
+                }
+                """);
+        ObjectNode evidenceBundle = evidenceBundle("event-support");
+        evidenceBundle.withArray("eventCandidates").addObject()
+                .put("id", "event-candidate:routine:function:public.refresh_sales-bigint");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle);
+
+        assertEquals("event:event-candidate_routine_function_public.refresh_sales-bigint",
+                normalized.path("events").get(0).path("id").asText());
     }
 
     @Test

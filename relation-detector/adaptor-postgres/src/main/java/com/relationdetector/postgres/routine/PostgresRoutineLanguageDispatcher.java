@@ -88,8 +88,7 @@ public final class PostgresRoutineLanguageDispatcher {
         Map<String, Object> attributes = new LinkedHashMap<>(outer.attributes());
         attributes.putAll(descriptor.provenance());
         attributes.putAll(statement.attributes());
-        attributes.put("sourceObjectType", descriptor.sourceObjectType());
-        attributes.put("sourceObjectName", descriptor.sourceObjectName());
+        applyRoutineIdentity(attributes, descriptor);
         attributes.put(PostgresRoutineAttributes.EMBEDDED_SQL, true);
         attributes.put(PostgresRoutineAttributes.NON_COLUMN_IDENTIFIERS,
                 PostgresRoutineAttributes.merge(attributes,
@@ -137,8 +136,7 @@ public final class PostgresRoutineLanguageDispatcher {
             String text, int startLine) {
         Map<String, Object> attributes = new LinkedHashMap<>(outer.attributes());
         attributes.putAll(descriptor.provenance());
-        attributes.put("sourceObjectType", descriptor.sourceObjectType());
-        attributes.put("sourceObjectName", descriptor.sourceObjectName());
+        applyRoutineIdentity(attributes, descriptor);
         attributes.put(PostgresRoutineAttributes.EMBEDDED_SQL, true);
         attributes.put(PostgresRoutineAttributes.NON_COLUMN_IDENTIFIERS,
                 PostgresRoutineAttributes.merge(attributes,
@@ -153,6 +151,7 @@ public final class PostgresRoutineLanguageDispatcher {
         long end = body.startLine() + relative.endLine() - 1L;
         Map<String, Object> attributes = new LinkedHashMap<>(body.attributes());
         attributes.putAll(relative.attributes());
+        copyRoutineProvenance(body.attributes(), attributes);
         attributes.put("sourceLine", start);
         return new SqlStatementRecord(relative.sql(), body.sourceType(), body.sourceName(), start, end, attributes);
     }
@@ -163,7 +162,24 @@ public final class PostgresRoutineLanguageDispatcher {
         attributes.put("sourceFile", String.valueOf(body.attributes().getOrDefault("sourceFile", "")));
         attributes.put("sourceObjectType", descriptor.sourceObjectType());
         attributes.put("sourceObjectName", descriptor.sourceObjectName());
+        attributes.put("sourceObjectIdentity", descriptor.sourceObjectIdentity());
         attributes.put("declaredLanguage", descriptor.declaredLanguage());
         return attributes;
+    }
+
+    private void applyRoutineIdentity(Map<String, Object> attributes, PostgresRoutineDescriptor descriptor) {
+        attributes.put("sourceObjectType", descriptor.sourceObjectType());
+        attributes.put("sourceObjectName", descriptor.sourceObjectName());
+        attributes.put("sourceObjectIdentity", descriptor.sourceObjectIdentity());
+    }
+
+    private void copyRoutineProvenance(Map<String, Object> source, Map<String, Object> target) {
+        for (String key : List.of("sourceObjectType", "sourceObjectName",
+                "sourceObjectIdentity", "sourceStatementId")) {
+            Object value = source.get(key);
+            if (value != null && !String.valueOf(value).isBlank()) {
+                target.put(key, value);
+            }
+        }
     }
 }

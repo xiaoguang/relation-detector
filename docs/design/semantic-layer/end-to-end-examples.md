@@ -173,19 +173,7 @@ CREATE TABLE order_items (
 [✓] `SemanticEvidenceBuilder` 不生成历史 `CompactEvidenceBundle`，不做 BFS join path 搜索，不做 conflict detection
 ```
 
-**Step 3: NoopSemanticEnricher**
-
-```
-输入: EvidenceGraph
-
-预期输出: 同一个 EvidenceGraph，不新增或修改 semantic fact
-
-验收检查点:
-[✓] NoopSemanticEnricher 不调用 LLM
-[✓] 输出 graph 与输入 graph 的事实数量一致
-```
-
-**Step 4: SemanticKgBuilder + JsonSemanticKgWriter**
+**Step 3: SemanticKgBuilder + JsonSemanticKgWriter**
 
 ```
 SemanticKgBuilder 输出:

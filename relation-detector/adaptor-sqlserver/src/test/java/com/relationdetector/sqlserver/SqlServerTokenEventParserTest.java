@@ -386,7 +386,7 @@ class SqlServerTokenEventParserTest {
                 .filter(record -> record.sourceName().equals("sqlserver.sp_post_finished_goods_receipt"))
                 .findFirst()
                 .orElseThrow();
-        assertEquals("ROUTINE", statement.attributes().get("sourceObjectType"));
+        assertEquals("PROCEDURE", statement.attributes().get("sourceObjectType"));
         assertEquals("dbo.sp_post_finished_goods_receipt", statement.attributes().get("sourceObjectName"));
         assertEquals("sqlserver.sp_post_finished_goods_receipt", statement.attributes().get("sourceBlockId"));
 
@@ -408,7 +408,7 @@ class SqlServerTokenEventParserTest {
                 () -> "Expected COALESCE lineage from real sample block, lineages=" + lineages
                         + ", events=" + result.events());
         assertTrue(lineages.stream().allMatch(lineage ->
-                        "ROUTINE".equals(lineage.evidence().get(0).attributes().get("sourceObjectType"))
+                        "PROCEDURE".equals(lineage.evidence().get(0).attributes().get("sourceObjectType"))
                                 && "dbo.sp_post_finished_goods_receipt".equals(
                                 lineage.evidence().get(0).attributes().get("sourceObjectName"))),
                 () -> "Expected routine provenance on lineage evidence, lineages=" + lineages);

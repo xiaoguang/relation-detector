@@ -37,6 +37,7 @@ import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParser.T
 import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParser.Target_starContext;
 import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParser.UpdatestmtContext;
 import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParserBaseVisitor;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
@@ -48,12 +49,15 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammarEventFacade sink;
     private final PostgresMergeEventSupport mergeEvents;
+    private final List<Token> visibleTokens;
     private final java.util.List<com.relationdetector.contracts.model.WarningMessage> warnings = new java.util.ArrayList<>();
+    private String sourceObjectIdentity = "";
     private int ownedJoinPredicateDepth;
     private final PostgresSetProjectionSupport setProjections;
 
-    PostgresFullGrammarParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
+    PostgresFullGrammarParseTreeVisitor(SqlStatementRecord statement, List<Token> visibleTokens) {
         this.statement = statement;
+        this.visibleTokens = List.copyOf(visibleTokens);
         this.core = new PostgresSqlEventVisitorCore(statement, new PostgresParseTreeAdapter());
         this.sink = core.sink();
         this.mergeEvents = new PostgresMergeEventSupport(core, sink);
@@ -68,13 +72,17 @@ final class PostgresFullGrammarParseTreeVisitor extends PostgresFullGrammarParse
         return core.mergedEvents();
     }
     PostgresFullGrammarEventOutcome extractOutcome(ParseTree tree) {
-        return new PostgresFullGrammarEventOutcome(extract(tree), warnings);
+        return new PostgresFullGrammarEventOutcome(extract(tree), warnings,
+                sourceObjectIdentity.isBlank()
+                        ? java.util.Map.of()
+                        : java.util.Map.of("sourceObjectIdentity", sourceObjectIdentity));
     }
     @Override
     public Void visitCreatefunctionstmt(CreatefunctionstmtContext ctx) {
-        var adapter = new RoutineDeclarationAdapter();
+        var adapter = new RoutineDeclarationAdapter(visibleTokens);
         var descriptor = adapter.describe(ctx, statement);
         if (descriptor.isEmpty()) return null;
+        sourceObjectIdentity = descriptor.get().sourceObjectIdentity();
         var outcome = new PostgresRoutineLanguageDispatcher(new GeneratedPlPgSqlBodyParser()).dispatch(
                 descriptor.get(),
                 com.relationdetector.postgres.routine.PostgresRoutineAttributes

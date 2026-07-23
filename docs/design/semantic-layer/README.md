@@ -10,12 +10,11 @@
 Relation Detector
   -> Scan Result Reader
   -> Semantic Evidence Builder
-  -> NoopSemanticEnricher
   -> SemanticKgBuilder
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
-这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。EvidenceGraph 中的事件事实类型是 `SemanticEventCandidate`，KG 渲染为 `Event` 节点；它只来自 direct non-control write lineage，derived lineage 仅作 supporting evidence。事件 source/operation 只按 typed provenance 与 mapping kind 分类，缺失时使用 `SQL_WRITE/WRITE/SQL_WRITE_OPERATION` 中性默认值；同一 merged lineage 的 raw observations 按完整 typed source identity 分组，不同 source 拆成独立 event，同一 source 的多个 mapping kind 聚合且不依赖输入顺序。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。所有非 diagnostic fact/event、物理 endpoint node 和 edge 必须具有非空可解析 evidence；完全相同 ID/content 可幂等复用，冲突 ID 会使整个 build 原子失败。
+这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。EvidenceGraph 中的事件事实类型是 `SemanticEventCandidate`，KG 渲染为 `Event` 节点；它只来自 direct non-control write lineage，derived lineage 仅作 supporting evidence。事件 source/operation 只按 typed provenance 与 mapping kind 分类，缺失时使用 `SQL_WRITE/WRITE/SQL_WRITE_OPERATION` 中性默认值。完整 typed source identity 用于 raw contribution 去重和稳定排序；routine/trigger 最终按对象聚合，普通 SQL write 按 statement/source object 与 target table 聚合，同一 event 汇总多个 mapping kind 和不同证据位置。routine event identity 使用精确 `FUNCTION/PROCEDURE/PACKAGE/PACKAGE_BODY/EVENT` 类型与开放属性 `sourceObjectIdentity`；PostgreSQL full/live 路径使用输入参数类型签名区分 overload，compact token-event 使用 typed kind/name 与声明 statement identity，避免复制完整参数类型 grammar。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。所有非 diagnostic fact/event、物理 endpoint node 和 edge 必须具有非空可解析 evidence；完全相同 ID/content 可幂等复用，冲突 ID 会使整个 build 原子失败。
 
 `ScanResultReader` / `ScanBundle` 保留完整 `database.type + catalog + schema` 身份；多 input 合并会拒绝
 任一 identity 轴不同的输入。所有 semantic artifact 使用同一个 portable path renderer：工作目录内路径
@@ -52,9 +51,9 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 | `SEM-REF-01` | `MATCHED` | evidence/fact/candidate ID、文档内 entity 引用和 bundle 物理表列引用均执行精确闭包校验，不降级 catalog/schema。 |
 | `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线 `SemanticKgBuilder`。 |
 | `SEM-KG-01` | `MATCHED` | `SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析；identity registry 只允许完整内容相同的幂等重复，冲突 node/edge ID 原子失败。 |
-| `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构；merged lineage的raw observations按完整typed source identity拆分，不同source生成独立event，同一source聚合全部mapping kind并保持顺序无关。 |
+| `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。formal normalization的默认event ID从已验证`eventCandidateRef`派生。 |
 
-wire、reference closure、formal normalization ID、离线 KG evidence/identity gate 与多 observation typed event grouping 已闭环。Catalog Store、search、planner 等目标能力继续按各自 backlog 管理，不因本矩阵状态变化而归类为当前实现。
+wire、reference closure、formal normalization ID、离线 KG evidence/identity gate 与 routine event identity 已闭环。Catalog Store、search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，不因本矩阵状态变化而归类为当前实现。
 
 ### 目标离线构建链路
 
@@ -62,7 +61,7 @@ wire、reference closure、formal normalization ID、离线 KG evidence/identity
 Relation Detector
   -> Scan Result Reader
   -> Semantic Evidence Builder
-  -> LLM Semantic Enricher
+  -> Semantic Extraction Provider
   -> Semantic Catalog Store
        -> Lexicon Manager
        -> Embedding Indexer
@@ -101,27 +100,11 @@ Question
 | --- | --- | --- | --- |
 | 1 | Scan Result Reader | [01-scan-result-reader.md](01-scan-result-reader.md) | 读取 relation-detector 输出，归一化为 ScanBundle。 |
 | 2 | Semantic Evidence Builder | [02-semantic-evidence-builder.md](02-semantic-evidence-builder.md) | 将 direct/derived relationship、lineage、naming、diagnostic 和 typed event candidate 物化为 evidence graph；metadata/comment 索引仍是后续能力。 |
-| 3 | LLM Semantic Enricher / Semantic Extraction | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 构造 evidence bundle / prompt，支持 codex-session、openai-api 和 normalized extraction result。 |
-| 4 | Semantic Catalog Store | [04-semantic-catalog-store.md](04-semantic-catalog-store.md) | 持久化 semantic objects、edges、evidence refs、review decisions。 |
-| 5 | Lexicon Manager | [05-lexicon-manager.md](05-lexicon-manager.md) | 管理业务词、同义词和对象映射。 |
-| 6 | Embedding Indexer | [06-embedding-indexer.md](06-embedding-indexer.md) | 为语义对象生成向量索引。 |
+| 3 | LLM Semantic Extraction | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 构造 evidence bundle / prompt，支持 codex-session、openai-api 和 normalized extraction result；不介入离线 KG 构建。 |
+| 4-13 | Future Capabilities | [future-capabilities-roadmap.md](future-capabilities-roadmap.md) | Catalog、lexicon、embedding、search、question/planner、SQL draft/validation、answer 与 review 的目标、依赖、安全边界和实施门槛。 |
 
-### 在线问答
-
-| 序号 | 子系统 | 文档 | 职责 |
-| --- | --- | --- | --- |
-| 7 | Semantic Search | [07-semantic-search.md](07-semantic-search.md) | 结合 lexicon、embedding 和 evidence rerank。 |
-| 8 | Question Understanding | [08-question-understanding.md](08-question-understanding.md) | 把自然语言问题解析为结构化意图。 |
-| 9 | Query Planner | [09-query-planner.md](09-query-planner.md) | 选择表、字段、指标、grain 和 evidence-backed join path。 |
-| 10 | SQL Draft Generator | [10-sql-draft-generator.md](10-sql-draft-generator.md) | 根据 AnswerPlan 模板生成 SQL draft。 |
-| 11 | SQL Validator | [11-sql-validator.md](11-sql-validator.md) | 校验 draft 是否符合 catalog、evidence 和 governance。 |
-| 12 | Answer Composer | [12-answer-composer.md](12-answer-composer.md) | 组装 SQL draft、澄清问题或表字段计划响应。 |
-
-### 治理
-
-| 序号 | 子系统 | 文档 | 职责 |
-| --- | --- | --- | --- |
-| 13 | Review Queue | [13-review-queue.md](13-review-queue.md) | 管理需要人工或治理流程确认的候选对象。 |
+未来在线问答与治理不再维护十份尚未实现的类/API 草图；统一以路线图中的 typed 输入输出、
+安全边界和实施验收条件作为进入实现前的设计门槛。
 
 ## 全局约束
 

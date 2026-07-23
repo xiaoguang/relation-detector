@@ -33,6 +33,141 @@ import org.antlr.v4.runtime.CommonTokenStream;
 class PostgresRoutineSampleLineageTest {
 
     @Test
+    void overloadsCarryDistinctTypedIdentityForEveryProfile() {
+        String sql = """
+                CREATE FUNCTION public.refresh_sales(p_id bigint) RETURNS void LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO sales_fact (order_id) SELECT o.id FROM orders o;
+                END;
+                $$;
+                CREATE FUNCTION public.refresh_sales(p_code text) RETURNS void LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO sales_fact (order_id) SELECT o.id FROM orders o;
+                END;
+                $$;
+                """;
+        List<SqlStatementRecord> statements = new PostgresScriptFramer().frame(
+                new ScriptFrameRequest(sql, "sample-data/postgres/routine-overloads.sql",
+                        StatementSourceType.FUNCTION)).statements();
+
+        assertEquals(2, statements.size());
+        for (ParserCase parser : parsers()) {
+            Set<String> identities = new LinkedHashSet<>();
+            for (SqlStatementRecord statement : statements) {
+                var structured = parser.parser().parseSql(statement, null);
+                var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                        .filter(candidate -> "sales_fact.order_id".equals(candidate.target().displayName()))
+                        .findFirst().orElseThrow(() -> new AssertionError(
+                                parser.name() + " did not parse overload body: " + structured.events()));
+                identities.add(String.valueOf(lineage.evidence().get(0).attributes()
+                        .get("sourceObjectIdentity")));
+                assertEquals("FUNCTION", lineage.evidence().get(0).attributes().get("sourceObjectType"));
+            }
+            assertEquals(2, identities.size(), () -> parser.name() + " collapsed overload identities: " + identities);
+            assertTrue(identities.stream().noneMatch(value -> value.equals("null") || value.isBlank()),
+                    () -> parser.name() + " omitted overload identity: " + identities);
+        }
+    }
+
+    @Test
+    void fullGrammarIdentityUsesOnlyInputParameterTypes() {
+        String sql = """
+                CREATE FUNCTION public.identity_demo(
+                    IN p_id bigint,
+                    INOUT p_limit integer DEFAULT 10,
+                    OUT p_status text
+                ) LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO identity_audit (entity_id) SELECT a.id FROM accounts a;
+                  p_status := 'ok';
+                END;
+                $$;
+                """;
+        SqlStatementRecord statement = new PostgresScriptFramer().frame(
+                new ScriptFrameRequest(sql, "sample-data/postgres/routine-identity.sql",
+                        StatementSourceType.FUNCTION)).statements().get(0);
+
+        for (ParserCase parser : parsers().stream()
+                .filter(candidate -> !candidate.name().equals("token-event"))
+                .toList()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .filter(candidate -> "identity_audit.entity_id".equals(candidate.target().displayName()))
+                    .findFirst().orElseThrow(() -> new AssertionError(
+                            parser.name() + " did not parse the routine body: " + structured.events()));
+            assertEquals("public.identity_demo(bigint, integer)",
+                    lineage.evidence().get(0).attributes().get("sourceObjectIdentity"),
+                    () -> parser.name() + " included OUT, names, or defaults in the identity");
+        }
+    }
+
+    @Test
+    void fullGrammarIdentityPreservesMultiWordTypeBoundaries() {
+        String sql = """
+                CREATE FUNCTION public.type_boundary(p_value double precision) RETURNS void LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO identity_audit (entity_id) SELECT a.id FROM accounts a;
+                END;
+                $$;
+                CREATE FUNCTION public.type_boundary(p_value doubleprecision) RETURNS void LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO identity_audit (entity_id) SELECT a.id FROM accounts a;
+                END;
+                $$;
+                """;
+        List<SqlStatementRecord> statements = new PostgresScriptFramer().frame(
+                new ScriptFrameRequest(sql, "sample-data/postgres/routine-type-boundary.sql",
+                        StatementSourceType.FUNCTION)).statements();
+
+        for (ParserCase parser : parsers().stream()
+                .filter(candidate -> !candidate.name().equals("token-event"))
+                .toList()) {
+            Set<String> identities = new LinkedHashSet<>();
+            for (SqlStatementRecord statement : statements) {
+                var structured = parser.parser().parseSql(statement, null);
+                var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                        .filter(candidate -> "identity_audit.entity_id".equals(candidate.target().displayName()))
+                        .findFirst().orElseThrow();
+                identities.add(String.valueOf(lineage.evidence().get(0).attributes()
+                        .get("sourceObjectIdentity")));
+            }
+            assertEquals(Set.of(
+                    "public.type_boundary(double precision)",
+                    "public.type_boundary(doubleprecision)"), identities,
+                    () -> parser.name() + " collapsed a multi-word type boundary: " + identities);
+        }
+    }
+
+    @Test
+    void liveCollectedIdentityRemainsAuthoritativeForEveryProfile() {
+        String sql = """
+                CREATE FUNCTION public.refresh_sales(p_id bigint) RETURNS void LANGUAGE plpgsql AS $$
+                BEGIN
+                  INSERT INTO sales_fact (order_id) SELECT o.id FROM orders o;
+                END;
+                $$;
+                """;
+        SqlStatementRecord framed = new PostgresScriptFramer().frame(
+                new ScriptFrameRequest(sql, "pg_proc", StatementSourceType.FUNCTION)).statements().get(0);
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>(framed.attributes());
+        attributes.put("objectDefinitionSource", "pg_proc");
+        attributes.put("sourceObjectIdentity", "sales.public.refresh_sales(bigint)");
+        SqlStatementRecord statement = new SqlStatementRecord(
+                framed.sql(), framed.sourceType(), framed.sourceName(),
+                framed.startLine(), framed.endLine(), attributes);
+
+        for (ParserCase parser : parsers()) {
+            var structured = parser.parser().parseSql(statement, null);
+            var lineage = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                    .filter(candidate -> "sales_fact.order_id".equals(candidate.target().displayName()))
+                    .findFirst().orElseThrow();
+            assertEquals("sales.public.refresh_sales(bigint)",
+                    lineage.evidence().get(0).attributes().get("sourceObjectIdentity"),
+                    () -> parser.name() + " replaced the catalog-qualified live identity");
+        }
+    }
+
+    @Test
     void beginAtomicBodyUsesTheCurrentSqlParserForEveryProfile() {
         String sql = """
                 CREATE FUNCTION apply_account_snapshot() RETURNS void

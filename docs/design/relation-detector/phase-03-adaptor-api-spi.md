@@ -283,6 +283,14 @@ public interface DialectScriptFramer {
 warnings。共享 `StructuredScriptFramer` 只消费各 adaptor generated script lexer 的 typed
 lexeme，不能按 rule name、反射或 raw SQL 文本作结构推断。
 
+对象 provenance 有两个不同层次：`SqlStatementRecord.sourceType` 是 framing 得到的精确声明种类，
+`attributes.sourceObjectType` 是后续 parser/evidence/semantic event 使用的 typed 对象身份。两者在
+持久对象上保持一致：function 是 `FUNCTION`，procedure 是 `PROCEDURE`，trigger function 仍是
+`FUNCTION`，只有 trigger declaration 是 `TRIGGER`。开放属性 `sourceObjectIdentity` 保存可用于
+事件身份的精确对象键。PostgreSQL full grammar 和 live collector使用输入参数类型signature区分
+overload；compact token-event不复制完整参数类型grammar，而使用typed kind/name与声明statement
+identity防止碰撞。粗粒度semantic `sourceType`仍可映射为`ROUTINE`，但不得覆盖精确provenance。
+
 `StructuredScriptFramer` 只编排 lexeme 校验、fixture marker 和 statement/provenance 装配；
 `MySqlScriptSlicePlanner`、`PostgresScriptSlicePlanner`、`OracleScriptSlicePlanner`、
 `SqlServerScriptSlicePlanner`、`CommonScriptSlicePlanner` 分别拥有各自方言的 slice 算法。

@@ -9,12 +9,12 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.SemanticFactIds;
+import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
 import com.relationdetector.semantic.reader.ScanLineageFact;
@@ -159,7 +159,7 @@ public final class SemanticEventExtractor {
         }
         if (contributions.isEmpty()) {
             contributions.add(new SourceContribution(
-                    new EvidenceSource("SQL_WRITE", lineage.id(), "SQL_WRITE", "", "", ""),
+                    new EvidenceSource("SQL_WRITE", lineage.id(), "SQL_WRITE", "", "", "", ""),
                     consensusMappingKind));
         }
         return contributions.stream()
@@ -171,17 +171,19 @@ public final class SemanticEventExtractor {
     private EvidenceSource typedSource(JsonNode evidence, ScanLineageFact lineage) {
         String sourceObjectType = text(evidence.path("attributes"), "sourceObjectType");
         String sourceObjectName = text(evidence.path("attributes"), "sourceObjectName");
+        String sourceObjectIdentity = text(evidence.path("attributes"), "sourceObjectIdentity");
         String sourceFile = text(evidence.path("attributes"), "sourceFile");
         String sourceStatementId = text(evidence.path("attributes"), "sourceStatementId");
         if (sourceObjectType.isBlank() && sourceObjectName.isBlank() && sourceFile.isBlank()
-                && sourceStatementId.isBlank()) {
+                && sourceStatementId.isBlank() && sourceObjectIdentity.isBlank()) {
             return null;
         }
         String sourceType = classifier.sourceType(sourceObjectType);
         String canonicalFile = canonicalSourceFile(sourceFile);
-        String canonical = firstNonBlank(sourceObjectName, sourceStatementId, canonicalFile, lineage.id());
+        String canonical = firstNonBlank(
+                sourceObjectIdentity, sourceStatementId, sourceObjectName, canonicalFile, lineage.id());
         return new EvidenceSource(sourceType, canonical, classifier.sourceObjectType(sourceObjectType),
-                sourceObjectName, canonicalFile, sourceStatementId);
+                sourceObjectName, sourceObjectIdentity, canonicalFile, sourceStatementId);
     }
 
     private Iterable<JsonNode> evidenceArray(JsonNode node) {
@@ -195,15 +197,20 @@ public final class SemanticEventExtractor {
 
     private String groupKey(EvidenceSource source, String targetTable) {
         if ("ROUTINE".equals(source.sourceType()) || "TRIGGER".equals(source.sourceType())) {
-            return source.sourceType() + ":" + source.sourceObject();
+            return source.sourceType() + ":" + source.sourceObjectType() + ":" + source.sourceObject();
         }
         return source.sourceType() + ":" + source.sourceObject() + ":" + targetTable;
     }
 
     private String idFor(EvidenceSource source, String targetTable) {
-        if ("ROUTINE".equals(source.sourceType()) || "TRIGGER".equals(source.sourceType())) {
-            return "event-candidate:" + source.sourceType().toLowerCase(Locale.ROOT) + ":"
-                    + SemanticFactIds.slug(source.sourceObject());
+        if ("ROUTINE".equals(source.sourceType())) {
+            return StableSemanticId.of(
+                    "event-candidate:routine",
+                    source.sourceObjectType(),
+                    source.sourceObject());
+        }
+        if ("TRIGGER".equals(source.sourceType())) {
+            return "event-candidate:trigger:" + SemanticFactIds.slug(source.sourceObject());
         }
         return "event-candidate:sql-write:" + SemanticFactIds.slug(source.sourceObject()) + ":"
                 + SemanticFactIds.slug(targetTable);
@@ -266,6 +273,7 @@ public final class SemanticEventExtractor {
             String sourceObject,
             String sourceObjectType,
             String sourceObjectName,
+            String sourceObjectIdentity,
             String sourceFile,
             String sourceStatementId
     ) {
@@ -274,7 +282,8 @@ public final class SemanticEventExtractor {
     private record SourceContribution(EvidenceSource source, String mappingKind) {
         private String identityKey() {
             return source.sourceType() + "|" + source.sourceObjectType() + "|" + source.sourceObject()
-                    + "|" + source.sourceObjectName() + "|" + source.sourceFile()
+                    + "|" + source.sourceObjectName() + "|" + source.sourceObjectIdentity()
+                    + "|" + source.sourceFile()
                     + "|" + source.sourceStatementId() + "|" + mappingKind;
         }
     }

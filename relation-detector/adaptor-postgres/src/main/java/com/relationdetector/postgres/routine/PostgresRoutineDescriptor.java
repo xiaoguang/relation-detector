@@ -11,11 +11,17 @@ public record PostgresRoutineDescriptor(
         PostgresRoutineBody body,
         String sourceObjectType,
         String sourceObjectName,
+        String sourceObjectIdentity,
         Map<String, Object> provenance
 ) {
     public PostgresRoutineDescriptor(String declaredLanguage, PostgresRoutineBody body,
             String sourceObjectType, String sourceObjectName) {
-        this(declaredLanguage, body, sourceObjectType, sourceObjectName, Map.of());
+        this(declaredLanguage, body, sourceObjectType, sourceObjectName, sourceObjectName, Map.of());
+    }
+
+    public PostgresRoutineDescriptor(String declaredLanguage, PostgresRoutineBody body,
+            String sourceObjectType, String sourceObjectName, Map<String, Object> provenance) {
+        this(declaredLanguage, body, sourceObjectType, sourceObjectName, sourceObjectName, provenance);
     }
 
     public PostgresRoutineDescriptor {
@@ -28,5 +34,7 @@ public record PostgresRoutineDescriptor(
         if (inputObjectName != null && !String.valueOf(inputObjectName).isBlank()) {
             sourceObjectName = String.valueOf(inputObjectName);
         }
+        sourceObjectIdentity = sourceObjectIdentity == null || sourceObjectIdentity.isBlank()
+                ? sourceObjectName : sourceObjectIdentity;
     }
 }

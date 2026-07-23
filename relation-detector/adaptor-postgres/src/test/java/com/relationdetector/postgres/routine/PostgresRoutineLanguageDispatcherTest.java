@@ -115,6 +115,28 @@ class PostgresRoutineLanguageDispatcherTest {
         assertTrue(outcome.warnings().isEmpty(), outcome.warnings()::toString);
     }
 
+    @Test
+    void embeddedSqlKeepsStatementIdSeparateFromRoutineIdentity() {
+        List<SqlStatementRecord> captured = new ArrayList<>();
+        StructuredSqlParser embedded = (statement, context) -> {
+            captured.add(statement);
+            return new StructuredParseResult("capture", "POSTGRES", statement.sourceName(),
+                    List.of(), List.of(), Map.of());
+        };
+        PostgresRoutineDescriptor descriptor = new PostgresRoutineDescriptor(
+                "sql", new SqlStringBody("SELECT 1;", 40),
+                "FUNCTION", "public.refresh_sales",
+                "public.refresh_sales(bigint)", Map.of());
+
+        new PostgresRoutineLanguageDispatcher((body, context, parser) -> PlPgSqlParseOutcome.empty())
+                .dispatch(descriptor, outerStatement(), null, embedded);
+
+        assertEquals(1, captured.size());
+        assertEquals("lines:35-45", captured.get(0).attributes().get("sourceStatementId"));
+        assertEquals("public.refresh_sales(bigint)",
+                captured.get(0).attributes().get("sourceObjectIdentity"));
+    }
+
     private SqlStatementRecord outerStatement() {
         return new SqlStatementRecord("CREATE FUNCTION ...", StatementSourceType.FUNCTION,
                 "sample-data/postgres/routine.sql", 35, 45,

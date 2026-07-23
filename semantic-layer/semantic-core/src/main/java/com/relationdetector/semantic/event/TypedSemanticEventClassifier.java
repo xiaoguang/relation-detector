@@ -16,7 +16,7 @@ final class TypedSemanticEventClassifier {
 
     String sourceType(String sourceObjectType) {
         return switch (normalized(sourceObjectType)) {
-            case "PROCEDURE", "FUNCTION", "PACKAGE", "PACKAGE_BODY", "ROUTINE" -> "ROUTINE";
+            case "PROCEDURE", "FUNCTION", "PACKAGE", "PACKAGE_BODY", "EVENT", "ROUTINE" -> "ROUTINE";
             case "TRIGGER" -> "TRIGGER";
             case "DATA_LOAD" -> "DATA_LOAD";
             case "QUERY" -> "QUERY";

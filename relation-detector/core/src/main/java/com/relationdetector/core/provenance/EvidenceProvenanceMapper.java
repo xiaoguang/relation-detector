@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
@@ -12,6 +13,21 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
  */
 public final class EvidenceProvenanceMapper {
     private EvidenceProvenanceMapper() {
+    }
+
+    public static SqlStatementRecord withParserProvenance(
+            SqlStatementRecord statement,
+            StructuredParseResult structured
+    ) {
+        Object identity = structured.attributes().get("sourceObjectIdentity");
+        if (!(identity instanceof String value) || value.isBlank()) {
+            return statement;
+        }
+        Map<String, Object> attributes = new java.util.LinkedHashMap<>(statement.attributes());
+        attributes.put("sourceObjectIdentity", value);
+        return new SqlStatementRecord(
+                statement.sql(), statement.sourceType(), statement.sourceName(),
+                statement.startLine(), statement.endLine(), attributes);
     }
 
     public static void copy(
@@ -38,7 +54,7 @@ public final class EvidenceProvenanceMapper {
 
     private static void copyStatement(SqlStatementRecord statement, Map<String, Object> attributes) {
         for (String key : new String[]{"sourceFile", "sourceStatementId", "sourceBlockId",
-                "sourceObjectType", "sourceObjectName", "sourceObjectKind"}) {
+                "sourceObjectType", "sourceObjectName", "sourceObjectIdentity", "sourceObjectKind"}) {
             Object value = statement.attributes().get(key);
             if (value != null && !String.valueOf(value).isBlank()) {
                 attributes.put(key, value);
@@ -51,4 +67,5 @@ public final class EvidenceProvenanceMapper {
             attributes.put(key, value);
         }
     }
+
 }

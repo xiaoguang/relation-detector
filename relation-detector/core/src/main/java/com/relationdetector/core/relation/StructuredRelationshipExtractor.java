@@ -71,6 +71,7 @@ public final class StructuredRelationshipExtractor extends RelationshipCandidate
     }
 
     private List<RelationshipCandidate> extractNative(SqlStatementRecord statement, StructuredParseResult structured) {
+        statement = EvidenceProvenanceMapper.withParserProvenance(statement, structured);
         List<RelationshipCandidate> candidates = new ArrayList<>();
         List<List<StructuredSqlEvent>> eventGroups = scopedEventGroups(structured.events());
         Set<String> localTempRowsets = localTempRowsets(statement, structured.events());

@@ -608,7 +608,13 @@ CorrectnessFixtureExecutor
 
 SQL correctness fixture 通过 `StatementExecutionService` 执行，并复用 structured parser、relationship、lineage 与 naming enhancement 语义。方言/profile fixture 进入 production runner；common fixture 使用 direct structured-parser overload，但该入口与 runner 共用 `StructuredSqlParseExecutor` 的 detached context、完整 result validator 和延迟 warning 提交边界。因此 common correctness 可同时保护 parser facts/golden 与 direct SPI trust boundary。SQL naming rule 不在 statement 层提前执行；correctness 与正式 scan 都在合并 relationship candidates 后，由 scan-level `EvidenceEnhancementService` 调用 `NamingEvidenceExtractor` 一次生成 `NamingEvidencePool`。DDL fixture 仍通过 `StatementExecutionService` 和 DDL runner 执行，保持 parser-outcome 验收语义，其 typed DDL inventory 可产生 DDL naming observation，但不额外引入 scan-level metadata enhancement。
 
-structured parse 完成后统一执行 `StructuredParseProvenanceNormalizer`：显式 routine/trigger/rule/DDL/view 对象类型保持不变；有 typed write event 的普通 statement 是 `SQL_WRITE`；只有 rowset/projection/predicate 的普通 statement 是 `QUERY`；无 typed 证据时为 `UNKNOWN`。Script Framer 只负责 statement/object framing，不把 `PLAIN_SQL` / `NATIVE_LOG` / `MIGRATION` 预设为写入。
+structured parse 完成后统一执行 `StructuredParseProvenanceNormalizer`：它不覆盖显式
+`StatementSourceType`，只把普通 statement 根据 typed events 规范为 `SQL_WRITE`、`QUERY`、`DDL`
+或 `UNKNOWN`。通用 script framer、live-object 装配和 routine dispatcher均保留精确
+`FUNCTION/PROCEDURE/PACKAGE/PACKAGE_BODY/EVENT/TRIGGER`对象类型，并通过`sourceObjectIdentity`
+传播事件身份。PostgreSQL full/live路径使用输入参数类型signature；compact token-event使用typed
+声明statement identity。返回trigger的函数仍为`FUNCTION`，只有`CREATE TRIGGER`为`TRIGGER`。
+Script Framer只负责statement/object framing，不把`PLAIN_SQL`/`NATIVE_LOG`/`MIGRATION`预设为写入。
 
 ## Parser mode 和 profile 选择
 

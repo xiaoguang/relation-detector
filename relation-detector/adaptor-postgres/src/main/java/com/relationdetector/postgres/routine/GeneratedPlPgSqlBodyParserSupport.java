@@ -65,6 +65,7 @@ public final class GeneratedPlPgSqlBodyParserSupport {
                             "sourceBlockId", attribute(statement, "sourceBlockId"),
                             "sourceObjectType", attribute(statement, "sourceObjectType"),
                             "sourceObjectName", attribute(statement, "sourceObjectName"),
+                            "sourceObjectIdentity", attribute(statement, "sourceObjectIdentity"),
                             "syntaxErrorCount", errors.count)));
         }
         if (embeddedSqlParser == null && !structure.staticStatements().isEmpty()) {
@@ -97,7 +98,8 @@ public final class GeneratedPlPgSqlBodyParserSupport {
                             "sourceStatementId", attribute(statement, "sourceStatementId"),
                             "sourceBlockId", attribute(statement, "sourceBlockId"),
                             "sourceObjectType", attribute(statement, "sourceObjectType"),
-                            "sourceObjectName", attribute(statement, "sourceObjectName"))));
+                            "sourceObjectName", attribute(statement, "sourceObjectName"),
+                            "sourceObjectIdentity", attribute(statement, "sourceObjectIdentity"))));
         }
         int unsupported = Math.max(errors.lines.size(),
                 structure.unsupportedLines().size() + structure.dynamicSqlLines().size());
@@ -126,7 +128,8 @@ public final class GeneratedPlPgSqlBodyParserSupport {
                 "sourceStatementId", attribute(statement, "sourceStatementId"),
                 "sourceBlockId", attribute(statement, "sourceBlockId"),
                 "sourceObjectType", attribute(statement, "sourceObjectType"),
-                "sourceObjectName", attribute(statement, "sourceObjectName"));
+                "sourceObjectName", attribute(statement, "sourceObjectName"),
+                "sourceObjectIdentity", attribute(statement, "sourceObjectIdentity"));
     }
 
     private static String attribute(SqlStatementRecord statement, String name) {

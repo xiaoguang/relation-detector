@@ -79,7 +79,7 @@ class PostgresScriptFramerTest {
         assertEquals(1, result.statements().size());
         assertEquals(StatementSourceType.FUNCTION, result.statements().get(0).sourceType());
         assertEquals("FUNCTION:finance.reconcile_orders", result.statements().get(0).sourceName());
-        assertEquals("ROUTINE", result.statements().get(0).attributes().get("sourceObjectType"));
+        assertEquals("FUNCTION", result.statements().get(0).attributes().get("sourceObjectType"));
         assertEquals("finance.reconcile_orders", result.statements().get(0).attributes().get("sourceObjectName"));
         assertEquals("finance.reconcile_orders", result.statements().get(0).attributes().get("sourceStatementId"));
     }

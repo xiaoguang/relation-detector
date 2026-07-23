@@ -1,12 +1,13 @@
-# LLM Semantic Enricher 详细设计
+# LLM Semantic Extraction 详细设计
 
 ## 1. 目标与定位
 
 **职责：** 基于 relation-detector scan result 构造可追溯 evidence bundle / prompt，并在需要时调用 LLM 生成业务语义候选：实体、事件、关系解释、字段血缘解释、指标候选、维度候选、三元组和审核项。
 
-当前代码分两条链路：
+当前代码分两条独立链路：
 
-- `semantic build` / `semantic e2e` 的 KG 构建链路仍使用 `NoopSemanticEnricher`，它直接返回原始 `EvidenceGraph`，不创建 semantic fact，不调用 LLM。
+- `semantic build` / `semantic e2e` 的 KG 构建链路直接执行
+  `SemanticEvidenceBuilder -> SemanticKgBuilder`，不创建 semantic fact，也不调用 LLM。
 - `semantic extract` 的语义抽取链路已经实现：`SemanticExtractionBundleBuilder` 构造 evidence bundle（默认全量候选池，显式设置 `--max-*` 或 `focus` 时才裁剪），`SemanticExtractionPromptBuilder` 生成 prompt，`codex-session` provider 只写 prompt / bundle / 会话说明，`openai-api` provider 调用 OpenAI-compatible Responses API，并通过 bundle-aware normalizer 写 normalized semantic document。
 
 当前 `semantic extract` 的 normalized result 包含：
@@ -58,7 +59,6 @@ Semantica 官方 README 将 Semantica 定位为 LLM 旁边的 Context and Accoun
 ```text
 Semantic Evidence Builder
   -> EvidenceGraph
-  -> NoopSemanticEnricher (当前默认)
   -> SemanticKgBuilder
   -> semantic-kg.json / semantic-evidence-graph.json
 ```
@@ -93,13 +93,8 @@ ScanBundle
 
 ## 3. 接口契约
 
-```java
-public interface LlmSemanticEnricher {
-    EvidenceGraph enrich(EvidenceGraph graph);
-}
-```
-
-`LlmSemanticEnricher` 仍是 KG 构建链路的扩展点；当前 `semantic build` 使用 `NoopSemanticEnricher`。语义抽取链路使用独立的 extraction API：
+KG 构建链路没有 enrichment 扩展接口。正式 LLM 能力只通过独立 extraction provider 生成候选文档，
+不得原地修改 `EvidenceGraph`。语义抽取链路使用以下 API：
 
 ```java
 public final class SemanticExtractionBundleBuilder {
@@ -178,7 +173,7 @@ edge ID 仅在内容完全一致时幂等去重，内容冲突则失败。
   ],
   "eventCandidates": [
     {
-      "id": "event-candidate:routine:sp_rebuild_sales_fact",
+      "id": "event-candidate:routine:<sha256>",
       "sourceType": "ROUTINE",
       "lineageRefs": ["lineage:..."],
       "supportingDerivedLineageRefs": ["derivedLineage:..."],
@@ -235,7 +230,7 @@ LLM 返回 JSON semantic document，系统再做 deterministic normalization / v
     {
       "id": "event:sp_rebuild_sales_fact",
       "name": "重建销售事实表",
-      "eventCandidateRef": "event-candidate:routine:sp_rebuild_sales_fact",
+      "eventCandidateRef": "event-candidate:routine:<sha256>",
       "inputs": ["sales_orders", "payments"],
       "outputs": ["sales_fact"],
       "evidenceRefs": ["evidence:<sha256>"]

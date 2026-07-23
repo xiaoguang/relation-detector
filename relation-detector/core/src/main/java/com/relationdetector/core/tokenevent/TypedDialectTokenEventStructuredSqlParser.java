@@ -83,6 +83,7 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
         attributes.put("tokenCount", parsed.visibleTokens().size());
         attributes.put("tokenEvent", true);
         attributes.put("tokenEventPrimary", true);
+        attributes.putAll(collection.attributes());
         return new StructuredParseResult(
                 "ANTLR_TOKEN_EVENT",
                 dialect.name(),
@@ -110,15 +111,21 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
 
     protected record TypedEventCollection(
             List<StructuredSqlEvent> events,
-            List<WarningMessage> warnings
+            List<WarningMessage> warnings,
+            Map<String, Object> attributes
     ) {
+        protected TypedEventCollection(List<StructuredSqlEvent> events, List<WarningMessage> warnings) {
+            this(events, warnings, Map.of());
+        }
+
         public TypedEventCollection {
             events = events == null ? List.of() : List.copyOf(events);
             warnings = warnings == null ? List.of() : List.copyOf(warnings);
+            attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
         }
 
         static TypedEventCollection empty() {
-            return new TypedEventCollection(List.of(), List.of());
+            return new TypedEventCollection(List.of(), List.of(), Map.of());
         }
     }
 }

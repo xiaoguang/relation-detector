@@ -25,7 +25,6 @@ final class SemanticNormalizationSupport {
 
     static String slug(String value) {
         String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-        normalized = normalized.replace("routine:", "");
         normalized = normalized.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}._-]+", "_");
         normalized = normalized.replaceAll("_+", "_");
         if (normalized.startsWith("_")) {

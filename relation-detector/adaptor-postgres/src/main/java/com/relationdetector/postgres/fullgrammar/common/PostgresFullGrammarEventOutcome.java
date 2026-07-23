@@ -1,6 +1,7 @@
 package com.relationdetector.postgres.fullgrammar.common;
 
 import java.util.List;
+import java.util.Map;
 
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
@@ -11,10 +12,19 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
  */
 public record PostgresFullGrammarEventOutcome(
         List<StructuredSqlEvent> events,
-        List<WarningMessage> warnings
+        List<WarningMessage> warnings,
+        Map<String, Object> attributes
 ) {
+    public PostgresFullGrammarEventOutcome(
+            List<StructuredSqlEvent> events,
+            List<WarningMessage> warnings
+    ) {
+        this(events, warnings, Map.of());
+    }
+
     public PostgresFullGrammarEventOutcome {
         events = events == null ? List.of() : List.copyOf(events);
         warnings = warnings == null ? List.of() : List.copyOf(warnings);
+        attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
     }
 }

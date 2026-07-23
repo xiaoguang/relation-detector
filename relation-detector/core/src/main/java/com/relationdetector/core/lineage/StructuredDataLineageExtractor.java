@@ -83,6 +83,7 @@ public final class StructuredDataLineageExtractor {
             StructuredParseResult structured,
             Set<TableId> knownPhysicalTables
     ) {
+        statement = EvidenceProvenanceMapper.withParserProvenance(statement, structured);
         List<DataLineageCandidate> candidates = new ArrayList<>();
         Set<String> allLocalTempTables = localTempTables(statement, structured.events());
         for (List<StructuredSqlEvent> events : scopedEventGroups(structured.events())) {

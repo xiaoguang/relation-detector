@@ -2,7 +2,6 @@ package com.relationdetector.semantic.cli;
 
 import java.nio.file.Path;
 
-import com.relationdetector.semantic.enrich.NoopSemanticEnricher;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
 import com.relationdetector.semantic.kg.JsonSemanticKgWriter;
@@ -17,7 +16,6 @@ import com.relationdetector.semantic.reader.ScanBundle;
 final class SemanticKgBuildService {
     void build(ScanBundle bundle, Path output) {
         EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(bundle);
-        evidenceGraph = new NoopSemanticEnricher().enrich(evidenceGraph);
         SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
         new JsonSemanticKgWriter().writeArtifacts(kg, evidenceGraph, output);
     }

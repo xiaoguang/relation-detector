@@ -10,7 +10,7 @@
 
 当前代码实现边界：
 
-- 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> NoopSemanticEnricher -> SemanticKgBuilder -> JSON artifacts`。
+- 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> SemanticKgBuilder -> JSON artifacts`。
 - 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
 - 已实现 `semantic normalize-extraction`：输入 raw semantic output 和必需 evidence bundle，执行候选回填、typed reference/physical endpoint 校验、semantic owner-id 全局唯一性校验，并补齐 `semanticGraph` 与 `validation`。任一闭包失败时命令失败，不输出半闭合正式结果。
@@ -38,16 +38,7 @@ Semantica 官方 README 把 accountability、provenance、reasoning 和 governan
 | **Scan Result Reader** | 否 | 纯数据解析和校验。JSON 解析 + 字段校验是确定性规则操作。LLM 反而会引入错误 |
 | **Semantic Evidence Builder** | 否 | 当前只把 relationship、lineage、naming、derived、diagnostic 和 deterministic event candidate 确定性 materialize 为 `EvidenceGraph`。BFS join-path discovery、comment extraction 和 semantic conflict detection 是后续 catalog/search 层的确定性目标，不是当前 builder 能力；两者都不需要 LLM。 |
 | **LLM Semantic Enricher / Semantic Extraction** | **可选** | `semantic extract --provider codex-session` 只生成 prompt/bundle；`--provider openai-api` 才调用 LLM。LLM 用于从 evidence 推断业务实体名、生成描述、扩展同义词、识别指标候选；输出必须经过 normalizer/ref-closure 校验 |
-| **Semantic Catalog Store** | 否 | 纯 CRUD 存储。确定性读写，不需要 AI |
-| **Lexicon Manager** | 否 | 规则驱动的文本归一化和索引。列名拆分、注释提取是规则操作。同义词候选来自 LLM Enricher，Manager 只做存储和检索 |
-| **Embedding Indexer** | 否（但用 Embedding API） | 调用配置选择的 Embedding provider/model 生成向量。这不是 LLM 调用，不涉及文本生成；文本构造保持模板化，model、dimensions 与输入预算写入索引元数据。 |
-| **Semantic Search** | 否 | 纯数学计算。cosine similarity + 加权求和是确定性公式。不需要 LLM |
-| **Question Understanding** | **是** | 核心 LLM 使用点。用户问题是自由形式的自然语言，必须用 LLM 提取实体、指标、时间范围、过滤条件。规则 NER 无法覆盖业务术语的多样性 |
-| **Query Planner** | 否（可选辅助） | 核心逻辑是图算法（join path 选择）和规则匹配。歧义消解时可选调用 LLM 做语义判断，但 Phase 1 Scope 用规则即可 |
-| **SQL Draft Generator** | **绝对不能** | 这是最关键的 LLM 禁区。SQL 生成必须使用模板，确保只引用 catalog 中存在的表字段。让 LLM 生成 SQL 会编造不存在的列名和 join 条件 |
-| **SQL Validator** | 否 | 规则校验。表存在性、列存在性、join evidence 都是查 catalog 的确定性操作。可以复用 relation-detector parser |
-| **Answer Composer** | 否 | 模板化响应组装。解释文本来自 catalog 中的描述字段，不需要 LLM 重新生成 |
-| **Review Queue** | 否 | 状态机。CRUD 操作，不涉及 AI |
+| **Future capabilities** | 见路线图 | Catalog、lexicon、embedding、search、question/planner、SQL draft/validation、answer 与 review 的 LLM 使用点和禁区统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 维护；本表不重复尚未实现的类级设计。 |
 
 ### 2.3 LLM 调用点总结
 
@@ -191,7 +182,7 @@ Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extr
     {
       "id": "event:sp_rebuild_sales_fact",
       "name": "重建销售事实表",
-      "eventCandidateRef": "event-candidate:routine:sp_rebuild_sales_fact",
+      "eventCandidateRef": "event-candidate:routine:<sha256>",
       "inputs": ["sales_orders", "payments"],
       "outputs": ["sales_fact"],
       "evidenceRefs": ["evidence:<sha256>"]
@@ -423,8 +414,6 @@ Step 7: Answer（最终输出）
     ↓ 输出: ScanBundle (内存对象，typed facts 保留 raw payload)
 [SemanticEvidenceBuilder]
     ↓ 输出: EvidenceGraph (内存对象)
-[NoopSemanticEnricher]
-    ↓ 输出: EvidenceGraph (不修改)
 [SemanticKgBuilder]
     ↓ 输出: SemanticKnowledgeGraph (内存对象)
 [JsonSemanticKgWriter]
@@ -566,9 +555,8 @@ Step 7: Answer（最终输出）
 
 1. ScanResultReader → ScanBundle（relationships、dataLineages、derived facts、namingEvidence、diagnostics 转为 typed facts，同时保留 raw payload）
 2. SemanticEvidenceBuilder → EvidenceGraph（facts、endpoints、evidenceRefs、diagnostics、summary）
-3. NoopSemanticEnricher → EvidenceGraph（不新增、不修改 semantic fact）
-4. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）
-5. JsonSemanticKgWriter → `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
+3. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）
+4. JsonSemanticKgWriter → `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
 
 **目标完整链路输出（后续阶段）：**
 
@@ -580,7 +568,7 @@ Step 7: Answer（最终输出）
 **当前验收标准：**
 - `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json` 均生成且为合法 JSON
 - EvidenceGraph fact 保留 relation-detector payload；KG 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析。相同 ID/content 幂等复用，冲突 ID 原子失败。
-- `NoopSemanticEnricher` 不创造新 fact
+- KG 构建链路不调用 semantic extraction provider，也不创造新 fact
 - 只允许同一 `database.type`、`database.catalog` 与 `database.schema` 合并
 - 所有 fact/evidence/candidate 引用使用内容稳定 ID；正式 normalization 必须同时通过 bundle ID、物理 endpoint、文档内 entity 引用和 semantic owner-id closure
 

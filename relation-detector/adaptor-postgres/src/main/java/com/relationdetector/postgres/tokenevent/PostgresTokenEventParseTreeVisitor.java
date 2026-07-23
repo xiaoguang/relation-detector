@@ -2,12 +2,14 @@ package com.relationdetector.postgres.tokenevent;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.postgres.plpgsql.tokenevent.TokenEventPlPgSqlBodyParser;
 import com.relationdetector.postgres.routine.PlPgSqlStringBody;
 import com.relationdetector.postgres.routine.PostgresRoutineDescriptor;
 import com.relationdetector.postgres.routine.PostgresRoutineBody;
+import com.relationdetector.postgres.routine.PostgresRoutineIdentity;
 import com.relationdetector.postgres.routine.PostgresRoutineLanguageDispatcher;
 import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
 import com.relationdetector.postgres.routine.PostgresRoutineStatementFactory;
@@ -29,6 +31,7 @@ import com.relationdetector.postgres.common.PostgresSetProjectionLayout;
  */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEventWriteDdlSupport {
     private final boolean allowRoutineDispatch;
+    private String sourceObjectIdentity = "";
 
     public PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         this(statement, true);
@@ -46,6 +49,12 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
 
     public List<WarningMessage> warnings() {
         return List.copyOf(warnings);
+    }
+
+    public Map<String, Object> resultAttributes() {
+        return sourceObjectIdentity.isBlank()
+                ? Map.of()
+                : Map.of("sourceObjectIdentity", sourceObjectIdentity);
     }
 
     @Override
@@ -120,9 +129,12 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
         } else {
             return null;
         }
+        String objectIdentity = PostgresRoutineIdentity.preserveCollectedIdentity(statement,
+                PostgresRoutineIdentity.statementScoped(objectType, objectName, statement));
+        sourceObjectIdentity = objectIdentity;
         var outcome = new PostgresRoutineLanguageDispatcher(new TokenEventPlPgSqlBodyParser()).dispatch(
                 new PostgresRoutineDescriptor(language, routineBody, objectType, objectName,
-                        statement.attributes()),
+                        objectIdentity, statement.attributes()),
                 PostgresRoutineAttributes.withNonColumnIdentifiers(statement,
                         ctx.routineParameterList().routineParameter().stream()
                                 .map(parameter -> clean(parameter.identifier().getText())).toList()),

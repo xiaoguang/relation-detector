@@ -238,12 +238,12 @@ Natural Language
 
 | 优先级 | 建议 | 影响文档 | 能力分层 |
 | --- | --- | --- | --- |
-| P0 | 在整体设计中明确 `QuestionPlan / AnswerPlan` 是 LogicForm-like 中间表达。 | `semantic-layer-overall-design.md`, `08-question-understanding.md`, `09-query-planner.md` | Phase 1 Scope |
-| P0 | 在 Answer Composer 中强化“每个数字/字段/SQL draft 的 evidence explanation”。 | `12-answer-composer.md`, `semantic-layer-examples.md` | Phase 1 Scope |
-| P1 | 在 SQL Validator 中补充 `AnswerPlan -> SQL Draft -> Validation Result` 的追溯规则。 | `11-sql-validator.md`, `10-sql-draft-generator.md` | Phase 1 Scope |
+| P0 | 在整体设计中明确 `QuestionPlan / AnswerPlan` 是 LogicForm-like 中间表达。 | `semantic-layer-overall-design.md`, `future-capabilities-roadmap.md` | Phase 1 Scope |
+| P0 | 在 Answer Composer 中强化“每个数字/字段/SQL draft 的 evidence explanation”。 | `future-capabilities-roadmap.md`, `semantic-layer-examples.md` | Phase 1 Scope |
+| P1 | 在 SQL Validator 中补充 `AnswerPlan -> SQL Draft -> Validation Result` 的追溯规则。 | `future-capabilities-roadmap.md` | Phase 1 Scope |
 | P1 | 在术语表中补 `LogicForm-like intermediate representation` 或把 `QuestionPlan / AnswerPlan` 描述得更像中间语义表达。 | `glossary.md` | Phase 1 Scope |
-| P1 | 补充 `Time Semantics` 小节，区分简单时间范围、同比环比、业务日历和数据延迟。 | `08-question-understanding.md`, `09-query-planner.md` | Phase 1 / Phase 2+ |
-| P2 | 新增或扩展 `SemanticEvent` 设计，说明事件候选来自哪些 evidence，如何 review。 | `02-semantic-evidence-builder.md`, `04-semantic-catalog-store.md` | Phase 2+ |
+| P1 | 补充 `Time Semantics` 小节，区分简单时间范围、同比环比、业务日历和数据延迟。 | `future-capabilities-roadmap.md` | Phase 1 / Phase 2+ |
+| P2 | 新增或扩展 `SemanticEvent` 设计，说明事件候选来自哪些 evidence，如何 review。 | `02-semantic-evidence-builder.md`, `future-capabilities-roadmap.md` | Phase 2+ |
 | P2 | 把指标语义层和本体化语义层的关系写入总体设计，避免“只做指标字典”的误读。 | `semantic-layer-overall-design.md` | Phase 2+ |
 | P3 | 动作语义、API/URL 执行、主动预警、动态报告作为 Future Capability 单独归档。 | `semantic-layer-examples.md` 或未来 roadmap | Future Capability |
 

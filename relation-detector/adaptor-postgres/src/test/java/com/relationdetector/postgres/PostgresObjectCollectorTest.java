@@ -51,12 +51,49 @@ class PostgresObjectCollectorTest {
                 trigger.sql());
     }
 
+    @Test
+    void routineObjectNameIncludesPostgresIdentityArguments() {
+        var definitions = new PostgresObjectCollector().collect(connectionWithFunction(),
+                new ScanScope(null, "public", List.of(), List.of()));
+
+        assertEquals(1, definitions.size());
+        var function = definitions.get(0);
+        assertEquals(DatabaseObjectType.FUNCTION, function.type());
+        assertEquals("refresh_sales(bigint, text)", function.name());
+    }
+
     private Connection connection() {
         return connection(false);
     }
 
     private Connection connectionWithBlankTrigger() {
         return connection(true);
+    }
+
+    private Connection connectionWithFunction() {
+        return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {Connection.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getCatalog" -> "erp";
+                    case "prepareStatement" -> functionStatement((String) args[0]);
+                    case "close" -> null;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+    }
+
+    private PreparedStatement functionStatement(String sql) {
+        return (PreparedStatement) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {PreparedStatement.class}, (proxy, method, args) -> switch (method.getName()) {
+                    case "setString", "close" -> null;
+                    case "executeQuery" -> resultSet(sql.toLowerCase(Locale.ROOT).contains("pg_proc")
+                            ? List.of(Map.of(
+                                    "schema_name", "public",
+                                    "object_name", "refresh_sales",
+                                    "prokind", "f",
+                                    "identity_arguments", "bigint, text",
+                                    "definition", "CREATE FUNCTION public.refresh_sales(bigint, text) RETURNS void"))
+                            : List.of());
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
     }
 
     private Connection connection(boolean blankTrigger) {

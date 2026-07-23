@@ -11,7 +11,7 @@
 - 从 top-level `namingEvidence` 构建 `NamingEvidenceFact`，其中包含 direct 和 derived naming evidence。
 - 从 `derivedRelationships` / `derivedDataLineages` 构建 `DerivedRelationshipFact` / `DerivedLineageFact`。
 - 从 `warnings` 构建 `Diagnostic` fact。
-- 从 deterministic `SemanticEventExtractor` 输出构建 `SemanticEventCandidate` fact；KG writer 将它渲染为 `Event` 节点。eventCandidates 只来自 direct non-control write lineage，derived lineage 只能作为 supporting evidence。event source/operation 只读取 typed provenance 与 `mappingKind`；缺失时使用 `SQL_WRITE/WRITE`，event kind 固定为 `SQL_WRITE_OPERATION`，不读取 detail、路径、source 前缀或表列名推断结构。一个 merged lineage 的 raw observations 按完整 typed source identity 分组：不同 source 拆成独立 event，同一 source 的多个 mapping kind 聚合到同一 event；排序和稳定 ID 不依赖 observation 输入顺序。
+- 从 deterministic `SemanticEventExtractor` 输出构建 `SemanticEventCandidate` fact；KG writer 将它渲染为 `Event` 节点。eventCandidates 只来自 direct non-control write lineage，derived lineage 只能作为 supporting evidence。event source/operation 只读取 typed provenance 与 `mappingKind`；缺失时使用 `SQL_WRITE/WRITE`，event kind 固定为 `SQL_WRITE_OPERATION`，不读取 detail、路径、source 前缀或表列名推断结构。routine/trigger 按对象聚合，普通 SQL write 按 statement/source object 与 target table 聚合，同一 event 汇总多个 mapping kind 和不同证据位置。routine group key/stable ID使用精确`sourceObjectType + sourceObjectIdentity`；PostgreSQL full/live identity包含输入参数类型，compact token-event使用typed declaration statement identity。formal normalization默认event ID从已验证`eventCandidateRef`派生。
 - 从每条记录的 `rawEvidence` 优先抽取 `EvidenceReference`；没有 `rawEvidence` 时回退 grouped `evidence`。
 - 保存原始 relation-detector JSON payload snapshot，供后续审计和 KG materialization 使用。
 
@@ -52,7 +52,7 @@ Semantica 官方 ARCHITECTURE 在 semantic extract 之后显式设置 conflict d
 [Semantic Evidence Builder]
   ↓ 当前输出: EvidenceGraph
 
-下游: NoopSemanticEnricher
+下游: SemanticKgBuilder；独立的 semantic extraction provider 消费 evidence bundle，而不修改 EvidenceGraph
   当前实现: 直接返回 EvidenceGraph，不创造事实
 
 下游: SemanticKgBuilder
