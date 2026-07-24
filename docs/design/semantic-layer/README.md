@@ -25,15 +25,29 @@ Relation Detector
 ```text
 Relation Detector JSON
   -> Scan Result Reader
-  -> SemanticExtractionBundleBuilder
-  -> SemanticExtractionPromptBuilder
+  -> deterministic-kg/ + SemanticExtractionBundleBuilder
+  -> SemanticShardPlanner (连通分量 / evidence closure / 唯一 owner)
+  -> per-shard SemanticExtractionPromptBuilder
   -> semantic extract
-       -> codex-session: 写 prompt / evidence bundle / 会话说明，不调用外部模型
-       -> openai-api: 调用 OpenAI-compatible Responses API，通过 bundle-aware normalizer 写 raw response 与 normalized semantic document
+       -> codex-session: 写逐片 prompt / evidence bundle / 协调模板，不调用外部模型
+       -> openai-api: 固定 gpt-5.6-sol/xhigh，顺序执行逐片调用、片内 normalization、
+                      exact-ID merge 和受限 reconciliation
+  -> full-bundle normalization
+       -> merged draft / normalized semantic document / run manifest
   -> semantic normalize-extraction
        -> raw result + evidence bundle
        -> 严格验证 evidence/candidate refs，补齐 semanticGraph / validation
 ```
+
+模型不接收也不改写 deterministic KG；KG 与 extraction bundle 是同一个 `ScanBundle` 的并列输出。
+分片保留全部 fact/candidate，并由 planner 要求每项只有一个 canonical owner。超预算 table owner
+会按稳定 root ID 拆成 `table#part-NNNN`，但每个 root 及其 typed closure 仍不可切分。当前 prompt 和
+deterministic backfill 遵守 overlap 只读规则，但 model-authored 输出尚缺 owned-ref 强制校验；
+token budget 也使用确定性估算而不是模型 tokenizer。任何原子 closure 超过估算门限、引用不闭合、
+同 ID 冲突未解决或全局 normalization 失败都不会返回正式 extraction result；artifact 文件写入本身
+仍不是目录级事务。
+该分片边界只控制模型上下文；当前 reader 仍会先在内存中完整物化单个 relation-detector JSON。
+超大输入的 bounded-memory streaming / on-disk ingestion 尚未实现，不能由模型分片能力代替。
 
 `semantic e2e` 是 deterministic 验证入口：同一次读取 scan result 后同时写 `semantic-kg/<case-name>/` 和 `semantic-extraction/<case-name>/` 的 evidence bundle / prompt artifacts，但不调用模型。当前不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答；这些仍是后续阶段。
 
@@ -52,8 +66,21 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 | `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线 `SemanticKgBuilder`。 |
 | `SEM-KG-01` | `MATCHED` | `SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析；identity registry 只允许完整内容相同的幂等重复，冲突 node/edge ID 原子失败。 |
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。formal normalization的默认event ID从已验证`eventCandidateRef`派生。 |
+| `SEM-SHARD-PLAN-01` | `MATCHED` | 完整输入的 fact/candidate owner、dependency closure、evidence closure和shard coverage在模型调用前验证；超预算 table owner按稳定root拆片且root closure保持原子。 |
+| `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item必须用`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap与`evidenceRefs`只提供审计上下文，越界使整片在backfill前原子失败。 |
+| `SEM-SHARD-BUDGET-01` | `MATCHED` | `targetInputTokens/maxInputTokens`明确为带margin的确定性估算门限；最终prompt再次估算并在API前fail-fast，manifest只记录estimated tokens，不宣称exact。 |
+| `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
+| `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
+| `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 可复用output root下使用唯一staging/run目录；完整成功后原子rename，失败保留FAILED staging；artifact使用流式SHA-256，支持`full/final-only`保留策略。 |
+| `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML root/section/unknown field/数值严格校验，相对路径按config目录解析；CLI override后再次构造统一typed config。 |
+| `SEM-SHARD-STATE-01` | `MATCHED` | 公开JSON accessor返回副本、集合不可修改；同包流水线使用明确的trusted accessor，provider/writer不能通过公开引用回写已校验状态。 |
 
-wire、reference closure、formal normalization ID、离线 KG evidence/identity gate 与 routine event identity 已闭环。Catalog Store、search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，不因本矩阵状态变化而归类为当前实现。
+wire、reference closure、formal normalization ID、离线 KG evidence/identity gate、routine event identity
+以及semantic shard的typed planning、owner output、identity merge、估算门限、artifact transaction、
+strict configuration和公开状态不可变边界均已闭环。详细
+证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
+search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
+不因本矩阵状态变化而归类为当前实现。
 
 ### 目标离线构建链路
 
@@ -100,7 +127,7 @@ Question
 | --- | --- | --- | --- |
 | 1 | Scan Result Reader | [01-scan-result-reader.md](01-scan-result-reader.md) | 读取 relation-detector 输出，归一化为 ScanBundle。 |
 | 2 | Semantic Evidence Builder | [02-semantic-evidence-builder.md](02-semantic-evidence-builder.md) | 将 direct/derived relationship、lineage、naming、diagnostic 和 typed event candidate 物化为 evidence graph；metadata/comment 索引仍是后续能力。 |
-| 3 | LLM Semantic Extraction | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 构造 evidence bundle / prompt，支持 codex-session、openai-api 和 normalized extraction result；不介入离线 KG 构建。 |
+| 3 | LLM Semantic Extraction | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 构造 evidence-closed shards，支持 codex-session、openai-api、受限协调和 normalized result；确定性 KG 作为并列 artifact，模型不得改写。 |
 | 4-13 | Future Capabilities | [future-capabilities-roadmap.md](future-capabilities-roadmap.md) | Catalog、lexicon、embedding、search、question/planner、SQL draft/validation、answer 与 review 的目标、依赖、安全边界和实施门槛。 |
 
 未来在线问答与治理不再维护十份尚未实现的类/API 草图；统一以路线图中的 typed 输入输出、

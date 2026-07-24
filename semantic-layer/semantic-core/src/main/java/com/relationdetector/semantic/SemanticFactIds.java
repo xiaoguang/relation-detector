@@ -20,7 +20,8 @@ public final class SemanticFactIds {
                 endpoint(relationship.path("source")),
                 endpoint(relationship.path("target")),
                 relationship.path("relationType").asText(relationship.path("kind").asText("UNKNOWN")),
-                relationship.path("relationSubType").asText(""));
+                relationship.path("relationSubType").asText(""),
+                derived ? path(relationship) : "");
     }
 
     public static String lineage(JsonNode lineage, boolean derived) {
@@ -31,7 +32,8 @@ public final class SemanticFactIds {
                 source,
                 endpoint(lineage.path("target")),
                 lineage.path("flowKind").asText(lineage.path("kind").asText("UNKNOWN")),
-                lineage.path("transformType").asText("UNKNOWN"));
+                lineage.path("transformType").asText("UNKNOWN"),
+                derived ? path(lineage) : "");
     }
 
     public static String naming(JsonNode naming) {
@@ -83,6 +85,17 @@ public final class SemanticFactIds {
         }
         String tableName = schema.isBlank() ? table : schema + "." + table;
         return column.isBlank() ? tableName : tableName + "." + column;
+    }
+
+    private static String path(JsonNode fact) {
+        List<String> result = new ArrayList<>();
+        fact.path("path").forEach(endpoint -> {
+            String value = endpoint(endpoint);
+            if (!value.isBlank()) {
+                result.add(value);
+            }
+        });
+        return String.join("\u0000", result);
     }
 
     public static String slug(String value) {

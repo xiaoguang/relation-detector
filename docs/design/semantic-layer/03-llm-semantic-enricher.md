@@ -8,7 +8,12 @@
 
 - `semantic build` / `semantic e2e` 的 KG 构建链路直接执行
   `SemanticEvidenceBuilder -> SemanticKgBuilder`，不创建 semantic fact，也不调用 LLM。
-- `semantic extract` 的语义抽取链路已经实现：`SemanticExtractionBundleBuilder` 构造 evidence bundle（默认全量候选池，显式设置 `--max-*` 或 `focus` 时才裁剪），`SemanticExtractionPromptBuilder` 生成 prompt，`codex-session` provider 只写 prompt / bundle / 会话说明，`openai-api` provider 调用 OpenAI-compatible Responses API，并通过 bundle-aware normalizer 写 normalized semantic document。
+- `semantic extract` 的语义抽取链路已经实现：先从同一个 `ScanBundle` 写
+  `deterministic-kg/`，再由 `SemanticExtractionBundleBuilder` 构造完整 evidence bundle。
+  `SemanticShardPlanner` 按当前 table-touch 连通分量形成 evidence-closed shard；`codex-session`
+  只写逐片 prompt / bundle / 协调模板，`openai-api` 默认使用
+  `gpt-5.6-sol`、`xhigh` 调用 Responses API。逐片结果先在片内归一化，再确定性合并、
+  受限协调，最后针对原始完整 bundle 做一次全局闭包校验。
 
 当前 `semantic extract` 的 normalized result 包含：
 
@@ -31,6 +36,8 @@
 - LLM 不创建正式 Data Lineage。
 - LLM 不把任何 metric / entity / join path 直接提升为 `BUSINESS_APPROVED`。
 - LLM 输出必须引用 evidence bundle 中已有的 fact/evidence/candidate id；无法闭合的内容会使正式 normalization 失败。写入持久化 warning / review queue 属于后续 catalog/governance 阶段。
+- LLM 不接收可改写的正式 KG。确定性 KG 与模型 evidence bundle 是同一 `ScanBundle`
+  的并列 artifact；模型只能返回语义候选或受限 reconciliation patch。
 
 LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。数据库事实来自 relation-detector 输出的 relationship、lineage、metadata、SQL source 和注释。
 
@@ -67,14 +74,15 @@ KG 构建链路不调用 LLM，也不会修改 evidence graph。
 
 ```text
 ScanBundle
-  -> SemanticExtractionBundleBuilder
-  -> SemanticExtractionPromptBuilder
+  -> deterministic-kg/ (规则构建，不交给模型改写)
+  -> SemanticExtractionBundleBuilder (完整 bundle)
+  -> SemanticShardPlanner (连通分量 / evidence closure / 唯一 owner)
+  -> SemanticExtractionPromptBuilder (逐片)
   -> semantic extract
-       -> codex-session: 只写 semantic-extraction-evidence-bundle.json /
-                         semantic-extraction-prompt.md /
-                         semantic-extraction-codex-session.md
-       -> openai-api: 调用 Responses API，写 semantic-extraction-result-raw.json /
-                      semantic-extraction-result.json
+       -> codex-session: 写 shards/* prompt / bundle / session 与 reconciliation template
+       -> openai-api: 顺序调用 Responses API，片内 normalization 后 merge/reconcile
+  -> full-bundle normalization
+       -> semantic-extraction-result.json / run-manifest.json
   -> semantic normalize-extraction
        -> 对已有 JSON 输出生成 normalized semantic document
 ```
@@ -101,11 +109,15 @@ public final class SemanticExtractionBundleBuilder {
     ObjectNode build(ScanBundle bundle, String focus, int maxRelationships, int maxLineage, int maxNamingEvidence);
 }
 
-public final class SemanticExtractionPromptBuilder {
-    SemanticExtractionPrompt build(ScanBundle bundle, String focus, int maxRelationships, int maxLineage, int maxNamingEvidence);
+public final class SemanticExtractionService {
+    SemanticExtractionRunPlan plan(ObjectNode fullBundle, SemanticShardingOptions options);
+    SemanticExtractionRunResult execute(
+        SemanticExtractionRunPlan plan,
+        SemanticModelClient shardClient,
+        SemanticModelClient reconciliationClient);
 }
 
-public final class OpenAiResponsesSemanticExtractor {
+public interface SemanticModelClient {
     SemanticExtractionResult extract(SemanticExtractionPrompt prompt);
     String requestJson(SemanticExtractionPrompt prompt);
 }
@@ -195,11 +207,102 @@ edge ID 仅在内容完全一致时幂等去重，内容冲突则失败。
 相对化，外部绝对路径只保留文件名。
 
 无 `focus` 时，bundle 默认覆盖全局完整候选池；`--max-relationships`、`--max-lineage`、`--max-naming`
-的默认值是 `0`，表示不限制。只有用户显式设置正数上限时，才生成有意的 preview / compact prompt view。
+的默认值是 `0`，表示不限制。只有在 `sharding.mode=off` 时才允许用户显式设置正数上限，
+生成有意的 preview / compact prompt view；生产分片不能通过截断减少上下文。
 有 `focus` 时只保留相关表和 evidence。所有输出引用 bundle 中内容稳定的 fact、evidence 或 candidate id；
 relationship、lineage、naming、diagnostic、evidence、triplet candidate 以及 normalizer 生成的 relation/lineage/
 triplet/review id 都不使用数组位置。bundle-aware normalizer 会根据 evidence bundle 补齐遗漏的 event、
 triplet 和 review item 候选，并对每个引用做类型化闭包校验。
+
+### 4.1 Evidence-closed 分片
+
+默认配置：
+
+```yaml
+model: gpt-5.6-sol
+reasoningEffort: xhigh
+artifactRetention: full
+sharding:
+  mode: auto
+  targetInputTokens: 240000
+  maxInputTokens: 800000
+  maxShardCount: 128
+  reconcile: true
+```
+
+`AUTO` 在完整 prompt 估算不超过目标预算时只产生一个 shard；否则先按当前 table-touch 图的连通分量分组，
+再按稳定顺序把多个小型、互不连通的 component 装入同一目标预算，避免“一张孤立小表一次模型调用”。
+不能装入目标预算的单个连通分量再按 table owner 拆成 evidence-closed unit。若一个 table owner
+加入 ownership context 后仍超过 `maxInputTokens`，planner 按稳定 root ID 将其切成
+`table#part-NNNN` 子片；每个 root 重新闭合 typed dependency/evidence，单个 root 及其 closure 是
+不可切分的预算原子。这样 table 仍是 canonical ownership 轴，但不会被错误等同于“一张表只能对应
+一次模型请求”。`FORCE` 保留逐 component/table/part split 的诊断形态，不做小组件装箱。closure
+必须包含被该片 fact/candidate 引用的全部 fact、candidate 和 evidence；`evidenceRefs` 在这里是统一
+reference index 引用，不等同于只引用底层 `evidence[]`。
+
+`OFF` 不按 `targetInputTokens` 主动分片，但仍必须满足 `maxInputTokens` 估算门限。门限针对加入
+`ownedFactRefs`、`ownedCandidateRefs` 和 `overlapRefs` 后的最终 prompt 估算，而不是加入 ownership
+上下文之前的中间 bundle。当前 `SemanticPromptBudgetEstimator` 使用 ASCII 字符数、非 ASCII code point
+数、固定开销和 15% margin 做确定性估算；它没有调用模型 tokenizer。因此该门限是 repository estimate
+gate，不是 provider 精确 token 数的数学硬上限。API 返回的 actual usage 只用于事后审计。
+
+每个 fact 与 deterministic candidate 恰好有一个 canonical owner。其他 shard 可以携带只读 overlap
+上下文，planner 不会重复授予 owner，deterministic candidate backfill 也只补 owned candidates。prompt
+要求每个model-authored item使用非空`ownedGroundingRefs`直接引用当前片owned fact/candidate。
+`SemanticShardOutputOwnershipValidator`在candidate backfill和formal normalization前校验整个raw输出；
+direct candidate/fact ref指向其他owner、只有overlap、或只用`evidenceRefs`提供审计上下文均使整片原子
+失败。一个 root 的原子closure超过估算门限、owner缺失、引用不闭合或shard数超限时，planner明确
+失败，不截断、不丢事实。`maxShardCount=128` 是默认运行保护，不是能力上限；大型 derived bundle
+需要调用方基于预计规模显式提高该值，manifest 仍记录实际 shard 数供审计。
+
+这里的预算只约束模型 request context，不约束 relation-detector JSON 的读取内存。当前
+`ScanResultReader` 会先把一个输入完整物化为 `ScanBundle`，随后才构建 deterministic KG 和 shard plan。
+因此，无法在配置堆内完成 typed materialization 的超大输入不属于本分片机制已经解决的范围；要支持
+这类输入，需要单独设计 streaming / on-disk ingestion，不能通过提高模型分片数来宣称支持。
+
+模型 shard 顺序执行。每片输出先用该片 bundle 执行 formal normalization；全部片成功后按输出中的
+canonical identity确定性合并。物理entity使用完整`physicalName`；无物理身份的业务entity使用
+`normalizedName + machineType/type + ownedGroundingSignature`。相同identity幂等合并并重写typed
+entity refs；同名但grounding不同的业务entity保留不同ID并生成
+`POTENTIAL_SEMANTIC_DUPLICATE/REVIEW_NEEDED`。无owned grounding或同一identity结构冲突显式失败，
+禁止last-write-wins。
+多 shard 且启用 reconciliation 时，模型只接收 compact semantic summary、conflict variants 和 owner
+信息，并只可返回：
+
+- 已知 conflict 的 variant 选择；
+- 已有对象的展示名称/说明调整；
+- 使用已有 entity ID 和完整 bundle reference 的语义关系。
+
+协调器不得创建物理 fact、新 evidence/candidate reference、物理 endpoint 或治理批准状态。
+应用 patch 后，最终文档必须再次针对原始完整 bundle 归一化并重建semantic graph/reference closure；
+任一 shard、merge、patch 或全局闭包失败都不会返回`SemanticExtractionRunResult`。
+
+`run-manifest.json` 记录完整 bundle hash、每片 owner/估算 token、实际 input/output token、
+transport attempts、协调状态、冲突数、最终闭包状态，以及所有 artifact 的 SHA-256 和大小。
+`--output`是可复用root；每次运行写`.staging-<runId>`，完整成功后以同文件系统原子rename发布为
+`run-<runId>`。失败保留带`FAILED` manifest的staging且不发布final run。manifest直接使用当前配置的
+provider/model/reasoning，artifact hash通过流式读取生成。`artifactRetention=full`保留全部请求、响应和
+协调payload；`final-only`在模型抽取完整成功后只保留最终结果、deterministic KG、manifest、hash和
+pruned清单。`request-only`没有最终语义结果，因此始终保留其请求payload，不执行`final-only`裁剪。
+deterministic KG、build-run 和 evidence graph 也直接通过 Jackson generator 流式写入文件，不能先
+`writeValueAsString` 物化整个 artifact；后者会使大型 derived KG 同时受到堆大小和 JVM 单字符串长度
+上限约束。
+
+### 4.2 当前实现差异矩阵
+
+| ID | 状态 | 已实现边界与剩余缺口 |
+| --- | --- | --- |
+| `SEM-SHARD-PLAN-01` | `MATCHED` | planner 对完整输入建立唯一 fact/candidate owner map，逐片补齐 dependency/evidence closure；超预算 table owner 按稳定 root 拆成 part，root closure 保持原子，并在模型调用前执行覆盖校验。 |
+| `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item通过`ownedGroundingRefs`证明当前片owner；direct ref越界、overlap-only或evidence-only输出在backfill前原子拒绝。 |
+| `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的prompt保守估算；超过`maxInputTokens`在API前失败，配置、Javadoc和manifest均不把estimate称为exact token。 |
+| `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
+| `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
+| `SEM-SHARD-ARTIFACT-01` | `MATCHED` | unique staging/run目录、完整成功后的原子rename、FAILED staging、streaming SHA-256和`full/final-only`策略均有独立测试。 |
+| `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML shape/unknown field/numeric value严格失败，相对路径按配置目录解析，CLI override后重新构造并校验typed config。 |
+| `SEM-SHARD-STATE-01` | `MATCHED` | 构造输入deep-copy、public JSON accessor返回副本、集合不可修改；同包trusted accessor仅用于已校验内部流水线。 |
+
+上述七项均已由typed validation、identity和artifact transaction boundary闭环；没有通过弱化
+evidence closure、删除overlap或截断事实规避问题。
 
 独立归一化命令为：
 
@@ -270,14 +373,17 @@ LLM 输出进入 catalog 前必须校验。当前代码已实现的是 normalize
 
 ```mermaid
 flowchart TD
-  A["证据包（默认全量候选池）"] --> B["构造 LLM Prompt"]
-  B --> C["生成语义对象建议"]
-  C --> D["校验 evidence/candidate ID 与文档内 entity 引用"]
-  D --> E{"证据是否有效?"}
-  E -- "是" --> F["写入 SYSTEM_PROPOSED 语义对象"]
-  E -- "否" --> G["formal normalization 失败"]
-  F --> H["normalized semantic document"]
-  G --> I["不输出部分 artifact；后续治理可单独接收候选"]
+  A["完整证据包"] --> B["确定性 KG（并列 artifact）"]
+  A --> C["Evidence-closed shard planner"]
+  C --> D["逐片 LLM 与片内 normalization"]
+  D --> E["Exact-ID merge"]
+  E --> F{"多片且启用协调?"}
+  F -- "是" --> G["受限 reconciliation patch"]
+  F -- "否" --> H["无冲突 draft"]
+  G --> I["完整 bundle 全局 normalization"]
+  H --> I
+  I --> J["Ref-closed semantic document"]
+  I -. "失败" .-> K["原子失败，不输出部分正式结果"]
 ```
 
 </details>
@@ -287,14 +393,17 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A["Semantic Extraction Evidence Bundle"] --> B["Build LLM Prompt"]
-  B --> C["Generate semantic object proposals"]
-  C --> D["Validate evidence/candidate IDs and document-local entity refs"]
-  D --> E{"Valid evidence?"}
-  E -- "yes" --> F["Write SYSTEM_PROPOSED semantic objects"]
-  E -- "no" --> G["Fail formal normalization"]
-  F --> H["Normalized semantic document"]
-  G --> I["No partial artifact; governance may ingest a separate candidate"]
+  A["Complete evidence bundle"] --> B["Deterministic KG sibling artifact"]
+  A --> C["Evidence-closed shard planner"]
+  C --> D["Per-shard LLM and normalization"]
+  D --> E["Exact-ID merge"]
+  E --> F{"Multiple shards and reconciliation enabled?"}
+  F -- "yes" --> G["Constrained reconciliation patch"]
+  F -- "no" --> H["Conflict-free draft"]
+  G --> I["Full-bundle global normalization"]
+  H --> I
+  I --> J["Ref-closed semantic document"]
+  I -. "failure" .-> K["Atomic failure; no partial formal result"]
 ```
 
 </details>
@@ -307,6 +416,13 @@ flowchart TD
 | LLM 返回字段但没有对应 semantic entity | 正式 normalization 失败并报告 unresolved reference |
 | LLM 新建 entity 并填写 bundle 中不存在的物理表/字段 | 正式 normalization 失败，不输出部分 artifact |
 | LLM 在同一或不同 section 复用 semantic object id | 正式 normalization 失败；graph node/edge 也有独立冲突防御 |
+| 两个物理图连通分量 | 形成两个确定性 shard；每个 fact/candidate 只有一个 owner |
+| shard 引用 bundle 外 evidence/fact/candidate | planning 或片内 normalization 失败 |
+| 一个最小 evidence closure 超过配置的估算门限 | 明确失败，不截断事实；另用 provider usage 审计实际 token |
+| 模型只使用 overlap ref 创建对象 | `SemanticShardOutputOwnershipValidator` 在 backfill 前原子拒绝，不产生部分结果 |
+| 两片返回同 ID 不同内容 | 形成显式 conflict；没有协调或协调不完整时失败 |
+| 两片返回不同 ID 的同一 physical entity | 当前不会形成 conflict，记录为 `SEM-SHARD-MERGE-01` |
+| HTTP 429/5xx/transport failure | 在配置上限内重试；4xx/JSON/闭包错误不作为 transport 重试 |
 | LLM 返回新 join path step | 当前不写入物理 relationship；正式拒绝/审核属于后续 catalog gate |
 | evidence 完整的 table/column | 写入 `EVIDENCE_SUPPORTED` |
 | 指标候选 | normalized result 保留 `SYSTEM_PROPOSED` / `REVIEW_NEEDED` 等状态；Review Queue 写入尚未实现 |

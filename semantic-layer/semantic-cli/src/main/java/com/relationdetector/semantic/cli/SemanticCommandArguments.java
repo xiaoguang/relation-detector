@@ -4,8 +4,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.relationdetector.semantic.extract.ArtifactRetention;
 import com.relationdetector.semantic.extract.SemanticExtractionConfig;
 import com.relationdetector.semantic.extract.SemanticExtractionConfigLoader;
+import com.relationdetector.semantic.extract.SemanticShardMode;
+import com.relationdetector.semantic.extract.SemanticShardingOptions;
 
 /**
  * CN: 解析并合并 semantic CLI 参数与 extract 配置；输入是 argv 和环境默认值，输出不可变命令参数，失败时只抛配置异常，不执行命令或访问 scan 数据。
@@ -27,6 +30,12 @@ record SemanticCommandArguments(
         int maxLineage,
         int maxNamingEvidence,
         boolean requestOnly,
+        ArtifactRetention artifactRetention,
+        SemanticShardingOptions sharding,
+        int shardMaxOutputTokens,
+        int reconciliationMaxOutputTokens,
+        int requestTimeoutSeconds,
+        int maxTransportRetries,
         String name,
         Path evidenceBundle
 ) {
@@ -112,6 +121,46 @@ record SemanticCommandArguments(
                     values.requestOnly = true;
                     values.requestOnlySet = true;
                 }
+                case "--artifact-retention" -> {
+                    values.artifactRetention = ArtifactRetention.parse(requireValue(args, index++, arg));
+                    values.artifactRetentionSet = true;
+                }
+                case "--shard-mode" -> {
+                    values.shardMode = SemanticShardMode.parse(requireValue(args, index++, arg));
+                    values.shardModeSet = true;
+                }
+                case "--target-input-tokens" -> {
+                    values.targetInputTokens = positiveInt(requireValue(args, index++, arg), arg);
+                    values.targetInputTokensSet = true;
+                }
+                case "--max-input-tokens" -> {
+                    values.maxInputTokens = positiveInt(requireValue(args, index++, arg), arg);
+                    values.maxInputTokensSet = true;
+                }
+                case "--max-shards" -> {
+                    values.maxShardCount = positiveInt(requireValue(args, index++, arg), arg);
+                    values.maxShardCountSet = true;
+                }
+                case "--shard-max-output-tokens" -> {
+                    values.shardMaxOutputTokens = positiveInt(requireValue(args, index++, arg), arg);
+                    values.shardMaxOutputSet = true;
+                }
+                case "--reconciliation-max-output-tokens" -> {
+                    values.reconciliationMaxOutputTokens = positiveInt(requireValue(args, index++, arg), arg);
+                    values.reconciliationMaxOutputSet = true;
+                }
+                case "--no-reconcile" -> {
+                    values.reconcile = false;
+                    values.reconcileSet = true;
+                }
+                case "--request-timeout-seconds" -> {
+                    values.requestTimeoutSeconds = positiveInt(requireValue(args, index++, arg), arg);
+                    values.requestTimeoutSet = true;
+                }
+                case "--max-transport-retries" -> {
+                    values.maxTransportRetries = nonNegativeInt(requireValue(args, index++, arg), arg);
+                    values.maxTransportRetriesSet = true;
+                }
                 case "--name" -> values.name = requireValue(args, index++, arg);
                 case "--evidence-bundle" -> values.evidenceBundle = Path.of(requireValue(args, index++, arg));
                 default -> throw new IllegalArgumentException("unknown semantic argument");
@@ -151,8 +200,8 @@ record SemanticCommandArguments(
 
                 Commands:
                   build                 Build evidence-backed semantic KG JSON from relation-detector JSON.
-                  extract               Build an evidence bundle/prompt. codex-session writes local artifacts;
-                                        openai-api calls an OpenAI-compatible Responses API.
+                  extract               Build deterministic KG plus evidence-closed model shards. codex-session
+                                        writes local artifacts; openai-api calls the Responses API.
                   e2e                   Deterministically write both semantic-kg/<name>/ and
                                         semantic-extraction/<name>/ artifacts without calling a model.
                   normalize-extraction  Convert a JSON semantic extraction result into the formal ref-closed
@@ -165,8 +214,8 @@ record SemanticCommandArguments(
                   --config <file>        YAML/JSON config for extract. CLI arguments override config values.
                   --focus <source>       Optional routine/query/source focus.
                   --provider <name>      codex-session or openai-api. Defaults to codex-session.
-                  --model <model>        Model for openai-api. Defaults to OPENAI_MODEL or gpt-5.5.
-                  --reasoning-effort <v> Reasoning effort for extract. Defaults to high.
+                  --model <model>        Approved extraction model; currently fixed to gpt-5.6-sol.
+                  --reasoning-effort <v> Approved extraction effort; currently fixed to xhigh.
                   --max-output-tokens <n>Maximum model output tokens. Defaults to 12000.
                   --base-url <url>       OpenAI-compatible base URL.
                   --api-key-env <name>   Environment variable containing API key. Defaults to OPENAI_API_KEY.
@@ -174,6 +223,22 @@ record SemanticCommandArguments(
                   --max-lineage <n>      Evidence lineage cap. Defaults to 0 (unlimited).
                   --max-naming <n>       Evidence naming cap. Defaults to 0 (unlimited).
                   --request-only         Write request artifacts without calling the model.
+                  --artifact-retention <v>
+                                         full or final-only. Defaults to full.
+                  --shard-mode <mode>    auto, off, or force. Defaults to auto.
+                  --target-input-tokens <n>
+                                         Preferred conservative estimated input budget. Defaults to 240000.
+                  --max-input-tokens <n> Conservative estimated per-shard input limit. Defaults to 800000.
+                  --max-shards <n>       Maximum shard count. Defaults to 128.
+                  --shard-max-output-tokens <n>
+                                         Maximum output tokens for each shard. Defaults to 24000.
+                  --reconciliation-max-output-tokens <n>
+                                         Maximum output tokens for reconciliation. Defaults to 16000.
+                  --no-reconcile         Disable the global reconciliation call for sharded extraction.
+                  --request-timeout-seconds <n>
+                                         Timeout for one model request. Defaults to 900.
+                  --max-transport-retries <n>
+                                         Retry count for transport, HTTP 429, and 5xx failures. Defaults to 2.
                   --evidence-bundle <f>  Required evidence bundle for normalize-extraction.
                   --help                 Show this help.
                 """;
@@ -220,8 +285,8 @@ record SemanticCommandArguments(
         private Path config;
         private SemanticExtractProvider provider = SemanticExtractProvider.CODEX_SESSION;
         private String focus = "";
-        private String model = valueOrDefault(System.getenv("OPENAI_MODEL"), "gpt-5.5");
-        private String reasoningEffort = "high";
+        private String model = SemanticExtractionConfig.APPROVED_MODEL;
+        private String reasoningEffort = SemanticExtractionConfig.APPROVED_REASONING_EFFORT;
         private int maxOutputTokens = 12000;
         private String baseUrl = valueOrDefault(System.getenv("OPENAI_BASE_URL"), "https://api.openai.com/v1");
         private String apiKeyEnv = "OPENAI_API_KEY";
@@ -229,6 +294,16 @@ record SemanticCommandArguments(
         private int maxLineage;
         private int maxNamingEvidence;
         private boolean requestOnly;
+        private ArtifactRetention artifactRetention = ArtifactRetention.FULL;
+        private SemanticShardMode shardMode = SemanticShardMode.AUTO;
+        private int targetInputTokens = 240000;
+        private int maxInputTokens = 800000;
+        private int maxShardCount = 128;
+        private boolean reconcile = true;
+        private int shardMaxOutputTokens = 24000;
+        private int reconciliationMaxOutputTokens = 16000;
+        private int requestTimeoutSeconds = 900;
+        private int maxTransportRetries = 2;
         private String name = "";
         private Path evidenceBundle;
         private boolean providerSet;
@@ -242,6 +317,16 @@ record SemanticCommandArguments(
         private boolean maxLineageSet;
         private boolean maxNamingSet;
         private boolean requestOnlySet;
+        private boolean artifactRetentionSet;
+        private boolean shardModeSet;
+        private boolean targetInputTokensSet;
+        private boolean maxInputTokensSet;
+        private boolean maxShardCountSet;
+        private boolean shardMaxOutputSet;
+        private boolean reconciliationMaxOutputSet;
+        private boolean reconcileSet;
+        private boolean requestTimeoutSet;
+        private boolean maxTransportRetriesSet;
 
         private void merge(SemanticExtractionConfig loaded) {
             if (inputs.isEmpty()) inputs = new ArrayList<>(loaded.inputs());
@@ -257,12 +342,36 @@ record SemanticCommandArguments(
             if (!maxLineageSet) maxLineage = loaded.maxLineage();
             if (!maxNamingSet) maxNamingEvidence = loaded.maxNamingEvidence();
             if (!requestOnlySet) requestOnly = loaded.requestOnly();
+            if (!artifactRetentionSet) artifactRetention = loaded.artifactRetention();
+            if (!shardModeSet) shardMode = loaded.sharding().mode();
+            if (!targetInputTokensSet) targetInputTokens = loaded.sharding().targetInputTokens();
+            if (!maxInputTokensSet) maxInputTokens = loaded.sharding().maxInputTokens();
+            if (!maxShardCountSet) maxShardCount = loaded.sharding().maxShardCount();
+            if (!reconcileSet) reconcile = loaded.sharding().reconcile();
+            if (!shardMaxOutputSet) shardMaxOutputTokens = loaded.shardMaxOutputTokens();
+            if (!reconciliationMaxOutputSet) {
+                reconciliationMaxOutputTokens = loaded.reconciliationMaxOutputTokens();
+            }
+            if (!requestTimeoutSet) requestTimeoutSeconds = loaded.requestTimeoutSeconds();
+            if (!maxTransportRetriesSet) maxTransportRetries = loaded.maxTransportRetries();
         }
 
         private SemanticCommandArguments toArguments(SemanticCommand command, boolean help) {
-            return new SemanticCommandArguments(command, List.copyOf(inputs), output, help, provider, focus, model,
-                    reasoningEffort, maxOutputTokens, baseUrl, apiKeyEnv, maxRelationships, maxLineage,
-                    maxNamingEvidence, requestOnly, name, evidenceBundle);
+            SemanticShardingOptions sharding = new SemanticShardingOptions(
+                    shardMode, targetInputTokens, maxInputTokens, maxShardCount, reconcile);
+            SemanticExtractionConfig validated = new SemanticExtractionConfig(
+                    provider == SemanticExtractProvider.OPENAI_API ? "openai-api" : "codex-session",
+                    inputs, output, focus, model, reasoningEffort, maxOutputTokens, baseUrl, apiKeyEnv,
+                    maxRelationships, maxLineage, maxNamingEvidence, requestOnly, artifactRetention, sharding,
+                    shardMaxOutputTokens, reconciliationMaxOutputTokens, requestTimeoutSeconds,
+                    maxTransportRetries);
+            return new SemanticCommandArguments(command, validated.inputs(), validated.output(), help, provider,
+                    validated.focus(), validated.model(), validated.reasoningEffort(), validated.maxOutputTokens(),
+                    validated.baseUrl(), validated.apiKeyEnv(), validated.maxRelationships(), validated.maxLineage(),
+                    validated.maxNamingEvidence(), validated.requestOnly(), validated.artifactRetention(),
+                    validated.sharding(),
+                    validated.shardMaxOutputTokens(), validated.reconciliationMaxOutputTokens(),
+                    validated.requestTimeoutSeconds(), validated.maxTransportRetries(), name, evidenceBundle);
         }
     }
 }

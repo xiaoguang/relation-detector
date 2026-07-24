@@ -40,15 +40,21 @@ final class SemanticSectionNormalizer {
     ) {
         Map<String, String> entityByName = new LinkedHashMap<>();
         Map<String, String> entityByPhysical = new LinkedHashMap<>();
+        Set<String> ambiguousEntityNames = new LinkedHashSet<>();
         Set<String> linkedEntities = new LinkedHashSet<>();
 
-        normalizeEntities(document.entities, entityByName, entityByPhysical, graph, validator);
-        normalizeEvents(document.events, entityByName, linkedEntities, graph, validator);
-        normalizeRelations(document.relations, entityByName, linkedEntities, graph, validator);
+        normalizeEntities(document.entities, entityByName, ambiguousEntityNames, entityByPhysical, graph, validator);
+        Set<String> entityIds = document.entities.stream()
+                .map(entity -> entity.id)
+                .filter(this::present)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        normalizeEvents(document.events, entityByName, entityIds, linkedEntities, graph, validator);
+        normalizeRelations(document.relations, entityByName, entityIds, linkedEntities, graph, validator);
         normalizeLineage(document.lineage, entityByPhysical, linkedEntities, graph, validator);
         normalizeMetrics(document.metrics, entityByPhysical, linkedEntities, graph, validator);
-        normalizeDimensions(document.dimensions, entityByName, entityByPhysical, linkedEntities, graph, validator);
-        normalizeTriplets(document.triplets, entityByName, linkedEntities, graph, validator);
+        normalizeDimensions(document.dimensions, entityByName, entityByPhysical,
+                entityIds, linkedEntities, graph, validator);
+        normalizeTriplets(document.triplets, entityByName, entityIds, linkedEntities, graph, validator);
         return new NormalizationResult(linkedEntities);
     }
 
@@ -78,6 +84,7 @@ final class SemanticSectionNormalizer {
     private void normalizeEntities(
             List<SemanticEntity> entities,
             Map<String, String> entityByName,
+            Set<String> ambiguousEntityNames,
             Map<String, String> entityByPhysical,
             SemanticGraphAssembler graph,
             Session validator
@@ -89,7 +96,14 @@ final class SemanticSectionNormalizer {
             validator.registerOwner("entity", entity.id);
             validator.requirePhysicalTable("entity", entity.id, "physicalName", entity.physicalName);
             validator.requireEvidence("entity", entity.id, entity);
-            entityByName.put(text(entity.name), entity.id);
+            String name = text(entity.name);
+            if (!ambiguousEntityNames.contains(name)) {
+                String previous = entityByName.putIfAbsent(name, entity.id);
+                if (previous != null && !previous.equals(entity.id)) {
+                    entityByName.remove(name);
+                    ambiguousEntityNames.add(name);
+                }
+            }
             entityByPhysical.put(text(entity.physicalName), entity.id);
             graph.addNode(entity.id, "Entity", entity.name, entity.type, entity.evidenceRefs());
         }
@@ -110,11 +124,11 @@ final class SemanticSectionNormalizer {
     private void normalizeEvents(
             List<SemanticEvent> events,
             Map<String, String> entityByName,
+            Set<String> knownEntityIds,
             Set<String> linkedEntities,
             SemanticGraphAssembler graph,
             Session validator
     ) {
-        Set<String> knownEntityIds = new LinkedHashSet<>(entityByName.values());
         for (SemanticEvent event : events) {
             String eventKey = SemanticNormalizationSupport.nonBlank(
                     event.eventCandidateRef,
@@ -137,8 +151,12 @@ final class SemanticSectionNormalizer {
             for (String input : values(event.inputs)) {
                 String ref = entityByName.get(input);
                 SemanticNormalizationSupport.addIfAbsent(event.inputEntityRefs, ref, linkedEntities);
-                graph.addEdge("event-input", event.id, ref, "EVENT_INPUT", event.evidenceRefs());
-                validator.requireResolved(event.id, "inputs", input, ref, "entity");
+                if (present(ref)) {
+                    graph.addEdge("event-input", event.id, ref, "EVENT_INPUT", event.evidenceRefs());
+                }
+                if (event.inputEntityRefs.isEmpty()) {
+                    validator.requireResolved(event.id, "inputs", input, ref, "entity");
+                }
             }
 
             List<String> originalOutputs = SemanticNormalizationSupport.mutableStrings(event.outputEntityRefs);
@@ -152,8 +170,12 @@ final class SemanticSectionNormalizer {
             for (String output : values(event.outputs)) {
                 String ref = entityByName.get(output);
                 SemanticNormalizationSupport.addIfAbsent(event.outputEntityRefs, ref, linkedEntities);
-                graph.addEdge("event-output", event.id, ref, "EVENT_OUTPUT", event.evidenceRefs());
-                validator.requireResolved(event.id, "outputs", output, ref, "entity");
+                if (present(ref)) {
+                    graph.addEdge("event-output", event.id, ref, "EVENT_OUTPUT", event.evidenceRefs());
+                }
+                if (event.outputEntityRefs.isEmpty()) {
+                    validator.requireResolved(event.id, "outputs", output, ref, "entity");
+                }
             }
         }
     }
@@ -161,13 +183,16 @@ final class SemanticSectionNormalizer {
     private void normalizeRelations(
             List<SemanticRelation> relations,
             Map<String, String> entityByName,
+            Set<String> knownEntityIds,
             Set<String> linkedEntities,
             SemanticGraphAssembler graph,
             Session validator
     ) {
         for (SemanticRelation relation : relations) {
-            String fromRef = entityByName.get(text(relation.from));
-            String toRef = entityByName.get(text(relation.to));
+            String fromRef = knownEntityIds.contains(relation.fromEntityRef)
+                    ? relation.fromEntityRef : entityByName.get(text(relation.from));
+            String toRef = knownEntityIds.contains(relation.toEntityRef)
+                    ? relation.toEntityRef : entityByName.get(text(relation.to));
             relation.id = SemanticNormalizationSupport.nonBlank(relation.id,
                     StableSemanticId.of("relation", relation.from, relation.to, relation.type, relation.machineType));
             validator.registerOwner("relation", relation.id);
@@ -260,6 +285,7 @@ final class SemanticSectionNormalizer {
             List<SemanticDimension> dimensions,
             Map<String, String> entityByName,
             Map<String, String> entityByPhysical,
+            Set<String> knownEntityIds,
             Set<String> linkedEntities,
             SemanticGraphAssembler graph,
             Session validator
@@ -273,7 +299,8 @@ final class SemanticSectionNormalizer {
             validator.requirePhysicalTable("dimension", dimension.id, "dimensionTable", dimension.dimensionTable);
             validator.requireEvidence("dimension", dimension.id, dimension);
             String ownerRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(dimension.physicalField));
-            String dimensionRef = entityByPhysical.get(text(dimension.dimensionTable));
+            String dimensionRef = knownEntityIds.contains(dimension.dimensionEntityRef)
+                    ? dimension.dimensionEntityRef : entityByPhysical.get(text(dimension.dimensionTable));
             if (dimensionRef == null) {
                 dimensionRef = entityByName.get(text(dimension.name));
             }
@@ -295,6 +322,7 @@ final class SemanticSectionNormalizer {
     private void normalizeTriplets(
             List<SemanticTriplet> triplets,
             Map<String, String> entityByName,
+            Set<String> knownEntityIds,
             Set<String> linkedEntities,
             SemanticGraphAssembler graph,
             Session validator
@@ -306,8 +334,10 @@ final class SemanticSectionNormalizer {
             validator.registerOwner("triplet", triplet.id);
             validator.requireEvidence("triplet", triplet.id, triplet);
             validator.requireTripletCandidateRef(triplet.id, triplet.candidateRef);
-            String subjectRef = entityByName.get(text(triplet.subject));
-            String objectRef = entityByName.get(text(triplet.object));
+            String subjectRef = knownEntityIds.contains(triplet.subjectRef)
+                    ? triplet.subjectRef : entityByName.get(text(triplet.subject));
+            String objectRef = knownEntityIds.contains(triplet.objectRef)
+                    ? triplet.objectRef : entityByName.get(text(triplet.object));
             if (present(subjectRef)) {
                 triplet.subjectRef = subjectRef;
             }

@@ -71,6 +71,14 @@ final class SemanticReferenceValidator {
                             "Evidence reference does not exist in the supplied bundle."));
                 }
             }
+            for (String reference : item.ownedGroundingRefs()) {
+                if (!referenceIndex.contains(reference)) {
+                    String key = section + ":" + id + ":ownedGroundingRefs:" + reference;
+                    unresolvedReferences.putIfAbsent(key, new SemanticValidationIssue(
+                            section, id, "ownedGroundingRefs", reference, "factOrCandidate",
+                            "Owned grounding reference does not exist in the supplied bundle."));
+                }
+            }
         }
 
         void requireEventCandidateRef(String id, String candidateRef) {

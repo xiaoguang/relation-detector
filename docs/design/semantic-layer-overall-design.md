@@ -326,7 +326,7 @@ sources
 | --- | --- | --- | --- |
 | Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result 和 ScanBundle 是语义层的标准 facts/evidence records。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
 | Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader 读取 relation-detector JSON arrays，校验当前 writer 的 timestamp、fact shape、枚举、nested evidence/warning 和 summary contract，并在多 input 时要求 database type / catalog / schema 完全一致。reader 不做业务去重；持久化 catalog index 仍是后续增强。 | 不调用 LLM，不发明事实。 |
-| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector 已抽数据库 relationship、lineage、namingEvidence、diagnostics；Semantic Evidence Builder 组织 evidence graph；`semantic extract` 可生成 evidence bundle / prompt，并在 `openai-api` 下生成 normalized semantic document。 | 当前不宣称完整业务 Catalog / ontology 已完成。 |
+| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector 已抽数据库 relationship、lineage、namingEvidence、diagnostics；`semantic extract` 从同一 ScanBundle 并列生成 deterministic KG 和完整 evidence bundle，按 typed table-touch component 形成 evidence-closed shards；超预算 table owner按稳定root继续拆片，并在 `openai-api` 下经片内owner校验、canonical identity merge、受限协调和完整 bundle 复验生成 normalized semantic document。 | 模型不接收可改写的正式 KG；当前仍未实现超大源JSON的streaming/on-disk ingestion，也不把估算token门限称为provider精确上限。 |
 | Conflict / Dedup | 检测冲突、保留来源、去重合并。 | Evidence Builder 做规则初筛；LLM 只生成解释建议；Review Queue / governance 决定最终状态。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |
 | KG / Context Graph | 构建可查询图，记录事实、决策和推理路径。 | 当前已落地 JSON `SemanticKnowledgeGraph` artifact；Semantic Catalog / Context Graph 是后续承载方式。 | Phase 1 不要求完整 graph store。 |
 | Ontology / Governance | OWL、SHACL、policy enforcement、合规规则。 | reviewStatus、SQL Validator、Review Queue 和治理决策。 | 不承诺完整 OWL/SHACL 本体平台。 |
@@ -377,7 +377,10 @@ sources
 输出：
 
 - `semantic-evidence.json`。
-- 可供 LLM enrichment 的 compact evidence bundle。
+- 可供 LLM extraction 的 evidence-closed bundle；大输入由确定性 planner 切成有唯一 owner 的
+  evidence-closed shards。planner、prompt 和 deterministic backfill 把 overlap 视为只读上下文；
+  model-authored 输出必须以`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap和
+  `evidenceRefs`只作为只读审计上下文，越界在backfill前原子拒绝。
 
 不负责：
 
@@ -464,9 +467,12 @@ Phase 1 Scope 必备字段建议：
 `payloadSnapshot` 用于保存当时用于语义判断的最小事实切片。后续重新扫描后即使 fingerprint 仍然相似，也能回放当时语义对象为何成立。
 
 当前 artifact stage 只实现了该模型的子集：EvidenceGraph 保存 payload snapshot 和 evidence records，
-fact/evidence/candidate 使用内容稳定 ID，semantic extraction bundle 通过顶层 evidence registry 与字符串
-refs 形成闭包；但尚无 `scanRunId/sourceHash/detectorVersion/reviewDecisionId`。这些跨运行和治理字段仍是
-Phase 1 后续契约，不是当前 JSON 已全部具备的字段。
+fact/evidence/candidate 使用内容稳定 ID。semantic extraction 的完整 bundle 与每个 shard 通过统一
+reference index 形成 evidence/fact/candidate 闭包，planner 要求每项只有一个 canonical owner，最终
+结果再次针对完整 bundle 验证。当前该全局复验验证引用存在性，但还不验证每个 model-authored 输出
+至少使用一个 owner ref；exact-ID merge 也不等于不同 ID semantic dedup。尚无
+`scanRunId/sourceHash/detectorVersion/reviewDecisionId`，这些跨运行和治理字段仍是 Phase 1 后续契约，
+不是当前 JSON 已全部具备的字段。
 
 ### 4.2 字段 evidence 示例
 

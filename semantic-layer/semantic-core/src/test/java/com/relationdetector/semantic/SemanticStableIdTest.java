@@ -44,6 +44,35 @@ final class SemanticStableIdTest {
         assertEquals(candidateIds(first), candidateIds(reordered));
     }
 
+    @Test
+    void derivedFactIdsIncludeTheCanonicalPath() {
+        JsonNode relationshipViaOrders = derivedPath(
+                "shop.payments.customer_id", "shop.customers.id",
+                List.of("shop.payments.customer_id", "shop.orders.customer_id", "shop.customers.id"),
+                "RELATIONSHIP");
+        JsonNode relationshipViaInvoices = derivedPath(
+                "shop.payments.customer_id", "shop.customers.id",
+                List.of("shop.payments.customer_id", "shop.invoices.customer_id", "shop.customers.id"),
+                "RELATIONSHIP");
+        JsonNode lineageViaOrders = derivedPath(
+                "shop.payments.amount", "shop.customer_facts.amount",
+                List.of("shop.payments.amount", "shop.order_facts.amount", "shop.customer_facts.amount"),
+                "DATA_LINEAGE");
+        JsonNode lineageViaInvoices = derivedPath(
+                "shop.payments.amount", "shop.customer_facts.amount",
+                List.of("shop.payments.amount", "shop.invoice_facts.amount", "shop.customer_facts.amount"),
+                "DATA_LINEAGE");
+
+        ScanBundle bundle = new ScanBundle("mysql", "shop", "", "", List.of(), List.of(), Map.of(),
+                List.of(), List.of(),
+                List.of(relationshipViaOrders, relationshipViaInvoices),
+                List.of(lineageViaOrders, lineageViaInvoices),
+                List.of(), List.of());
+
+        assertEquals(2, bundle.derivedRelationships().stream().map(ScanFact::id).distinct().count());
+        assertEquals(2, bundle.derivedDataLineages().stream().map(ScanFact::id).distinct().count());
+    }
+
     private ScanBundle bundle(List<JsonNode> relationships, List<JsonNode> lineages, List<JsonNode> diagnostics) {
         return new ScanBundle("mysql", "shop", "", "", List.of("logs"), List.of(), Map.of(),
                 relationships, lineages, List.of(), List.of(), List.of(), diagnostics);
@@ -113,6 +142,24 @@ final class SemanticStableIdTest {
         value.put("message", code + " requires review");
         value.put("source", source);
         value.put("line", 1);
+        return value;
+    }
+
+    private JsonNode derivedPath(String source, String target, List<String> path, String kind) {
+        ObjectNode value = JSON.createObjectNode();
+        value.put("kind", kind);
+        value.set("source", endpoint(source));
+        value.set("target", endpoint(target));
+        value.put("pathLength", path.size() - 1);
+        path.forEach(item -> value.withArray("path").add(endpoint(item)));
+        value.put("confidence", 0.8d);
+        value.putArray("evidence");
+        value.putArray("rawEvidence");
+        value.putObject("attributes");
+        if ("DATA_LINEAGE".equals(kind)) {
+            value.put("flowKind", "VALUE");
+            value.put("transformType", "DIRECT");
+        }
         return value;
     }
 

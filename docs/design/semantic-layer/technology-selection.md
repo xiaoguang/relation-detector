@@ -41,8 +41,14 @@ Phase 2+: 按服务边界拆分或引入消息队列
 
 - 离线构建：`ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> JSON artifacts`。
 - 输出 artifact：`semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`。
-- 离线抽取：`ScanBundle -> SemanticExtractionBundleBuilder -> SemanticExtractionPromptBuilder -> semantic extract`。
-- 输出 artifact：`semantic-extraction-evidence-bundle.json`、`semantic-extraction-prompt.md`、`semantic-extraction-result.json`（仅 `openai-api` 或 normalize 后生成）。
+- 离线抽取：`ScanBundle -> deterministic KG + complete evidence bundle -> SemanticShardPlanner ->
+  per-shard prompt/normalization -> exact-ID merge -> constrained reconciliation -> full-bundle normalization`。
+- 输出 artifact：`deterministic-kg/`、`full-evidence-bundle.json`、`shards/*`、可选
+  `reconciliation/`、`merged-draft.json`、`semantic-extraction-result.json` 和带 hash/token/attempt
+  统计的 `run-manifest.json`。
+- 当前 input token budget 是确定性字符估算与 safety margin，不是 model-specific tokenizer。
+  artifact writer 在可复用output root中使用唯一staging/run目录、流式hash和原子rename；失败staging
+  保留审计，成功run按`full/final-only`策略保留payload。
 
 后续完整 Phase 1 目标链路为：
 

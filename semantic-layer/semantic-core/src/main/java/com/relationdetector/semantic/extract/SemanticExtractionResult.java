@@ -10,7 +10,8 @@ public record SemanticExtractionResult(
         String requestJson,
         String responseJson,
         String outputText,
-        JsonNode response
+        JsonNode response,
+        int transportAttempts
 ) {
     public SemanticExtractionResult {
         if (requestJson == null || requestJson.isBlank()) {
@@ -25,5 +26,35 @@ public record SemanticExtractionResult(
         if (response == null || response.isNull()) {
             throw new IllegalArgumentException("response is required");
         }
+        if (transportAttempts <= 0) {
+            transportAttempts = 1;
+        }
+        response = response.deepCopy();
+    }
+
+    public SemanticExtractionResult(
+            String requestJson,
+            String responseJson,
+            String outputText,
+            JsonNode response
+    ) {
+        this(requestJson, responseJson, outputText, response, 1);
+    }
+
+    public int inputTokens() {
+        return response.path("usage").path("input_tokens").asInt(0);
+    }
+
+    public int outputTokens() {
+        return response.path("usage").path("output_tokens").asInt(0);
+    }
+
+    @Override
+    public JsonNode response() {
+        return response.deepCopy();
+    }
+
+    JsonNode trustedResponse() {
+        return response;
     }
 }

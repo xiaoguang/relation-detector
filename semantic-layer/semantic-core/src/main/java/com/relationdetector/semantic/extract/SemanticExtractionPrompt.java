@@ -3,8 +3,8 @@ package com.relationdetector.semantic.extract;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * CN: 将 developer/user prompts 与不可缺失的 compact evidence bundle 绑定为一个请求值；构造器拒绝空 prompt 或无 evidence 的正式抽取。
- * EN: Binds developer and user prompts to a required compact evidence bundle as one request value. Construction rejects empty prompts and evidence-free formal extraction.
+ * CN: 将 developer/user prompts 与不可缺失的 evidence-closed bundle 绑定为一个请求值；构造器拒绝空 prompt 或无 bundle 的正式抽取。
+ * EN: Binds developer and user prompts to a required evidence-closed bundle as one request value. Construction rejects empty prompts and bundle-free formal extraction.
  */
 public record SemanticExtractionPrompt(
         String developerPrompt,
@@ -21,5 +21,15 @@ public record SemanticExtractionPrompt(
         if (evidenceBundle == null || evidenceBundle.isMissingNode() || evidenceBundle.isNull()) {
             throw new IllegalArgumentException("evidenceBundle is required");
         }
+        evidenceBundle = evidenceBundle.deepCopy();
+    }
+
+    @Override
+    public JsonNode evidenceBundle() {
+        return evidenceBundle.deepCopy();
+    }
+
+    JsonNode trustedEvidenceBundle() {
+        return evidenceBundle;
     }
 }

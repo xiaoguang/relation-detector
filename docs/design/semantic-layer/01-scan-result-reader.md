@@ -131,7 +131,7 @@ public final class ScanResultReader {
   "schema": "",
   "generatedAt": "2026-06-23T00:00:00Z",
   "sources": ["ddl", "object-files", "logs"],
-  "inputFiles": ["relation-detector/target/.../mysql-v8_0-full-derived-fresh.json"],
+  "inputFiles": ["relation-detector/target/.../mysql-v8_0-full.json"],
   "summary": {"directRelationshipCount": 397, "totalNamingEvidenceCount": 1031},
   "relationships": [ScanRelationshipFact],
   "dataLineages": [ScanLineageFact],

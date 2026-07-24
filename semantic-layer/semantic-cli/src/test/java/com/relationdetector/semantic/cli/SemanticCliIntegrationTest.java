@@ -14,6 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
 
 final class SemanticCliIntegrationTest {
@@ -129,18 +130,30 @@ final class SemanticCliIntegrationTest {
                 }
                 """);
 
-        int exit = Main.run(new String[] {
-                "extract",
-                "--input", input.toString(),
-                "--output", output.toString(),
-                "--focus", "ROUTINE:shop.sp_rebuild_sales_fact"
-        });
+        PrintStream original = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        int exit;
+        System.setOut(new PrintStream(captured));
+        try {
+            exit = Main.run(new String[] {
+                    "extract",
+                    "--input", input.toString(),
+                    "--output", output.toString(),
+                    "--focus", "ROUTINE:shop.sp_rebuild_sales_fact"
+            });
+        } finally {
+            System.setOut(original);
+        }
 
         assertEquals(0, exit);
-        assertTrue(Files.exists(output.resolve("semantic-extraction-evidence-bundle.json")));
-        assertTrue(Files.exists(output.resolve("semantic-extraction-prompt.md")));
-        assertTrue(Files.exists(output.resolve("semantic-extraction-codex-session.md")));
-        JsonNode evidenceBundle = JSON.readTree(output.resolve("semantic-extraction-evidence-bundle.json").toFile());
+        Path published = Path.of(captured.toString().trim());
+        assertEquals(output.toAbsolutePath().normalize(), published.getParent());
+        assertTrue(published.getFileName().toString().startsWith("run-"));
+        assertTrue(Files.exists(published.resolve("semantic-extraction-evidence-bundle.json")));
+        assertTrue(Files.exists(published.resolve("semantic-extraction-prompt.md")));
+        assertTrue(Files.exists(published.resolve("semantic-extraction-codex-session.md")));
+        JsonNode evidenceBundle = JSON.readTree(
+                published.resolve("semantic-extraction-evidence-bundle.json").toFile());
         assertEquals("ROUTINE:shop.sp_rebuild_sales_fact", evidenceBundle.path("focus").asText());
         assertTrue(evidenceBundle.path("lineage").isArray());
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
@@ -150,7 +163,7 @@ final class SemanticCliIntegrationTest {
     }
 
     @Test
-    void semanticExtractAllowsZeroCandidateLimitsAsUnlimited() throws Exception {
+    void semanticExtractDistinguishesUnlimitedInputFromExplicitPreviewLimits() throws Exception {
         Path input = tempDir.resolve("scan-result-zero-limits.json");
         Path output = tempDir.resolve("semantic-extract-zero-limits-output");
         Files.writeString(input, """
@@ -187,8 +200,27 @@ final class SemanticCliIntegrationTest {
         });
 
         assertEquals(0, exit);
-        JsonNode evidenceBundle = JSON.readTree(output.resolve("semantic-extraction-evidence-bundle.json").toFile());
+        Path published = onlyPublishedRun(output);
+        JsonNode evidenceBundle = JSON.readTree(
+                published.resolve("semantic-extraction-evidence-bundle.json").toFile());
         assertEquals(1, evidenceBundle.path("relationships").size());
+
+        int rejectedPreview = Main.run(new String[] {
+                "extract",
+                "--input", input.toString(),
+                "--output", tempDir.resolve("semantic-extract-preview-rejected").toString(),
+                "--max-relationships", "1"
+        });
+        int explicitPreview = Main.run(new String[] {
+                "extract",
+                "--input", input.toString(),
+                "--output", tempDir.resolve("semantic-extract-preview").toString(),
+                "--max-relationships", "1",
+                "--shard-mode", "off"
+        });
+
+        assertEquals(2, rejectedPreview);
+        assertEquals(0, explicitPreview);
     }
 
     @Test
@@ -215,12 +247,86 @@ final class SemanticCliIntegrationTest {
                 "--provider", "openai-api",
                 "--input", input.toString(),
                 "--output", output.toString(),
-                "--request-only"
+                "--request-only",
+                "--artifact-retention", "final-only"
         });
 
         assertEquals(0, exit);
-        assertTrue(Files.exists(output.resolve("semantic-extraction-request.json")));
-        assertTrue(Files.readString(output.resolve("semantic-extraction-request.json")).contains("gpt-5.5"));
+        Path published = onlyPublishedRun(output);
+        assertTrue(Files.exists(published.resolve("semantic-extraction-request.json")));
+        assertTrue(Files.readString(
+                published.resolve("semantic-extraction-request.json")).contains("gpt-5.6-sol"));
+        assertTrue(Files.readString(
+                published.resolve("semantic-extraction-request.json")).contains("xhigh"));
+        JsonNode manifest = JSON.readTree(published.resolve("run-manifest.json").toFile());
+        assertEquals("final-only", manifest.path("retention").asText());
+        assertEquals("gpt-5.6-sol", manifest.path("model").asText());
+        assertEquals("xhigh", manifest.path("reasoningEffort").asText());
+    }
+
+    @Test
+    void semanticExtractForceModeWritesEvidenceClosedShardRequestsAndManifest() throws Exception {
+        Path input = tempDir.resolve("scan-result-sharded.json");
+        Path output = tempDir.resolve("semantic-extract-sharded-output");
+        ObjectNode scan = JSON.createObjectNode();
+        scan.putObject("database").put("type", "mysql").put("catalog", "shop").put("schema", "");
+        scan.put("generatedAt", "2026-07-05T00:00:00Z");
+        scan.putObject("summary")
+                .put("directRelationshipCount", 2)
+                .put("derivedRelationshipCount", 0)
+                .put("totalRelationshipCount", 2)
+                .put("directDataLineageCount", 0)
+                .put("derivedDataLineageCount", 0)
+                .put("totalDataLineageCount", 0)
+                .put("directNamingEvidenceCount", 0)
+                .put("derivedNamingEvidenceCount", 0)
+                .put("totalNamingEvidenceCount", 0)
+                .put("warningCount", 0)
+                .putArray("sources").add("logs");
+        addRelationship(scan.withArray("relationships"),
+                "orders", "customer_id", "customers", "id");
+        addRelationship(scan.withArray("relationships"),
+                "stock", "supplier_id", "suppliers", "id");
+        for (String section : java.util.List.of("dataLineages", "derivedRelationships", "derivedDataLineages",
+                "namingEvidence", "derivedNamingEvidence", "warnings")) {
+            scan.putArray(section);
+        }
+        Files.writeString(input, JSON.writeValueAsString(scan));
+
+        int exit = Main.run(new String[] {
+                "extract",
+                "--provider", "openai-api",
+                "--input", input.toString(),
+                "--output", output.toString(),
+                "--request-only",
+                "--shard-mode", "force",
+                "--shard-max-output-tokens", "32123",
+                "--reconciliation-max-output-tokens", "12345"
+        });
+
+        assertEquals(0, exit);
+        Path published = onlyPublishedRun(output);
+        assertTrue(Files.exists(published.resolve("shards/shard-0001/semantic-extraction-request.json")));
+        assertTrue(Files.exists(published.resolve("shards/shard-0002/semantic-extraction-request.json")));
+        assertTrue(Files.exists(published.resolve("deterministic-kg/semantic-kg.json")));
+        assertTrue(Files.exists(published.resolve("deterministic-kg/semantic-evidence-graph.json")));
+        assertTrue(Files.exists(published.resolve("deterministic-kg/semantic-build-run.json")));
+        assertTrue(Files.exists(published.resolve(
+                "reconciliation/template/semantic-extraction-request.json")));
+        assertTrue(Files.readString(published.resolve(
+                "reconciliation/template/semantic-extraction-prompt.md")).contains("\"template\" : true"));
+        assertEquals(32123, JSON.readTree(published.resolve(
+                "shards/shard-0001/semantic-extraction-request.json").toFile())
+                .path("max_output_tokens").asInt());
+        assertEquals(12345, JSON.readTree(published.resolve(
+                "reconciliation/template/semantic-extraction-request.json").toFile())
+                .path("max_output_tokens").asInt());
+        JsonNode manifest = JSON.readTree(published.resolve("run-manifest.json").toFile());
+        assertEquals(2, manifest.path("shardCount").asInt());
+        assertEquals(4, manifest.path("ownedCandidateCount").asInt());
+        assertEquals("gpt-5.6-sol", manifest.path("model").asText());
+        assertEquals("xhigh", manifest.path("reasoningEffort").asText());
+        assertTrue(hasArtifact(manifest, "deterministic-kg/semantic-kg.json"));
     }
 
     @Test
@@ -330,7 +436,7 @@ final class SemanticCliIntegrationTest {
         int exit = Main.run(new String[] {"extract", "--config", config.toString()});
 
         assertEquals(0, exit);
-        assertTrue(Files.exists(output.resolve("semantic-extraction-codex-session.md")));
+        assertTrue(Files.exists(onlyPublishedRun(output).resolve("semantic-extraction-codex-session.md")));
     }
 
     private JsonNode firstNodeOfType(JsonNode kg, String type) {
@@ -349,6 +455,52 @@ final class SemanticCliIntegrationTest {
             }
         }
         return false;
+    }
+
+    private boolean hasArtifact(JsonNode manifest, String path) {
+        for (JsonNode artifact : manifest.path("artifacts")) {
+            if (path.equals(artifact.path("path").asText())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Path onlyPublishedRun(Path outputRoot) throws Exception {
+        try (java.util.stream.Stream<Path> entries = Files.list(outputRoot)) {
+            return entries.filter(Files::isDirectory)
+                    .filter(path -> path.getFileName().toString().startsWith("run-"))
+                    .findFirst()
+                    .orElseThrow();
+        }
+    }
+
+    private void addRelationship(
+            com.fasterxml.jackson.databind.node.ArrayNode relationships,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn
+    ) {
+        ObjectNode relationship = relationships.addObject();
+        relationship.set("source", endpoint(sourceTable, sourceColumn));
+        relationship.set("target", endpoint(targetTable, targetColumn));
+        relationship.put("relationType", "FK_LIKE");
+        relationship.put("relationSubType", "INFERRED_JOIN_FK");
+        relationship.put("confidence", 0.8);
+        relationship.putArray("evidence").addObject()
+                .put("type", "SQL_LOG_JOIN")
+                .put("sourceType", "PLAIN_SQL")
+                .put("score", 0.8)
+                .put("source", "queries.sql")
+                .put("detail", "join")
+                .putObject("attributes");
+        relationship.putArray("rawEvidence");
+        relationship.putArray("warnings");
+    }
+
+    private ObjectNode endpoint(String table, String column) {
+        return JSON.createObjectNode().put("table", table).put("column", column);
     }
 
     @Test

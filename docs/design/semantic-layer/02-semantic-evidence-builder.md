@@ -297,7 +297,12 @@ evidence JSON 生成，同样不使用数组位置。scanRunId/sourceHash 等跨
 
 本节以及后续关于 graph search、comment evidence、candidate conflict、compact bundle 的内容是后续 Catalog Store / governance 阶段的目标设计。当前代码不会在 `SemanticEvidenceBuilder` 内生成 `CompactEvidenceBundle`，也不会在这里执行 graph search 或 conflict detection。
 
-当前已经实现的 LLM 输入压缩发生在独立的 `semantic extract` 链路中：`SemanticExtractionBundleBuilder` 从 `ScanBundle` 构造 `semantic-extraction-evidence-bundle.json`，`SemanticExtractionPromptBuilder` 再生成 prompt。该实现不等同于本节历史设计中的 `CompactEvidenceBundle`。
+当前已经实现的 LLM 上下文规划发生在独立的 `semantic extract` 链路中：
+`SemanticExtractionBundleBuilder` 先从 `ScanBundle` 构造完整 bundle，`SemanticShardPlanner` 再按当前
+table-touch 图和完整 reference closure 形成 shards，`SemanticExtractionPromptBuilder` 为每片生成
+prompt。当前 table-touch index 会递归检查 item 全部文本值，尚未收口为只读取 typed endpoint/reference
+字段，因此不能把它描述为已经严格证明的 typed physical graph。
+它不通过数组上限截断生产事实，也不等同于本节历史设计中的 `CompactEvidenceBundle`。
 
 ```pseudo-json
 {

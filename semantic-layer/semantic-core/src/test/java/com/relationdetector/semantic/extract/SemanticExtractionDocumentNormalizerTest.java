@@ -64,6 +64,25 @@ final class SemanticExtractionDocumentNormalizerTest {
     }
 
     @Test
+    void rejectsOwnedGroundingReferenceOutsideTheFullEvidenceBundle() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [{
+                    "name": "订单",
+                    "physicalName": "orders",
+                    "ownedGroundingRefs": ["relationship:missing"],
+                    "evidenceRefs": ["evidence:known"]
+                  }],
+                  "events": [], "relations": [], "lineage": [], "metrics": [],
+                  "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle("evidence:known")));
+    }
+
+    @Test
     void rejectsBusinessApprovedFromModelOutput() throws Exception {
         JsonNode raw = JSON.readTree("""
                 {
@@ -480,6 +499,44 @@ final class SemanticExtractionDocumentNormalizerTest {
         for (String section : List.of("relations", "lineage", "triplets", "reviewItems")) {
             assertEquals(sectionIds(firstNormalized, section), sectionIds(reorderedNormalized, section), section);
         }
+    }
+
+    @Test
+    void preservesExplicitEntityRefsWhenSameNamedBusinessEntitiesAreAmbiguous() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:sales-order","name":"订单","machineType":"BUSINESS_ENTITY","evidenceRefs":["e1"]},
+                    {"id":"entity:service-order","name":"订单","machineType":"BUSINESS_ENTITY","evidenceRefs":["e2"]}
+                  ],
+                  "events": [],
+                  "relations": [
+                    {
+                      "id":"relation:order-domains",
+                      "from":"订单",
+                      "to":"订单",
+                      "fromEntityRef":"entity:sales-order",
+                      "toEntityRef":"entity:service-order",
+                      "type":"DOMAIN_RELATED",
+                      "evidenceRefs":["e1","e2"]
+                    }
+                  ],
+                  "lineage": [],
+                  "metrics": [],
+                  "dimensions": [],
+                  "triplets": [],
+                  "reviewItems": []
+                }
+                """);
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(
+                raw, evidenceBundle("e1", "e2"));
+
+        assertEquals("entity:sales-order",
+                normalized.path("relations").get(0).path("fromEntityRef").asText());
+        assertEquals("entity:service-order",
+                normalized.path("relations").get(0).path("toEntityRef").asText());
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
     private String semanticDocument(boolean reversed) {

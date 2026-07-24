@@ -1,15 +1,27 @@
 semanticExtraction:
   # Production mode. This calls an OpenAI-compatible Responses API.
   provider: openai-api
-  input: relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full-derived-fresh.json
-  output: semantic-layer/target/semantic-extraction/openai-api-sp-rebuild-sales-fact
-  focus: ROUTINE:erp_system.sp_rebuild_sales_fact
-  model: gpt-5.5
-  reasoningEffort: high
+  input: ../../relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full.json
+  # Reusable output root. Each successful run is atomically published as run-<runId>.
+  output: ../target/semantic-extraction/openai-api-full
+  artifactRetention: full
+  model: gpt-5.6-sol
+  reasoningEffort: xhigh
   maxOutputTokens: 12000
+  shardMaxOutputTokens: 24000
+  reconciliationMaxOutputTokens: 16000
+  requestTimeoutSeconds: 900
+  maxTransportRetries: 2
   baseUrl: https://api.openai.com/v1
   apiKeyEnv: OPENAI_API_KEY
-  # 0 means unlimited. Set positive max* values only for an intentional preview prompt.
+  sharding:
+    mode: auto
+    targetInputTokens: 240000
+    # Character-based estimate gate, not an exact provider tokenizer limit.
+    maxInputTokens: 800000
+    maxShardCount: 128
+    reconcile: true
+  # 0 means unlimited. Positive max* values are preview-only and require sharding.mode=off.
   maxRelationships: 0
   maxLineage: 0
   maxNamingEvidence: 0

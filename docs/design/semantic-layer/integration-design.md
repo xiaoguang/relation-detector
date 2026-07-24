@@ -11,7 +11,13 @@
 当前代码实现边界：
 
 - 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> SemanticKgBuilder -> JSON artifacts`。
-- 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
+- 已实现 `semantic extract`：从同一个 `ScanBundle` 并列写 deterministic KG 与完整 evidence bundle；
+  小输入保持单请求，大输入先按当前 table-touch component 建立 evidence closure，再把小型断开分量确定性装入
+  同一预算 shard。`codex-session`
+  只写逐片本地 prompt 与 reconciliation template；`openai-api`固定使用`gpt-5.6-sol/xhigh`
+  顺序执行 shards、片内归一化、canonical identity merge、受限协调和完整 bundle 最终闭包校验。
+  component只消费typed endpoint/reference字段；raw model output必须携带当前片
+  `ownedGroundingRefs`，物理实体和纯业务实体分别按完整物理名及owned grounding signature确定性合并。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
 - 已实现 `semantic normalize-extraction`：输入 raw semantic output 和必需 evidence bundle，执行候选回填、typed reference/physical endpoint 校验、semantic owner-id 全局唯一性校验，并补齐 `semanticGraph` 与 `validation`。任一闭包失败时命令失败，不输出半闭合正式结果。
 - `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链，两者各自守住证据和身份边界。`SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、physical endpoint node 和 edge 的 evidence 非空且可解析；`SemanticKgIdentityRegistry` 只允许 ID 与完整内容均相同的幂等重复，冲突 node/edge 使整个 build 原子失败。这些保证不能从 `SemanticGraphAssembler` 的测试外推，也不能反向外推到 formal normalization。
@@ -45,8 +51,9 @@ Semantica 官方 README 把 accountability、provenance、reasoning 和 governan
 ```
 离线链路：
   Evidence Bundle → [semantic extract]
-    codex-session: 0 次外部调用，仅生成 prompt / bundle / session 指令
-    openai-api: N 次 LLM 调用（按输入文件、focus 或后续分批策略）
+    codex-session: 0 次外部调用，仅生成 evidence-closed shard prompt / bundle / session 指令
+    openai-api: S 次 shard 调用 + 可选 1 次 reconciliation 调用
+      S 由完整 bundle 的确定性 table-touch 图和估算 token budget 决定，不按数组截断或文件随意分批
 
 在线链路：
   User Question → [Question Understanding] → QuestionIntent
@@ -159,9 +166,12 @@ EvidenceGraph {
   }
 }
 
-        ↓ [semantic extract: 构造 evidence bundle / prompt]
-        ↓ [codex-session: 写本地 prompt artifacts，不调用模型]
-        ↓ [openai-api: 可调用大模型，并使用 bundle-aware normalization]
+        ↓ [semantic extract: 同时写 deterministic KG 与完整 evidence bundle]
+        ↓ [SemanticShardPlanner: 连通分量、evidence closure、唯一 fact/candidate owner]
+        ↓ [codex-session: 写逐片 prompt artifacts，不调用模型]
+        ↓ [openai-api: 顺序调用大模型，并逐片执行 bundle-aware normalization]
+        ↓ [exact-ID merge + constrained reconciliation patch]
+        ↓ [针对原始完整 bundle 再次执行全局 normalization]
         ↓ [LLM 任务: 业务名/描述/同义词/实体/事件/指标/维度/lineage 解释/triplet]
         ↓ [normalize-extraction: raw result + evidence bundle，生成 ID/internal-ref-closed semantic document]
 
@@ -427,13 +437,19 @@ Step 7: Answer（最终输出）
     ↓ 输出: scan-result.json (JSON 文件)
 [ScanResultReader]
     ↓ 输出: ScanBundle (内存对象)
+[SemanticKgBuildService]
+    ↓ 输出: deterministic-kg/ (并列 artifact，不交给模型改写)
 [SemanticExtractionBundleBuilder]
-    ↓ 输出: semantic-extraction-evidence-bundle.json
+    ↓ 输出: full-evidence-bundle.json
+[SemanticShardPlanner]
+    ↓ 输出: evidence-closed shards + fact/candidate owner manifest
 [SemanticExtractionPromptBuilder]
-    ↓ 输出: semantic-extraction-prompt.md
+    ↓ 输出: shards/*/semantic-extraction-prompt.md
 [semantic extract]
-    ↓ codex-session: 只写 prompt / bundle / session 说明
-    ↓ openai-api: 调用 Responses API，写 raw result / bundle-aware normalized result
+    ↓ codex-session: 写逐片 prompt / bundle / session 与 reconciliation template
+    ↓ openai-api: 顺序调用 Responses API，执行片内 normalization、exact-ID merge、受限 reconciliation
+[full-bundle normalization]
+    ↓ 输出: merged-draft.json / semantic-extraction-result.json / run-manifest.json
 [semantic normalize-extraction]
     ↓ 输入: raw result + evidence bundle
     ↓ 输出: ID/internal-ref-closed normalized semantic document
@@ -586,7 +602,8 @@ Step 7: Answer（最终输出）
 模块内部错误 → 记录 warning/error → 不阻断下游
   - 当前 EvidenceBuilder: 无法识别的 rawEvidence 片段 → 保留原始 payload，尽量生成 fact / evidenceRef
   - 目标 EvidenceBuilder: 注释解析失败 → 跳过，记录 warning
-  - 目标 LLMEnricher: API 调用失败 → 重试，仍失败返回部分结果
+  - 当前 semantic extract: transport/429/5xx 在配置范围内重试，仍失败则整次执行失败，不返回部分
+    `SemanticExtractionRunResult`
   - 目标 SqlValidator: 校验失败 → FAILED，AnswerComposer 不输出 SQL
 
 不可恢复错误 → 抛出异常 → 终止当前链路
@@ -595,6 +612,8 @@ Step 7: Answer（最终输出）
   - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
   - 当前 SemanticKgBuilder: 非 diagnostic fact/event、physical endpoint node 或 edge 的 evidence 为空/无法解析，或相同 ID 的 node/edge 完整内容冲突 → 原子终止；完全相同的 ID/content 可幂等复用
   - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
+  - 当前 SemanticExtractionRunArtifactWriter: 每次run先写唯一staging；模型、闭包、hash、manifest和
+    I/O全部成功后才原子rename为`run-<runId>`。失败保留FAILED staging，不发布半成品run
   - 目标 CatalogStore: 磁盘写入失败 → 终止
   - 目标 SqlGenerator: plan 无表 → 终止
 ```

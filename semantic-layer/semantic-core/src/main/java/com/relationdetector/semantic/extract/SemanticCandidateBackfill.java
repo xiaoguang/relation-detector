@@ -21,7 +21,10 @@ import com.relationdetector.semantic.extract.model.SemanticExtractionDocument;
 import com.relationdetector.semantic.extract.model.SemanticReviewItem;
 import com.relationdetector.semantic.extract.model.SemanticTriplet;
 
-/** Completes omitted LLM sections from deterministic candidate anchors. */
+/**
+ * CN: 用当前 evidence bundle 中由该 shard 拥有的确定性候选补齐模型遗漏 section；输入是已解析文档与 bundle，输出为原文档的受控补齐，禁止从 overlap 候选创建重复语义对象。
+ * EN: Backfills model-omitted sections from deterministic candidates owned by the current shard. It mutates only the parsed document and never materializes read-only overlap candidates.
+ */
 final class SemanticCandidateBackfill {
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -30,6 +33,7 @@ final class SemanticCandidateBackfill {
             return;
         }
         SemanticCandidateBundle candidates = read(evidenceBundle);
+        retainOwnedCandidates(candidates, evidenceBundle.path("shardContext"));
         Map<String, String> namesByPhysical = entityNamesByPhysical(document.entities);
         backfillEvents(document.events, candidates.eventCandidates, namesByPhysical);
         backfillTriplets(document.triplets, candidates.tripletCandidates, namesByPhysical);
@@ -44,6 +48,21 @@ final class SemanticCandidateBackfill {
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("failed to read semantic candidate bundle", e);
         }
+    }
+
+    private void retainOwnedCandidates(SemanticCandidateBundle candidates, JsonNode shardContext) {
+        if (!shardContext.isObject()) {
+            return;
+        }
+        Set<String> owned = new LinkedHashSet<>();
+        shardContext.path("ownedCandidateRefs").forEach(ref -> {
+            if (ref.isTextual() && !ref.asText().isBlank()) {
+                owned.add(ref.asText());
+            }
+        });
+        candidates.eventCandidates.removeIf(candidate -> !owned.contains(candidate.id()));
+        candidates.tripletCandidates.removeIf(candidate -> !owned.contains(candidate.id()));
+        candidates.reviewItemCandidates.removeIf(candidate -> !owned.contains(candidate.id()));
     }
 
     private Map<String, String> entityNamesByPhysical(List<SemanticEntity> entities) {

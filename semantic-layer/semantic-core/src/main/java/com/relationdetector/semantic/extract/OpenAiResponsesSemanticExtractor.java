@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * CN: 将 evidence-grounded prompt 调用 OpenAI Responses API，并解析结构化输出与成功响应 artifact；HTTP/transport 失败只抛固定脱敏消息，不暴露 response body 或密钥。
  * EN: Calls the OpenAI Responses API with an evidence-grounded prompt and parses structured output plus successful response artifacts. HTTP or transport failures expose only sanitized messages, never response bodies or secrets.
  */
-public final class OpenAiResponsesSemanticExtractor {
+public final class OpenAiResponsesSemanticExtractor implements SemanticModelClient {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final ResponsesTransport transport;
     private final URI responsesEndpoint;
@@ -25,6 +25,9 @@ public final class OpenAiResponsesSemanticExtractor {
     private final String model;
     private final String reasoningEffort;
     private final int maxOutputTokens;
+    private final Duration requestTimeout;
+    private final int maxTransportRetries;
+    private final RetrySleeper retrySleeper;
 
     public OpenAiResponsesSemanticExtractor(
             String baseUrl,
@@ -35,8 +38,23 @@ public final class OpenAiResponsesSemanticExtractor {
     ) {
         this(new HttpClientResponsesTransport(
                         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()),
-                baseUrl, apiKey, model,
-                reasoningEffort, maxOutputTokens);
+                Thread::sleep, baseUrl, apiKey, model,
+                reasoningEffort, maxOutputTokens, 600, 0);
+    }
+
+    public OpenAiResponsesSemanticExtractor(
+            String baseUrl,
+            String apiKey,
+            String model,
+            String reasoningEffort,
+            int maxOutputTokens,
+            int requestTimeoutSeconds,
+            int maxTransportRetries
+    ) {
+        this(new HttpClientResponsesTransport(
+                        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()),
+                Thread::sleep, baseUrl, apiKey, model, reasoningEffort, maxOutputTokens,
+                requestTimeoutSeconds, maxTransportRetries);
     }
 
     OpenAiResponsesSemanticExtractor(
@@ -47,7 +65,8 @@ public final class OpenAiResponsesSemanticExtractor {
             String reasoningEffort,
             int maxOutputTokens
     ) {
-        this(new HttpClientResponsesTransport(client), baseUrl, apiKey, model, reasoningEffort, maxOutputTokens);
+        this(new HttpClientResponsesTransport(client), Thread::sleep, baseUrl, apiKey, model,
+                reasoningEffort, maxOutputTokens, 600, 0);
     }
 
     OpenAiResponsesSemanticExtractor(
@@ -58,12 +77,38 @@ public final class OpenAiResponsesSemanticExtractor {
             String reasoningEffort,
             int maxOutputTokens
     ) {
+        this(transport, Thread::sleep, baseUrl, apiKey, model, reasoningEffort, maxOutputTokens, 600, 0);
+    }
+
+    OpenAiResponsesSemanticExtractor(
+            ResponsesTransport transport,
+            RetrySleeper retrySleeper,
+            String baseUrl,
+            String apiKey,
+            String model,
+            String reasoningEffort,
+            int maxOutputTokens,
+            int requestTimeoutSeconds,
+            int maxTransportRetries
+    ) {
         this.transport = transport;
+        this.retrySleeper = retrySleeper;
         this.responsesEndpoint = responsesEndpoint(baseUrl);
         this.apiKey = apiKey == null ? "" : apiKey;
-        this.model = model == null || model.isBlank() ? "gpt-5.5" : model;
-        this.reasoningEffort = reasoningEffort == null || reasoningEffort.isBlank() ? "high" : reasoningEffort;
-        this.maxOutputTokens = maxOutputTokens <= 0 ? 12000 : maxOutputTokens;
+        this.model = model == null || model.isBlank() ? "gpt-5.6-sol" : model;
+        this.reasoningEffort = reasoningEffort == null || reasoningEffort.isBlank() ? "xhigh" : reasoningEffort;
+        if (maxOutputTokens <= 0) {
+            throw new IllegalArgumentException("maxOutputTokens must be positive");
+        }
+        if (requestTimeoutSeconds <= 0) {
+            throw new IllegalArgumentException("requestTimeoutSeconds must be positive");
+        }
+        if (maxTransportRetries < 0) {
+            throw new IllegalArgumentException("maxTransportRetries must be zero or positive");
+        }
+        this.maxOutputTokens = maxOutputTokens;
+        this.requestTimeout = Duration.ofSeconds(requestTimeoutSeconds);
+        this.maxTransportRetries = maxTransportRetries;
     }
 
     public SemanticExtractionResult extract(SemanticExtractionPrompt prompt) {
@@ -73,18 +118,12 @@ public final class OpenAiResponsesSemanticExtractor {
         try {
             String requestBody = JSON.writeValueAsString(request(prompt));
             HttpRequest request = HttpRequest.newBuilder(responsesEndpoint)
-                    .timeout(Duration.ofMinutes(10))
+                    .timeout(requestTimeout)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
-            TransportResponse response = transport.send(request);
-            JsonNode responseJson = parseJson(response.body());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalArgumentException(
-                        "OpenAI Responses API failed with HTTP " + response.statusCode());
-            }
-            return new SemanticExtractionResult(requestBody, response.body(), outputText(responseJson), responseJson);
+            return sendWithRetry(request, requestBody);
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to call OpenAI Responses API", e);
         } catch (InterruptedException e) {
@@ -96,6 +135,11 @@ public final class OpenAiResponsesSemanticExtractor {
     @FunctionalInterface
     interface ResponsesTransport {
         TransportResponse send(HttpRequest request) throws IOException, InterruptedException;
+    }
+
+    @FunctionalInterface
+    interface RetrySleeper {
+        void sleep(long millis) throws InterruptedException;
     }
 
     record TransportResponse(int statusCode, String body) {
@@ -115,6 +159,39 @@ public final class OpenAiResponsesSemanticExtractor {
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to serialize OpenAI request", e);
         }
+    }
+
+    private SemanticExtractionResult sendWithRetry(HttpRequest request, String requestBody)
+            throws IOException, InterruptedException {
+        int attempt = 0;
+        while (true) {
+            try {
+                TransportResponse response = transport.send(request);
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    JsonNode responseJson = parseJson(response.body());
+                    return new SemanticExtractionResult(
+                            requestBody, response.body(), outputText(responseJson), responseJson, attempt + 1);
+                }
+                if (!retryable(response.statusCode()) || attempt >= maxTransportRetries) {
+                    throw new IllegalArgumentException(
+                            "OpenAI Responses API failed with HTTP " + response.statusCode());
+                }
+            } catch (IOException error) {
+                if (attempt >= maxTransportRetries) {
+                    throw error;
+                }
+            }
+            retrySleeper.sleep(backoffMillis(attempt));
+            attempt++;
+        }
+    }
+
+    private boolean retryable(int statusCode) {
+        return statusCode == 429 || statusCode >= 500 && statusCode <= 599;
+    }
+
+    private long backoffMillis(int attempt) {
+        return Math.min(2000L, 250L << Math.min(attempt, 3));
     }
 
     private ObjectNode request(SemanticExtractionPrompt prompt) {

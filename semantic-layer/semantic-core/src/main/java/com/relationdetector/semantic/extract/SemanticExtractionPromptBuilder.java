@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.reader.ScanBundle;
 
 /**
- * CN: 将 compact evidence bundle 装配为严格 evidence-grounded developer/user prompts；prompt 声明引用闭包与禁止发明规则，但不执行模型请求。
- * EN: Assembles a compact evidence bundle into developer and user prompts that enforce evidence grounding and reference closure. It does not execute a model request.
+ * CN: 将 evidence-closed bundle 装配为严格 evidence-grounded developer/user prompts；prompt 声明引用闭包与禁止发明规则，但不执行模型请求。
+ * EN: Assembles an evidence-closed bundle into developer and user prompts that enforce evidence grounding and reference closure. It does not execute a model request.
  */
 public final class SemanticExtractionPromptBuilder {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -33,6 +33,14 @@ public final class SemanticExtractionPromptBuilder {
         return new SemanticExtractionPrompt(developerPrompt(), userPrompt(evidenceBundle), evidenceBundle);
     }
 
+    public SemanticExtractionPrompt build(ObjectNode evidenceBundle) {
+        if (evidenceBundle == null) {
+            throw new IllegalArgumentException("semantic evidence bundle is required");
+        }
+        ObjectNode detached = evidenceBundle.deepCopy();
+        return new SemanticExtractionPrompt(developerPrompt(), userPrompt(detached), detached);
+    }
+
     /**
      * CN: 返回固定 developer contract，约束模型只使用 bundle、保留 lineage、引用 event/triplet candidates 并输出 ref-closed document；无输入和副作用。
      * EN: Returns the fixed developer contract requiring bundle-only reasoning, preserved lineage, candidate references, and ref-closed output. It has no input or side effects.
@@ -44,6 +52,11 @@ public final class SemanticExtractionPromptBuilder {
                 Hard rules:
                 - Only use the provided evidence bundle.
                 - Do not invent database facts, physical tables, columns, joins, metrics, or lineage.
+                - When shardContext is present, create output only for ownedFactRefs and ownedCandidateRefs.
+                  overlapRefs are read-only context and must not become independently owned output.
+                - Every model-authored output item must include a non-empty ownedGroundingRefs array containing
+                  current-shard ownedFactRefs or ownedCandidateRefs. evidenceRefs are audit context only and never
+                  establish output ownership.
                 - Do not mark anything as BUSINESS_APPROVED.
                 - Every output item must include evidenceRefs that point back to stable ids in the input bundle.
                 - If a business meaning or metric formula is uncertain, use reviewStatus=REVIEW_NEEDED.

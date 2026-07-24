@@ -22,14 +22,16 @@ public final class SemanticExtractionArtifactWriter {
             throw new IllegalArgumentException("requestJson is required");
         }
         createDirectory(outputDirectory);
-        write(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"), pretty(prompt.evidenceBundle()));
+        write(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
+                pretty(prompt.trustedEvidenceBundle()));
         write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
         write(outputDirectory.resolve("semantic-extraction-request.json"), requestJson);
     }
 
     public void writeCodexSessionRequest(Path outputDirectory, SemanticExtractionPrompt prompt) {
         createDirectory(outputDirectory);
-        write(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"), pretty(prompt.evidenceBundle()));
+        write(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
+                pretty(prompt.trustedEvidenceBundle()));
         write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
         write(outputDirectory.resolve("semantic-extraction-codex-session.md"), codexSessionMarkdown(outputDirectory));
     }
@@ -40,7 +42,7 @@ public final class SemanticExtractionArtifactWriter {
         write(outputDirectory.resolve("semantic-extraction-response.json"), result.responseJson());
         write(outputDirectory.resolve("semantic-extraction-result-raw.json"), result.outputText());
         write(outputDirectory.resolve("semantic-extraction-result.json"),
-                pretty(normalizeResult(result.outputText(), prompt.evidenceBundle())));
+                pretty(normalizeResult(result.outputText(), prompt.trustedEvidenceBundle())));
     }
 
     public ObjectNode normalizeResult(String outputText, JsonNode evidenceBundle) {

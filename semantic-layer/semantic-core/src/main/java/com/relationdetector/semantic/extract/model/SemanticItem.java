@@ -17,6 +17,7 @@ public abstract class SemanticItem {
     public String description;
     public String reviewStatus;
     public String severity;
+    public List<String> ownedGroundingRefs;
     public List<String> evidenceRefs;
 
     public String id() {
@@ -29,5 +30,9 @@ public abstract class SemanticItem {
 
     public List<String> evidenceRefs() {
         return evidenceRefs == null ? List.of() : evidenceRefs;
+    }
+
+    public List<String> ownedGroundingRefs() {
+        return ownedGroundingRefs == null ? List.of() : ownedGroundingRefs;
     }
 }

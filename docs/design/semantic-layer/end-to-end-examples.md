@@ -5,7 +5,11 @@
 本文档提供 Semantic Layer 的端到端测试示例。当前代码已经落地两条离线链路：
 
 - KG JSON artifact 构建链路：`relation-detector scan-result.json -> ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> semantic-kg.json`
-- 语义抽取链路：`semantic extract` 生成 evidence bundle / prompt，`codex-session` 只写会话输入，`openai-api` 可调用 Responses API 并产出 normalized semantic document
+- 语义抽取链路：`semantic extract` 从同一个 `ScanBundle` 并列写 deterministic KG 与完整
+  evidence bundle；大输入按当前 table-touch component 形成 evidence closure，并把小型断开分量确定性装箱为 bounded
+  shards。`codex-session` 只写逐片会话输入，
+  `openai-api` 可逐片调用 Responses API，经 exact-ID merge、受限协调和完整 bundle 最终校验后产出
+  normalized semantic document
 
 在线问答、Catalog Store、Embedding、Lexicon 仍是目标设计示例，不是当前已实现 API。
 
@@ -121,10 +125,17 @@ CREATE TABLE order_items (
   "dataLineages": [
     {
       "sources": [{"table": "payments", "column": "amount"}],
-      "target": {"table": null, "column": "paid_amount_30d"},
+      "target": {"table": "orders", "column": "total_amount"},
       "flowKind": "VALUE", "transformType": "AGGREGATE",
       "confidence": 0.80,
-      "evidence": [{"type": "LINEAGE", "detail": "SUM(payments.amount) AS paid_amount_30d"}]
+      "evidence": [{
+        "type": "DATA_LINEAGE",
+        "transformType": "AGGREGATE",
+        "sourceType": "PLAIN_SQL",
+        "score": 0.80,
+        "source": "sales-summary.sql",
+        "detail": "SUM(payments.amount) -> orders.total_amount"
+      }]
     }
   ]
 }
