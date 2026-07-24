@@ -314,6 +314,15 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     通过后才统一应用，plugin warning message/source/attributes 不进入 scan result。
 14. offline INSERT profiling 没有可执行 producer，其 runtime/SPI 字段已在 v6 删除；
     YAML transport 仅保留拒绝哨兵，旧字段明确返回 config format error，不会被静默忽略。
+15. `derivedPaths.minConfidence` 已按未舍入的 BigDecimal 衰减值执行输出过滤；低分 relationship、
+    lineage 和 naming path 在路径/事实配额与 raw-evidence 聚合前排除，等于阈值保留，输出 confidence
+    只在最终呈现时保留四位小数。
+16. `DataProfilePipeline` 的 request candidate 和 `ProfileOutcomeContractValidator` 的返回 evidence
+    均复用 core 递归 detachment 原语。输入/输出嵌套 list、set、map 不与插件共享，未知可变 attribute
+    类型原子失败；request 原地突变和 result 延迟突变均有 focused negative tests。
+17. `ProfileOutcomeContractValidator` 的所有违约统一使用 `AdaptorContractException`。direct API
+    原样抛出，single CLI 与 batch case 均归类为 `ADAPTOR_ERROR`；全批延迟提交保证最后一个 outcome
+    失败时也不留下部分 profiling 状态。
 
 上述 live definition、warning sanitization 与 collector fail-fast 主链已有 focused tests；当前完整
 验收数量应从生成报告与 verification manifest读取，不在本文复制。direct Java `ScanConfig.*Paths`、
@@ -350,8 +359,10 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   failure 的 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
   脱敏文本。live namespace resolver 的 `LiveSourceConfigurationException` 已在 single-scan 映射为
   `CONFIG_FORMAT_ERROR`，batch case 保留同一 typed code，整体仍返回 `BATCH_PARTIAL_FAILURE`。adaptor
-  SPI/type/id/capability/implementation/result-contract failure 则统一使用 `AdaptorContractException` 和
-  `ADAPTOR_ERROR`；`ScanTaskExecutor` 在串行和并行路径保留同一异常类型。
+  SPI/type/id/capability/implementation 以及全部 adaptor result-contract failure 使用
+  `AdaptorContractException / ADAPTOR_ERROR`；`ScanTaskExecutor` 在串行和并行路径保留同一异常类型。
+  profile outcome contract violation 同样保持该类别，single 与 batch 的直接契约测试覆盖安全文本和
+  case 级 error code。
 - `DirectionConfidence` 和保留 error/evidence enum 继续作为 compatibility contract；所有 public production
   enum value 已由 AST discovery gate 逐值执行 Jackson serializer/deserializer round-trip，冻结的 CLI
   `ErrorCode` matrix 另有穷举集合断言和路径测试。

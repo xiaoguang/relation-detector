@@ -397,6 +397,12 @@ public interface DataProfiler {
 - `ProfileOutcome.warnings` 同样属于不可信 SPI 输入。core 只验证 status 对应的 warning type/code；
   plugin message/source/attributes 不进入 `ScanResult`，固定安全 warning 由 core 按 status、adaptor id 与
   candidate endpoints 重建。所有 bounded outcomes 先完整验证再统一应用，任一违规不会留下部分结果。
+- request candidate 和返回 evidence 均复用 `AdaptorResultDetachmentSupport` 做递归复制，嵌套
+  list/set/map 变为不可修改容器，未知可变 attribute 类型直接形成 contract violation。profile outcome
+  先完成 deep detachment，再执行 status、family、source type 与 negative policy 校验。
+- profile contract violation 统一抛 `AdaptorContractException`：direct API 原样保留，single-scan
+  映射为 `ADAPTOR_ERROR`，batch case 保留同一 code。整个 bounded batch 延迟提交，任一 outcome
+  违约不会留下前序 evidence、warning 或 candidate 状态。
 - 默认关闭。
 
 ## 权重修正接口

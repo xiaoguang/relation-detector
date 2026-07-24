@@ -13,6 +13,8 @@ import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
+import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
 
 /**
  * CN: 在 core 消费 adaptor 画像结果前原子验证 status、evidence 和 warning envelope，并重建安全 warning；
@@ -29,12 +31,15 @@ public final class ProfileOutcomeContractValidator {
             EvidenceType.VALUE_OVERLAP_HIGH,
             EvidenceType.NEGATIVE_VALUE_MISMATCH);
     private final NegativeProfileEvidencePolicy negativePolicy = new NegativeProfileEvidencePolicy();
+    private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
     public ValidatedProfileOutcome validate(ProfileRequest request, ProfileOutcome outcome, String adaptorId) {
         if (request == null || outcome == null) {
             throw violation();
         }
-        List<Evidence> evidence = outcome.evidence();
+        List<Evidence> evidence = outcome.evidence().stream()
+                .map(item -> detachment.evidence(item, "data profile outcome evidence"))
+                .toList();
         validateStatusShape(outcome.status(), evidence, outcome.warnings());
         validateEvidence(request, evidence);
         return new ValidatedProfileOutcome(evidence, rebuiltWarnings(request, outcome, adaptorId));
@@ -127,8 +132,8 @@ public final class ProfileOutcomeContractValidator {
         return safe ? value : "unknown";
     }
 
-    private IllegalStateException violation() {
-        return new IllegalStateException("Data profiler violated the ProfileOutcome contract");
+    private AdaptorContractException violation() {
+        return new AdaptorContractException("Data profiler violated the ProfileOutcome contract");
     }
 
     /**

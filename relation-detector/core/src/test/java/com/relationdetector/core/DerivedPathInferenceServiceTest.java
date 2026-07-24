@@ -37,6 +37,7 @@ class DerivedPathInferenceServiceTest {
     @Test
     void derivesTransitiveNamingEvidenceUpToFiveHops() {
         ScanConfig config = enabledConfig();
+        config.derivedMinConfidence = 0.0d;
         NamingEvidencePool pool = new NamingEvidencePool();
         Endpoint a = col("a", "r");
         Endpoint b = col("b", "s");
@@ -679,6 +680,110 @@ class DerivedPathInferenceServiceTest {
                 "cycle traversal must never emit self-loop derived facts");
     }
 
+    @Test
+    void minimumConfidenceFiltersRelationshipLineageAndNamingPaths() {
+        ScanConfig config = enabledConfig();
+        config.derivedMinConfidence = 0.70d;
+
+        Endpoint orderItemOrderId = col("order_items", "order_id");
+        Endpoint ordersId = col("orders", "id");
+        Endpoint ordersCustomerId = col("orders", "customer_id");
+        Endpoint customersId = col("customers", "id");
+        Endpoint lineageA = col("lineage_a", "id");
+        Endpoint lineageB = col("lineage_b", "id");
+        Endpoint lineageC = col("lineage_c", "id");
+        Endpoint namingA = col("naming_a", "id");
+        Endpoint namingB = col("naming_b", "id");
+        Endpoint namingC = col("naming_c", "id");
+        NamingEvidencePool naming = new NamingEvidencePool();
+        naming.add(naming(namingA, namingB, 0.80d));
+        naming.add(naming(namingB, namingC, 0.80d));
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(
+                        fk(orderItemOrderId, ordersId),
+                        fk(ordersCustomerId, customersId)),
+                List.of(
+                        lineage(lineageA, lineageB, LineageFlowKind.VALUE, 0.80d),
+                        lineage(lineageB, lineageC, LineageFlowKind.VALUE, 0.80d)),
+                naming.merged(),
+                config);
+
+        assertTrue(result.derivedRelationships().isEmpty());
+        assertTrue(result.derivedDataLineages().isEmpty());
+        assertTrue(result.derivedNamingEvidence().isEmpty());
+    }
+
+    @Test
+    void minimumConfidenceKeepsEqualAndHigherScoresWithoutRaisingThem() {
+        Endpoint a = col("confidence_a", "id");
+        Endpoint b = col("confidence_b", "id");
+        Endpoint c = col("confidence_c", "id");
+
+        ScanConfig equalConfig = enabledConfig();
+        equalConfig.derivedMinConfidence = 0.60d;
+        DerivedPathCandidate equal = service.infer(List.of(), List.of(
+                lineage(a, b, LineageFlowKind.VALUE, 0.80d),
+                lineage(b, c, LineageFlowKind.VALUE, 0.80d)
+        ), List.of(), equalConfig).derivedDataLineages().get(0);
+
+        ScanConfig lowerConfig = enabledConfig();
+        lowerConfig.derivedMinConfidence = 0.50d;
+        DerivedPathCandidate higher = service.infer(List.of(), List.of(
+                lineage(a, b, LineageFlowKind.VALUE, 0.80d),
+                lineage(b, c, LineageFlowKind.VALUE, 0.80d)
+        ), List.of(), lowerConfig).derivedDataLineages().get(0);
+
+        assertEquals(new BigDecimal("0.6000"), equal.confidence());
+        assertEquals(new BigDecimal("0.6000"), higher.confidence());
+    }
+
+    @Test
+    void filteredPathDoesNotConsumePerPairQuota() {
+        ScanConfig config = enabledConfig();
+        config.derivedMinConfidence = 0.50d;
+        config.derivedMaxPathsPerPair = 1;
+        Endpoint source = col("quota_a", "id");
+        Endpoint lowMiddle = col("quota_b", "id");
+        Endpoint highMiddle = col("quota_c", "id");
+        Endpoint target = col("quota_z", "id");
+
+        List<DerivedPathCandidate> result = service.infer(List.of(), List.of(
+                lineage(source, lowMiddle, LineageFlowKind.VALUE, 0.40d),
+                lineage(lowMiddle, target, LineageFlowKind.VALUE, 0.40d),
+                lineage(source, highMiddle, LineageFlowKind.VALUE, 0.80d),
+                lineage(highMiddle, target, LineageFlowKind.VALUE, 0.80d)
+        ), List.of(), config).derivedDataLineages();
+
+        assertEquals(1, result.size());
+        assertEquals(List.of(source, highMiddle, target), result.get(0).path());
+        assertEquals(new BigDecimal("0.6000"), result.get(0).confidence());
+    }
+
+    @Test
+    void filteredPathDoesNotConsumeGlobalFactQuota() {
+        ScanConfig config = enabledConfig();
+        config.derivedMinConfidence = 0.50d;
+        config.derivedMaxFacts = 1;
+        Endpoint lowSource = col("fact_a", "id");
+        Endpoint lowMiddle = col("fact_b", "id");
+        Endpoint lowTarget = col("fact_c", "id");
+        Endpoint highSource = col("fact_x", "id");
+        Endpoint highMiddle = col("fact_y", "id");
+        Endpoint highTarget = col("fact_z", "id");
+
+        List<DerivedPathCandidate> result = service.infer(List.of(), List.of(
+                lineage(lowSource, lowMiddle, LineageFlowKind.VALUE, 0.40d),
+                lineage(lowMiddle, lowTarget, LineageFlowKind.VALUE, 0.40d),
+                lineage(highSource, highMiddle, LineageFlowKind.VALUE, 0.80d),
+                lineage(highMiddle, highTarget, LineageFlowKind.VALUE, 0.80d)
+        ), List.of(), config).derivedDataLineages();
+
+        assertEquals(1, result.size());
+        assertEquals(highSource, result.get(0).source());
+        assertEquals(highTarget, result.get(0).target());
+    }
+
     private ScanConfig enabledConfig() {
         ScanConfig config = new ScanConfig();
         config.derivedPathsEnabled = true;
@@ -699,11 +804,15 @@ class DerivedPathInferenceServiceTest {
     }
 
     private NamingEvidenceCandidate naming(Endpoint source, Endpoint target) {
+        return naming(source, target, DefaultEvidenceScores.NAMING_MATCH);
+    }
+
+    private NamingEvidenceCandidate naming(Endpoint source, Endpoint target, double score) {
         return new NamingEvidenceCandidate(
                 source,
                 target,
                 new Evidence(EvidenceType.NAMING_MATCH,
-                        BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                        BigDecimal.valueOf(score),
                         EvidenceSourceType.NAMING_HEURISTIC,
                         "test",
                         source.displayName() + " names " + target.displayName(),
@@ -759,6 +868,25 @@ class DerivedPathInferenceServiceTest {
 
     private DataLineageCandidate lineage(Endpoint source, Endpoint target, LineageFlowKind flowKind) {
         return lineage(source, target, flowKind, LineageTransformType.DIRECT, Map.of());
+    }
+
+    private DataLineageCandidate lineage(
+            Endpoint source,
+            Endpoint target,
+            LineageFlowKind flowKind,
+            double confidence
+    ) {
+        DataLineageCandidate candidate = lineage(source, target, flowKind);
+        candidate.confidence(BigDecimal.valueOf(confidence));
+        candidate.evidence().clear();
+        candidate.evidence().add(new DataLineageEvidence(
+                LineageTransformType.DIRECT,
+                BigDecimal.valueOf(confidence),
+                EvidenceSourceType.PLAIN_SQL,
+                "test.sql",
+                source.displayName() + " -> " + target.displayName(),
+                Map.of()));
+        return candidate;
     }
 
     private DataLineageCandidate lineage(

@@ -1008,6 +1008,12 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 
 路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
 
+`derivedPaths.minConfidence` 的契约是输出过滤阈值：计算衰减置信度后，低于该值的 path 不应输出。
+`DerivedPathGraphBuilder` 使用 `BigDecimal` 计算未舍入的
+`minimum edge confidence * decay^(pathLength-1)`；低于阈值的 relationship、lineage 和 naming
+path observation 在 `maxPathsPerPair`、`maxFacts` 及 raw-evidence 聚合前排除，等于阈值时保留。
+最终输出 confidence 仍统一保留四位小数，但过滤判断不使用该舍入值，也不再把低分结果抬升到阈值。
+
 Endpoint identity 在 derived graph 中保持 catalog/schema 保真：显式 namespace 原样保留；bare
 endpoint 只有在上游 production scan 已经用唯一、规范 namespace 物化时才携带该 namespace。
 未物化的 `table.column` 不会因同名降级匹配 `schema.table.column` 或

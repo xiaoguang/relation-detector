@@ -22,6 +22,7 @@ final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
     private final DataProfileNamespacePolicy namespacePolicy = new DataProfileNamespacePolicy();
     private final ProfileOutcomeContractValidator outcomeContract = new ProfileOutcomeContractValidator();
+    private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
     /**
      * CN: 对当前 scan 的有界 candidates 完成全部 adaptor profile 调用和契约校验后，再统一写入 evidence、warning
@@ -79,14 +80,7 @@ final class DataProfilePipeline {
     }
 
     private RelationshipCandidate profileView(RelationshipCandidate source) {
-        RelationshipCandidate copy = new RelationshipCandidate(
-                source.source(), source.target(), source.relationType(), source.relationSubType());
-        copy.confidence(source.confidence());
-        copy.evidence().addAll(source.evidence());
-        copy.rawEvidence().addAll(source.rawEvidence());
-        copy.warnings().addAll(source.warnings());
-        copy.attributes().putAll(source.attributes());
-        return copy;
+        return detachment.relationshipCandidate(source, "data profile request candidate");
     }
 
     private record ProfileApplication(

@@ -4,10 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.EvidenceSourceType;
+import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.ErrorCode;
+import com.relationdetector.contracts.Enums.RelationSubType;
+import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.contracts.model.ColumnRef;
+import com.relationdetector.contracts.model.Endpoint;
+import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
+import com.relationdetector.contracts.spi.ProfileOutcome;
+import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.profile.ProfileOutcomeContractValidator;
 import com.relationdetector.core.scan.DatabaseConnectionException;
 import com.relationdetector.core.scan.AdaptorContractException;
 import com.relationdetector.core.scan.ScanConfig;
@@ -15,10 +28,12 @@ import com.relationdetector.core.scan.ScanResult;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -65,6 +80,40 @@ class CliErrorCodeContractTest {
                 "scan", "--config", malformed.toString());
         assertResult(ErrorCode.CONFIG_FORMAT_ERROR, new SingleScanRunner(),
                 "scan", "--config", invalidShape.toString());
+    }
+
+    @Test
+    void mapsProfileOutcomeContractViolationToAdaptorError() {
+        SingleScanRunner runner = runner(
+                ignored -> config(),
+                (config, adaptor) -> {
+                    RelationshipCandidate candidate = new RelationshipCandidate(
+                            Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id")),
+                            Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id")),
+                            RelationType.FK_LIKE,
+                            RelationSubType.PROFILE_SUPPORTED_FK);
+                    ProfileRequest request = new ProfileRequest(candidate, DataProfileOptions.defaults());
+                    Evidence invalid = new Evidence(
+                            EvidenceType.SQL_LOG_JOIN,
+                            BigDecimal.valueOf(0.20d),
+                            EvidenceSourceType.DATA_PROFILE,
+                            "plugin",
+                            "invalid profile evidence",
+                            Map.of());
+                    new ProfileOutcomeContractValidator().validate(
+                            request, ProfileOutcome.success(List.of(invalid)), adaptor.id());
+                    return result();
+                },
+                ignored -> { });
+
+        CommandResult result = run(
+                runner,
+                List.of(new CommonDatabaseAdaptor()),
+                "scan", "--config", "scan.yml");
+
+        assertEquals(ErrorCode.ADAPTOR_ERROR.code(), result.code());
+        assertEquals("Requested database adaptor is unavailable.\n", result.stderr());
+        assertSafe(result.stderr());
     }
 
     private void assertResult(ErrorCode expected, SingleScanRunner runner, String... args) {

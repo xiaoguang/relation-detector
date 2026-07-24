@@ -176,10 +176,14 @@ final class DerivedPathGraphBuilder {
             Map<String, Integer> pathsPerPair,
             List<DerivedPathObservation> observations
     ) {
+        DerivedPathObservation observation = new DerivedPathObservation(source, target, path);
+        if (!meetsMinimumConfidence(observation)) {
+            return;
+        }
         String pair = pairKey(source, target);
         int count = pathsPerPair.getOrDefault(pair, 0);
         if (config.derivedMaxPathsPerPair == 0 || count < config.derivedMaxPathsPerPair) {
-            observations.add(new DerivedPathObservation(source, target, path));
+            observations.add(observation);
             pathsPerPair.put(pair, count + 1);
         }
     }
@@ -193,6 +197,9 @@ final class DerivedPathGraphBuilder {
             List<DerivedPathObservation> observations
     ) {
         DerivedPathObservation observation = new DerivedPathObservation(source, target, path);
+        if (!meetsMinimumConfidence(observation)) {
+            return;
+        }
         String pathKey = canonicalPathKey(DerivedPathKind.RELATIONSHIP.name(), observation);
         if (acceptedCanonicalPaths.contains(pathKey)) {
             observations.add(observation);
@@ -289,14 +296,22 @@ final class DerivedPathGraphBuilder {
     }
 
     BigDecimal confidence(DerivedPathObservation observation) {
+        return rawConfidence(observation).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal rawConfidence(DerivedPathObservation observation) {
         BigDecimal minimum = observation.edges().stream()
                 .map(DerivedEdge::confidence)
                 .min(Comparator.naturalOrder())
                 .orElse(BigDecimal.ZERO);
-        double value = minimum.doubleValue()
-                * Math.pow(config.derivedConfidenceDecay, observation.edges().size() - 1);
-        return BigDecimal.valueOf(Math.max(value, config.derivedMinConfidence))
-                .setScale(4, RoundingMode.HALF_UP);
+        BigDecimal decay = BigDecimal.valueOf(config.derivedConfidenceDecay)
+                .pow(observation.edges().size() - 1);
+        return minimum.multiply(decay);
+    }
+
+    private boolean meetsMinimumConfidence(DerivedPathObservation observation) {
+        return rawConfidence(observation)
+                .compareTo(BigDecimal.valueOf(config.derivedMinConfidence)) >= 0;
     }
 
     List<Endpoint> endpoints(DerivedPathObservation observation) {

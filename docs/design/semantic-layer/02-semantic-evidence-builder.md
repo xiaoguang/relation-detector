@@ -300,8 +300,10 @@ evidence JSON 生成，同样不使用数组位置。scanRunId/sourceHash 等跨
 当前已经实现的 LLM 上下文规划发生在独立的 `semantic extract` 链路中：
 `SemanticExtractionBundleBuilder` 先从 `ScanBundle` 构造完整 bundle，`SemanticShardPlanner` 再按当前
 table-touch 图和完整 reference closure 形成 shards，`SemanticExtractionPromptBuilder` 为每片生成
-prompt。当前 table-touch index 会递归检查 item 全部文本值，尚未收口为只读取 typed endpoint/reference
-字段，因此不能把它描述为已经严格证明的 typed physical graph。
+prompt。当前 table-touch index 只从 relationship/naming 的 `source/target`、lineage 的
+`sources/target`、event candidate 的 `inputEndpoints/outputEndpoints` 建立直接物理表触达，再沿
+typed fact/candidate dependency refs 传播 closure；description、diagnostic、attributes 和其它普通
+文本值不会建立图边。
 它不通过数组上限截断生产事实，也不等同于本节历史设计中的 `CompactEvidenceBundle`。
 
 ```pseudo-json

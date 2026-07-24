@@ -16,7 +16,7 @@ import sys
 
 path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
-current = "| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |"
+current = "| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |"
 stale = "| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1265 | 57 | 906 |"
 if current not in text:
     raise SystemExit("expected current Oracle row is missing")

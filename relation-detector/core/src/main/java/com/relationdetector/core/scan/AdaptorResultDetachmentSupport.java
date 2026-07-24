@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.WarningMessage;
+
 /**
  * CN: 深复制 adaptor 结果 attributes 中允许的不可变标量、列表、集合与字符串键 map，防止插件在 core
  * 校验后继续修改嵌套容器；输入来自 SPI 边界，输出供契约 validator 装配副本。本类不解释属性语义，
@@ -19,6 +23,47 @@ import java.util.Set;
  * or accept unknown mutable value types.
  */
 public final class AdaptorResultDetachmentSupport {
+    public RelationshipCandidate relationshipCandidate(
+            RelationshipCandidate candidate,
+            String boundary
+    ) {
+        require(candidate != null, boundary + " is null");
+        RelationshipCandidate copy = new RelationshipCandidate(
+                candidate.source(), candidate.target(), candidate.relationType(), candidate.relationSubType());
+        copy.confidence(candidate.confidence());
+        candidate.evidence().forEach(item -> copy.evidence().add(
+                evidence(item, boundary + " evidence")));
+        candidate.rawEvidence().forEach(item -> copy.rawEvidence().add(
+                evidence(item, boundary + " raw evidence")));
+        candidate.warnings().forEach(item -> copy.warnings().add(
+                warning(item, boundary + " warning")));
+        copy.attributes().putAll(attributes(candidate.attributes(), boundary + " attributes"));
+        return copy;
+    }
+
+    public Evidence evidence(Evidence evidence, String boundary) {
+        require(evidence != null, boundary + " is null");
+        return new Evidence(
+                evidence.type(),
+                evidence.score(),
+                evidence.sourceType(),
+                evidence.source(),
+                evidence.detail(),
+                attributes(evidence.attributes(), boundary + " attributes"));
+    }
+
+    public WarningMessage warning(WarningMessage warning, String boundary) {
+        require(warning != null, boundary + " is null");
+        return new WarningMessage(
+                warning.type(),
+                warning.severity(),
+                warning.code(),
+                warning.message(),
+                warning.source(),
+                warning.line(),
+                attributes(warning.attributes(), boundary + " attributes"));
+    }
+
     public Map<String, Object> attributes(Map<String, Object> attributes, String boundary) {
         require(attributes != null, boundary + " are null");
         Map<String, Object> result = new LinkedHashMap<>();

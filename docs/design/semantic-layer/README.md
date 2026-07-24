@@ -42,10 +42,12 @@ Relation Detector JSON
 模型不接收也不改写 deterministic KG；KG 与 extraction bundle 是同一个 `ScanBundle` 的并列输出。
 分片保留全部 fact/candidate，并由 planner 要求每项只有一个 canonical owner。超预算 table owner
 会按稳定 root ID 拆成 `table#part-NNNN`，但每个 root 及其 typed closure 仍不可切分。当前 prompt 和
-deterministic backfill 遵守 overlap 只读规则，但 model-authored 输出尚缺 owned-ref 强制校验；
-token budget 也使用确定性估算而不是模型 tokenizer。任何原子 closure 超过估算门限、引用不闭合、
-同 ID 冲突未解决或全局 normalization 失败都不会返回正式 extraction result；artifact 文件写入本身
-仍不是目录级事务。
+deterministic backfill 遵守 overlap 只读规则；`SemanticShardOutputOwnershipValidator` 还会在 backfill
+前要求每个 model-authored 对象以 `ownedGroundingRefs` 直接引用当前 shard 拥有的 fact/candidate，
+仅引用 overlap 或 evidence 不能建立输出所有权。token budget 使用确定性估算而不是模型 tokenizer。
+任何原子 closure 超过估算门限、引用不闭合、同 ID 冲突未解决或全局 normalization 失败都不会返回
+正式 extraction result。artifact writer 先写唯一 staging 目录，完整结果、manifest 和 hash 全部成功后
+才以同文件系统原子 rename 发布 `run-<runId>`；失败 staging 保留为审计材料，不发布半成品 run。
 该分片边界只控制模型上下文；当前 reader 仍会先在内存中完整物化单个 relation-detector JSON。
 超大输入的 bounded-memory streaming / on-disk ingestion 尚未实现，不能由模型分片能力代替。
 

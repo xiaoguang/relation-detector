@@ -318,7 +318,7 @@ derivedPaths:
 | `maxPathsPerPair=0` | 0 表示不限制同一 source/target 的路径数量 |
 | `maxFacts=0` | 0 表示不限制总推导事实数 |
 | `confidenceDecay` | 每跳置信度衰减 |
-| `minConfidence` | 推导结果最小置信度 |
+| `minConfidence` | 推导结果最小置信度；按未舍入的衰减置信度过滤低于阈值的 relationship、lineage 和 naming path，等于阈值时保留。过滤先于路径/事实配额，最终输出值再统一保留四位小数。 |
 
 默认关闭。工具 UI 可以把它做成“显示间接关系 / 间接血缘”的高级开关。
 

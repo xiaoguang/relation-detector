@@ -29,6 +29,16 @@ outcome。只有 `SUCCESS` 可携带非空 evidence 且不能携带 warning；ev
 evidence；plugin warning 的 message/source/attributes 不受信任，core 只按已验证 status、adaptor id 与
 candidate endpoints 重建固定脱敏 warning。全部 bounded outcomes 通过后才统一写入，违规时无部分修改。
 
+`DataProfilePipeline.profileView()` 复用 `AdaptorResultDetachmentSupport` 重建完整 candidate：
+evidence、raw evidence、warning 和 candidate attributes 均递归复制，嵌套 list/set/map 对插件不可修改，
+未知可变 attribute 类型直接拒绝。`ProfileOutcomeContractValidator` 在任何 status、family、source type
+或 negative-policy 校验前，同样先重建 deep-detached evidence；因此插件对请求的原地修改或对原始
+返回容器的延迟修改都不能回写 scan 状态。
+
+Profile outcome 违约统一抛 `AdaptorContractException`。direct API 保留该类型，single CLI 映射为
+`ADAPTOR_ERROR`，batch case 保存同一 code 且整体仍返回 `BATCH_PARTIAL_FAILURE`。全部 bounded
+outcomes 继续延迟提交，最后一个 outcome 违约也不会留下前序 evidence、warning 或 source 状态。
+
 ## 设计原则
 
 - 默认不读取业务数据，必须显式开启。

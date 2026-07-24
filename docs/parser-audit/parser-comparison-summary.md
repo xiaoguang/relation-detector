@@ -51,7 +51,7 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 
 | Parser category | Fixtures | SQL / DDL | Rel | Lin | DirName | Diag | DerRel | DerLin | DerName |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 321 | 110 | 250 | 0 | 1190 | 7 | 861 |
+| common token-event sample-data | 9 | 6 / 3 | 321 | 110 | 250 | 0 | 1162 | 7 | 853 |
 | MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 448 | 248 | 0 | 1266 | 89 | 907 |
 | MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 331 | 428 | 244 | 0 | 1166 | 100 | 848 |
 | MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 448 | 248 | 0 | 1266 | 89 | 907 |
@@ -59,17 +59,17 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 | PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 | 1023 | 57 | 733 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 1023 | 57 | 733 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
-| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
-| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
-| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
-| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
-| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1127 | 195 | 812 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
+| SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
+| SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
+| SQL Server full-grammar v2019 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
+| SQL Server full-grammar v2022 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
+| SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
 
 Derived relationship now uses reverse referenced-by traversal internally and still emits FK-like forward output. The large SQL Server derived relationship inflation caused by earlier forward FK + identity bridge traversal is removed; derived naming evidence is now visible as `TRANSITIVE_NAMING_PATH`.
 

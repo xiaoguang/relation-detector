@@ -114,7 +114,7 @@ class DataProfilePipelineTest {
             return ProfileOutcome.success(List.of(evidence(EvidenceType.SQL_LOG_JOIN)));
         });
 
-        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), context));
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
 
         assertEquals(2, calls.get());
         assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
@@ -137,7 +137,7 @@ class DataProfilePipelineTest {
                         "test-profile",
                         0))));
 
-        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), context));
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
 
         assertTrue(context.relationshipCandidates.isEmpty());
         assertTrue(context.result.warnings().isEmpty());
@@ -156,8 +156,8 @@ class DataProfilePipelineTest {
                 Map.of());
         ScanPipelineContext sourceType = contextReturning(ProfileOutcome.success(List.of(wrongSource)));
 
-        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), structural));
-        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), sourceType));
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), structural));
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), sourceType));
 
         assertTrue(structural.relationshipCandidates.isEmpty());
         assertTrue(sourceType.relationshipCandidates.isEmpty());
@@ -174,7 +174,7 @@ class DataProfilePipelineTest {
         ScanPipelineContext context = existingProfileContext(candidate,
                 ProfileOutcome.success(List.of(negativeEvidence())));
 
-        assertThrows(IllegalStateException.class, () -> pipeline.profile(connection(), context));
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
 
         assertEquals(1, candidate.evidence().size());
     }
@@ -189,6 +189,92 @@ class DataProfilePipelineTest {
 
         assertEquals(List.of(EvidenceType.DDL_FOREIGN_KEY, EvidenceType.NEGATIVE_VALUE_MISMATCH),
                 candidate.evidence().stream().map(Evidence::type).toList());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void profilerRequestIsDeeplyDetachedFromTheScanCandidate() {
+        List<String> candidateNested = new ArrayList<>(List.of("candidate"));
+        List<String> evidenceNested = new ArrayList<>(List.of("evidence"));
+        List<String> warningNested = new ArrayList<>(List.of("warning"));
+        RelationshipCandidate candidate = relationship(null, null);
+        candidate.attributes().put("nested", candidateNested);
+        candidate.evidence().add(new Evidence(
+                EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(0.20d),
+                EvidenceSourceType.PLAIN_SQL,
+                "query.sql",
+                "join",
+                Map.of("nested", evidenceNested)));
+        candidate.warnings().add(new com.relationdetector.contracts.model.WarningMessage(
+                WarningType.PARSE_WARNING,
+                WarningSeverity.WARN,
+                "TEST_WARNING",
+                "warning",
+                "query.sql",
+                1,
+                Map.of("nested", warningNested)));
+        ScanPipelineContext context = contextReturningCandidates(List.of(candidate), (connection, request) -> {
+            assertFalse(request.candidate() == candidate);
+            request.candidate().attributes().put("pluginMutation", true);
+            request.candidate().evidence().clear();
+            request.candidate().warnings().clear();
+            assertThrows(UnsupportedOperationException.class,
+                    () -> ((List<String>) request.candidate().attributes().get("nested")).add("plugin"));
+            return new ProfileOutcome(ProfileStatus.NO_EVIDENCE, List.of(), List.of());
+        });
+
+        pipeline.profile(connection(), context);
+
+        assertFalse(candidate.attributes().containsKey("pluginMutation"));
+        assertEquals(List.of("candidate"), candidateNested);
+        assertEquals(List.of("evidence"), evidenceNested);
+        assertEquals(List.of("warning"), warningNested);
+        assertEquals(1, candidate.evidence().size());
+        assertEquals(1, candidate.warnings().size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void profilerResultEvidenceIsDeeplyDetachedBeforeItEntersTheScan() {
+        List<String> pluginNested = new ArrayList<>(List.of("validated"));
+        Evidence pluginEvidence = new Evidence(
+                EvidenceType.VALUE_CONTAINMENT_HIGH,
+                BigDecimal.valueOf(0.20d),
+                EvidenceSourceType.DATA_PROFILE,
+                "test-profile",
+                "containment",
+                Map.of("nested", pluginNested));
+        ScanPipelineContext context = contextReturning(ProfileOutcome.success(List.of(pluginEvidence)));
+
+        pipeline.profile(connection(), context);
+        pluginNested.add("late-plugin-mutation");
+
+        Evidence applied = context.relationshipCandidates.get(0).evidence().stream()
+                .filter(item -> item.type() == EvidenceType.VALUE_CONTAINMENT_HIGH)
+                .findFirst()
+                .orElseThrow();
+        List<String> appliedNested = (List<String>) applied.attributes().get("nested");
+        assertEquals(List.of("validated"), appliedNested);
+        assertThrows(UnsupportedOperationException.class, () -> appliedNested.add("scan-mutation"));
+    }
+
+    @Test
+    void rejectsUnsupportedMutableProfileAttributesWithoutPartialState() {
+        Evidence pluginEvidence = new Evidence(
+                EvidenceType.VALUE_CONTAINMENT_HIGH,
+                BigDecimal.valueOf(0.20d),
+                EvidenceSourceType.DATA_PROFILE,
+                "test-profile",
+                "containment",
+                Map.of("mutable", new StringBuilder("plugin-owned")));
+        ScanPipelineContext context = contextReturning(ProfileOutcome.success(List.of(pluginEvidence)));
+
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
+
+        assertTrue(context.relationshipCandidates.isEmpty());
+        assertTrue(context.result.warnings().isEmpty());
+        assertTrue(context.result.sources().isEmpty());
     }
 
     @Test
