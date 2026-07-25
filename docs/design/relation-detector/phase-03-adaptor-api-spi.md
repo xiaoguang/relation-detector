@@ -81,6 +81,11 @@ public interface DatabaseAdaptor {
 - preflight只能证明请求有可调用实现，不能证明collector返回的是完整parser-grade declaration、所有
   namespace fallback一致或真实driver权限组合已经验证。live completeness必须由各adaptor设计和
   runtime/高保真contract test单独声明。
+- `AdaptorContractValidator` 在 JDBC 前通过 `ValidatedDatabaseAdaptor` 一次性读取并校验
+  `supportedDatabaseTypes()`、`capabilities()`、`identifierRules()`、`collectors()`、`parsers()`、
+  `profiling()` 与 dialect permission codes。集合和 grouped record 固化为不可变快照，registry、
+  preflight 与 scan 不再重复读取插件 shape。null 顶层/grouped 值、非法嵌套值及 null scope 返回统一
+  抛 `AdaptorContractException`；v5 仍在读取 v6 grouped shape 前以版本错误拒绝。
 
 ## 采集器接口
 
@@ -399,7 +404,9 @@ public interface DataProfiler {
   candidate endpoints 重建。所有 bounded outcomes 先完整验证再统一应用，任一违规不会留下部分结果。
 - request candidate 和返回 evidence 均复用 `AdaptorResultDetachmentSupport` 做递归复制，嵌套
   list/set/map 变为不可修改容器，未知可变 attribute 类型直接形成 contract violation。profile outcome
-  先完成 deep detachment，再执行 status、family、source type 与 negative policy 校验。
+  先完成 deep detachment，再执行 status、family 与source type校验。negative policy不读取插件调用后的
+  request，而使用调用前从原scan candidate固化的`NegativeProfileEligibility`；插件注入声明FK或删除
+  conditional guard都不能改变core-owned资格。
 - profile contract violation 统一抛 `AdaptorContractException`：direct API 原样保留，single-scan
   映射为 `ADAPTOR_ERROR`，batch case 保留同一 code。整个 bounded batch 延迟提交，任一 outcome
   违约不会留下前序 evidence、warning 或 candidate 状态。

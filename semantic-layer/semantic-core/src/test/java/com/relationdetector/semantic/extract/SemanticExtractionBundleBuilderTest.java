@@ -20,7 +20,7 @@ final class SemanticExtractionBundleBuilderTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test
-    void noFocusUsesGlobalEvidenceUpToConfiguredLimits() {
+    void completeBundleIncludesAllPhysicalFactsWithoutFocusMetadata() {
         List<JsonNode> relationships = new ArrayList<>();
         List<JsonNode> derivedRelationships = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
@@ -30,8 +30,9 @@ final class SemanticExtractionBundleBuilderTest {
         ScanBundle bundle = new ScanBundle("mysql", "sample_data", "", List.of("logs"), List.of(),
                 Map.of(), relationships, List.of(), derivedRelationships, List.of(), List.of(), List.of());
 
-        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 50, 50, 50);
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
 
+        assertFalse(evidenceBundle.has("focus"));
         assertEquals(40, evidenceBundle.path("relationships").size());
         assertEquals(40, evidenceBundle.path("derivedRelationships").size());
         assertTrue(evidenceBundle.path("tables").toString().contains("orders_39"));
@@ -39,7 +40,7 @@ final class SemanticExtractionBundleBuilderTest {
     }
 
     @Test
-    void zeroLimitsMeanUnlimitedCandidates() {
+    void completeBundleIncludesAllCandidates() {
         List<JsonNode> relationships = new ArrayList<>();
         List<JsonNode> lineage = new ArrayList<>();
         List<JsonNode> namingEvidence = new ArrayList<>();
@@ -59,7 +60,7 @@ final class SemanticExtractionBundleBuilderTest {
         ScanBundle bundle = new ScanBundle("mysql", "sample_data", "", List.of("object-files"), List.of(),
                 Map.of(), relationships, lineage, List.of(), List.of(), namingEvidence, List.of());
 
-        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 0, 0, 0);
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
 
         assertEquals(6, evidenceBundle.path("relationships").size());
         assertEquals(6, evidenceBundle.path("lineage").size());
@@ -69,7 +70,7 @@ final class SemanticExtractionBundleBuilderTest {
     }
 
     @Test
-    void positiveLimitsExplicitlyCreatePromptPreview() {
+    void completeBundleDoesNotTruncateFactsBeforeSharding() {
         List<JsonNode> relationships = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
             relationships.add(relationship("orders_" + i, "customer_id", "customers_" + i, "id"));
@@ -77,10 +78,10 @@ final class SemanticExtractionBundleBuilderTest {
         ScanBundle bundle = new ScanBundle("mysql", "sample_data", "", List.of("logs"), List.of(),
                 Map.of(), relationships, List.of(), List.of(), List.of(), List.of(), List.of());
 
-        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 2, 2, 2);
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
 
-        assertEquals(2, evidenceBundle.path("relationships").size());
-        assertEquals(4, evidenceBundle.path("tripletCandidates").size());
+        assertEquals(6, evidenceBundle.path("relationships").size());
+        assertEquals(12, evidenceBundle.path("tripletCandidates").size());
     }
 
     @Test
@@ -90,7 +91,7 @@ final class SemanticExtractionBundleBuilderTest {
         ScanBundle bundle = new ScanBundle("mysql", "sample_data", "", List.of("object-files"), List.of(),
                 Map.of(), List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
-        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 50, 50, 50);
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
 
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
         JsonNode event = evidenceBundle.path("eventCandidates").get(0);
@@ -133,7 +134,7 @@ final class SemanticExtractionBundleBuilderTest {
                 Map.of(), List.of(relationship), List.of(lineage), List.of(), List.of(), List.of(naming),
                 List.of(diagnostic));
 
-        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 50, 50, 50);
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
 
         assertFalse(evidenceBundle.path("reviewItemCandidates").isEmpty());
         assertEquals(evidenceBundle.path("diagnostics").get(0).path("id").asText(),
@@ -154,7 +155,7 @@ final class SemanticExtractionBundleBuilderTest {
                 List.of(relationship("orders", "customer_id", "customers", "id")),
                 List.of(), List.of(), List.of(), List.of(), List.of());
 
-        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle, "", 10, 10, 10);
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
 
         assertEquals(1, evidenceBundle.path("evidence").size());
         JsonNode evidenceRef = evidenceBundle.path("relationships").get(0).path("evidenceRefs").get(0);

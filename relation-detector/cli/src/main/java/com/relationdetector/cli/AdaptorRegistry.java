@@ -63,8 +63,7 @@ public final class AdaptorRegistry {
 
     private static void addValidated(List<DatabaseAdaptor> discovered, DatabaseAdaptor adaptor) {
         try {
-            CONTRACT_VALIDATOR.validateSpiVersion(adaptor);
-            discovered.add(adaptor);
+            discovered.add(CONTRACT_VALIDATOR.validateSpiVersion(adaptor));
         } catch (IllegalArgumentException error) {
             throw adaptorError(error);
         }
@@ -83,8 +82,7 @@ public final class AdaptorRegistry {
         List<IllegalArgumentException> violations = new ArrayList<>();
         for (DatabaseAdaptor adaptor : adaptors) {
             try {
-                CONTRACT_VALIDATOR.validate(database, adaptor);
-                matches.add(adaptor);
+                matches.add(CONTRACT_VALIDATOR.validate(database, adaptor));
             } catch (IllegalArgumentException error) {
                 violations.add(error);
             }

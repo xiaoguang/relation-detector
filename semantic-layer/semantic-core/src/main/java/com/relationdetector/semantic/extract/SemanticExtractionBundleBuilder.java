@@ -26,8 +26,10 @@ import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
 import com.relationdetector.semantic.reader.ScanRelationshipFact;
 
 /**
- * CN: 从 typed ScanBundle 和 focus/limits 构造 compact evidence bundle，包含 stable facts、event/triplet/review candidates 与完整 refs；只裁剪展示范围，不改物理事实。
- * EN: Builds a compact evidence bundle from a typed ScanBundle plus focus and limits, including stable facts and event, triplet, and review candidates with complete references. It trims presentation only, never physical facts.
+ * CN: 从完整 typed ScanBundle 构造 evidence-closed bundle，保留全部 physical facts、deterministic candidates
+ * 与引用 registry；上下文规模只由下游 typed sharding 控制，本类不做 focus 或数量裁剪。
+ * EN: Builds an evidence-closed bundle from the complete typed ScanBundle, retaining every physical fact,
+ * deterministic candidate, and reference registry. Downstream typed sharding alone controls context size.
  */
 public final class SemanticExtractionBundleBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -37,15 +39,16 @@ public final class SemanticExtractionBundleBuilder {
     private final TripletCandidateBuilder tripletCandidateBuilder = new TripletCandidateBuilder();
 
     /**
-     * CN: 先建立 evidence graph 和 focus table set，再按稳定 section 顺序输出 bundle；输入为空直接失败，limits 只影响各候选数组长度，返回前不调用模型。
-     * EN: Builds the evidence graph and focus-table set before emitting bundle sections in stable order. Null input fails, limits affect candidate-array lengths only, and no model is invoked.
+     * CN: 先建立完整 evidence graph 与物理 table registry，再按稳定 section 顺序输出全部事实和候选；
+     * 输入为空直接失败，返回前不调用模型或执行任何预分片裁剪。
+     * EN: Builds the complete evidence graph and physical-table registry before emitting every fact and candidate
+     * in stable section order. Null input fails, and no model call or pre-sharding truncation occurs.
      */
-    public ObjectNode build(ScanBundle bundle, String focus, int maxRelationships, int maxLineage, int maxNamingEvidence) {
+    public ObjectNode build(ScanBundle bundle) {
         if (bundle == null) {
             throw new IllegalArgumentException("scan bundle is required");
         }
-        String normalizedFocus = focus == null ? "" : focus.trim();
-        Set<String> focusTables = focusTables(bundle, normalizedFocus);
+        Set<String> physicalTables = physicalTables(bundle);
         EvidenceGraph evidenceGraph = evidenceBuilder.build(bundle);
         Map<String, List<String>> evidenceRefsByFact = evidenceRefsByFact(evidenceGraph);
         ObjectNode root = JSON.createObjectNode();
@@ -53,29 +56,22 @@ public final class SemanticExtractionBundleBuilder {
         database.put("type", bundle.databaseType());
         database.put("catalog", bundle.catalog());
         database.put("schema", bundle.schema());
-        root.put("focus", normalizedFocus);
         List<SemanticEventCandidate> events = eventExtractor.extract(bundle);
         root.set("inputFiles", strings(bundle.inputFiles().stream()
                 .map(SemanticInputPathCanonicalizer::canonicalize)
                 .toList()));
         root.set("sources", strings(bundle.sources()));
-        root.set("tables", strings(new ArrayList<>(focusTables)));
+        root.set("tables", strings(new ArrayList<>(physicalTables)));
         root.set("evidence", evidence(evidenceGraph.evidenceRefs()));
-        root.set("relationships", relationships(bundle.relationships(), focusTables, maxRelationships, false,
-                evidenceRefsByFact));
-        root.set("lineage", lineages(bundle.dataLineages(), normalizedFocus, focusTables, maxLineage, false,
-                evidenceRefsByFact));
-        root.set("eventCandidates", eventCandidates(events, focusTables, maxLineage));
-        root.set("derivedRelationships", relationships(bundle.derivedRelationships(), focusTables, maxRelationships, true,
-                evidenceRefsByFact));
-        root.set("derivedLineage", lineages(bundle.derivedDataLineages(), normalizedFocus, focusTables, maxLineage, true,
-                evidenceRefsByFact));
-        root.set("namingEvidence", namingEvidence(bundle.namingEvidence(), focusTables, maxNamingEvidence,
-                evidenceRefsByFact));
+        root.set("relationships", relationships(bundle.relationships(), evidenceRefsByFact));
+        root.set("lineage", lineages(bundle.dataLineages(), evidenceRefsByFact));
+        root.set("eventCandidates", eventCandidates(events));
+        root.set("derivedRelationships", relationships(bundle.derivedRelationships(), evidenceRefsByFact));
+        root.set("derivedLineage", lineages(bundle.derivedDataLineages(), evidenceRefsByFact));
+        root.set("namingEvidence", namingEvidence(bundle.namingEvidence(), evidenceRefsByFact));
         root.set("reviewItemCandidates", reviewItemCandidateGenerator.build(bundle, 0));
-        root.set("tripletCandidates", tripletCandidateBuilder.build(bundle, events, focusTables,
-                maxRelationships, maxLineage, maxNamingEvidence));
-        root.set("diagnostics", diagnostics(bundle.diagnostics(), 0));
+        root.set("tripletCandidates", tripletCandidateBuilder.build(bundle, events));
+        root.set("diagnostics", diagnostics(bundle.diagnostics()));
         root.putObject("instructions")
                 .put("allOutputsMustUseEvidenceRefs", true)
                 .put("llmCannotCreateDatabaseFacts", true)
@@ -84,19 +80,8 @@ public final class SemanticExtractionBundleBuilder {
         return root;
     }
 
-    private Set<String> focusTables(ScanBundle bundle, String focus) {
+    private Set<String> physicalTables(ScanBundle bundle) {
         Set<String> tables = new LinkedHashSet<>();
-        if (!focus.isBlank()) {
-            for (ScanLineageFact lineage : bundle.dataLineages()) {
-                if (lineageEvidenceMatches(lineage, focus)) {
-                    lineage.sources().forEach(source -> addTable(tables, source));
-                    addTable(tables, lineage.target());
-                }
-            }
-            if (!tables.isEmpty()) {
-                return tables;
-            }
-        }
         for (ScanRelationshipFact relationship : bundle.relationships()) {
             addTable(tables, relationship.source());
             addTable(tables, relationship.target());
@@ -110,26 +95,24 @@ public final class SemanticExtractionBundleBuilder {
             addTable(tables, lineage.target());
         }
         for (ScanLineageFact lineage : bundle.derivedDataLineages()) {
-            lineage.sources().forEach(source -> {
-                String table = source.table();
-                if (!table.isBlank()) {
-                    tables.add(table);
-                }
-            });
+            lineage.sources().forEach(source -> addTable(tables, source));
             addTable(tables, lineage.target());
+        }
+        for (ScanNamingEvidenceFact naming : bundle.namingEvidence()) {
+            addTable(tables, naming.source());
+            addTable(tables, naming.target());
         }
         return tables;
     }
 
-    private ArrayNode relationships(List<ScanRelationshipFact> relationships, Set<String> focusTables, int limit,
-            boolean derived, Map<String, List<String>> evidenceRefsByFact) {
+    private ArrayNode relationships(
+            List<ScanRelationshipFact> relationships,
+            Map<String, List<String>> evidenceRefsByFact
+    ) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanRelationshipFact relationship : relationships) {
             PhysicalEndpointRef source = relationship.source();
             PhysicalEndpointRef target = relationship.target();
-            if (!touches(source, target, focusTables)) {
-                continue;
-            }
             JsonNode document = relationship.document();
             ObjectNode item = result.addObject();
             item.put("id", relationship.id());
@@ -140,25 +123,18 @@ public final class SemanticExtractionBundleBuilder {
             item.put("confidence", relationship.confidence());
             item.set("evidenceRefs", strings(evidenceRefsByFact.getOrDefault(relationship.id(), List.of())));
             item.set("evidenceTypes", evidenceTypes(document.path("evidence")));
-            if (limited(limit) && result.size() >= limit) {
-                break;
-            }
         }
         return result;
     }
 
-    private ArrayNode lineages(List<ScanLineageFact> lineages, String focus, Set<String> focusTables, int limit,
-            boolean derived, Map<String, List<String>> evidenceRefsByFact) {
+    private ArrayNode lineages(
+            List<ScanLineageFact> lineages,
+            Map<String, List<String>> evidenceRefsByFact
+    ) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanLineageFact lineage : lineages) {
             List<PhysicalEndpointRef> sources = new ArrayList<>(lineage.sources());
             PhysicalEndpointRef target = lineage.target();
-            boolean focusMatch = !focus.isBlank() && lineageEvidenceMatches(lineage, focus);
-            boolean tableMatch = sources.stream().anyMatch(source -> tableTouches(source, focusTables))
-                    || tableTouches(target, focusTables);
-            if (!focusMatch && !tableMatch) {
-                continue;
-            }
             JsonNode document = lineage.document();
             ObjectNode item = result.addObject();
             item.put("id", lineage.id());
@@ -169,21 +145,13 @@ public final class SemanticExtractionBundleBuilder {
             item.put("confidence", lineage.confidence());
             item.set("evidenceRefs", strings(evidenceRefsByFact.getOrDefault(lineage.id(), List.of())));
             item.set("evidenceSources", evidenceSources(document.path("evidence")));
-            if (limited(limit) && result.size() >= limit) {
-                break;
-            }
         }
         return result;
     }
 
-    private ArrayNode eventCandidates(List<SemanticEventCandidate> events, Set<String> focusTables, int limit) {
+    private ArrayNode eventCandidates(List<SemanticEventCandidate> events) {
         ArrayNode result = JSON.createArrayNode();
         for (SemanticEventCandidate event : events) {
-            boolean touches = event.inputEndpoints().stream().anyMatch(endpoint -> tableTouches(endpoint, focusTables))
-                    || event.outputEndpoints().stream().anyMatch(endpoint -> tableTouches(endpoint, focusTables));
-            if (!touches) {
-                continue;
-            }
             ObjectNode item = result.addObject();
             item.put("id", event.id());
             item.put("eventKind", event.eventKind());
@@ -205,22 +173,18 @@ public final class SemanticExtractionBundleBuilder {
             item.set("evidenceRefs", strings(event.evidenceRefs()));
             item.set("attributes", JSON.valueToTree(event.attributes()));
             item.put("confidence", event.confidence().doubleValue());
-            if (limited(limit) && result.size() >= limit) {
-                break;
-            }
         }
         return result;
     }
 
-    private ArrayNode namingEvidence(List<ScanNamingEvidenceFact> namingEvidence, Set<String> focusTables, int limit,
-            Map<String, List<String>> evidenceRefsByFact) {
+    private ArrayNode namingEvidence(
+            List<ScanNamingEvidenceFact> namingEvidence,
+            Map<String, List<String>> evidenceRefsByFact
+    ) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanNamingEvidenceFact naming : namingEvidence) {
             PhysicalEndpointRef source = naming.source();
             PhysicalEndpointRef target = naming.target();
-            if (!touches(source, target, focusTables)) {
-                continue;
-            }
             ObjectNode item = result.addObject();
             item.put("id", naming.id());
             item.put("source", source.displayName());
@@ -228,14 +192,11 @@ public final class SemanticExtractionBundleBuilder {
             item.put("rule", naming.rule());
             item.put("directionHint", naming.directionHint());
             item.set("evidenceRefs", strings(evidenceRefsByFact.getOrDefault(naming.id(), List.of())));
-            if (limited(limit) && result.size() >= limit) {
-                break;
-            }
         }
         return result;
     }
 
-    private ArrayNode diagnostics(List<ScanDiagnosticFact> diagnostics, int limit) {
+    private ArrayNode diagnostics(List<ScanDiagnosticFact> diagnostics) {
         ArrayNode result = JSON.createArrayNode();
         for (ScanDiagnosticFact diagnostic : diagnostics) {
             ObjectNode item = result.addObject();
@@ -244,48 +205,12 @@ public final class SemanticExtractionBundleBuilder {
             item.put("severity", diagnostic.severity());
             item.put("message", diagnostic.message());
             item.put("source", diagnostic.source());
-            if (limited(limit) && result.size() >= limit) {
-                break;
-            }
         }
         return result;
     }
 
-    private boolean lineageEvidenceMatches(ScanLineageFact lineage, String focus) {
-        JsonNode document = lineage.document();
-        String lowerFocus = focus.toLowerCase();
-        for (JsonNode evidence : document.path("evidence")) {
-            if (evidence.path("source").asText("").toLowerCase().contains(lowerFocus)) {
-                return true;
-            }
-        }
-        for (JsonNode evidence : document.path("rawEvidence")) {
-            if (evidence.path("source").asText("").toLowerCase().contains(lowerFocus)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean limited(int limit) {
-        return limit > 0;
-    }
-
-    private boolean touches(PhysicalEndpointRef source, PhysicalEndpointRef target, Set<String> focusTables) {
-        return tableTouches(source, focusTables) || tableTouches(target, focusTables);
-    }
-
-    private boolean tableTouches(PhysicalEndpointRef endpoint, Set<String> focusTables) {
-        return endpoint != null && focusTables.contains(endpoint.table());
-    }
-
-    private boolean tableTouches(String endpoint, Set<String> focusTables) {
-        String table = endpoint == null || endpoint.isBlank() ? "" : PhysicalEndpointRef.column(endpoint).table();
-        return !table.isBlank() && focusTables.contains(table);
-    }
-
     private void addTable(Set<String> tables, PhysicalEndpointRef endpoint) {
-        if (endpoint != null) {
+        if (endpoint != null && !endpoint.table().isBlank()) {
             tables.add(endpoint.table());
         }
     }

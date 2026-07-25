@@ -25,15 +25,11 @@ final class SemanticExtractionConfigLoaderTest {
                     - result-a.json
                     - result-b.json
                   output: out
-                  focus: ROUTINE:erp.sp
                   model: gpt-5.6-sol
                   reasoningEffort: xhigh
                   maxOutputTokens: 9000
                   baseUrl: http://127.0.0.1:9999/v1
                   apiKeyEnv: TEST_OPENAI_API_KEY
-                  maxRelationships: 10
-                  maxLineage: 20
-                  maxNamingEvidence: 30
                   requestOnly: true
                   artifactRetention: final-only
                   sharding:
@@ -53,15 +49,11 @@ final class SemanticExtractionConfigLoaderTest {
         assertEquals("openai-api", loaded.provider());
         assertEquals(List.of(tempDir.resolve("result-a.json"), tempDir.resolve("result-b.json")), loaded.inputs());
         assertEquals(tempDir.resolve("out"), loaded.output());
-        assertEquals("ROUTINE:erp.sp", loaded.focus());
         assertEquals("gpt-5.6-sol", loaded.model());
         assertEquals("xhigh", loaded.reasoningEffort());
         assertEquals(9000, loaded.maxOutputTokens());
         assertEquals("http://127.0.0.1:9999/v1", loaded.baseUrl());
         assertEquals("TEST_OPENAI_API_KEY", loaded.apiKeyEnv());
-        assertEquals(10, loaded.maxRelationships());
-        assertEquals(20, loaded.maxLineage());
-        assertEquals(30, loaded.maxNamingEvidence());
         assertTrue(loaded.requestOnly());
         assertEquals(ArtifactRetention.FINAL_ONLY, loaded.artifactRetention());
         assertEquals(SemanticShardMode.FORCE, loaded.sharding().mode());
@@ -76,32 +68,13 @@ final class SemanticExtractionConfigLoaderTest {
     }
 
     @Test
-    void defaultsUseUnlimitedEvidenceCandidateLimits() {
+    void defaultsUseCompleteInputAndApprovedModelProfile() {
         SemanticExtractionConfig defaults = SemanticExtractionConfig.defaults();
 
-        assertEquals(0, defaults.maxRelationships());
-        assertEquals(0, defaults.maxLineage());
-        assertEquals(0, defaults.maxNamingEvidence());
         assertEquals("gpt-5.6-sol", defaults.model());
         assertEquals("xhigh", defaults.reasoningEffort());
         assertEquals(SemanticShardingOptions.defaults(), defaults.sharding());
         assertEquals(ArtifactRetention.FULL, defaults.artifactRetention());
-    }
-
-    @Test
-    void missingCandidateLimitsRemainUnlimited() throws Exception {
-        Path config = tempDir.resolve("semantic-extraction-default-limits.yml");
-        Files.writeString(config, """
-                semanticExtraction:
-                  input: result.json
-                  output: out
-                """);
-
-        SemanticExtractionConfig loaded = new SemanticExtractionConfigLoader().load(config);
-
-        assertEquals(0, loaded.maxRelationships());
-        assertEquals(0, loaded.maxLineage());
-        assertEquals(0, loaded.maxNamingEvidence());
     }
 
     @Test
@@ -145,6 +118,20 @@ final class SemanticExtractionConfigLoaderTest {
                 () -> new SemanticExtractionConfigLoader().load(unknownExtraction));
         assertThrows(IllegalArgumentException.class,
                 () -> new SemanticExtractionConfigLoader().load(unknownSharding));
+    }
+
+    @Test
+    void rejectsRemovedFocusAndPreShardingFactLimits() throws Exception {
+        for (String field : List.of("focus", "maxRelationships", "maxLineage", "maxNamingEvidence")) {
+            Path config = writeConfig("""
+                    semanticExtraction:
+                      %s: %s
+                    """.formatted(field, "focus".equals(field) ? "ROUTINE:erp.sp" : "1"));
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> new SemanticExtractionConfigLoader().load(config),
+                    field);
+        }
     }
 
     @Test

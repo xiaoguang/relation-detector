@@ -276,7 +276,7 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 配置已从 runtime 和 SPI 删除：
 
 1. Oracle/SQL Server `METADATA` 与 `DATABASE_OBJECTS` capability 已有非空 live collector，支持组合 constraint/index 和 partial-success warning；这证明代码契约可执行，但真实权限/版本组合仍需 runtime smoke。
-2. `AdaptorContractValidator` 与 `ScanCapabilityValidator` 在 JDBC 前分别验证 SPI/type/id 及实际请求的 capability、collector 和 consumer；live DDL 要求 structured DDL parser，live objects 要求 structured SQL parser，纯文件 scan 不新增 live capability 要求。契约失败统一抛 `AdaptorContractException`，single/batch 保持 `ADAPTOR_ERROR` 类别。
+2. `AdaptorContractValidator` 在 JDBC 前一次性校验并冻结 adaptor 的 SPI/id/database types/capabilities/identifier rules/grouped collectors/parsers/profiling；`ScanCapabilityValidator`只消费该快照验证实际请求。null或畸形shape、null scope返回统一为`AdaptorContractException`，single/batch稳定保持`ADAPTOR_ERROR`。live DDL要求structured DDL parser，live objects要求structured SQL parser，纯文件scan不新增live capability要求。
 3. `IndexEvidencePolicy` 不允许组合 PK/UNIQUE 成员证明单列唯一；普通组合索引仅首列可支持 lookup / `SOURCE_INDEX`，不单独决定方向。
 4. `DataLineageMerger` 对 source set canonical dedupe/sort，fact identity 不再依赖发射顺序。
 5. `ProfileOutcome` 区分 success/no-evidence/skip/permission/timeout/query-failure。`ProfileOutcomeContractValidator` 将外部 outcome 作为不可信输入原子校验，core 不转发 plugin warning 内容，而按已验证 status 重建脱敏 warning。四个方言 live SQL 独立测量 source non-null rows、source/target distinct 和 matched distinct，containment、overlap 与 negative gate 均基于真实统计。
@@ -319,7 +319,8 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     只在最终呈现时保留四位小数。
 16. `DataProfilePipeline` 的 request candidate 和 `ProfileOutcomeContractValidator` 的返回 evidence
     均复用 core 递归 detachment 原语。输入/输出嵌套 list、set、map 不与插件共享，未知可变 attribute
-    类型原子失败；request 原地突变和 result 延迟突变均有 focused negative tests。
+    类型原子失败。negative eligibility在插件调用前从原scan candidate固化；插件注入声明FK、删除guard、
+    修改request或延迟修改result均不能回写scan或改变core-owned负向资格。
 17. `ProfileOutcomeContractValidator` 的所有违约统一使用 `AdaptorContractException`。direct API
     原样抛出，single CLI 与 batch case 均归类为 `ADAPTOR_ERROR`；全批延迟提交保证最后一个 outcome
     失败时也不留下部分 profiling 状态。

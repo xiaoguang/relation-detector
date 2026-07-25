@@ -57,10 +57,10 @@ public final class ScanEngine {
      */
     public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
         configurationValidator.validate(config);
-        adaptorContractValidator.validate(config.database(), adaptor);
-        capabilityValidator.validate(config, adaptor);
+        DatabaseAdaptor validatedAdaptor = adaptorContractValidator.validate(config.database(), adaptor);
+        capabilityValidator.validate(config, validatedAdaptor);
         DatabaseConfig requestedDatabase = config.database();
-        ScanScope scope = adaptor.canonicalizeScope(new ScanScope(
+        ScanScope scope = validatedAdaptor.canonicalizeScope(new ScanScope(
                 requestedDatabase.catalog(), requestedDatabase.schema(),
                 requestedDatabase.includeTables(), requestedDatabase.excludeTables()));
         ResolvedScanConfig runtimeConfig = config;
@@ -69,7 +69,7 @@ public final class ScanEngine {
             connection = openConnection(config.database());
             runtimeConfig = discoverJdbcDatabaseVersion(config, connection);
             if (connection != null) {
-                scope = adaptor.resolveLiveScope(connection, scope);
+                scope = validatedAdaptor.resolveLiveScope(connection, scope);
             }
         } catch (LiveSourceConfigurationException ex) {
             closeQuietly(connection);
@@ -87,7 +87,7 @@ public final class ScanEngine {
         List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();
         ScanPipelineContext pipelineContext = new ScanPipelineContext(
                 runtimeConfig,
-                adaptor,
+                validatedAdaptor,
                 scope,
                 result,
                 context,

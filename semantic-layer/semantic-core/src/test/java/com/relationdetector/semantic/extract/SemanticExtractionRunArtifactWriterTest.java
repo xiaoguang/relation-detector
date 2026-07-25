@@ -65,6 +65,11 @@ final class SemanticExtractionRunArtifactWriterTest {
         assertEquals(150, manifest.path("usage").path("outputTokens").asInt());
         assertEquals(6, manifest.path("usage").path("transportAttempts").asInt());
         assertEquals("COMPLETE", manifest.path("reconciliation").path("status").asText());
+        assertEquals(800_000, manifest.path("reconciliation").path("maxInputTokens").asInt());
+        assertEquals(
+                new SemanticPromptBudgetEstimator().estimate(run.reconciliationPrompt()),
+                manifest.path("reconciliation").path("estimatedInputTokens").asInt());
+        assertFalse(manifest.path("reconciliation").path("tokenEstimateExact").asBoolean(true));
         assertEquals(100, manifest.path("reconciliation").path("inputTokens").asInt());
         assertEquals(50, manifest.path("reconciliation").path("outputTokens").asInt());
         assertEquals(3, manifest.path("reconciliation").path("transportAttempts").asInt());
@@ -364,7 +369,6 @@ final class SemanticExtractionRunArtifactWriterTest {
     private ObjectNode emptyBundle() {
         ObjectNode root = JSON.createObjectNode();
         root.putObject("database").put("type", "mysql").put("catalog", "shop").put("schema", "");
-        root.put("focus", "");
         for (String section : List.of("inputFiles", "sources", "tables", "evidence", "relationships", "lineage",
                 "eventCandidates", "derivedRelationships", "derivedLineage", "namingEvidence",
                 "reviewItemCandidates", "tripletCandidates", "diagnostics")) {

@@ -61,6 +61,55 @@ final class SemanticExtractionServiceTest {
     }
 
     @Test
+    void rejectsOversizedReconciliationBeforeCallingTheModel() {
+        ObjectNode bundle = bundleWithTwoComponents();
+        SemanticExtractionRunPlan plan = new SemanticExtractionService().plan(bundle,
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 20_000, 128, true));
+        AtomicInteger reconciliationCalls = new AtomicInteger();
+        SemanticModelClient shardClient = prompt -> result(
+                rawShardDocument(prompt.evidenceBundle(), "x".repeat(100_000)));
+        SemanticModelClient reconciliationClient = prompt -> {
+            reconciliationCalls.incrementAndGet();
+            return result("""
+                    {"resolutions":[],"renames":[],"relations":[]}
+                    """);
+        };
+
+        assertThrows(SemanticShardingException.class,
+                () -> new SemanticExtractionService().execute(plan, shardClient, reconciliationClient));
+        assertEquals(0, reconciliationCalls.get());
+    }
+
+    @Test
+    void permitsReconciliationAtTheExactEstimatedInputLimit() {
+        ObjectNode bundle = bundleWithTwoComponents();
+        SemanticExtractionService service = new SemanticExtractionService();
+        SemanticExtractionRunPlan baselinePlan = service.plan(bundle,
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 240_000, 800_000, 128, true));
+        SemanticModelClient shardClient = prompt -> result(rawShardDocument(prompt.evidenceBundle()));
+        SemanticModelClient reconciliationClient = prompt -> result("""
+                {"resolutions":[],"renames":[],"relations":[]}
+                """);
+        SemanticExtractionRunResult baseline = service.execute(
+                baselinePlan, shardClient, reconciliationClient);
+        int exactLimit = new SemanticPromptBudgetEstimator().estimate(baseline.reconciliationPrompt());
+        SemanticExtractionRunPlan exactPlan = new SemanticExtractionRunPlan(
+                baselinePlan.fullBundle(),
+                baselinePlan.shardPlan(),
+                baselinePlan.shardRequests(),
+                true,
+                exactLimit);
+        AtomicInteger reconciliationCalls = new AtomicInteger();
+
+        service.execute(exactPlan, shardClient, prompt -> {
+            reconciliationCalls.incrementAndGet();
+            return reconciliationClient.extract(prompt);
+        });
+
+        assertEquals(1, reconciliationCalls.get());
+    }
+
+    @Test
     void deterministicBackfillUsesOnlyCandidatesOwnedByTheCurrentShard() {
         ObjectNode bundle = emptyBundle();
         addRelationship(bundle, "rel-orders", "shop.orders.customer_id", "shop.customers.id", "ev-orders");
@@ -92,6 +141,10 @@ final class SemanticExtractionServiceTest {
     }
 
     private String rawShardDocument(JsonNode bundle) {
+        return rawShardDocument(bundle, "");
+    }
+
+    private String rawShardDocument(JsonNode bundle, String nameSuffix) {
         ObjectNode raw = JSON.createObjectNode();
         for (String section : List.of("entities", "events", "relations", "lineage", "metrics", "dimensions",
                 "triplets", "reviewItems")) {
@@ -101,7 +154,7 @@ final class SemanticExtractionServiceTest {
         for (JsonNode table : bundle.path("tables")) {
             String physicalName = table.asText();
             ObjectNode entity = raw.withArray("entities").addObject()
-                    .put("name", physicalName)
+                    .put("name", physicalName + nameSuffix)
                     .put("type", "业务实体")
                     .put("physicalName", physicalName);
             entity.putArray("ownedGroundingRefs").add(evidenceRef);
@@ -133,7 +186,6 @@ final class SemanticExtractionServiceTest {
     private ObjectNode emptyBundle() {
         ObjectNode root = JSON.createObjectNode();
         root.putObject("database").put("type", "mysql").put("catalog", "shop").put("schema", "");
-        root.put("focus", "");
         for (String section : List.of("inputFiles", "sources", "tables", "evidence", "relationships", "lineage",
                 "eventCandidates", "derivedRelationships", "derivedLineage", "namingEvidence",
                 "reviewItemCandidates", "tripletCandidates", "diagnostics")) {

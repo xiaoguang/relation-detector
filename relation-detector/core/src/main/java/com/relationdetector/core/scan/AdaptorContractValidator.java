@@ -8,28 +8,21 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
  * EN: Validates adaptor id, database type, and the SPI v6 binary contract before JDBC is opened.
  */
 public final class AdaptorContractValidator {
-    public void validate(DatabaseConfig database, DatabaseAdaptor adaptor) {
-        validateSpiVersion(adaptor);
-        if (!adaptor.supportedDatabaseTypes().contains(database.databaseType())) {
-            throw new AdaptorContractException("adaptor=" + adaptor.id()
+    public DatabaseAdaptor validate(DatabaseConfig database, DatabaseAdaptor adaptor) {
+        DatabaseAdaptor validated = validateSpiVersion(adaptor);
+        if (!validated.supportedDatabaseTypes().contains(database.databaseType())) {
+            throw new AdaptorContractException("adaptor=" + validated.id()
                     + " does not support database type " + database.databaseType());
         }
-        if (hasText(database.adaptorId()) && !database.adaptorId().equals(adaptor.id())) {
+        if (hasText(database.adaptorId()) && !database.adaptorId().equals(validated.id())) {
             throw new AdaptorContractException("configured adaptor id=" + database.adaptorId()
-                    + " does not match adaptor id=" + adaptor.id());
+                    + " does not match adaptor id=" + validated.id());
         }
+        return validated;
     }
 
-    public void validateSpiVersion(DatabaseAdaptor adaptor) {
-        if (adaptor == null) {
-            throw new AdaptorContractException("database adaptor is required");
-        }
-        int actual = adaptor.spiVersion();
-        if (actual != AdaptorApiVersion.CURRENT) {
-            throw new AdaptorContractException("adaptor SPI version mismatch: plugin=" + adaptor.id()
-                    + ", actual=" + actual + ", required=" + AdaptorApiVersion.CURRENT
-                    + "; recompile the plugin against the current relation-detector contracts");
-        }
+    public DatabaseAdaptor validateSpiVersion(DatabaseAdaptor adaptor) {
+        return ValidatedDatabaseAdaptor.snapshot(adaptor, AdaptorApiVersion.CURRENT);
     }
 
     private boolean hasText(String value) {

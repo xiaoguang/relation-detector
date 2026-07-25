@@ -18,9 +18,7 @@ final class SemanticE2eCommandHandler {
         Path kgOutput = arguments.output().resolve("semantic-kg").resolve(name);
         Path extractionOutput = arguments.output().resolve("semantic-extraction").resolve(name);
         new SemanticKgBuildService().build(bundle, kgOutput);
-        SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(
-                bundle, arguments.focus(), arguments.maxRelationships(), arguments.maxLineage(),
-                arguments.maxNamingEvidence());
+        SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(bundle);
         new SemanticExtractionArtifactWriter().writeCodexSessionRequest(extractionOutput, prompt);
         return 0;
     }

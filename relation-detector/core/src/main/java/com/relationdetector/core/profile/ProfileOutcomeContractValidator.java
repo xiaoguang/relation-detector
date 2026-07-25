@@ -8,9 +8,9 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.ProfileOutcome;
-import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 import com.relationdetector.core.scan.AdaptorContractException;
@@ -33,16 +33,36 @@ public final class ProfileOutcomeContractValidator {
     private final NegativeProfileEvidencePolicy negativePolicy = new NegativeProfileEvidencePolicy();
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
 
-    public ValidatedProfileOutcome validate(ProfileRequest request, ProfileOutcome outcome, String adaptorId) {
-        if (request == null || outcome == null) {
+    /**
+     * CN: 在调用外部 profiler 前，从 core-owned candidate 捕获负向策略与诊断端点；返回值不引用可变
+     * candidate，插件随后修改 request 不会改变资格。
+     * EN: Captures negative-evidence policy and diagnostic endpoints from the core-owned candidate before the
+     * external profiler runs. The snapshot retains no mutable candidate reference.
+     */
+    public NegativeProfileEligibility captureNegativeEligibility(RelationshipCandidate candidate) {
+        if (candidate == null) {
+            throw violation();
+        }
+        return new NegativeProfileEligibility(
+                negativePolicy.allows(candidate),
+                candidate.source().normalizedKey(),
+                candidate.target().normalizedKey());
+    }
+
+    public ValidatedProfileOutcome validate(
+            NegativeProfileEligibility eligibility,
+            ProfileOutcome outcome,
+            String adaptorId
+    ) {
+        if (eligibility == null || outcome == null) {
             throw violation();
         }
         List<Evidence> evidence = outcome.evidence().stream()
                 .map(item -> detachment.evidence(item, "data profile outcome evidence"))
                 .toList();
         validateStatusShape(outcome.status(), evidence, outcome.warnings());
-        validateEvidence(request, evidence);
-        return new ValidatedProfileOutcome(evidence, rebuiltWarnings(request, outcome, adaptorId));
+        validateEvidence(eligibility, evidence);
+        return new ValidatedProfileOutcome(evidence, rebuiltWarnings(eligibility, outcome, adaptorId));
     }
 
     private void validateStatusShape(
@@ -72,14 +92,14 @@ public final class ProfileOutcomeContractValidator {
         }
     }
 
-    private void validateEvidence(ProfileRequest request, List<Evidence> evidence) {
+    private void validateEvidence(NegativeProfileEligibility eligibility, List<Evidence> evidence) {
         for (Evidence item : evidence) {
             if (item == null || !ALLOWED_TYPES.contains(item.type())
                     || item.sourceType() != EvidenceSourceType.DATA_PROFILE) {
                 throw violation();
             }
             if (item.type() == EvidenceType.NEGATIVE_VALUE_MISMATCH
-                    && (!negativePolicy.allows(request)
+                    && (!eligibility.negativeAllowed()
                     || !"LIVE_DATABASE".equals(item.attributes().get("profileMode"))
                     || !"DECLARED_FOREIGN_KEY_ONLY".equals(item.attributes().get("negativePolicy")))) {
                 throw violation();
@@ -88,7 +108,7 @@ public final class ProfileOutcomeContractValidator {
     }
 
     private List<WarningMessage> rebuiltWarnings(
-            ProfileRequest request,
+            NegativeProfileEligibility eligibility,
             ProfileOutcome outcome,
             String adaptorId
     ) {
@@ -110,8 +130,8 @@ public final class ProfileOutcomeContractValidator {
                 "data-profile:" + profilerSource,
                 null,
                 Map.of(
-                        "sourceEndpoint", request.candidate().source().normalizedKey(),
-                        "targetEndpoint", request.candidate().target().normalizedKey(),
+                        "sourceEndpoint", eligibility.sourceEndpoint(),
+                        "targetEndpoint", eligibility.targetEndpoint(),
                         "profilerSource", profilerSource));
         return List.of(warning);
     }
@@ -134,6 +154,24 @@ public final class ProfileOutcomeContractValidator {
 
     private AdaptorContractException violation() {
         return new AdaptorContractException("Data profiler violated the ProfileOutcome contract");
+    }
+
+    /**
+     * CN: 保存插件调用前确定的负向 evidence 资格和安全端点文本；不携带 candidate 或其他可变 scan 状态。
+     * EN: Stores pre-plugin negative-evidence eligibility and safe endpoint text without retaining candidate or
+     * other mutable scan state.
+     */
+    public record NegativeProfileEligibility(
+            boolean negativeAllowed,
+            String sourceEndpoint,
+            String targetEndpoint
+    ) {
+        public NegativeProfileEligibility {
+            if (sourceEndpoint == null || sourceEndpoint.isBlank()
+                    || targetEndpoint == null || targetEndpoint.isBlank()) {
+                throw new AdaptorContractException("Data profiler violated the ProfileOutcome contract");
+            }
+        }
     }
 
     /**

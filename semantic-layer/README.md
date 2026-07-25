@@ -29,9 +29,9 @@ java -jar semantic-layer/semantic-cli/target/relation-detector-semantic-cli-0.1.
   --name mysql-v8_0-full
 ```
 
-Evidence candidate limits default to `0`, meaning unlimited. Positive `--max-relationships`, `--max-lineage`, or
-`--max-naming` values are preview-only and therefore require `--shard-mode off`. Production extraction keeps the
-complete candidate pool and partitions it deterministically instead of truncating it.
+Formal extraction always builds one complete, reference-closed evidence bundle. It does not expose a focus filter or
+pre-sharding relationship, lineage, or naming count limits. Typed sharding and the conservative input-token estimate
+are the only model-context controls; they partition the complete input without truncating facts or candidates.
 
 ## Semantic extraction providers
 

@@ -4,22 +4,20 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * CN: semantic extraction command 的不可变 runtime config，规范 provider、inputs、model、limits 和 output defaults；不读取环境变量或执行请求。
- * EN: Immutable runtime configuration for semantic extraction commands, normalizing provider, inputs, model, limits, and output defaults. It neither reads environment variables nor executes requests.
+ * CN: semantic extraction command 的不可变 runtime config，规范 provider、inputs、model、sharding 和 output
+ * defaults；完整事实输入不可裁剪，本类不读取环境变量或执行请求。
+ * EN: Immutable runtime configuration for semantic extraction commands, normalizing provider, inputs, model,
+ * sharding, and output defaults. Physical-fact input is never truncated here, and no environment or request is read.
  */
 public record SemanticExtractionConfig(
         String provider,
         List<Path> inputs,
         Path output,
-        String focus,
         String model,
         String reasoningEffort,
         int maxOutputTokens,
         String baseUrl,
         String apiKeyEnv,
-        int maxRelationships,
-        int maxLineage,
-        int maxNamingEvidence,
         boolean requestOnly,
         ArtifactRetention artifactRetention,
         SemanticShardingOptions sharding,
@@ -34,7 +32,6 @@ public record SemanticExtractionConfig(
     public SemanticExtractionConfig {
         provider = blankDefault(provider, "codex-session");
         inputs = List.copyOf(inputs == null ? List.of() : inputs);
-        focus = blankDefault(focus, "");
         model = blankDefault(model, APPROVED_MODEL);
         reasoningEffort = blankDefault(reasoningEffort, APPROVED_REASONING_EFFORT);
         if (!APPROVED_MODEL.equals(model)) {
@@ -47,9 +44,6 @@ public record SemanticExtractionConfig(
         requirePositive(maxOutputTokens, "maxOutputTokens");
         baseUrl = blankDefault(baseUrl, "https://api.openai.com/v1");
         apiKeyEnv = blankDefault(apiKeyEnv, "OPENAI_API_KEY");
-        requireNonNegative(maxRelationships, "maxRelationships");
-        requireNonNegative(maxLineage, "maxLineage");
-        requireNonNegative(maxNamingEvidence, "maxNamingEvidence");
         artifactRetention = artifactRetention == null ? ArtifactRetention.FULL : artifactRetention;
         sharding = sharding == null ? SemanticShardingOptions.defaults() : sharding;
         requirePositive(shardMaxOutputTokens, "shardMaxOutputTokens");
@@ -59,9 +53,9 @@ public record SemanticExtractionConfig(
     }
 
     public static SemanticExtractionConfig defaults() {
-        return new SemanticExtractionConfig("codex-session", List.of(), null, "",
+        return new SemanticExtractionConfig("codex-session", List.of(), null,
                 APPROVED_MODEL, APPROVED_REASONING_EFFORT, 12000,
-                "https://api.openai.com/v1", "OPENAI_API_KEY", 0, 0, 0, false, ArtifactRetention.FULL,
+                "https://api.openai.com/v1", "OPENAI_API_KEY", false, ArtifactRetention.FULL,
                 SemanticShardingOptions.defaults(), 24000, 16000, 900, 2);
     }
 

@@ -94,7 +94,7 @@ final class SemanticStableIdTest {
     }
 
     private Set<String> candidateIds(ScanBundle bundle) {
-        JsonNode extraction = new SemanticExtractionBundleBuilder().build(bundle, "", 0, 0, 0);
+        JsonNode extraction = new SemanticExtractionBundleBuilder().build(bundle);
         Set<String> result = new LinkedHashSet<>();
         for (String section : List.of("eventCandidates", "tripletCandidates", "reviewItemCandidates")) {
             extraction.path(section).forEach(item -> result.add(item.path("id").asText()));

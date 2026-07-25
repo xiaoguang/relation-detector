@@ -133,7 +133,8 @@ final class SemanticExtractionRecordImmutabilityTest {
                 List.of(new SemanticShardRequest(
                         shard,
                         new SemanticExtractionPrompt("developer", "user", nestedDocument()))),
-                true);
+                true,
+                800_000);
     }
 
     private SemanticExtractionRunResult runResult(

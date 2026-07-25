@@ -22,14 +22,8 @@ public final class SemanticExtractionPromptBuilder {
         this.bundleBuilder = bundleBuilder;
     }
 
-    public SemanticExtractionPrompt build(
-            ScanBundle bundle,
-            String focus,
-            int maxRelationships,
-            int maxLineage,
-            int maxNamingEvidence
-    ) {
-        ObjectNode evidenceBundle = bundleBuilder.build(bundle, focus, maxRelationships, maxLineage, maxNamingEvidence);
+    public SemanticExtractionPrompt build(ScanBundle bundle) {
+        ObjectNode evidenceBundle = bundleBuilder.build(bundle);
         return new SemanticExtractionPrompt(developerPrompt(), userPrompt(evidenceBundle), evidenceBundle);
     }
 

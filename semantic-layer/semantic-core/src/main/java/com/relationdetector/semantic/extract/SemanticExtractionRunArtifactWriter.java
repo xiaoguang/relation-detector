@@ -367,6 +367,7 @@ public final class SemanticExtractionRunArtifactWriter {
         manifest.put("model", blankDefault(model, ""));
         manifest.put("reasoningEffort", blankDefault(reasoningEffort, ""));
         manifest.put("fullBundleHash", plan.shardPlan().fullBundleHash());
+        manifest.put("maxInputTokens", plan.maxInputTokens());
         manifest.put("shardCount", plan.shardPlan().shards().size());
         manifest.put("reconcile", plan.reconcile());
         manifest.put("ownedFactCount", plan.shardPlan().factOwners().size());
@@ -502,6 +503,7 @@ public final class SemanticExtractionRunArtifactWriter {
         ObjectNode reconciliation = manifest.putObject("reconciliation");
         boolean required = plan.shardRequests().size() > 1 && plan.reconcile();
         reconciliation.put("required", required);
+        reconciliation.put("maxInputTokens", plan.maxInputTokens());
         if (!required) {
             reconciliation.put("status", "NOT_REQUIRED");
             return;
@@ -511,6 +513,9 @@ public final class SemanticExtractionRunArtifactWriter {
             return;
         }
         reconciliation.put("status", "COMPLETE");
+        reconciliation.put("estimatedInputTokens",
+                new SemanticPromptBudgetEstimator().estimate(run.reconciliationPrompt()));
+        reconciliation.put("tokenEstimateExact", false);
         reconciliation.put("inputTokens", run.reconciliationResult().inputTokens());
         reconciliation.put("outputTokens", run.reconciliationResult().outputTokens());
         reconciliation.put("transportAttempts", run.reconciliationResult().transportAttempts());

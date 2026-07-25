@@ -8,7 +8,6 @@ import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
 import com.relationdetector.semantic.extract.SemanticExtractionRunArtifactWriter;
 import com.relationdetector.semantic.extract.SemanticExtractionRunPlan;
 import com.relationdetector.semantic.extract.SemanticExtractionService;
-import com.relationdetector.semantic.extract.SemanticShardMode;
 import com.relationdetector.semantic.reader.ScanBundle;
 
 /**
@@ -26,13 +25,7 @@ final class SemanticExtractCommandHandler {
      */
     int execute(SemanticCommandArguments arguments) {
         ScanBundle bundle = new SemanticScanBundleReader().read(arguments);
-        requireCompleteShardingInput(arguments);
-        ObjectNode fullBundle = new SemanticExtractionBundleBuilder().build(
-                bundle,
-                arguments.focus(),
-                arguments.maxRelationships(),
-                arguments.maxLineage(),
-                arguments.maxNamingEvidence());
+        ObjectNode fullBundle = new SemanticExtractionBundleBuilder().build(bundle);
         SemanticExtractionService service = new SemanticExtractionService();
         SemanticExtractionRunPlan plan = service.plan(fullBundle, arguments.sharding());
         SemanticExtractionRunArtifactWriter writer = new SemanticExtractionRunArtifactWriter();
@@ -87,13 +80,4 @@ final class SemanticExtractCommandHandler {
         return 0;
     }
 
-    private void requireCompleteShardingInput(SemanticCommandArguments arguments) {
-        boolean preview = arguments.maxRelationships() > 0
-                || arguments.maxLineage() > 0
-                || arguments.maxNamingEvidence() > 0;
-        if (preview && arguments.sharding().mode() != SemanticShardMode.OFF) {
-            throw new IllegalArgumentException(
-                    "preview evidence limits require shard mode off");
-        }
-    }
 }

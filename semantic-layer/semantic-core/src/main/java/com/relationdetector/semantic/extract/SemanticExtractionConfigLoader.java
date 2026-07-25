@@ -18,14 +18,11 @@ public final class SemanticExtractionConfigLoader {
     private static final YAMLMapper YAML = new YAMLMapper();
     private static final Set<String> ROOT_FIELDS = Set.of("semanticExtraction");
     private static final Set<String> EXTRACTION_FIELDS = Set.of(
-            "provider", "inputs", "input", "output", "focus", "model",
+            "provider", "inputs", "input", "output", "model",
             "reasoningEffort", "reasoning-effort",
             "maxOutputTokens", "max-output-tokens",
             "baseUrl", "base-url",
             "apiKeyEnv", "api-key-env",
-            "maxRelationships", "max-relationships",
-            "maxLineage", "max-lineage",
-            "maxNamingEvidence", "max-naming",
             "requestOnly", "request-only",
             "artifactRetention", "artifact-retention",
             "sharding",
@@ -98,15 +95,11 @@ public final class SemanticExtractionConfigLoader {
                 text(extract, "provider", null, "codex-session"),
                 inputs,
                 output,
-                text(extract, "focus", null, ""),
                 text(extract, "model", null, "gpt-5.6-sol"),
                 text(extract, "reasoningEffort", "reasoning-effort", "xhigh"),
                 integer(extract, "maxOutputTokens", "max-output-tokens", 12000),
                 text(extract, "baseUrl", "base-url", "https://api.openai.com/v1"),
                 text(extract, "apiKeyEnv", "api-key-env", "OPENAI_API_KEY"),
-                integer(extract, "maxRelationships", "max-relationships", 0),
-                integer(extract, "maxLineage", "max-lineage", 0),
-                integer(extract, "maxNamingEvidence", "max-naming", 0),
                 bool(extract, "requestOnly", "request-only", false),
                 ArtifactRetention.parse(text(extract, "artifactRetention", "artifact-retention", "full")),
                 new SemanticShardingOptions(

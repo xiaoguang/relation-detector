@@ -70,16 +70,17 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。formal normalization的默认event ID从已验证`eventCandidateRef`派生。 |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整输入的 fact/candidate owner、dependency closure、evidence closure和shard coverage在模型调用前验证；超预算 table owner按稳定root拆片且root closure保持原子。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item必须用`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap与`evidenceRefs`只提供审计上下文，越界使整片在backfill前原子失败。 |
-| `SEM-SHARD-BUDGET-01` | `MATCHED` | `targetInputTokens/maxInputTokens`明确为带margin的确定性估算门限；最终prompt再次估算并在API前fail-fast，manifest只记录estimated tokens，不宣称exact。 |
+| `SEM-SHARD-BUDGET-01` | `MATCHED` | shard与reconciliation的完整prompt都使用带margin的确定性估算，并在模型调用前应用同一`maxInputTokens`；等于门限保留，manifest记录estimated tokens且不宣称exact。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 可复用output root下使用唯一staging/run目录；完整成功后原子rename，失败保留FAILED staging；artifact使用流式SHA-256，支持`full/final-only`保留策略。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML root/section/unknown field/数值严格校验，相对路径按config目录解析；CLI override后再次构造统一typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 公开JSON accessor返回副本、集合不可修改；同包流水线使用明确的trusted accessor，provider/writer不能通过公开引用回写已校验状态。 |
+| `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式抽取始终使用完整、闭合bundle，不存在focus或分片前事实数量裁剪；旧CLI参数和YAML字段明确拒绝，typed sharding是唯一上下文规模控制机制。 |
 
 wire、reference closure、formal normalization ID、离线 KG evidence/identity gate、routine event identity
-以及semantic shard的typed planning、owner output、identity merge、估算门限、artifact transaction、
-strict configuration和公开状态不可变边界均已闭环。详细
+以及semantic shard的typed planning、完整输入、owner output、identity merge、统一模型请求预算、
+artifact transaction、strict configuration和公开状态不可变边界均已闭环。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。

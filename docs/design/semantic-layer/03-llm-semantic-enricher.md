@@ -106,7 +106,7 @@ KG 构建链路没有 enrichment 扩展接口。正式 LLM 能力只通过独立
 
 ```java
 public final class SemanticExtractionBundleBuilder {
-    ObjectNode build(ScanBundle bundle, String focus, int maxRelationships, int maxLineage, int maxNamingEvidence);
+    ObjectNode build(ScanBundle bundle);
 }
 
 public final class SemanticExtractionService {
@@ -152,12 +152,12 @@ edge ID 仅在内容完全一致时幂等去重，内容冲突则失败。
 
 ## 4. Prompt 输入约束
 
-发送给 LLM 的 evidence bundle 是可追溯的结构；默认保留完整候选池，只有显式上限或 focus 才产生 preview / compact 视图。当前实现中的 bundle 顶层包括：
+发送给 LLM 的 evidence bundle 是完整、可追溯且引用闭合的结构。正式抽取不提供 focus 或分片前数量
+裁剪；上下文规模只由 typed sharding 和保守 token 估算门限控制。当前实现中的 bundle 顶层包括：
 
 ```json
 {
   "database": {"type": "mysql", "catalog": "sample", "schema": ""},
-  "focus": "",
   "inputFiles": ["..."],
   "sources": ["ddl", "object-files", "logs"],
   "tables": ["customers", "orders", "payments"],
@@ -206,10 +206,11 @@ edge ID 仅在内容完全一致时幂等去重，内容冲突则失败。
 完整输入身份保留 `database.type/catalog/schema`，`inputFiles` 使用统一 portable path label：工作目录内路径
 相对化，外部绝对路径只保留文件名。
 
-无 `focus` 时，bundle 默认覆盖全局完整候选池；`--max-relationships`、`--max-lineage`、`--max-naming`
-的默认值是 `0`，表示不限制。只有在 `sharding.mode=off` 时才允许用户显式设置正数上限，
-生成有意的 preview / compact prompt view；生产分片不能通过截断减少上下文。
-有 `focus` 时只保留相关表和 evidence。所有输出引用 bundle 中内容稳定的 fact、evidence 或 candidate id；
+bundle 始终覆盖全部 direct/derived relationship、lineage、naming，以及全部 event、triplet 和 review
+candidate。顶层 `tables` 覆盖所有 endpoint，evidence inventory 对所有 fact/candidate reference 闭合。
+旧 `focus`、`maxRelationships`、`maxLineage`、`maxNamingEvidence` YAML 字段以及对应 CLI 参数已经删除：
+CLI 参数返回 argument error，YAML 字段按未知配置拒绝，不能静默退化为裁剪视图。所有输出引用 bundle
+中内容稳定的 fact、evidence 或 candidate id；
 relationship、lineage、naming、diagnostic、evidence、triplet candidate 以及 normalizer 生成的 relation/lineage/
 triplet/review id 都不使用数组位置。bundle-aware normalizer 会根据 evidence bundle 补齐遗漏的 event、
 triplet 和 review item 候选，并对每个引用做类型化闭包校验。
@@ -245,6 +246,10 @@ reference index 引用，不等同于只引用底层 `evidence[]`。
 上下文之前的中间 bundle。当前 `SemanticPromptBudgetEstimator` 使用 ASCII 字符数、非 ASCII code point
 数、固定开销和 15% margin 做确定性估算；它没有调用模型 tokenizer。因此该门限是 repository estimate
 gate，不是 provider 精确 token 数的数学硬上限。API 返回的 actual usage 只用于事后审计。
+
+`SemanticExtractionRunPlan` 保存同一个 `maxInputTokens`。多 shard reconciliation prompt 在 merge 后
+完整构造，再由同一个 `SemanticPromptBudgetEstimator` 执行门限；超过上限时在模型调用前原子失败，
+等于上限时允许执行。manifest 同时记录门限和 `estimatedInputTokens`，并明确该值不是模型精确 token 数。
 
 每个 fact 与 deterministic candidate 恰好有一个 canonical owner。其他 shard 可以携带只读 overlap
 上下文，planner 不会重复授予 owner，deterministic candidate backfill 也只补 owned candidates。prompt
@@ -294,15 +299,16 @@ deterministic KG、build-run 和 evidence graph 也直接通过 Jackson generato
 | --- | --- | --- |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | planner 对完整输入建立唯一 fact/candidate owner map，逐片补齐 dependency/evidence closure；超预算 table owner 按稳定 root 拆成 part，root closure 保持原子，并在模型调用前执行覆盖校验。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item通过`ownedGroundingRefs`证明当前片owner；direct ref越界、overlap-only或evidence-only输出在backfill前原子拒绝。 |
-| `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的prompt保守估算；超过`maxInputTokens`在API前失败，配置、Javadoc和manifest均不把estimate称为exact token。 |
+| `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后完整reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | unique staging/run目录、完整成功后的原子rename、FAILED staging、streaming SHA-256和`full/final-only`策略均有独立测试。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML shape/unknown field/numeric value严格失败，相对路径按配置目录解析，CLI override后重新构造并校验typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 构造输入deep-copy、public JSON accessor返回副本、集合不可修改；同包trusted accessor仅用于已校验内部流水线。 |
+| `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式bundle不提供focus或事实数量裁剪；全部direct/derived facts、deterministic candidates、endpoint tables和evidence refs在分片前保持闭合，旧CLI/YAML字段明确拒绝。 |
 
-上述七项均已由typed validation、identity和artifact transaction boundary闭环；没有通过弱化
-evidence closure、删除overlap或截断事实规避问题。
+上述 typed validation、identity、完整输入、模型请求预算和artifact transaction boundary均已闭环；
+没有通过弱化evidence closure、删除overlap或截断事实规避问题。
 
 独立归一化命令为：
 

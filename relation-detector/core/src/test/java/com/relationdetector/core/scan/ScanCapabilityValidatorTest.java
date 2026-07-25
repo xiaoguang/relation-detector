@@ -88,6 +88,24 @@ class ScanCapabilityValidatorTest {
     }
 
     @Test
+    void rejectsMalformedGroupedShapeBeforeOpeningJdbc() throws Exception {
+        DatabaseAdaptor base = new CommonDatabaseAdaptor();
+        DatabaseAdaptor malformed = new DatabaseAdaptor() {
+            @Override public int spiVersion() { return base.spiVersion(); }
+            @Override public String id() { return base.id(); }
+            @Override public String displayName() { return base.displayName(); }
+            @Override public Set<DatabaseType> supportedDatabaseTypes() { return base.supportedDatabaseTypes(); }
+            @Override public Set<AdaptorCapability> capabilities() { return base.capabilities(); }
+            @Override public IdentifierRules identifierRules() { return base.identifierRules(); }
+            @Override public AdaptorCollectors collectors() { return base.collectors(); }
+            @Override public AdaptorParsers parsers() { return base.parsers(); }
+            @Override public AdaptorProfiling profiling() { return null; }
+        };
+
+        assertRejectedBeforeConnection(malformed, "profiling");
+    }
+
+    @Test
     void rejectsLiveDdlWithoutStructuredDdlParserBeforeOpeningJdbc() throws Exception {
         AdaptorParsers parsers = new AdaptorParsers(new CommonDatabaseAdaptor().parsers().sqlRelations(),
                 new CommonDatabaseAdaptor().parsers().structuredSql(), Optional.empty(),

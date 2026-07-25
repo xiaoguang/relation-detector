@@ -15,6 +15,7 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
+import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -91,6 +92,7 @@ class AdaptorApiVersionTest {
             String id,
             Set<DatabaseType> supportedDatabaseTypes
     ) implements DatabaseAdaptor {
+        private static final CommonDatabaseAdaptor GROUPED_SHAPE = new CommonDatabaseAdaptor();
 
         @Override
         public String displayName() {
@@ -104,22 +106,22 @@ class AdaptorApiVersionTest {
 
         @Override
         public IdentifierRules identifierRules() {
-            throw new AssertionError("invalid adaptor capabilities must not be called");
+            return GROUPED_SHAPE.identifierRules();
         }
 
         @Override
         public AdaptorCollectors collectors() {
-            throw new AssertionError("invalid adaptor capabilities must not be called");
+            return GROUPED_SHAPE.collectors();
         }
 
         @Override
         public AdaptorParsers parsers() {
-            throw new AssertionError("invalid adaptor capabilities must not be called");
+            return GROUPED_SHAPE.parsers();
         }
 
         @Override
         public AdaptorProfiling profiling() {
-            throw new AssertionError("invalid adaptor capabilities must not be called");
+            return GROUPED_SHAPE.profiling();
         }
     }
 }

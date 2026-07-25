@@ -33,7 +33,10 @@ candidate endpoints 重建固定脱敏 warning。全部 bounded outcomes 通过�
 evidence、raw evidence、warning 和 candidate attributes 均递归复制，嵌套 list/set/map 对插件不可修改，
 未知可变 attribute 类型直接拒绝。`ProfileOutcomeContractValidator` 在任何 status、family、source type
 或 negative-policy 校验前，同样先重建 deep-detached evidence；因此插件对请求的原地修改或对原始
-返回容器的延迟修改都不能回写 scan 状态。
+返回容器的延迟修改都不能回写原 scan candidate。调用外部 profiler 前，
+`ProfileOutcomeContractValidator.captureNegativeEligibility()` 从原scan candidate固化声明FK、
+物理column-to-column及conditional/polymorphic状态；返回结果只读取该不可变快照。插件修改detached
+request、注入FK或删除guard均不能改变负向资格，相关正反向测试已闭环。
 
 Profile outcome 违约统一抛 `AdaptorContractException`。direct API 保留该类型，single CLI 映射为
 `ADAPTOR_ERROR`，batch case 保存同一 code 且整体仍返回 `BATCH_PARTIAL_FAILURE`。全部 bounded
@@ -481,7 +484,8 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 可以携带非空 evidence。core 必须在 `DataProfilePipeline` 再验证一次，避免第三方 v6 adaptor 绕过
 candidate selection、conditional guard 或负向 evidence policy。当前 `ProfileOutcomeContractValidator` 在
 写入 warning 或 candidate 前原子校验全部 outcome 的 status、evidence allowlist、`DATA_PROFILE` source type 和负向策略；
-pre-merge conditional/polymorphic 判断同时读取 candidate、structural evidence 与 raw evidence attributes。
+pre-merge conditional/polymorphic判断在插件调用前同时读取原candidate、structural evidence与raw
+evidence attributes，并固化为`NegativeProfileEligibility`；插件返回后的mutable request不再参与policy。
 
 ## 测试设计
 

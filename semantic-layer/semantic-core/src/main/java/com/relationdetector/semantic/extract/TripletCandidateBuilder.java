@@ -3,7 +3,6 @@ package com.relationdetector.semantic.extract;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -17,54 +16,39 @@ import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
 import com.relationdetector.semantic.reader.ScanRelationshipFact;
 
 /**
- * CN: 从 relationships、events、lineage 和 naming 构造各有 evidenceRef 的 deterministic triplet candidates，避免 triplet 只复制关系；limits 仅裁剪候选，不改原 facts。
- * EN: Builds deterministic evidence-referenced triplet candidates from relationships, events, lineage, and naming so triplets are not mere relation mirrors. Limits trim candidates without changing source facts.
+ * CN: 从完整 relationships、events、lineage 和 naming 构造各有 evidenceRef 的 deterministic triplet
+ * candidates；不在 typed sharding 前按数量或名称裁剪。
+ * EN: Builds evidence-referenced deterministic triplet candidates from all relationships, events, lineage, and
+ * naming facts without count- or name-based truncation before typed sharding.
  */
 final class TripletCandidateBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    ArrayNode build(
-            ScanBundle bundle,
-            List<SemanticEventCandidate> events,
-            Set<String> focusTables,
-            int maxRelationships,
-            int maxLineage,
-            int maxNaming
-    ) {
+    ArrayNode build(ScanBundle bundle, List<SemanticEventCandidate> events) {
         ArrayNode result = JSON.createArrayNode();
-        addRelationshipTriplets(result, bundle, focusTables, maxRelationships);
-        addEventTriplets(result, events, focusTables, maxLineage);
-        addLineageTriplets(result, bundle, focusTables, maxLineage);
-        addNamingTriplets(result, bundle, focusTables, maxNaming);
+        addRelationshipTriplets(result, bundle);
+        addEventTriplets(result, events);
+        addLineageTriplets(result, bundle);
+        addNamingTriplets(result, bundle);
         return result;
     }
 
-    private void addRelationshipTriplets(ArrayNode result, ScanBundle bundle, Set<String> focusTables, int limit) {
-        int added = 0;
+    private void addRelationshipTriplets(ArrayNode result, ScanBundle bundle) {
         for (ScanRelationshipFact relationship : bundle.relationships()) {
             PhysicalEndpointRef source = relationship.source();
             PhysicalEndpointRef target = relationship.target();
-            if (!touches(source, target, focusTables)) {
-                continue;
-            }
             String ref = relationship.id();
             add(result, StableSemanticId.of("triplet-candidate", "relationship", ref), "ENTITY_RELATION",
                     source.table(), "引用", target.table(), ref, List.of(ref));
             add(result, StableSemanticId.of("triplet-candidate", "dimension", ref), "DIMENSION_OF",
                     target.table(), "可作为维度分析", source.table(), ref, List.of(ref));
-            added++;
-            if (reachedLimit(added, limit)) {
-                break;
-            }
         }
     }
 
-    private void addEventTriplets(ArrayNode result, List<SemanticEventCandidate> events, Set<String> focusTables,
-            int limit) {
-        int added = 0;
+    private void addEventTriplets(ArrayNode result, List<SemanticEventCandidate> events) {
         for (SemanticEventCandidate event : events) {
-            List<String> inputs = tables(event.inputEndpoints(), focusTables);
-            List<String> outputs = tables(event.outputEndpoints(), focusTables);
+            List<String> inputs = tables(event.inputEndpoints());
+            List<String> outputs = tables(event.outputEndpoints());
             for (String input : inputs) {
                 for (String output : outputs) {
                     String id = StableSemanticId.of("triplet-candidate", "event", event.id(), input, output);
@@ -72,59 +56,38 @@ final class TripletCandidateBuilder {
                             event.readableNameHint().isBlank() ? "写入" : "通过" + event.readableNameHint() + "写入",
                             output, event.id(), event.evidenceRefs());
                     item.put("eventCandidateRef", event.id());
-                    added++;
-                    if (reachedLimit(added, limit)) {
-                        return;
-                    }
                 }
             }
         }
     }
 
-    private void addLineageTriplets(ArrayNode result, ScanBundle bundle, Set<String> focusTables, int limit) {
-        int added = 0;
+    private void addLineageTriplets(ArrayNode result, ScanBundle bundle) {
         for (ScanLineageFact lineage : bundle.dataLineages()) {
             List<PhysicalEndpointRef> sources = new ArrayList<>(lineage.sources());
             PhysicalEndpointRef target = lineage.target();
-            if (sources.stream().noneMatch(source -> tableTouches(source, focusTables)) && !tableTouches(target, focusTables)) {
-                continue;
-            }
             String ref = lineage.id();
             for (PhysicalEndpointRef source : sources) {
                 add(result, StableSemanticId.of("triplet-candidate", "lineage", ref,
                                 source.displayName(), target.displayName()),
                         "LINEAGE_TRANSFORM",
                         source.displayName(), "加工为", target.displayName(), ref, List.of(ref));
-                added++;
                 if (isMetricTarget(target)) {
                     add(result, StableSemanticId.of("triplet-candidate", "metric-source", ref,
                                     target.displayName(), source.displayName()),
                             "METRIC_SOURCE",
                             target.displayName(), "来源于", source.displayName(), ref, List.of(ref));
-                    added++;
-                }
-                if (limited(limit) && added >= limit) {
-                    return;
                 }
             }
         }
     }
 
-    private void addNamingTriplets(ArrayNode result, ScanBundle bundle, Set<String> focusTables, int limit) {
-        int added = 0;
+    private void addNamingTriplets(ArrayNode result, ScanBundle bundle) {
         for (ScanNamingEvidenceFact naming : bundle.namingEvidence()) {
             PhysicalEndpointRef source = naming.source();
             PhysicalEndpointRef target = naming.target();
-            if (!touches(source, target, focusTables)) {
-                continue;
-            }
             String ref = naming.id();
             add(result, StableSemanticId.of("triplet-candidate", "naming", ref), "NAMING_ALIAS",
                     source.displayName(), "命名指向", target.displayName(), ref, List.of(ref));
-            added++;
-            if (reachedLimit(added, limit)) {
-                break;
-            }
         }
     }
 
@@ -145,19 +108,11 @@ final class TripletCandidateBuilder {
         return item;
     }
 
-    private boolean touches(PhysicalEndpointRef source, PhysicalEndpointRef target, Set<String> focusTables) {
-        return tableTouches(source, focusTables) || tableTouches(target, focusTables);
-    }
-
-    private boolean tableTouches(PhysicalEndpointRef endpoint, Set<String> focusTables) {
-        return endpoint != null && focusTables.contains(endpoint.table());
-    }
-
-    private List<String> tables(List<String> endpoints, Set<String> focusTables) {
+    private List<String> tables(List<String> endpoints) {
         List<String> result = new ArrayList<>();
         for (String endpoint : endpoints == null ? List.<String>of() : endpoints) {
             String table = endpoint == null || endpoint.isBlank() ? "" : PhysicalEndpointRef.column(endpoint).table();
-            if (!table.isBlank() && focusTables.contains(table) && !result.contains(table)) {
+            if (!table.isBlank() && !result.contains(table)) {
                 result.add(table);
             }
         }
@@ -179,11 +134,4 @@ final class TripletCandidateBuilder {
                 || lower.contains("count");
     }
 
-    private boolean limited(int limit) {
-        return limit > 0;
-    }
-
-    private boolean reachedLimit(int added, int limit) {
-        return limited(limit) && added >= limit;
-    }
 }

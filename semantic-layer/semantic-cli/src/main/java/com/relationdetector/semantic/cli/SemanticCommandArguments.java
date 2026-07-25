@@ -20,15 +20,11 @@ record SemanticCommandArguments(
         Path output,
         boolean help,
         SemanticExtractProvider provider,
-        String focus,
         String model,
         String reasoningEffort,
         int maxOutputTokens,
         String baseUrl,
         String apiKeyEnv,
-        int maxRelationships,
-        int maxLineage,
-        int maxNamingEvidence,
         boolean requestOnly,
         ArtifactRetention artifactRetention,
         SemanticShardingOptions sharding,
@@ -81,10 +77,6 @@ record SemanticCommandArguments(
                     values.provider = SemanticExtractProvider.parse(requireValue(args, index++, arg));
                     values.providerSet = true;
                 }
-                case "--focus" -> {
-                    values.focus = requireValue(args, index++, arg);
-                    values.focusSet = true;
-                }
                 case "--model" -> {
                     values.model = requireValue(args, index++, arg);
                     values.modelSet = true;
@@ -104,18 +96,6 @@ record SemanticCommandArguments(
                 case "--api-key-env" -> {
                     values.apiKeyEnv = requireValue(args, index++, arg);
                     values.apiKeyEnvSet = true;
-                }
-                case "--max-relationships" -> {
-                    values.maxRelationships = nonNegativeInt(requireValue(args, index++, arg), arg);
-                    values.maxRelationshipsSet = true;
-                }
-                case "--max-lineage" -> {
-                    values.maxLineage = nonNegativeInt(requireValue(args, index++, arg), arg);
-                    values.maxLineageSet = true;
-                }
-                case "--max-naming" -> {
-                    values.maxNamingEvidence = nonNegativeInt(requireValue(args, index++, arg), arg);
-                    values.maxNamingSet = true;
                 }
                 case "--request-only" -> {
                     values.requestOnly = true;
@@ -193,7 +173,7 @@ record SemanticCommandArguments(
         return """
                 semantic build --input <scan-result.json> [--input <scan-result.json> ...] --output <dir>
                 semantic extract --config <semantic-extraction.yml>
-                semantic extract --input <scan-result.json> --output <dir> [--focus <source>] [--request-only]
+                semantic extract --input <scan-result.json> --output <dir> [--request-only]
                 semantic e2e --input <scan-result.json> --output <dir> [--name <case-name>]
                 semantic normalize-extraction --input <raw-result.json> --evidence-bundle <bundle.json>
                                               --output <normalized-result.json>
@@ -212,16 +192,12 @@ record SemanticCommandArguments(
                   --output <dir>         Output directory for semantic artifacts.
                   --name <case-name>     E2E output case name. Defaults to input file stem.
                   --config <file>        YAML/JSON config for extract. CLI arguments override config values.
-                  --focus <source>       Optional routine/query/source focus.
                   --provider <name>      codex-session or openai-api. Defaults to codex-session.
                   --model <model>        Approved extraction model; currently fixed to gpt-5.6-sol.
                   --reasoning-effort <v> Approved extraction effort; currently fixed to xhigh.
                   --max-output-tokens <n>Maximum model output tokens. Defaults to 12000.
                   --base-url <url>       OpenAI-compatible base URL.
                   --api-key-env <name>   Environment variable containing API key. Defaults to OPENAI_API_KEY.
-                  --max-relationships <n>Evidence relationship cap. Defaults to 0 (unlimited).
-                  --max-lineage <n>      Evidence lineage cap. Defaults to 0 (unlimited).
-                  --max-naming <n>       Evidence naming cap. Defaults to 0 (unlimited).
                   --request-only         Write request artifacts without calling the model.
                   --artifact-retention <v>
                                          full or final-only. Defaults to full.
@@ -284,15 +260,11 @@ record SemanticCommandArguments(
         private Path output;
         private Path config;
         private SemanticExtractProvider provider = SemanticExtractProvider.CODEX_SESSION;
-        private String focus = "";
         private String model = SemanticExtractionConfig.APPROVED_MODEL;
         private String reasoningEffort = SemanticExtractionConfig.APPROVED_REASONING_EFFORT;
         private int maxOutputTokens = 12000;
         private String baseUrl = valueOrDefault(System.getenv("OPENAI_BASE_URL"), "https://api.openai.com/v1");
         private String apiKeyEnv = "OPENAI_API_KEY";
-        private int maxRelationships;
-        private int maxLineage;
-        private int maxNamingEvidence;
         private boolean requestOnly;
         private ArtifactRetention artifactRetention = ArtifactRetention.FULL;
         private SemanticShardMode shardMode = SemanticShardMode.AUTO;
@@ -307,15 +279,11 @@ record SemanticCommandArguments(
         private String name = "";
         private Path evidenceBundle;
         private boolean providerSet;
-        private boolean focusSet;
         private boolean modelSet;
         private boolean reasoningSet;
         private boolean maxOutputSet;
         private boolean baseUrlSet;
         private boolean apiKeyEnvSet;
-        private boolean maxRelationshipsSet;
-        private boolean maxLineageSet;
-        private boolean maxNamingSet;
         private boolean requestOnlySet;
         private boolean artifactRetentionSet;
         private boolean shardModeSet;
@@ -332,15 +300,11 @@ record SemanticCommandArguments(
             if (inputs.isEmpty()) inputs = new ArrayList<>(loaded.inputs());
             if (output == null) output = loaded.output();
             if (!providerSet) provider = SemanticExtractProvider.parse(loaded.provider());
-            if (!focusSet) focus = loaded.focus();
             if (!modelSet) model = loaded.model();
             if (!reasoningSet) reasoningEffort = loaded.reasoningEffort();
             if (!maxOutputSet) maxOutputTokens = loaded.maxOutputTokens();
             if (!baseUrlSet) baseUrl = loaded.baseUrl();
             if (!apiKeyEnvSet) apiKeyEnv = loaded.apiKeyEnv();
-            if (!maxRelationshipsSet) maxRelationships = loaded.maxRelationships();
-            if (!maxLineageSet) maxLineage = loaded.maxLineage();
-            if (!maxNamingSet) maxNamingEvidence = loaded.maxNamingEvidence();
             if (!requestOnlySet) requestOnly = loaded.requestOnly();
             if (!artifactRetentionSet) artifactRetention = loaded.artifactRetention();
             if (!shardModeSet) shardMode = loaded.sharding().mode();
@@ -361,14 +325,13 @@ record SemanticCommandArguments(
                     shardMode, targetInputTokens, maxInputTokens, maxShardCount, reconcile);
             SemanticExtractionConfig validated = new SemanticExtractionConfig(
                     provider == SemanticExtractProvider.OPENAI_API ? "openai-api" : "codex-session",
-                    inputs, output, focus, model, reasoningEffort, maxOutputTokens, baseUrl, apiKeyEnv,
-                    maxRelationships, maxLineage, maxNamingEvidence, requestOnly, artifactRetention, sharding,
+                    inputs, output, model, reasoningEffort, maxOutputTokens, baseUrl, apiKeyEnv,
+                    requestOnly, artifactRetention, sharding,
                     shardMaxOutputTokens, reconciliationMaxOutputTokens, requestTimeoutSeconds,
                     maxTransportRetries);
             return new SemanticCommandArguments(command, validated.inputs(), validated.output(), help, provider,
-                    validated.focus(), validated.model(), validated.reasoningEffort(), validated.maxOutputTokens(),
-                    validated.baseUrl(), validated.apiKeyEnv(), validated.maxRelationships(), validated.maxLineage(),
-                    validated.maxNamingEvidence(), validated.requestOnly(), validated.artifactRetention(),
+                    validated.model(), validated.reasoningEffort(), validated.maxOutputTokens(),
+                    validated.baseUrl(), validated.apiKeyEnv(), validated.requestOnly(), validated.artifactRetention(),
                     validated.sharding(),
                     validated.shardMaxOutputTokens(), validated.reconciliationMaxOutputTokens(),
                     validated.requestTimeoutSeconds(), validated.maxTransportRetries(), name, evidenceBundle);

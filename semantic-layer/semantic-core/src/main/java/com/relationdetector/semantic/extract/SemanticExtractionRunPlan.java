@@ -12,7 +12,8 @@ public record SemanticExtractionRunPlan(
         ObjectNode fullBundle,
         SemanticShardPlan shardPlan,
         List<SemanticShardRequest> shardRequests,
-        boolean reconcile
+        boolean reconcile,
+        int maxInputTokens
 ) {
     public SemanticExtractionRunPlan {
         if (fullBundle == null || shardPlan == null) {
@@ -22,6 +23,9 @@ public record SemanticExtractionRunPlan(
         shardRequests = List.copyOf(shardRequests == null ? List.of() : shardRequests);
         if (shardRequests.size() != shardPlan.shards().size()) {
             throw new IllegalArgumentException("semantic shard request count does not match shard plan");
+        }
+        if (maxInputTokens <= 0) {
+            throw new IllegalArgumentException("semantic extraction maxInputTokens must be positive");
         }
     }
 

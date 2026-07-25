@@ -27,7 +27,13 @@ final class NegativeProfileEvidencePolicy {
         if (request == null || request.candidate() == null) {
             return false;
         }
-        RelationshipCandidate candidate = request.candidate();
+        return allows(request.candidate());
+    }
+
+    boolean allows(RelationshipCandidate candidate) {
+        if (candidate == null) {
+            return false;
+        }
         if (!candidate.source().isColumnLevel() || !candidate.target().isColumnLevel()) {
             return false;
         }

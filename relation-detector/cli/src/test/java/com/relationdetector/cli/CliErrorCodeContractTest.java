@@ -14,11 +14,9 @@ import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
-import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ProfileOutcome;
-import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.profile.ProfileOutcomeContractValidator;
 import com.relationdetector.core.scan.DatabaseConnectionException;
@@ -92,7 +90,6 @@ class CliErrorCodeContractTest {
                             Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id")),
                             RelationType.FK_LIKE,
                             RelationSubType.PROFILE_SUPPORTED_FK);
-                    ProfileRequest request = new ProfileRequest(candidate, DataProfileOptions.defaults());
                     Evidence invalid = new Evidence(
                             EvidenceType.SQL_LOG_JOIN,
                             BigDecimal.valueOf(0.20d),
@@ -100,8 +97,11 @@ class CliErrorCodeContractTest {
                             "plugin",
                             "invalid profile evidence",
                             Map.of());
-                    new ProfileOutcomeContractValidator().validate(
-                            request, ProfileOutcome.success(List.of(invalid)), adaptor.id());
+                    ProfileOutcomeContractValidator validator = new ProfileOutcomeContractValidator();
+                    validator.validate(
+                            validator.captureNegativeEligibility(candidate),
+                            ProfileOutcome.success(List.of(invalid)),
+                            adaptor.id());
                     return result();
                 },
                 ignored -> { });

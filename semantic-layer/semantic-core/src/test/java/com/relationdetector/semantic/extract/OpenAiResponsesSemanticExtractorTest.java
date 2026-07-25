@@ -28,7 +28,7 @@ final class OpenAiResponsesSemanticExtractorTest {
         SemanticExtractionPrompt prompt = new SemanticExtractionPrompt(
                 "Return JSON only.",
                 "Extract candidates.",
-                JSON.createObjectNode().put("focus", "test"));
+                JSON.createObjectNode().put("kind", "test"));
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> extractor.extract(prompt));
@@ -52,7 +52,7 @@ final class OpenAiResponsesSemanticExtractorTest {
         SemanticExtractionPrompt prompt = new SemanticExtractionPrompt(
                 "Return JSON only.",
                 "Extract candidates.",
-                JSON.createObjectNode().put("focus", "test"));
+                JSON.createObjectNode().put("kind", "test"));
 
         JsonNode request = JSON.readTree(extractor.requestJson(prompt));
         SemanticExtractionResult result = extractor.extract(prompt);
@@ -132,6 +132,6 @@ final class OpenAiResponsesSemanticExtractorTest {
         return new SemanticExtractionPrompt(
                 "Return JSON only.",
                 "Extract candidates.",
-                JSON.createObjectNode().put("focus", "test"));
+                JSON.createObjectNode().put("kind", "test"));
     }
 }

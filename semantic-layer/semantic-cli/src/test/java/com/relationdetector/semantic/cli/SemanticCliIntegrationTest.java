@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -138,8 +139,7 @@ final class SemanticCliIntegrationTest {
             exit = Main.run(new String[] {
                     "extract",
                     "--input", input.toString(),
-                    "--output", output.toString(),
-                    "--focus", "ROUTINE:shop.sp_rebuild_sales_fact"
+                    "--output", output.toString()
             });
         } finally {
             System.setOut(original);
@@ -154,7 +154,7 @@ final class SemanticCliIntegrationTest {
         assertTrue(Files.exists(published.resolve("semantic-extraction-codex-session.md")));
         JsonNode evidenceBundle = JSON.readTree(
                 published.resolve("semantic-extraction-evidence-bundle.json").toFile());
-        assertEquals("ROUTINE:shop.sp_rebuild_sales_fact", evidenceBundle.path("focus").asText());
+        assertFalse(evidenceBundle.has("focus"));
         assertTrue(evidenceBundle.path("lineage").isArray());
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
         assertEquals(StableSemanticId.of(
@@ -163,7 +163,7 @@ final class SemanticCliIntegrationTest {
     }
 
     @Test
-    void semanticExtractDistinguishesUnlimitedInputFromExplicitPreviewLimits() throws Exception {
+    void semanticExtractRejectsRemovedPreShardingSelectors() throws Exception {
         Path input = tempDir.resolve("scan-result-zero-limits.json");
         Path output = tempDir.resolve("semantic-extract-zero-limits-output");
         Files.writeString(input, """
@@ -190,37 +190,15 @@ final class SemanticCliIntegrationTest {
                 }
                 """);
 
-        int exit = Main.run(new String[] {
-                "extract",
-                "--input", input.toString(),
-                "--output", output.toString(),
-                "--max-relationships", "0",
-                "--max-lineage", "0",
-                "--max-naming", "0"
-        });
-
-        assertEquals(0, exit);
-        Path published = onlyPublishedRun(output);
-        JsonNode evidenceBundle = JSON.readTree(
-                published.resolve("semantic-extraction-evidence-bundle.json").toFile());
-        assertEquals(1, evidenceBundle.path("relationships").size());
-
-        int rejectedPreview = Main.run(new String[] {
-                "extract",
-                "--input", input.toString(),
-                "--output", tempDir.resolve("semantic-extract-preview-rejected").toString(),
-                "--max-relationships", "1"
-        });
-        int explicitPreview = Main.run(new String[] {
-                "extract",
-                "--input", input.toString(),
-                "--output", tempDir.resolve("semantic-extract-preview").toString(),
-                "--max-relationships", "1",
-                "--shard-mode", "off"
-        });
-
-        assertEquals(2, rejectedPreview);
-        assertEquals(0, explicitPreview);
+        for (String option : List.of("--focus", "--max-relationships", "--max-lineage", "--max-naming")) {
+            int exit = Main.run(new String[] {
+                    "extract",
+                    "--input", input.toString(),
+                    "--output", output.resolve(option.substring(2)).toString(),
+                    option, "--focus".equals(option) ? "ROUTINE:shop.sp" : "1"
+            });
+            assertEquals(2, exit, option);
+        }
     }
 
     @Test
@@ -430,7 +408,6 @@ final class SemanticCliIntegrationTest {
                   provider: codex-session
                   input: %s
                   output: %s
-                  focus: ROUTINE:shop.sp_rebuild_sales_fact
                 """.formatted(input, output));
 
         int exit = Main.run(new String[] {"extract", "--config", config.toString()});

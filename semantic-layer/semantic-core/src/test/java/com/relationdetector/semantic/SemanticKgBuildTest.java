@@ -146,7 +146,7 @@ final class SemanticKgBuildTest {
 
         JsonNode kgJson = JSON.readTree(writer.writeKg(kg));
         JsonNode evidenceJson = JSON.readTree(writer.writeEvidenceGraph(graph));
-        JsonNode extractionJson = new SemanticExtractionBundleBuilder().build(bundle, "", 10, 10, 10);
+        JsonNode extractionJson = new SemanticExtractionBundleBuilder().build(bundle);
 
         assertEquals("shop_catalog", bundle.catalog());
         assertEquals("shop_catalog", kgJson.path("buildRun").path("database").path("catalog").asText());

@@ -23,6 +23,7 @@ public final class SemanticExtractionService {
             new SemanticReconciliationPromptBuilder();
     private final SemanticReconciliationPatchValidator patchValidator =
             new SemanticReconciliationPatchValidator();
+    private final SemanticPromptBudgetEstimator budgetEstimator = new SemanticPromptBudgetEstimator();
 
     public SemanticExtractionRunPlan plan(ObjectNode fullBundle, SemanticShardingOptions options) {
         SemanticShardingOptions resolved = options == null ? SemanticShardingOptions.defaults() : options;
@@ -30,7 +31,8 @@ public final class SemanticExtractionService {
         List<SemanticShardRequest> requests = shardPlan.shards().stream()
                 .map(shard -> new SemanticShardRequest(shard, promptBuilder.build(shard.trustedBundle())))
                 .toList();
-        return new SemanticExtractionRunPlan(fullBundle, shardPlan, requests, resolved.reconcile());
+        return new SemanticExtractionRunPlan(
+                fullBundle, shardPlan, requests, resolved.reconcile(), resolved.maxInputTokens());
     }
 
     /**
@@ -65,6 +67,7 @@ public final class SemanticExtractionService {
                 throw new IllegalArgumentException("semantic reconciliation client is required");
             }
             reconciliationPrompt = reconciliationPromptBuilder.build(merge, plan.shardPlan());
+            requireWithinInputBudget(reconciliationPrompt, plan.maxInputTokens());
             reconciliationResult = reconciliationClient.extract(reconciliationPrompt);
             reconciliationPatch = parse(reconciliationResult.outputText(), "semantic reconciliation patch");
             mergedDraft = patchValidator.apply(merge, reconciliationPatch, plan.trustedFullBundle());
@@ -75,6 +78,14 @@ public final class SemanticExtractionService {
         ObjectNode finalDocument = normalizer.normalize(mergedDraft, plan.trustedFullBundle());
         return new SemanticExtractionRunResult(plan, executions, merge, reconciliationPrompt,
                 reconciliationResult, reconciliationPatch, mergedDraft, finalDocument);
+    }
+
+    private void requireWithinInputBudget(SemanticExtractionPrompt prompt, int maxInputTokens) {
+        int estimate = budgetEstimator.estimate(prompt);
+        if (estimate > maxInputTokens) {
+            throw new SemanticShardingException(
+                    "semantic reconciliation prompt exceeds the configured estimated input-token limit");
+        }
     }
 
     private ObjectNode normalize(String output, SemanticShard shard) {

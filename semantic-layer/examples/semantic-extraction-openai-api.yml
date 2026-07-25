@@ -22,6 +22,3 @@ semanticExtraction:
     maxShardCount: 128
     reconcile: true
   # 0 means unlimited. Positive max* values are preview-only and require sharding.mode=off.
-  maxRelationships: 0
-  maxLineage: 0
-  maxNamingEvidence: 0

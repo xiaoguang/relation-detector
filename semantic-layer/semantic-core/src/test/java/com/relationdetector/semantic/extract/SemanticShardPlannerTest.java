@@ -244,7 +244,6 @@ final class SemanticShardPlannerTest {
     private ObjectNode emptyBundle() {
         ObjectNode root = JSON.createObjectNode();
         root.putObject("database").put("type", "mysql").put("catalog", "shop").put("schema", "");
-        root.put("focus", "");
         root.putArray("inputFiles");
         root.putArray("sources");
         root.putArray("tables");

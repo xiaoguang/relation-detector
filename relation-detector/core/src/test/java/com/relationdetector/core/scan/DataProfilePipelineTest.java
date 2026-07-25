@@ -192,6 +192,43 @@ class DataProfilePipelineTest {
     }
 
     @Test
+    void profilerCannotInjectDeclaredForeignKeyIntoRequestToAuthorizeNegativeEvidence() {
+        RelationshipCandidate candidate = relationship(null, null);
+        candidate.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        ScanPipelineContext context = contextReturningCandidates(List.of(candidate), (connection, request) -> {
+            request.candidate().evidence().add(new Evidence(
+                    EvidenceType.DDL_FOREIGN_KEY,
+                    BigDecimal.valueOf(0.98d),
+                    EvidenceSourceType.DDL_FILE,
+                    "plugin.sql",
+                    "plugin-injected declaration",
+                    Map.of()));
+            return ProfileOutcome.success(List.of(negativeEvidence()));
+        });
+
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
+
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                candidate.evidence().stream().map(Evidence::type).toList());
+        assertTrue(context.result.sources().isEmpty());
+        assertTrue(context.result.warnings().isEmpty());
+    }
+
+    @Test
+    void profilerCannotRemovePrecomputedNegativeEligibilityFromRequest() {
+        RelationshipCandidate candidate = declaredCandidate(Map.of());
+        ScanPipelineContext context = contextReturningCandidates(List.of(candidate), (connection, request) -> {
+            request.candidate().evidence().clear();
+            return ProfileOutcome.success(List.of(negativeEvidence()));
+        });
+
+        pipeline.profile(connection(), context);
+
+        assertEquals(List.of(EvidenceType.DDL_FOREIGN_KEY, EvidenceType.NEGATIVE_VALUE_MISMATCH),
+                candidate.evidence().stream().map(Evidence::type).toList());
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void profilerRequestIsDeeplyDetachedFromTheScanCandidate() {
         List<String> candidateNested = new ArrayList<>(List.of("candidate"));
@@ -481,6 +518,7 @@ class DataProfilePipelineTest {
         config.databaseType = DatabaseType.MYSQL;
         config.jdbcUrl = "jdbc:test:data-profile-pipeline";
         config.dataProfileEnabled = true;
+        config.verifyDeclaredForeignKeys = true;
         config.skipUnindexedLargeTargets = false;
         ScanScope scope = new ScanScope(null, null, List.of(), List.of());
         ScanResult result = new ScanResult("mysql", null, null);
