@@ -4,7 +4,7 @@ package com.relationdetector.semantic.extract;
  * CN: 对最终 prompt 文本做保守、确定性的 token 预算估算；输入是已渲染文本，输出只用于切片门限，禁止影响语义或替代 API usage。
  * EN: Conservatively and deterministically estimates tokens for rendered prompt text. The estimate is only a sharding budget signal and never semantic input or a replacement for API usage.
  */
-public final class SemanticPromptBudgetEstimator {
+final class SemanticPromptBudgetEstimator {
     private static final int FIXED_OVERHEAD = 64;
 
     public int estimate(String text) {

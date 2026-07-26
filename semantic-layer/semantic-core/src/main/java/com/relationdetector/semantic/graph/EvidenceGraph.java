@@ -26,7 +26,14 @@ public record EvidenceGraph(
         endpoints = List.copyOf(endpoints == null ? List.of() : endpoints);
         facts = List.copyOf(facts == null ? List.of() : facts);
         evidenceRefs = List.copyOf(evidenceRefs == null ? List.of() : evidenceRefs);
-        diagnostics = List.copyOf(diagnostics == null ? List.of() : diagnostics);
+        diagnostics = diagnostics == null
+                ? List.<JsonNode>of()
+                : diagnostics.stream().map(node -> (JsonNode) node.deepCopy()).toList();
         summary = Map.copyOf(summary == null ? Map.of() : summary);
+    }
+
+    @Override
+    public List<JsonNode> diagnostics() {
+        return diagnostics.stream().map(node -> (JsonNode) node.deepCopy()).toList();
     }
 }

@@ -56,4 +56,24 @@ final class SemanticLayerArchitectureTest {
         assertFalse(classifier.contains("JsonNode"), "typed classifier must not read raw evidence documents");
         assertFalse(classifier.contains("sourceFile"), "typed classifier must not classify from file paths");
     }
+
+    @Test
+    void unboundedArtifactWritersStreamJsonAndModelClientOnlyCallsModels() throws Exception {
+        Path extract = Path.of("src/main/java/com/relationdetector/semantic/extract");
+        String runWriter = Files.readString(extract.resolve("SemanticExtractionRunArtifactWriter.java"));
+        String requestWriter = Files.readString(extract.resolve("SemanticRequestArtifactWriter.java"));
+        String modelClient = Files.readString(extract.resolve("SemanticModelClient.java"));
+        String normalizeHandler = Files.readString(Path.of(
+                "../semantic-cli/src/main/java/com/relationdetector/semantic/cli/"
+                        + "SemanticNormalizeExtractionCommandHandler.java"));
+
+        assertFalse(runWriter.contains("JSON.writeValueAsString(value)"),
+                "run artifacts must stream unbounded JSON directly to files");
+        assertFalse(requestWriter.contains("pretty(prompt.trustedEvidenceBundle())"),
+                "evidence bundles must stream directly to files");
+        assertFalse(modelClient.contains("requestJson("),
+                "model execution and request rendering must remain separate responsibilities");
+        assertFalse(normalizeHandler.contains("writeValueAsString(normalized)"),
+                "normalized semantic documents must stream directly to their output file");
+    }
 }

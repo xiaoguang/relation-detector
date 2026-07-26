@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.relationdetector.semantic.SemanticFactIds;
 import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
@@ -196,10 +195,7 @@ public final class SemanticEventExtractor {
     }
 
     private String groupKey(EvidenceSource source, String targetTable) {
-        if ("ROUTINE".equals(source.sourceType()) || "TRIGGER".equals(source.sourceType())) {
-            return source.sourceType() + ":" + source.sourceObjectType() + ":" + source.sourceObject();
-        }
-        return source.sourceType() + ":" + source.sourceObject() + ":" + targetTable;
+        return idFor(source, targetTable);
     }
 
     private String idFor(EvidenceSource source, String targetTable) {
@@ -210,10 +206,17 @@ public final class SemanticEventExtractor {
                     source.sourceObject());
         }
         if ("TRIGGER".equals(source.sourceType())) {
-            return "event-candidate:trigger:" + SemanticFactIds.slug(source.sourceObject());
+            return StableSemanticId.of(
+                    "event-candidate:trigger",
+                    source.sourceObjectType(),
+                    source.sourceObject());
         }
-        return "event-candidate:sql-write:" + SemanticFactIds.slug(source.sourceObject()) + ":"
-                + SemanticFactIds.slug(targetTable);
+        return StableSemanticId.of(
+                "event-candidate:sql-write",
+                source.sourceType(),
+                source.sourceObjectType(),
+                source.sourceObject(),
+                targetTable);
     }
 
     private String tableOf(String endpoint) {

@@ -19,14 +19,14 @@ final class SemanticShardOutputOwnershipValidator {
     private static final List<String> DIRECT_REFERENCE_FIELDS = List.of(
             "eventCandidateRef", "candidateRef", "factRef");
 
-    void validate(JsonNode rawDocument, SemanticShard shard) {
-        if (rawDocument == null || !rawDocument.isObject() || shard == null) {
+    void validate(JsonNode rawDocument, JsonNode bundle) {
+        if (rawDocument == null || !rawDocument.isObject() || bundle == null || !bundle.isObject()) {
             throw new SemanticExtractionValidationException("semantic shard output ownership input is invalid");
         }
-        Set<String> owned = new LinkedHashSet<>(shard.ownedFactRefs());
-        owned.addAll(shard.ownedCandidateRefs());
-        Set<String> overlap = shard.overlapRefs();
-        Set<String> evidence = evidenceIds(shard.trustedBundle());
+        OwnershipContext context = ownershipContext(bundle);
+        Set<String> owned = new LinkedHashSet<>(context.ownedFacts());
+        owned.addAll(context.ownedCandidates());
+        Set<String> evidence = evidenceIds(bundle);
         for (String section : OUTPUT_SECTIONS) {
             JsonNode items = rawDocument.path(section);
             if (!items.isArray()) {
@@ -34,7 +34,84 @@ final class SemanticShardOutputOwnershipValidator {
                         "semantic shard output section must be an array: " + section);
             }
             for (JsonNode item : items) {
-                validateItem(section, item, owned, overlap, evidence);
+                validateItem(section, item, owned, context.overlap(), evidence);
+            }
+        }
+    }
+
+    private OwnershipContext ownershipContext(JsonNode bundle) {
+        JsonNode context = bundle.path("shardContext");
+        if (!context.isObject()
+                || context.path("shardId").asText("").isBlank()
+                || context.path("ownerKey").asText("").isBlank()
+                || !context.path("outputOwnedReferencesOnly").asBoolean(false)) {
+            throw new SemanticExtractionValidationException("semantic shardContext is missing or invalid");
+        }
+        Set<String> ownedFacts = textSet(context, "ownedFactRefs");
+        Set<String> ownedCandidates = textSet(context, "ownedCandidateRefs");
+        Set<String> overlap = textSet(context, "overlapRefs");
+        requireDisjoint(ownedFacts, ownedCandidates, overlap);
+
+        Set<String> factIds = itemIds(bundle, SemanticShardBundleIndex.FACT_SECTIONS);
+        Set<String> candidateIds = itemIds(bundle, SemanticShardBundleIndex.CANDIDATE_SECTIONS);
+        Set<String> allIds = new LinkedHashSet<>(factIds);
+        if (!allIds.addAll(candidateIds)) {
+            throw new SemanticExtractionValidationException(
+                    "semantic evidence bundle item ids must be globally unique");
+        }
+        if (!factIds.containsAll(ownedFacts)
+                || !candidateIds.containsAll(ownedCandidates)
+                || !allIds.containsAll(overlap)) {
+            throw new SemanticExtractionValidationException(
+                    "semantic shardContext contains references outside the supplied bundle");
+        }
+        return new OwnershipContext(ownedFacts, ownedCandidates, overlap);
+    }
+
+    private Set<String> textSet(JsonNode context, String field) {
+        JsonNode values = context.path(field);
+        if (!values.isArray()) {
+            throw new SemanticExtractionValidationException(
+                    "semantic shardContext field must be an array: " + field);
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (JsonNode value : values) {
+            String reference = value.isTextual() ? value.asText() : "";
+            if (reference.isBlank() || !result.add(reference)) {
+                throw new SemanticExtractionValidationException(
+                        "semantic shardContext contains an invalid or duplicate reference");
+            }
+        }
+        return Set.copyOf(result);
+    }
+
+    private Set<String> itemIds(JsonNode bundle, List<String> sections) {
+        Set<String> result = new LinkedHashSet<>();
+        for (String section : sections) {
+            JsonNode items = bundle.path(section);
+            if (!items.isArray()) {
+                throw new SemanticExtractionValidationException(
+                        "semantic evidence bundle section must be an array: " + section);
+            }
+            for (JsonNode item : items) {
+                String id = item.path("id").asText("");
+                if (id.isBlank() || !result.add(id)) {
+                    throw new SemanticExtractionValidationException(
+                            "semantic evidence bundle contains a missing or duplicate item id");
+                }
+            }
+        }
+        return result;
+    }
+
+    private void requireDisjoint(Set<String> ownedFacts, Set<String> ownedCandidates, Set<String> overlap) {
+        Set<String> seen = new LinkedHashSet<>();
+        for (Set<String> refs : List.of(ownedFacts, ownedCandidates, overlap)) {
+            for (String ref : refs) {
+                if (!seen.add(ref)) {
+                    throw new SemanticExtractionValidationException(
+                            "semantic shardContext ownership sets must be disjoint");
+                }
             }
         }
     }
@@ -97,10 +174,22 @@ final class SemanticShardOutputOwnershipValidator {
 
     private Set<String> evidenceIds(JsonNode bundle) {
         Set<String> result = new LinkedHashSet<>();
-        bundle.path("evidence").forEach(item -> {
+        JsonNode evidence = bundle.path("evidence");
+        if (!evidence.isArray()) {
+            throw new SemanticExtractionValidationException(
+                    "semantic evidence bundle section must be an array: evidence");
+        }
+        evidence.forEach(item -> {
             String id = item.path("id").asText("");
             if (!id.isBlank()) result.add(id);
         });
         return result;
+    }
+
+    private record OwnershipContext(
+            Set<String> ownedFacts,
+            Set<String> ownedCandidates,
+            Set<String> overlap
+    ) {
     }
 }

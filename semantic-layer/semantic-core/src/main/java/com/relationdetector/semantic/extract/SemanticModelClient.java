@@ -7,8 +7,4 @@ package com.relationdetector.semantic.extract;
 @FunctionalInterface
 public interface SemanticModelClient {
     SemanticExtractionResult extract(SemanticExtractionPrompt prompt);
-
-    default String requestJson(SemanticExtractionPrompt prompt) {
-        throw new UnsupportedOperationException("request serialization is not supported by this model client");
-    }
 }

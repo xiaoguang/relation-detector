@@ -51,11 +51,13 @@ public final class PostgresLogExtractor implements SqlLogExtractor {
         }
         try {
             List<SqlStatementRecord> records = new ArrayList<>();
-            List<String> lines = Files.readAllLines(file);
+            String text = Files.readString(file);
+            String source = SourceNameNormalizer.normalizeFile(file, text);
+            List<String> lines = text.lines().toList();
             for (int index = 0; index < lines.size(); index++) {
                 String payload = statementPayload(lines.get(index));
                 if (!payload.isBlank()) {
-                    records.addAll(parsePayload(file, payload, index + 1L, warnings));
+                    records.addAll(parsePayload(source, payload, index + 1L, warnings));
                 }
             }
             return records.stream();
@@ -76,13 +78,13 @@ public final class PostgresLogExtractor implements SqlLogExtractor {
     }
 
     private List<SqlStatementRecord> parsePayload(
-            Path file,
+            String source,
             String payload,
             long sourceLine,
             Consumer<WarningMessage> warnings
     ) {
         var parsed = scriptFramer.frame(new ScriptFrameRequest(
-                payload, file.toString(), StatementSourceType.NATIVE_LOG));
+                payload, source, StatementSourceType.NATIVE_LOG));
         parsed.warnings().forEach(warnings);
         return parsed.statements().stream()
                 .map(statement -> relocate(statement, sourceLine - 1L))

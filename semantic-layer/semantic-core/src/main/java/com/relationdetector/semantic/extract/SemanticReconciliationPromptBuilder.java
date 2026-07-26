@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * CN: 从 merged semantic 摘要、跨片冲突和 owner manifest 构造精简 reconciliation prompt；输出只允许 patch，不发送完整物理 KG 或允许改写事实。
  * EN: Builds a compact reconciliation prompt from merged semantic summaries, cross-shard conflicts, and ownership metadata. It requests a patch only and never sends or rewrites the full physical KG.
  */
-public final class SemanticReconciliationPromptBuilder {
+final class SemanticReconciliationPromptBuilder {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
     public SemanticExtractionPrompt build(SemanticShardMergeResult merge, SemanticShardPlan plan) {

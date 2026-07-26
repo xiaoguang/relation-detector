@@ -63,14 +63,16 @@ class ScanCapabilityValidatorTest {
     @Test
     void rejectsWrongSpiBeforeOpeningJdbc() throws Exception {
         assertRejectedBeforeConnection(new TestAdaptor(AdaptorApiVersion.CURRENT - 1, "common",
-                Set.of(DatabaseType.COMMON), Set.of(), new AdaptorCollectors(null, null, null, null),
+                Set.of(DatabaseType.COMMON), Set.of(), new AdaptorCollectors(
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()),
                 new CommonDatabaseAdaptor().parsers()), "SPI");
     }
 
     @Test
     void rejectsUnsupportedDatabaseTypeBeforeOpeningJdbc() throws Exception {
         assertRejectedBeforeConnection(new TestAdaptor(AdaptorApiVersion.CURRENT, "common",
-                Set.of(DatabaseType.MYSQL), Set.of(), new AdaptorCollectors(null, null, null, null),
+                Set.of(DatabaseType.MYSQL), Set.of(), new AdaptorCollectors(
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()),
                 new CommonDatabaseAdaptor().parsers()), "database type");
     }
 
@@ -111,8 +113,10 @@ class ScanCapabilityValidatorTest {
                 new CommonDatabaseAdaptor().parsers().structuredSql(), Optional.empty(),
                 new CommonDatabaseAdaptor().parsers().scriptFramer());
         assertRejectedBeforeConnection(new TestAdaptor(AdaptorApiVersion.CURRENT, "common", Set.of(DatabaseType.COMMON),
-                Set.of(AdaptorCapability.DDL_PARSING), new AdaptorCollectors(null, null,
-                        Optional.of((connection, scope) -> java.util.List.of()), null), parsers), "structured DDL parser");
+                Set.of(AdaptorCapability.DDL_PARSING), new AdaptorCollectors(
+                        Optional.empty(), Optional.empty(),
+                        Optional.of((connection, scope) -> java.util.List.of()), Optional.empty()),
+                parsers), "structured DDL parser");
     }
 
     @Test
@@ -128,7 +132,12 @@ class ScanCapabilityValidatorTest {
         AdaptorContractException error = assertThrows(AdaptorContractException.class,
                 () -> new ScanEngine().scan(config, new TestAdaptor(AdaptorApiVersion.CURRENT, "common",
                         Set.of(DatabaseType.COMMON), Set.of(AdaptorCapability.DATABASE_OBJECTS),
-                        new AdaptorCollectors(null, Optional.of((connection, scope) -> java.util.List.of()), null, null), parsers)));
+                        new AdaptorCollectors(
+                                Optional.empty(),
+                                Optional.of((connection, scope) -> java.util.List.of()),
+                                Optional.empty(),
+                                Optional.empty()),
+                        parsers)));
 
         assertTrue(error.getMessage().contains("structured SQL parser"));
         assertTrue(driver.connections.get() == 0);

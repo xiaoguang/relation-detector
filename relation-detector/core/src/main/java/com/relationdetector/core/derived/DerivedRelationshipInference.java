@@ -91,9 +91,6 @@ final class DerivedRelationshipInference {
             if (namingCandidate != null) {
                 derivedNaming.add(namingCandidate);
             }
-            if (graphs.limitReached(derivedRelationships.size())) {
-                break;
-            }
         }
         return new Result(List.copyOf(derivedRelationships), List.copyOf(derivedNaming));
     }

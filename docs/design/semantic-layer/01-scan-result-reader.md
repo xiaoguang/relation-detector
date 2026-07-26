@@ -144,6 +144,10 @@ public final class ScanResultReader {
 
 `ScanBundle` 在 reader 边界把 relation-detector 事实一次性转为强类型 fact；每个 fact 同时保留原始 `document()` payload。下游 event、bundle 和 evidence graph 不再重复解析 endpoint、confidence 或 flowKind。relationship、lineage、naming 和 diagnostic id 根据规范化语义内容生成，不依赖数组位置；lineage source identity 先排序再哈希。重复 stable id 会被 contract 边界拒绝。relation-detector 顶层 `warnings` 映射为 `ScanBundle.diagnostics`；reader 不读取独立顶层 `diagnostics` 字段。`ScanBundle.jsonView()`、extraction bundle 和 KG build-run 共用 portable input path renderer：工作目录内路径相对化，外部绝对路径只保留文件名，因此不泄漏工作区绝对路径；该标签不等同于持久化的 repository identity。
 
+不可变边界覆盖外层list/map与公开JSON状态。typed fact的`document()`、`EvidenceGraphFact.payload()`
+和`EvidenceGraph.diagnostics()`在构造及公开读取时deep-copy；下游调用方修改返回`JsonNode`不会改变
+reader或graph内部已验证状态。
+
 ## 4. 处理流程图
 
 <details open>

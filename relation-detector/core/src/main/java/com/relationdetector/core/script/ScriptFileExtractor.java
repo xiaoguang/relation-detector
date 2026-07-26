@@ -29,7 +29,9 @@ public final class ScriptFileExtractor {
             Consumer<WarningMessage> warnings
     ) {
         try {
-            var request = new ScriptFrameRequest(Files.readString(file), file.toString(), sourceType);
+            String text = Files.readString(file);
+            var request = new ScriptFrameRequest(
+                    text, com.relationdetector.core.log.SourceNameNormalizer.normalizeFile(file, text), sourceType);
             var result = resultValidator.validateFrame(request, parser.frame(request));
             result.warnings().forEach(warnings);
             return result.statements().stream();

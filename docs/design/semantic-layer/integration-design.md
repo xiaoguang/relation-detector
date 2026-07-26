@@ -19,7 +19,10 @@
   component只消费typed endpoint/reference字段；raw model output必须携带当前片
   `ownedGroundingRefs`，物理实体和纯业务实体分别按完整物理名及owned grounding signature确定性合并。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
-- 已实现 `semantic normalize-extraction`：输入 raw semantic output 和必需 evidence bundle，执行候选回填、typed reference/physical endpoint 校验、semantic owner-id 全局唯一性校验，并补齐 `semanticGraph` 与 `validation`。任一闭包失败时命令失败，不输出半闭合正式结果。
+- 已实现 `semantic normalize-extraction`：输入 raw semantic output 和带合法`shardContext`的必需
+  evidence bundle，复用自动分片的owned/overlap校验，再执行候选回填、typed reference/physical endpoint
+  校验、semantic owner-id全局唯一性校验，并补齐`semanticGraph`与`validation`。任一所有权或闭包失败时
+  命令失败，不输出半闭合正式结果。
 - `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链，两者各自守住证据和身份边界。`SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、physical endpoint node 和 edge 的 evidence 非空且可解析；`SemanticKgIdentityRegistry` 只允许 ID 与完整内容均相同的幂等重复，冲突 node/edge 使整个 build 原子失败。这些保证不能从 `SemanticGraphAssembler` 的测试外推，也不能反向外推到 formal normalization。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
@@ -494,7 +497,7 @@ Step 7: Answer（最终输出）
 | --- | --- |
 | 所有正式语义对象必须带 evidenceRefs | formal normalizer 与离线 KG builder 均原子拒绝缺失或无法解析的引用；KG endpoint node/edge 同样必须有 evidence，冲突 ID 不会静默覆盖。未来 Catalog Store 必须继续保持该契约。 |
 | 物理名必须来自 catalog | SQL Generator 只能引用 catalog 中的表名和列名 |
-| 指标默认 SYSTEM_PROPOSED | LLM Enricher 生成的指标 reviewStatus 必须为 SYSTEM_PROPOSED |
+| 指标默认 SYSTEM_PROPOSED | 目标契约要求LLM Enricher生成的指标为SYSTEM_PROPOSED；当前normalizer只拒绝BUSINESS_APPROVED，尚未补缺失状态 |
 | SQL 必须校验 | Answer Composer 不能输出未经 Validator 校验的 SQL |
 
 ## 5. 端到端验收场景
@@ -586,12 +589,14 @@ Step 7: Answer（最终输出）
 - EvidenceGraph fact 保留 relation-detector payload；KG 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析。相同 ID/content 幂等复用，冲突 ID 原子失败。
 - KG 构建链路不调用 semantic extraction provider，也不创造新 fact
 - 只允许同一 `database.type`、`database.catalog` 与 `database.schema` 合并
-- 所有 fact/evidence/candidate 引用使用内容稳定 ID；正式 normalization 必须同时通过 bundle ID、物理 endpoint、文档内 entity 引用和 semantic owner-id closure
+- 所有fact/evidence/candidate引用使用确定性ID并通过冲突gate；routine、trigger和SQL-write event均
+  使用长度分隔的完整typed identity，不使用显示slug。正式normalization必须通过bundle ID、物理endpoint、
+  文档内entity引用、shard ownership和semantic owner-id closure
 
 **目标完整链路验收标准（后续阶段）：**
 - 所有语义对象有 evidenceRefs
-- 所有指标 reviewStatus = SYSTEM_PROPOSED
-- 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SYSTEM_PROPOSED；只有 Review Queue / governance workflow 可以写入 BUSINESS_APPROVED
+- 正式semantic对象缺失reviewStatus时归一为`SYSTEM_PROPOSED`，review item归一为`REVIEW_NEEDED`；
+  只有Review Queue/governance workflow可以写入`BUSINESS_APPROVED`
 - 冲突字段进入 Review Queue
 - Embedding 记录数与语义对象数一致
 - Lexicon 覆盖所有表和列名
@@ -612,8 +617,11 @@ Step 7: Answer（最终输出）
   - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
   - 当前 SemanticKgBuilder: 非 diagnostic fact/event、physical endpoint node 或 edge 的 evidence 为空/无法解析，或相同 ID 的 node/edge 完整内容冲突 → 原子终止；完全相同的 ID/content 可幂等复用
   - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
-  - 当前 SemanticExtractionRunArtifactWriter: 每次run先写唯一staging；模型、闭包、hash、manifest和
-    I/O全部成功后才原子rename为`run-<runId>`。失败保留FAILED staging，不发布半成品run
+  - 当前 SemanticExtractionRunArtifactWriter: 每次run先写唯一staging并在任何payload前原子写
+    `IN_PROGRESS`；codex-session、
+    request-only和模型执行分别在本模式交付物完成后发布`AWAITING_MODEL_RESULTS`、
+    `REQUESTS_READY`或`COMPLETE` run。普通失败原子写`FAILED`且不发布半成品；若终态写入本身失败，
+    最后一个可解析`IN_PROGRESS`保留并把二次I/O异常附加到原异常
   - 目标 CatalogStore: 磁盘写入失败 → 终止
   - 目标 SqlGenerator: plan 无表 → 终止
 ```

@@ -2,7 +2,6 @@ package com.relationdetector.semantic.extract;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -71,12 +70,6 @@ final class TripletCandidateBuilder {
                                 source.displayName(), target.displayName()),
                         "LINEAGE_TRANSFORM",
                         source.displayName(), "加工为", target.displayName(), ref, List.of(ref));
-                if (isMetricTarget(target)) {
-                    add(result, StableSemanticId.of("triplet-candidate", "metric-source", ref,
-                                    target.displayName(), source.displayName()),
-                            "METRIC_SOURCE",
-                            target.displayName(), "来源于", source.displayName(), ref, List.of(ref));
-                }
             }
         }
     }
@@ -117,21 +110,6 @@ final class TripletCandidateBuilder {
             }
         }
         return result;
-    }
-
-    private boolean isMetricTarget(PhysicalEndpointRef endpoint) {
-        String lower = endpoint == null ? "" : endpoint.displayName().toLowerCase(Locale.ROOT);
-        return lower.contains("amount")
-                || lower.contains("total")
-                || lower.contains("quantity")
-                || lower.contains("qty")
-                || lower.contains("price")
-                || lower.contains("cost")
-                || lower.contains("revenue")
-                || lower.contains("margin")
-                || lower.contains("balance")
-                || lower.contains("rate")
-                || lower.contains("count");
     }
 
 }

@@ -16,8 +16,6 @@ public final class SemanticExtractionService {
     private final SemanticShardPlanner shardPlanner = new SemanticShardPlanner();
     private final SemanticExtractionPromptBuilder promptBuilder = new SemanticExtractionPromptBuilder();
     private final SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
-    private final SemanticShardOutputOwnershipValidator ownershipValidator =
-            new SemanticShardOutputOwnershipValidator();
     private final SemanticShardResultMerger merger = new SemanticShardResultMerger();
     private final SemanticReconciliationPromptBuilder reconciliationPromptBuilder =
             new SemanticReconciliationPromptBuilder();
@@ -90,8 +88,7 @@ public final class SemanticExtractionService {
 
     private ObjectNode normalize(String output, SemanticShard shard) {
         JsonNode raw = parse(output, "semantic shard result");
-        ownershipValidator.validate(raw, shard);
-        return normalizer.normalize(raw, shard.trustedBundle());
+        return normalizer.normalizeOwnedShard(raw, shard.trustedBundle());
     }
 
     private JsonNode parse(String output, String label) {

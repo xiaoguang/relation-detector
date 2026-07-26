@@ -110,7 +110,7 @@ class ScanExecutionParallelismTest {
                     Optional.empty(),
                     Optional.of((file, hint) -> {
                         try {
-                            String source = com.relationdetector.core.log.SourceNameNormalizer.normalize(file);
+                            String source = com.relationdetector.core.log.SourceNameNormalizer.normalizeFile(file);
                             return Stream.of(new SqlStatementRecord(Files.readString(file), StatementSourceType.NATIVE_LOG,
                                     source, 1, 1, Map.of(
                                             "sourceFile", source,

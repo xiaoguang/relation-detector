@@ -21,4 +21,9 @@ public record ScanDiagnosticFact(
         }
         document = document.deepCopy();
     }
+
+    @Override
+    public JsonNode document() {
+        return document.deepCopy();
+    }
 }

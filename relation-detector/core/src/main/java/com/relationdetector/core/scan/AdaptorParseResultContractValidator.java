@@ -88,10 +88,11 @@ public final class AdaptorParseResultContractValidator {
     public StatementResult validateLog(
             Path file,
             List<SqlStatementRecord> rawStatements,
-            List<WarningMessage> rawWarnings
+        List<WarningMessage> rawWarnings
     ) {
         require(file != null, "log source file is null");
-        String sourceFile = normalizedSource(file.toString(), "log source file");
+        String sourceFile = normalizedSource(
+                SourceNameNormalizer.normalizeFile(file), "log source file");
         return new StatementResult(
                 copyStatements(rawStatements, sourceFile, Long.MAX_VALUE, "log statement"),
                 validateWarnings(rawWarnings, sourceFile, "log warning"));

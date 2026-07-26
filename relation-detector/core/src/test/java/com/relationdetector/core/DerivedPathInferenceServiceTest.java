@@ -28,6 +28,7 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.derived.DerivedPathInferenceResult;
 import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.naming.NamingEvidencePool;
+import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.scan.EvidenceEnhancementService;
 import com.relationdetector.core.scan.ScanConfig;
 
@@ -291,6 +292,85 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void factLimitIsGlobalAcrossRelationshipLineageAndNaming() {
+        ScanConfig config = enabledConfig();
+        Endpoint orderItemOrderId = col("order_items", "order_id");
+        Endpoint ordersId = col("orders", "id");
+        Endpoint ordersCustomerId = col("orders", "customer_id");
+        Endpoint customersId = col("customers", "id");
+        Endpoint lineageSource = col("stage_a", "value");
+        Endpoint lineageMiddle = col("stage_b", "value");
+        Endpoint lineageTarget = col("stage_c", "value");
+        Endpoint namingSource = col("naming_a", "id");
+        Endpoint namingMiddle = col("naming_b", "id");
+        Endpoint namingTarget = col("naming_c", "id");
+
+        DerivedPathInferenceResult unlimited = service.infer(
+                List.of(
+                        fk(orderItemOrderId, ordersId),
+                        fk(ordersCustomerId, customersId)),
+                List.of(
+                        lineage(lineageSource, lineageMiddle, LineageFlowKind.VALUE),
+                        lineage(lineageMiddle, lineageTarget, LineageFlowKind.VALUE)),
+                List.of(
+                        naming(namingSource, namingMiddle),
+                        naming(namingMiddle, namingTarget)),
+                config);
+
+        assertEquals(1, unlimited.derivedRelationships().size());
+        assertEquals(1, unlimited.derivedDataLineages().size());
+        assertEquals(1, unlimited.derivedNamingEvidence().size(),
+                "Direct naming paths must be generated in the final derived phase");
+
+        config.derivedMaxFacts = 2;
+        DerivedPathInferenceResult result = service.infer(
+                List.of(
+                        fk(orderItemOrderId, ordersId),
+                        fk(ordersCustomerId, customersId)),
+                List.of(
+                        lineage(lineageSource, lineageMiddle, LineageFlowKind.VALUE),
+                        lineage(lineageMiddle, lineageTarget, LineageFlowKind.VALUE)),
+                List.of(
+                        naming(namingSource, namingMiddle),
+                        naming(namingMiddle, namingTarget)),
+                config);
+
+        assertEquals(2, result.derivedRelationships().size()
+                + result.derivedDataLineages().size()
+                + result.derivedNamingEvidence().size());
+        assertEquals(1, result.derivedRelationships().size());
+        assertEquals(1, result.derivedDataLineages().size());
+        assertTrue(result.derivedNamingEvidence().isEmpty(),
+                "NAMING follows RELATIONSHIP and DATA_LINEAGE in the global stable order");
+    }
+
+    @Test
+    void trimmedDerivedNamingDoesNotLeaveDanglingRelationshipReference() {
+        ScanConfig config = enabledConfig();
+        config.derivedMaxFacts = 1;
+        Endpoint cashierAccountId = col("cashier_journals", "account_id");
+        Endpoint accountsId = col("accounts", "id");
+        Endpoint reconciliationCashierJournalId = col("reconciliation_items", "cashier_journal_id");
+        Endpoint cashierJournalsId = col("cashier_journals", "id");
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(
+                        fk(cashierAccountId, accountsId),
+                        fk(reconciliationCashierJournalId, cashierJournalsId)),
+                List.of(),
+                List.of(
+                        naming(cashierAccountId, accountsId),
+                        naming(reconciliationCashierJournalId, cashierJournalsId)),
+                config);
+
+        assertEquals(1, result.derivedRelationships().size());
+        assertTrue(result.derivedNamingEvidence().isEmpty());
+        assertTrue(result.derivedRelationships().get(0).evidence().stream()
+                        .noneMatch(evidence -> evidence.type() == EvidenceType.NAMING_MATCH),
+                "A trimmed optional naming fact must remove its relationship evidenceRef");
+    }
+
+    @Test
     void relationshipPathDoesNotBridgeSameNamedTablesAcrossCatalogs() {
         ScanConfig config = enabledConfig();
         Endpoint orderItemOrderId = catalogCol("tenant_a", "sales", "order_items", "order_id");
@@ -476,7 +556,7 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
-    void relationshipCanReferenceDerivedNamingEvidenceFromTopLevelPool() {
+    void finalAssemblyCanReferenceDerivedNamingEvidenceFromTopLevelPool() {
         ScanConfig config = enabledConfig();
         Endpoint a = col("a", "r");
         Endpoint b = col("b", "s");
@@ -494,6 +574,13 @@ class DerivedPathInferenceServiceTest {
                 Map.of()));
 
         new EvidenceEnhancementService().enhance(List.of(candidate), pool, null, config);
+        assertTrue(candidate.evidence().stream()
+                        .noneMatch(item -> item.type() == EvidenceType.NAMING_MATCH),
+                "Direct enhancement must not generate derived naming before the global budget");
+
+        pool.addAll(service.infer(List.of(), List.of(), pool.merged(), config)
+                .derivedNamingEvidence());
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool);
 
         Evidence naming = candidate.evidence().stream()
                 .filter(item -> item.type() == EvidenceType.NAMING_MATCH)

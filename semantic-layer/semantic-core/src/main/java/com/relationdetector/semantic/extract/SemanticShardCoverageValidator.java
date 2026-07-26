@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * CN: 验证完整 bundle 的 facts/candidates 在 shard plan 中恰有一个 owner 且每片 evidence refs 闭合；输入 plan，成功无输出，失败原子拒绝。
  * EN: Validates unique fact/candidate ownership and evidence-reference closure for every shard. Success has no output; any violation rejects the plan atomically.
  */
-public final class SemanticShardCoverageValidator {
+final class SemanticShardCoverageValidator {
     public void validate(ObjectNode fullBundle, SemanticShardPlan plan) {
         if (fullBundle == null || plan == null || plan.shards().isEmpty()) {
             throw new SemanticShardingException("semantic shard plan is incomplete");

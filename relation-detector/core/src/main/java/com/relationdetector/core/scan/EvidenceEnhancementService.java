@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.RelationshipCandidate;
-import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.metadata.MetadataEvidenceEnhancer;
 import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.naming.NamingEvidencePool;
@@ -61,9 +60,6 @@ public final class EvidenceEnhancementService {
         }
         namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(relationshipCandidates,
                 config));
-        namingEvidencePool.addAll(new DerivedPathInferenceService(
-                new CanonicalEndpointKeyProvider(identifierRules, namespace))
-                .deriveNamingEvidence(namingEvidencePool.merged(), config));
         namingMatchEvidenceEnhancer.enhance(relationshipCandidates, namingEvidencePool);
     }
 

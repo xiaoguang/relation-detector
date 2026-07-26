@@ -32,6 +32,12 @@ public record EvidenceGraphFact(
         endpoints = List.copyOf(endpoints == null ? List.of() : endpoints);
         evidenceRefs = List.copyOf(evidenceRefs == null ? List.of() : evidenceRefs);
         confidence = confidence == null ? BigDecimal.ZERO : confidence;
+        payload = payload == null ? null : payload.deepCopy();
         attributes = Map.copyOf(attributes == null ? Map.of() : attributes);
+    }
+
+    @Override
+    public JsonNode payload() {
+        return payload == null ? null : payload.deepCopy();
     }
 }

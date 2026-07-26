@@ -60,9 +60,6 @@ final class DerivedPathGraphBuilder {
             LinkedHashSet<String> visited = new LinkedHashSet<>(graphKeys(start.source()));
             dfs(start.source(), start.target(), List.of(start), visited, graph,
                     directPairs, pathsPerPair, observations, allowNamingOnlyGraph);
-            if (limitReached(observations.size())) {
-                break;
-            }
         }
         return List.copyOf(observations);
     }
@@ -109,7 +106,7 @@ final class DerivedPathGraphBuilder {
                 addPath(origin, current, path, pathsPerPair, observations);
             }
         }
-        if (path.size() >= config.derivedMaxPathLength || limitReached(observations.size())) {
+        if (path.size() >= config.derivedMaxPathLength) {
             return;
         }
         LinkedHashSet<String> branchVisited = new LinkedHashSet<>(visited);
@@ -124,9 +121,6 @@ final class DerivedPathGraphBuilder {
             List<DerivedEdge> nextPath = append(path, edge);
             dfs(origin, edge.target(), nextPath, nextVisited, graph,
                     directPairs, pathsPerPair, observations, allowNamingOnlyGraph);
-            if (limitReached(observations.size())) {
-                break;
-            }
         }
     }
 
@@ -203,9 +197,6 @@ final class DerivedPathGraphBuilder {
         String pathKey = canonicalPathKey(DerivedPathKind.RELATIONSHIP.name(), observation);
         if (acceptedCanonicalPaths.contains(pathKey)) {
             observations.add(observation);
-            return;
-        }
-        if (limitReached(acceptedCanonicalPaths.size())) {
             return;
         }
         String pair = pairKey(source, target);
@@ -375,10 +366,6 @@ final class DerivedPathGraphBuilder {
 
     boolean sameEndpoint(Endpoint left, Endpoint right) {
         return endpointKeys.same(left, right);
-    }
-
-    boolean limitReached(int count) {
-        return config.derivedMaxFacts > 0 && count >= config.derivedMaxFacts;
     }
 
     private boolean overlaps(Set<String> left, Set<String> right) {

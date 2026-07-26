@@ -15,7 +15,7 @@ import com.relationdetector.semantic.StableSemanticId;
  * CN: 按 section/stable ID 幂等合并已归一化 shard，并显式保留内容冲突；输入完整 shard results，输出 draft/conflicts，禁止 last-write-wins。
  * EN: Idempotently merges normalized shards by section and stable id while preserving content conflicts explicitly. It never uses last-write-wins behavior.
  */
-public final class SemanticShardResultMerger {
+final class SemanticShardResultMerger {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final List<String> SECTIONS = List.of(
             "entities", "events", "relations", "lineage", "metrics", "dimensions", "triplets", "reviewItems");

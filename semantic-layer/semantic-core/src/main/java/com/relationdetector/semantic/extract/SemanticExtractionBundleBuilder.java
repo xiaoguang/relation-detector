@@ -69,7 +69,7 @@ public final class SemanticExtractionBundleBuilder {
         root.set("derivedRelationships", relationships(bundle.derivedRelationships(), evidenceRefsByFact));
         root.set("derivedLineage", lineages(bundle.derivedDataLineages(), evidenceRefsByFact));
         root.set("namingEvidence", namingEvidence(bundle.namingEvidence(), evidenceRefsByFact));
-        root.set("reviewItemCandidates", reviewItemCandidateGenerator.build(bundle, 0));
+        root.set("reviewItemCandidates", reviewItemCandidateGenerator.build(bundle));
         root.set("tripletCandidates", tripletCandidateBuilder.build(bundle, events));
         root.set("diagnostics", diagnostics(bundle.diagnostics()));
         root.putObject("instructions")

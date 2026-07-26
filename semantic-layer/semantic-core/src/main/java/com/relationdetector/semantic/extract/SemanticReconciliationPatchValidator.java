@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * CN: 校验并应用受限 reconciliation patch，只允许选择已知 conflict variant、改展示名称或增加已有证据支持的语义关系；禁止创建物理事实或新引用。
  * EN: Validates and applies a constrained reconciliation patch that may select known variants, adjust display text, or add evidence-backed semantic relations. It cannot create physical facts or references.
  */
-public final class SemanticReconciliationPatchValidator {
+final class SemanticReconciliationPatchValidator {
     private static final Set<String> RENAME_SECTIONS = Set.of(
             "entities", "events", "relations", "lineage", "metrics", "dimensions", "triplets", "reviewItems");
 

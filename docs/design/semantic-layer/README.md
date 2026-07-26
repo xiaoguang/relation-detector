@@ -46,8 +46,13 @@ deterministic backfill 遵守 overlap 只读规则；`SemanticShardOutputOwnersh
 前要求每个 model-authored 对象以 `ownedGroundingRefs` 直接引用当前 shard 拥有的 fact/candidate，
 仅引用 overlap 或 evidence 不能建立输出所有权。token budget 使用确定性估算而不是模型 tokenizer。
 任何原子 closure 超过估算门限、引用不闭合、同 ID 冲突未解决或全局 normalization 失败都不会返回
-正式 extraction result。artifact writer 先写唯一 staging 目录，完整结果、manifest 和 hash 全部成功后
-才以同文件系统原子 rename 发布 `run-<runId>`；失败 staging 保留为审计材料，不发布半成品 run。
+正式 extraction result。artifact writer先写唯一staging目录，并在当前模式的交付物完整后原子发布：
+codex-session为`AWAITING_MODEL_RESULTS`，request-only为`REQUESTS_READY`，模型完整执行才是`COMPLETE`。
+因此存在`run-<runId>`不等于模型抽取完成，消费者必须读取manifest status。失败不发布半成品run。
+staging已创建时writer会尽力
+写入`FAILED` manifest并保留目录，但二次I/O失败时不能保证该manifest落盘。
+无界 evidence bundle、merged/final result和KG JSON直接写文件；prompt/request因token门限有界可保留
+字符串表示。所有分片payload统一位于`shards/shard-NNNN/`，单分片不生成root兼容副本。
 该分片边界只控制模型上下文；当前 reader 仍会先在内存中完整物化单个 relation-detector JSON。
 超大输入的 bounded-memory streaming / on-disk ingestion 尚未实现，不能由模型分片能力代替。
 
@@ -57,7 +62,8 @@ deterministic backfill 遵守 overlap 只读规则；`SemanticShardOutputOwnersh
 normalizer：候选回填后建立统一 reference index，验证每个 evidence/candidate ref、文档内 entity 引用和
 governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对象引用的表列存在于 evidence bundle，
 `SemanticOwnerIdRegistry` 保证所有 semantic section 的 owner ID 全局唯一。任一闭包失败都直接拒绝，不输出
-部分 artifact。
+部分 artifact。独立命令不接收 shard plan，因此只能证明完整 bundle reference closure，不能证明
+`ownedGroundingRefs`属于原owner shard；该保证只在`SemanticExtractionService`执行链成立。
 
 ### 当前实现差异矩阵
 
@@ -68,19 +74,24 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 | `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线 `SemanticKgBuilder`。 |
 | `SEM-KG-01` | `MATCHED` | `SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析；identity registry 只允许完整内容相同的幂等重复，冲突 node/edge ID 原子失败。 |
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。formal normalization的默认event ID从已验证`eventCandidateRef`派生。 |
+| `SEM-EVENT-ID-01` | `MATCHED` | routine、trigger和普通SQL-write event都使用长度分隔的完整typed identity生成group key与stable ID；显示slug不参与身份。 |
+| `SEM-CANDIDATE-01` | `MATCHED` | 完整bundle保留全部typed deterministic candidates；名称驱动的`METRIC_SOURCE`与未使用review limit分支已删除，正式metric仍必须由证据闭合的semantic normalization产生。 |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整输入的 fact/candidate owner、dependency closure、evidence closure和shard coverage在模型调用前验证；超预算 table owner按稳定root拆片且root closure保持原子。 |
-| `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item必须用`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap与`evidenceRefs`只提供审计上下文，越界使整片在backfill前原子失败。 |
+| `SEM-SHARD-OUTPUT-01` | `MATCHED` | `SemanticExtractionService`中每个model-authored item必须用`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap与`evidenceRefs`只提供审计上下文，越界使整片在backfill前原子失败。 |
+| `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`与自动分片共用owner-aware入口；bundle必须携带合法`shardContext`，owned/overlap refs唯一、互斥且存在，输出对象必须由当前片owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | shard与reconciliation的完整prompt都使用带margin的确定性估算，并在模型调用前应用同一`maxInputTokens`；等于门限保留，manifest记录estimated tokens且不宣称exact。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
-| `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 可复用output root下使用唯一staging/run目录；完整成功后原子rename，失败保留FAILED staging；artifact使用流式SHA-256，支持`full/final-only`保留策略。 |
+| `SEM-SHARD-ARTIFACT-01` | `MATCHED` | staging在任何payload前原子写`IN_PROGRESS`；模式成功后原子替换为`AWAITING_MODEL_RESULTS/REQUESTS_READY/COMPLETE`并发布，普通失败写`FAILED`。若终态写入自身失败则保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML root/section/unknown field/数值严格校验，相对路径按config目录解析；CLI override后再次构造统一typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 公开JSON accessor返回副本、集合不可修改；同包流水线使用明确的trusted accessor，provider/writer不能通过公开引用回写已校验状态。 |
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式抽取始终使用完整、闭合bundle，不存在focus或分片前事实数量裁剪；旧CLI参数和YAML字段明确拒绝，typed sharding是唯一上下文规模控制机制。 |
+| `SEM-READER-STATE-01` | `MATCHED` | `ScanBundle`/`EvidenceGraph`外层集合不可修改；typed fact document、graph payload与diagnostics在构造和公开accessor边界deep-copy，调用方不能回写内部状态。 |
+| `SEM-GOVERNANCE-01` | `MATCHED` | normalizer拒绝模型写入`BUSINESS_APPROVED`；正式semantic对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`，backfill后不保留空状态。 |
 
-wire、reference closure、formal normalization ID、离线 KG evidence/identity gate、routine event identity
-以及semantic shard的typed planning、完整输入、owner output、identity merge、统一模型请求预算、
-artifact transaction、strict configuration和公开状态不可变边界均已闭环。详细
+wire、reference closure、formal normalization ID、离线 KG evidence/identity gate、完整event identity、
+deterministic candidate、typed sharding、完整输入、owner output、identity merge、统一模型请求预算、
+strict configuration、reader/graph公开状态、governance默认值与artifact状态事务已经闭环。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。
@@ -140,8 +151,11 @@ Question
 
 - 所有语义对象必须携带 `evidenceRefs`，可追溯到 relation-detector 原始输出。
 - provenance / auditability 是主线能力，不是输出展示层附属信息；AnswerPlan、SQL draft element 和 review decision 也必须能回溯 evidence。
-- LLM 只能生成 [SYSTEM_PROPOSED](glossary.md#system_proposed) semantic objects、解释、同义词和 query rewrite；不能创造数据库事实。
-- 指标默认 `SYSTEM_PROPOSED`，只有审核后才能成为 [BUSINESS_APPROVED](glossary.md#business_approved) 正式口径。
+- LLM只能生成待治理semantic objects、解释、同义词和query rewrite，不能创造数据库事实或写入
+  `BUSINESS_APPROVED`。目标默认状态是[SYSTEM_PROPOSED](glossary.md#system_proposed)，但当前normalizer
+  尚未为缺失状态自动补值。
+- 指标只有经过治理流程才能成为[BUSINESS_APPROVED](glossary.md#business_approved)正式口径；空状态不能
+  被解释为已审核。
 - [EVIDENCE_SUPPORTED](glossary.md#evidence_supported) 表示有 evidence 支撑，但不等于业务已确认。
 - SQL draft 必须经过 SQL Validator；文档示例不代表自动执行能力。
 - 不确定时优先反问用户，而不是生成看似完整但口径不明的 SQL。

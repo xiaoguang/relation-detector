@@ -17,7 +17,7 @@ class TableOutputCliTest {
     Path tempDir;
 
     @Test
-    void tableFormatOverrideWritesRelationshipEvidenceAndWarningSummary() throws Exception {
+    void tableFormatOverrideWritesRelationshipEvidenceAndZeroWarningSummary() throws Exception {
         Path ddl = tempDir.resolve("schema.sql");
         Path config = tempDir.resolve("config.yml");
         Path output = tempDir.resolve("result.txt");
@@ -48,8 +48,8 @@ class TableOutputCliTest {
         assertTrue(rendered.contains("orders.customer_id"), rendered);
         assertTrue(rendered.contains("customers.id"), rendered);
         assertTrue(rendered.contains("DDL_FOREIGN_KEY"), rendered);
-        assertTrue(rendered.contains("Warnings: "), rendered);
-        assertTrue(rendered.contains("\n- "), rendered);
+        assertTrue(rendered.contains("Warnings: 0"), rendered);
+        assertFalse(rendered.contains("\n- "), rendered);
     }
 
     @Test

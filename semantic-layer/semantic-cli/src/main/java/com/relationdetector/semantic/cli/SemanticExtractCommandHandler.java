@@ -58,8 +58,8 @@ final class SemanticExtractCommandHandler {
             published = writer.writeRequestOnly(
                     arguments.output(),
                     plan,
-                    shardExtractor,
-                    reconciliationExtractor,
+                    shardExtractor::requestJson,
+                    reconciliationExtractor::requestJson,
                     arguments.model(),
                     arguments.reasoningEffort(),
                     arguments.artifactRetention(),

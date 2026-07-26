@@ -23,7 +23,7 @@ import com.relationdetector.semantic.StableSemanticId;
  * split by stable roots, while each root and its typed closure remains indivisible. It consumes a complete bundle plus
  * budgets and never truncates arrays or rewrites fact/candidate IDs.
  */
-public final class SemanticShardPlanner {
+final class SemanticShardPlanner {
     private final SemanticPromptBudgetEstimator estimator = new SemanticPromptBudgetEstimator();
     private final SemanticExtractionPromptBuilder promptBuilder = new SemanticExtractionPromptBuilder();
 

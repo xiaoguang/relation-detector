@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,6 +36,20 @@ class AdaptorContractValidatorTest {
                     () -> validator.validate(database, new ShapeAdaptor(field)),
                     field.name());
         }
+    }
+
+    @Test
+    void rejectsNullNestedCollectorOptionalInsteadOfTreatingItAsAbsent() {
+        ShapeAdaptor plugin = new ShapeAdaptor(null) {
+            @Override
+            public AdaptorCollectors collectors() {
+                return new AdaptorCollectors(
+                        null, Optional.empty(), Optional.empty(), Optional.empty());
+            }
+        };
+
+        assertThrows(AdaptorContractException.class,
+                () -> validator.validate(database, plugin));
     }
 
     @Test
@@ -94,7 +109,7 @@ class AdaptorContractValidatorTest {
         PERMISSION_VENDOR_CODES
     }
 
-    private static final class ShapeAdaptor implements DatabaseAdaptor {
+    private static class ShapeAdaptor implements DatabaseAdaptor {
         private final CommonDatabaseAdaptor delegate = new CommonDatabaseAdaptor();
         private final BrokenField broken;
         private final Set<DatabaseType> supportedTypes = new HashSet<>(Set.of(DatabaseType.COMMON));

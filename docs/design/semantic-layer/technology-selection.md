@@ -47,8 +47,9 @@ Phase 2+: 按服务边界拆分或引入消息队列
   `reconciliation/`、`merged-draft.json`、`semantic-extraction-result.json` 和带 hash/token/attempt
   统计的 `run-manifest.json`。
 - 当前 input token budget 是确定性字符估算与 safety margin，不是 model-specific tokenizer。
-  artifact writer 在可复用output root中使用唯一staging/run目录、流式hash和原子rename；失败staging
-  保留审计，成功run按`full/final-only`策略保留payload。
+  artifact writer 在可复用output root中使用唯一staging/run目录、流式hash和原子rename；任何payload前
+  原子写`IN_PROGRESS`，普通失败写`FAILED`，终态写入失败时保留最后一个可解析状态，且失败不发布
+  final run。成功run按`full/final-only`策略保留payload。
 
 后续完整 Phase 1 目标链路为：
 

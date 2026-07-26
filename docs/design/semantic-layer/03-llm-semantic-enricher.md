@@ -89,7 +89,7 @@ ScanBundle
 
 真实 LLM 只存在于 `openai-api` provider。`codex-session` 是开发/人工测试入口，不会自动调用模型；用户或 Codex 会话可以读取 prompt 后生成 JSON，再通过 `normalize-extraction` 标准化。
 
-输出对象默认状态：
+目标治理状态：
 
 | 对象 | 默认状态 | 说明 |
 | --- | --- | --- |
@@ -98,6 +98,9 @@ ScanBundle
 | SemanticEntity | `SYSTEM_PROPOSED` | 业务实体抽象需要审核或后续治理确认。 |
 | SemanticMetric | `SYSTEM_PROPOSED` | 指标口径必须审核后才能作为正式回答口径。 |
 | JoinPath Explanation | `EVIDENCE_SUPPORTED` | 只能解释已存在 relationship path，不能新增 path。 |
+
+normalizer强制拒绝模型写入`BUSINESS_APPROVED`；正式semantic对象缺失`reviewStatus`时补
+`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。因此正式输出不以空值表达治理状态。
 
 ## 3. 接口契约
 
@@ -119,7 +122,6 @@ public final class SemanticExtractionService {
 
 public interface SemanticModelClient {
     SemanticExtractionResult extract(SemanticExtractionPrompt prompt);
-    String requestJson(SemanticExtractionPrompt prompt);
 }
 
 public final class SemanticExtractionDocumentNormalizer {
@@ -127,8 +129,11 @@ public final class SemanticExtractionDocumentNormalizer {
 }
 ```
 
-无 evidence bundle 的兼容入口只会 fail-fast，不产生正式语义结果。CLI 的
+`SemanticModelClient` 只负责模型调用。request-only artifact 由调用方提供独立的请求渲染函数，
+不把序列化职责放回模型接口。normalizer 不提供无 evidence bundle 的入口；CLI 的
 `normalize-extraction` 同样强制要求 `--evidence-bundle`。
+它不接收shard plan或owner map，因此只执行bundle reference/evidence/physical endpoint closure；
+`ownedGroundingRefs`的存在性与owner归属只在`SemanticExtractionService`逐片执行链中校验。
 
 normalizer 的 JSON 只是输入/输出边界：内部先映射为 typed `SemanticExtractionDocument` 及
 `SemanticEntity/Event/Metric/Triplet/ReviewItem` DTO，然后依次交给 `SemanticCandidateBackfill`、
@@ -271,7 +276,7 @@ canonical identity确定性合并。物理entity使用完整`physicalName`；无
 entity refs；同名但grounding不同的业务entity保留不同ID并生成
 `POTENTIAL_SEMANTIC_DUPLICATE/REVIEW_NEEDED`。无owned grounding或同一identity结构冲突显式失败，
 禁止last-write-wins。
-多 shard 且启用 reconciliation 时，模型只接收 compact semantic summary、conflict variants 和 owner
+多 shard 且启用 reconciliation 时，模型只接收有界 semantic summary、conflict variants 和 owner
 信息，并只可返回：
 
 - 已知 conflict 的 variant 选择；
@@ -284,14 +289,20 @@ entity refs；同名但grounding不同的业务entity保留不同ID并生成
 
 `run-manifest.json` 记录完整 bundle hash、每片 owner/估算 token、实际 input/output token、
 transport attempts、协调状态、冲突数、最终闭包状态，以及所有 artifact 的 SHA-256 和大小。
-`--output`是可复用root；每次运行写`.staging-<runId>`，完整成功后以同文件系统原子rename发布为
-`run-<runId>`。失败保留带`FAILED` manifest的staging且不发布final run。manifest直接使用当前配置的
+`--output`是可复用root；每次运行写`.staging-<runId>`。codex-session请求材料完成后以
+`AWAITING_MODEL_RESULTS`发布，request-only以`REQUESTS_READY`发布，只有模型执行、merge和全局闭包
+完成后才以`COMPLETE`发布；`run-*`本身不代表模型已完成。staging创建后、任何payload前先原子写
+`IN_PROGRESS`。普通失败原子替换为`FAILED`且不发布当前模式的final run；若终态写入本身失败，
+最后一个可解析`IN_PROGRESS`保留，并把二次I/O异常附加到原异常。manifest直接使用当前配置的
 provider/model/reasoning，artifact hash通过流式读取生成。`artifactRetention=full`保留全部请求、响应和
 协调payload；`final-only`在模型抽取完整成功后只保留最终结果、deterministic KG、manifest、hash和
 pruned清单。`request-only`没有最终语义结果，因此始终保留其请求payload，不执行`final-only`裁剪。
-deterministic KG、build-run 和 evidence graph 也直接通过 Jackson generator 流式写入文件，不能先
-`writeValueAsString` 物化整个 artifact；后者会使大型 derived KG 同时受到堆大小和 JVM 单字符串长度
-上限约束。
+full/shard evidence bundle、merged draft、最终 semantic result、独立 normalization输出、
+deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入文件，不能先
+`writeValueAsString` 物化整个 artifact；后者会使大型 derived graph 同时受到堆大小和 JVM
+单字符串长度上限约束。Prompt和transport request已经受token估算门限约束，可以保留字符串表示。
+单 shard与多 shard使用同一目录契约：prompt/request/response/raw/片内normalized结果只存在于
+`shards/shard-NNNN/`，根目录不再保留兼容副本。
 
 ### 4.2 当前实现差异矩阵
 
@@ -299,23 +310,28 @@ deterministic KG、build-run 和 evidence graph 也直接通过 Jackson generato
 | --- | --- | --- |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | planner 对完整输入建立唯一 fact/candidate owner map，逐片补齐 dependency/evidence closure；超预算 table owner 按稳定 root 拆成 part，root closure 保持原子，并在模型调用前执行覆盖校验。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item通过`ownedGroundingRefs`证明当前片owner；direct ref越界、overlap-only或evidence-only输出在backfill前原子拒绝。 |
+| `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后完整reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
-| `SEM-SHARD-ARTIFACT-01` | `MATCHED` | unique staging/run目录、完整成功后的原子rename、FAILED staging、streaming SHA-256和`full/final-only`策略均有独立测试。 |
+| `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML shape/unknown field/numeric value严格失败，相对路径按配置目录解析，CLI override后重新构造并校验typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 构造输入deep-copy、public JSON accessor返回副本、集合不可修改；同包trusted accessor仅用于已校验内部流水线。 |
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式bundle不提供focus或事实数量裁剪；全部direct/derived facts、deterministic candidates、endpoint tables和evidence refs在分片前保持闭合，旧CLI/YAML字段明确拒绝。 |
+| `SEM-CANDIDATE-01` | `MATCHED` | deterministic candidates只来自typed facts/events；名称驱动`METRIC_SOURCE`和未使用review limit分支已删除。 |
+| `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
+| `SEM-EVENT-ID-01` | `MATCHED` | routine、trigger与普通SQL-write均使用长度分隔的完整typed identity生成group key和ID，显示slug不参与身份。 |
 
-上述 typed validation、identity、完整输入、模型请求预算和artifact transaction boundary均已闭环；
-没有通过弱化evidence closure、删除overlap或截断事实规避问题。
+上述typed validation、完整输入、模型请求预算、owner-aware normalization、治理默认值、
+lossless event identity、deterministic candidate和artifact状态事务已经闭环，没有通过弱化evidence
+closure、删除overlap或截断事实规避问题。
 
 独立归一化命令为：
 
 ```bash
 semantic normalize-extraction \
-  --input semantic-extraction-result-raw.json \
-  --evidence-bundle semantic-extraction-evidence-bundle.json \
+  --input shards/shard-0001/semantic-extraction-result.json \
+  --evidence-bundle shards/shard-0001/semantic-extraction-evidence-bundle.json \
   --output semantic-extraction-result.json
 ```
 
@@ -446,7 +462,8 @@ flowchart TD
 - LLM 为多个 semantic object 提供相同 id 时，`SemanticOwnerIdRegistry` 必须在同 section 或跨 section 冲突处拒绝；`SemanticGraphAssembler` 继续作为 node/edge 冲突的第二道防御，不能依赖 map 覆盖或 `putIfAbsent` 选择任一项。
 - LLM 返回不存在的 `evidenceFingerprint` 时，bundle reference index 必须拒绝该引用。
 - LLM 返回 `BUSINESS_APPROVED` 时，normalizer 必须拒绝，不静默改写模型输出。
-- LLM 生成的 metric、entity、synonym 默认是 `SYSTEM_PROPOSED`，只有治理流程可以提升为 `BUSINESS_APPROVED`。
+- LLM生成的metric、entity、synonym缺失状态时归一为`SYSTEM_PROPOSED`，review item归一为
+  `REVIEW_NEEDED`；只有治理流程可以提升为`BUSINESS_APPROVED`。
 - join path explanation 只能引用已有 relationship path，不能新增 path step。
 
 示例：

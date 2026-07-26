@@ -149,11 +149,13 @@ final class SemanticCliIntegrationTest {
         Path published = Path.of(captured.toString().trim());
         assertEquals(output.toAbsolutePath().normalize(), published.getParent());
         assertTrue(published.getFileName().toString().startsWith("run-"));
-        assertTrue(Files.exists(published.resolve("semantic-extraction-evidence-bundle.json")));
-        assertTrue(Files.exists(published.resolve("semantic-extraction-prompt.md")));
-        assertTrue(Files.exists(published.resolve("semantic-extraction-codex-session.md")));
+        Path shardDirectory = published.resolve("shards/shard-0001");
+        assertTrue(Files.exists(shardDirectory.resolve("semantic-extraction-evidence-bundle.json")));
+        assertTrue(Files.exists(shardDirectory.resolve("semantic-extraction-prompt.md")));
+        assertTrue(Files.exists(shardDirectory.resolve("semantic-extraction-codex-session.md")));
+        assertFalse(Files.exists(published.resolve("semantic-extraction-prompt.md")));
         JsonNode evidenceBundle = JSON.readTree(
-                published.resolve("semantic-extraction-evidence-bundle.json").toFile());
+                shardDirectory.resolve("semantic-extraction-evidence-bundle.json").toFile());
         assertFalse(evidenceBundle.has("focus"));
         assertTrue(evidenceBundle.path("lineage").isArray());
         assertEquals(1, evidenceBundle.path("eventCandidates").size());
@@ -231,11 +233,13 @@ final class SemanticCliIntegrationTest {
 
         assertEquals(0, exit);
         Path published = onlyPublishedRun(output);
-        assertTrue(Files.exists(published.resolve("semantic-extraction-request.json")));
+        Path request = published.resolve("shards/shard-0001/semantic-extraction-request.json");
+        assertTrue(Files.exists(request));
+        assertFalse(Files.exists(published.resolve("semantic-extraction-request.json")));
         assertTrue(Files.readString(
-                published.resolve("semantic-extraction-request.json")).contains("gpt-5.6-sol"));
+                request).contains("gpt-5.6-sol"));
         assertTrue(Files.readString(
-                published.resolve("semantic-extraction-request.json")).contains("xhigh"));
+                request).contains("xhigh"));
         JsonNode manifest = JSON.readTree(published.resolve("run-manifest.json").toFile());
         assertEquals("final-only", manifest.path("retention").asText());
         assertEquals("gpt-5.6-sol", manifest.path("model").asText());
@@ -413,7 +417,8 @@ final class SemanticCliIntegrationTest {
         int exit = Main.run(new String[] {"extract", "--config", config.toString()});
 
         assertEquals(0, exit);
-        assertTrue(Files.exists(onlyPublishedRun(output).resolve("semantic-extraction-codex-session.md")));
+        assertTrue(Files.exists(onlyPublishedRun(output).resolve(
+                "shards/shard-0001/semantic-extraction-codex-session.md")));
     }
 
     private JsonNode firstNodeOfType(JsonNode kg, String type) {
@@ -488,11 +493,19 @@ final class SemanticCliIntegrationTest {
         Files.writeString(input, """
                 {
                   "entities": [
-                    {"name": "销售事实表", "physicalName": "sales_fact", "type": "分析事实表", "evidenceRefs": ["sales_orders.id -> sales_fact.order_id"]},
-                    {"name": "销售订单", "physicalName": "sales_orders", "type": "业务单据", "evidenceRefs": ["sales_orders.id -> sales_fact.order_id"]}
+                    {"name": "销售事实表", "physicalName": "sales_fact", "type": "分析事实表",
+                     "ownedGroundingRefs": ["event-candidate:routine:erp.sp_rebuild_sales_fact"],
+                     "evidenceRefs": ["sales_orders.id -> sales_fact.order_id"]},
+                    {"name": "销售订单", "physicalName": "sales_orders", "type": "业务单据",
+                     "ownedGroundingRefs": ["event-candidate:routine:erp.sp_rebuild_sales_fact"],
+                     "evidenceRefs": ["sales_orders.id -> sales_fact.order_id"]}
                   ],
                   "events": [
-                    {"name": "重建销售事实表", "physicalName": "erp.sp_rebuild_sales_fact", "type": "数据加工事件", "eventCandidateRef": "event-candidate:routine:erp.sp_rebuild_sales_fact", "inputs": ["销售订单"], "outputs": ["销售事实表"], "evidenceRefs": ["event-candidate:routine:erp.sp_rebuild_sales_fact"]}
+                    {"name": "重建销售事实表", "physicalName": "erp.sp_rebuild_sales_fact", "type": "数据加工事件",
+                     "eventCandidateRef": "event-candidate:routine:erp.sp_rebuild_sales_fact",
+                     "ownedGroundingRefs": ["event-candidate:routine:erp.sp_rebuild_sales_fact"],
+                     "inputs": ["销售订单"], "outputs": ["销售事实表"],
+                     "evidenceRefs": ["event-candidate:routine:erp.sp_rebuild_sales_fact"]}
                   ],
                   "relations": [],
                   "lineage": [],
@@ -509,7 +522,15 @@ final class SemanticCliIntegrationTest {
                   "relationships": [], "lineage": [], "derivedRelationships": [], "derivedLineage": [],
                   "namingEvidence": [], "diagnostics": [],
                   "eventCandidates": [{"id": "event-candidate:routine:erp.sp_rebuild_sales_fact"}],
-                  "tripletCandidates": [], "reviewItemCandidates": []
+                  "tripletCandidates": [], "reviewItemCandidates": [],
+                  "shardContext": {
+                    "shardId": "standalone-0001",
+                    "ownerKey": "sales_fact",
+                    "outputOwnedReferencesOnly": true,
+                    "ownedFactRefs": [],
+                    "ownedCandidateRefs": ["event-candidate:routine:erp.sp_rebuild_sales_fact"],
+                    "overlapRefs": []
+                  }
                 }
                 """);
 
@@ -526,6 +547,35 @@ final class SemanticCliIntegrationTest {
         assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
         assertTrue(normalized.path("semanticGraph").path("nodes").isArray());
         assertTrue(normalized.path("validation").path("isRefClosed").isBoolean());
+    }
+
+    @Test
+    void semanticNormalizeExtractionRejectsBundleWithoutShardContext() throws Exception {
+        Path input = tempDir.resolve("semantic-extraction-result-no-owner.json");
+        Path evidenceBundle = tempDir.resolve("semantic-extraction-evidence-no-owner.json");
+        Path output = tempDir.resolve("semantic-extraction-no-owner-output.json");
+        Files.writeString(input, """
+                {"entities": [], "events": [], "relations": [], "lineage": [], "metrics": [],
+                 "dimensions": [], "triplets": [], "reviewItems": []}
+                """);
+        Files.writeString(evidenceBundle, """
+                {
+                  "tables": [], "evidence": [], "relationships": [], "lineage": [],
+                  "derivedRelationships": [], "derivedLineage": [], "namingEvidence": [],
+                  "diagnostics": [], "eventCandidates": [], "tripletCandidates": [],
+                  "reviewItemCandidates": []
+                }
+                """);
+
+        int exit = Main.run(new String[] {
+                "normalize-extraction",
+                "--input", input.toString(),
+                "--evidence-bundle", evidenceBundle.toString(),
+                "--output", output.toString()
+        });
+
+        assertEquals(2, exit);
+        assertTrue(Files.notExists(output));
     }
 
     @Test

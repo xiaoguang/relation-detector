@@ -223,7 +223,7 @@ class NamingEvidenceExtractorTest {
     }
 
     @Test
-    void retainsDdlSourceLineAndStatementForNamingRawObservations() {
+    void retainsPortableDdlSourceLineAndStatementForNamingRawObservations() {
         List<StructuredSqlEvent> events = List.of(
                 ddlColumn("/workspace/relation-detector/ddl/customers.sql", 3, "customers", "id"),
                 ddlColumn("/workspace/relation-detector/ddl/orders.sql", 11, "orders", "customer_id"));
@@ -233,7 +233,7 @@ class NamingEvidenceExtractorTest {
         assertEquals(1, evidence.size());
         Evidence ordersObservation = rawObservationForTable(evidence.get(0), "orders");
         assertEquals(EvidenceSourceType.DDL_FILE, ordersObservation.sourceType());
-        assertEquals("relation-detector/ddl/orders.sql", ordersObservation.source());
+        assertEquals("external/unavailable/orders.sql", ordersObservation.source());
         assertEquals(11L, ordersObservation.attributes().get("line"));
     }
 

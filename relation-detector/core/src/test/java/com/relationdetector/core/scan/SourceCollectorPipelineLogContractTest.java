@@ -51,7 +51,7 @@ class SourceCollectorPipelineLogContractTest {
     }
 
     private DatabaseAdaptor adaptor(Path log, AtomicInteger parserCalls) {
-        String source = SourceNameNormalizer.normalize(log);
+        String source = SourceNameNormalizer.normalizeFile(log);
         return new DatabaseAdaptor() {
             @Override public int spiVersion() {
                 return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT;

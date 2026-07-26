@@ -1,5 +1,8 @@
 package com.relationdetector.contracts.parse;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,8 +28,14 @@ public record StructuredParseResult(
         Map<String, Object> attributes
 ) {
     public StructuredParseResult {
-        events = events == null ? List.of() : List.copyOf(events);
-        warnings = warnings == null ? List.of() : List.copyOf(warnings);
-        attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
+        events = events == null
+                ? null
+                : Collections.unmodifiableList(new ArrayList<>(events));
+        warnings = warnings == null
+                ? null
+                : Collections.unmodifiableList(new ArrayList<>(warnings));
+        attributes = attributes == null
+                ? null
+                : Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
     }
 }

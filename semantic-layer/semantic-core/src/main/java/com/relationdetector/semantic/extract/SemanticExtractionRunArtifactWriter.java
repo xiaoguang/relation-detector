@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -13,6 +14,7 @@ import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -23,14 +25,17 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * CN: 在独立 staging 目录写入完整 run，生成可审计 manifest 后原子发布；失败 run 保留 FAILED staging。
- * EN: Writes a complete run in an isolated staging directory and atomically publishes it after its auditable manifest is complete. Failed runs remain staged with FAILED status.
+ * CN: 在独立 staging 目录先原子写入 IN_PROGRESS manifest，再写 payload 并以原子 manifest 替换记录终态；
+ * 仅完整 run 会发布。普通失败留下 FAILED，若终态更新本身失败则保留最后一个可解析状态。
+ * EN: Atomically writes an IN_PROGRESS manifest before any payload, then records terminal state through atomic
+ * manifest replacement. Only complete runs are published; ordinary failures leave FAILED, while a failed terminal
+ * update preserves the last parseable state.
  */
 public final class SemanticExtractionRunArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private static final Consumer<Path> NO_SHARED_ARTIFACTS = ignored -> {
     };
-    private final SemanticExtractionArtifactWriter legacyWriter = new SemanticExtractionArtifactWriter();
+    private final SemanticRequestArtifactWriter requestWriter = new SemanticRequestArtifactWriter();
     private final RunArtifactPublisher publisher = new RunArtifactPublisher();
 
     public Path writeCodexSession(
@@ -66,38 +71,44 @@ public final class SemanticExtractionRunArtifactWriter {
                 output -> {
                     prepare(output, plan);
                     for (SemanticShardRequest request : plan.shardRequests()) {
-                        legacyWriter.writeCodexSessionRequest(
+                        requestWriter.writeCodexSessionRequest(
                                 shardDirectory(output, request.shard().id()), request.prompt());
                     }
                     writeReconciliationTemplate(output, plan, null, true);
-                    writeCompatibilityArtifacts(output, plan, null, true);
                 });
     }
 
     public Path writeRequestOnly(
             Path outputRoot,
             SemanticExtractionRunPlan plan,
-            SemanticModelClient shardClient,
-            SemanticModelClient reconciliationClient,
+            Function<SemanticExtractionPrompt, String> shardRequestRenderer,
+            Function<SemanticExtractionPrompt, String> reconciliationRequestRenderer,
             String model,
             String reasoningEffort,
             ArtifactRetention retention
     ) {
         return writeRequestOnly(
-                outputRoot, plan, shardClient, reconciliationClient, model, reasoningEffort,
+                outputRoot, plan, shardRequestRenderer, reconciliationRequestRenderer, model, reasoningEffort,
                 retention, NO_SHARED_ARTIFACTS);
     }
 
     public Path writeRequestOnly(
             Path outputRoot,
             SemanticExtractionRunPlan plan,
-            SemanticModelClient shardClient,
-            SemanticModelClient reconciliationClient,
+            Function<SemanticExtractionPrompt, String> shardRequestRenderer,
+            Function<SemanticExtractionPrompt, String> reconciliationRequestRenderer,
             String model,
             String reasoningEffort,
             ArtifactRetention retention,
             Consumer<Path> sharedArtifactWriter
     ) {
+        if (shardRequestRenderer == null) {
+            throw new IllegalArgumentException("shard request renderer is required");
+        }
+        if (plan != null && plan.reconcile() && plan.shardRequests().size() > 1
+                && reconciliationRequestRenderer == null) {
+            throw new IllegalArgumentException("reconciliation request renderer is required");
+        }
         return publish(
                 outputRoot,
                 plan,
@@ -113,11 +124,10 @@ public final class SemanticExtractionRunArtifactWriter {
                     prepare(output, plan);
                     for (SemanticShardRequest request : plan.shardRequests()) {
                         Path directory = shardDirectory(output, request.shard().id());
-                        legacyWriter.writeRequestOnly(
-                                directory, request.prompt(), shardClient.requestJson(request.prompt()));
+                        requestWriter.writeRequestOnly(
+                                directory, request.prompt(), shardRequestRenderer.apply(request.prompt()));
                     }
-                    writeReconciliationTemplate(output, plan, reconciliationClient, false);
-                    writeCompatibilityArtifacts(output, plan, shardClient, false);
+                    writeReconciliationTemplate(output, plan, reconciliationRequestRenderer, false);
                 });
     }
 
@@ -161,8 +171,10 @@ public final class SemanticExtractionRunArtifactWriter {
     }
 
     /**
-     * CN: 在 run staging 生命周期内执行模型流程并写入最终产物；模型、归一化、闭包或 I/O 失败都只留下 FAILED staging，不发布半成品目录。
-     * EN: Executes the model workflow inside the run staging lifecycle and writes final artifacts. Model, normalization, closure, or I/O failures leave only a FAILED staging directory.
+     * CN: 在 run staging 生命周期内执行模型流程并写入最终产物；普通失败原子写为 FAILED，若终态写入本身失败则保留先前可解析的 IN_PROGRESS，且任何失败都不发布半成品目录。
+     * EN: Executes the model workflow inside the run staging lifecycle and writes final artifacts. Ordinary failures
+     * atomically record FAILED; if that terminal update itself fails, the prior parseable IN_PROGRESS remains, and no
+     * failure publishes a partial run.
      */
     public Path executeAndWriteResult(
             Path outputRoot,
@@ -183,6 +195,8 @@ public final class SemanticExtractionRunArtifactWriter {
                 : sharedArtifactWriter;
         RunArtifactPublisher.RunDirectory runDirectory = publisher.begin(outputRoot);
         try {
+            writeInitialManifest(
+                    runDirectory, plan, provider, model, reasoningEffort, resolvedRetention);
             resolvedSharedWriter.accept(runDirectory.stagingDirectory());
             SemanticExtractionRunResult run = execution.get();
             if (run == null || run.plan() == null
@@ -196,7 +210,7 @@ public final class SemanticExtractionRunArtifactWriter {
                     ? pruneIntermediateArtifacts(runDirectory.stagingDirectory())
                     : List.of();
             finishManifest(manifest, runDirectory, resolvedRetention, Instant.now(), pruned);
-            writeJson(runDirectory.stagingDirectory().resolve("run-manifest.json"), manifest);
+            writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
             return publisher.publish(runDirectory);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
@@ -224,6 +238,8 @@ public final class SemanticExtractionRunArtifactWriter {
                 : sharedArtifactWriter;
         RunArtifactPublisher.RunDirectory runDirectory = publisher.begin(outputRoot);
         try {
+            writeInitialManifest(
+                    runDirectory, plan, provider, model, reasoningEffort, resolvedRetention);
             resolvedSharedWriter.accept(runDirectory.stagingDirectory());
             runArtifactWriter.accept(runDirectory.stagingDirectory());
             ObjectNode manifest = createManifest(
@@ -234,7 +250,7 @@ public final class SemanticExtractionRunArtifactWriter {
                     : List.of();
             finishManifest(
                     manifest, runDirectory, resolvedRetention, Instant.now(), pruned);
-            writeJson(runDirectory.stagingDirectory().resolve("run-manifest.json"), manifest);
+            writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
             return publisher.publish(runDirectory);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
@@ -260,10 +276,24 @@ public final class SemanticExtractionRunArtifactWriter {
                     plan, "FAILED", List.of(), null, provider, model, reasoningEffort);
             manifest.put("failureType", failure.getClass().getSimpleName());
             finishManifest(manifest, runDirectory, retention, null, List.of());
-            writeJson(runDirectory.stagingDirectory().resolve("run-manifest.json"), manifest);
+            writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
         } catch (RuntimeException manifestFailure) {
             failure.addSuppressed(manifestFailure);
         }
+    }
+
+    private void writeInitialManifest(
+            RunArtifactPublisher.RunDirectory runDirectory,
+            SemanticExtractionRunPlan plan,
+            String provider,
+            String model,
+            String reasoningEffort,
+            ArtifactRetention retention
+    ) {
+        ObjectNode manifest = createManifest(
+                plan, "IN_PROGRESS", List.of(), null, provider, model, reasoningEffort);
+        finishManifest(manifest, runDirectory, retention, null, List.of());
+        writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
     }
 
     private void prepare(Path output, SemanticExtractionRunPlan plan) {
@@ -277,14 +307,6 @@ public final class SemanticExtractionRunArtifactWriter {
             Path directory = shardDirectory(output, execution.request().shard().id());
             writePromptArtifacts(
                     directory,
-                    execution.request().prompt(),
-                    execution.result(),
-                    execution.trustedNormalizedDocument());
-        }
-        if (run.shardExecutions().size() == 1) {
-            SemanticShardExecution execution = run.shardExecutions().get(0);
-            writePromptArtifacts(
-                    output,
                     execution.request().prompt(),
                     execution.result(),
                     execution.trustedNormalizedDocument());
@@ -309,33 +331,16 @@ public final class SemanticExtractionRunArtifactWriter {
             JsonNode normalized
     ) {
         createDirectory(directory);
-        legacyWriter.writeRequestOnly(directory, prompt, result.requestJson());
+        requestWriter.writeRequestOnly(directory, prompt, result.requestJson());
         write(directory.resolve("semantic-extraction-response.json"), result.responseJson());
         write(directory.resolve("semantic-extraction-result-raw.json"), result.outputText());
         writeJson(directory.resolve("semantic-extraction-result.json"), normalized);
     }
 
-    private void writeCompatibilityArtifacts(
-            Path output,
-            SemanticExtractionRunPlan plan,
-            SemanticModelClient client,
-            boolean codex
-    ) {
-        if (plan.shardRequests().size() != 1) {
-            return;
-        }
-        SemanticExtractionPrompt prompt = plan.shardRequests().get(0).prompt();
-        if (codex) {
-            legacyWriter.writeCodexSessionRequest(output, prompt);
-        } else {
-            legacyWriter.writeRequestOnly(output, prompt, client.requestJson(prompt));
-        }
-    }
-
     private void writeReconciliationTemplate(
             Path output,
             SemanticExtractionRunPlan plan,
-            SemanticModelClient client,
+            Function<SemanticExtractionPrompt, String> requestRenderer,
             boolean codex
     ) {
         if (plan.shardRequests().size() <= 1 || !plan.reconcile()) {
@@ -345,9 +350,9 @@ public final class SemanticExtractionRunArtifactWriter {
         createDirectory(directory);
         SemanticExtractionPrompt prompt = new SemanticReconciliationPromptBuilder().template(plan.shardPlan());
         if (codex) {
-            legacyWriter.writeCodexSessionRequest(directory, prompt);
-        } else if (client != null) {
-            legacyWriter.writeRequestOnly(directory, prompt, client.requestJson(prompt));
+            requestWriter.writeCodexSessionRequest(directory, prompt);
+        } else if (requestRenderer != null) {
+            requestWriter.writeRequestOnly(directory, prompt, requestRenderer.apply(prompt));
         }
     }
 
@@ -449,6 +454,7 @@ public final class SemanticExtractionRunArtifactWriter {
     private boolean retainedFinalArtifact(Path output, Path artifact) {
         String relative = relativePath(output, artifact);
         return "semantic-extraction-result.json".equals(relative)
+                || "run-manifest.json".equals(relative)
                 || relative.startsWith("deterministic-kg/");
     }
 
@@ -535,9 +541,30 @@ public final class SemanticExtractionRunArtifactWriter {
 
     private void writeJson(Path path, Object value) {
         try {
-            write(path, JSON.writeValueAsString(value));
+            Files.createDirectories(path.getParent());
+            JSON.writeValue(path.toFile(), value);
         } catch (IOException error) {
-            throw new IllegalArgumentException("failed to serialize semantic extraction artifact", error);
+            throw new IllegalArgumentException("failed to write semantic extraction JSON artifact: " + path, error);
+        }
+    }
+
+    private void writeManifestAtomically(Path directory, ObjectNode manifest) {
+        Path target = directory.resolve("run-manifest.json");
+        Path temporary = directory.resolve("run-manifest.json.tmp");
+        try {
+            JSON.writeValue(temporary.toFile(), manifest);
+            Files.move(
+                    temporary,
+                    target,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException error) {
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (IOException cleanupFailure) {
+                error.addSuppressed(cleanupFailure);
+            }
+            throw new IllegalArgumentException("failed to update semantic extraction run manifest", error);
         }
     }
 

@@ -161,13 +161,21 @@ sqlserver / sqlserver.tokenevent / sqlserver.fullgrammar.common / sqlserver.full
 
 ### 1. fallback 只发生在 parser selection 层
 
-当 `parser.mode=auto|full-grammar` 时，如果无法根据 database type / profile / version 选中 full-grammar profile，runner 会使用 adaptor 暴露的 token-event parser，并记录 fallback 诊断。
+当`parser.mode=auto`且无法根据database type/profile/version选中full-grammar profile时，runner静默选择
+adaptor暴露的token-event parser。显式`parser.mode=full-grammar`选择失败时才记录selection fallback诊断。
 
-如果 full-grammar profile 已经选中，full-grammar parser 自己返回 structured events、partial result 和 warning；它不会在 event 层委托 token-event 补齐事件。只有 profile 缺失、版本不支持或 full-grammar hard failure 才 fallback 到 token-event，并输出 parser-mode fallback warning。
+如果full-grammar profile已经选中，full-grammar parser自己返回structured events、partial result和
+warning；它不会在event层委托token-event补齐事件。普通runtime hard failure会记录固定warning并
+fallback到token-event；contract violation直接失败。
 
 ### 2. SQL relationship 与 Data Lineage 共享 structured result
 
-生产 `ScanEngine.scan(...)` 当前通过 `SourceCollectorPipeline` 和 `StatementParsePipeline` 进入 `StatementExecutionService`。单条 SQL 由 `StatementExecutionService.executeSql(...)` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后生成 relationship candidates，并把同一个 `StructuredParseResult` 交给 Data Lineage extractor。SQL naming rule 不在 statement 层执行；它随后由 scan-level `EvidenceEnhancementService` 对合并后的 relationship candidates 执行一次。direct structured-parser overload 不经过 runner，但与 runner 共用 `StructuredSqlParseExecutor`，因此 detached context、result validation 和 warning 延迟提交契约一致。
+生产`ScanEngine.scan(...)`当前通过`SourceCollectorPipeline`和`StatementParsePipeline`进入
+`StatementExecutionService`。单条SQL只解析一次，同时生成relationship candidates并把同一个
+`StructuredParseResult`交给Data Lineage extractor。SQL naming rule不在statement层执行；全部source
+收集后、最终`RelationshipMerger`之前，scan-level `EvidenceEnhancementService`对原始candidate集合执行一次。
+direct structured-parser overload不经过runner，但与runner共用`StructuredSqlParseExecutor`，因此
+detached context、result validation和warning延迟提交契约一致。
 
 这是当前实现事实，不改变 relationship / Data Lineage JSON schema，也不改变 semantic extractor 的职责边界。
 
@@ -276,7 +284,7 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 配置已从 runtime 和 SPI 删除：
 
 1. Oracle/SQL Server `METADATA` 与 `DATABASE_OBJECTS` capability 已有非空 live collector，支持组合 constraint/index 和 partial-success warning；这证明代码契约可执行，但真实权限/版本组合仍需 runtime smoke。
-2. `AdaptorContractValidator` 在 JDBC 前一次性校验并冻结 adaptor 的 SPI/id/database types/capabilities/identifier rules/grouped collectors/parsers/profiling；`ScanCapabilityValidator`只消费该快照验证实际请求。null或畸形shape、null scope返回统一为`AdaptorContractException`，single/batch稳定保持`ADAPTOR_ERROR`。live DDL要求structured DDL parser，live objects要求structured SQL parser，纯文件scan不新增live capability要求。
+2. `AdaptorContractValidator` 在 JDBC 前一次性校验并冻结 adaptor 的 SPI/id/database types/capabilities/identifier rules/grouped collectors/parsers/profiling；`ScanCapabilityValidator`只消费该快照验证实际请求。`AdaptorCollectors`不再把null Optional member归一为空，null顶层grouped record、nested member、core可见的畸形shape和null scope统一为`AdaptorContractException`，single/batch稳定保持`ADAPTOR_ERROR`。live DDL要求structured DDL parser，live objects要求structured SQL parser，纯文件scan不新增live capability要求。
 3. `IndexEvidencePolicy` 不允许组合 PK/UNIQUE 成员证明单列唯一；普通组合索引仅首列可支持 lookup / `SOURCE_INDEX`，不单独决定方向。
 4. `DataLineageMerger` 对 source set canonical dedupe/sort，fact identity 不再依赖发射顺序。
 5. `ProfileOutcome` 区分 success/no-evidence/skip/permission/timeout/query-failure。`ProfileOutcomeContractValidator` 将外部 outcome 作为不可信输入原子校验，core 不转发 plugin warning 内容，而按已验证 status 重建脱敏 warning。四个方言 live SQL 独立测量 source non-null rows、source/target distinct 和 matched distinct，containment、overlap 与 negative gate 均基于真实统计。
@@ -297,7 +305,9 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     script framer 与 SQL/DDL parser 的 statement/event/warning 由独立的
     `AdaptorParseResultContractValidator` 全批校验并延迟提交。production runner、direct
     statement overload 与 relationship facade 共用 `StructuredSqlParseExecutor`，不再存在
-    structured SQL result 绕过契约边界的 core 旁路。
+    structured SQL result 绕过契约边界的 core 旁路。`StructuredParseResult`和
+    `ScriptFrameResult`保留null collection和null element供core validator识别；所有可见shape
+    违约在事实或warning提交前原子失败。
 11. `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner；CLI 以配置文件父目录调用
     `ScanConfig.resolve(baseDirectory)`，direct API 无参调用以当前工作目录为 base。运行态仅消费稳定排序、
     规范绝对路径且去重的 `*Files`，missing、non-regular 和 unreadable 输入均在 scan 前明确失败。
@@ -324,6 +334,12 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 17. `ProfileOutcomeContractValidator` 的所有违约统一使用 `AdaptorContractException`。direct API
     原样抛出，single CLI 与 batch case 均归类为 `ADAPTOR_ERROR`；全批延迟提交保证最后一个 outcome
     失败时也不留下部分 profiling 状态。
+18. `derivedPaths.maxFacts`在relationship、lineage和derived naming全部生成、naming稳定合并后，
+    按`RELATIONSHIP`、`DATA_LINEAGE`、`NAMING`及类内canonical key实施scan级总配额；低分path先过滤，
+    被裁剪naming的可选引用同步清理或重写，`0`保持全部结果。
+19. `SourceNameNormalizer`对工作区文件输出相对路径，对工作区外文件输出
+    `external/sha256-<完整摘要>/<文件名>`；读取竞态或失败输出`external/unavailable/<文件名>`。
+    script framing、DDL/object、common与四方言log、parse result及file warning共用该source。
 
 上述 live definition、warning sanitization 与 collector fail-fast 主链已有 focused tests；当前完整
 验收数量应从生成报告与 verification manifest读取，不在本文复制。direct Java `ScanConfig.*Paths`、

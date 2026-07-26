@@ -50,12 +50,14 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
                     file, StatementSourceType.PLAIN_SQL, scriptFramer, warnings);
         }
         try {
-            List<String> lines = Files.readAllLines(file);
+            String text = Files.readString(file);
+            String source = SourceNameNormalizer.normalizeFile(file, text);
+            List<String> lines = text.lines().toList();
             boolean generalLog = hint == LogFormatHint.MYSQL_GENERAL_LOG
                     || hint == LogFormatHint.AUTO && lines.stream().anyMatch(line -> line.contains(" Query "));
             return generalLog
-                    ? generalLogStatements(file, lines, warnings).stream()
-                    : slowLogStatements(file, lines, warnings).stream();
+                    ? generalLogStatements(source, lines, warnings).stream()
+                    : slowLogStatements(source, lines, warnings).stream();
         } catch (Exception ex) {
             warnings.accept(DiagnosticWarnings.logExtractFailed(file, ex));
             return Stream.empty();
@@ -63,7 +65,7 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
     }
 
     private List<SqlStatementRecord> generalLogStatements(
-            Path file,
+            String source,
             List<String> lines,
             Consumer<WarningMessage> warnings
     ) {
@@ -75,13 +77,13 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
                 continue;
             }
             String payload = line.substring(query + " Query ".length());
-            records.addAll(parsePayload(file, payload, index + 1L, warnings));
+            records.addAll(parsePayload(source, payload, index + 1L, warnings));
         }
         return List.copyOf(records);
     }
 
     private List<SqlStatementRecord> slowLogStatements(
-            Path file,
+            String source,
             List<String> lines,
             Consumer<WarningMessage> warnings
     ) {
@@ -94,19 +96,19 @@ public final class MySqlLogExtractor implements SqlLogExtractor {
             }
         }
         var parsed = scriptFramer.frame(new ScriptFrameRequest(
-                serverSql.toString(), file.toString(), StatementSourceType.NATIVE_LOG));
+                serverSql.toString(), source, StatementSourceType.NATIVE_LOG));
         parsed.warnings().forEach(warnings);
         return parsed.statements();
     }
 
     private List<SqlStatementRecord> parsePayload(
-            Path file,
+            String source,
             String payload,
             long sourceLine,
             Consumer<WarningMessage> warnings
     ) {
         var parsed = scriptFramer.frame(new ScriptFrameRequest(
-                payload, file.toString(), StatementSourceType.NATIVE_LOG));
+                payload, source, StatementSourceType.NATIVE_LOG));
         parsed.warnings().forEach(warnings);
         return parsed.statements().stream()
                 .map(statement -> relocate(statement, sourceLine - 1L))

@@ -66,7 +66,7 @@ final class SemanticExtractionBundleBuilderTest {
         assertEquals(6, evidenceBundle.path("lineage").size());
         assertEquals(6, evidenceBundle.path("namingEvidence").size());
         assertEquals(6, evidenceBundle.path("eventCandidates").size());
-        assertEquals(36, evidenceBundle.path("tripletCandidates").size());
+        assertEquals(30, evidenceBundle.path("tripletCandidates").size());
     }
 
     @Test
@@ -144,7 +144,7 @@ final class SemanticExtractionBundleBuilderTest {
         assertTrue(hasTripletType(triplets, "ENTITY_RELATION"), triplets::toPrettyString);
         assertTrue(hasTripletType(triplets, "EVENT_INPUT_OUTPUT"), triplets::toPrettyString);
         assertTrue(hasTripletType(triplets, "LINEAGE_TRANSFORM"), triplets::toPrettyString);
-        assertTrue(hasTripletType(triplets, "METRIC_SOURCE"), triplets::toPrettyString);
+        assertFalse(hasTripletType(triplets, "METRIC_SOURCE"), triplets::toPrettyString);
         assertTrue(hasTripletType(triplets, "DIMENSION_OF"), triplets::toPrettyString);
         assertTrue(hasTripletType(triplets, "NAMING_ALIAS"), triplets::toPrettyString);
     }

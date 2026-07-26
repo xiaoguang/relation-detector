@@ -60,6 +60,50 @@ class AdaptorParseResultContractValidatorTest {
     }
 
     @Test
+    void frameResultRejectsNullStatementCollectionInsteadOfTreatingItAsEmpty() {
+        ScriptFrameRequest request = new ScriptFrameRequest(
+                "SELECT 1;", "input.sql", StatementSourceType.PLAIN_SQL);
+
+        assertThrows(AdaptorContractException.class,
+                () -> validator.validateFrame(request, new ScriptFrameResult(null, List.of())));
+    }
+
+    @Test
+    void frameResultRejectsNullStatementElement() {
+        ScriptFrameRequest request = new ScriptFrameRequest(
+                "SELECT 1;", "input.sql", StatementSourceType.PLAIN_SQL);
+
+        assertThrows(AdaptorContractException.class,
+                () -> validator.validateFrame(
+                        request, new ScriptFrameResult(Arrays.asList((SqlStatementRecord) null), List.of())));
+    }
+
+    @Test
+    void structuredResultRejectsNullEventCollectionInsteadOfTreatingItAsEmpty() {
+        SqlStatementRecord statement = statement(
+                "SELECT 1", StatementSourceType.PLAIN_SQL, "input.sql", 1, 1,
+                Map.of("sourceFile", "input.sql", "sourceStatementId", "input.sql:1-1"));
+        StructuredParseResult raw = new StructuredParseResult(
+                "plugin", "common", "input.sql", null, List.of(), Map.of());
+
+        assertThrows(AdaptorContractException.class,
+                () -> validator.validateSql(statement, raw, List.of()));
+    }
+
+    @Test
+    void structuredResultRejectsNullEventElement() {
+        SqlStatementRecord statement = statement(
+                "SELECT 1", StatementSourceType.PLAIN_SQL, "input.sql", 1, 1,
+                Map.of("sourceFile", "input.sql", "sourceStatementId", "input.sql:1-1"));
+        StructuredParseResult raw = new StructuredParseResult(
+                "plugin", "common", "input.sql",
+                Arrays.asList((StructuredSqlEvent) null), List.of(), Map.of());
+
+        assertThrows(AdaptorContractException.class,
+                () -> validator.validateSql(statement, raw, List.of()));
+    }
+
+    @Test
     void logResultRejectsInvalidLastStatementAtomically() {
         List<SqlStatementRecord> statements = Arrays.asList(
                 statement("SELECT 1", StatementSourceType.NATIVE_LOG,

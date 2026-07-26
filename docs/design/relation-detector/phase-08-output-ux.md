@@ -144,7 +144,7 @@ derivedPaths:
   不可读输入在 scan 前失败。
 - `execution.parallelism` 默认 `1`，表示 scan 内按源顺序串行解析；设为正整数后，独立 file/object/log statement 可以并行解析，但每个 task 使用独立 visitor、collector、`AdaptorContext` 和 warning list，最终按原始 source order 合并。JDBC collection 本身不并行。CLI 的 `--parallelism <n>` 可覆盖该配置。
 - `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL/Oracle/SQL Server SQL/DDL 均通过统一 `parser.mode` 选择 full-grammar 或 token-event，ANTLR 只作为底层 lexer/parser 支撑。
-- 当前统一 parser 配置为 `parser.mode: auto|full-grammar|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammar profile 时优先使用 full-grammar；不能选择 profile、版本不支持或 full-grammar hard failure 时使用 token-event fallback 并记录 warning。profile 已选中后的 syntax warning / partial result 属于所选 parser，不触发 fallback。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
+- 当前统一 parser 配置为 `parser.mode: auto|full-grammar|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammar profile时优先使用full-grammar；不能选择profile时静默使用token-event。显式`full-grammar`选择失败，或已选full parser发生普通runtime hard failure时，使用token-event并记录固定warning。profile已选中后的syntax warning / partial result属于所选parser，不触发fallback。CLI可通过`--parser-mode`、`--grammar-profile`、`--database-version`覆盖YAML。
 - `parser.grammarProfile` 使用用户可见 profile id；当前内置 profile 包括 `mysql/5.7`、`mysql/8.0`、`postgresql/16`、`postgresql/17`、`postgresql/18`、`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai`、`sqlserver/2016`、`sqlserver/2017`、`sqlserver/2019`、`sqlserver/2022`、`sqlserver/2025`。
 - PostgreSQL full-grammar 是严格大版本语法证明：`postgresql/16` 不用于通过 17/18 专属 correctness，`postgresql/17` 不用于通过 18 专属 correctness。token-event 可以作为未知版本或 unsupported version 的宽松 fallback。
 - MySQL `SQL_MODE` 是 MySQL grammar runtime 的方言开关，不是 `parser.mode`。配置、CLI 和输出 diagnostics 中的 parser mode 只使用 `auto|full-grammar|token-event`。
@@ -156,7 +156,7 @@ derivedPaths:
 - `namingMatch.enabled` 默认 `true`。开启后，`NamingEvidenceExtractor` 使用合并后的 `NamingRuleSet` 生成 top-level `namingEvidence`；relationship 只能引用该证据池中的 `evidenceRef`，不能本地重新计算 `NAMING_MATCH`。
 - `namingMatch.systemRulesEnabled` 默认 `true`。系统默认规则来自 `naming-rules/system-default.yml`，当前表达 `TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID` 三类 direct 规则。客户规则可通过 `ruleFiles` 和 inline `rules` 追加；重复 `id`、只配置 source 或 target 半边、或配置 `TRANSITIVE_NAMING_PATH` 都必须报错。
 - 客户规则第一阶段统一使用 `rule: USER_CONFIGURED`，支持列名 equals / equalsAny / suffix / suffixAny、表 aliases、显式 `sourceEndpoint` / `targetEndpoint`。`TRANSITIVE_NAMING_PATH` 不是客户配置规则，只能由 derived path 引擎产生。
-- `derivedPaths.enabled` 默认 `false`。开启后输出传递推导视图：`derivedRelationships`、`derivedDataLineages`，并可向 top-level `namingEvidence` 增加 `TRANSITIVE_NAMING_PATH`。JSON 同时提供只读轻量视图 `derivedNamingEvidence`，方便统计和阅读 derived naming；完整 grouped evidence / rawEvidence 仍只保存在 top-level `namingEvidence`，relationship 也只引用 top-level `namingEvidence.id`。relationship 推导内部可反向遍历 referenced-by 图，但 JSON 中的 derived relationship source/target 仍保持 FK-like 正向；审计路径放在 `path`、`traversalPath` 和 attributes 中。`maxPathLength` 默认 `5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制。
+- `derivedPaths.enabled` 默认 `false`。开启后输出传递推导视图：`derivedRelationships`、`derivedDataLineages`，并可向 top-level `namingEvidence` 增加 `TRANSITIVE_NAMING_PATH`。JSON 同时提供只读轻量视图 `derivedNamingEvidence`，方便统计和阅读 derived naming；完整 grouped evidence / rawEvidence 仍只保存在 top-level `namingEvidence`，relationship 也只引用 top-level `namingEvidence.id`。relationship 推导内部可反向遍历 referenced-by 图，但 JSON 中的 derived relationship source/target 仍保持 FK-like 正向；审计路径放在 `path`、`traversalPath` 和 attributes 中。`maxPathLength` 默认 `5`；`maxPathsPerPair=0`表示每对不限制，`maxFacts=0`表示三类derived事实总数不限制。非零`maxFacts`在最终合并后按relationship、lineage、naming稳定顺序实施scan级总上限。
 - 启用 live-backed source 时必须有非空 `jdbcUrl`；username/password 是 driver-dependent 认证输入，
   不强制两者同时非空。
 - `timeoutSeconds`、execution 和 profiling 数量限制必须为正数；derived path length 必须大于零，
@@ -380,7 +380,9 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - relationship 和 naming evidence 的 evidence type 已按现有 evidence model 输出。
 - data lineage 已有 `rawEvidence` / grouped `evidence` 双层结构和 stable source/target facts。当前 JSON writer 为 lineage evidence 统一输出 `type=DATA_LINEAGE`，并同时保留 `transformType/sourceType/score/source/detail/attributes`；消费者应使用 `flowKind` 与 `transformType` 理解值流语义，不能用 SQL 文本重新推断结构。
-- 文件来源的 `rawEvidence.source` 应输出 repo-relative path；object/routine 来源可以输出对象名。不得重新输出本机绝对路径。
+- 文件来源的`rawEvidence.source`使用portable label：工作区文件为相对路径，工作区外文件为
+  `external/sha256-<完整摘要>/<文件名>`，读取竞态或失败为`external/unavailable/<文件名>`。
+  source、sourceFile、statement ID和warning source共用该标签；object/routine来源可以输出对象名。
 
 ## Table 输出
 

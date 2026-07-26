@@ -4,54 +4,36 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * CN: 按固定 filenames 写出 prompt、evidence bundle、request、成功 response 和 normalized document；正式 result 必须带 evidence bundle 并通过 normalizer，I/O 失败不留伪成功状态。
- * EN: Writes prompt, evidence bundle, request, successful response, and normalized document under fixed filenames. Formal results require evidence-backed normalization, and I/O failure never becomes a successful artifact.
+ * CN: 按固定文件名写出单次模型请求所需的 evidence bundle、prompt 和 transport request；输入来自已验证
+ * extraction prompt，输出供 run writer 或独立 E2E 命令使用，不负责模型调用、响应归一化或发布事务。
+ * EN: Writes the evidence bundle, prompt, and transport request for one model request under fixed filenames. It
+ * consumes a validated extraction prompt for run writers or standalone E2E commands and does not call models,
+ * normalize responses, or publish runs.
  */
-public final class SemanticExtractionArtifactWriter {
+public final class SemanticRequestArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-    private final SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
 
     public void writeRequestOnly(Path outputDirectory, SemanticExtractionPrompt prompt, String requestJson) {
         if (requestJson == null || requestJson.isBlank()) {
             throw new IllegalArgumentException("requestJson is required");
         }
         createDirectory(outputDirectory);
-        write(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
-                pretty(prompt.trustedEvidenceBundle()));
+        writeJson(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
+                prompt.trustedEvidenceBundle());
         write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
         write(outputDirectory.resolve("semantic-extraction-request.json"), requestJson);
     }
 
     public void writeCodexSessionRequest(Path outputDirectory, SemanticExtractionPrompt prompt) {
         createDirectory(outputDirectory);
-        write(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
-                pretty(prompt.trustedEvidenceBundle()));
+        writeJson(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
+                prompt.trustedEvidenceBundle());
         write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
         write(outputDirectory.resolve("semantic-extraction-codex-session.md"), codexSessionMarkdown(outputDirectory));
-    }
-
-    public void writeResult(Path outputDirectory, SemanticExtractionPrompt prompt, SemanticExtractionResult result) {
-        createDirectory(outputDirectory);
-        writeRequestOnly(outputDirectory, prompt, result.requestJson());
-        write(outputDirectory.resolve("semantic-extraction-response.json"), result.responseJson());
-        write(outputDirectory.resolve("semantic-extraction-result-raw.json"), result.outputText());
-        write(outputDirectory.resolve("semantic-extraction-result.json"),
-                pretty(normalizeResult(result.outputText(), prompt.trustedEvidenceBundle())));
-    }
-
-    public ObjectNode normalizeResult(String outputText, JsonNode evidenceBundle) {
-        try {
-            JsonNode raw = JSON.readTree(outputText);
-            return normalizer.normalize(raw, evidenceBundle);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("semantic extraction result must be valid JSON", e);
-        }
     }
 
     private String promptMarkdown(SemanticExtractionPrompt prompt) {
@@ -99,11 +81,11 @@ public final class SemanticExtractionArtifactWriter {
                 """.formatted(outputDirectory.resolve("semantic-extraction-result.json"));
     }
 
-    private String pretty(Object value) {
+    private void writeJson(Path path, Object value) {
         try {
-            return JSON.writeValueAsString(value);
+            JSON.writeValue(path.toFile(), value);
         } catch (IOException e) {
-            throw new IllegalArgumentException("failed to serialize semantic extraction artifact", e);
+            throw new IllegalArgumentException("failed to write semantic extraction JSON artifact: " + path, e);
         }
     }
 

@@ -2,7 +2,6 @@ package com.relationdetector.semantic;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -98,16 +97,4 @@ public final class SemanticFactIds {
         return String.join("\u0000", result);
     }
 
-    public static String slug(String value) {
-        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-        normalized = normalized.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}._-]+", "_");
-        normalized = normalized.replaceAll("_+", "_");
-        if (normalized.startsWith("_")) {
-            normalized = normalized.substring(1);
-        }
-        if (normalized.endsWith("_")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        return normalized.isBlank() ? "unknown" : normalized;
-    }
 }

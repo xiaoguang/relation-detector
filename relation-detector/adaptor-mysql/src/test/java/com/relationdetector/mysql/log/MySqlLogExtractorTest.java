@@ -11,6 +11,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.core.log.SourceNameNormalizer;
 
 class MySqlLogExtractorTest {
     @TempDir
@@ -32,6 +33,8 @@ class MySqlLogExtractorTest {
         assertEquals(StatementSourceType.NATIVE_LOG, statements.get(0).sourceType());
         assertEquals(1, statements.get(0).startLine());
         assertEquals(2, statements.get(1).startLine());
+        assertEquals(SourceNameNormalizer.normalizeFile(log),
+                statements.get(0).attributes().get("sourceFile"));
     }
 
     @Test

@@ -1,11 +1,13 @@
 package com.relationdetector.core.derived;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
+import com.relationdetector.core.naming.NamingEvidenceMerger;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
@@ -27,11 +29,7 @@ public final class DerivedPathInferenceService {
             List<NamingEvidenceCandidate> namingEvidence,
             ScanConfig config
     ) {
-        if (!enabled(config) || !config.derivedNamingEvidenceEnabled) {
-            return List.of();
-        }
-        DerivedPathGraphBuilder graphBuilder = new DerivedPathGraphBuilder(config, endpointKeys);
-        return new DerivedNamingInference(config, graphBuilder).derive(namingEvidence);
+        return infer(List.of(), List.of(), namingEvidence, config).derivedNamingEvidence();
     }
 
     public DerivedPathInferenceResult infer(
@@ -52,10 +50,20 @@ public final class DerivedPathInferenceService {
         var lineages = config.derivedDataLineageEnabled
                 ? new DerivedLineageInference(config, graphBuilder).infer(dataLineages)
                 : List.<com.relationdetector.contracts.model.DerivedPathCandidate>of();
-        return new DerivedPathInferenceResult(
+        List<NamingEvidenceCandidate> derivedNaming = new ArrayList<>(
+                relationshipsResult.derivedNamingEvidence());
+        if (config.derivedNamingEvidenceEnabled) {
+            derivedNaming.addAll(namingInference.derive(namingEvidence));
+        }
+        List<NamingEvidenceCandidate> mergedNaming = new NamingEvidenceMerger(endpointKeys)
+                .merge(derivedNaming);
+        return new DerivedResultSelector(endpointKeys).select(
                 relationshipsResult.derivedRelationships(),
                 lineages,
-                relationshipsResult.derivedNamingEvidence());
+                mergedNaming,
+                namingEvidence,
+                derivedNaming,
+                config.derivedMaxFacts);
     }
 
     private boolean enabled(ScanConfig config) {

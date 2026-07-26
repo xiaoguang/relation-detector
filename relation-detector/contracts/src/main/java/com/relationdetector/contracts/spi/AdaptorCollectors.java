@@ -21,10 +21,4 @@ public record AdaptorCollectors(
         Optional<DatabaseDdlCollector> databaseDdl,
         Optional<SqlLogExtractor> logs
 ) {
-    public AdaptorCollectors {
-        metadata = metadata == null ? Optional.empty() : metadata;
-        objects = objects == null ? Optional.empty() : objects;
-        databaseDdl = databaseDdl == null ? Optional.empty() : databaseDdl;
-        logs = logs == null ? Optional.empty() : logs;
-    }
 }

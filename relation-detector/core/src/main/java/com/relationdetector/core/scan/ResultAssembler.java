@@ -32,7 +32,9 @@ final class ResultAssembler {
         ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());
         ctx.result.derivedRelationships().clear();
         ctx.result.derivedRelationships().addAll(derived.derivedRelationships());
-        new NamingMatchEvidenceEnhancer().normalizeReferences(
+        NamingMatchEvidenceEnhancer namingEnhancer = new NamingMatchEvidenceEnhancer();
+        namingEnhancer.enhance(ctx.result.relationships(), ctx.namingEvidencePool);
+        namingEnhancer.normalizeReferences(
                 ctx.result.relationships(), ctx.result.derivedRelationships(), ctx.namingEvidencePool);
         ctx.result.derivedDataLineages().clear();
         ctx.result.derivedDataLineages().addAll(derived.derivedDataLineages());

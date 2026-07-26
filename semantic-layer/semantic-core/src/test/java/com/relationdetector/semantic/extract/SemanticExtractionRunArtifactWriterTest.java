@@ -76,7 +76,7 @@ final class SemanticExtractionRunArtifactWriterTest {
     }
 
     @Test
-    void completeSingleShardRunKeepsLegacyRootArtifacts() {
+    void completeSingleShardRunKeepsPayloadsOnlyUnderShardDirectory() {
         SemanticExtractionService service = new SemanticExtractionService();
         SemanticExtractionRunPlan plan = service.plan(singleComponentBundle(), SemanticShardingOptions.defaults());
         SemanticExtractionRunResult run = service.execute(
@@ -87,46 +87,49 @@ final class SemanticExtractionRunArtifactWriterTest {
         Path published = new SemanticExtractionRunArtifactWriter().writeResult(
                 tempDir, run, "openai-api", "gpt-test", "medium", ArtifactRetention.FULL);
 
+        assertTrue(Files.isRegularFile(published.resolve("full-evidence-bundle.json")));
+        assertTrue(Files.isRegularFile(published.resolve("semantic-extraction-result.json")));
+        Path shard = published.resolve("shards/shard-0001");
         for (String name : List.of(
                 "semantic-extraction-evidence-bundle.json",
                 "semantic-extraction-prompt.md",
                 "semantic-extraction-request.json",
                 "semantic-extraction-response.json",
-                "semantic-extraction-result-raw.json",
-                "semantic-extraction-result.json")) {
-            assertTrue(Files.isRegularFile(published.resolve(name)), name);
+                "semantic-extraction-result-raw.json")) {
+            assertTrue(Files.isRegularFile(shard.resolve(name)), name);
+            assertFalse(Files.exists(published.resolve(name)), "duplicate root artifact: " + name);
         }
+        assertTrue(Files.isRegularFile(shard.resolve("semantic-extraction-result.json")));
     }
 
     @Test
     void reusableRootPublishesIndependentCodexAndRequestOnlyRuns() throws Exception {
         SemanticExtractionRunPlan plan = new SemanticExtractionService().plan(
                 singleComponentBundle(), SemanticShardingOptions.defaults());
-        SemanticModelClient requestClient = new SemanticModelClient() {
-            @Override
-            public SemanticExtractionResult extract(SemanticExtractionPrompt prompt) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String requestJson(SemanticExtractionPrompt prompt) {
-                return "{\"model\":\"stale-request-model\",\"reasoning\":{\"effort\":\"low\"}}";
-            }
-        };
         SemanticExtractionRunArtifactWriter writer = new SemanticExtractionRunArtifactWriter();
 
         Path codexRun = writer.writeCodexSession(
                 tempDir, plan, "codex-current", "medium", ArtifactRetention.FULL);
         Path requestRun = writer.writeRequestOnly(
-                tempDir, plan, requestClient, null, "api-current", "xhigh", ArtifactRetention.FULL);
+                tempDir,
+                plan,
+                prompt -> "{\"model\":\"stale-request-model\",\"reasoning\":{\"effort\":\"low\"}}",
+                null,
+                "api-current",
+                "xhigh",
+                ArtifactRetention.FULL);
 
         assertNotEquals(codexRun, requestRun);
         assertEquals(tempDir, codexRun.getParent());
         assertEquals(tempDir, requestRun.getParent());
         assertTrue(codexRun.getFileName().toString().startsWith("run-"));
         assertTrue(requestRun.getFileName().toString().startsWith("run-"));
-        assertTrue(Files.isRegularFile(codexRun.resolve("semantic-extraction-codex-session.md")));
-        assertTrue(Files.isRegularFile(requestRun.resolve("semantic-extraction-request.json")));
+        assertTrue(Files.isRegularFile(codexRun.resolve(
+                "shards/shard-0001/semantic-extraction-codex-session.md")));
+        assertTrue(Files.isRegularFile(requestRun.resolve(
+                "shards/shard-0001/semantic-extraction-request.json")));
+        assertFalse(Files.exists(codexRun.resolve("semantic-extraction-codex-session.md")));
+        assertFalse(Files.exists(requestRun.resolve("semantic-extraction-request.json")));
         JsonNode requestManifest = JSON.readTree(requestRun.resolve("run-manifest.json").toFile());
         assertEquals("openai-api", requestManifest.path("provider").asText());
         assertEquals("api-current", requestManifest.path("model").asText());
@@ -173,6 +176,7 @@ final class SemanticExtractionRunArtifactWriterTest {
                 () -> new SemanticExtractionRunArtifactWriter().writeCodexSession(
                         tempDir, plan, "codex-current", "high", ArtifactRetention.FULL,
                         staging -> {
+                            assertEquals("IN_PROGRESS", readManifest(staging).path("status").asText());
                             writeBytes(staging.resolve("partial.bin"), new byte[] {(byte) 0xff, 0x00});
                             throw new IllegalStateException("synthetic artifact failure");
                         }));
@@ -185,6 +189,29 @@ final class SemanticExtractionRunArtifactWriterTest {
         assertEquals("high", manifest.path("reasoningEffort").asText());
         assertTrue(manifest.path("publishedAt").isNull());
         assertTrue(hasArtifact(manifest, "partial.bin"));
+        assertEquals(0, directoryCount(tempDir, "run-"));
+    }
+
+    @Test
+    void failedManifestReplacementLeavesTheLastParseableInProgressState() throws Exception {
+        SemanticExtractionRunPlan plan = new SemanticExtractionService().plan(
+                singleComponentBundle(), SemanticShardingOptions.defaults());
+
+        assertThrows(IllegalStateException.class,
+                () -> new SemanticExtractionRunArtifactWriter().writeCodexSession(
+                        tempDir, plan, "codex-current", "high", ArtifactRetention.FULL,
+                        staging -> {
+                            assertEquals("IN_PROGRESS", readManifest(staging).path("status").asText());
+                            try {
+                                Files.createDirectory(staging.resolve("run-manifest.json.tmp"));
+                            } catch (IOException error) {
+                                throw new IllegalStateException(error);
+                            }
+                            throw new IllegalStateException("synthetic artifact failure");
+                        }));
+
+        Path staging = onlyDirectory(tempDir, ".staging-");
+        assertEquals("IN_PROGRESS", readManifest(staging).path("status").asText());
         assertEquals(0, directoryCount(tempDir, "run-"));
     }
 
@@ -301,6 +328,14 @@ final class SemanticExtractionRunArtifactWriterTest {
             }
         }
         return "";
+    }
+
+    private JsonNode readManifest(Path directory) {
+        try {
+            return JSON.readTree(directory.resolve("run-manifest.json").toFile());
+        } catch (IOException error) {
+            throw new IllegalStateException(error);
+        }
     }
 
     private void writeBytes(Path path, byte[] bytes) {

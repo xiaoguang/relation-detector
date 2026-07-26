@@ -91,7 +91,7 @@ core/src/main/java/com/relationdetector/core/scan
   StatementExecutionService / EvidenceEnhancementService / ResultAssembler
 
 core/src/main/java/com/relationdetector/core/lineage/model
-  ProjectionTrace / ExpressionSourceSet / AssignmentMapping / RoutineScope / WriteTarget
+  ProjectionTrace / ExpressionSourceSet / AssignmentMapping
 
 core/src/main/java/com/relationdetector/core/ddl
   package-info.java
@@ -357,7 +357,7 @@ flowchart TD
   namingEnhancer --> relMerge["RelationshipMerger"]
 ```
 
-当前生产 `ScanEngine.scan(...)` 只保留对外编排入口；source collection 进入 `SourceCollectorPipeline`，单条 SQL/DDL 进入 `StatementParsePipeline`，再由 `StatementExecutionService` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)` 或 DDL runner。生产 SQL 语句只做一次结构化解析，同时得到 relationship candidates 和可供 Data Lineage 使用的 `StructuredParseResult`。SQL naming rule 在 statement 层不执行，只在 scan-level relationship merge 后由 `EvidenceEnhancementService` 统一生成 top-level naming evidence。这样生产 scan 中 SQL/DML 的 parser mode、profile selection、fallback warning 和 diagnostics 在同一条语句内保持一致。
+当前生产 `ScanEngine.scan(...)` 只保留对外编排入口；source collection 进入 `SourceCollectorPipeline`，单条 SQL/DDL 进入 `StatementParsePipeline`，再由 `StatementExecutionService` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)` 或 DDL runner。生产 SQL 语句只做一次结构化解析，同时得到 relationship candidates 和可供 Data Lineage 使用的 `StructuredParseResult`。SQL naming rule 在 statement 层不执行；全部source收集后、最终`RelationshipMerger`之前，由scan-level `EvidenceEnhancementService`对原始candidate集合统一生成top-level naming evidence并挂接`NAMING_MATCH`。这样生产scan中SQL/DML的parser mode、profile selection、fallback warning和diagnostics在同一条语句内保持一致。
 
 `ScanConfig` 只在 parser bundle 选择和 typed log-noise policy 的实际拥有者路径中使用；SQL runner
 直接把原始 `SqlStatementRecord` 交给共享 parser 执行边界。迁移期的空 policy-attribute helper 与 direct SQL
@@ -372,9 +372,9 @@ SQL 的 production runner、direct statement service 和 relationship facade 共
 `AdaptorParseResultContractValidator` 校验整个 `StructuredParseResult` 的 event family、必需 typed payload、
 statement source/line/object/block provenance、attributes 与 warnings 后，才允许事实抽取和 warning 提交。
 任何 contract violation 都不会留下前序部分状态，也不得触发 token-event fallback。
-对外部文件，parser event 可以保留输入 statement 已声明的绝对 `sourceFile`；validator 要求两者精确
-绑定，但不在 parser trust boundary 把输入路径当作插件伪造。公开 JSON / verification artifact 的绝对路径
-禁止仍是独立的输出契约。
+对外部文件，framing前统一生成可移植source：工作区内使用相对路径，工作区外使用完整内容摘要，
+读取失败使用`external/unavailable/<文件名>`。parser event、`sourceFile`、statement ID与warning都绑定
+同一规范source；validator拒绝不一致结果，公开JSON与verification artifact不传播本机绝对路径。
 
 `SourceCollectorPipeline` 在 statement task 内让 `AdaptorContractException` 越过普通 parse warning
 recovery；`ScanTaskExecutor` 在串行路径直接传播，在并行 `Future.get()` 路径识别 cause 后原样传播。
@@ -606,7 +606,7 @@ CorrectnessFixtureExecutor
   -> GoldenWriter             // only writes expected JSON when updateCorrectnessGold=true
 ```
 
-SQL correctness fixture 通过 `StatementExecutionService` 执行，并复用 structured parser、relationship、lineage 与 naming enhancement 语义。方言/profile fixture 进入 production runner；common fixture 使用 direct structured-parser overload，但该入口与 runner 共用 `StructuredSqlParseExecutor` 的 detached context、完整 result validator 和延迟 warning 提交边界。因此 common correctness 可同时保护 parser facts/golden 与 direct SPI trust boundary。SQL naming rule 不在 statement 层提前执行；correctness 与正式 scan 都在合并 relationship candidates 后，由 scan-level `EvidenceEnhancementService` 调用 `NamingEvidenceExtractor` 一次生成 `NamingEvidencePool`。DDL fixture 仍通过 `StatementExecutionService` 和 DDL runner 执行，保持 parser-outcome 验收语义，其 typed DDL inventory 可产生 DDL naming observation，但不额外引入 scan-level metadata enhancement。
+SQL correctness fixture 通过 `StatementExecutionService` 执行，并复用 structured parser、relationship、lineage 与 naming enhancement 语义。方言/profile fixture 进入 production runner；common fixture 使用 direct structured-parser overload，但该入口与 runner 共用 `StructuredSqlParseExecutor` 的 detached context、完整 result validator 和延迟 warning 提交边界。因此 common correctness 可同时保护 parser facts/golden 与 direct SPI trust boundary。SQL naming rule不在statement层提前执行；correctness与正式scan都在收集完整candidate集合后、`RelationshipMerger`之前，由scan-level `EvidenceEnhancementService`调用`NamingEvidenceExtractor`一次生成`NamingEvidencePool`。DDL fixture仍通过`StatementExecutionService`和DDL runner执行，保持parser-outcome验收语义，其typed DDL inventory可产生DDL naming observation，但不额外引入scan-level metadata enhancement。
 
 structured parse 完成后统一执行 `StructuredParseProvenanceNormalizer`：它不覆盖显式
 `StatementSourceType`，只把普通 statement 根据 typed events 规范为 `SQL_WRITE`、`QUERY`、`DDL`
@@ -1006,7 +1006,7 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 - `derivedDataLineages`：只从 `LineageFlowKind.VALUE` 的字段血缘边推导；`CONTROL` 和 `NAMING_MATCH` 不参与数据流推导。
 - derived `namingEvidence`：direct namingEvidence 的有向链可生成 `rule=TRANSITIVE_NAMING_PATH` 的 top-level naming evidence，relationship 仍只能通过 `evidenceRef` 引用这个池。JSON 顶层的 `derivedNamingEvidence` 只是轻量阅读视图，方便按 derived name 统计；完整证据仍只在 top-level `namingEvidence` 中维护。
 
-路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
+路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 表示每对路径不限制，`maxFacts=0` 表示三类derived事实总数不限制，但仍做循环检测和自环过滤。非零`maxFacts`在relationship、lineage和naming全部形成并合并后，按`RELATIONSHIP`、`DATA_LINEAGE`、`NAMING`及类内canonical key应用全局总配额；被裁剪derived naming的可选引用同步删除或重写，不会留下悬空`evidenceRef`。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
 
 `derivedPaths.minConfidence` 的契约是输出过滤阈值：计算衰减置信度后，低于该值的 path 不应输出。
 `DerivedPathGraphBuilder` 使用 `BigDecimal` 计算未舍入的

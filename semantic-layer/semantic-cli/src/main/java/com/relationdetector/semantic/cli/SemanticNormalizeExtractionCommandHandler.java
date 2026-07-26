@@ -23,12 +23,13 @@ final class SemanticNormalizeExtractionCommandHandler {
         try {
             JsonNode raw = JSON.readTree(arguments.inputs().get(0).toFile());
             JsonNode evidenceBundle = JSON.readTree(arguments.evidenceBundle().toFile());
-            JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle);
+            JsonNode normalized = new SemanticExtractionDocumentNormalizer()
+                    .normalizeOwnedShard(raw, evidenceBundle);
             Path parent = arguments.output().getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            Files.writeString(arguments.output(), JSON.writeValueAsString(normalized));
+            JSON.writeValue(arguments.output().toFile(), normalized);
             return 0;
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to normalize semantic extraction result", e);

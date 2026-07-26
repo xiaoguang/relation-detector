@@ -52,9 +52,9 @@ Development default is `codex-session`. It writes the deterministic KG plus one 
 - `run-manifest.json`
 
 It does not call an external model provider and does not require `OPENAI_API_KEY`.
-For a single shard it also preserves the historical root-level prompt artifacts. For multiple shards it writes a
-constrained reconciliation template. A Codex session or human supplies each result, which must be normalized against
-that shard's bundle before deterministic merge and final full-bundle normalization.
+Single-shard and multi-shard runs use the same layout: request payloads exist only under `shards/shard-NNNN/`.
+Multiple shards also receive a constrained reconciliation template. A Codex session or human supplies each result,
+which must be normalized against that shard's bundle before deterministic merge and final full-bundle normalization.
 
 `openai-api` uses the approved fixed profile `gpt-5.6-sol` with `xhigh` reasoning and writes:
 
@@ -89,8 +89,8 @@ directory:
 ```bash
 java -jar semantic-layer/semantic-cli/target/relation-detector-semantic-cli-0.1.0-SNAPSHOT.jar \
   semantic normalize-extraction \
-  --input <run-dir>/semantic-extraction-result-full.json \
-  --evidence-bundle <run-dir>/semantic-extraction-evidence-bundle.json \
+  --input <run-dir>/shards/shard-0001/semantic-extraction-result.json \
+  --evidence-bundle <run-dir>/shards/shard-0001/semantic-extraction-evidence-bundle.json \
   --output semantic-layer/semantic-extraction-preview/mysql-v8_0-full/semantic-extraction-result-normalized.json
 ```
 
@@ -101,9 +101,11 @@ into evidence-closed table-owned units. If one table owner still exceeds the har
 therefore the canonical ownership axis, not necessarily one model request. Each fact and deterministic candidate has
 exactly one canonical owner; overlap is read-only context. Component edges come only from typed endpoint and
 fact/candidate reference fields; descriptions, diagnostics, and arbitrary attributes cannot connect components.
-Every model-authored item must carry `ownedGroundingRefs` from the current shard. A raw owner validator rejects
-overlap-only or cross-owner output before backfill and formal normalization; `evidenceRefs` remain audit context and
-do not establish ownership.
+In the `SemanticExtractionService`/`openai-api` shard flow, every model-authored item must carry
+`ownedGroundingRefs` from the current shard. A raw owner validator rejects overlap-only or cross-owner output before
+backfill and formal normalization; `evidenceRefs` remain audit context and do not establish ownership. The standalone
+`normalize-extraction` command receives only a raw document and a complete evidence bundle, not a shard ownership
+plan. It validates reference/evidence closure but currently cannot prove shard ownership.
 
 Cross-shard entity identity is deterministic. A complete `physicalName` identifies one physical entity. A pure
 business entity uses normalized name, machine type, and its owned grounding signature. Equal signatures merge and
@@ -123,15 +125,20 @@ one complete relation-detector result before building the deterministic KG and s
 typed in-memory representation require a separate streaming or on-disk ingestion design and must not be treated as
 supported merely because the resulting model prompts could be split.
 
-`--output` is a reusable run root. Each invocation writes `.staging-<runId>` and publishes it as `run-<runId>` only
-after shard execution, merge, full-bundle normalization, graph/reference closure, artifact hashing, and manifest
-creation all succeed. Failed runs remain as FAILED staging directories and never appear as completed runs. Hashes are
-streamed. `artifactRetention=full|final-only` controls successful-run payload retention without weakening failure
-auditability. Deterministic KG, build-run, and evidence-graph files are streamed directly through Jackson instead of
-being materialized as one unbounded Java String. `final-only` pruning applies after a complete model result exists;
-request-only runs retain their request payload because that payload is their deliverable. YAML is strictly shaped,
-rejects unknown or invalid values, resolves relative paths from the config directory, and is validated again after
-CLI overrides.
+`--output` is a reusable run root. Each invocation writes `.staging-<runId>` and atomically publishes a
+mode-specific deliverable as `run-<runId>`: codex-session publishes `AWAITING_MODEL_RESULTS`, request-only publishes
+`REQUESTS_READY`, and a model execution publishes `COMPLETE` only after shard execution, merge, full-bundle
+normalization, graph/reference closure, artifact hashing, and manifest creation all succeed. A published run directory
+therefore is not by itself proof of completed model extraction; callers must inspect the manifest status. Failed
+executions never publish a final run. If staging exists, the writer makes a best-effort attempt to write a `FAILED`
+manifest, but a second I/O failure can prevent that manifest from landing. Hashes are streamed.
+`artifactRetention=full|final-only` controls successful-run payload retention. Deterministic KG, build-run, and
+evidence-graph files are streamed directly through Jackson instead of being materialized as one unbounded Java String.
+Full/shard evidence bundles, merged drafts, final normalized results, and standalone normalized outputs use the same
+direct-to-file rule. Prompt and transport request strings remain bounded by the configured estimate gate.
+`final-only` pruning applies after a complete model result exists; request-only runs retain their request payload
+because that payload is their deliverable. YAML is strictly shaped, rejects unknown or invalid values, resolves
+relative paths from the config directory, and is validated again after CLI overrides.
 
 Production should use `openai-api`, either by command-line flags or config:
 
@@ -163,4 +170,7 @@ java -jar semantic-layer/semantic-cli/target/relation-detector-semantic-cli-0.1.
   --config semantic-layer/examples/semantic-extraction-openai-api.yml
 ```
 
-All generated semantic candidates remain `SYSTEM_PROPOSED` unless a later governance/review step approves them.
+The governance target is for generated semantic candidates to carry `SYSTEM_PROPOSED` until a later review step.
+The current normalizer rejects model-authored `BUSINESS_APPROVED`, but it does not fill a missing `reviewStatus`;
+backfilled event/triplet candidates can therefore remain unset. Consumers must not interpret an absent status as
+approval.

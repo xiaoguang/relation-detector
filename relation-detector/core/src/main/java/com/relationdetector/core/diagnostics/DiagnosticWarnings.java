@@ -9,6 +9,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
+import com.relationdetector.core.log.SourceNameNormalizer;
 
 /**
  * CN: 统一构造 parser、file 与 live-source failures 的 operator-facing warnings。parser/file warning
@@ -49,7 +50,7 @@ public final class DiagnosticWarnings {
         Map<String, Object> attributes = exceptionAttributes(ex);
         readString(file).ifPresent(text -> attributes.put("rawStatement", text));
         return WarningMessage.warn(WarningType.PARSE_WARNING, "DDL_PARSE_FAILED",
-                ex.getMessage(), file.toString(), 0, attributes);
+                ex.getMessage(), SourceNameNormalizer.normalizeFile(file), 0, attributes);
     }
 
     public static WarningMessage ddlTextParseFailed(String sourceName, String ddl, Exception ex) {
@@ -89,7 +90,7 @@ public final class DiagnosticWarnings {
         Map<String, Object> attributes = exceptionAttributes(ex);
         readString(file).ifPresent(text -> attributes.put("rawStatement", text));
         return WarningMessage.warn(WarningType.PARSE_WARNING, "SQL_FILE_EXTRACT_FAILED",
-                ex.getMessage(), file.toString(), 0, attributes);
+                ex.getMessage(), SourceNameNormalizer.normalizeFile(file), 0, attributes);
     }
 
     /**
@@ -99,7 +100,7 @@ public final class DiagnosticWarnings {
     public static WarningMessage logExtractFailed(Path file, Exception ex) {
         Map<String, Object> attributes = exceptionAttributes(ex);
         return WarningMessage.warn(WarningType.PARSE_WARNING, "LOG_EXTRACT_FAILED",
-                ex.getMessage(), file.toString(), 0, attributes);
+                ex.getMessage(), SourceNameNormalizer.normalizeFile(file), 0, attributes);
     }
 
     /**

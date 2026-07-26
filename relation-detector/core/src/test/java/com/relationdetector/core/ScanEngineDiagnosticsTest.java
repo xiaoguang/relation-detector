@@ -68,7 +68,7 @@ class ScanEngineDiagnosticsTest {
 
         WarningMessage warning = onlyWarning(result);
         assertEquals("DDL_PARSE_FAILED", warning.code());
-        assertEquals(ddlFile.toRealPath().toString(), warning.source());
+        assertEquals(com.relationdetector.core.log.SourceNameNormalizer.normalizeFile(ddlFile), warning.source());
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("CREATE TABLE orders"),
                 "warning should retain the original DDL text that failed");
         assertEquals("IllegalStateException", warning.attributes().get("exceptionClass"));
@@ -91,7 +91,7 @@ class ScanEngineDiagnosticsTest {
 
         WarningMessage warning = warningWithRawStatementContaining(result, "CREATE PROCEDURE rebuild_orders");
         assertEquals("SQL_PARSE_FAILED", warning.code());
-        assertEquals(procedureFile.toRealPath().toString(), warning.source());
+        assertEquals(com.relationdetector.core.log.SourceNameNormalizer.normalizeFile(procedureFile), warning.source());
         assertEquals(1L, warning.line());
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("CREATE PROCEDURE rebuild_orders"),
                 "warning should retain the original procedure SQL statement that failed");
@@ -111,7 +111,7 @@ class ScanEngineDiagnosticsTest {
 
         WarningMessage warning = onlyWarning(result);
         assertEquals("SQL_PARSE_FAILED", warning.code());
-        assertEquals(logFile.toRealPath().toString(), warning.source());
+        assertEquals(com.relationdetector.core.log.SourceNameNormalizer.normalizeFile(logFile), warning.source());
         assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("orders o JOIN users u"),
                 "warning should retain the original log SQL statement that failed");
         assertEquals("NATIVE_LOG", warning.attributes().get("statementSourceType"));
@@ -258,7 +258,7 @@ class ScanEngineDiagnosticsTest {
         public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
             try {
                 String sql = Files.readString(file).replaceFirst("(?s).* Query ", "").trim();
-                String source = com.relationdetector.core.log.SourceNameNormalizer.normalize(file);
+                String source = com.relationdetector.core.log.SourceNameNormalizer.normalizeFile(file);
                 return Stream.of(new SqlStatementRecord(sql, com.relationdetector.contracts.Enums.StatementSourceType.NATIVE_LOG,
                         source, 1, 1, java.util.Map.of(
                                 "sourceFile", source,

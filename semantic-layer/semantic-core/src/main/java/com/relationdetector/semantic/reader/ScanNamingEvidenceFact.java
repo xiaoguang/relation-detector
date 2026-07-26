@@ -25,4 +25,9 @@ public record ScanNamingEvidenceFact(
         }
         document = document.deepCopy();
     }
+
+    @Override
+    public JsonNode document() {
+        return document.deepCopy();
+    }
 }

@@ -101,9 +101,6 @@ final class DerivedLineageInference {
                         observation.source(), observation.detail(), attributes));
             }
             result.add(candidate);
-            if (graphs.limitReached(result.size())) {
-                break;
-            }
         }
         return List.copyOf(result);
     }

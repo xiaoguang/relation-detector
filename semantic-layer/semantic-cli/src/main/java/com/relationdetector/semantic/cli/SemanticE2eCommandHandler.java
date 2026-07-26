@@ -2,9 +2,9 @@ package com.relationdetector.semantic.cli;
 
 import java.nio.file.Path;
 
-import com.relationdetector.semantic.extract.SemanticExtractionArtifactWriter;
 import com.relationdetector.semantic.extract.SemanticExtractionPrompt;
 import com.relationdetector.semantic.extract.SemanticExtractionPromptBuilder;
+import com.relationdetector.semantic.extract.SemanticRequestArtifactWriter;
 import com.relationdetector.semantic.reader.ScanBundle;
 
 /**
@@ -19,7 +19,7 @@ final class SemanticE2eCommandHandler {
         Path extractionOutput = arguments.output().resolve("semantic-extraction").resolve(name);
         new SemanticKgBuildService().build(bundle, kgOutput);
         SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(bundle);
-        new SemanticExtractionArtifactWriter().writeCodexSessionRequest(extractionOutput, prompt);
+        new SemanticRequestArtifactWriter().writeCodexSessionRequest(extractionOutput, prompt);
         return 0;
     }
 

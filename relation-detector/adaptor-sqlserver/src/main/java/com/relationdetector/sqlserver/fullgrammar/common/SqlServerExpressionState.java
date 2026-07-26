@@ -8,7 +8,7 @@ import java.util.Set;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
 
-final class SqlServerTransformState {
+final class SqlServerExpressionState {
     boolean aggregate;
     boolean arithmetic;
     boolean coalesce;

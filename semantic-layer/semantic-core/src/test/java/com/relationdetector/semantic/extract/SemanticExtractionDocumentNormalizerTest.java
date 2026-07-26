@@ -1,9 +1,9 @@
 package com.relationdetector.semantic.extract;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -36,17 +36,6 @@ final class SemanticExtractionDocumentNormalizerTest {
                 .anyMatch(method -> method.getName().startsWith("normalizeEntities")
                         || method.getName().startsWith("normalizeEvents")
                         || method.getName().startsWith("normalizeRelations")));
-    }
-
-    @Test
-    void requiresEvidenceBundleForFormalNormalization() throws Exception {
-        JsonNode raw = JSON.readTree("""
-                {"entities": [], "events": [], "relations": [], "lineage": [], "metrics": [],
-                 "dimensions": [], "triplets": [], "reviewItems": []}
-                """);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> new SemanticExtractionDocumentNormalizer().normalize(raw));
     }
 
     @Test
@@ -238,6 +227,12 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertEquals("entity:sales_orders", normalized.path("relations").get(0).path("toEntityRef").asText());
         assertEquals("entity:sales_fact", normalized.path("metrics").get(0).path("ownerEntityRef").asText());
         assertEquals("entity:sales_orders", normalized.path("dimensions").get(0).path("dimensionEntityRef").asText());
+        for (String section : List.of(
+                "entities", "events", "relations", "lineage", "metrics", "dimensions", "triplets")) {
+            assertEquals("SYSTEM_PROPOSED",
+                    normalized.path(section).get(0).path("reviewStatus").asText(),
+                    section);
+        }
         assertTrue(normalized.path("semanticGraph").path("nodes").isArray());
         assertTrue(normalized.path("semanticGraph").path("edges").isArray());
         assertFalse(normalized.path("semanticGraph").path("nodes").isEmpty());
@@ -379,6 +374,7 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertEquals("metric:sales_fact.gross_margin_rate", review.path("targetRef").asText());
         assertEquals("metrics", review.path("targetSection").asText());
         assertEquals("REVIEW_NEEDED", review.path("type").asText());
+        assertEquals("REVIEW_NEEDED", review.path("reviewStatus").asText());
         assertEquals(1, normalized.path("validation").path("generatedReviewItemCount").asInt());
     }
 

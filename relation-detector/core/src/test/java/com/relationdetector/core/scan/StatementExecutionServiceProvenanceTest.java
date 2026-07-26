@@ -152,7 +152,7 @@ class StatementExecutionServiceProvenanceTest {
                 new TableId("catalog_a", "schema_a", "sales_fact", "schema_a.sales_fact"));
 
         StatementExecutionOutcome outcome = new StatementExecutionService().executeSql(
-                new CommonDatabaseAdaptor(), config, statement, context, knownPhysical);
+                new CommonDatabaseAdaptor(), config, statement, context, knownPhysical, null);
 
         assertFalse(outcome.relationshipCandidates().isEmpty());
         assertFalse(outcome.lineageCandidates().isEmpty());

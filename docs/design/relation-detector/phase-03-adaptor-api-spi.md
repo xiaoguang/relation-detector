@@ -84,8 +84,11 @@ public interface DatabaseAdaptor {
 - `AdaptorContractValidator` 在 JDBC 前通过 `ValidatedDatabaseAdaptor` 一次性读取并校验
   `supportedDatabaseTypes()`、`capabilities()`、`identifierRules()`、`collectors()`、`parsers()`、
   `profiling()` 与 dialect permission codes。集合和 grouped record 固化为不可变快照，registry、
-  preflight 与 scan 不再重复读取插件 shape。null 顶层/grouped 值、非法嵌套值及 null scope 返回统一
-  抛 `AdaptorContractException`；v5 仍在读取 v6 grouped shape 前以版本错误拒绝。
+  preflight 与 scan 不再重复读取插件 shape。null 顶层 grouped record、parser/profiling 中可见的
+  null member、非法集合元素及 null scope 返回统一抛 `AdaptorContractException`；v5 仍在读取 v6
+  grouped shape 前以版本错误拒绝。
+- `AdaptorCollectors`不归一化null `Optional` member。内置adaptor必须显式返回`Optional.empty()`；
+  外部adaptor返回null时，core在JDBC前将其作为SPI shape violation拒绝，不能与合法的absent collector混同。
 
 ## 采集器接口
 
@@ -161,14 +164,18 @@ public interface ObjectDefinitionCollector {
 deep-detach，再执行类型、来源和 warning allowlist 校验。任一元素违约都会使该次 outcome 整体失败，
 前序 statement、event 和 warning 均不会进入 scan。
 
+`StructuredParseResult`与`ScriptFrameResult`只冻结非null collection，不把null collection或null
+element归一为空。`AdaptorParseResultContractValidator`因此能区分合法空结果与畸形null shape，并在
+statement/event/warning提交前原子拒绝后者。
+
 `StructuredSqlParser` 的所有 core consumer 共用 `StructuredSqlParseExecutor`：production runner、
 `StatementExecutionService` direct overload 和 `StructuredSqlRelationshipParser` facade 都先使用 detached
 context，再由 `AdaptorParseResultContractValidator` 校验完整 typed result。边界按 sealed event family
 验证必需 payload，并在事实抽取前拒绝 statement 行范围、source/object/block identity 或 parser-origin
 不一致的 provenance。common correctness 的 direct 路径因此与 production runner 具有相同 SPI isolation；
 普通 runtime failure 仍只能在 parser selection 层触发 fallback，contract violation 不得被 fallback 掩盖。
-该边界校验 parser 输出是否与输入 statement 的 source 一致，不把输入本身拥有的本地绝对路径
-重新分类为 adaptor 违约；公开 artifact 的路径可移植性仍由 output / verification 契约独立检查。
+该边界校验 parser 输出是否与输入 statement 的规范source一致。文件入口在调用parser前已由
+`SourceNameNormalizer`生成可移植source，因此validator无需接受或传播本机绝对路径。
 
 ### SqlLogExtractor
 
@@ -334,7 +341,7 @@ SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipe
 - PostgreSQL adaptor 根包只保留 `PostgresDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.postgres.tokenevent`，暴露 `PostgresTokenEventStructuredSqlParser` / `PostgresTokenEventStructuredDdlParser`。
 - Oracle adaptor 根包只保留 `OracleDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.oracle.tokenevent`，暴露 `OracleTokenEventStructuredSqlParser` / `OracleTokenEventStructuredDdlParser`。`OracleRelationSql.g4` 归 `grammar/oracle-token-event` artifact 所有。
 - SQL Server adaptor 根包只保留 `SqlServerDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.sqlserver.tokenevent`，暴露 `SqlServerTokenEventStructuredSqlParser` / `SqlServerTokenEventStructuredDdlParser`。compact `SqlServerRelationSql.g4` 归 `grammar/sqlserver-token-event` artifact 所有。
-- SQL/DDL parser 由 `ParserBundleSelector` 按 `parser.mode: auto|full-grammar|token-event` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。profile/version/JDBC metadata 足够时可通过 adaptor 注册的 `FullGrammarDialectModule` 使用 full-grammar；无合理配置、profile 不支持或 full-grammar hard failure 时 fallback 到 adaptor token-event parser 并记录 warning。profile 已选中后的 syntax warning / partial result 属于 full-grammar 结果，不在 event 层委托 token-event 补齐。`parser.sql.mode`、`parser.ddl.mode` 和 simple/shadow fallback 已移除。
+- SQL/DDL parser 由 `ParserBundleSelector` 按 `parser.mode: auto|full-grammar|token-event` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。profile/version/JDBC metadata 足够时可通过 adaptor 注册的 `FullGrammarDialectModule` 使用 full-grammar；`auto` 无法选择profile时静默选择token-event，显式`full-grammar`选择失败时记录fallback warning。full-grammar已经选中后发生普通runtime hard failure时也记录固定warning并fallback；syntax warning / partial result仍属于full-grammar结果，不在event层委托token-event补齐。`parser.sql.mode`、`parser.ddl.mode`和simple/shadow fallback已移除。
 - `SqlRelationParserRunner` 与 `DdlRelationParserRunner` 都从 `ParserBundle` 取 parser，不再分别重复 profile selection。SQL runner 还会复用同一个 `StructuredParseResult` 供 relationship 与 Data Lineage 抽取使用。
 - 第三方 adaptor 可以在 `AdaptorParsers` 中只提供 structured SQL 或 structured DDL
   一侧，但缺失的一侧不应由 core simple parser 假装支持；应明确返回空 capability/

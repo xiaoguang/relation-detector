@@ -1,5 +1,7 @@
 package com.relationdetector.contracts.parse;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.relationdetector.contracts.model.WarningMessage;
@@ -13,8 +15,12 @@ public record ScriptFrameResult(
         List<WarningMessage> warnings
 ) {
     public ScriptFrameResult {
-        statements = statements == null ? List.of() : List.copyOf(statements);
-        warnings = warnings == null ? List.of() : List.copyOf(warnings);
+        statements = statements == null
+                ? null
+                : Collections.unmodifiableList(new ArrayList<>(statements));
+        warnings = warnings == null
+                ? null
+                : Collections.unmodifiableList(new ArrayList<>(warnings));
     }
 
     public static ScriptFrameResult empty() {

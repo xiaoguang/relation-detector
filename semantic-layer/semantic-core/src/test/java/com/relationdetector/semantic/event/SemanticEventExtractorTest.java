@@ -300,6 +300,30 @@ final class SemanticEventExtractorTest {
     }
 
     @Test
+    void triggerAndSqlWriteIdsRemainDistinctWhenReadableSlugsCollide() {
+        ObjectNode lineage = (ObjectNode) lineage(
+                "orders", "id", "sales_fact", "order_id",
+                "write.sql", "", "typed writes", "DIRECT");
+        lineage.remove("attributes");
+        var raw = lineage.putArray("rawEvidence");
+        raw.add(typedRoutineEvidence(
+                "TRIGGER", "public.trigger/a", "public.trigger/a",
+                "public.trigger/a", "INSERT_SELECT"));
+        raw.add(typedRoutineEvidence(
+                "TRIGGER", "public.trigger a", "public.trigger a",
+                "public.trigger a", "UPDATE_SET"));
+        raw.add(typedEvidence("SQL_WRITE", "jobs/a.sql", "jobs/a.sql:1-2", "INSERT_SELECT"));
+        raw.add(typedEvidence("SQL_WRITE", "jobs a.sql", "jobs a.sql:1-2", "UPDATE_SET"));
+        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("logs"), List.of(), Map.of(),
+                List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+
+        List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
+
+        assertEquals(4, events.size());
+        assertEquals(4, events.stream().map(SemanticEventCandidate::id).distinct().count());
+    }
+
+    @Test
     void typedDatabaseEventUsesRoutineObjectIdentity() {
         ObjectNode lineage = (ObjectNode) lineage(
                 "orders", "id", "sales_fact", "order_id",

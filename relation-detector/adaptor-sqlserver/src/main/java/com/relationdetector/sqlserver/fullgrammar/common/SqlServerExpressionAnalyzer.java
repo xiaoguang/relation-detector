@@ -248,7 +248,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     }
 
     private LineageTransformType enclosingValueTransform(ParseTree tree) {
-        SqlServerTransformState state = new SqlServerTransformState();
+        SqlServerExpressionState state = new SqlServerExpressionState();
         collectTransforms(tree, state);
         if (state.aggregate) {
             return LineageTransformType.AGGREGATE;
@@ -269,7 +269,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     }
 
     private LineageTransformType enclosingValueTransformOutsideCases(ParseTree tree) {
-        SqlServerTransformState state = new SqlServerTransformState();
+        SqlServerExpressionState state = new SqlServerExpressionState();
         collectTransformsOutsideCases(tree, state);
         if (state.aggregate) {
             return LineageTransformType.AGGREGATE;
@@ -289,7 +289,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         return LineageTransformType.DIRECT;
     }
 
-    private void collectTransformsOutsideCases(ParseTree tree, SqlServerTransformState state) {
+    private void collectTransformsOutsideCases(ParseTree tree, SqlServerExpressionState state) {
         if (tree == null || isCaseContext(tree)) {
             return;
         }
@@ -299,7 +299,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         }
     }
 
-    private void collectTransforms(ParseTree tree, SqlServerTransformState state) {
+    private void collectTransforms(ParseTree tree, SqlServerExpressionState state) {
         if (tree == null) {
             return;
         }
@@ -309,7 +309,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
         }
     }
 
-    private void collectCurrentTransform(ParseTree tree, SqlServerTransformState state) {
+    private void collectCurrentTransform(ParseTree tree, SqlServerExpressionState state) {
         parseTreeAdapter().functionName(tree).ifPresent(name -> {
             LineageTransformType classified = LineageTransformClassifier.classifyFunction(
                     name, false, FUNCTION_EXTENSIONS);

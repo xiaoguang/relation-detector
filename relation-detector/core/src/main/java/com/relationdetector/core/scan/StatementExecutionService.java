@@ -39,16 +39,6 @@ public final class StatementExecutionService {
             ScanConfig config,
             SqlStatementRecord statement,
             AdaptorContext context,
-            Set<TableId> knownPhysicalTables
-    ) {
-        return executeSql(adaptor, config, statement, context, knownPhysicalTables, null);
-    }
-
-    public StatementExecutionOutcome executeSql(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context,
             Set<TableId> knownPhysicalTables,
             ParserBundle parserBundle
     ) {
@@ -84,39 +74,6 @@ public final class StatementExecutionService {
     }
 
     public StatementExecutionOutcome executeDdlText(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(adaptor, config, ddl, sourceName, sourceType, context));
-    }
-
-    public StatementExecutionOutcome executeDdlText(
-            ParserBundle parserBundle,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parserBundle, ddl, sourceName, sourceType, context));
-    }
-
-    public StatementExecutionOutcome executeDdlText(
-            ParserBundle parserBundle,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context,
-            ScanConfig config
-    ) {
-        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parserBundle, ddl, sourceName, sourceType, context,
-                config));
-    }
-
-    public StatementExecutionOutcome executeDdlText(
             ParserBundle parserBundle,
             String ddl,
             String sourceName,
@@ -129,27 +86,6 @@ public final class StatementExecutionService {
         return ddlOutcome(ddlParserRunner.parseTextWithEvidence(
                 parserBundle.ddlParser(), ddl, sourceName, sourceType, context, config,
                 identifierRules, namespace));
-    }
-
-    public StatementExecutionOutcome executeDdlText(
-            StructuredDdlParser parser,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parser, ddl, sourceName, sourceType, context));
-    }
-
-    public StatementExecutionOutcome executeDdlText(
-            StructuredDdlParser parser,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context,
-            ScanConfig config
-    ) {
-        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, config));
     }
 
     public StatementExecutionOutcome executeDdlStatements(

@@ -30,4 +30,9 @@ public record ScanRelationshipFact(
         }
         return value.deepCopy();
     }
+
+    @Override
+    public JsonNode document() {
+        return document.deepCopy();
+    }
 }
