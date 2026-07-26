@@ -41,10 +41,10 @@ require_absent() {
 }
 
 VERIFY_RELEASE="$ROOT/relation-detector/scripts/verify-release.sh"
-MANIFEST_BUILDER="$ROOT/relation-detector/scripts/build-verification-manifest.py"
+VERIFICATION_RUNNER="$ROOT/relation-detector/scripts/run-release-verification-tool.sh"
 
 [[ -x "$VERIFY_RELEASE" ]]
-[[ -x "$MANIFEST_BUILDER" ]]
+[[ -x "$VERIFICATION_RUNNER" ]]
 grep -q 'NO_CACHE_STATUS' "$VERIFY_RELEASE"
 grep -q 'no-cache acceptance failed' "$VERIFY_RELEASE"
 grep -q -- '-DcorrectnessFixtureProfile=smoke' "$VERIFY_RELEASE"
@@ -255,9 +255,14 @@ TSV
 cp "$TMP_DIR/fingerprints.tsv" "$TMP_DIR/semantic-fingerprints.tsv"
 printf '{"java":"test"}\n' >"$TMP_DIR/verification/environment.json"
 
-python3 "$MANIFEST_BUILDER" \
+"$VERIFICATION_RUNNER" validate-results \
+  --result-dir "$TMP_DIR/results" \
+  --expected-categories 1 \
+  --output "$TMP_DIR/verification/result-validation.json"
+
+"$VERIFICATION_RUNNER" manifest \
   --verification-dir "$TMP_DIR/verification" \
-  --results-dir "$TMP_DIR/results" \
+  --result-validation "$TMP_DIR/verification/result-validation.json" \
   --correctness-summary "$TMP_DIR/correctness.json" \
   --observation-parity "$TMP_DIR/parity.tsv" \
   --warning-codes "$TMP_DIR/warnings.tsv" \
@@ -272,6 +277,12 @@ python3 "$MANIFEST_BUILDER" \
   --expected-categories 1 \
   --expected-json 2 \
   --artifact "$TMP_DIR/verification/environment.json" \
+  --artifact "$TMP_DIR/verification/result-validation.json" \
+  --artifact "$TMP_DIR/correctness.json" \
+  --artifact "$TMP_DIR/parity.tsv" \
+  --artifact "$TMP_DIR/warnings.tsv" \
+  --artifact "$TMP_DIR/fingerprints.tsv" \
+  --artifact "$TMP_DIR/semantic-fingerprints.tsv" \
   --output "$TMP_DIR/verification/verification-manifest.json"
 
 jq -e '
@@ -285,7 +296,7 @@ jq -e '
   .integrity.sourcePaths == "PASS" and
   .integrity.sourceLines == "PASS" and
   .integrity.derivedCycles == "PASS" and
-  (.artifacts | length) == 6 and
+  (.artifacts | length) == 7 and
   any(.artifacts[]; .path == "environment.json")
 ' "$TMP_DIR/verification/verification-manifest.json" >/dev/null
 
@@ -297,9 +308,9 @@ oracle	1	1	0	0
 sqlserver	1	1	0	0
 TSV
 
-if python3 "$MANIFEST_BUILDER" \
+if "$VERIFICATION_RUNNER" manifest \
   --verification-dir "$TMP_DIR/verification" \
-  --results-dir "$TMP_DIR/results" \
+  --result-validation "$TMP_DIR/verification/result-validation.json" \
   --correctness-summary "$TMP_DIR/correctness.json" \
   --observation-parity "$TMP_DIR/parity-bad.tsv" \
   --warning-codes "$TMP_DIR/warnings.tsv" \

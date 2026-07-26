@@ -20,6 +20,7 @@ LOCK_JOB="verify-release"
 MVN_BIN="${VERIFY_RELEASE_MVN:-mvn}"
 VERIFY_ALL_RUNNER="${VERIFY_RELEASE_VERIFY_ALL_RUNNER:-$ROOT/relation-detector/scripts/verify-all.sh}"
 STALE_SUMMARY="${VERIFY_RELEASE_STALE_SUMMARY:-$ROOT/relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv}"
+VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$ROOT/relation-detector/scripts/run-release-verification-tool.sh}"
 ACTIVE_CHILD_PID=""
 
 terminate_active_process_tree() {
@@ -89,30 +90,18 @@ write_failure_manifest() {
   local message="$3"
   mkdir -p "$VERIFY_DIR"
   cp "$NO_CACHE_LOG" "$VERIFY_DIR/no-cache-acceptance.log"
-  python3 - "$VERIFY_DIR/verification-manifest.json" "$phase" "$status" "$message" <<'PY'
-import hashlib
-import json
-import subprocess
-import sys
-from pathlib import Path
-
-output, phase, status, message = sys.argv[1:]
-log = Path(output).parent / "no-cache-acceptance.log"
-manifest = {
-    "status": "FAIL",
-    "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
-    "branch": subprocess.check_output(["git", "branch", "--show-current"], text=True).strip() or "DETACHED",
-    "failedPhase": phase,
-    "errors": [message],
-    "maven": {phase + "Status": int(status)},
-    "artifacts": [{
-        "path": log.name,
-        "sha256": hashlib.sha256(log.read_bytes()).hexdigest(),
-        "bytes": log.stat().st_size,
-    }],
-}
-Path(output).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-PY
+  local commit branch
+  commit="$(git rev-parse HEAD)"
+  branch="$(git branch --show-current)"
+  branch="${branch:-DETACHED}"
+  "$VERIFICATION_RUNNER" failure-manifest \
+    --output "$VERIFY_DIR/verification-manifest.json" \
+    --phase "$phase" \
+    --status "$status" \
+    --message "$message" \
+    --commit "$commit" \
+    --branch "$branch" \
+    --artifact "$VERIFY_DIR/no-cache-acceptance.log"
 }
 
 set +e

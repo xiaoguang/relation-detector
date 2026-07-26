@@ -497,7 +497,7 @@ Step 7: Answer（最终输出）
 | --- | --- |
 | 所有正式语义对象必须带 evidenceRefs | formal normalizer 与离线 KG builder 均原子拒绝缺失或无法解析的引用；KG endpoint node/edge 同样必须有 evidence，冲突 ID 不会静默覆盖。未来 Catalog Store 必须继续保持该契约。 |
 | 物理名必须来自 catalog | SQL Generator 只能引用 catalog 中的表名和列名 |
-| 指标默认 SYSTEM_PROPOSED | 目标契约要求LLM Enricher生成的指标为SYSTEM_PROPOSED；当前normalizer只拒绝BUSINESS_APPROVED，尚未补缺失状态 |
+| 指标默认 SYSTEM_PROPOSED | 当前normalizer拒绝BUSINESS_APPROVED，并把正式semantic对象的缺失状态补为SYSTEM_PROPOSED；review item缺失状态补为REVIEW_NEEDED |
 | SQL 必须校验 | Answer Composer 不能输出未经 Validator 校验的 SQL |
 
 ## 5. 端到端验收场景
@@ -576,13 +576,14 @@ Step 7: Answer（最终输出）
 2. SemanticEvidenceBuilder → EvidenceGraph（facts、endpoints、evidenceRefs、diagnostics、summary）
 3. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）
 4. JsonSemanticKgWriter → `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
+5. 可选 `semantic extract / normalize-extraction` → owner-aware normalized semantic document
+   （entities、events、relations、lineage、metrics、dimensions、triplets、reviewItems、semanticGraph、validation）
 
 **目标完整链路输出（后续阶段）：**
 
-1. semantic extract / normalize-extraction → normalized semantic document（entities、events、relations、lineage、metrics、dimensions、triplets、reviewItems、semanticGraph、validation）
-2. CatalogStore → semantic-catalog/ 目录
-3. EmbeddingIndexer → embedding JSONL
-4. LexiconManager → lexicon JSON
+1. CatalogStore → semantic-catalog/ 目录
+2. EmbeddingIndexer → embedding JSONL
+3. LexiconManager → lexicon JSON
 
 **当前验收标准：**
 - `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json` 均生成且为合法 JSON
@@ -592,11 +593,11 @@ Step 7: Answer（最终输出）
 - 所有fact/evidence/candidate引用使用确定性ID并通过冲突gate；routine、trigger和SQL-write event均
   使用长度分隔的完整typed identity，不使用显示slug。正式normalization必须通过bundle ID、物理endpoint、
   文档内entity引用、shard ownership和semantic owner-id closure
+- 正式semantic对象缺失reviewStatus时归一为`SYSTEM_PROPOSED`，review item归一为`REVIEW_NEEDED`；
+  模型不能写`BUSINESS_APPROVED`
 
 **目标完整链路验收标准（后续阶段）：**
 - 所有语义对象有 evidenceRefs
-- 正式semantic对象缺失reviewStatus时归一为`SYSTEM_PROPOSED`，review item归一为`REVIEW_NEEDED`；
-  只有Review Queue/governance workflow可以写入`BUSINESS_APPROVED`
 - 冲突字段进入 Review Queue
 - Embedding 记录数与语义对象数一致
 - Lexicon 覆盖所有表和列名
@@ -608,7 +609,9 @@ Step 7: Answer（最终输出）
   - 当前 EvidenceBuilder: 无法识别的 rawEvidence 片段 → 保留原始 payload，尽量生成 fact / evidenceRef
   - 目标 EvidenceBuilder: 注释解析失败 → 跳过，记录 warning
   - 当前 semantic extract: transport/429/5xx 在配置范围内重试，仍失败则整次执行失败，不返回部分
-    `SemanticExtractionRunResult`
+    `SemanticExtractionRunResult`；完整bundle/deterministic artifact先写staging，逐片成功结果和
+    reconciliation分别经隐藏临时目录原子提交。后续失败时failure staging保留前序成功片及hash，
+    但不发布部分正式run
   - 目标 SqlValidator: 校验失败 → FAILED，AnswerComposer 不输出 SQL
 
 不可恢复错误 → 抛出异常 → 终止当前链路

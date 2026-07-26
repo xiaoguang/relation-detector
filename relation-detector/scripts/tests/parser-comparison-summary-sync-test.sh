@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-SYNC="$ROOT/relation-detector/scripts/sync-parser-comparison-summary.py"
+SYNC="$ROOT/relation-detector/scripts/run-release-verification-tool.sh"
 SUMMARY="$ROOT/relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv"
 DOCUMENT="$ROOT/docs/parser-audit/parser-comparison-summary.md"
 TMP_DIR="$(mktemp -d)"
@@ -23,12 +23,12 @@ if current not in text:
 path.write_text(text.replace(current, stale, 1), encoding="utf-8")
 PY
 
-if python3 "$SYNC" --summary "$SUMMARY" --document "$TMP_DIR/parser-comparison-summary.md"; then
+if "$SYNC" parser-summary --summary "$SUMMARY" --document "$TMP_DIR/parser-comparison-summary.md"; then
   echo "stale parser comparison summary must fail" >&2
   exit 1
 fi
 
-python3 "$SYNC" --summary "$SUMMARY" --document "$TMP_DIR/parser-comparison-summary.md" --update
-python3 "$SYNC" --summary "$SUMMARY" --document "$TMP_DIR/parser-comparison-summary.md"
+"$SYNC" parser-summary --summary "$SUMMARY" --document "$TMP_DIR/parser-comparison-summary.md" --update
+"$SYNC" parser-summary --summary "$SUMMARY" --document "$TMP_DIR/parser-comparison-summary.md"
 
 echo "parser comparison summary sync test passed"

@@ -89,6 +89,13 @@ bash relation-detector/scripts/verify-all.sh
 
 该脚本先运行 matrix/模块验收，再调用隔离 correctness，最后复用已打包 CLI 生成 sample-data 结果并建立 verification manifest。它不是“单一 Maven reactor”，也不能以中途的 smoke summary 代替完整隔离结果。
 
+发布后处理由`run-release-verification-tool.sh`启动内部Java入口，默认
+`RELATION_DETECTOR_VERIFICATION_HEAP=512m`。结果校验按顶层数组逐项读取并使用外存引用索引；
+canonical/semantic fingerprint按对象字段分块外排、多路归并，规范字节直接进入SHA-256。
+`verification-manifest.json`只读取小型validation/summary/TSV，不再次物化38份大JSON。当前38份
+约9.8 GiB结果已与旧Python fingerprint完成canonical/semantic各38/38 SHA对照。外排会增加磁盘I/O，
+因此仍必须以最终manifest为PASS作为完成条件，不能把CLI文件已写出当作发布验收结束。
+
 需要排除构建缓存时，使用 release wrapper：
 
 ```bash

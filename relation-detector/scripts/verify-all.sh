@@ -13,6 +13,7 @@ MVN_BIN="${VERIFY_ALL_MVN:-mvn}"
 CORRECTNESS_RUNNER="${VERIFY_ALL_CORRECTNESS_RUNNER:-$ROOT/relation-detector/scripts/run-correctness-isolated.sh}"
 SAMPLE_DATA_RUNNER="${VERIFY_ALL_SAMPLE_DATA_RUNNER:-$ROOT/relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
 STALE_SUMMARY="${VERIFY_ALL_STALE_SUMMARY:-$ROOT/relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv}"
+VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$ROOT/relation-detector/scripts/run-release-verification-tool.sh}"
 ACTIVE_CHILD_PID=""
 
 terminate_active_process_tree() {
@@ -86,32 +87,12 @@ else
   WORKTREE_CLEAN=false
 fi
 
-python3 - "$VERIFY_DIR/environment.json" "$COMMIT" "$BRANCH" "$ORIGIN_MAIN" "$MVN_BIN" <<'PY'
-import json
-import platform
-import subprocess
-import sys
-
-output, commit, branch, origin_main, maven_bin = sys.argv[1:]
-
-def command(*args):
-    return subprocess.run(args, check=True, text=True, stdout=subprocess.PIPE).stdout.strip()
-
-data = {
-    "commit": commit,
-    "branch": branch,
-    "originMain": origin_main,
-    "maven": command(maven_bin, "-version"),
-    "platform": platform.platform(),
-    "python": platform.python_version(),
-}
-java = subprocess.run(["java", "-version"], text=True, stdout=subprocess.PIPE,
-                      stderr=subprocess.STDOUT, check=True)
-data["java"] = java.stdout.strip()
-with open(output, "w", encoding="utf-8") as handle:
-    json.dump(data, handle, indent=2, sort_keys=True)
-    handle.write("\n")
-PY
+"$VERIFICATION_RUNNER" environment \
+  --output "$VERIFY_DIR/environment.json" \
+  --commit "$COMMIT" \
+  --branch "$BRANCH" \
+  --origin-main "$ORIGIN_MAIN" \
+  --maven-bin "$MVN_BIN"
 
 # The comparison test must not consume a summary left by an older or subset CLI run.
 # The complete sample-data phase below recreates this file before final validation.
@@ -127,16 +108,25 @@ run_active_child env \
   SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}" \
   bash "$SAMPLE_DATA_RUNNER"
 
-python3 relation-detector/scripts/sync-parser-comparison-summary.py
+"$VERIFICATION_RUNNER" parser-summary \
+  --summary relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv \
+  --document docs/parser-audit/parser-comparison-summary.md
 
-python3 relation-detector/scripts/validate-sample-data-results.py \
+"$VERIFICATION_RUNNER" validate-results \
+  --result-dir relation-detector/target/sample-data-parser-cli/results \
+  --expected-categories 19 \
+  --output "$VERIFY_DIR/result-validation.json"
+
+"$VERIFICATION_RUNNER" fingerprint \
+  --workspace "$VERIFY_DIR/fingerprint-work/canonical" \
+  --output "$VERIFY_DIR/fingerprints.tsv" \
   relation-detector/target/sample-data-parser-cli/results
 
-python3 relation-detector/scripts/canonical-json-fingerprint.py \
-  relation-detector/target/sample-data-parser-cli/results >"$VERIFY_DIR/fingerprints.tsv"
-
-python3 relation-detector/scripts/canonical-json-fingerprint.py --semantic \
-  relation-detector/target/sample-data-parser-cli/results >"$VERIFY_DIR/semantic-fingerprints.tsv"
+"$VERIFICATION_RUNNER" fingerprint --semantic \
+  --workspace "$VERIFY_DIR/fingerprint-work/semantic" \
+  --output "$VERIFY_DIR/semantic-fingerprints.tsv" \
+  relation-detector/target/sample-data-parser-cli/results
+rmdir "$VERIFY_DIR/fingerprint-work"
 
 cp relation-detector/target/sample-data-parser-cli/summary.tsv "$VERIFY_DIR/summary.tsv"
 cp relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv \
@@ -161,7 +151,7 @@ if [[ -n "${VERIFY_NO_CACHE_LOG:-}" && -f "$VERIFY_NO_CACHE_LOG" ]]; then
   MANIFEST_OPTIONAL_ARGS+=(--artifact "$VERIFY_DIR/no-cache-acceptance.log")
 fi
 
-python3 relation-detector/scripts/build-performance-report.py \
+"$VERIFICATION_RUNNER" performance \
   --session-start "$SESSION_START" \
   --surefire-root "$ROOT" \
   --cli-log-root "$ROOT/relation-detector/target/sample-data-parser-cli/logs" \
@@ -172,9 +162,9 @@ python3 relation-detector/scripts/build-performance-report.py \
   --maven-log "$MAVEN_LOG" \
   --output "$VERIFY_DIR/performance-report.json"
 
-python3 relation-detector/scripts/build-verification-manifest.py \
+"$VERIFICATION_RUNNER" manifest \
   --verification-dir "$VERIFY_DIR" \
-  --results-dir relation-detector/target/sample-data-parser-cli/results \
+  --result-validation "$VERIFY_DIR/result-validation.json" \
   --correctness-summary "$VERIFY_DIR/correctness-run-summary.json" \
   --observation-parity "$VERIFY_DIR/observation-parity.tsv" \
   --warning-codes "$VERIFY_DIR/warning-codes.tsv" \
@@ -185,7 +175,13 @@ python3 relation-detector/scripts/build-verification-manifest.py \
   --origin-main "$ORIGIN_MAIN" \
   --worktree-clean "$WORKTREE_CLEAN" \
   --maven-status 0 \
+  --expected-fixtures 1197 \
+  --expected-categories 19 \
+  --expected-json 38 \
   "${MANIFEST_OPTIONAL_ARGS[@]}" \
+  --artifact "$VERIFY_DIR/result-validation.json" \
+  --artifact "$VERIFY_DIR/fingerprints.tsv" \
+  --artifact "$VERIFY_DIR/semantic-fingerprints.tsv" \
   --artifact "$VERIFY_DIR/acceptance.log" \
   --artifact "$VERIFY_DIR/summary.tsv" \
   --artifact "$VERIFY_DIR/summary-with-derived.tsv" \

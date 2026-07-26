@@ -88,10 +88,13 @@ done
 RESULT_DIR="$RELATION_ROOT/target/sample-data-parser-cli/results"
 : >"$OUT_DIR/fingerprints.tsv"
 if [[ -d "$RESULT_DIR" ]]; then
-  python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" "$RESULT_DIR" >"$OUT_DIR/fingerprints.tsv"
+  "$RELATION_ROOT/scripts/run-release-verification-tool.sh" fingerprint \
+    --workspace "$OUT_DIR/fingerprint-work" \
+    --output "$OUT_DIR/fingerprints.tsv" \
+    "$RESULT_DIR"
 fi
 
-python3 "$RELATION_ROOT/scripts/build-performance-report.py" \
+"$RELATION_ROOT/scripts/run-release-verification-tool.sh" performance \
   --session-start "$SESSION_START" \
   --surefire-root "$ROOT" \
   --cli-log-root "$RELATION_ROOT/target/sample-data-parser-cli/logs" \

@@ -51,6 +51,10 @@ codex-session为`AWAITING_MODEL_RESULTS`，request-only为`REQUESTS_READY`，模
 因此存在`run-<runId>`不等于模型抽取完成，消费者必须读取manifest status。失败不发布半成品run。
 staging已创建时writer会尽力
 写入`FAILED` manifest并保留目录，但二次I/O失败时不能保证该manifest落盘。
+真实API运行在同一staging事务内顺序执行：完整bundle和deterministic artifact先落盘；每个归一化
+成功的shard及解析成功的reconciliation分别以隐藏临时目录写完后原子改名。后续失败时，前序成功片
+继续留在failure staging并在manifest中标为`COMPLETE`，未完成片为`PENDING`；失败不发布`run-*`，
+`final-only`也只在完整成功后裁剪。
 无界 evidence bundle、merged/final result和KG JSON直接写文件；prompt/request因token门限有界可保留
 字符串表示。所有分片payload统一位于`shards/shard-NNNN/`，单分片不生成root兼容副本。
 该分片边界只控制模型上下文；当前 reader 仍会先在内存中完整物化单个 relation-detector JSON。
@@ -62,8 +66,10 @@ staging已创建时writer会尽力
 normalizer：候选回填后建立统一 reference index，验证每个 evidence/candidate ref、文档内 entity 引用和
 governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对象引用的表列存在于 evidence bundle，
 `SemanticOwnerIdRegistry` 保证所有 semantic section 的 owner ID 全局唯一。任一闭包失败都直接拒绝，不输出
-部分 artifact。独立命令不接收 shard plan，因此只能证明完整 bundle reference closure，不能证明
-`ownedGroundingRefs`属于原owner shard；该保证只在`SemanticExtractionService`执行链成立。
+部分 artifact。独立命令要求 evidence bundle 携带合法 `shardContext`，并与自动执行链共用
+`normalizeOwnedShard`：在 backfill 前验证 owned/overlap 集合及每个 model-authored object 的
+`ownedGroundingRefs`。它不需要接收完整 shard plan，但调用方必须提供 planner 生成或同契约构造的
+owner context；缺失、伪造或越界 context 会被拒绝。
 
 ### 当前实现差异矩阵
 
@@ -83,6 +89,7 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | staging在任何payload前原子写`IN_PROGRESS`；模式成功后原子替换为`AWAITING_MODEL_RESULTS/REQUESTS_READY/COMPLETE`并发布，普通失败写`FAILED`。若终态写入自身失败则保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
+| `SEM-SHARD-FAILURE-AUDIT-01` | `MATCHED` | 完整bundle/deterministic artifact在首次模型调用前写入；逐片和reconciliation审计目录原子提交。后续失败保留所有已完成片及可复核hash，未完成片为`PENDING`，不发布部分正式run；`final-only`失败时不裁剪。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML root/section/unknown field/数值严格校验，相对路径按config目录解析；CLI override后再次构造统一typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 公开JSON accessor返回副本、集合不可修改；同包流水线使用明确的trusted accessor，provider/writer不能通过公开引用回写已校验状态。 |
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式抽取始终使用完整、闭合bundle，不存在focus或分片前事实数量裁剪；旧CLI参数和YAML字段明确拒绝，typed sharding是唯一上下文规模控制机制。 |
@@ -91,7 +98,8 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 
 wire、reference closure、formal normalization ID、离线 KG evidence/identity gate、完整event identity、
 deterministic candidate、typed sharding、完整输入、owner output、identity merge、统一模型请求预算、
-strict configuration、reader/graph公开状态、governance默认值与artifact状态事务已经闭环。详细
+strict configuration、reader/graph公开状态、governance默认值、artifact发布事务与失败运行逐片审计
+已经闭环。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。
@@ -152,8 +160,8 @@ Question
 - 所有语义对象必须携带 `evidenceRefs`，可追溯到 relation-detector 原始输出。
 - provenance / auditability 是主线能力，不是输出展示层附属信息；AnswerPlan、SQL draft element 和 review decision 也必须能回溯 evidence。
 - LLM只能生成待治理semantic objects、解释、同义词和query rewrite，不能创造数据库事实或写入
-  `BUSINESS_APPROVED`。目标默认状态是[SYSTEM_PROPOSED](glossary.md#system_proposed)，但当前normalizer
-  尚未为缺失状态自动补值。
+  `BUSINESS_APPROVED`。当前normalizer为正式semantic对象缺失状态补
+  [SYSTEM_PROPOSED](glossary.md#system_proposed)，为review item补`REVIEW_NEEDED`。
 - 指标只有经过治理流程才能成为[BUSINESS_APPROVED](glossary.md#business_approved)正式口径；空状态不能
   被解释为已审核。
 - [EVIDENCE_SUPPORTED](glossary.md#evidence_supported) 表示有 evidence 支撑，但不等于业务已确认。

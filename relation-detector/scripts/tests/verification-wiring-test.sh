@@ -8,6 +8,7 @@ RUNNER="$ROOT/relation-detector/test-fixtures/examples/sample-data-parser-cli/ru
 CORRECTNESS_RUNNER="$ROOT/relation-detector/scripts/run-correctness-isolated.sh"
 SAMPLE_DATA_ISOLATED_RUNNER="$ROOT/relation-detector/scripts/run-sample-data-isolated.sh"
 LOCK_LIBRARY="$ROOT/relation-detector/scripts/heavy-job-lock.sh"
+VERIFICATION_RUNNER="$ROOT/relation-detector/scripts/run-release-verification-tool.sh"
 
 grep -q '<id>matrix-smoke</id>' "$ROOT/pom.xml"
 grep -q '<id>acceptance</id>' "$ROOT/pom.xml"
@@ -18,6 +19,7 @@ grep -q 'run-correctness-isolated.sh' "$VERIFY"
 [[ -x "$CORRECTNESS_RUNNER" ]]
 [[ -x "$SAMPLE_DATA_ISOLATED_RUNNER" ]]
 [[ -f "$LOCK_LIBRARY" ]]
+[[ -x "$VERIFICATION_RUNNER" ]]
 grep -q 'heavy-job-lock.sh' "$CORRECTNESS_RUNNER"
 grep -q 'heavy-job-lock.sh' "$SAMPLE_DATA_ISOLATED_RUNNER"
 grep -q 'heavy-job-lock.sh' "$VERIFY"
@@ -49,11 +51,12 @@ grep -q 'SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1' \
   "$ROOT/relation-detector/scripts/reconstruct-grammar-migration-baseline.sh"
 grep -q 'CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1}"' "$RUNNER"
 grep -q 'oracle-v12c oracle-v19c oracle-v21c oracle-v26ai' "$SAMPLE_DATA_ISOLATED_RUNNER"
-grep -q 'validate-sample-data-results.py' "$VERIFY"
-grep -q 'sync-parser-comparison-summary.py' "$VERIFY"
-grep -q 'build-performance-report.py' "$VERIFY"
-grep -q 'canonical-json-fingerprint.py' "$VERIFY"
-grep -q 'build-verification-manifest.py' "$VERIFY"
+grep -q 'run-release-verification-tool.sh' "$VERIFY"
+grep -q 'validate-results' "$VERIFY"
+grep -q 'parser-summary' "$VERIFY"
+grep -q 'performance' "$VERIFY"
+grep -q 'fingerprint' "$VERIFY"
+grep -q 'manifest' "$VERIFY"
 grep -q 'verification-manifest.json' "$VERIFY"
 grep -q 'VERIFY_SESSION_ID' "$VERIFY"
 grep -q 'MANIFEST_OPTIONAL_ARGS=(--artifact' "$VERIFY"
@@ -69,8 +72,19 @@ grep -q -- '--artifact "$VERIFY_DIR/no-cache-acceptance.log"' "$VERIFY"
 grep -q -- '--cli-report' "$VERIFY"
 grep -q -- '--correctness-summary' "$VERIFY"
 grep -q -- '--fingerprints' "$VERIFY"
+grep -q 'rmdir "$VERIFY_DIR/fingerprint-work"' "$VERIFY"
 grep -q 'SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE' "$RUNNER"
 grep -q 'audit-semantic-observations.sh' "$RUNNER"
+
+if rg -n 'python3|\\.py' \
+  "$VERIFY_RELEASE" \
+  "$VERIFY" \
+  "$CORRECTNESS_RUNNER" \
+  "$SAMPLE_DATA_ISOLATED_RUNNER" \
+  "$RUNNER"; then
+  echo "current release chain must not invoke Python" >&2
+  exit 1
+fi
 
 if SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE=true bash "$RUNNER" does-not-exist >/dev/null 2>&1; then
   echo "unknown sample-data parser case must fail" >&2

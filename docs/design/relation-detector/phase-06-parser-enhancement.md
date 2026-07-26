@@ -1265,6 +1265,12 @@ bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sam
 direct/derived JSON；当前文件数量由 verification manifest 校验，不在本文复制。
 进程布局是验收实现细节，不改变 CLI JSON 或报告契约。
 
+`verify-all.sh`随后通过内部Java verification入口运行结构校验、canonical/semantic fingerprint和
+manifest integrity。校验器按顶层数组逐项处理，跨section引用写入外存索引；fingerprint对对象字段
+分块外排并多路归并，规范字节直接进入SHA-256。默认verification heap为512 MiB，manifest只消费
+小型`result-validation.json`而不再重读38份大JSON。CLI阶段完成仍不等于发布验收完成，只有最终
+manifest实际生成且为PASS才可作为发布证据；外排I/O耗时属于有界内存实现的已知代价。
+
 `verify-release.sh`、`verify-all.sh`、`run-correctness-isolated.sh` 与
 `run-sample-data-isolated.sh` 默认使用同一个 heavy-job lock。最外层入口写入 `pid/job/token` 并从
 smoke 阶段持锁到最终 manifest；嵌套入口必须验证并借用同一 token，borrower 不负责释放。

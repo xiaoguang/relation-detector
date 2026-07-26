@@ -114,6 +114,6 @@ SQL Validator 优先校验 structured elements
 | 存储 | JSON 文件 | PostgreSQL + JSONB + pgvector | 服务化/分库/消息队列 |
 | 通信 | Java interface | Java interface + job status | HTTP/gRPC |
 | 搜索 | 尚未实现；目标为 Lexicon + in-memory vector | Lexicon + pgvector | 在线学习/评测调参 |
-| LLM | 已有可配置 OpenAI-compatible extraction；catalog enrichment 尚未实现 | 可配置模型 + promptVersion | 多模型评测/路由 |
+| LLM | 已有固定批准模型`gpt-5.6-sol/xhigh`的OpenAI-compatible extraction；endpoint、timeout和预算可配置，catalog enrichment尚未实现 | 受治理的模型/prompt版本配置 | 多模型评测/路由 |
 | SQL 校验 | 尚未实现；目标为 Draft elements + parser sanity | relation-detector parser integration | 深层语义/成本/安全审计 |
 | SQL 生成 | 尚未实现；目标为模板 draft | 模板 draft | 只允许受控润色，不让 LLM 改事实 |

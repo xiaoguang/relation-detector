@@ -13,7 +13,7 @@ OUTPUT_DIR="${CORRECTNESS_OUTPUT_DIR:-$ROOT/relation-detector/target/correctness
 RUN_SUMMARY="${CORRECTNESS_RUN_SUMMARY:-$ROOT/relation-detector/target/correctness-run-summary.json}"
 LOCK_DIR="${CORRECTNESS_LOCK_DIR:-${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$ROOT/relation-detector/target/.relation-detector-heavy-job.lock}}"
 LOCK_JOB="correctness"
-AGGREGATOR="$ROOT/relation-detector/scripts/aggregate-correctness-summaries.py"
+VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$ROOT/relation-detector/scripts/run-release-verification-tool.sh}"
 
 GROUP_IDS=(common mysql postgres oracle-root oracle-v12c oracle-v19c oracle-v21c oracle-v26ai sqlserver)
 GROUP_PROFILES=(common mysql postgres oracle-root oracle/v12c oracle/v19c oracle/v21c oracle/v26ai sqlserver)
@@ -124,7 +124,7 @@ AGGREGATE_ARGS=()
 for category in "${EXPECTED_CATEGORIES[@]}"; do
   AGGREGATE_ARGS+=(--expected-category "$category")
 done
-python3 "$AGGREGATOR" \
+"$VERIFICATION_RUNNER" aggregate-correctness \
   --output "$OUTPUT_DIR/correctness-run-summary.json" \
   "${AGGREGATE_ARGS[@]}" \
   "${SUMMARY_FILES[@]}"

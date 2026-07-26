@@ -224,9 +224,11 @@ final class SemanticExtractionRunArtifactWriterTest {
                 () -> new SemanticExtractionRunArtifactWriter().executeAndWriteResult(
                         tempDir,
                         plan,
-                        () -> {
+                        new SemanticExtractionService(),
+                        prompt -> {
                             throw new IllegalArgumentException("synthetic model failure");
                         },
+                        null,
                         "openai-api",
                         "gpt-current",
                         "xhigh",
@@ -239,6 +241,135 @@ final class SemanticExtractionRunArtifactWriterTest {
         assertEquals("FAILED", manifest.path("status").asText());
         assertEquals("gpt-current", manifest.path("model").asText());
         assertTrue(hasArtifact(manifest, "deterministic-kg/semantic-kg.json"));
+        assertEquals(0, directoryCount(tempDir, "run-"));
+    }
+
+    @Test
+    void secondShardFailureKeepsTheCompletedFirstShardForAudit() throws Exception {
+        SemanticExtractionService service = new SemanticExtractionService();
+        SemanticExtractionRunPlan plan = service.plan(twoComponentBundle(),
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 240_000, 800_000, 128, true));
+        AtomicInteger calls = new AtomicInteger();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new SemanticExtractionRunArtifactWriter().executeAndWriteResult(
+                        tempDir,
+                        plan,
+                        service,
+                        prompt -> {
+                            if (calls.incrementAndGet() == 2) {
+                                throw new IllegalArgumentException("sensitive model failure");
+                            }
+                            return result(rawShardDocument(prompt.evidenceBundle()), 1);
+                        },
+                        prompt -> result("{\"resolutions\":[],\"renames\":[],\"relations\":[]}", 1),
+                        "openai-api",
+                        "gpt-current",
+                        "xhigh",
+                        ArtifactRetention.FINAL_ONLY,
+                        staging -> writeBytes(staging.resolve(
+                                "deterministic-kg/semantic-kg.json"), "{}".getBytes())));
+
+        Path staging = onlyDirectory(tempDir, ".staging-");
+        JsonNode manifest = readManifest(staging);
+        assertEquals("FAILED", manifest.path("status").asText());
+        assertEquals("COMPLETE", manifest.path("shards").get(0).path("status").asText());
+        assertEquals("PENDING", manifest.path("shards").get(1).path("status").asText());
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0001/semantic-extraction-result.json")));
+        assertFalse(Files.exists(staging.resolve("shards/shard-0002")));
+        assertTrue(Files.isRegularFile(staging.resolve("full-evidence-bundle.json")));
+        assertTrue(Files.isRegularFile(staging.resolve("deterministic-kg/semantic-kg.json")));
+        assertFalse(manifest.toString().contains("sensitive model failure"));
+        assertEquals(0, directoryCount(tempDir, "run-"));
+    }
+
+    @Test
+    void reconciliationFailureKeepsEveryCompletedShardWithoutPublishing() throws Exception {
+        SemanticExtractionService service = new SemanticExtractionService();
+        SemanticExtractionRunPlan plan = service.plan(twoComponentBundle(),
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 240_000, 800_000, 128, true));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new SemanticExtractionRunArtifactWriter().executeAndWriteResult(
+                        tempDir,
+                        plan,
+                        service,
+                        prompt -> result(rawShardDocument(prompt.evidenceBundle()), 1),
+                        prompt -> {
+                            throw new IllegalArgumentException("reconciliation failed");
+                        },
+                        "openai-api",
+                        "gpt-current",
+                        "xhigh",
+                        ArtifactRetention.FULL,
+                        ignored -> {
+                        }));
+
+        Path staging = onlyDirectory(tempDir, ".staging-");
+        JsonNode manifest = readManifest(staging);
+        assertEquals("FAILED", manifest.path("status").asText());
+        assertEquals(List.of("COMPLETE", "COMPLETE"),
+                java.util.stream.StreamSupport.stream(
+                                manifest.path("shards").spliterator(), false)
+                        .map(item -> item.path("status").asText())
+                        .toList());
+        assertEquals("PENDING", manifest.path("reconciliation").path("status").asText());
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0001/semantic-extraction-response.json")));
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0002/semantic-extraction-response.json")));
+        assertFalse(Files.exists(staging.resolve("reconciliation")));
+        assertEquals(0, directoryCount(tempDir, "run-"));
+    }
+
+    @Test
+    void reconciliationPatchClosureFailureKeepsShardAndReconciliationAudit() throws Exception {
+        SemanticExtractionService service = new SemanticExtractionService();
+        SemanticExtractionRunPlan plan = service.plan(twoComponentBundle(),
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 240_000, 800_000, 128, true));
+        String invalidPatch = """
+                {
+                  "resolutions": [],
+                  "renames": [],
+                  "relations": [{
+                    "id": "relation:invalid",
+                    "fromEntityRef": "entity:missing",
+                    "toEntityRef": "entity:missing",
+                    "evidenceRefs": ["rel-orders"]
+                  }]
+                }
+                """;
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticExtractionRunArtifactWriter().executeAndWriteResult(
+                        tempDir,
+                        plan,
+                        service,
+                        prompt -> result(rawShardDocument(prompt.evidenceBundle()), 1),
+                        prompt -> result(invalidPatch, 1),
+                        "openai-api",
+                        "gpt-current",
+                        "xhigh",
+                        ArtifactRetention.FINAL_ONLY,
+                        ignored -> {
+                        }));
+
+        Path staging = onlyDirectory(tempDir, ".staging-");
+        JsonNode manifest = readManifest(staging);
+        assertEquals("FAILED", manifest.path("status").asText());
+        assertEquals(List.of("COMPLETE", "COMPLETE"),
+                java.util.stream.StreamSupport.stream(
+                                manifest.path("shards").spliterator(), false)
+                        .map(item -> item.path("status").asText())
+                        .toList());
+        assertEquals("COMPLETE", manifest.path("reconciliation").path("status").asText());
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0001/semantic-extraction-result.json")));
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0002/semantic-extraction-result.json")));
+        assertTrue(Files.isRegularFile(staging.resolve("reconciliation/patch.json")));
+        assertTrue(hasArtifact(manifest, "reconciliation/patch.json"));
         assertEquals(0, directoryCount(tempDir, "run-"));
     }
 

@@ -13,9 +13,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -179,33 +179,58 @@ public final class SemanticExtractionRunArtifactWriter {
     public Path executeAndWriteResult(
             Path outputRoot,
             SemanticExtractionRunPlan plan,
-            Supplier<SemanticExtractionRunResult> execution,
+            SemanticExtractionService service,
+            SemanticModelClient shardClient,
+            SemanticModelClient reconciliationClient,
             String provider,
             String model,
             String reasoningEffort,
             ArtifactRetention retention,
             Consumer<Path> sharedArtifactWriter
     ) {
-        if (plan == null || execution == null) {
-            throw new IllegalArgumentException("semantic extraction plan and execution are required");
+        if (plan == null || service == null || shardClient == null) {
+            throw new IllegalArgumentException("semantic extraction plan, service and shard client are required");
         }
         ArtifactRetention resolvedRetention = retention == null ? ArtifactRetention.FULL : retention;
         Consumer<Path> resolvedSharedWriter = sharedArtifactWriter == null
                 ? NO_SHARED_ARTIFACTS
                 : sharedArtifactWriter;
         RunArtifactPublisher.RunDirectory runDirectory = publisher.begin(outputRoot);
+        List<SemanticShardExecution> completedShards = new ArrayList<>();
+        ReconciliationAudit[] completedReconciliation = new ReconciliationAudit[1];
         try {
             writeInitialManifest(
                     runDirectory, plan, provider, model, reasoningEffort, resolvedRetention);
+            prepare(runDirectory.stagingDirectory(), plan);
             resolvedSharedWriter.accept(runDirectory.stagingDirectory());
-            SemanticExtractionRunResult run = execution.get();
+            SemanticExtractionExecutionObserver observer = new SemanticExtractionExecutionObserver() {
+                @Override
+                public void shardCompleted(SemanticShardExecution execution) {
+                    writeShardAtomically(runDirectory.stagingDirectory(), execution);
+                    completedShards.add(execution);
+                }
+
+                @Override
+                public void reconciliationCompleted(
+                        SemanticExtractionPrompt prompt,
+                        SemanticExtractionResult result,
+                        JsonNode patch
+                ) {
+                    writeReconciliationAtomically(
+                            runDirectory.stagingDirectory(), prompt, result, patch);
+                    completedReconciliation[0] = new ReconciliationAudit(prompt, result, patch);
+                }
+            };
+            SemanticExtractionRunResult run = service.execute(
+                    plan, shardClient, reconciliationClient, observer);
             if (run == null || run.plan() == null
                     || !run.plan().shardPlan().fullBundleHash().equals(plan.shardPlan().fullBundleHash())) {
                 throw new IllegalArgumentException("semantic extraction execution returned a different run plan");
             }
-            writeResultArtifacts(runDirectory.stagingDirectory(), run);
+            writeFinalResultArtifacts(runDirectory.stagingDirectory(), run);
             ObjectNode manifest = createManifest(
-                    plan, "COMPLETE", run.shardExecutions(), run, provider, model, reasoningEffort);
+                    plan, "COMPLETE", run.shardExecutions(), run, null,
+                    provider, model, reasoningEffort);
             List<ArtifactEntry> pruned = resolvedRetention == ArtifactRetention.FINAL_ONLY
                     ? pruneIntermediateArtifacts(runDirectory.stagingDirectory())
                     : List.of();
@@ -214,7 +239,15 @@ public final class SemanticExtractionRunArtifactWriter {
             return publisher.publish(runDirectory);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
-                    runDirectory, plan, provider, model, reasoningEffort, resolvedRetention, failure);
+                    runDirectory,
+                    plan,
+                    completedShards,
+                    completedReconciliation[0],
+                    provider,
+                    model,
+                    reasoningEffort,
+                    resolvedRetention,
+                    failure);
             throw failure;
         }
     }
@@ -243,7 +276,7 @@ public final class SemanticExtractionRunArtifactWriter {
             resolvedSharedWriter.accept(runDirectory.stagingDirectory());
             runArtifactWriter.accept(runDirectory.stagingDirectory());
             ObjectNode manifest = createManifest(
-                    plan, status, executions, run, provider, model, reasoningEffort);
+                    plan, status, executions, run, null, provider, model, reasoningEffort);
             List<ArtifactEntry> pruned = "COMPLETE".equals(status)
                     && resolvedRetention == ArtifactRetention.FINAL_ONLY
                     ? pruneIntermediateArtifacts(runDirectory.stagingDirectory())
@@ -254,7 +287,15 @@ public final class SemanticExtractionRunArtifactWriter {
             return publisher.publish(runDirectory);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
-                    runDirectory, plan, provider, model, reasoningEffort, resolvedRetention, failure);
+                    runDirectory,
+                    plan,
+                    List.of(),
+                    null,
+                    provider,
+                    model,
+                    reasoningEffort,
+                    resolvedRetention,
+                    failure);
             throw failure;
         }
     }
@@ -262,6 +303,8 @@ public final class SemanticExtractionRunArtifactWriter {
     private void writeFailedManifest(
             RunArtifactPublisher.RunDirectory runDirectory,
             SemanticExtractionRunPlan plan,
+            List<SemanticShardExecution> completedShards,
+            ReconciliationAudit completedReconciliation,
             String provider,
             String model,
             String reasoningEffort,
@@ -273,7 +316,14 @@ public final class SemanticExtractionRunArtifactWriter {
         }
         try {
             ObjectNode manifest = createManifest(
-                    plan, "FAILED", List.of(), null, provider, model, reasoningEffort);
+                    plan,
+                    "FAILED",
+                    completedShards,
+                    null,
+                    completedReconciliation,
+                    provider,
+                    model,
+                    reasoningEffort);
             manifest.put("failureType", failure.getClass().getSimpleName());
             finishManifest(manifest, runDirectory, retention, null, List.of());
             writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
@@ -291,7 +341,7 @@ public final class SemanticExtractionRunArtifactWriter {
             ArtifactRetention retention
     ) {
         ObjectNode manifest = createManifest(
-                plan, "IN_PROGRESS", List.of(), null, provider, model, reasoningEffort);
+                plan, "IN_PROGRESS", List.of(), null, null, provider, model, reasoningEffort);
         finishManifest(manifest, runDirectory, retention, null, List.of());
         writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
     }
@@ -322,6 +372,51 @@ public final class SemanticExtractionRunArtifactWriter {
         }
         writeJson(output.resolve("merged-draft.json"), run.trustedMergedDraft());
         writeJson(output.resolve("semantic-extraction-result.json"), run.trustedFinalDocument());
+    }
+
+    private void writeFinalResultArtifacts(Path output, SemanticExtractionRunResult run) {
+        writeJson(output.resolve("merged-draft.json"), run.trustedMergedDraft());
+        writeJson(output.resolve("semantic-extraction-result.json"), run.trustedFinalDocument());
+    }
+
+    private void writeShardAtomically(Path output, SemanticShardExecution execution) {
+        Path parent = output.resolve("shards");
+        Path target = parent.resolve(execution.request().shard().id());
+        Path temporary = parent.resolve("." + execution.request().shard().id()
+                + ".tmp-" + UUID.randomUUID());
+        writeDirectoryAtomically(temporary, target, directory -> writePromptArtifacts(
+                directory,
+                execution.request().prompt(),
+                execution.result(),
+                execution.trustedNormalizedDocument()));
+    }
+
+    private void writeReconciliationAtomically(
+            Path output,
+            SemanticExtractionPrompt prompt,
+            SemanticExtractionResult result,
+            JsonNode patch
+    ) {
+        Path target = output.resolve("reconciliation");
+        Path temporary = output.resolve(".reconciliation.tmp-" + UUID.randomUUID());
+        writeDirectoryAtomically(temporary, target, directory -> {
+            writePromptArtifacts(directory, prompt, result, patch);
+            writeJson(directory.resolve("patch.json"), patch);
+        });
+    }
+
+    private void writeDirectoryAtomically(Path temporary, Path target, Consumer<Path> writer) {
+        try {
+            Files.createDirectories(temporary.getParent());
+            writer.accept(temporary);
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException error) {
+            deleteRecursivelyBestEffort(temporary);
+            throw new IllegalArgumentException("failed to publish semantic extraction audit directory", error);
+        } catch (RuntimeException | Error error) {
+            deleteRecursivelyBestEffort(temporary);
+            throw error;
+        }
     }
 
     private void writePromptArtifacts(
@@ -361,6 +456,7 @@ public final class SemanticExtractionRunArtifactWriter {
             String status,
             List<SemanticShardExecution> executions,
             SemanticExtractionRunResult run,
+            ReconciliationAudit reconciliationAudit,
             String provider,
             String model,
             String reasoningEffort
@@ -395,8 +491,8 @@ public final class SemanticExtractionRunArtifactWriter {
             item.put("actualOutputTokens", execution == null ? 0 : execution.result().outputTokens());
             item.put("transportAttempts", execution == null ? 0 : execution.result().transportAttempts());
         }
-        addUsage(manifest, executions, run);
-        addReconciliation(manifest, plan, run);
+        addUsage(manifest, executions, run, reconciliationAudit);
+        addReconciliation(manifest, plan, run, reconciliationAudit);
         return manifest;
     }
 
@@ -485,15 +581,19 @@ public final class SemanticExtractionRunArtifactWriter {
     private void addUsage(
             ObjectNode manifest,
             List<SemanticShardExecution> executions,
-            SemanticExtractionRunResult run
+            SemanticExtractionRunResult run,
+            ReconciliationAudit reconciliationAudit
     ) {
         int inputTokens = executions.stream().mapToInt(value -> value.result().inputTokens()).sum();
         int outputTokens = executions.stream().mapToInt(value -> value.result().outputTokens()).sum();
         int attempts = executions.stream().mapToInt(value -> value.result().transportAttempts()).sum();
-        if (run != null && run.reconciliationResult() != null) {
-            inputTokens += run.reconciliationResult().inputTokens();
-            outputTokens += run.reconciliationResult().outputTokens();
-            attempts += run.reconciliationResult().transportAttempts();
+        SemanticExtractionResult reconciliation = run != null
+                ? run.reconciliationResult()
+                : reconciliationAudit == null ? null : reconciliationAudit.result();
+        if (reconciliation != null) {
+            inputTokens += reconciliation.inputTokens();
+            outputTokens += reconciliation.outputTokens();
+            attempts += reconciliation.transportAttempts();
         }
         manifest.putObject("usage")
                 .put("inputTokens", inputTokens)
@@ -504,7 +604,8 @@ public final class SemanticExtractionRunArtifactWriter {
     private void addReconciliation(
             ObjectNode manifest,
             SemanticExtractionRunPlan plan,
-            SemanticExtractionRunResult run
+            SemanticExtractionRunResult run,
+            ReconciliationAudit reconciliationAudit
     ) {
         ObjectNode reconciliation = manifest.putObject("reconciliation");
         boolean required = plan.shardRequests().size() > 1 && plan.reconcile();
@@ -514,17 +615,23 @@ public final class SemanticExtractionRunArtifactWriter {
             reconciliation.put("status", "NOT_REQUIRED");
             return;
         }
-        if (run == null || run.reconciliationResult() == null) {
+        SemanticExtractionPrompt prompt = run != null
+                ? run.reconciliationPrompt()
+                : reconciliationAudit == null ? null : reconciliationAudit.prompt();
+        SemanticExtractionResult result = run != null
+                ? run.reconciliationResult()
+                : reconciliationAudit == null ? null : reconciliationAudit.result();
+        if (result == null) {
             reconciliation.put("status", "PENDING");
             return;
         }
         reconciliation.put("status", "COMPLETE");
         reconciliation.put("estimatedInputTokens",
-                new SemanticPromptBudgetEstimator().estimate(run.reconciliationPrompt()));
+                new SemanticPromptBudgetEstimator().estimate(prompt));
         reconciliation.put("tokenEstimateExact", false);
-        reconciliation.put("inputTokens", run.reconciliationResult().inputTokens());
-        reconciliation.put("outputTokens", run.reconciliationResult().outputTokens());
-        reconciliation.put("transportAttempts", run.reconciliationResult().transportAttempts());
+        reconciliation.put("inputTokens", result.inputTokens());
+        reconciliation.put("outputTokens", result.outputTokens());
+        reconciliation.put("transportAttempts", result.transportAttempts());
     }
 
     private Path shardDirectory(Path output, String shardId) {
@@ -595,6 +702,23 @@ public final class SemanticExtractionRunArtifactWriter {
         }
     }
 
+    private void deleteRecursivelyBestEffort(Path root) {
+        if (Files.notExists(root)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException ignored) {
+                    // The original artifact write failure remains authoritative.
+                }
+            });
+        } catch (IOException ignored) {
+            // The original artifact write failure remains authoritative.
+        }
+    }
+
     private long size(Path path) {
         try {
             return Files.size(path);
@@ -624,5 +748,12 @@ public final class SemanticExtractionRunArtifactWriter {
     }
 
     private record ArtifactEntry(String path, long size, String sha256) {
+    }
+
+    private record ReconciliationAudit(
+            SemanticExtractionPrompt prompt,
+            SemanticExtractionResult result,
+            JsonNode patch
+    ) {
     }
 }

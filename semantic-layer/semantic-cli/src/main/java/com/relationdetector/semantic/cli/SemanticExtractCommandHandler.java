@@ -70,7 +70,9 @@ final class SemanticExtractCommandHandler {
         published = writer.executeAndWriteResult(
                 arguments.output(),
                 plan,
-                () -> service.execute(plan, shardExtractor, reconciliationExtractor),
+                service,
+                shardExtractor,
+                reconciliationExtractor,
                 "openai-api",
                 arguments.model(),
                 arguments.reasoningEffort(),

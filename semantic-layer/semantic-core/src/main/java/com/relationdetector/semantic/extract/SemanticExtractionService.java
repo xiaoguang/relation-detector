@@ -42,14 +42,34 @@ public final class SemanticExtractionService {
             SemanticModelClient shardClient,
             SemanticModelClient reconciliationClient
     ) {
+        return execute(plan, shardClient, reconciliationClient, SemanticExtractionExecutionObserver.NOOP);
+    }
+
+    /**
+     * CN: 以执行观察器顺序运行 shard，并在每个已归一化 shard 与 reconciliation 成功点通知 artifact 层；
+     * 返回完整闭包结果，观察器、模型、JSON、merge 或最终 normalization 失败时不返回部分结果。
+     * EN: Executes shards sequentially with an observer that is notified after each normalized shard and successful
+     * reconciliation. It returns only a closed result; observer, model, JSON, merge, or normalization failure aborts.
+     */
+    SemanticExtractionRunResult execute(
+            SemanticExtractionRunPlan plan,
+            SemanticModelClient shardClient,
+            SemanticModelClient reconciliationClient,
+            SemanticExtractionExecutionObserver observer
+    ) {
         if (plan == null || shardClient == null) {
             throw new IllegalArgumentException("semantic extraction plan and shard client are required");
+        }
+        if (observer == null) {
+            throw new IllegalArgumentException("semantic extraction execution observer is required");
         }
         List<SemanticShardExecution> executions = new ArrayList<>();
         for (SemanticShardRequest request : plan.shardRequests()) {
             SemanticExtractionResult result = shardClient.extract(request.prompt());
             ObjectNode normalized = normalize(result.outputText(), request.shard());
-            executions.add(new SemanticShardExecution(request, result, normalized));
+            SemanticShardExecution execution = new SemanticShardExecution(request, result, normalized);
+            observer.shardCompleted(execution);
+            executions.add(execution);
         }
         SemanticShardMergeResult merge = merger.merge(executions.stream()
                 .map(execution -> new SemanticShardNormalizedResult(
@@ -68,6 +88,8 @@ public final class SemanticExtractionService {
             requireWithinInputBudget(reconciliationPrompt, plan.maxInputTokens());
             reconciliationResult = reconciliationClient.extract(reconciliationPrompt);
             reconciliationPatch = parse(reconciliationResult.outputText(), "semantic reconciliation patch");
+            observer.reconciliationCompleted(
+                    reconciliationPrompt, reconciliationResult, reconciliationPatch);
             mergedDraft = patchValidator.apply(merge, reconciliationPatch, plan.trustedFullBundle());
         } else {
             merge.requireConflictFree();

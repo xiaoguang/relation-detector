@@ -177,10 +177,14 @@ collect_checkpoint() {
   fi
   write_inventories "$commit" "$destination"
   if [[ -d "$destination/results" ]]; then
-    python3 "$ROOT/relation-detector/scripts/canonical-json-fingerprint.py" \
-      "$destination/results" >"$destination/fingerprints.tsv"
-    python3 "$ROOT/relation-detector/scripts/canonical-json-fingerprint.py" --semantic \
-      "$destination/results" >"$destination/semantic-fingerprints.tsv"
+    "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" fingerprint \
+      --workspace "$destination/fingerprint-work/canonical" \
+      --output "$destination/fingerprints.tsv" \
+      "$destination/results"
+    "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" fingerprint --semantic \
+      --workspace "$destination/fingerprint-work/semantic" \
+      --output "$destination/semantic-fingerprints.tsv" \
+      "$destination/results"
     python3 "$ROOT/relation-detector/scripts/compare-semantic-results.py" \
       --inventory-root "$destination/results" \
       --output "$destination/semantic-inventory.json"
@@ -297,8 +301,11 @@ PY
   fi
   if [[ "$cli_status" -eq 0 ]]; then
     set +e
-    (cd "$worktree" && python3 "$ROOT/relation-detector/scripts/validate-sample-data-results.py" \
-      relation-detector/target/sample-data-parser-cli/results) >>"$log" 2>&1
+    RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$worktree" \
+      "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" validate-results \
+      --result-dir "$worktree/relation-detector/target/sample-data-parser-cli/results" \
+      --expected-categories 19 \
+      --output "$destination/result-validation.json" >>"$log" 2>&1
     validation_status=$?
     set -e
   else

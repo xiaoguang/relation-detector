@@ -186,6 +186,11 @@ manifest。单 shard不再复制一套 root-level prompt/request/response/raw ar
 - 不可解析 evidence、跨 owner输出、identity冲突和超预算 closure均显式失败。
 - 失败 run不发布 `run-<runId>`。staging创建后、任何payload前先原子写`IN_PROGRESS` manifest；
   普通失败原子替换为`FAILED`。若终态写入本身失败，保留最后一个可解析`IN_PROGRESS`与原异常。
+- API模型执行和artifact writer位于同一staging事务。完整bundle与deterministic artifact在首次模型调用
+  前写入；每个归一化成功的shard及解析成功的reconciliation分别先写隐藏临时目录，再原子改名为正式
+  审计目录。后续失败时保留这些已完成材料，manifest把已完成shard标记为`COMPLETE`、其余为
+  `PENDING`并记录已落盘artifact大小和SHA-256；失败run始终不发布。
+- `final-only`只在完整成功、最终闭包通过且正式结果写入后裁剪中间材料；失败运行保留前序成功片。
 - Artifact hash按文件流式计算。
 
 ## 9. 验证矩阵
@@ -202,6 +207,6 @@ manifest。单 shard不再复制一套 root-level prompt/request/response/raw ar
 | Sharding | component、owner、root closure、overlap只读和唯一owner |
 | Budget | shard与reconciliation低于/等于/超过门限 |
 | Merge | 同物理实体合并；业务实体按grounding合并或进入review |
-| Artifact | streaming写入、staging原子发布、retention、hash和单分片无重复副本 |
+| Artifact | streaming写入、逐片原子审计目录、失败保留、staging原子发布、retention、hash和单分片无重复副本 |
 
 当前测试口径见 [Semantic Layer Test Specification](module-test-specification.md)。

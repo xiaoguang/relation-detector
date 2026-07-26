@@ -57,6 +57,13 @@ full-grammar:
 
 Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-traceability.md)。本报告只说明验证方法和证据边界，不复制 closure ID 或状态表，避免两份手工状态随实现分叉。
 
+本轮全仓反向审计新增的两个具名缺口已经按 traceability 所列测试闭合：
+
+1. release sample-data 后处理已迁入内部Java verification入口。大结果按section/item流式校验，
+   canonical/semantic fingerprint采用外存字段排序，manifest只消费小型validation报告。
+2. semantic API执行通过package-private观察器把已完成shard和reconciliation原子写入同一staging；
+   后续失败仍保留前序成功片的request/response/normalized审计材料，但不发布部分正式run。
+
 ### 本轮反向审计复核结论
 
 上一轮冻结的四项实现已经按其当时的测试边界闭合：
@@ -254,6 +261,11 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - 无缓存 clean 复验：`bash relation-detector/scripts/verify-release.sh`；它先运行 no-cache smoke reactor，再进入隔离 full correctness 和 sample-data。
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
 - 跨 parser 差异需联合阅读 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)、各版本边界审计与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)；它们分别维护当前统计、确认的版本差异和未关闭问题。
+
+当前`verify-all.sh`只有在最终`verification-manifest.json`实际生成且状态为PASS时才形成完整发布证据。
+sample-data CLI生成38份JSON并不等同于后处理完成。内部Java verification子进程默认使用512 MiB堆，
+流式生成`result-validation.json`并以外存归并计算fingerprint；manifest不再重读38份大JSON。
+外存处理以更多磁盘I/O换取堆边界，因此完成条件仍是最终manifest，而不是中途CLI文件数量。
 
 ### DDL
 

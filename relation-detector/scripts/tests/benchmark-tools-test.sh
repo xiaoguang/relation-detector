@@ -2,6 +2,7 @@
 set -euo pipefail
 
 RELATION_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+VERIFICATION_RUNNER="$RELATION_ROOT/scripts/run-release-verification-tool.sh"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -12,8 +13,16 @@ cat >"$TMP_DIR/two.json" <<'JSON'
 {"facts":[{"id":"a"}],"summary":{"count":1},"generatedAt":"second"}
 JSON
 
-first_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" "$TMP_DIR/one.json" | cut -f1)"
-second_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" "$TMP_DIR/two.json" | cut -f1)"
+"$VERIFICATION_RUNNER" fingerprint \
+  --workspace "$TMP_DIR/fingerprint-one" \
+  --output "$TMP_DIR/one.tsv" \
+  "$TMP_DIR/one.json"
+"$VERIFICATION_RUNNER" fingerprint \
+  --workspace "$TMP_DIR/fingerprint-two" \
+  --output "$TMP_DIR/two.tsv" \
+  "$TMP_DIR/two.json"
+first_hash="$(cut -f1 "$TMP_DIR/one.tsv")"
+second_hash="$(cut -f1 "$TMP_DIR/two.tsv")"
 [[ "$first_hash" == "$second_hash" ]]
 
 cat >"$TMP_DIR/token.json" <<'JSON'
@@ -26,9 +35,21 @@ cat >"$TMP_DIR/semantic-change.json" <<'JSON'
 {"relationships":[{"source":"orders.customer_id","target":"customers.id","evidence":[{"type":"SQL_LOG_JOIN","attributes":{"fullGrammarNative":true,"sourceFile":"query.sql","sourceStatementId":"query.sql:3-3","sourceLine":3}}]}],"dataLineages":[{"source":"orders.amount","target":"sales_fact.amount","flowKind":"CONTROL","transformType":"DIRECT"}],"parserProfile":"full-grammar"}
 JSON
 
-token_semantic_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" --semantic "$TMP_DIR/token.json" | cut -f1)"
-full_semantic_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" --semantic "$TMP_DIR/full.json" | cut -f1)"
-changed_semantic_hash="$(python3 "$RELATION_ROOT/scripts/canonical-json-fingerprint.py" --semantic "$TMP_DIR/semantic-change.json" | cut -f1)"
+"$VERIFICATION_RUNNER" fingerprint --semantic \
+  --workspace "$TMP_DIR/fingerprint-token" \
+  --output "$TMP_DIR/token.tsv" \
+  "$TMP_DIR/token.json"
+"$VERIFICATION_RUNNER" fingerprint --semantic \
+  --workspace "$TMP_DIR/fingerprint-full" \
+  --output "$TMP_DIR/full.tsv" \
+  "$TMP_DIR/full.json"
+"$VERIFICATION_RUNNER" fingerprint --semantic \
+  --workspace "$TMP_DIR/fingerprint-changed" \
+  --output "$TMP_DIR/changed.tsv" \
+  "$TMP_DIR/semantic-change.json"
+token_semantic_hash="$(cut -f1 "$TMP_DIR/token.tsv")"
+full_semantic_hash="$(cut -f1 "$TMP_DIR/full.tsv")"
+changed_semantic_hash="$(cut -f1 "$TMP_DIR/changed.tsv")"
 [[ "$token_semantic_hash" == "$full_semantic_hash" ]]
 [[ "$token_semantic_hash" != "$changed_semantic_hash" ]]
 
@@ -67,7 +88,7 @@ semantic123	/repo/results/mysql-v8_0-full.json
 semantic456	/repo/results/mysql-v8_0-full-derived-fresh.json
 TSV
 
-python3 "$RELATION_ROOT/scripts/build-performance-report.py" \
+"$VERIFICATION_RUNNER" performance \
   --session-start 0 \
   --surefire-root "$TMP_DIR/reports" \
   --cli-log-root "$TMP_DIR/logs" \
@@ -97,8 +118,10 @@ cat >"$TMP_DIR/results/example.json" <<'JSON'
 {"summary":{"directRelationshipCount":0,"derivedRelationshipCount":0,"totalRelationshipCount":0,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"relationships":[],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
 JSON
 cp "$TMP_DIR/results/example.json" "$TMP_DIR/results/example-derived-fresh.json"
-python3 "$RELATION_ROOT/scripts/validate-sample-data-results.py" \
-  "$TMP_DIR/results" --expected-categories 1 >/dev/null
+"$VERIFICATION_RUNNER" validate-results \
+  --result-dir "$TMP_DIR/results" \
+  --expected-categories 1 \
+  --output "$TMP_DIR/result-validation.json" >/dev/null
 
 mkdir -p "$TMP_DIR/results-duplicate"
 cat >"$TMP_DIR/results-duplicate/example.json" <<'JSON'
@@ -106,8 +129,11 @@ cat >"$TMP_DIR/results-duplicate/example.json" <<'JSON'
 JSON
 cp "$TMP_DIR/results-duplicate/example.json" "$TMP_DIR/results-duplicate/example-derived-fresh.json"
 printf 'SELECT 1;\n' >"$TMP_DIR/query.sql"
-if (cd "$TMP_DIR" && python3 "$RELATION_ROOT/scripts/validate-sample-data-results.py" \
-  "$TMP_DIR/results-duplicate" --expected-categories 1 >/dev/null 2>&1); then
+if RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$TMP_DIR" \
+  "$VERIFICATION_RUNNER" validate-results \
+  --result-dir "$TMP_DIR/results-duplicate" \
+  --expected-categories 1 \
+  --output "$TMP_DIR/duplicate-validation.json" >/dev/null 2>&1; then
   echo "duplicate raw observations must fail sample-data validation" >&2
   exit 1
 fi
@@ -117,8 +143,11 @@ cat >"$TMP_DIR/results-line/example.json" <<'JSON'
 {"summary":{"directRelationshipCount":1,"derivedRelationshipCount":0,"totalRelationshipCount":1,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"relationships":[{"rawEvidence":[{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":2}}]}],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
 JSON
 cp "$TMP_DIR/results-line/example.json" "$TMP_DIR/results-line/example-derived-fresh.json"
-if (cd "$TMP_DIR" && python3 "$RELATION_ROOT/scripts/validate-sample-data-results.py" \
-  "$TMP_DIR/results-line" --expected-categories 1 >/dev/null 2>&1); then
+if RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$TMP_DIR" \
+  "$VERIFICATION_RUNNER" validate-results \
+  --result-dir "$TMP_DIR/results-line" \
+  --expected-categories 1 \
+  --output "$TMP_DIR/line-validation.json" >/dev/null 2>&1; then
   echo "sourceLine outside statement/file must fail sample-data validation" >&2
   exit 1
 fi

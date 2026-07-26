@@ -7,7 +7,7 @@ RELATION_ROOT="$ROOT/relation-detector"
 # shellcheck source=heavy-job-lock.sh
 source "$RELATION_ROOT/scripts/heavy-job-lock.sh"
 GROUP_RUNNER="${SAMPLE_DATA_PARSER_CLI_GROUP_RUNNER:-$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
-AGGREGATOR="$RELATION_ROOT/scripts/aggregate-sample-data-batch-reports.py"
+VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$RELATION_ROOT/scripts/run-release-verification-tool.sh}"
 OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-cli}"
 LOCK_DIR="${SAMPLE_DATA_PARSER_CLI_LOCK_DIR:-${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$RELATION_ROOT/target/.relation-detector-heavy-job.lock}}"
 LOCK_JOB="sample-data"
@@ -224,7 +224,7 @@ AGGREGATE_ARGS=()
 for selected_case in "${SELECTED_CASES[@]}"; do
   AGGREGATE_ARGS+=(--expected-case "$selected_case")
 done
-python3 "$AGGREGATOR" \
+"$VERIFICATION_RUNNER" aggregate-sample \
   --output "$OUT_DIR/batch-report.json" \
   "${AGGREGATE_ARGS[@]}" \
   "${REPORTS[@]}"

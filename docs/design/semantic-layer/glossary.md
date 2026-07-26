@@ -10,7 +10,10 @@
 
 Phase 1 Scope 重点是 evidence-grounded semantic catalog、lexicon/embedding search、question plan 和 SQL draft validator 的基础闭环。它不承诺复杂 BI 指标平台、跨系统 fuzzy match、方言 SQL 自动改写、成本估计或 SQL 自动执行。
 
-当前代码尚未覆盖完整 Phase 1 Scope；已落地的是更早一段的 KG artifact stage：读取 relation-detector JSON，构建 `ScanBundle`、`EvidenceGraph` 和可审计 `semantic-kg.json`。Catalog Store、Lexicon、Embedding、Question Plan、SQL Draft Validator 和在线问答仍是后续实现范围。
+当前代码尚未覆盖完整 Phase 1 Scope；已落地的是离线 artifact 阶段：读取 relation-detector JSON，
+构建 `ScanBundle`、`EvidenceGraph`、可审计 `semantic-kg.json`，并可从完整 evidence bundle 经 typed
+sharding、owner-aware normalization 和可选模型调用生成 normalized semantic extraction result。
+Catalog Store、Lexicon、Embedding、Question Plan、SQL Draft Validator 和在线问答仍是后续实现范围。
 
 ### Phase 2+
 
@@ -136,7 +139,9 @@ Deduplication 用于合并同 key evidence、同义词候选、语义对象候�
 
 上下文图。
 
-Context Graph 是借鉴 Semantica 的长期承载形态：把事实、语义对象、决策、原因、后果和 provenance 作为可查询图对象。Phase 1 不要求完整 graph store；当前代码只生成 JSON KG artifact，后续再进入 Semantic Catalog 和可查询 graph/context store。
+Context Graph 是借鉴 Semantica 的长期承载形态：把事实、语义对象、决策、原因、后果和 provenance
+作为可查询图对象。Phase 1 不要求完整 graph store；当前代码生成 deterministic JSON KG 和 normalized
+semantic document 内的 `semanticGraph`，但尚无可查询 graph/context store 或 Semantic Catalog。
 
 ## 语义对象
 

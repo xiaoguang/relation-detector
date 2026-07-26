@@ -12,7 +12,7 @@ This document separates three questions that used to be mixed together:
 
 The direct and derived snapshot tables are synchronized from
 `relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv` by
-`relation-detector/scripts/sync-parser-comparison-summary.py`. Refresh them with
+`relation-detector/scripts/run-release-verification-tool.sh parser-summary`. Refresh them with
 `--update`; do not edit the generated rows by hand.
 
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |

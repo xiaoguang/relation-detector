@@ -45,17 +45,37 @@
 
 ### 1.1.1 当前代码状态
 
-当前仓库中的 semantic-layer 代码先落地到 **离线 KG JSON artifact** 阶段：
+当前仓库中的 semantic-layer 已落地两条并列的离线 artifact 链路：
 
 ```text
 relation-detector JSON
   -> ScanResultReader
-  -> SemanticEvidenceBuilder
-  -> SemanticKgBuilder
-  -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
+  -> [deterministic branch]
+       SemanticEvidenceBuilder
+       -> SemanticKgBuilder
+       -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
+  -> [semantic extraction branch]
+       SemanticExtractionBundleBuilder
+       -> typed sharding / optional model calls
+       -> owner-aware normalization / merge / full-bundle closure
+       -> semantic-extraction-result.json / run-manifest.json
 ```
 
-也就是说，当前已实现的是 evidence-backed KG 生成，不是完整 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator 或 Answer Composer。`SemanticEventExtractor` 已从 direct non-control write lineage 生成 deterministic event candidates；derived lineage 只作为 supporting refs，不单独造 event。event 分类只消费 typed provenance/mapping kind，缺失时使用中性 write 默认值。当前 KG 节点包括 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和由 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 join path step。这里的 `Event` 是 evidence-backed candidate，不等于已经审核通过的正式业务事件。reader/bundle 保留完整 `database.type/catalog/schema`，对外 artifact 统一使用不含本机绝对路径的 portable input label。正式 semantic normalization 必须携带 evidence bundle，并通过 `SemanticPhysicalReferenceIndex`、`SemanticReferenceIndex` 与 `SemanticOwnerIdRegistry` 验证物理 endpoint、evidence/fact/candidate ID、文档内 entity 引用和跨 section owner ID 的完整闭包；离线 `SemanticKgBuilder` 也要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空可解析，并拒绝冲突 node/edge ID。任一失败都原子拒绝，不返回部分 artifact。后续章节描述的是目标架构和后续阶段设计；如果某节没有明确说明“当前代码已实现”，默认按设计目标或后续能力理解。
+也就是说，当前已实现 evidence-backed KG 生成和 evidence-closed semantic extraction artifact，但不是完整
+Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator
+或 Answer Composer。`SemanticEventExtractor` 已从 direct non-control write lineage 生成 deterministic
+event candidates；derived lineage 只作为 supporting refs，不单独造 event。event 分类只消费 typed
+provenance/mapping kind，缺失时使用中性 write 默认值。当前 KG 节点包括 `PhysicalTable`、
+`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、
+derived fact 和由 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、
+event input/output、supported-by evidence 和 join path step。这里的 `Event` 是 evidence-backed
+candidate，不等于已经审核通过的正式业务事件。reader/bundle 保留完整
+`database.type/catalog/schema`，对外 artifact 统一使用不含本机绝对路径的 portable input label。
+正式 semantic normalization 必须携带 evidence bundle 和合法 `shardContext`，并通过 owner、
+physical endpoint、evidence/fact/candidate ID、文档内 entity 引用和跨 section owner ID 的完整闭包；
+离线 `SemanticKgBuilder` 也要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空可解析，
+并拒绝冲突 node/edge ID。任一失败都原子拒绝正式结果。后续章节描述的是目标架构和后续阶段设计；
+如果某节没有明确说明“当前代码已实现”，默认按设计目标或后续能力理解。
 
 ### 1.2 事件的意义与边界
 
@@ -469,8 +489,11 @@ Phase 1 Scope 必备字段建议：
 当前 artifact stage 只实现了该模型的子集：EvidenceGraph 保存 payload snapshot 和 evidence records，
 fact/evidence/candidate 使用内容稳定 ID。semantic extraction 的完整 bundle 与每个 shard 通过统一
 reference index 形成 evidence/fact/candidate 闭包，planner 要求每项只有一个 canonical owner，最终
-结果再次针对完整 bundle 验证。当前该全局复验验证引用存在性，但还不验证每个 model-authored 输出
-至少使用一个 owner ref；exact-ID merge 也不等于不同 ID semantic dedup。尚无
+结果再次针对完整 bundle 验证。每个 model-authored 输出在片内 backfill 前必须直接引用至少一个当前
+shard owned fact/candidate；独立 normalization 也要求 bundle 携带同一 owner context。最终全局
+normalization重新验证合并后的引用与物理/evidence闭包，但不会重新推导原始分片owner。物理实体和
+有owned grounding的纯业务实体已有canonical merge；同名但grounding不同的对象保留并进入review。
+尚无
 `scanRunId/sourceHash/detectorVersion/reviewDecisionId`，这些跨运行和治理字段仍是 Phase 1 后续契约，
 不是当前 JSON 已全部具备的字段。
 

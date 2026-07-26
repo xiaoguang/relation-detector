@@ -132,8 +132,10 @@ public final class SemanticExtractionDocumentNormalizer {
 `SemanticModelClient` 只负责模型调用。request-only artifact 由调用方提供独立的请求渲染函数，
 不把序列化职责放回模型接口。normalizer 不提供无 evidence bundle 的入口；CLI 的
 `normalize-extraction` 同样强制要求 `--evidence-bundle`。
-它不接收shard plan或owner map，因此只执行bundle reference/evidence/physical endpoint closure；
-`ownedGroundingRefs`的存在性与owner归属只在`SemanticExtractionService`逐片执行链中校验。
+它不接收完整shard plan，但 evidence bundle 必须携带 `shardContext`。CLI 与自动执行链都调用
+`normalizeOwnedShard`，在 backfill 前校验 owned/overlap 集合和 `ownedGroundingRefs`，随后再执行
+bundle reference/evidence/physical endpoint closure。调用方不能用一个没有owner context的完整bundle
+绕过该边界。
 
 normalizer 的 JSON 只是输入/输出边界：内部先映射为 typed `SemanticExtractionDocument` 及
 `SemanticEntity/Event/Metric/Triplet/ReviewItem` DTO，然后依次交给 `SemanticCandidateBackfill`、
@@ -287,6 +289,13 @@ entity refs；同名但grounding不同的业务entity保留不同ID并生成
 应用 patch 后，最终文档必须再次针对原始完整 bundle 归一化并重建semantic graph/reference closure；
 任一 shard、merge、patch 或全局闭包失败都不会返回`SemanticExtractionRunResult`。
 
+真实API运行由artifact writer创建staging并调用service的package-private执行观察器。完整bundle和
+deterministic artifact在首次模型调用前写入；每个shard完成模型调用和片内normalization后，writer
+把request/response/raw/normalized文件写到隐藏临时目录，全部成功后原子改名为正式shard目录。
+reconciliation解析成功后采用相同边界。后续shard、patch或最终闭包失败时，failure staging仍保留
+全部前序`COMPLETE`片及其hash，未完成片标记为`PENDING`；正式`run-*`仍只在全局闭包成功后发布。
+`final-only`不裁剪失败运行，只在成功发布前裁剪中间payload。
+
 `run-manifest.json` 记录完整 bundle hash、每片 owner/估算 token、实际 input/output token、
 transport attempts、协调状态、冲突数、最终闭包状态，以及所有 artifact 的 SHA-256 和大小。
 `--output`是可复用root；每次运行写`.staging-<runId>`。codex-session请求材料完成后以
@@ -315,6 +324,7 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
+| `SEM-SHARD-FAILURE-AUDIT-01` | `MATCHED` | 完整bundle/deterministic artifact先落盘；每个归一化shard和解析后的reconciliation以隐藏临时目录原子写入。后续失败保留前序`COMPLETE`片、其artifact大小/SHA-256及`PENDING`余片，且不发布`run-*`；`final-only`失败时不裁剪。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML shape/unknown field/numeric value严格失败，相对路径按配置目录解析，CLI override后重新构造并校验typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 构造输入deep-copy、public JSON accessor返回副本、集合不可修改；同包trusted accessor仅用于已校验内部流水线。 |
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式bundle不提供focus或事实数量裁剪；全部direct/derived facts、deterministic candidates、endpoint tables和evidence refs在分片前保持闭合，旧CLI/YAML字段明确拒绝。 |
@@ -323,8 +333,8 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-EVENT-ID-01` | `MATCHED` | routine、trigger与普通SQL-write均使用长度分隔的完整typed identity生成group key和ID，显示slug不参与身份。 |
 
 上述typed validation、完整输入、模型请求预算、owner-aware normalization、治理默认值、
-lossless event identity、deterministic candidate和artifact状态事务已经闭环，没有通过弱化evidence
-closure、删除overlap或截断事实规避问题。
+lossless event identity、deterministic candidate、artifact发布事务和失败运行逐片审计已经闭环，
+没有通过弱化evidence closure、删除overlap或截断事实规避问题。
 
 独立归一化命令为：
 

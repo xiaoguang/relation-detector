@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 RELATION_ROOT="$ROOT/relation-detector"
+VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$RELATION_ROOT/scripts/run-release-verification-tool.sh}"
 
 if [[ "${SAMPLE_DATA_PARSER_CLI_GROUP_WORKER:-false}" != "true" ]]; then
   exec "$RELATION_ROOT/scripts/run-sample-data-isolated.sh" "$@"
@@ -359,177 +360,21 @@ if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_BATCH:-false}" != "true" ]]; then
   fi
 fi
 
+SUMMARY_ARGS=()
 REQUESTED_CASES_CSV=""
 if [[ "$REQUESTED_CASE_COUNT" -gt 0 ]]; then
   REQUESTED_CASES_CSV="$(IFS=,; echo "${REQUESTED_CASES[*]}")"
+  for requested_case in "${REQUESTED_CASES[@]}"; do
+    SUMMARY_ARGS+=(--requested-case "$requested_case")
+  done
 fi
-python3 - "$RESULT_DIR" "$CONFIG_DIR" "$OUT_DIR/summary.tsv" "$OUT_DIR/summary-with-derived.tsv" "$OUT_DIR/warning-codes.tsv" "$REQUESTED_CASES_CSV" <<'PY'
-import json
-import sys
-from collections import Counter
-from pathlib import Path
-
-result_dir = Path(sys.argv[1])
-config_dir = Path(sys.argv[2])
-summary_path = Path(sys.argv[3])
-derived_summary_path = Path(sys.argv[4])
-warnings_path = Path(sys.argv[5])
-requested_cases = [item for item in sys.argv[6].split(",") if item]
-
-def list_items(lines, section_name):
-    values = []
-    in_section = False
-    section_indent = None
-    for line in lines:
-        stripped = line.strip()
-        if stripped == f"{section_name}:":
-            in_section = True
-            section_indent = len(line) - len(line.lstrip())
-            continue
-        if not in_section:
-            continue
-        indent = len(line) - len(line.lstrip())
-        if stripped.endswith(":") and indent <= section_indent:
-            break
-        if stripped.startswith("- "):
-            values.append(stripped[2:].strip().strip('"'))
-    return values
-
-def file_counts(config_path):
-    lines = config_path.read_text(encoding="utf-8").splitlines()
-    ddl_files = list_items(lines, "files")
-    # The generated file has three files sections in order: ddl, optional objects, logs.
-    sections = []
-    current = []
-    in_files = False
-    files_indent = None
-    for line in lines:
-        stripped = line.strip()
-        indent = len(line) - len(line.lstrip())
-        if stripped == "files:":
-            if in_files:
-                sections.append(current)
-            current = []
-            in_files = True
-            files_indent = indent
-            continue
-        if in_files and stripped.endswith(":") and indent <= files_indent:
-            sections.append(current)
-            current = []
-            in_files = False
-        if in_files and stripped.startswith("- "):
-            current.append(stripped[2:].strip().strip('"'))
-    if in_files:
-        sections.append(current)
-    ddl = len(sections[0]) if sections else 0
-    object_explicit = len(sections[1]) if len(sections) > 1 else 0
-    logs = len(sections[2]) if len(sections) > 2 else 0
-    object_paths = []
-    lines_text = "\n".join(lines)
-    marker = "  objects:\n"
-    if marker in lines_text:
-        object_block = lines_text.split(marker, 1)[1].split("\n  logs:\n", 1)[0]
-        block_lines = object_block.splitlines()
-        for i, line in enumerate(block_lines):
-            if line.strip() == "paths:":
-                for item in block_lines[i + 1:]:
-                    if item.strip().startswith("- "):
-                        object_paths.append(item.strip()[2:])
-                    elif item.startswith("    ") or not item.strip():
-                        continue
-                    else:
-                        break
-    object_path_files = 0
-    for root in object_paths:
-        object_path_files += len(list(Path(root).glob("**/*.sql")))
-    sql = object_explicit + object_path_files + logs
-    return ddl + sql, sql, ddl
-
-summary_rows = []
-derived_rows = []
-warning_rows = []
-for path in sorted(result_dir.glob("*.json")):
-    if path.stem.endswith("-derived") or path.stem.endswith("-derived-fresh") or path.stem.endswith("-refresh"):
-        continue
-    if requested_cases and path.stem not in requested_cases:
-        continue
-    config_path = config_dir / f"{path.stem}.yml"
-    if not config_path.exists():
-        continue
-    data = json.loads(path.read_text(encoding="utf-8"))
-    summary = data.get("summary", {})
-    warnings = data.get("warnings") or []
-    codes = Counter(w.get("code", "UNKNOWN") for w in warnings)
-    sources = summary.get("sources") or data.get("sources") or []
-    source_text = ",".join(sources) if isinstance(sources, list) else str(sources)
-    fixtures, sql_files, ddl_files = file_counts(config_path)
-    summary_rows.append([
-        path.stem,
-        str(fixtures),
-        f"{sql_files} / {ddl_files}",
-        str(summary.get("directRelationshipCount",
-                        summary.get("relationshipCount", len(data.get("relationships") or [])))),
-        str(summary.get("directDataLineageCount",
-                        summary.get("dataLineageCount", len(data.get("dataLineages") or [])))),
-            str(summary.get("directNamingEvidenceCount",
-                        summary.get("namingEvidenceCount", len(data.get("namingEvidence") or [])))),
-        str(summary.get("warningCount", len(warnings))),
-        source_text,
-        str(path),
-    ])
-    if not codes:
-        warning_rows.append([path.stem, "NONE", "0"])
-    else:
-        for code, count in sorted(codes.items()):
-            warning_rows.append([path.stem, code, str(count)])
-    derived_path = result_dir / f"{path.stem}-derived-fresh.json"
-    if derived_path.exists():
-        derived_data = json.loads(derived_path.read_text(encoding="utf-8"))
-        derived_summary = derived_data.get("summary", {})
-        derived_name_count = derived_summary.get("derivedNamingEvidenceCount")
-        if derived_name_count is None:
-            derived_name_count = sum(
-                1 for item in derived_data.get("namingEvidence") or []
-                if item.get("rule") == "TRANSITIVE_NAMING_PATH"
-            )
-        derived_rows.append([
-            path.stem,
-            str(fixtures),
-            f"{sql_files} / {ddl_files}",
-            str(derived_summary.get("directRelationshipCount",
-                                    derived_summary.get("relationshipCount",
-                                                        len(derived_data.get("relationships") or [])))),
-            str(derived_summary.get("directDataLineageCount",
-                                    derived_summary.get("dataLineageCount",
-                                                        len(derived_data.get("dataLineages") or [])))),
-            str(derived_summary.get("directNamingEvidenceCount",
-                                    derived_summary.get("namingEvidenceCount",
-                                                        len(derived_data.get("namingEvidence") or [])))),
-            str(derived_summary.get("warningCount", len(derived_data.get("warnings") or []))),
-            str(derived_summary.get("derivedRelationshipCount", len(derived_data.get("derivedRelationships") or []))),
-            str(derived_summary.get("derivedDataLineageCount", len(derived_data.get("derivedDataLineages") or []))),
-            str(derived_name_count),
-        ])
-
-summary_path.write_text(
-    "parser\tfixtures\tSQL / DDL\trelations\tlineage\tnamingEvidence\twarnings\tsources\tjson\n"
-    + "\n".join("\t".join(row) for row in summary_rows)
-    + "\n",
-    encoding="utf-8",
-)
-warnings_path.write_text(
-    "parser\twarningCode\tcount\n"
-    + "\n".join("\t".join(row) for row in warning_rows)
-    + "\n",
-    encoding="utf-8",
-)
-derived_summary_path.write_text(
-    "Parser\tFix\tSQL/DDL\tRel\tLin\tName\tDiag\tDerRel\tDerLin\tDerName\n"
-    + "\n".join("\t".join(row) for row in derived_rows)
-    + "\n",
-    encoding="utf-8",
-)
-PY
+"$VERIFICATION_RUNNER" sample-summary \
+  --result-dir "$RESULT_DIR" \
+  --config-dir "$CONFIG_DIR" \
+  --summary "$OUT_DIR/summary.tsv" \
+  --derived-summary "$OUT_DIR/summary-with-derived.tsv" \
+  --warnings "$OUT_DIR/warning-codes.tsv" \
+  "${SUMMARY_ARGS[@]}"
 
 bash "$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/audit-semantic-observations.sh" \
   "$RESULT_DIR" "$OUT_DIR/observation-parity.tsv" "$REQUESTED_CASES_CSV"
