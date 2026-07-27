@@ -91,6 +91,17 @@ final class SemanticReferenceValidator {
                     "Triplet must reference a deterministic tripletCandidate.");
         }
 
+        void requireReviewTarget(String reviewId, String targetSection, String targetRef) {
+            String ownerSection = semanticOwnerSection(targetSection);
+            boolean resolved = ownerSection == null
+                    ? referenceIndex.contains(targetSection, targetRef)
+                    : ownerIds.contains(ownerSection, targetRef);
+            if (!resolved) {
+                throw new SemanticExtractionValidationException(
+                        "review item " + reviewId + " target does not belong to section " + targetSection);
+            }
+        }
+
         void requireResolved(String ownerId, String field, String value, String resolvedRef, String expectedRefKind) {
             if (blank(value) || !blank(resolvedRef)) {
                 return;
@@ -136,6 +147,20 @@ final class SemanticReferenceValidator {
             String key = field + ":" + id;
             unresolvedReferences.putIfAbsent(key, new SemanticValidationIssue(
                     null, id, field, text(value), kind, reason));
+        }
+
+        private String semanticOwnerSection(String section) {
+            return switch (text(section)) {
+                case "entities" -> "entity";
+                case "events" -> "event";
+                case "relations" -> "relation";
+                case "lineage" -> "lineage";
+                case "metrics" -> "metric";
+                case "dimensions" -> "dimension";
+                case "triplets" -> "triplet";
+                case "reviewItems" -> "reviewItem";
+                default -> null;
+            };
         }
 
         private String text(String value) {

@@ -7,13 +7,15 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 /**
- * CN: 在可复用 output root 中原子声明唯一 staging/run 路径，并在完整 manifest 写入后执行同文件系统
- * rename；上游是 run artifact writer，下游是文件系统，禁止写业务 payload 或清理失败 staging。
+ * CN: 在可复用 output root 中原子声明唯一 staging/run 路径，并为 final-only 构建独立发布候选；
+ * 上游是 run artifact writer，下游是文件系统，只负责目录声明与同文件系统 rename，禁止写业务 payload
+ * 或清理失败 staging。
  *
- * EN: Atomically claims unique staging and run paths under a reusable output root and performs the same-filesystem
- * rename after the manifest is complete. It neither writes domain payloads nor removes failed staging directories.
+ * EN: Atomically claims unique staging and run paths under a reusable output root and creates an independent
+ * final-only publish candidate. It only owns directory claims and same-filesystem renames; it neither writes domain
+ * payloads nor removes failed staging directories.
  */
-final class RunArtifactPublisher {
+class RunArtifactPublisher {
     RunDirectory begin(Path outputRoot) {
         if (outputRoot == null) {
             throw new IllegalArgumentException("semantic extraction output root is required");
@@ -37,10 +39,29 @@ final class RunArtifactPublisher {
     }
 
     Path publish(RunDirectory runDirectory) {
+        return publishDirectory(runDirectory.stagingDirectory(), runDirectory.publishedDirectory());
+    }
+
+    Path createPublishCandidate(RunDirectory runDirectory) {
+        Path candidate = runDirectory.stagingDirectory().getParent()
+                .resolve(".publish-" + runDirectory.runId() + "-" + UUID.randomUUID());
+        try {
+            return Files.createDirectory(candidate);
+        } catch (IOException error) {
+            throw new IllegalArgumentException(
+                    "failed to create semantic extraction publish candidate", error);
+        }
+    }
+
+    Path publishCandidate(RunDirectory runDirectory, Path candidate) {
+        return publishDirectory(candidate, runDirectory.publishedDirectory());
+    }
+
+    private Path publishDirectory(Path source, Path target) {
         try {
             return Files.move(
-                    runDirectory.stagingDirectory(),
-                    runDirectory.publishedDirectory(),
+                    source,
+                    target,
                     StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException error) {
             throw new IllegalArgumentException("failed to atomically publish semantic extraction run", error);

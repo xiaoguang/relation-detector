@@ -1,6 +1,7 @@
 package com.relationdetector.core.profile;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +33,14 @@ import com.relationdetector.contracts.spi.IdentifierRules;
  * EN: Selects bounded live-profile candidates from existing relationship, naming, and metadata facts without scanning arbitrary columns.
  */
 public final class DataProfileCandidateGenerator {
+    private static final Set<EvidenceType> SQL_PREDICATE_EVIDENCE = Set.of(
+            EvidenceType.SQL_LOG_JOIN,
+            EvidenceType.SQL_LOG_EXISTS,
+            EvidenceType.SQL_LOG_SUBQUERY_IN);
+    private static final Set<EvidenceType> OBJECT_PREDICATE_EVIDENCE = Set.of(
+            EvidenceType.VIEW_JOIN,
+            EvidenceType.PROCEDURE_JOIN,
+            EvidenceType.TRIGGER_REFERENCE);
     private final IndexEvidencePolicy indexPolicy = new IndexEvidencePolicy();
     private static final Set<EvidenceType> STRUCTURAL_PROFILE_EVIDENCE = Set.of(
             EvidenceType.SQL_LOG_JOIN,
@@ -65,25 +74,26 @@ public final class DataProfileCandidateGenerator {
         DataProfileOptions effective = options == null ? DataProfileOptions.defaults() : options;
         CanonicalIdentifierResolver resolver = new CanonicalIdentifierResolver(identifierRules);
         CanonicalEndpointKeyProvider endpointKeys = new CanonicalEndpointKeyProvider(identifierRules, namespace);
-        List<RelationshipCandidate> result = new ArrayList<>();
-        Map<String, RelationshipCandidate> seen = new LinkedHashMap<>();
-        Map<String, Integer> targetsBySource = new HashMap<>();
-        int limit = effective.maxCandidatePairs();
+        List<RankedCandidate> eligible = new ArrayList<>();
         for (RelationshipCandidate candidate : candidates == null ? List.<RelationshipCandidate>of() : candidates) {
             if (selectedExistingCandidate(candidate, metadata, effective, resolver, namespace)) {
-                add(seen, result, targetsBySource, candidate, limit,
-                        effective.maxTargetsPerSourceColumn(), endpointKeys);
+                eligible.add(rankExisting(candidate, metadata, resolver, namespace, endpointKeys));
             }
         }
         if (effective.discoverFromNamingEvidence()) {
             for (NamingEvidenceCandidate naming : namingEvidence == null ? List.<NamingEvidenceCandidate>of() : namingEvidence) {
                 if (namingCandidateAllowed(naming, metadata, resolver, namespace)) {
-                    add(seen, result, targetsBySource, discoveredCandidate(naming), limit,
-                            effective.maxTargetsPerSourceColumn(), endpointKeys);
+                    RelationshipCandidate discovered = discoveredCandidate(naming);
+                    eligible.add(new RankedCandidate(
+                            discovered,
+                            ProfileCandidatePriority.NAMING_DISCOVERY,
+                            1,
+                            endpointKeys.factKey(discovered.source()),
+                            endpointKeys.factKey(discovered.target())));
                 }
             }
         }
-        return List.copyOf(result);
+        return applyBudgets(eligible, effective, endpointKeys);
     }
 
     private boolean selectedExistingCandidate(RelationshipCandidate candidate, MetadataSnapshot metadata,
@@ -91,16 +101,20 @@ public final class DataProfileCandidateGenerator {
         if (candidate == null || !candidate.source().isColumnLevel() || !candidate.target().isColumnLevel()) {
             return false;
         }
-        if (options.skipUnindexedLargeTargets()
-                && metadataHasIndexFacts(metadata)
-                && !targetIndexed(metadata,
-                CanonicalEndpointKey.from(candidate.target(), resolver, namespace), resolver, namespace)) {
+        CanonicalEndpointKey sourceKey = CanonicalEndpointKey.from(candidate.source(), resolver, namespace);
+        CanonicalEndpointKey targetKey = CanonicalEndpointKey.from(candidate.target(), resolver, namespace);
+        if (!compatible(metadata, sourceKey, targetKey, resolver, namespace)) {
             return false;
         }
-        boolean declared = candidate.evidence().stream().anyMatch(evidence ->
-                evidence.type() == EvidenceType.METADATA_FOREIGN_KEY
-                        || evidence.type() == EvidenceType.DDL_FOREIGN_KEY);
+        boolean declared = hasEvidence(candidate, EvidenceType.METADATA_FOREIGN_KEY)
+                || hasEvidence(candidate, EvidenceType.DDL_FOREIGN_KEY);
         if (declared && !options.verifyDeclaredForeignKeys()) {
+            return false;
+        }
+        if (!declared
+                && options.skipUnindexedLargeTargets()
+                && metadataHasIndexFacts(metadata)
+                && !targetIndexed(metadata, targetKey, resolver, namespace)) {
             return false;
         }
         return candidate.evidence().stream().anyMatch(evidence -> STRUCTURAL_PROFILE_EVIDENCE.contains(evidence.type()));
@@ -116,11 +130,11 @@ public final class DataProfileCandidateGenerator {
                 || !naming.source().isColumnLevel() || !naming.target().isColumnLevel()) {
             return false;
         }
-        return targetUnique(metadata,
-                CanonicalEndpointKey.from(naming.target(), resolver, namespace), resolver, namespace)
-                && compatible(metadata,
-                CanonicalEndpointKey.from(naming.source(), resolver, namespace),
-                CanonicalEndpointKey.from(naming.target(), resolver, namespace), resolver, namespace);
+        CanonicalEndpointKey sourceKey = CanonicalEndpointKey.from(naming.source(), resolver, namespace);
+        CanonicalEndpointKey targetKey = CanonicalEndpointKey.from(naming.target(), resolver, namespace);
+        return targetUnique(metadata, targetKey, resolver, namespace)
+                && targetIndexed(metadata, sourceKey, resolver, namespace)
+                && compatible(metadata, sourceKey, targetKey, resolver, namespace);
     }
 
     private RelationshipCandidate discoveredCandidate(NamingEvidenceCandidate naming) {
@@ -174,8 +188,8 @@ public final class DataProfileCandidateGenerator {
         if (source == null || target == null) {
             return false;
         }
-        return normalize(source.dataType()).equals(normalize(target.dataType()))
-                || normalize(source.columnType()).equals(normalize(target.columnType()));
+        return sameNonBlankType(source.dataType(), target.dataType())
+                || sameNonBlankType(source.columnType(), target.columnType());
     }
 
     private MetadataColumnFact column(MetadataSnapshot metadata, CanonicalEndpointKey key,
@@ -186,22 +200,91 @@ public final class DataProfileCandidateGenerator {
                 .orElse(null);
     }
 
-    private void add(Map<String, RelationshipCandidate> seen, List<RelationshipCandidate> result,
-            Map<String, Integer> targetsBySource, RelationshipCandidate candidate, int limit,
-            int maxTargetsPerSource, CanonicalEndpointKeyProvider endpointKeys) {
-        if (result.size() >= limit) {
-            return;
+    private RankedCandidate rankExisting(
+            RelationshipCandidate candidate,
+            MetadataSnapshot metadata,
+            CanonicalIdentifierResolver resolver,
+            NamespaceContext namespace,
+            CanonicalEndpointKeyProvider endpointKeys
+    ) {
+        CanonicalEndpointKey targetKey = CanonicalEndpointKey.from(candidate.target(), resolver, namespace);
+        boolean sqlPredicate = candidate.evidence().stream()
+                .anyMatch(evidence -> SQL_PREDICATE_EVIDENCE.contains(evidence.type()));
+        boolean declared = hasEvidence(candidate, EvidenceType.METADATA_FOREIGN_KEY)
+                || hasEvidence(candidate, EvidenceType.DDL_FOREIGN_KEY);
+        boolean naming = hasEvidence(candidate, EvidenceType.NAMING_MATCH);
+        boolean objectPredicate = candidate.evidence().stream()
+                .anyMatch(evidence -> OBJECT_PREDICATE_EVIDENCE.contains(evidence.type()));
+        ProfileCandidatePriority priority;
+        if (sqlPredicate && targetUnique(metadata, targetKey, resolver, namespace)) {
+            priority = ProfileCandidatePriority.SQL_PREDICATE_UNIQUE_TARGET;
+        } else if (declared) {
+            priority = ProfileCandidatePriority.DECLARED_FOREIGN_KEY;
+        } else if (sqlPredicate && naming) {
+            priority = ProfileCandidatePriority.SQL_PREDICATE_WITH_NAMING;
+        } else if (objectPredicate) {
+            priority = ProfileCandidatePriority.OBJECT_PREDICATE;
+        } else {
+            priority = ProfileCandidatePriority.OTHER_STRUCTURAL;
         }
-        String sourceKey = endpointKeys.factKey(candidate.source());
-        if (targetsBySource.getOrDefault(sourceKey, 0) >= maxTargetsPerSource) {
-            return;
+        return new RankedCandidate(
+                candidate,
+                priority,
+                observationCount(candidate),
+                endpointKeys.factKey(candidate.source()),
+                endpointKeys.factKey(candidate.target()));
+    }
+
+    private List<RelationshipCandidate> applyBudgets(
+            List<RankedCandidate> eligible,
+            DataProfileOptions options,
+            CanonicalEndpointKeyProvider endpointKeys
+    ) {
+        eligible.sort(Comparator
+                .comparing(RankedCandidate::priority)
+                .thenComparing(Comparator.comparingInt(RankedCandidate::observationCount).reversed())
+                .thenComparing(RankedCandidate::sourceKey)
+                .thenComparing(RankedCandidate::targetKey)
+                .thenComparing(candidate -> candidate.candidate().relationSubType().name()));
+        Map<String, RankedCandidate> unique = new LinkedHashMap<>();
+        for (RankedCandidate ranked : eligible) {
+            unique.putIfAbsent(ranked.sourceKey() + "->" + ranked.targetKey(), ranked);
         }
-        String key = sourceKey + "->" + endpointKeys.factKey(candidate.target());
-        if (!seen.containsKey(key)) {
-            seen.put(key, candidate);
-            result.add(candidate);
+
+        List<RelationshipCandidate> selected = new ArrayList<>();
+        Map<String, Integer> targetsBySource = new HashMap<>();
+        for (RankedCandidate ranked : unique.values()) {
+            if (selected.size() >= options.maxCandidatePairs()) {
+                break;
+            }
+            String sourceKey = endpointKeys.factKey(ranked.candidate().source());
+            if (targetsBySource.getOrDefault(sourceKey, 0) >= options.maxTargetsPerSourceColumn()) {
+                continue;
+            }
+            selected.add(ranked.candidate());
             targetsBySource.merge(sourceKey, 1, Integer::sum);
         }
+        return List.copyOf(selected);
+    }
+
+    private int observationCount(RelationshipCandidate candidate) {
+        int count = candidate.evidence().size() + candidate.rawEvidence().size();
+        for (Evidence evidence : candidate.rawEvidence()) {
+            Object occurrenceCount = evidence.attributes().get("occurrenceCount");
+            if (occurrenceCount instanceof Number number && number.intValue() > 1) {
+                count += number.intValue() - 1;
+            }
+        }
+        return count;
+    }
+
+    private boolean hasEvidence(RelationshipCandidate candidate, EvidenceType type) {
+        return candidate.evidence().stream().anyMatch(evidence -> evidence.type() == type);
+    }
+
+    private boolean sameNonBlankType(String left, String right) {
+        String normalizedLeft = normalize(left);
+        return !normalizedLeft.isBlank() && normalizedLeft.equals(normalize(right));
     }
 
     private String normalize(String value) {
@@ -210,5 +293,23 @@ public final class DataProfileCandidateGenerator {
 
     private IdentifierRules defaultIdentifierRules() {
         return value -> value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
+    }
+
+    private enum ProfileCandidatePriority {
+        SQL_PREDICATE_UNIQUE_TARGET,
+        DECLARED_FOREIGN_KEY,
+        SQL_PREDICATE_WITH_NAMING,
+        OBJECT_PREDICATE,
+        NAMING_DISCOVERY,
+        OTHER_STRUCTURAL
+    }
+
+    private record RankedCandidate(
+            RelationshipCandidate candidate,
+            ProfileCandidatePriority priority,
+            int observationCount,
+            String sourceKey,
+            String targetKey
+    ) {
     }
 }

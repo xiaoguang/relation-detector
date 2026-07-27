@@ -7,6 +7,15 @@
 - JSON 输出中的 enum 值必须稳定，采用全大写下划线格式，例如 `FK_LIKE`。
 - 已发布 enum 值不要改名；如果语义变化，应新增 enum 值并保留旧值兼容。
 - enum 用于表达离散状态，不要把可变文本、文件名、SQL 片段放进 enum。
+- 语义类别、状态、固定优先级和固定处理顺序属于闭集，必须由有业务名称的 enum
+  表达，禁止使用 `priority=5`、`rank=2` 或 `precedence=8` 这类隐藏语义数字。
+- 数量、阈值、置信度、行列位置、ordinal、版本号、HTTP/JDBC/vendor code 和进程
+  退出码仍是数值；只有它们所代表的内部闭集类别需要 enum。进程边界可以输出 int，
+  但内部成功/运行错误/用法错误等类别必须先由 enum 表达。
+- 缺失值不得使用项目自定义的 `-1` 哨兵；可缺失整数使用 `OptionalInt` 或显式结果
+  类型。JDK `indexOf()`、`read()` 等标准 API 自身定义的 `-1` 协议不在此列。
+- 内部 enum 可以用声明顺序表达经过测试锁定的弱到强顺序，但不得序列化为新的公共
+  JSON/SPI 值，也不得在调用点重新映射成整数权重。
 - 每个 enum 都应有单元测试覆盖 JSON 序列化和反序列化。
 - 文档中标记为“预留”的值可以先不实现完整逻辑，但不要在 v1 输出中伪造结果。
 
@@ -132,6 +141,8 @@ public enum RelationSubType {
 
 维护说明：
 
+- 实现使用内部 `SubtypePrecedence` enum 表达上述固定顺序；不得恢复为 `1..8`
+  的数值 rank。该内部 enum 不是 JSON 字段，不改变 `RelationSubType` wire contract。
 - `RelationSubType` 不替代 evidence 列表。它只放“主导形态”。
 - 一条关系可以有很多 evidence，但只能有一个 `relationSubType`。
 - 显式数据库 FK 永远不应被数据画像或日志证据覆盖成其他 subtype。
@@ -695,13 +706,14 @@ public enum AdaptorCapability {
 | `DATABASE_OBJECTS` | 支持读取过程、函数、视图、触发器定义。 |
 | `NATIVE_LOGS` | 支持该数据库原生日志格式提取 SQL。 |
 | `DATA_PROFILING` | 支持对候选关系做数据画像。 |
-| `EVIDENCE_WEIGHT_ADJUSTMENT` | 支持数据库特定 evidence 权重修正。 |
+| `EVIDENCE_WEIGHT_ADJUSTMENT` | 声明 adaptor 提供实际 evidence weight adjustment 策略。四个内置 adaptor 保留SPI v6 identity hook但不声明该能力；core仅对声明能力的adaptor调用hook。 |
 
 维护说明：
 
 - capabilities 用于提前校验用户配置。
 - 用户开启 adaptor 不支持的能力时，应给明确错误或 warning。
 - 不要通过 capabilities 表示版本号；版本兼容应由 adaptor 自己判断。
+- `EVIDENCE_WEIGHT_ADJUSTMENT` 表示存在实际策略，不表示 grouped SPI record 中仅有identity hook。
 
 ## 17. ScanSourceKind
 

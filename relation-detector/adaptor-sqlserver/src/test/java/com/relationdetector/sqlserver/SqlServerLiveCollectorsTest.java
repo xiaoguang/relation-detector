@@ -116,10 +116,19 @@ class SqlServerLiveCollectorsTest {
                 "target_schema", "dbo", "target_table", "users", "target_column", "id",
                 "constraint_name", "FK_ORDERS_USERS", "constraint_column_id", 1,
                 "update_referential_action_desc", "NO_ACTION", "delete_referential_action_desc", "NO_ACTION"));
-        if (sql.contains("sys.indexes")) return row(values(
-                "schema_name", "dbo", "table_name", "orders", "index_name", "IX_ORDERS_USER",
-                "is_unique", false, "is_primary_key", false, "type_desc", "NONCLUSTERED",
-                "is_disabled", false, "column_name", "user_id", "key_ordinal", 1, "is_included_column", false));
+        if (sql.contains("sys.indexes")) return rows(List.of(
+                values("schema_name", "dbo", "table_name", "orders", "index_name", "IX_ORDERS_USER",
+                        "is_unique", false, "is_primary_key", false, "type_desc", "NONCLUSTERED",
+                        "is_disabled", false, "has_filter", false, "column_name", "user_id",
+                        "key_ordinal", 1, "is_included_column", false),
+                values("schema_name", "dbo", "table_name", "orders", "index_name", "IX_ORDERS_FILTERED",
+                        "is_unique", true, "is_primary_key", false, "type_desc", "NONCLUSTERED",
+                        "is_disabled", false, "has_filter", true, "column_name", "user_id",
+                        "key_ordinal", 1, "is_included_column", false),
+                values("schema_name", "dbo", "table_name", "orders", "index_name", "IX_ORDERS_WITH_INCLUDE",
+                        "is_unique", false, "is_primary_key", false, "type_desc", "NONCLUSTERED",
+                        "is_disabled", false, "has_filter", false, "column_name", "user_id",
+                        "key_ordinal", 0, "is_included_column", true)));
         if (sql.contains("sys.sql_modules")) return row(values(
                 "schema_name", "dbo", "object_name", "rebuild_orders", "object_type", "P",
                 "definition", nullDefinition ? null : "CREATE PROCEDURE dbo.rebuild_orders AS SELECT 1"));
@@ -130,18 +139,23 @@ class SqlServerLiveCollectorsTest {
     }
 
     private java.sql.ResultSet row(Map<String, Object> values) throws Exception {
+        return rows(values.isEmpty() ? List.of() : List.of(values));
+    }
+
+    private java.sql.ResultSet rows(List<Map<String, Object>> rows) throws Exception {
         var rowSet = RowSetProvider.newFactory().createCachedRowSet();
         RowSetMetaDataImpl metadata = new RowSetMetaDataImpl();
-        metadata.setColumnCount(values.size());
+        Map<String, Object> shape = rows.isEmpty() ? Map.of() : rows.get(0);
+        metadata.setColumnCount(shape.size());
         int column = 1;
-        for (var entry : values.entrySet()) {
+        for (var entry : shape.entrySet()) {
             metadata.setColumnName(column, entry.getKey());
             metadata.setColumnType(column, entry.getValue() instanceof Number ? Types.INTEGER
                     : entry.getValue() instanceof Boolean ? Types.BOOLEAN : Types.VARCHAR);
             column++;
         }
         rowSet.setMetaData(metadata);
-        if (!values.isEmpty()) {
+        for (Map<String, Object> values : rows) {
             rowSet.moveToInsertRow();
             column = 1;
             for (Object value : values.values()) rowSet.updateObject(column++, value);

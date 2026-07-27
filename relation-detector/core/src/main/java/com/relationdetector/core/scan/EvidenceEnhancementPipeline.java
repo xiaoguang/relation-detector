@@ -1,8 +1,10 @@
 package com.relationdetector.core.scan;
 
 /**
- * CN: 编排 DDL inventory、scan-level enhancement 与 adaptor weight adjustment，保证一次 scan 只运行一套证据链路。
- * EN: Orchestrates DDL inventory, scan-level enhancement, and adaptor weight adjustment so one scan uses a single evidence path.
+ * CN: 编排 DDL inventory、scan-level enhancement 与 adaptor weight adjustment；只有 adaptor 明确声明
+ * 权重能力时才调用其 hook，identity hook 本身不构成 capability。
+ * EN: Orchestrates DDL inventory, scan-level enhancement, and adaptor weight adjustment. It invokes the weight hook
+ * only when the adaptor explicitly declares that capability; an identity hook alone does not constitute support.
  */
 final class EvidenceEnhancementPipeline {
     private final EvidenceEnhancementService enhancementService = new EvidenceEnhancementService();
@@ -31,6 +33,10 @@ final class EvidenceEnhancementPipeline {
     }
 
     void adjustWeights(ScanPipelineContext ctx) {
+        if (!ctx.adaptor.capabilities().contains(
+                com.relationdetector.contracts.Enums.AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT)) {
+            return;
+        }
         weightAdjustmentService.adjust(
                 ctx.relationshipCandidates,
                 ctx.namingEvidencePool,

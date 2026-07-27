@@ -2,6 +2,7 @@ package com.relationdetector.postgres.fullgrammar.v16;
 
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -80,7 +81,7 @@ final class PostgresSetProjectionSupport {
         return List.of();
     }
 
-    private int branchArity(Simple_select_pramaryContext branch) {
+    private OptionalInt branchArity(Simple_select_pramaryContext branch) {
         List<Target_elContext> targets = targets(branch);
         return PostgresSetProjectionLayout.branchArity(
                 targets.size(), targets.stream().anyMatch(Target_starContext.class::isInstance));

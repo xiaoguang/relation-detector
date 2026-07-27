@@ -29,9 +29,9 @@ final class SampleDataBatchAggregator {
             JsonNode report = read(path);
             JsonNode values = report.path("cases");
             if (!values.isArray()
-                    || report.path("summary").path("caseCount").asInt(-1) != values.size()
-                    || report.path("summary").path("failedCount").asInt(0) != 0
-                    || report.path("summary").path("skippedCount").asInt(0) != 0) {
+                    || !integerEquals(report.path("summary"), "caseCount", values.size())
+                    || !integerEquals(report.path("summary"), "failedCount", 0)
+                    || !integerEquals(report.path("summary"), "skippedCount", 0)) {
                 throw new ReleaseVerificationException(
                         "isolated sample-data group did not complete");
             }
@@ -63,6 +63,12 @@ final class SampleDataBatchAggregator {
         ArrayNode ordered = result.putArray("cases");
         expectedCases.forEach(id -> ordered.add(cases.get(id)));
         ReleaseVerificationJson.write(output, result);
+    }
+
+    private boolean integerEquals(JsonNode parent, String field, int expected) {
+        JsonNode value = parent.get(field);
+        return value != null && value.isIntegralNumber() && value.canConvertToInt()
+                && value.intValue() == expected;
     }
 
     private JsonNode read(Path path) {

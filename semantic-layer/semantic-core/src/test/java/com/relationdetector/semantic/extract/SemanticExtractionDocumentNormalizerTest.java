@@ -696,6 +696,100 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
+    @Test
+    void rejectsEveryUnresolvedDisplayInputEvenWhenAnotherInputResolved() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:orders","name":"订单","physicalName":"orders","evidenceRefs":["e1"]}
+                  ],
+                  "events": [{
+                    "name":"处理订单","eventCandidateRef":"event:process-orders",
+                    "inputs":["订单","不存在的客户"],
+                    "outputEntityRefs":["entity:orders"],
+                    "evidenceRefs":["event:process-orders"]
+                  }],
+                  "relations": [], "lineage": [], "metrics": [], "dimensions": [],
+                  "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("e1");
+        bundle.withArray("eventCandidates").addObject().put("id", "event:process-orders");
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticExtractionDocumentNormalizer().normalize(raw, bundle));
+    }
+
+    @Test
+    void explicitTypedEntityRefsCannotFallBackToResolvableDisplayNames() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:orders","name":"订单","physicalName":"orders","evidenceRefs":["e1"]},
+                    {"id":"entity:customers","name":"客户","physicalName":"customers","evidenceRefs":["e1"]}
+                  ],
+                  "events": [],
+                  "relations": [{
+                    "from":"订单","to":"客户",
+                    "fromEntityRef":"entity:missing","toEntityRef":"entity:customers",
+                    "type":"CUSTOMER_ORDER","evidenceRefs":["e1"]
+                  }],
+                  "lineage": [], "metrics": [], "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle("e1")));
+    }
+
+    @Test
+    void reviewTargetMustBelongToDeclaredSectionAndReasonDoesNotAffectDefaultId() throws Exception {
+        JsonNode wrongSection = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:orders","name":"订单","physicalName":"orders","evidenceRefs":["e1"]}
+                  ],
+                  "events": [],
+                  "relations": [{"fromEntityRef":"entity:orders","toEntityRef":"entity:orders",
+                    "type":"SELF","evidenceRefs":["e1"]}],
+                  "lineage": [], "metrics": [], "dimensions": [], "triplets": [],
+                  "reviewItems": [{
+                    "targetRef":"entity:orders","targetSection":"metrics",
+                    "type":"REVIEW_NEEDED","reason":"确认订单","evidenceRefs":["e1"]
+                  }]
+                }
+                """);
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticExtractionDocumentNormalizer().normalize(wrongSection, evidenceBundle("e1")));
+
+        JsonNode first = reviewDocument("第一次说明");
+        JsonNode second = reviewDocument("修改后的说明");
+        SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
+        String firstId = normalizer.normalize(first, evidenceBundle("e1"))
+                .path("reviewItems").get(0).path("id").asText();
+        String secondId = normalizer.normalize(second, evidenceBundle("e1"))
+                .path("reviewItems").get(0).path("id").asText();
+        assertEquals(firstId, secondId);
+    }
+
+    private JsonNode reviewDocument(String reason) throws Exception {
+        return JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:orders","name":"订单","physicalName":"orders","evidenceRefs":["e1"]}
+                  ],
+                  "events": [],
+                  "relations": [{"fromEntityRef":"entity:orders","toEntityRef":"entity:orders",
+                    "type":"SELF","evidenceRefs":["e1"]}],
+                  "lineage": [], "metrics": [], "dimensions": [], "triplets": [],
+                  "reviewItems": [{
+                    "targetRef":"entity:orders","targetSection":"entities",
+                    "type":"REVIEW_NEEDED","reason":"%s","evidenceRefs":["e1"]
+                  }]
+                }
+                """.formatted(reason));
+    }
+
     private String semanticDocument(boolean reversed) {
         String relations = reversed
                 ? """
@@ -736,9 +830,9 @@ final class SemanticExtractionDocumentNormalizerTest {
         return """
                 {
                   "entities": [
-                    {"name":"订单","physicalName":"orders","evidenceRefs":["e1"]},
-                    {"name":"客户","physicalName":"customers","evidenceRefs":["e1"]},
-                    {"name":"供应商","physicalName":"suppliers","evidenceRefs":["e2"]}
+                    {"id":"entity:orders","name":"订单","physicalName":"orders","evidenceRefs":["e1"]},
+                    {"id":"entity:customers","name":"客户","physicalName":"customers","evidenceRefs":["e1"]},
+                    {"id":"entity:suppliers","name":"供应商","physicalName":"suppliers","evidenceRefs":["e2"]}
                   ],
                   "events": [],
                   "relations": [%s],

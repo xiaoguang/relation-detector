@@ -16,10 +16,7 @@ import com.relationdetector.semantic.extract.SemanticExtractionDocumentNormalize
 final class SemanticNormalizeExtractionCommandHandler {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    int execute(SemanticCommandArguments arguments) {
-        if (arguments.inputs().size() != 1) {
-            throw new IllegalArgumentException("normalize-extraction requires exactly one --input file");
-        }
+    SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         try {
             JsonNode raw = JSON.readTree(arguments.inputs().get(0).toFile());
             JsonNode evidenceBundle = JSON.readTree(arguments.evidenceBundle().toFile());
@@ -30,7 +27,7 @@ final class SemanticNormalizeExtractionCommandHandler {
                 Files.createDirectories(parent);
             }
             JSON.writeValue(arguments.output().toFile(), normalized);
-            return 0;
+            return SemanticCliExitCode.SUCCESS;
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to normalize semantic extraction result", e);
         }

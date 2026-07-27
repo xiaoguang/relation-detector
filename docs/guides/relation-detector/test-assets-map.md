@@ -4,7 +4,10 @@
 
 逐条 fixture 明细由 `CorrectnessSummaryGeneratorTest` 生成。发布验收将报告保存为 `relation-detector/target/verification/<session>/reports/correctness-test-summary.md`；完整 SQL/DDL 仍以 fixture 的 `input.sql` 或 `input.ddl.sql` 为准。
 
-Data Lineage 全量审核由 `DataLineageAuditGeneratorTest` 从 fixture 和 `StructuredDataLineageExtractor` 输出生成，不调用大模型。发布验收将报告保存为 `relation-detector/target/verification/<session>/reports/data-lineage-full-audit.md`；它用于回答哪些 SQL 已有 lineage golden、哪些需要人工审核以及哪些不适用 v1 字段血缘。
+Data Lineage 全量审核由 `DataLineageAuditGeneratorTest` 从 fixture manifest、SQL 文本和已有
+`expected-lineage.json`生成，不调用 parser/extractor或大模型。发布验收将报告保存为
+`relation-detector/target/verification/<session>/reports/data-lineage-full-audit.md`；它当前只能索引已有
+golden覆盖，并用维护工具内的启发式规则分类`NOT_APPLICABLE`，不能发现新的 extractor candidate。
 
 full-grammar expression transform 的历史差异已经按人工审核结论固化到 lineage golden。后续不再用跨 parser 对照机制遮蔽差异，每个 parser 必须直接通过自己的 golden；当前未关闭项只记录在 [Sample-data Output Audit Backlog](../../parser-audit/sample-data-output-audit-backlog.md)。
 
@@ -74,8 +77,8 @@ Relationship、Lineage、diagnostics 与 naming evidence 的当前 per-fixture �
 | `relation-detector/test-fixtures/examples` | 示例配置和文件输入 | 面向用户/运维的 file-only 配置示例 |
 | `relation-detector/test-fixtures/local` | 本地真实库扫描配置 | 手动导出/扫描用，本地密码通过环境变量注入 |
 | `relation-detector/target/verification/<session>/reports/correctness-test-summary.md` | 生成的测试明细报告 | 由 `CorrectnessSummaryGeneratorTest` 从 fixture/golden 生成，并由发布验收登记 SHA-256 与大小 |
-| `relation-detector/target/verification/<session>/reports/data-lineage-full-audit.md` | Data Lineage 全量审核索引 | 由 `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 extractor 候选生成，按 `EXISTING_GOLD` / `SUGGESTED_GOLD` / `PENDING_REVIEW` / `NOT_APPLICABLE` 分类 |
-| `docs/parser-audit/data-lineage-pending-review.md` | Data Lineage 审核清单 | 记录暂不进入 golden 的复杂字段血缘候选，例如多 transform 混合表达式、参数/JSON_TABLE 输入和窗口函数派生 |
+| `relation-detector/target/verification/<session>/reports/data-lineage-full-audit.md` | Data Lineage golden 覆盖索引 | 由 `DataLineageAuditGeneratorTest` 从全部 correctness fixture、已有 lineage golden 和启发式不适用规则生成；当前实际分类为 `EXISTING_GOLD` / `NOT_APPLICABLE`，不运行 extractor |
+| `docs/parser-audit/data-lineage-pending-review.md` | Data Lineage 后续能力清单 | 人工记录 procedure/parameter/local-rowset 等尚未进入 v1 的设计 backlog，不是 generator 自动发现的候选 |
 
 ## Java 测试分类
 

@@ -3,6 +3,7 @@ package com.relationdetector.postgres.tokenevent;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.OptionalInt;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.postgres.plpgsql.tokenevent.TokenEventPlPgSqlBodyParser;
@@ -88,7 +89,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresTokenEvent
         return null;
     }
 
-    private int setBranchArity(PostgresRelationSqlParser.QuerySpecificationContext branch) {
+    private OptionalInt setBranchArity(PostgresRelationSqlParser.QuerySpecificationContext branch) {
         var items = branch.selectList().selectItem();
         return PostgresSetProjectionLayout.branchArity(
                 items.size(), items.stream().anyMatch(item -> item.STAR() != null));

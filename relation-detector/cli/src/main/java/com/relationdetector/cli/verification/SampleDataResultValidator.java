@@ -65,8 +65,12 @@ final class SampleDataResultValidator {
                 }
             }
             int diagnostics = 0;
+            long validatedSourceLocations = 0;
             for (int index = 0; index < paths.size(); index++) {
-                diagnostics += validateFile(paths.get(index), workspace.resolve("file-" + index));
+                FileValidation validation = validateFile(
+                        paths.get(index), workspace.resolve("file-" + index));
+                diagnostics += validation.diagnostics();
+                validatedSourceLocations += validation.validatedSourceLocations();
             }
             if (diagnostics != 0) {
                 throw new ReleaseVerificationException("sample-data results contain diagnostics");
@@ -76,10 +80,11 @@ final class SampleDataResultValidator {
             report.put("categories", direct.size());
             report.put("jsonFiles", paths.size());
             report.put("diagnostics", diagnostics);
+            report.put("validatedSourceLocationCount", validatedSourceLocations);
             report.putObject("integrity")
                     .put("evidenceRefs", "PASS")
                     .put("sourcePaths", "PASS")
-                    .put("sourceLines", "PASS")
+                    .put("providedSourceLocationsValid", "PASS")
                     .put("rawObservationDuplicates", "PASS")
                     .put("derivedCycles", "PASS");
             ReleaseVerificationJson.write(output, report);
@@ -89,7 +94,7 @@ final class SampleDataResultValidator {
         }
     }
 
-    private int validateFile(Path path, Path workspace) {
+    private FileValidation validateFile(Path path, Path workspace) {
         FileState state = new FileState(path, workspace);
         try (JsonParser parser = ReleaseVerificationJson.MAPPER.getFactory().createParser(path.toFile())) {
             if (parser.nextToken() != JsonToken.START_OBJECT) {
@@ -122,7 +127,7 @@ final class SampleDataResultValidator {
             throw new ReleaseVerificationException("failed to stream sample-data result: " + path, error);
         }
         state.finish();
-        return state.count("warnings");
+        return new FileValidation(state.count("warnings"), state.validatedSourceLocations);
     }
 
     private boolean arraySection(String field) {
@@ -143,7 +148,8 @@ final class SampleDataResultValidator {
             }
             state.increment(section);
             validatePortableSources(state.path, item);
-            validateSourceLocations(state.path, item, state.lineCounts);
+            state.validatedSourceLocations += validateSourceLocations(
+                    state.path, item, state.lineCounts);
             if (FACT_SECTIONS.contains(section)) {
                 validateRawObservations(state.path, section, item);
             }
@@ -207,7 +213,8 @@ final class SampleDataResultValidator {
         }
     }
 
-    private void validateSourceLocations(Path path, JsonNode value, Map<Path, Long> lineCounts) {
+    private long validateSourceLocations(Path path, JsonNode value, Map<Path, Long> lineCounts) {
+        long validated = 0;
         if (value.isObject()) {
             String sourceFile = value.path("sourceFile").asText("");
             JsonNode sourceLine = value.get("sourceLine");
@@ -226,11 +233,18 @@ final class SampleDataResultValidator {
                 if (span != null && (line < span.start() || line > span.end())) {
                     throw failure(path, "sourceLine is outside statement span");
                 }
+                validated++;
             }
-            value.forEach(child -> validateSourceLocations(path, child, lineCounts));
+            Iterator<JsonNode> children = value.elements();
+            while (children.hasNext()) {
+                validated += validateSourceLocations(path, children.next(), lineCounts);
+            }
         } else if (value.isArray()) {
-            value.forEach(child -> validateSourceLocations(path, child, lineCounts));
+            for (JsonNode child : value) {
+                validated += validateSourceLocations(path, child, lineCounts);
+            }
         }
+        return validated;
     }
 
     private StatementSpan statementSpan(String statementId) {
@@ -369,6 +383,7 @@ final class SampleDataResultValidator {
         private final ExternalStringIndex derivedNamingViewIds;
         private JsonNode summary;
         private int derivedNamingCount;
+        private long validatedSourceLocations;
 
         private FileState(Path path, Path workspace) {
             this.path = path;
@@ -418,8 +433,11 @@ final class SampleDataResultValidator {
                     : summary;
             for (Map.Entry<String, Integer> entry : expected.entrySet()) {
                 JsonNode actual = resolvedSummary.get(entry.getKey());
-                if (actual != null
-                        && (!actual.canConvertToInt() || actual.intValue() != entry.getValue())) {
+                if (actual == null) {
+                    throw new ReleaseVerificationException(
+                            path + ": summary." + entry.getKey() + " is required");
+                }
+                if (!actual.canConvertToInt() || actual.intValue() != entry.getValue()) {
                     throw new ReleaseVerificationException(
                             path + ": summary." + entry.getKey() + " does not match streamed count");
                 }
@@ -432,5 +450,8 @@ final class SampleDataResultValidator {
     }
 
     private record StatementSpan(long start, long end) {
+    }
+
+    private record FileValidation(int diagnostics, long validatedSourceLocations) {
     }
 }

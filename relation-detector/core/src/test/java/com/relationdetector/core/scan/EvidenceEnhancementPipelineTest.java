@@ -49,7 +49,11 @@ class EvidenceEnhancementPipelineTest {
 
     @Test
     void builtInNoOpAdjusterLeavesPipelineEvidenceUnchanged() {
-        ScanPipelineContext context = context(new CommonDatabaseAdaptor().profiling().evidenceWeightAdjuster());
+        AtomicInteger calls = new AtomicInteger();
+        ScanPipelineContext context = context((evidence, ignored) -> {
+            calls.incrementAndGet();
+            return evidence;
+        }, false);
         Evidence relationshipBefore = context.relationshipCandidates.get(0).evidence().get(0);
         Evidence namingBefore = context.namingEvidencePool.merged().get(0).rawEvidence().get(0);
 
@@ -57,6 +61,7 @@ class EvidenceEnhancementPipelineTest {
 
         assertEquals(relationshipBefore, context.relationshipCandidates.get(0).evidence().get(0));
         assertEquals(namingBefore, context.namingEvidencePool.merged().get(0).rawEvidence().get(0));
+        assertEquals(0, calls.get());
     }
 
     @Test
@@ -85,6 +90,10 @@ class EvidenceEnhancementPipelineTest {
     }
 
     private ScanPipelineContext context(EvidenceWeightAdjuster adjuster) {
+        return context(adjuster, true);
+    }
+
+    private ScanPipelineContext context(EvidenceWeightAdjuster adjuster, boolean adjustmentCapability) {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
         config.jdbcUrl = "jdbc:test:evidence-enhancement";
@@ -96,7 +105,8 @@ class EvidenceEnhancementPipelineTest {
                 EvidenceSourceType.PLAIN_SQL, "lineage.sql", "lineage", Map.of()));
         ScanResult result = new ScanResult("common", null, null);
         CommonDatabaseAdaptor base = new CommonDatabaseAdaptor();
-        ScanPipelineContext context = new ScanPipelineContext(config.resolve(), new ProfilingAdaptor(base, adjuster),
+        ScanPipelineContext context = new ScanPipelineContext(
+                config.resolve(), new ProfilingAdaptor(base, adjuster, adjustmentCapability),
                 new com.relationdetector.contracts.spi.ScanScope(null, null, List.of(), List.of()), result,
                 new AdaptorContext(null, Map.of(), result.warnings()::add), new ArrayList<>(List.of(relationship)),
                 new ArrayList<>(List.of(lineage)));
@@ -122,13 +132,26 @@ class EvidenceEnhancementPipelineTest {
                 evidence.source(), evidence.detail(), evidence.attributes());
     }
 
-    private record ProfilingAdaptor(CommonDatabaseAdaptor base, EvidenceWeightAdjuster adjuster)
+    private record ProfilingAdaptor(
+            CommonDatabaseAdaptor base,
+            EvidenceWeightAdjuster adjuster,
+            boolean adjustmentCapability
+    )
             implements com.relationdetector.contracts.spi.DatabaseAdaptor {
         @Override public int spiVersion() { return base.spiVersion(); }
         @Override public String id() { return base.id(); }
         @Override public String displayName() { return base.displayName(); }
         @Override public java.util.Set<DatabaseType> supportedDatabaseTypes() { return base.supportedDatabaseTypes(); }
-        @Override public java.util.Set<com.relationdetector.contracts.Enums.AdaptorCapability> capabilities() { return base.capabilities(); }
+        @Override
+        public java.util.Set<com.relationdetector.contracts.Enums.AdaptorCapability> capabilities() {
+            if (!adjustmentCapability) {
+                return base.capabilities();
+            }
+            java.util.Set<com.relationdetector.contracts.Enums.AdaptorCapability> result =
+                    new java.util.HashSet<>(base.capabilities());
+            result.add(com.relationdetector.contracts.Enums.AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT);
+            return java.util.Set.copyOf(result);
+        }
         @Override public com.relationdetector.contracts.spi.IdentifierRules identifierRules() { return base.identifierRules(); }
         @Override public com.relationdetector.contracts.spi.AdaptorCollectors collectors() { return base.collectors(); }
         @Override public com.relationdetector.contracts.spi.AdaptorParsers parsers() { return base.parsers(); }

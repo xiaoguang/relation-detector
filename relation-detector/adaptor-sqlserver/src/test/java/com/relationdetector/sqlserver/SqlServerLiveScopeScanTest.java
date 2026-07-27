@@ -54,7 +54,7 @@ class SqlServerLiveScopeScanTest {
         config.databaseType = DatabaseType.SQLSERVER;
         config.jdbcUrl = JDBC_URL;
         config.databaseVersion = "2022";
-        config.metadataEnabled = false;
+        config.metadataEnabled = true;
         config.dataProfileEnabled = true;
         config.logsEnabled = true;
         config.logFiles.add(Files.writeString(tempDir.resolve("query.sql"), "SELECT 1;"));

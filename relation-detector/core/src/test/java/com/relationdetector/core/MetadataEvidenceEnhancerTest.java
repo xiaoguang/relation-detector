@@ -228,6 +228,22 @@ class MetadataEvidenceEnhancerTest {
         assertHasEvidence(leadingColumn, EvidenceType.SOURCE_INDEX);
     }
 
+    @Test
+    void invisibleAndExpressionIndexesDoNotProvideColumnEvidence() {
+        MetadataSnapshot metadata = metadataFacts();
+        metadata.indexFacts().clear();
+        metadata.indexFacts().add(new MetadataIndexFact(null, "shop", "orders", "idx_hidden_user",
+                false, false, "BTREE", false, List.of("user_id"), List.of(), List.of(), List.of(1)));
+        metadata.indexFacts().add(new MetadataIndexFact(null, "shop", "users", "uq_user_expression",
+                true, false, "BTREE", true, List.of("id"), List.of("lower(email)"), List.of(), List.of(1)));
+        RelationshipCandidate candidate = joinCandidate("orders", "user_id", "users", "id");
+
+        new MetadataEvidenceEnhancer().enhance(List.of(candidate), metadata);
+
+        assertTrue(candidate.evidence().stream().noneMatch(e -> e.type() == EvidenceType.SOURCE_INDEX));
+        assertTrue(candidate.evidence().stream().noneMatch(e -> e.type() == EvidenceType.TARGET_UNIQUE));
+    }
+
     private MetadataSnapshot metadataFacts() {
         MetadataSnapshot snapshot = new MetadataSnapshot();
         snapshot.columnFacts().add(new MetadataColumnFact(null, "shop", "orders", "user_id",

@@ -202,7 +202,7 @@ B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINME
 
 ### 候选剪枝
 
-画像前先做零成本或低成本剪枝：
+目标契约要求画像前先做零成本或低成本剪枝：
 
 - 表/列必须存在于 metadata 或 DDL column inventory。
 - source 和 target 必须都是物理列 endpoint。
@@ -213,16 +213,23 @@ B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINME
 - 单表自关联必须有 role 或列差异，例如 `manager_id -> id`。
 - 如果 target 是大表且 target 列无索引，并且没有显式 FK/DDL 强证据，则跳过。
 
+运行时配置要求data profiling与live metadata、JDBC同时启用。所有候选的两端都必须存在于live
+metadata column inventory并通过类型兼容校验；DDL只提供结构证据，不能替代物理存在与类型。
+声明FK在target index gate之前识别，启用FK验证时可绕过unindexed-target过滤；其他候选继续遵守
+`skipUnindexedLargeTargets`。
+
 ### 候选排序
 
-当候选超过预算时，按以下优先级排序：
+候选先去重并按以下优先级稳定排序，再消耗全局和单source配额：
 
-1. 显式 SQL predicate + target unique。
-2. DDL/metadata FK 且 `verifyDeclaredForeignKeys=true`。
-3. SQL predicate + `NAMING_MATCH`。
-4. procedure/view/trigger 中反复出现的 predicate。
-5. namingEvidence + target unique + source index。
-6. 其它 B 层强结构候选。
+1. SQL predicate + target unique。
+2. 已启用验证的 DDL/metadata FK。
+3. SQL predicate + naming evidence。
+4. procedure/view/trigger predicate，observation 多者优先。
+5. naming discovery + target unique + source index。
+6. 其他合法结构候选。
+
+该顺序保证低优先级或重复候选不会提前占用预算。
 
 ## Live DB 画像指标
 

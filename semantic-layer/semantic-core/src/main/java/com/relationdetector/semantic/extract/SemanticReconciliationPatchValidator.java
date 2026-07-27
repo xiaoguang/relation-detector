@@ -11,10 +11,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * CN: 校验并应用受限 reconciliation patch，只允许选择已知 conflict variant、改展示名称或增加已有证据支持的语义关系；禁止创建物理事实或新引用。
- * EN: Validates and applies a constrained reconciliation patch that may select known variants, adjust display text, or add evidence-backed semantic relations. It cannot create physical facts or references.
+ * CN: 校验并应用受限 reconciliation patch，只允许选择已知 conflict variant 或修改展示名称；禁止创建语义对象、关系、物理事实或新引用。
+ * EN: Validates and applies a constrained reconciliation patch that may only select known variants or adjust display text. It cannot create semantic objects, relations, physical facts, or references.
  */
 final class SemanticReconciliationPatchValidator {
+    private static final Set<String> PATCH_SECTIONS = Set.of("resolutions", "renames");
     private static final Set<String> RENAME_SECTIONS = Set.of(
             "entities", "events", "relations", "lineage", "metrics", "dimensions", "triplets", "reviewItems");
 
@@ -22,11 +23,10 @@ final class SemanticReconciliationPatchValidator {
         if (merge == null || patch == null || !patch.isObject()) {
             throw new SemanticExtractionValidationException("semantic reconciliation patch is required");
         }
-        SemanticReferenceIndex referenceIndex = SemanticReferenceIndex.from(fullBundle);
+        requireSections(patch);
         ObjectNode result = merge.trustedMergedDocument().deepCopy();
         resolveConflicts(result, merge.conflicts(), requireArray(patch, "resolutions"));
         applyRenames(result, requireArray(patch, "renames"));
-        addRelations(result, requireArray(patch, "relations"), referenceIndex);
         return result;
     }
 
@@ -71,28 +71,13 @@ final class SemanticReconciliationPatchValidator {
         }
     }
 
-    private void addRelations(ObjectNode result, ArrayNode relations, SemanticReferenceIndex references) {
-        Set<String> entityIds = ids(result.withArray("entities"));
-        Set<String> relationIds = ids(result.withArray("relations"));
-        for (JsonNode relation : relations) {
-            String id = relation.path("id").asText("");
-            String from = relation.path("fromEntityRef").asText("");
-            String to = relation.path("toEntityRef").asText("");
-            if (id.isBlank() || !relationIds.add(id) || !entityIds.contains(from) || !entityIds.contains(to)) {
-                throw new SemanticExtractionValidationException("reconciliation relation identity is invalid");
+    private void requireSections(JsonNode patch) {
+        patch.fieldNames().forEachRemaining(section -> {
+            if (!PATCH_SECTIONS.contains(section)) {
+                throw new SemanticExtractionValidationException(
+                        "reconciliation patch contains unsupported section: " + section);
             }
-            JsonNode evidenceRefs = relation.path("evidenceRefs");
-            if (!evidenceRefs.isArray() || evidenceRefs.isEmpty()) {
-                throw new SemanticExtractionValidationException("reconciliation relation evidence is required");
-            }
-            for (JsonNode ref : evidenceRefs) {
-                if (!ref.isTextual() || !references.contains(ref.asText())) {
-                    throw new SemanticExtractionValidationException(
-                            "reconciliation relation contains unknown evidence reference");
-                }
-            }
-            result.withArray("relations").add(relation.deepCopy());
-        }
+        });
     }
 
     private ArrayNode requireArray(JsonNode patch, String field) {
@@ -130,12 +115,4 @@ final class SemanticReconciliationPatchValidator {
         return null;
     }
 
-    private Set<String> ids(ArrayNode section) {
-        Set<String> result = new LinkedHashSet<>();
-        section.forEach(item -> {
-            String id = item.path("id").asText("");
-            if (!id.isBlank()) result.add(id);
-        });
-        return result;
-    }
 }

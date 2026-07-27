@@ -21,21 +21,18 @@ public final class ReleaseVerificationMain {
 
     public static void main(String[] arguments) {
         try {
-            int status = run(arguments);
-            if (status != 0) {
-                System.exit(status);
-            }
+            run(arguments);
         } catch (ReleaseVerificationException error) {
             System.err.println(error.getMessage());
             System.exit(1);
         }
     }
 
-    static int run(String[] arguments) {
+    static void run(String[] arguments) {
         if (arguments.length == 0) {
             throw new ReleaseVerificationException("verification subcommand is required");
         }
-        return switch (arguments[0]) {
+        switch (arguments[0]) {
             case "fingerprint" -> fingerprint(arguments);
             case "validate-results" -> validateResults(arguments);
             case "aggregate-correctness" -> aggregateCorrectness(arguments);
@@ -48,10 +45,10 @@ public final class ReleaseVerificationMain {
             case "failure-manifest" -> failureManifest(arguments);
             default -> throw new ReleaseVerificationException(
                     "unknown verification subcommand: " + arguments[0]);
-        };
+        }
     }
 
-    private static int fingerprint(String[] arguments) {
+    private static void fingerprint(String[] arguments) {
         VerificationCommandArguments parsed =
                 VerificationCommandArguments.parse(arguments, 1, "--semantic");
         Path workspace = Path.of(parsed.required("--workspace"));
@@ -80,19 +77,17 @@ public final class ReleaseVerificationMain {
         } finally {
             VerificationFileSupport.deleteRecursively(workspace);
         }
-        return 0;
     }
 
-    private static int validateResults(String[] arguments) {
+    private static void validateResults(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         new SampleDataResultValidator().validate(
                 Path.of(parsed.required("--result-dir")),
                 positiveInt(parsed.optional("--expected-categories", "19"), "--expected-categories"),
                 Path.of(parsed.required("--output")));
-        return 0;
     }
 
-    private static int aggregateCorrectness(String[] arguments) {
+    private static void aggregateCorrectness(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         Set<String> expected = new LinkedHashSet<>(parsed.repeated("--expected-category"));
         if (expected.size() != parsed.repeated("--expected-category").size()) {
@@ -102,19 +97,17 @@ public final class ReleaseVerificationMain {
                 parsed.positional().stream().map(Path::of).toList(),
                 expected,
                 Path.of(parsed.required("--output")));
-        return 0;
     }
 
-    private static int aggregateSample(String[] arguments) {
+    private static void aggregateSample(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         new SampleDataBatchAggregator().aggregate(
                 parsed.positional().stream().map(Path::of).toList(),
                 parsed.repeated("--expected-case"),
                 Path.of(parsed.required("--output")));
-        return 0;
     }
 
-    private static int sampleSummary(String[] arguments) {
+    private static void sampleSummary(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         new SampleDataSummaryWriter().write(new SampleDataSummaryWriter.Request(
                 Path.of(parsed.required("--result-dir")),
@@ -123,20 +116,18 @@ public final class ReleaseVerificationMain {
                 Path.of(parsed.required("--derived-summary")),
                 Path.of(parsed.required("--warnings")),
                 parsed.repeated("--requested-case")));
-        return 0;
     }
 
-    private static int parserSummary(String[] arguments) {
+    private static void parserSummary(String[] arguments) {
         VerificationCommandArguments parsed =
                 VerificationCommandArguments.parse(arguments, 1, "--update");
         new ParserComparisonSummarySynchronizer().synchronize(
                 Path.of(parsed.required("--summary")),
                 Path.of(parsed.required("--document")),
                 parsed.flag("--update"));
-        return 0;
     }
 
-    private static int environment(String[] arguments) {
+    private static void environment(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         new EnvironmentReportWriter().write(
                 Path.of(parsed.required("--output")),
@@ -144,10 +135,9 @@ public final class ReleaseVerificationMain {
                 parsed.required("--branch"),
                 parsed.required("--origin-main"),
                 parsed.required("--maven-bin"));
-        return 0;
     }
 
-    private static int performance(String[] arguments) {
+    private static void performance(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         new PerformanceReportWriter().write(new PerformanceReportWriter.Request(
                 decimal(parsed.required("--session-start"), "--session-start"),
@@ -159,10 +149,9 @@ public final class ReleaseVerificationMain {
                 Path.of(parsed.required("--semantic-fingerprints")),
                 parsed.repeated("--maven-log").stream().map(Path::of).toList(),
                 Path.of(parsed.required("--output"))));
-        return 0;
     }
 
-    private static int manifest(String[] arguments) {
+    private static void manifest(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         String noCache = parsed.optional("--no-cache-status", "");
         new VerificationManifestBuilder().build(new VerificationManifestBuilder.ManifestRequest(
@@ -182,10 +171,9 @@ public final class ReleaseVerificationMain {
                 positiveInt(parsed.optional("--expected-json", "38"), "--expected-json"),
                 parsed.repeated("--artifact").stream().map(Path::of).toList(),
                 Path.of(parsed.required("--output"))));
-        return 0;
     }
 
-    private static int failureManifest(String[] arguments) {
+    private static void failureManifest(String[] arguments) {
         VerificationCommandArguments parsed = VerificationCommandArguments.parse(arguments, 1);
         new ReleaseFailureManifestWriter().write(
                 Path.of(parsed.required("--output")),
@@ -195,7 +183,6 @@ public final class ReleaseVerificationMain {
                 parsed.required("--commit"),
                 parsed.required("--branch"),
                 Path.of(parsed.required("--artifact")));
-        return 0;
     }
 
     private static List<Path> resolveJsonInputs(List<String> values) {

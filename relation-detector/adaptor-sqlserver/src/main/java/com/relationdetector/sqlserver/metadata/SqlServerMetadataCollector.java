@@ -177,13 +177,14 @@ public final class SqlServerMetadataCollector implements MetadataCollector {
             MetadataSnapshot snapshot) {
         String sql = """
                 SELECT s.name AS schema_name, t.name AS table_name, i.name AS index_name,
-                       i.is_unique, i.is_primary_key, i.type_desc, i.is_disabled,
+                       i.is_unique, i.is_primary_key, i.type_desc, i.is_disabled, i.has_filter,
                        c.name AS column_name, ic.key_ordinal, ic.is_included_column
                 FROM sys.indexes i JOIN sys.tables t ON t.object_id=i.object_id
                 JOIN sys.schemas s ON s.schema_id=t.schema_id
                 JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id
                 JOIN sys.columns c ON c.object_id=t.object_id AND c.column_id=ic.column_id
-                WHERE s.name=? AND i.name IS NOT NULL ORDER BY t.name, i.name, ic.key_ordinal, ic.index_column_id
+                WHERE s.name=? AND i.name IS NOT NULL AND i.has_filter=0
+                ORDER BY t.name, i.name, ic.key_ordinal, ic.index_column_id
                 """;
         Map<String, IndexRows> groups = new LinkedHashMap<>();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -191,7 +192,9 @@ public final class SqlServerMetadataCollector implements MetadataCollector {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String table = rs.getString("table_name");
-                    if (!inScope(scope, table) || rs.getBoolean("is_included_column")) continue;
+                    if (!inScope(scope, table)
+                            || rs.getBoolean("is_included_column")
+                            || rs.getBoolean("has_filter")) continue;
                     String key = rs.getString("schema_name") + "|" + table + "|" + rs.getString("index_name");
                     groups.computeIfAbsent(key, ignored -> new IndexRows(rsString(rs, "schema_name"), table,
                             rsString(rs, "index_name"), rsBoolean(rs, "is_unique"),

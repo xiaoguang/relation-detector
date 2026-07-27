@@ -66,8 +66,7 @@ public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.DDL_PARSING,
                         AdaptorCapability.DATABASE_OBJECTS,
                         AdaptorCapability.NATIVE_LOGS,
-                        AdaptorCapability.DATA_PROFILING,
-                        AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
+                        AdaptorCapability.DATA_PROFILING),
                 OracleDatabaseAdaptor::normalizeIdentifier,
                 new AdaptorCollectors(
                         Optional.of(new OracleMetadataCollector()),

@@ -54,9 +54,19 @@ class PostgresMetadataCollectorCatalogTest {
         assertEquals("erp", snapshot.constraintFacts().get(1).referencedCatalog());
         assertEquals(List.of("tenant_id", "customer_id"), snapshot.constraintFacts().get(1).columns());
         assertEquals(List.of("tenant_id", "id"), snapshot.constraintFacts().get(1).referencedColumns());
-        assertEquals(1, snapshot.indexFacts().size());
-        assertEquals(List.of("tenant_id", "customer_id"), snapshot.indexFacts().get(0).columns());
-        assertEquals(List.of(1, 2), snapshot.indexFacts().get(0).seqInIndex());
+        assertEquals(2, snapshot.indexFacts().size());
+        var composite = snapshot.indexFacts().stream()
+                .filter(index -> index.indexName().equals("idx_orders_customer"))
+                .findFirst().orElseThrow();
+        assertEquals(List.of("tenant_id", "customer_id"), composite.columns());
+        assertEquals(List.of(1, 2), composite.seqInIndex());
+        var withInclude = snapshot.indexFacts().stream()
+                .filter(index -> index.indexName().equals("idx_orders_with_include"))
+                .findFirst().orElseThrow();
+        assertEquals(List.of("tenant_id"), withInclude.columns());
+        assertEquals(List.of(1), withInclude.seqInIndex());
+        assertTrue(snapshot.indexFacts().stream()
+                .noneMatch(index -> index.indexName().equals("idx_orders_partial")));
         assertEquals(2, snapshot.relationships().size());
         assertEquals("erp.public.orders.tenant_id", snapshot.relationships().get(0).source().displayName());
         assertEquals("erp.public.customers.tenant_id", snapshot.relationships().get(0).target().displayName());
@@ -107,8 +117,11 @@ class PostgresMetadataCollectorCatalogTest {
         }
         if (normalized.contains("metadata_indexes")) {
             return resultSet(List.of(
-                    indexRow(2, "customer_id"),
-                    indexRow(1, "tenant_id")));
+                    indexRow("idx_orders_customer", 2, "customer_id", false, true),
+                    indexRow("idx_orders_customer", 1, "tenant_id", false, true),
+                    indexRow("idx_orders_partial", 1, "customer_id", true, true),
+                    indexRow("idx_orders_with_include", 1, "tenant_id", false, true),
+                    indexRow("idx_orders_with_include", 2, "customer_id", false, false)));
         }
         throw new AssertionError("Unexpected SQL: " + sql);
     }
@@ -132,13 +145,20 @@ class PostgresMetadataCollectorCatalogTest {
                 Map.entry("update_rule", "NO ACTION"), Map.entry("delete_rule", "NO ACTION"));
     }
 
-    private Map<String, Object> indexRow(int position, String column) {
+    private Map<String, Object> indexRow(
+            String indexName,
+            int position,
+            String column,
+            boolean partial,
+            boolean keyMember
+    ) {
         return Map.ofEntries(
                 Map.entry("schema_name", "public"), Map.entry("table_name", "orders"),
-                Map.entry("index_name", "idx_orders_customer"), Map.entry("is_unique", false),
+                Map.entry("index_name", indexName), Map.entry("is_unique", false),
                 Map.entry("is_primary", false), Map.entry("index_type", "btree"),
                 Map.entry("position", position), Map.entry("column_name", column),
-                Map.entry("expression", ""));
+                Map.entry("expression", ""), Map.entry("is_partial", partial),
+                Map.entry("is_key_member", keyMember));
     }
 
     private ResultSet resultSet(List<Map<String, Object>> rows) {

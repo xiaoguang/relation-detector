@@ -23,7 +23,7 @@ final class SemanticExtractCommandHandler {
      * Codex, request-only, or API flow inside one unique staging directory. Success prints the actual run path;
      * configuration, model, closure, or I/O failures never publish a partial run.
      */
-    int execute(SemanticCommandArguments arguments) {
+    SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         ScanBundle bundle = new SemanticScanBundleReader().read(arguments);
         ObjectNode fullBundle = new SemanticExtractionBundleBuilder().build(bundle);
         SemanticExtractionService service = new SemanticExtractionService();
@@ -41,7 +41,7 @@ final class SemanticExtractCommandHandler {
                     arguments.artifactRetention(),
                     deterministicArtifacts);
             System.out.println(published);
-            return 0;
+            return SemanticCliExitCode.SUCCESS;
         }
         String apiKey = arguments.requestOnly() ? "" : arguments.apiKey();
         int shardOutputTokens = plan.shardRequests().size() == 1
@@ -65,7 +65,7 @@ final class SemanticExtractCommandHandler {
                     arguments.artifactRetention(),
                     deterministicArtifacts);
             System.out.println(published);
-            return 0;
+            return SemanticCliExitCode.SUCCESS;
         }
         published = writer.executeAndWriteResult(
                 arguments.output(),
@@ -79,7 +79,7 @@ final class SemanticExtractCommandHandler {
                 arguments.artifactRetention(),
                 deterministicArtifacts);
         System.out.println(published);
-        return 0;
+        return SemanticCliExitCode.SUCCESS;
     }
 
 }

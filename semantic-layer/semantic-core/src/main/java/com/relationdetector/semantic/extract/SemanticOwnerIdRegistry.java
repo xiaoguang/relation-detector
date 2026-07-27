@@ -17,4 +17,8 @@ final class SemanticOwnerIdRegistry {
                     "duplicate semantic owner id " + id + " in " + previous + " and " + section);
         }
     }
+
+    boolean contains(String section, String id) {
+        return section != null && section.equals(sectionsById.get(id));
+    }
 }

@@ -1,6 +1,8 @@
 # Data Lineage Pending Review
 
-This file is maintained with Data Lineage v1. It lists field-flow candidates that are plausible, but not yet stable enough to become `expected-lineage.json` golden fingerprints.
+This file is a manually maintained future-capability backlog for Data Lineage v1. The generated
+lineage audit does not run the extractor or discover these candidates; entries remain here until
+procedure/parameter/local-rowset scope is explicitly designed and tested.
 
 v1 rule: only reviewed physical `table.column -> table.column` lineage enters golden. Parameters, JSON paths, literals, local variables, and dynamic SQL remain outside Data Lineage v1.
 

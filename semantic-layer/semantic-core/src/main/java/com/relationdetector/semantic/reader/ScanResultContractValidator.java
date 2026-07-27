@@ -103,11 +103,17 @@ final class ScanResultContractValidator {
             require(pathLength.isIntegralNumber() && pathLength.asInt() > 0,
                     at + ".pathLength must be a positive integer");
             JsonNode path = requireArray(value, "path");
-            require(!path.isEmpty(), at + ".path must not be empty");
+            require(path.size() >= 3, at + ".path must contain at least three endpoints");
+            require(pathLength.asInt() == path.size() - 1,
+                    at + ".pathLength must equal path.size - 1");
             int pathIndex = 0;
             for (JsonNode endpoint : path) {
                 endpoint(endpoint, at + ".path[" + pathIndex++ + "]");
             }
+            require(value.path("source").equals(path.get(0)),
+                    at + ".source must equal the first path endpoint");
+            require(value.path("target").equals(path.get(path.size() - 1)),
+                    at + ".target must equal the last path endpoint");
             confidence(value, at);
             validateRelationshipEvidence(requireArray(value, "evidence"), at + ".evidence");
             validateRelationshipEvidence(requireArray(value, "rawEvidence"), at + ".rawEvidence");

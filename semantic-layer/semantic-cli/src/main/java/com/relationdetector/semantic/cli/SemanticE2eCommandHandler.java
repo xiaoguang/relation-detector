@@ -12,7 +12,7 @@ import com.relationdetector.semantic.reader.ScanBundle;
  * EN: Executes deterministic e2e generation by reusing the KG service and writing a local extraction request; it never calls an external model.
  */
 final class SemanticE2eCommandHandler {
-    int execute(SemanticCommandArguments arguments) {
+    SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         ScanBundle bundle = new SemanticScanBundleReader().read(arguments);
         String name = arguments.name().isBlank() ? defaultName(arguments.inputs().get(0)) : arguments.name();
         Path kgOutput = arguments.output().resolve("semantic-kg").resolve(name);
@@ -20,7 +20,7 @@ final class SemanticE2eCommandHandler {
         new SemanticKgBuildService().build(bundle, kgOutput);
         SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(bundle);
         new SemanticRequestArtifactWriter().writeCodexSessionRequest(extractionOutput, prompt);
-        return 0;
+        return SemanticCliExitCode.SUCCESS;
     }
 
     private String defaultName(Path input) {

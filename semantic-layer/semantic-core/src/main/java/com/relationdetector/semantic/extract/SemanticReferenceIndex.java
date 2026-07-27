@@ -32,10 +32,18 @@ final class SemanticReferenceIndex {
 
     private final Set<String> references;
     private final Map<String, String> candidateKinds;
+    private final Map<String, Set<String>> referencesBySection;
 
-    private SemanticReferenceIndex(Set<String> references, Map<String, String> candidateKinds) {
+    private SemanticReferenceIndex(
+            Set<String> references,
+            Map<String, String> candidateKinds,
+            Map<String, Set<String>> referencesBySection
+    ) {
         this.references = Set.copyOf(references);
         this.candidateKinds = Map.copyOf(candidateKinds);
+        Map<String, Set<String>> detached = new LinkedHashMap<>();
+        referencesBySection.forEach((section, values) -> detached.put(section, Set.copyOf(values)));
+        this.referencesBySection = Map.copyOf(detached);
     }
 
     static SemanticReferenceIndex from(JsonNode bundle) {
@@ -44,6 +52,7 @@ final class SemanticReferenceIndex {
         }
         Set<String> references = new LinkedHashSet<>();
         Map<String, String> candidateKinds = new LinkedHashMap<>();
+        Map<String, Set<String>> referencesBySection = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : SECTIONS.entrySet()) {
             JsonNode section = bundle.path(entry.getKey());
             if (!section.isArray()) {
@@ -57,12 +66,13 @@ final class SemanticReferenceIndex {
                 if (!references.add(id)) {
                     throw new IllegalArgumentException("duplicate semantic evidence bundle id: " + id);
                 }
+                referencesBySection.computeIfAbsent(entry.getKey(), ignored -> new LinkedHashSet<>()).add(id);
                 if (entry.getValue().endsWith("Candidate")) {
                     candidateKinds.put(id, entry.getValue());
                 }
             }
         }
-        return new SemanticReferenceIndex(references, candidateKinds);
+        return new SemanticReferenceIndex(references, candidateKinds, referencesBySection);
     }
 
     boolean contains(String reference) {
@@ -71,5 +81,10 @@ final class SemanticReferenceIndex {
 
     boolean isCandidate(String reference, String expectedKind) {
         return expectedKind.equals(candidateKinds.get(reference));
+    }
+
+    boolean contains(String section, String reference) {
+        return reference != null
+                && referencesBySection.getOrDefault(section, Set.of()).contains(reference);
     }
 }

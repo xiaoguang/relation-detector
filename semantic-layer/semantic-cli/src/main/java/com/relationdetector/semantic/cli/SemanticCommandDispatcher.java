@@ -5,7 +5,7 @@ package com.relationdetector.semantic.cli;
  * EN: Dispatches validated arguments to exactly one build, extract, e2e, or normalize handler; command behavior must stay outside this dispatcher.
  */
 final class SemanticCommandDispatcher {
-    int execute(SemanticCommandArguments arguments) {
+    SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         return switch (arguments.command()) {
             case BUILD -> new SemanticBuildCommandHandler().execute(arguments);
             case EXTRACT -> new SemanticExtractCommandHandler().execute(arguments);

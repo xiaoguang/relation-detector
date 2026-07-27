@@ -57,26 +57,25 @@ full-grammar:
 
 Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-traceability.md)。本报告只说明验证方法和证据边界，不复制 closure ID 或状态表，避免两份手工状态随实现分叉。
 
-本轮全仓反向审计新增的两个具名缺口已经按 traceability 所列测试闭合：
+2026-07-26 冻结的有限矩阵已经按 traceability 中的直接测试闭合：
 
-1. release sample-data 后处理已迁入内部Java verification入口。大结果按section/item流式校验，
-   canonical/semantic fingerprint采用外存字段排序，manifest只消费小型validation报告。
-2. semantic API执行通过package-private观察器把已完成shard和reconciliation原子写入同一staging；
-   后续失败仍保留前序成功片的request/response/normalized审计材料，但不发布部分正式run。
+1. profiling候选以live metadata证明物理存在和类型兼容，稳定排序/去重后再消费配额，声明FK可按配置
+   绕过unindexed-target gate。
+2. MySQL functional/invisible、PostgreSQL partial/INCLUDE、SQL Server filtered/INCLUDE/disabled index
+   不再被提升为无条件单列或lookup证据。
+3. 内置adaptor保留SPI v6 identity hook但不声明weight-adjustment capability；core只调用明确声明能力
+   的实际策略。
+4. semantic derived path、逐项typed ref、review section和自动review identity均严格闭包。
+5. reconciliation只允许冲突选择和既有对象展示名称修改，不能新增对象或relation。
+6. `final-only`从完整staging构建独立发布候选，晚期失败仍保留已完成shard审计材料。
+7. semantic CLI将参数/配置/API key缺失映射为exit 2，执行期失败映射为脱敏exit 1。
+8. Java verification强制核对writer定义的10个summary字段，并以
+   `providedSourceLocationsValid`和实际校验数量表达位置契约。
 
-本次重新从代码反向核对设计后，两个具名实现差异已经闭合：
+Fingerprint继续作为manifest中的审计产物，不另设tracked baseline；`verify-all`允许dirty，
+clean-worktree发布证明由`verify-release`负责。这些是冻结的窄契约，不是未闭合缺口。
 
-1. `ParserBundleSelector`只在外部parser调用周围捕获普通runtime failure；返回值shape检查、
-   selection attributes装配和core校验位于fallback catch之外，null result/null attributes保持
-   `AdaptorContractException`并禁止token fallback。
-2. deterministic candidate与formal normalizer现在都使用长度分隔的`StableSemanticId`。
-   entity/event/metric/dimension、自动review和graph edge的缺省ID基于完整canonical identity；
-   显式输入ID保持不变。
-
-另有一项仅属于文档滞后：typed scan fact、evidence graph payload和diagnostics已经在构造与公开读取
-边界deep-copy，测试规范不应再描述为raw `JsonNode`可回写。
-
-### 本轮反向审计复核结论
+### 历史已闭合边界
 
 上一轮冻结的四项实现已经按其当时的测试边界闭合：
 
@@ -130,9 +129,10 @@ PostgreSQL full/live 路径使用只包含输入参数类型的 identity signatu
 不会进入身份；compact token-event 使用 typed kind/name 与声明 statement identity，避免复制完整
 参数类型 grammar。`SemanticEventExtractor` 仍把 coarse semantic source type 分类为 `ROUTINE`，
 但 group key/stable ID 使用精确 provenance。formal normalization虽然从已验证的
-`eventCandidateRef`派生默认event ID且不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
-缺省ID现在统一通过`SemanticCanonicalIdentity`和`StableSemanticId`生成；物理/业务entity规则与shard
-canonicalizer复用。显式输入ID不变，自动review和graph edge也不再依赖display slug。
+   `eventCandidateRef`派生默认event ID且不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
+   缺省ID现在统一通过`SemanticCanonicalIdentity`和`StableSemanticId`生成；物理/业务entity规则与shard
+   canonicalizer复用。显式输入ID不变。graph edge已脱离display slug；自动review先规范化section，
+   再以`targetSection + targetRef + type`生成稳定ID，可变reason不参与identity。
 未审计 SQL statement family 和真实数据库 runtime smoke 继续按各自 backlog/环境边界管理。
 
 ## 本轮代码结构注释审视
@@ -280,10 +280,14 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
 - 跨 parser 差异需联合阅读 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)、各版本边界审计与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)；它们分别维护当前统计、确认的版本差异和未关闭问题。
 
-当前`verify-all.sh`只有在最终`verification-manifest.json`实际生成且状态为PASS时才形成完整发布证据。
+当前`verify-all.sh`只有在最终`verification-manifest.json`实际生成且状态为PASS时才形成完整的
+**当前工作区verification session证据**；它会记录dirty worktree但不会据此失败。无缓存且干净工作树的
+正式发布证明仍必须使用`verify-release.sh`。
 sample-data CLI生成38份JSON并不等同于后处理完成。内部Java verification子进程默认使用512 MiB堆，
 流式生成`result-validation.json`并以外存归并计算fingerprint；manifest不再重读38份大JSON。
 外存处理以更多磁盘I/O换取堆边界，因此完成条件仍是最终manifest，而不是中途CLI文件数量。
+当前fingerprint是可复核artifact，没有与仓库内受控expected hash执行发布判定；它证明本次产物可比较，
+不单独证明相对某个历史基线无变化。
 
 ### DDL
 
@@ -391,6 +395,13 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 
 ## 后续技术债
 
+- 真实MySQL/PostgreSQL/SQL Server版本的live metadata和profiling smoke仍是环境验收边界；fake JDBC
+  测试不宣称覆盖所有驱动版本。
+- Fingerprint按产品决定保留为manifest审计产物，不建立第二套tracked expected baseline；事实正确性仍由
+  correctness golden、CLI结果验证和语义审计共同承担。
+- `providedSourceLocationsValid=PASS`只证明实际提供的位置合法，报告同时记录校验数量；它不宣称
+  live或derived事实必须具有文件位置。
+- `verify-all`允许dirty工作树以支持开发验证；clean-worktree正式发布证明必须使用`verify-release`。
 - Catalog identity 的 direct fact、live profile 和 derived path 边界已由 focused negative tests 闭环；
   当前 sample-data 仍不用于替代跨 catalog/quoted case 的专门测试。
 - relationship 已将完整、顺序无关的 guard 数组纳入 candidate/observation/fingerprint identity，

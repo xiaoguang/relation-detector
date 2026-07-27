@@ -282,10 +282,10 @@ entity refs；同名但grounding不同的业务entity保留不同ID并生成
 信息，并只可返回：
 
 - 已知 conflict 的 variant 选择；
-- 已有对象的展示名称/说明调整；
-- 使用已有 entity ID 和完整 bundle reference 的语义关系。
+- 已有对象的展示名称调整。
 
-协调器不得创建物理 fact、新 evidence/candidate reference、物理 endpoint 或治理批准状态。
+Patch wire只允许`resolutions`和`renames`两个数组；额外section（包括`relations`）直接拒绝。
+协调器不得创建对象、relation、物理fact、新evidence/candidate reference、物理endpoint或治理批准状态。
 应用 patch 后，最终文档必须再次针对原始完整 bundle 归一化并重建semantic graph/reference closure；
 任一 shard、merge、patch 或全局闭包失败都不会返回`SemanticExtractionRunResult`。
 
@@ -294,7 +294,9 @@ deterministic artifact在首次模型调用前写入；每个shard完成模型�
 把request/response/raw/normalized文件写到隐藏临时目录，全部成功后原子改名为正式shard目录。
 reconciliation解析成功后采用相同边界。后续shard、patch或最终闭包失败时，failure staging仍保留
 全部前序`COMPLETE`片及其hash，未完成片标记为`PENDING`；正式`run-*`仍只在全局闭包成功后发布。
-`final-only`不裁剪失败运行，只在成功发布前裁剪中间payload。
+`final-only`不原地裁剪完整staging，而是构建同级隐藏publish candidate并只复制最终保留项。
+candidate copy、终态manifest或最终rename失败时，完整staging保留前序审计材料并写为`FAILED`；
+成功发布candidate后才尽力清理原staging。
 
 `run-manifest.json` 记录完整 bundle hash、每片 owner/估算 token、实际 input/output token、
 transport attempts、协调状态、冲突数、最终闭包状态，以及所有 artifact 的 SHA-256 和大小。
@@ -318,25 +320,23 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | ID | 状态 | 已实现边界与剩余缺口 |
 | --- | --- | --- |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | planner 对完整输入建立唯一 fact/candidate owner map，逐片补齐 dependency/evidence closure；超预算 table owner 按稳定 root 拆成 part，root closure 保持原子，并在模型调用前执行覆盖校验。 |
-| `SEM-SHARD-OUTPUT-01` | `MATCHED` | 每个model-authored item通过`ownedGroundingRefs`证明当前片owner；direct ref越界、overlap-only或evidence-only输出在backfill前原子拒绝。 |
+| `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard item的owned grounding已校验；reconciliation只接受`resolutions`和`renames`，不能新增对象或relation。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后完整reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
-| `SEM-SHARD-FAILURE-AUDIT-01` | `MATCHED` | 完整bundle/deterministic artifact先落盘；每个归一化shard和解析后的reconciliation以隐藏临时目录原子写入。后续失败保留前序`COMPLETE`片、其artifact大小/SHA-256及`PENDING`余片，且不发布`run-*`；`final-only`失败时不裁剪。 |
+| `SEM-SHARD-FAILURE-AUDIT-01` | `MATCHED` | 普通失败保留前序`COMPLETE`片且不发布；`final-only`从完整staging构建独立候选，晚期失败仍保留完整材料。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML shape/unknown field/numeric value严格失败，相对路径按配置目录解析，CLI override后重新构造并校验typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 构造输入deep-copy、public JSON accessor返回副本、集合不可修改；同包trusted accessor仅用于已校验内部流水线。 |
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式bundle不提供focus或事实数量裁剪；全部direct/derived facts、deterministic candidates、endpoint tables和evidence refs在分片前保持闭合，旧CLI/YAML字段明确拒绝。 |
 | `SEM-CANDIDATE-01` | `MATCHED` | deterministic candidates只来自typed facts/events；名称驱动`METRIC_SOURCE`和未使用review limit分支已删除。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
-| `SEM-NORMALIZED-ID-01` | `MATCHED` | 显式ID保持不变；entity/event/metric/dimension缺省ID、自动review与graph edge均由完整canonical content和`StableSemanticId`生成。物理/业务entity规则与shard canonicalizer复用。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
 
-上述typed validation、完整输入、模型请求预算、owner-aware evidence closure、治理默认值、
-deterministic candidate、canonical owner identity、artifact发布事务和失败运行逐片审计已经闭环，
-没有通过弱化evidence closure、删除overlap或截断事实规避问题。自动生成ID的修正不改变显式输入ID，
-也不提供旧slug ID别名。
+上述完整输入、模型请求预算、shard owner validation、治理默认值、deterministic candidate、
+formal逐引用闭包、自动review identity、reconciliation限制和`final-only`晚期失败审计均按矩阵闭合。
 
 独立归一化命令为：
 

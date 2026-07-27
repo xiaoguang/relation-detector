@@ -484,7 +484,7 @@ class DataProfilePipelineTest {
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
                 new ArrayList<>(List.of(candidate)),
                 new ArrayList<>());
-        ctx.metadataSnapshot = new MetadataSnapshot();
+        ctx.metadataSnapshot = metadataFor(List.of(candidate));
         return ctx;
     }
 
@@ -530,7 +530,7 @@ class DataProfilePipelineTest {
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
                 new ArrayList<>(candidates),
                 new ArrayList<>());
-        ctx.metadataSnapshot = new MetadataSnapshot();
+        ctx.metadataSnapshot = metadataFor(candidates);
         return ctx;
     }
 
@@ -586,6 +586,36 @@ class DataProfilePipelineTest {
                 "bigint", "bigint", true, null, "", null, 1));
         metadata.indexFacts().add(new MetadataIndexFact(null, null, "customers", "PRIMARY", true, true,
                 "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
+        metadata.indexFacts().add(new MetadataIndexFact(null, null, "orders", "idx_orders_customer", false, false,
+                "BTREE", true, List.of("customer_id"), List.of(), List.of(), List.of(1)));
+        return metadata;
+    }
+
+    private MetadataSnapshot metadataFor(List<RelationshipCandidate> candidates) {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (RelationshipCandidate candidate : candidates) {
+            for (Endpoint endpoint : List.of(candidate.source(), candidate.target())) {
+                ColumnRef column = endpoint.column();
+                TableId table = column.table();
+                String key = table.catalog() + "|" + table.schema() + "|"
+                        + table.normalizedName() + "|" + column.normalizedName();
+                if (seen.add(key)) {
+                    metadata.columnFacts().add(new MetadataColumnFact(
+                            table.catalog(),
+                            table.schema(),
+                            table.tableName(),
+                            column.columnName(),
+                            "bigint",
+                            "bigint",
+                            true,
+                            null,
+                            "",
+                            null,
+                            1));
+                }
+            }
+        }
         return metadata;
     }
 
@@ -627,7 +657,7 @@ class DataProfilePipelineTest {
 
         @Override
         public Set<AdaptorCapability> capabilities() {
-            return Set.of();
+            return Set.of(AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT);
         }
 
         @Override

@@ -43,7 +43,7 @@ final class SemanticExtractionRunArtifactWriterTest {
         SemanticModelClient shardClient = prompt -> result(
                 rawShardDocument(prompt.evidenceBundle()), attempts.incrementAndGet());
         SemanticModelClient reconciliationClient = prompt -> result(
-                "{\"resolutions\":[],\"renames\":[],\"relations\":[]}",
+                "{\"resolutions\":[],\"renames\":[]}",
                 attempts.incrementAndGet());
         SemanticExtractionRunResult run = service.execute(plan, shardClient, reconciliationClient);
 
@@ -262,7 +262,7 @@ final class SemanticExtractionRunArtifactWriterTest {
                             }
                             return result(rawShardDocument(prompt.evidenceBundle()), 1);
                         },
-                        prompt -> result("{\"resolutions\":[],\"renames\":[],\"relations\":[]}", 1),
+                        prompt -> result("{\"resolutions\":[],\"renames\":[]}", 1),
                         "openai-api",
                         "gpt-current",
                         "xhigh",
@@ -381,7 +381,7 @@ final class SemanticExtractionRunArtifactWriterTest {
         SemanticExtractionRunResult run = service.execute(
                 plan,
                 prompt -> result(rawShardDocument(prompt.evidenceBundle()), 1),
-                prompt -> result("{\"resolutions\":[],\"renames\":[],\"relations\":[]}", 1));
+                prompt -> result("{\"resolutions\":[],\"renames\":[]}", 1));
         byte[] binary = new byte[] {(byte) 0xff, 0x00, 0x01, (byte) 0x80};
 
         Path published = new SemanticExtractionRunArtifactWriter().writeResult(
@@ -401,6 +401,64 @@ final class SemanticExtractionRunArtifactWriterTest {
         assertTrue(hasPrunedArtifact(manifest, "reconciliation/patch.json"));
         assertTrue(hasPrunedArtifact(manifest, "full-evidence-bundle.json"));
         assertTrue(hasPrunedArtifact(manifest, "merged-draft.json"));
+        assertFalse(hasDirectory(tempDir, ".staging-"));
+        assertFalse(hasDirectory(tempDir, ".publish-"));
+    }
+
+    @Test
+    void finalOnlyCopyFailureKeepsTheCompleteStagingAudit() throws Exception {
+        assertFinalOnlyPublicationFailureKeepsAudit(FailurePoint.COPY);
+    }
+
+    @Test
+    void finalOnlyManifestFailureKeepsTheCompleteStagingAudit() throws Exception {
+        assertFinalOnlyPublicationFailureKeepsAudit(FailurePoint.MANIFEST);
+    }
+
+    @Test
+    void finalOnlyRenameFailureKeepsTheCompleteStagingAudit() throws Exception {
+        assertFinalOnlyPublicationFailureKeepsAudit(FailurePoint.PUBLISH);
+    }
+
+    private void assertFinalOnlyPublicationFailureKeepsAudit(FailurePoint failurePoint) throws Exception {
+        SemanticExtractionService service = new SemanticExtractionService();
+        SemanticExtractionRunPlan plan = service.plan(twoComponentBundle(),
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 240_000, 800_000, 128, true));
+        SemanticExtractionRunResult run = service.execute(
+                plan,
+                prompt -> result(rawShardDocument(prompt.evidenceBundle()), 1),
+                prompt -> result("{\"resolutions\":[],\"renames\":[]}", 1));
+        SemanticExtractionRunArtifactWriter writer =
+                new SemanticExtractionRunArtifactWriter(new FailingFinalOnlyPublisher(failurePoint));
+
+        assertThrows(IllegalArgumentException.class, () -> writer.writeResult(
+                tempDir,
+                run,
+                "openai-api",
+                "gpt-current",
+                "xhigh",
+                ArtifactRetention.FINAL_ONLY,
+                staging -> writeBytes(staging.resolve("deterministic-kg/semantic-kg.json"), "{}".getBytes())));
+
+        Path staging = onlyDirectory(tempDir, ".staging-");
+        JsonNode manifest = readManifest(staging);
+        assertEquals("FAILED", manifest.path("status").asText());
+        assertEquals(List.of("COMPLETE", "COMPLETE"),
+                java.util.stream.StreamSupport.stream(
+                                manifest.path("shards").spliterator(), false)
+                        .map(item -> item.path("status").asText())
+                        .toList());
+        assertTrue(Files.isRegularFile(staging.resolve("full-evidence-bundle.json")));
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0001/semantic-extraction-response.json")));
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0002/semantic-extraction-response.json")));
+        assertTrue(Files.isRegularFile(staging.resolve("reconciliation/patch.json")));
+        assertTrue(Files.isRegularFile(staging.resolve("merged-draft.json")));
+        assertTrue(Files.isRegularFile(staging.resolve("semantic-extraction-result.json")));
+        assertTrue(Files.isRegularFile(staging.resolve("deterministic-kg/semantic-kg.json")));
+        assertEquals(0, directoryCount(tempDir, "run-"));
+        assertEquals(0, directoryCount(tempDir, ".publish-"));
     }
 
     private void awaitBoth(CountDownLatch latch) {
@@ -600,5 +658,42 @@ final class SemanticExtractionRunArtifactWriterTest {
 
     private String table(String endpoint) {
         return endpoint.substring(0, endpoint.lastIndexOf('.'));
+    }
+
+    private enum FailurePoint {
+        COPY,
+        MANIFEST,
+        PUBLISH
+    }
+
+    private static final class FailingFinalOnlyPublisher extends RunArtifactPublisher {
+        private final FailurePoint failurePoint;
+
+        private FailingFinalOnlyPublisher(FailurePoint failurePoint) {
+            this.failurePoint = failurePoint;
+        }
+
+        @Override
+        Path createPublishCandidate(RunDirectory runDirectory) {
+            Path candidate = super.createPublishCandidate(runDirectory);
+            try {
+                if (failurePoint == FailurePoint.COPY) {
+                    Files.createDirectory(candidate.resolve("semantic-extraction-result.json"));
+                } else if (failurePoint == FailurePoint.MANIFEST) {
+                    Files.createDirectory(candidate.resolve("run-manifest.json.tmp"));
+                }
+                return candidate;
+            } catch (IOException error) {
+                throw new IllegalStateException(error);
+            }
+        }
+
+        @Override
+        Path publishCandidate(RunDirectory runDirectory, Path candidate) {
+            if (failurePoint == FailurePoint.PUBLISH) {
+                throw new IllegalArgumentException("synthetic final-only publish failure");
+            }
+            return super.publishCandidate(runDirectory, candidate);
+        }
     }
 }

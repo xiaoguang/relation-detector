@@ -2,6 +2,7 @@ package com.relationdetector.core.script;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 
@@ -22,14 +23,14 @@ final class CommonScriptSlicePlanner extends ScriptFramingSupport implements Scr
                 .toList();
         List<Slice> result = new ArrayList<>();
         int segmentStart = 0;
-        int objectStart = -1;
+        OptionalInt objectStart = OptionalInt.empty();
         int beginDepth = 0;
         int caseDepth = 0;
         boolean sawBegin = false;
         boolean awaitingObjectTerminator = false;
 
         for (ScriptLexeme token : significant) {
-            if (objectStart < 0) {
+            if (objectStart.isEmpty()) {
                 if (token.kind() != ScriptLexemeKind.CREATE) {
                     continue;
                 }
@@ -38,7 +39,7 @@ final class CommonScriptSlicePlanner extends ScriptFramingSupport implements Scr
                     continue;
                 }
                 result.addAll(splitSemicolon(lexemes, segmentStart, token.startOffset()));
-                objectStart = token.startOffset();
+                objectStart = OptionalInt.of(token.startOffset());
                 beginDepth = 0;
                 caseDepth = 0;
                 sawBegin = false;
@@ -59,15 +60,15 @@ final class CommonScriptSlicePlanner extends ScriptFramingSupport implements Scr
                     awaitingObjectTerminator = sawBegin && beginDepth == 0;
                 }
             } else if (token.kind() == ScriptLexemeKind.SEMICOLON && awaitingObjectTerminator) {
-                result.add(new Slice(objectStart, token.endOffset(), false));
+                result.add(new Slice(objectStart.getAsInt(), token.endOffset(), false));
                 segmentStart = token.endOffset();
-                objectStart = -1;
+                objectStart = OptionalInt.empty();
                 awaitingObjectTerminator = false;
             }
         }
 
-        if (objectStart >= 0) {
-            result.add(new Slice(objectStart, text.length(), false));
+        if (objectStart.isPresent()) {
+            result.add(new Slice(objectStart.getAsInt(), text.length(), false));
         } else {
             result.addAll(splitSemicolon(lexemes, segmentStart, text.length()));
         }

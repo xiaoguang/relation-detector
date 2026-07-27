@@ -2,7 +2,6 @@ package com.relationdetector.semantic.extract;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -26,17 +25,30 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * CN: 在独立 staging 目录先原子写入 IN_PROGRESS manifest，再写 payload 并以原子 manifest 替换记录终态；
- * 仅完整 run 会发布。普通失败留下 FAILED，若终态更新本身失败则保留最后一个可解析状态。
+ * full 直接发布完整 staging，final-only 从完整 staging 构建独立精简候选后发布。普通失败留下完整
+ * staging 与 FAILED；若终态更新本身失败则保留最后一个可解析状态。
  * EN: Atomically writes an IN_PROGRESS manifest before any payload, then records terminal state through atomic
- * manifest replacement. Only complete runs are published; ordinary failures leave FAILED, while a failed terminal
- * update preserves the last parseable state.
+ * manifest replacement. Full retention publishes complete staging, while final-only publishes an independently
+ * built reduced candidate. Ordinary failures retain complete staging with FAILED; a failed terminal update preserves
+ * the last parseable state.
  */
 public final class SemanticExtractionRunArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private static final Consumer<Path> NO_SHARED_ARTIFACTS = ignored -> {
     };
     private final SemanticRequestArtifactWriter requestWriter = new SemanticRequestArtifactWriter();
-    private final RunArtifactPublisher publisher = new RunArtifactPublisher();
+    private final RunArtifactPublisher publisher;
+
+    public SemanticExtractionRunArtifactWriter() {
+        this(new RunArtifactPublisher());
+    }
+
+    SemanticExtractionRunArtifactWriter(RunArtifactPublisher publisher) {
+        if (publisher == null) {
+            throw new IllegalArgumentException("semantic extraction artifact publisher is required");
+        }
+        this.publisher = publisher;
+    }
 
     public Path writeCodexSession(
             Path outputRoot,
@@ -231,12 +243,7 @@ public final class SemanticExtractionRunArtifactWriter {
             ObjectNode manifest = createManifest(
                     plan, "COMPLETE", run.shardExecutions(), run, null,
                     provider, model, reasoningEffort);
-            List<ArtifactEntry> pruned = resolvedRetention == ArtifactRetention.FINAL_ONLY
-                    ? pruneIntermediateArtifacts(runDirectory.stagingDirectory())
-                    : List.of();
-            finishManifest(manifest, runDirectory, resolvedRetention, Instant.now(), pruned);
-            writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
-            return publisher.publish(runDirectory);
+            return publishCompleteRun(runDirectory, manifest, resolvedRetention);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
                     runDirectory,
@@ -277,20 +284,24 @@ public final class SemanticExtractionRunArtifactWriter {
             runArtifactWriter.accept(runDirectory.stagingDirectory());
             ObjectNode manifest = createManifest(
                     plan, status, executions, run, null, provider, model, reasoningEffort);
-            List<ArtifactEntry> pruned = "COMPLETE".equals(status)
-                    && resolvedRetention == ArtifactRetention.FINAL_ONLY
-                    ? pruneIntermediateArtifacts(runDirectory.stagingDirectory())
-                    : List.of();
+            if ("COMPLETE".equals(status)) {
+                return publishCompleteRun(runDirectory, manifest, resolvedRetention);
+            }
             finishManifest(
-                    manifest, runDirectory, resolvedRetention, Instant.now(), pruned);
+                    manifest,
+                    runDirectory,
+                    resolvedRetention,
+                    Instant.now(),
+                    List.of(),
+                    runDirectory.stagingDirectory());
             writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
             return publisher.publish(runDirectory);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
                     runDirectory,
                     plan,
-                    List.of(),
-                    null,
+                    executions,
+                    reconciliationAudit(run),
                     provider,
                     model,
                     reasoningEffort,
@@ -325,11 +336,27 @@ public final class SemanticExtractionRunArtifactWriter {
                     model,
                     reasoningEffort);
             manifest.put("failureType", failure.getClass().getSimpleName());
-            finishManifest(manifest, runDirectory, retention, null, List.of());
+            finishManifest(
+                    manifest,
+                    runDirectory,
+                    retention,
+                    null,
+                    List.of(),
+                    runDirectory.stagingDirectory());
             writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
         } catch (RuntimeException manifestFailure) {
             failure.addSuppressed(manifestFailure);
         }
+    }
+
+    private ReconciliationAudit reconciliationAudit(SemanticExtractionRunResult run) {
+        if (run == null || run.reconciliationPrompt() == null || run.reconciliationResult() == null) {
+            return null;
+        }
+        return new ReconciliationAudit(
+                run.reconciliationPrompt(),
+                run.reconciliationResult(),
+                run.reconciliationPatch());
     }
 
     private void writeInitialManifest(
@@ -342,8 +369,55 @@ public final class SemanticExtractionRunArtifactWriter {
     ) {
         ObjectNode manifest = createManifest(
                 plan, "IN_PROGRESS", List.of(), null, null, provider, model, reasoningEffort);
-        finishManifest(manifest, runDirectory, retention, null, List.of());
+        finishManifest(
+                manifest,
+                runDirectory,
+                retention,
+                null,
+                List.of(),
+                runDirectory.stagingDirectory());
         writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
+    }
+
+    private Path publishCompleteRun(
+            RunArtifactPublisher.RunDirectory runDirectory,
+            ObjectNode manifest,
+            ArtifactRetention retention
+    ) {
+        if (retention != ArtifactRetention.FINAL_ONLY) {
+            finishManifest(
+                    manifest,
+                    runDirectory,
+                    retention,
+                    Instant.now(),
+                    List.of(),
+                    runDirectory.stagingDirectory());
+            writeManifestAtomically(runDirectory.stagingDirectory(), manifest);
+            return publisher.publish(runDirectory);
+        }
+
+        Path candidate = null;
+        try {
+            candidate = publisher.createPublishCandidate(runDirectory);
+            copyRetainedFinalArtifacts(runDirectory.stagingDirectory(), candidate);
+            List<ArtifactEntry> pruned = prunedArtifactEntries(runDirectory.stagingDirectory());
+            finishManifest(
+                    manifest,
+                    runDirectory,
+                    retention,
+                    Instant.now(),
+                    pruned,
+                    candidate);
+            writeManifestAtomically(candidate, manifest);
+            Path published = publisher.publishCandidate(runDirectory, candidate);
+            deleteRecursivelyBestEffort(runDirectory.stagingDirectory());
+            return published;
+        } catch (RuntimeException | Error failure) {
+            if (candidate != null) {
+                deleteRecursivelyBestEffort(candidate);
+            }
+            throw failure;
+        }
     }
 
     private void prepare(Path output, SemanticExtractionRunPlan plan) {
@@ -501,7 +575,8 @@ public final class SemanticExtractionRunArtifactWriter {
             RunArtifactPublisher.RunDirectory runDirectory,
             ArtifactRetention retention,
             Instant publishedAt,
-            List<ArtifactEntry> pruned
+            List<ArtifactEntry> pruned,
+            Path artifactRoot
     ) {
         manifest.put("runId", runDirectory.runId());
         manifest.put("retention", retention.wireValue());
@@ -512,7 +587,7 @@ public final class SemanticExtractionRunArtifactWriter {
         }
         addArtifactEntries(
                 manifest.putArray("artifacts"),
-                artifactEntries(runDirectory.stagingDirectory()));
+                artifactEntries(artifactRoot));
         addArtifactEntries(manifest.putArray("prunedArtifacts"), pruned);
     }
 
@@ -525,26 +600,29 @@ public final class SemanticExtractionRunArtifactWriter {
         }
     }
 
-    private List<ArtifactEntry> pruneIntermediateArtifacts(Path output) {
-        List<Path> files = regularFiles(output).stream()
+    private List<ArtifactEntry> prunedArtifactEntries(Path output) {
+        return regularFiles(output).stream()
                 .filter(path -> !retainedFinalArtifact(output, path))
-                .toList();
-        List<ArtifactEntry> pruned = files.stream()
                 .map(path -> artifactEntry(output, path))
                 .sorted(Comparator.comparing(ArtifactEntry::path))
                 .toList();
-        for (Path file : files) {
-            delete(file);
+    }
+
+    private void copyRetainedFinalArtifacts(Path source, Path target) {
+        for (Path artifact : regularFiles(source)) {
+            if (!retainedFinalArtifact(source, artifact)
+                    || "run-manifest.json".equals(relativePath(source, artifact))) {
+                continue;
+            }
+            Path destination = target.resolve(relativePath(source, artifact));
+            try {
+                Files.createDirectories(destination.getParent());
+                Files.copy(artifact, destination);
+            } catch (IOException error) {
+                throw new IllegalArgumentException(
+                        "failed to build semantic extraction publish candidate", error);
+            }
         }
-        try (Stream<Path> paths = Files.walk(output)) {
-            paths.filter(Files::isDirectory)
-                    .sorted(Comparator.reverseOrder())
-                    .filter(path -> !path.equals(output))
-                    .forEach(this::deleteEmptyDirectory);
-        } catch (IOException error) {
-            throw new IllegalArgumentException("failed to prune semantic extraction artifact directories", error);
-        }
-        return pruned;
     }
 
     private boolean retainedFinalArtifact(Path output, Path artifact) {
@@ -681,24 +759,6 @@ public final class SemanticExtractionRunArtifactWriter {
             Files.writeString(path, content == null ? "" : content);
         } catch (IOException error) {
             throw new IllegalArgumentException("failed to write semantic extraction artifact", error);
-        }
-    }
-
-    private void delete(Path path) {
-        try {
-            Files.delete(path);
-        } catch (IOException error) {
-            throw new IllegalArgumentException("failed to prune semantic extraction artifact", error);
-        }
-    }
-
-    private void deleteEmptyDirectory(Path path) {
-        try {
-            Files.deleteIfExists(path);
-        } catch (DirectoryNotEmptyException ignored) {
-            // Retained final artifacts keep their parent directories.
-        } catch (IOException error) {
-            throw new IllegalArgumentException("failed to prune semantic extraction artifact directory", error);
         }
     }
 

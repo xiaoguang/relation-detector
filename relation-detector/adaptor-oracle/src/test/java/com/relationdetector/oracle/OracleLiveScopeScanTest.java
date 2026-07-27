@@ -54,7 +54,7 @@ class OracleLiveScopeScanTest {
         config.databaseType = DatabaseType.ORACLE;
         config.jdbcUrl = JDBC_URL;
         config.databaseVersion = "19c";
-        config.metadataEnabled = false;
+        config.metadataEnabled = true;
         config.dataProfileEnabled = true;
         config.logsEnabled = true;
         config.logFiles.add(Files.writeString(tempDir.resolve("query.sql"), "SELECT 1 FROM dual;"));

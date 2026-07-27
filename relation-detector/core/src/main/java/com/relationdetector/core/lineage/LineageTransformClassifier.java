@@ -33,7 +33,7 @@ public final class LineageTransformClassifier {
     public static LineageTransformType dominant(LineageTransformType... transforms) {
         LineageTransformType dominant = LineageTransformType.DIRECT;
         for (LineageTransformType transform : transforms) {
-            if (priority(transform) > priority(dominant)) {
+            if (precedence(transform).compareTo(precedence(dominant)) > 0) {
                 dominant = transform;
             }
         }
@@ -106,19 +106,31 @@ public final class LineageTransformClassifier {
         return functionName == null ? "" : functionName.strip().toLowerCase(Locale.ROOT);
     }
 
-    private static int priority(LineageTransformType transform) {
+    private static TransformPrecedence precedence(LineageTransformType transform) {
         return switch (transform) {
             // CASE_WHEN is forced for predicate/control sources by the callers.
             // For value expressions, preserve the outer data transformation.
-            case CUMULATIVE -> 8;
-            case AGGREGATE -> 7;
-            case WINDOW_DERIVED -> 6;
-            case ARITHMETIC -> 5;
-            case COALESCE -> 4;
-            case CONCAT_FORMAT -> 3;
-            case FUNCTION_CALL -> 2;
-            case CASE_WHEN -> 1;
-            default -> 0;
+            case DIRECT, UNKNOWN_EXPRESSION -> TransformPrecedence.DIRECT_OR_UNKNOWN;
+            case CASE_WHEN -> TransformPrecedence.CASE_WHEN;
+            case FUNCTION_CALL -> TransformPrecedence.FUNCTION_CALL;
+            case CONCAT_FORMAT -> TransformPrecedence.CONCAT_FORMAT;
+            case COALESCE -> TransformPrecedence.COALESCE;
+            case ARITHMETIC -> TransformPrecedence.ARITHMETIC;
+            case WINDOW_DERIVED -> TransformPrecedence.WINDOW_DERIVED;
+            case AGGREGATE -> TransformPrecedence.AGGREGATE;
+            case CUMULATIVE -> TransformPrecedence.CUMULATIVE;
         };
+    }
+
+    private enum TransformPrecedence {
+        DIRECT_OR_UNKNOWN,
+        CASE_WHEN,
+        FUNCTION_CALL,
+        CONCAT_FORMAT,
+        COALESCE,
+        ARITHMETIC,
+        WINDOW_DERIVED,
+        AGGREGATE,
+        CUMULATIVE
     }
 }

@@ -760,10 +760,15 @@ orders.user_id 大量非空样本不存在于 users.id
 
 ```text
 SQL_LOG_JOIN = 0.55
+DDL_FOREIGN_KEY = 0.95
 TARGET_UNIQUE = 0.18
 NAMING_MATCH = 0.20
 NEGATIVE_VALUE_MISMATCH = -0.30
 ```
+
+这里的负向画像只用于验证已经由 DDL 或 metadata 声明的非条件外键。仅有 SQL JOIN、
+命名或其它推断关系时，即使 live 数据存在缺失，也不能生成
+`NEGATIVE_VALUE_MISMATCH`，因为 tenant、软删除、归档和时间窗口等过滤语义并不完整。
 
 先合并正向证据：
 

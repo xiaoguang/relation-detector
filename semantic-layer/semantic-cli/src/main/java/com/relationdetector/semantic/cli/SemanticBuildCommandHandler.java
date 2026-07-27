@@ -5,8 +5,8 @@ package com.relationdetector.semantic.cli;
  * EN: Executes the build command through the shared KG build service; it writes KG artifacts and must not duplicate graph assembly.
  */
 final class SemanticBuildCommandHandler {
-    int execute(SemanticCommandArguments arguments) {
+    SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         new SemanticKgBuildService().build(new SemanticScanBundleReader().read(arguments), arguments.output());
-        return 0;
+        return SemanticCliExitCode.SUCCESS;
     }
 }

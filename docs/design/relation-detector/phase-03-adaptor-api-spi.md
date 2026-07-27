@@ -452,6 +452,10 @@ replacement，再完成 naming raw-evidence 转换；返回值相对 baseline �
 baseline identity/attributes 与新 score 重建 evidence。relationship、naming 和 warning 只有整批成功后
 才替换，因此 hook 修改嵌套 list/map、保留插件容器引用或在最后一项违约都不会留下部分状态。
 
+四个内置 adaptor 为保持SPI v6 grouped record完整性继续返回identity adjuster，但不声明
+`EVIDENCE_WEIGHT_ADJUSTMENT`。core只在adaptor明确声明该能力时调用hook；因此identity占位实现
+不会被误报为数据库特定策略，外部adaptor的实际策略仍受上述原子契约约束。
+
 ## Java SPI 注册
 
 每个 adaptor jar 包含：

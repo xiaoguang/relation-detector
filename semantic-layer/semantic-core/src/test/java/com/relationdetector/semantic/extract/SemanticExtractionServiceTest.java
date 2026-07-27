@@ -29,7 +29,7 @@ final class SemanticExtractionServiceTest {
         SemanticModelClient reconciliationClient = prompt -> {
             reconciliationCalls.incrementAndGet();
             return result("""
-                    {"resolutions":[],"renames":[],"relations":[]}
+                    {"resolutions":[],"renames":[]}
                     """);
         };
 
@@ -71,7 +71,7 @@ final class SemanticExtractionServiceTest {
         SemanticModelClient reconciliationClient = prompt -> {
             reconciliationCalls.incrementAndGet();
             return result("""
-                    {"resolutions":[],"renames":[],"relations":[]}
+                    {"resolutions":[],"renames":[]}
                     """);
         };
 
@@ -88,7 +88,7 @@ final class SemanticExtractionServiceTest {
                 new SemanticShardingOptions(SemanticShardMode.FORCE, 240_000, 800_000, 128, true));
         SemanticModelClient shardClient = prompt -> result(rawShardDocument(prompt.evidenceBundle()));
         SemanticModelClient reconciliationClient = prompt -> result("""
-                {"resolutions":[],"renames":[],"relations":[]}
+                {"resolutions":[],"renames":[]}
                 """);
         SemanticExtractionRunResult baseline = service.execute(
                 baselinePlan, shardClient, reconciliationClient);

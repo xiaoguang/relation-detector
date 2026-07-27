@@ -53,8 +53,9 @@ staging已创建时writer会尽力
 写入`FAILED` manifest并保留目录，但二次I/O失败时不能保证该manifest落盘。
 真实API运行在同一staging事务内顺序执行：完整bundle和deterministic artifact先落盘；每个归一化
 成功的shard及解析成功的reconciliation分别以隐藏临时目录写完后原子改名。后续失败时，前序成功片
-继续留在failure staging并在manifest中标为`COMPLETE`，未完成片为`PENDING`；失败不发布`run-*`，
-`final-only`也只在完整成功后裁剪。
+继续留在failure staging并在manifest中标为`COMPLETE`，未完成片为`PENDING`；失败不发布`run-*`。
+`final-only`不修改完整staging，而是从中构建同级隐藏发布候选，只复制最终保留项和终态manifest。
+copy、manifest或publish晚期失败时，完整staging保留并标记`FAILED`；成功发布后才尽力清理staging。
 无界 evidence bundle、merged/final result和KG JSON直接写文件；prompt/request因token门限有界可保留
 字符串表示。所有分片payload统一位于`shards/shard-NNNN/`，单分片不生成root兼容副本。
 该分片边界只控制模型上下文；当前 reader 仍会先在内存中完整物化单个 relation-detector JSON。
@@ -71,37 +72,41 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 `ownedGroundingRefs`。它不需要接收完整 shard plan，但调用方必须提供 planner 生成或同契约构造的
 owner context；缺失、伪造或越界 context 会被拒绝。
 
+Formal section normalization采用严格typed-ref优先：显式typed ref存在时必须解析成功，只有缺失时
+才允许display fallback；event的每个display input/output分别校验。review先规范化`targetSection`，
+再要求`targetRef`属于该section；自动review ID只使用section、target和type，不受reason变化影响。
+
 ### 当前实现差异矩阵
 
 | ID | 状态 | 当前边界 |
 | --- | --- | --- |
-| `SEM-WIRE-01` | `MATCHED` | reader 校验必需结构、ISO-8601 `generatedAt`、endpoint、confidence、summary/数组计数、relation/lineage/evidence/warning 枚举及嵌套 evidence；非空 derived relationship/lineage 使用 writer 的统一 path contract。relation-detector 的 `includeWarnings=false` 同时清空根/fact warning 数组并把可见 count 置零，因此 writer 生成的 suppressed output 仍满足该契约。 |
-| `SEM-REF-01` | `MATCHED` | evidence/fact/candidate ID、文档内 entity 引用和 bundle 物理表列引用均执行精确闭包校验，不降级 catalog/schema。 |
+| `SEM-WIRE-01` | `MATCHED` | derived path至少包含三个endpoint，`pathLength == path.size()-1`，source/target与path两端一致；必需结构、枚举和嵌套evidence继续严格校验。 |
+| `SEM-REF-01` | `MATCHED` | 显式typed ref必须解析成功，缺失时才允许display fallback；event display ref逐项校验，review target按规范化section查询owner。 |
 | `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线 `SemanticKgBuilder`。 |
 | `SEM-KG-01` | `MATCHED` | `SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析；identity registry 只允许完整内容相同的幂等重复，冲突 node/edge ID 原子失败。 |
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
-| `SEM-NORMALIZED-ID-01` | `MATCHED` | 显式ID保持不变；entity/event/metric/dimension缺省ID、自动review与graph edge均使用完整canonical content和`StableSemanticId`。物理/业务entity规则与shard canonicalizer一致。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review都使用长度分隔canonical identity；review先规范化section，ID使用`targetSection + targetRef + type`且不包含可变reason。 |
 | `SEM-CANDIDATE-01` | `MATCHED` | 完整bundle保留全部typed deterministic candidates；名称驱动的`METRIC_SOURCE`与未使用review limit分支已删除，正式metric仍必须由证据闭合的semantic normalization产生。 |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整输入的 fact/candidate owner、dependency closure、evidence closure和shard coverage在模型调用前验证；超预算 table owner按稳定root拆片且root closure保持原子。 |
-| `SEM-SHARD-OUTPUT-01` | `MATCHED` | `SemanticExtractionService`中每个model-authored item必须用`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap与`evidenceRefs`只提供审计上下文，越界使整片在backfill前原子失败。 |
+| `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard model output要求owned grounding；reconciliation只接受冲突variant选择和既有对象rename，不能新增对象、relation、fact或evidence。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`与自动分片共用owner-aware入口；bundle必须携带合法`shardContext`，owned/overlap refs唯一、互斥且存在，输出对象必须由当前片owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | shard与reconciliation的完整prompt都使用带margin的确定性估算，并在模型调用前应用同一`maxInputTokens`；等于门限保留，manifest记录estimated tokens且不宣称exact。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | staging在任何payload前原子写`IN_PROGRESS`；模式成功后原子替换为`AWAITING_MODEL_RESULTS/REQUESTS_READY/COMPLETE`并发布，普通失败写`FAILED`。若终态写入自身失败则保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
-| `SEM-SHARD-FAILURE-AUDIT-01` | `MATCHED` | 完整bundle/deterministic artifact在首次模型调用前写入；逐片和reconciliation审计目录原子提交。后续失败保留所有已完成片及可复核hash，未完成片为`PENDING`，不发布部分正式run；`final-only`失败时不裁剪。 |
+| `SEM-SHARD-FAILURE-AUDIT-01` | `MATCHED` | 逐片和reconciliation目录原子提交；final-only从完整staging构建独立发布候选，晚期失败保留全部已完成片材料且不发布半成品。 |
 | `SEM-SHARD-CONFIG-01` | `MATCHED` | YAML root/section/unknown field/数值严格校验，相对路径按config目录解析；CLI override后再次构造统一typed config。 |
 | `SEM-SHARD-STATE-01` | `MATCHED` | 公开JSON accessor返回副本、集合不可修改；同包流水线使用明确的trusted accessor，provider/writer不能通过公开引用回写已校验状态。 |
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式抽取始终使用完整、闭合bundle，不存在focus或分片前事实数量裁剪；旧CLI参数和YAML字段明确拒绝，typed sharding是唯一上下文规模控制机制。 |
 | `SEM-READER-STATE-01` | `MATCHED` | `ScanBundle`/`EvidenceGraph`外层集合不可修改；typed fact document、graph payload与diagnostics在构造和公开accessor边界deep-copy，调用方不能回写内部状态。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | normalizer拒绝模型写入`BUSINESS_APPROVED`；正式semantic对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`，backfill后不保留空状态。 |
+| `SEM-CLI-ERROR-01` | `MATCHED` | CLI使用固定脱敏文案；参数、配置和API key缺失通过usage异常映射为exit 2，wire、sharding、normalization、模型调用和artifact I/O失败映射为runtime exit 1。 |
 
-wire、reference closure、离线 KG evidence/identity gate、typed event candidate identity、
-deterministic candidate、typed sharding、完整输入、owner output、identity merge、统一模型请求预算、
-strict configuration、reader/graph公开状态、governance默认值、artifact发布事务与失败运行逐片审计
-以及formal normalization的canonical owner/event ID已经闭环。自动生成ID的修正不改变显式输入ID，
-也不提供旧slug ID别名。详细
+离线 KG evidence/identity gate、typed event candidate identity、deterministic candidate、typed sharding、
+完整输入、统一模型请求预算、strict configuration、reader/graph公开状态和governance默认值已经闭环。
+wire path shape、formal semantic引用、自动review identity、reconciliation边界、`final-only`晚期失败
+审计及CLI错误分类已经按上述窄契约闭合。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。

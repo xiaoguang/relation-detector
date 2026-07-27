@@ -108,6 +108,8 @@ final class ScanResultContractValidatorTest {
         derived.putArray("path")
                 .addObject().put("table", "orders").put("column", "customer_id");
         derived.withArray("path")
+                .addObject().put("table", "customer_stage").put("column", "customer_id");
+        derived.withArray("path")
                 .addObject().put("table", "customer_summary").put("column", "customer_id");
         derived.putArray("evidence");
         derived.putArray("rawEvidence");
@@ -117,6 +119,53 @@ final class ScanResultContractValidatorTest {
                 .put("totalDataLineageCount", 1);
 
         assertDoesNotThrow(() -> read(root));
+    }
+
+    @Test
+    void rejectsDerivedPathWithTooFewEndpointsOrMismatchedLength() throws Exception {
+        ObjectNode tooShort = derivedLineageRoot();
+        ((ObjectNode) tooShort.path("derivedDataLineages").get(0)).withArray("path").remove(1);
+        assertThrows(IllegalArgumentException.class, () -> read(tooShort));
+
+        ObjectNode wrongLength = derivedLineageRoot();
+        ((ObjectNode) wrongLength.path("derivedDataLineages").get(0)).put("pathLength", 1);
+        assertThrows(IllegalArgumentException.class, () -> read(wrongLength));
+    }
+
+    @Test
+    void rejectsDerivedPathWhoseEndpointsDoNotMatchSourceAndTarget() throws Exception {
+        ObjectNode wrongSource = derivedLineageRoot();
+        ((ObjectNode) wrongSource.path("derivedDataLineages").get(0).path("source"))
+                .put("table", "other_orders");
+        assertThrows(IllegalArgumentException.class, () -> read(wrongSource));
+
+        ObjectNode wrongTarget = derivedLineageRoot();
+        ((ObjectNode) wrongTarget.path("derivedDataLineages").get(0).path("target"))
+                .put("table", "other_summary");
+        assertThrows(IllegalArgumentException.class, () -> read(wrongTarget));
+    }
+
+    private ObjectNode derivedLineageRoot() throws Exception {
+        ObjectNode root = validRoot();
+        ObjectNode derived = root.withArray("derivedDataLineages").addObject();
+        derived.put("kind", "DATA_LINEAGE");
+        derived.putObject("source").put("table", "orders").put("column", "customer_id");
+        derived.putObject("target").put("table", "customer_summary").put("column", "customer_id");
+        derived.put("pathLength", 2);
+        derived.put("confidence", 0.6);
+        derived.putArray("path")
+                .addObject().put("table", "orders").put("column", "customer_id");
+        derived.withArray("path")
+                .addObject().put("table", "customer_stage").put("column", "customer_id");
+        derived.withArray("path")
+                .addObject().put("table", "customer_summary").put("column", "customer_id");
+        derived.putArray("evidence");
+        derived.putArray("rawEvidence");
+        derived.putObject("attributes");
+        ((ObjectNode) root.path("summary"))
+                .put("derivedDataLineageCount", 1)
+                .put("totalDataLineageCount", 1);
+        return root;
     }
 
     private ScanBundle read(ObjectNode root) throws Exception {

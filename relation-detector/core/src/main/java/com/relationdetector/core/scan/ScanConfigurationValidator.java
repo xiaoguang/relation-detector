@@ -115,6 +115,9 @@ final class ScanConfigurationValidator {
         if (dataProfileEnabled && !hasJdbc) {
             throw invalid("sources.dataProfile requires database.jdbcUrl");
         }
+        if (dataProfileEnabled && !sources.metadataEnabled()) {
+            throw invalid("sources.dataProfile requires sources.metadata");
+        }
 
         boolean executable = sources.metadataEnabled() || liveDdl || fileDdl || liveObjects || fileObjects || fileLogs;
         if (!executable) {
@@ -135,6 +138,9 @@ final class ScanConfigurationValidator {
         }
         if (input.dataProfileEnabled && !hasJdbc) {
             throw invalid("sources.dataProfile requires database.jdbcUrl");
+        }
+        if (input.dataProfileEnabled && !input.metadataEnabled) {
+            throw invalid("sources.dataProfile requires sources.metadata");
         }
         boolean executable = input.metadataEnabled
                 || input.ddlEnabled && (input.ddlFromDatabase || hasInputs(input.ddlFiles, input.ddlPaths))

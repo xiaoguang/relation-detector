@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.IntSupplier;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,7 +43,7 @@ final class SemanticCliIntegrationTest {
     }
 
     @Test
-    void semanticCliDoesNotEchoArgumentDetailsOnFailure() {
+    void semanticCliTreatsInputIoAsSanitizedRuntimeFailure() {
         PrintStream original = System.err;
         ByteArrayOutputStream captured = new ByteArrayOutputStream();
         System.setErr(new PrintStream(captured));
@@ -54,12 +55,60 @@ final class SemanticCliIntegrationTest {
                     "--output", tempDir.resolve("output").toString()
             });
 
-            assertEquals(2, exit);
-            assertTrue(captured.toString().contains("Semantic command error"));
+            assertEquals(1, exit);
+            assertTrue(captured.toString().contains("Semantic command failed"));
             assertFalse(captured.toString().contains("customer-secret-value"));
         } finally {
             System.setErr(original);
         }
+    }
+
+    @Test
+    void semanticCliTreatsMalformedConfigurationAsUsageFailure() throws Exception {
+        Path config = tempDir.resolve("invalid-semantic.yml");
+        Files.writeString(config, "semanticExtraction: [not-an-object]");
+
+        CapturedFailure failure = captureFailure(() -> Main.run(new String[] {
+                "extract", "--config", config.toString()
+        }));
+
+        assertEquals(2, failure.exitCode());
+        assertTrue(failure.stderr().contains("Semantic command error"));
+        assertFalse(failure.stderr().contains("not-an-object"));
+    }
+
+    @Test
+    void semanticCliTreatsMissingApiKeyAsUsageFailure() throws Exception {
+        Path input = tempDir.resolve("api-key-input.json");
+        Path output = tempDir.resolve("api-key-output");
+        Files.writeString(input, emptyScanResult());
+
+        CapturedFailure failure = captureFailure(() -> Main.run(new String[] {
+                "extract",
+                "--provider", "openai-api",
+                "--input", input.toString(),
+                "--output", output.toString(),
+                "--api-key-env", "RELATION_DETECTOR_TEST_MISSING_API_KEY"
+        }));
+
+        assertEquals(2, failure.exitCode());
+        assertTrue(failure.stderr().contains("Semantic command error"));
+        assertFalse(failure.stderr().contains("RELATION_DETECTOR_TEST_MISSING_API_KEY"));
+    }
+
+    @Test
+    void semanticCliTreatsWireValidationAsSanitizedRuntimeFailure() throws Exception {
+        Path input = tempDir.resolve("invalid-wire.json");
+        Path output = tempDir.resolve("invalid-wire-output");
+        Files.writeString(input, "{\"database\":{\"type\":\"mysql\"}}");
+
+        CapturedFailure failure = captureFailure(() -> Main.run(new String[] {
+                "build", "--input", input.toString(), "--output", output.toString()
+        }));
+
+        assertEquals(1, failure.exitCode());
+        assertTrue(failure.stderr().contains("Semantic command failed"));
+        assertFalse(failure.stderr().contains("invalid-wire"));
     }
 
     @Test
@@ -448,6 +497,46 @@ final class SemanticCliIntegrationTest {
         return false;
     }
 
+    private CapturedFailure captureFailure(IntSupplier invocation) {
+        PrintStream original = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured));
+        try {
+            return new CapturedFailure(invocation.getAsInt(), captured.toString());
+        } finally {
+            System.setErr(original);
+        }
+    }
+
+    private String emptyScanResult() {
+        return """
+                {
+                  "database": {"type": "mysql", "schema": "shop"},
+                  "generatedAt": "2026-07-05T00:00:00Z",
+                  "summary": {
+                    "directRelationshipCount": 0,
+                    "derivedRelationshipCount": 0,
+                    "totalRelationshipCount": 0,
+                    "directDataLineageCount": 0,
+                    "derivedDataLineageCount": 0,
+                    "totalDataLineageCount": 0,
+                    "directNamingEvidenceCount": 0,
+                    "derivedNamingEvidenceCount": 0,
+                    "totalNamingEvidenceCount": 0,
+                    "warningCount": 0,
+                    "sources": ["object-files"]
+                  },
+                  "relationships": [],
+                  "dataLineages": [],
+                  "derivedRelationships": [],
+                  "derivedDataLineages": [],
+                  "namingEvidence": [],
+                  "derivedNamingEvidence": [],
+                  "warnings": []
+                }
+                """;
+    }
+
     private Path onlyPublishedRun(Path outputRoot) throws Exception {
         try (java.util.stream.Stream<Path> entries = Files.list(outputRoot)) {
             return entries.filter(Files::isDirectory)
@@ -483,6 +572,9 @@ final class SemanticCliIntegrationTest {
 
     private ObjectNode endpoint(String table, String column) {
         return JSON.createObjectNode().put("table", table).put("column", column);
+    }
+
+    private record CapturedFailure(int exitCode, String stderr) {
     }
 
     @Test
@@ -576,7 +668,7 @@ final class SemanticCliIntegrationTest {
                 "--output", output.toString()
         });
 
-        assertEquals(2, exit);
+        assertEquals(1, exit);
         assertTrue(Files.notExists(output));
     }
 

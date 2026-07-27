@@ -294,11 +294,16 @@ jq -e '
   .observationParity.differenceCount == 0 and
   .integrity.evidenceRefs == "PASS" and
   .integrity.sourcePaths == "PASS" and
-  .integrity.sourceLines == "PASS" and
+  .integrity.providedSourceLocationsValid == "PASS" and
   .integrity.derivedCycles == "PASS" and
   (.artifacts | length) == 7 and
   any(.artifacts[]; .path == "environment.json")
 ' "$TMP_DIR/verification/verification-manifest.json" >/dev/null
+
+jq -e '
+  .validatedSourceLocationCount == 0 and
+  .integrity.providedSourceLocationsValid == "PASS"
+' "$TMP_DIR/verification/result-validation.json" >/dev/null
 
 cat >"$TMP_DIR/parity-bad.tsv" <<'TSV'
 Pair	Token	Full	TokenOnly	FullOnly

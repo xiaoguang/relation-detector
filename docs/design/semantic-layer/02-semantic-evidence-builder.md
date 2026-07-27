@@ -129,7 +129,8 @@ Formal model output还必须满足：
 
 - 每个对象至少引用一个可解析 evidence/fact/candidate。
 - 物理 table/column 必须存在于 bundle registry。
-- 文档内 entity/event/metric/dimension 等 typed ref全部可解析。
+- 文档内 entity/event/metric/dimension/review 等 typed ref逐项可解析。
+- 只有 typed ref 缺失时才允许使用兼容的展示名称回填；已提供但无效的 typed ref 必须失败。
 - 模型不能输出 `BUSINESS_APPROVED`。
 - 任一校验失败不返回部分 artifact。
 - `SemanticExtractionService`和独立`normalize-extraction`共用owner-aware入口；evidence bundle必须
@@ -150,7 +151,8 @@ Formal model output还必须满足：
 
 描述、diagnostic 文本和 arbitrary attributes不能建立 component 边。在`SemanticExtractionService`
 执行链中，每个模型输出对象必须通过`ownedGroundingRefs`直接引用当前shard owned fact/candidate；
-仅引用overlap或evidence不构成所有权。独立normalization命令没有该shard上下文。
+仅引用overlap或evidence不构成所有权。独立normalization命令同样要求 evidence bundle 携带
+planner生成或按同一契约构造的`shardContext`；缺失、伪造或越界context必须失败。
 
 Token 门限是带安全余量的确定性估算，不是模型精确 token 数。Shard request和reconciliation request都
 使用同一 `maxInputTokens` 门限。超过门限在模型调用前失败，不能截断 closure。
@@ -192,7 +194,9 @@ manifest。单 shard不再复制一套 root-level prompt/request/response/raw ar
   前写入；每个归一化成功的shard及解析成功的reconciliation分别先写隐藏临时目录，再原子改名为正式
   审计目录。后续失败时保留这些已完成材料，manifest把已完成shard标记为`COMPLETE`、其余为
   `PENDING`并记录已落盘artifact大小和SHA-256；失败run始终不发布。
-- `final-only`只在完整成功、最终闭包通过且正式结果写入后裁剪中间材料；失败运行保留前序成功片。
+- 普通失败会保留前序成功片。`final-only`从完整staging构建同级隐藏publish candidate，只复制最终
+  保留项和终态manifest；copy、manifest或publish失败时完整staging写为`FAILED`并保留，成功发布后才
+  尽力清理原staging。
 - Artifact hash按文件流式计算。
 
 ## 9. 验证矩阵
@@ -202,7 +206,7 @@ manifest。单 shard不再复制一套 root-level prompt/request/response/raw ar
 | 类别 | 必需测试 |
 | --- | --- |
 | Materialization | direct/derived facts、diagnostics、event candidates完整进入图 |
-| Deterministic candidates | 全量候选进入bundle；硬编码metric名称启发式只产生待审核候选；review不得被limit裁剪 |
+| Deterministic candidates | 全量typed候选进入bundle；名称驱动的`METRIC_SOURCE`不存在；review不得被limit裁剪 |
 | Identity | 输入重排ID不变；冲突ID失败 |
 | Closure | 缺失fact/evidence/candidate/physical endpoint失败 |
 | Event | typed mapping分类；名称、路径、detail不能改变分类 |

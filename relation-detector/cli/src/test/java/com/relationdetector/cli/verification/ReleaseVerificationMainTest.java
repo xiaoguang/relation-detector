@@ -24,12 +24,12 @@ final class ReleaseVerificationMainTest {
         Path output = tempDir.resolve("fingerprints.tsv");
         Files.writeString(input, "{\"generatedAt\":\"now\",\"facts\":[{\"id\":\"a\"}]}");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "fingerprint",
                 "--workspace", tempDir.resolve("work").toString(),
                 "--output", output.toString(),
                 input.toString()
-        }));
+        });
 
         String[] fields = Files.readString(output).strip().split("\\t", 2);
         assertEquals("24e6bbe5b9f1e37cdf54f1a4b0d8b56e7f39c13f8044f6f975af3d35c76cf380", fields[0]);
@@ -45,20 +45,41 @@ final class ReleaseVerificationMainTest {
         Files.writeString(results.resolve("example-derived-fresh.json"), result);
         Path output = tempDir.resolve("result-validation.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "validate-results",
                 "--result-dir", results.toString(),
                 "--expected-categories", "1",
                 "--output", output.toString()
-        }));
+        });
 
         JsonNode report = JSON.readTree(output.toFile());
         assertEquals("PASS", report.path("status").asText());
         assertEquals(1, report.path("categories").asInt());
         assertEquals(2, report.path("jsonFiles").asInt());
         assertEquals(0, report.path("diagnostics").asInt());
+        assertEquals(0, report.path("validatedSourceLocationCount").asInt());
         assertEquals("PASS", report.path("integrity").path("evidenceRefs").asText());
+        assertEquals("PASS",
+                report.path("integrity").path("providedSourceLocationsValid").asText());
+        assertEquals(true, report.path("integrity").path("sourceLines").isMissingNode());
         assertEquals("PASS", report.path("integrity").path("derivedCycles").asText());
+    }
+
+    @Test
+    void validateResultsRequiresEveryWriterSummaryCount() throws Exception {
+        Path results = tempDir.resolve("missing-summary-field-results");
+        Files.createDirectories(results);
+        String missing = emptyResult().replace("\"warningCount\": 0", "\"omittedWarningCount\": 0");
+        Files.writeString(results.resolve("example.json"), missing);
+        Files.writeString(results.resolve("example-derived-fresh.json"), missing);
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("missing-summary-field-report.json").toString()
+                }));
     }
 
     @Test
@@ -90,14 +111,14 @@ final class ReleaseVerificationMainTest {
         Files.writeString(second, correctnessSummary(3, "postgres/root"));
         Path output = tempDir.resolve("aggregate.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "aggregate-correctness",
                 "--output", output.toString(),
                 "--expected-category", "mysql/root",
                 "--expected-category", "postgres/root",
                 first.toString(),
                 second.toString()
-        }));
+        });
 
         JsonNode aggregate = JSON.readTree(output.toFile());
         assertEquals(5, aggregate.path("executed").asInt());
@@ -117,14 +138,14 @@ final class ReleaseVerificationMainTest {
         Files.writeString(second, batchReport("first", firstOutput));
         Path output = tempDir.resolve("aggregate.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "aggregate-sample",
                 "--output", output.toString(),
                 "--expected-case", "first",
                 "--expected-case", "second",
                 first.toString(),
                 second.toString()
-        }));
+        });
 
         JsonNode aggregate = JSON.readTree(output.toFile());
         assertEquals("first", aggregate.path("cases").get(0).path("id").asText());
@@ -146,7 +167,7 @@ final class ReleaseVerificationMainTest {
                   "integrity":{
                     "evidenceRefs":"PASS",
                     "sourcePaths":"PASS",
-                    "sourceLines":"PASS",
+                    "providedSourceLocationsValid":"PASS",
                     "rawObservationDuplicates":"PASS",
                     "derivedCycles":"PASS"
                   }
@@ -171,7 +192,7 @@ final class ReleaseVerificationMainTest {
         Files.copy(fingerprints, semantic);
         Path output = verification.resolve("verification-manifest.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "manifest",
                 "--verification-dir", verification.toString(),
                 "--result-validation", validation.toString(),
@@ -190,7 +211,7 @@ final class ReleaseVerificationMainTest {
                 "--expected-json", "2",
                 "--artifact", validation.toString(),
                 "--output", output.toString()
-        }));
+        });
 
         JsonNode manifest = JSON.readTree(output.toFile());
         assertEquals("PASS", manifest.path("status").asText());
@@ -205,7 +226,7 @@ final class ReleaseVerificationMainTest {
         Files.writeString(log, "private compiler output");
         Path output = tempDir.resolve("verification-manifest.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "failure-manifest",
                 "--output", output.toString(),
                 "--phase", "noCache",
@@ -214,7 +235,7 @@ final class ReleaseVerificationMainTest {
                 "--commit", "head",
                 "--branch", "main",
                 "--artifact", log.toString()
-        }));
+        });
 
         JsonNode manifest = JSON.readTree(output.toFile());
         assertEquals("FAIL", manifest.path("status").asText());
@@ -249,7 +270,7 @@ final class ReleaseVerificationMainTest {
         Path derived = tempDir.resolve("summary-with-derived.tsv");
         Path warnings = tempDir.resolve("warning-codes.tsv");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "sample-summary",
                 "--result-dir", results.toString(),
                 "--config-dir", configs.toString(),
@@ -257,7 +278,7 @@ final class ReleaseVerificationMainTest {
                 "--derived-summary", derived.toString(),
                 "--warnings", warnings.toString(),
                 "--requested-case", "example"
-        }));
+        });
 
         assertEquals(
                 "parser\tfixtures\tSQL / DDL\trelations\tlineage\tnamingEvidence\twarnings\tsources\tjson\n"
@@ -284,31 +305,31 @@ final class ReleaseVerificationMainTest {
                         "--summary", summary.toString(),
                         "--document", document.toString()
                 }));
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "parser-summary",
                 "--summary", summary.toString(),
                 "--document", document.toString(),
                 "--update"
-        }));
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        });
+        ReleaseVerificationMain.run(new String[] {
                 "parser-summary",
                 "--summary", summary.toString(),
                 "--document", document.toString()
-        }));
+        });
     }
 
     @Test
     void environmentReportDoesNotDescribePythonRuntime() throws Exception {
         Path output = tempDir.resolve("environment.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "environment",
                 "--output", output.toString(),
                 "--commit", "head",
                 "--branch", "branch",
                 "--origin-main", "origin",
                 "--maven-bin", "mvn"
-        }));
+        });
 
         JsonNode environment = JSON.readTree(output.toFile());
         assertEquals("head", environment.path("commit").asText());
@@ -343,7 +364,7 @@ final class ReleaseVerificationMainTest {
                 """);
         Path output = tempDir.resolve("performance.json");
 
-        assertEquals(0, ReleaseVerificationMain.run(new String[] {
+        ReleaseVerificationMain.run(new String[] {
                 "performance",
                 "--session-start", "0",
                 "--surefire-root", tempDir.toString(),
@@ -354,7 +375,7 @@ final class ReleaseVerificationMainTest {
                 "--semantic-fingerprints", fingerprints.toString(),
                 "--maven-log", maven.toString(),
                 "--output", output.toString()
-        }));
+        });
 
         JsonNode report = JSON.readTree(output.toFile());
         assertEquals(2, report.path("tests").path("total").asInt());

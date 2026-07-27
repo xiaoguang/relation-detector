@@ -9,8 +9,10 @@ import com.relationdetector.contracts.metadata.MetadataIndexFact;
 public final class IndexEvidencePolicy {
     public boolean provesSingleColumnUnique(MetadataIndexFact index, String column) {
         return index != null
+                && index.visible()
                 && (index.unique() || index.primary())
                 && index.columns().size() == 1
+                && index.expressions().stream().noneMatch(this::hasText)
                 && same(index.columns().get(0), column);
     }
 
@@ -25,5 +27,9 @@ public final class IndexEvidencePolicy {
 
     private boolean same(String left, String right) {
         return left != null && right != null && left.equals(right);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

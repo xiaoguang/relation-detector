@@ -54,7 +54,7 @@ class PostgresLiveScopeScanTest {
         config.databaseType = DatabaseType.POSTGRESQL;
         config.jdbcUrl = JDBC_URL;
         config.databaseVersion = "16";
-        config.metadataEnabled = false;
+        config.metadataEnabled = true;
         config.dataProfileEnabled = true;
         config.logsEnabled = true;
         config.logFiles.add(Files.writeString(tempDir.resolve("query.sql"), "SELECT 1;"));

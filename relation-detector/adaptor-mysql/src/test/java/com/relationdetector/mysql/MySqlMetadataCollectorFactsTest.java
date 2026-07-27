@@ -171,6 +171,46 @@ class MySqlMetadataCollectorFactsTest {
                 warning.code().equals("MYSQL_METADATA_COLUMNS_FAILED")));
     }
 
+    @Test
+    void preservesFunctionalAndInvisibleIndexShapeWithoutPromotingIt() {
+        Map<String, List<Map<String, Object>>> rows = catalogRows();
+        rows.put("STATISTICS", List.of(
+                row("TABLE_SCHEMA", "shop", "TABLE_NAME", "orders", "INDEX_NAME", "idx_hidden_user_id",
+                        "NON_UNIQUE", 1, "SEQ_IN_INDEX", 1, "COLUMN_NAME", "user_id", "INDEX_TYPE", "BTREE",
+                        "SUB_PART", null, "EXPRESSION", null, "IS_VISIBLE", "NO"),
+                row("TABLE_SCHEMA", "shop", "TABLE_NAME", "users", "INDEX_NAME", "uq_users_lower_email",
+                        "NON_UNIQUE", 0, "SEQ_IN_INDEX", 1, "COLUMN_NAME", null, "INDEX_TYPE", "BTREE",
+                        "SUB_PART", null, "EXPRESSION", "lower(`email`)", "IS_VISIBLE", "YES")));
+
+        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
+                JdbcFake.connection(rows),
+                new ScanScope("shop", null, List.of("orders", "users"), List.of()));
+
+        assertEquals(2, snapshot.indexFacts().size());
+        assertFalse(snapshot.indexFacts().stream()
+                .filter(index -> index.indexName().equals("idx_hidden_user_id"))
+                .findFirst().orElseThrow().visible());
+        assertEquals(List.of("lower(`email`)"), snapshot.indexFacts().stream()
+                .filter(index -> index.indexName().equals("uq_users_lower_email"))
+                .findFirst().orElseThrow().expressions());
+        assertTrue(snapshot.indexFacts().stream()
+                .filter(index -> index.indexName().equals("uq_users_lower_email"))
+                .findFirst().orElseThrow().columns().isEmpty());
+    }
+
+    @Test
+    void retriesMysql57IndexQueryWhenMysql8ColumnsAreUnavailable() {
+        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
+                JdbcFake.mysql57Connection(catalogRows()),
+                new ScanScope("shop", null, List.of("orders", "users"), List.of()));
+
+        assertEquals(2, snapshot.indexFacts().size());
+        assertTrue(snapshot.indexFacts().stream().allMatch(index -> index.expressions().isEmpty()));
+        assertTrue(snapshot.indexFacts().stream().allMatch(index -> index.visible()));
+        assertTrue(snapshot.warnings().stream().noneMatch(warning ->
+                warning.code().equals("MYSQL_METADATA_INDEXES_FAILED")));
+    }
+
     private Connection catalogConnection() {
         return JdbcFake.connection(catalogRows());
     }
@@ -223,6 +263,26 @@ class MySqlMetadataCollectorFactsTest {
                                 throw new SQLException("catalog family unavailable", "42000", 1142);
                             }
                             return preparedStatement(String.valueOf(args[0]), rows);
+                        }
+                        if (method.getName().equals("close")) {
+                            return null;
+                        }
+                        if (method.getName().equals("isClosed")) {
+                            return false;
+                        }
+                        throw new UnsupportedOperationException("Connection." + method.getName());
+                    });
+        }
+
+        static Connection mysql57Connection(Map<String, List<Map<String, Object>>> rows) {
+            return (Connection) Proxy.newProxyInstance(JdbcFake.class.getClassLoader(), new Class<?>[] { Connection.class },
+                    (proxy, method, args) -> {
+                        if (method.getName().equals("prepareStatement")) {
+                            String sql = String.valueOf(args[0]);
+                            if (sql.contains("EXPRESSION") || sql.contains("IS_VISIBLE")) {
+                                throw new SQLException("unknown catalog column", "42S22", 1054);
+                            }
+                            return preparedStatement(sql, rows);
                         }
                         if (method.getName().equals("close")) {
                             return null;

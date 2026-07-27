@@ -3,6 +3,7 @@ package com.relationdetector.mysql.metadata;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -19,7 +20,34 @@ import com.relationdetector.contracts.spi.ScanScope;
  */
 final class MySqlIndexMetadataReader {
     void read(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
-        String sql = """
+        try {
+            snapshot.indexFacts().addAll(read(connection, scope, true));
+        } catch (SQLException ex) {
+            if (!mysql57CatalogShape(ex)) {
+                MySqlMetadataReaderSupport.warn(snapshot, "MYSQL_METADATA_INDEXES_FAILED", ex,
+                        "information_schema.STATISTICS");
+                return;
+            }
+            try {
+                snapshot.indexFacts().addAll(read(connection, scope, false));
+            } catch (Exception fallbackFailure) {
+                MySqlMetadataReaderSupport.warn(snapshot, "MYSQL_METADATA_INDEXES_FAILED", fallbackFailure,
+                        "information_schema.STATISTICS");
+            }
+        } catch (Exception ex) {
+            MySqlMetadataReaderSupport.warn(snapshot, "MYSQL_METADATA_INDEXES_FAILED", ex,
+                    "information_schema.STATISTICS");
+        }
+    }
+
+    private List<MetadataIndexFact> read(Connection connection, ScanScope scope, boolean mysql8) throws SQLException {
+        String sql = mysql8 ? """
+                SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX,
+                       COLUMN_NAME, INDEX_TYPE, SUB_PART, EXPRESSION, IS_VISIBLE
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = ?
+                ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX
+                """ : """
                 SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX,
                        COLUMN_NAME, INDEX_TYPE, SUB_PART
                 FROM information_schema.STATISTICS
@@ -38,16 +66,19 @@ final class MySqlIndexMetadataReader {
                     IndexBuilder builder = indexes.computeIfAbsent(catalog + "|" + tableName + "|" + indexName,
                             ignored -> new IndexBuilder(catalog, tableName, indexName,
                                     rsBooleanUnique(rs), "PRIMARY".equalsIgnoreCase(indexName),
-                                    safeString(rs, "INDEX_TYPE"), true));
+                                    safeString(rs, "INDEX_TYPE"),
+                                    !mysql8 || !"NO".equalsIgnoreCase(safeString(rs, "IS_VISIBLE"))));
                     builder.entries.add(new IndexEntry(rs.getInt("SEQ_IN_INDEX"), rs.getString("COLUMN_NAME"),
-                            null, MySqlMetadataReaderSupport.stringOrNull(rs.getObject("SUB_PART"))));
+                            mysql8 ? safeString(rs, "EXPRESSION") : null,
+                            MySqlMetadataReaderSupport.stringOrNull(rs.getObject("SUB_PART"))));
                 }
             }
-            indexes.values().forEach(builder -> snapshot.indexFacts().add(builder.toFact()));
-        } catch (Exception ex) {
-            MySqlMetadataReaderSupport.warn(snapshot, "MYSQL_METADATA_INDEXES_FAILED", ex,
-                    "information_schema.STATISTICS");
+            return indexes.values().stream().map(IndexBuilder::toFact).toList();
         }
+    }
+
+    private boolean mysql57CatalogShape(SQLException failure) {
+        return "42S22".equals(failure.getSQLState()) || failure.getErrorCode() == 1054;
     }
 
     private static boolean rsBooleanUnique(ResultSet rs) {
@@ -89,11 +120,20 @@ final class MySqlIndexMetadataReader {
 
         private MetadataIndexFact toFact() {
             entries.sort(Comparator.comparingInt(IndexEntry::seq));
+            List<IndexEntry> physicalColumns = entries.stream()
+                    .filter(entry -> entry.column() != null && !entry.column().isBlank())
+                    .toList();
+            List<IndexEntry> expressionMembers = entries.stream()
+                    .filter(entry -> entry.expression() != null && !entry.expression().isBlank())
+                    .toList();
+            List<Integer> positions = physicalColumns.isEmpty()
+                    ? expressionMembers.stream().map(IndexEntry::seq).toList()
+                    : physicalColumns.stream().map(IndexEntry::seq).toList();
             return new MetadataIndexFact(catalog, null, table, name, unique, primary, type, visible,
-                    entries.stream().map(IndexEntry::column).filter(value -> value != null && !value.isBlank()).toList(),
-                    entries.stream().map(IndexEntry::expression).filter(value -> value != null && !value.isBlank()).toList(),
-                    entries.stream().map(entry -> entry.subPart() == null ? "" : entry.subPart()).toList(),
-                    entries.stream().map(IndexEntry::seq).toList());
+                    physicalColumns.stream().map(IndexEntry::column).toList(),
+                    expressionMembers.stream().map(IndexEntry::expression).toList(),
+                    physicalColumns.stream().map(entry -> entry.subPart() == null ? "" : entry.subPart()).toList(),
+                    positions);
         }
     }
 

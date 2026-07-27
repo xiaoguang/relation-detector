@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -256,12 +257,13 @@ final class PerformanceReportWriter {
         }
         String body = line.substring(marker + SLOW_FIXTURE.length(), line.length() - " ms".length())
                 .stripTrailing();
-        int separator = lastWhitespace(body);
-        if (separator < 1) {
+        OptionalInt separator = lastWhitespace(body);
+        if (separator.isEmpty() || separator.getAsInt() < 1) {
             return null;
         }
-        String manifest = body.substring(0, separator).stripTrailing();
-        Integer elapsed = unsignedInteger(body.substring(separator + 1).strip());
+        int separatorIndex = separator.getAsInt();
+        String manifest = body.substring(0, separatorIndex).stripTrailing();
+        Integer elapsed = unsignedInteger(body.substring(separatorIndex + 1).strip());
         return manifest.isBlank() || elapsed == null ? null : new FixtureTiming(manifest, elapsed);
     }
 
@@ -333,13 +335,13 @@ final class PerformanceReportWriter {
         return false;
     }
 
-    private int lastWhitespace(String value) {
+    private OptionalInt lastWhitespace(String value) {
         for (int index = value.length() - 1; index >= 0; index--) {
             if (Character.isWhitespace(value.charAt(index))) {
-                return index;
+                return OptionalInt.of(index);
             }
         }
-        return -1;
+        return OptionalInt.empty();
     }
 
     private List<Path> recent(Path root, String prefix, String suffix, double sessionStart) {

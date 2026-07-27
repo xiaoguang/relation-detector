@@ -10,7 +10,7 @@ public final class Main {
 
     public static void main(String[] args) {
         int code = run(args);
-        if (code != 0) {
+        if (code != SemanticCliExitCode.SUCCESS.processCode()) {
             System.exit(code);
         }
     }
@@ -20,15 +20,15 @@ public final class Main {
             SemanticCommandArguments arguments = SemanticCommandArguments.parse(args);
             if (arguments.help()) {
                 System.out.print(SemanticCommandArguments.usageText());
-                return 0;
+                return SemanticCliExitCode.SUCCESS.processCode();
             }
-            return new SemanticCommandDispatcher().execute(arguments);
-        } catch (IllegalArgumentException ex) {
+            return new SemanticCommandDispatcher().execute(arguments).processCode();
+        } catch (SemanticCliUsageException ex) {
             SemanticCliErrorRenderer.renderArgumentError();
-            return 2;
+            return SemanticCliExitCode.USAGE_ERROR.processCode();
         } catch (Exception ex) {
             SemanticCliErrorRenderer.renderRuntimeError();
-            return 1;
+            return SemanticCliExitCode.RUNTIME_ERROR.processCode();
         }
     }
 }

@@ -43,6 +43,17 @@ class ScanConfigurationValidatorTest {
     }
 
     @Test
+    void rejectsLiveProfilingWithoutMetadataBeforeJdbc() {
+        ScanConfig config = validLiveConfig();
+        config.metadataEnabled = false;
+        config.dataProfileEnabled = true;
+        config.logsEnabled = true;
+        config.logFiles.add(writeSql("profile-without-metadata.sql"));
+
+        assertThrows(ScanConfigurationException.class, config::resolve);
+    }
+
+    @Test
     void rejectsWhenEveryExecutableSourceIsDisabled() {
         ScanConfig config = fileOnlyBase();
 

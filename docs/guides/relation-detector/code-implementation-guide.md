@@ -98,6 +98,14 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 维护注意：
 
 - enum 的 JSON 字符串不能随意改名。
+- 语义类别、状态、优先级和固定处理顺序必须使用有业务名称的 enum；禁止在
+  `priority`、`rank`、`precedence` 字段中保存 `1..N` 并依赖数字解释业务含义。
+- 数量、阈值、置信度、位置、ordinal、版本及外部协议 code 保持数值，不为满足
+  “枚举化”机械创建无限枚举。
+- 项目自定义的整数缺省值使用 `OptionalInt` 或显式结果类型，不使用 `-1`；JDK
+  标准 API 已定义的 `indexOf()/read()` 返回协议保持原样。
+- 内部顺序 enum 不属于 JSON/SPI 兼容面。新增或调整顺序必须有行为测试，并通过
+  repository semantic-number architecture gate。
 - `contracts` 不应依赖 `core`，否则第三方 adaptor 会被迫依赖核心实现。
 - 新增数据库 adaptor 时，应只依赖该 API 和必要的工具库。
 
@@ -636,7 +644,11 @@ sources:
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
   - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `relation-detector/target/generated-reports/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，`verify-all.sh` 会把报告复制到当前 verification session 并登记摘要。
-  - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `StructuredDataLineageExtractor` 当前输出生成 `relation-detector/target/generated-reports/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，完整报告不进入 Git。
+  - `DataLineageAuditGeneratorTest` 从 correctness fixture manifest、SQL文本和已有
+    `expected-lineage.json`生成`relation-detector/target/generated-reports/data-lineage-full-audit.md`。
+    它不调用parser/extractor，candidate fingerprint列表当前为空；实际只能证明已有golden覆盖，并用
+    维护工具启发式规则归类`NOT_APPLICABLE`。该测试默认跳过；验收时显式传
+    `-DrunGeneratedReportTests=true`，完整报告不进入Git。
   - `DialectSqlAssetHygieneTest` 扫描 MySQL / PostgreSQL / Oracle / SQL Server 的 `sample-data` 和 correctness SQL，阻止明显跨方言残留，例如 MySQL 资产里出现 `LANGUAGE plpgsql` / `VARCHAR2`，PostgreSQL 资产里出现 `AUTO_INCREMENT` / `ENGINE=...`，Oracle 资产里出现 `LIMIT` / `::type` / `ON DUPLICATE KEY UPDATE`，SQL Server 资产里出现 `VARCHAR2` / `AUTO_INCREMENT` / `LANGUAGE plpgsql`。该检查只做资产卫生守门，不替代真实数据库装载或完整官方 grammar 验证。
 - MySQL/PostgreSQL/Oracle/SQL Server parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventBuilder` 或 profile attributes，证明 adaptor 选择了自己的方言 parser/event builder。
   - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
@@ -727,7 +739,11 @@ PostgreSQL：
   `mvn -T 2 -Pmatrix-smoke verify` 覆盖当前注册 parser category 的代表 fixture，实际数量从当次 summary 读取。
 - 每个逻辑批次结束使用 `relation-detector/scripts/run-correctness-isolated.sh`。它按 parser family 顺序启动有界 JVM，汇总全部 discovered fixture。结构重构期间不得使用 `updateCorrectnessGold` 掩盖差异。
 - sample-data 使用 `relation-detector/scripts/run-sample-data-isolated.sh`，按 parser family 分组顺序启动 JVM，Oracle root 和各 versioned profile 单独分组。发布默认 case parallelism 为 1；更高值只允许在固定 heap、相同输入的 wall-time、峰值内存和 GC A/B 证明更快且安全后显式启用。全部组退出后才汇总 direct/derived JSON。当前 parser category 和 JSON 数从 batch report 读取，不在指南中写死。
-- 发布入口 `bash relation-detector/scripts/verify-all.sh` 串联 acceptance、isolated sample-data、summary、reference、absolute-path 和 canonical output 校验。full correctness 与 sample-data runner 共用 `target/.relation-detector-heavy-job.lock`，后启动者必须在创建重型 JVM 前失败；进程扫描只作为 orphan 防线，不能替代共享锁。
+- 验收会话入口 `bash relation-detector/scripts/verify-all.sh` 串联 acceptance、isolated sample-data、
+  summary、reference、portable-path检查和fingerprint生成。fingerprint是本次会话的审计产物，
+  不与受控基线比较；事实回归仍由fixture golden和observation parity门禁负责。该入口允许脏工作树，
+  所以单独的manifest PASS不是干净提交的完整发布证明。full correctness 与 sample-data runner 共用
+  `target/.relation-detector-heavy-job.lock`，后启动者必须在创建重型 JVM 前失败。
 - 发布前使用 `bash relation-detector/scripts/verify-release.sh`。它先做无缓存 clean smoke reactor，再调用 `verify-all.sh` 完成分组 full correctness 和 sample-data。Maven Build Cache 只复用 generated/compiled artifact，Surefire/Failsafe 仍每次运行，不缓存测试结果。不把单 JVM `-Pacceptance` full profile 当作发布路径。
 - `relation-detector/scripts/benchmark-build.sh` 记录 clean/warm/focused/full/CLI 时间；
   report 只读本次 session 的 Surefire XML，包含 module timing、ANTLR timing、测试 Top 20、
@@ -737,7 +753,9 @@ PostgreSQL：
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
 - correctness 明细报告生成测试：修改 `relation-detector/test-fixtures/correctness` 后运行 `mvn -pl relation-detector/cli -Dtest=CorrectnessSummaryGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`，输出位于 `relation-detector/target/generated-reports/correctness-test-summary.md`；发布验收会将它复制到当前 verification session。
-- Data Lineage 全量审核报告生成测试：修改 SQL fixture、`expected-lineage.json` 或 `StructuredDataLineageExtractor` 后运行 `mvn -pl relation-detector/cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`，输出位于 `relation-detector/target/generated-reports/data-lineage-full-audit.md`。该报告只生成审核清单，不自动写入新的 lineage golden。
+- Data Lineage golden覆盖报告生成测试：修改fixture manifest、SQL文本或`expected-lineage.json`后运行
+  `mvn -pl relation-detector/cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。
+  当前generator不消费`StructuredDataLineageExtractor`输出，因此仅修改extractor不要求刷新该报告。
 - enum 序列化值稳定性测试。
 - warning code 稳定性测试。
 - 置信度数值允许小范围精度变化，但 subtype 和 evidence 不应无故改变。

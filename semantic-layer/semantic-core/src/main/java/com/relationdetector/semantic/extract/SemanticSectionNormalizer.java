@@ -61,20 +61,19 @@ final class SemanticSectionNormalizer {
     void normalizeReviewItems(
             List<SemanticReviewItem> reviewItems,
             SemanticGraphAssembler graph,
-            Session validator
+        Session validator
     ) {
         for (SemanticReviewItem item : reviewItems) {
             String targetRef = SemanticNormalizationSupport.nonBlank(item.targetRef, item.target);
+            item.targetSection = SemanticNormalizationSupport.nonBlank(item.targetSection, item.section);
             item.id = SemanticNormalizationSupport.nonBlank(
                     item.id,
-                    StableSemanticId.of("review", targetRef, item.targetSection, item.type, item.reason));
+                    SemanticCanonicalIdentity.review(targetRef, item.targetSection, item.type));
             validator.registerOwner("reviewItem", item.id);
             if (!blank(targetRef)) {
                 item.targetRef = targetRef;
             }
-            if (item.targetSection == null) {
-                item.targetSection = text(item.section);
-            }
+            validator.requireReviewTarget(item.id, item.targetSection, item.targetRef);
             validator.requireEvidence("reviewItem", item.id, item);
             graph.addNode(item.id, "ReviewItem", targetRef, "REVIEW_NEEDED", item.evidenceRefs());
             graph.addEdge("review-target", item.id, targetRef, "REVIEW_TARGET", item.evidenceRefs());
@@ -157,9 +156,7 @@ final class SemanticSectionNormalizer {
                 if (present(ref)) {
                     graph.addEdge("event-input", event.id, ref, "EVENT_INPUT", event.evidenceRefs());
                 }
-                if (event.inputEntityRefs.isEmpty()) {
-                    validator.requireResolved(event.id, "inputs", input, ref, "entity");
-                }
+                validator.requireResolved(event.id, "inputs", input, ref, "entity");
             }
 
             List<String> originalOutputs = SemanticNormalizationSupport.mutableStrings(event.outputEntityRefs);
@@ -176,9 +173,7 @@ final class SemanticSectionNormalizer {
                 if (present(ref)) {
                     graph.addEdge("event-output", event.id, ref, "EVENT_OUTPUT", event.evidenceRefs());
                 }
-                if (event.outputEntityRefs.isEmpty()) {
-                    validator.requireResolved(event.id, "outputs", output, ref, "entity");
-                }
+                validator.requireResolved(event.id, "outputs", output, ref, "entity");
             }
         }
     }
@@ -189,21 +184,27 @@ final class SemanticSectionNormalizer {
             Set<String> knownEntityIds,
             Set<String> linkedEntities,
             SemanticGraphAssembler graph,
-            Session validator
+        Session validator
     ) {
         for (SemanticRelation relation : relations) {
-            String fromRef = knownEntityIds.contains(relation.fromEntityRef)
-                    ? relation.fromEntityRef : entityByName.get(text(relation.from));
-            String toRef = knownEntityIds.contains(relation.toEntityRef)
-                    ? relation.toEntityRef : entityByName.get(text(relation.to));
+            boolean explicitFrom = present(relation.fromEntityRef);
+            boolean explicitTo = present(relation.toEntityRef);
+            String fromRef = explicitFrom
+                    ? knownEntityIds.contains(relation.fromEntityRef) ? relation.fromEntityRef : null
+                    : entityByName.get(text(relation.from));
+            String toRef = explicitTo
+                    ? knownEntityIds.contains(relation.toEntityRef) ? relation.toEntityRef : null
+                    : entityByName.get(text(relation.to));
             relation.id = SemanticNormalizationSupport.nonBlank(relation.id,
                     StableSemanticId.of("relation", relation.from, relation.to, relation.type, relation.machineType));
             validator.registerOwner("relation", relation.id);
             validator.requireEvidence("relation", relation.id, relation);
             relation.fromEntityRef = present(fromRef) ? fromRef : relation.fromEntityRef;
             relation.toEntityRef = present(toRef) ? toRef : relation.toEntityRef;
-            validator.requireResolved(relation.id, "from", relation.from, fromRef, "entity");
-            validator.requireResolved(relation.id, "to", relation.to, toRef, "entity");
+            validator.requireResolved(relation.id, explicitFrom ? "fromEntityRef" : "from",
+                    explicitFrom ? relation.fromEntityRef : relation.from, fromRef, "entity");
+            validator.requireResolved(relation.id, explicitTo ? "toEntityRef" : "to",
+                    explicitTo ? relation.toEntityRef : relation.to, toRef, "entity");
             graph.addNode(relation.id, "Relation", relation.type, relation.machineType, relation.evidenceRefs());
             graph.addEdge("relation-from", relation.id, fromRef, "RELATION_FROM", relation.evidenceRefs());
             graph.addEdge("relation-to", relation.id, toRef, "RELATION_TO", relation.evidenceRefs());
@@ -312,9 +313,11 @@ final class SemanticSectionNormalizer {
             validator.requirePhysicalTable("dimension", dimension.id, "dimensionTable", dimension.dimensionTable);
             validator.requireEvidence("dimension", dimension.id, dimension);
             String ownerRef = entityByPhysical.get(SemanticNormalizationSupport.tableOf(dimension.physicalField));
-            String dimensionRef = knownEntityIds.contains(dimension.dimensionEntityRef)
-                    ? dimension.dimensionEntityRef : entityByPhysical.get(text(dimension.dimensionTable));
-            if (dimensionRef == null) {
+            boolean explicitDimensionRef = present(dimension.dimensionEntityRef);
+            String dimensionRef = explicitDimensionRef
+                    ? knownEntityIds.contains(dimension.dimensionEntityRef) ? dimension.dimensionEntityRef : null
+                    : entityByPhysical.get(text(dimension.dimensionTable));
+            if (!explicitDimensionRef && dimensionRef == null) {
                 dimensionRef = entityByName.get(text(dimension.name));
             }
             if (present(ownerRef)) {
@@ -325,7 +328,10 @@ final class SemanticSectionNormalizer {
             }
             addLinked(linkedEntities, ownerRef, dimensionRef);
             validator.requireResolved(dimension.id, "physicalField", dimension.physicalField, ownerRef, "entity");
-            validator.requireResolved(dimension.id, "dimensionTable", dimension.dimensionTable, dimensionRef, "entity");
+            validator.requireResolved(dimension.id,
+                    explicitDimensionRef ? "dimensionEntityRef" : "dimensionTable",
+                    explicitDimensionRef ? dimension.dimensionEntityRef : dimension.dimensionTable,
+                    dimensionRef, "entity");
             graph.addNode(dimension.id, "Dimension", dimension.name, dimension.type, dimension.evidenceRefs());
             graph.addEdge("dimension-owner", dimension.id, ownerRef, "DIMENSION_OWNER", dimension.evidenceRefs());
             graph.addEdge("dimension-target", dimension.id, dimensionRef, "DIMENSION_TARGET", dimension.evidenceRefs());
@@ -347,18 +353,24 @@ final class SemanticSectionNormalizer {
             validator.registerOwner("triplet", triplet.id);
             validator.requireEvidence("triplet", triplet.id, triplet);
             validator.requireTripletCandidateRef(triplet.id, triplet.candidateRef);
-            String subjectRef = knownEntityIds.contains(triplet.subjectRef)
-                    ? triplet.subjectRef : entityByName.get(text(triplet.subject));
-            String objectRef = knownEntityIds.contains(triplet.objectRef)
-                    ? triplet.objectRef : entityByName.get(text(triplet.object));
+            boolean explicitSubject = present(triplet.subjectRef);
+            boolean explicitObject = present(triplet.objectRef);
+            String subjectRef = explicitSubject
+                    ? knownEntityIds.contains(triplet.subjectRef) ? triplet.subjectRef : null
+                    : entityByName.get(text(triplet.subject));
+            String objectRef = explicitObject
+                    ? knownEntityIds.contains(triplet.objectRef) ? triplet.objectRef : null
+                    : entityByName.get(text(triplet.object));
             if (present(subjectRef)) {
                 triplet.subjectRef = subjectRef;
             }
             if (present(objectRef)) {
                 triplet.objectRef = objectRef;
             }
-            validator.requireResolved(triplet.id, "subject", triplet.subject, subjectRef, "entity");
-            validator.requireResolved(triplet.id, "object", triplet.object, objectRef, "entity");
+            validator.requireResolved(triplet.id, explicitSubject ? "subjectRef" : "subject",
+                    explicitSubject ? triplet.subjectRef : triplet.subject, subjectRef, "entity");
+            validator.requireResolved(triplet.id, explicitObject ? "objectRef" : "object",
+                    explicitObject ? triplet.objectRef : triplet.object, objectRef, "entity");
             addLinked(linkedEntities, subjectRef, objectRef);
             graph.addNode(triplet.id, "Triplet", triplet.readable, triplet.predicate, triplet.evidenceRefs());
             graph.addEdge("triplet-subject", triplet.id, subjectRef, "TRIPLET_SUBJECT", triplet.evidenceRefs());

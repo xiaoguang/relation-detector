@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,20 +50,24 @@ final class VerificationManifestBuilder {
         if (request.noCacheStatus() != null && request.noCacheStatus() != 0) {
             errors.add("no-cache Maven status is " + request.noCacheStatus());
         }
-        int executed = correctness.path("executed").asInt(-1);
-        int passed = correctness.path("passed").asInt(-1);
-        int failed = correctness.path("failed").asInt(-1);
-        if (executed != request.expectedFixtures()
-                || passed != request.expectedFixtures()
-                || failed != 0) {
+        OptionalInt executed = integer(correctness, "executed");
+        OptionalInt passed = integer(correctness, "passed");
+        OptionalInt failed = integer(correctness, "failed");
+        if (executed.isEmpty() || executed.getAsInt() != request.expectedFixtures()
+                || passed.isEmpty() || passed.getAsInt() != request.expectedFixtures()
+                || failed.isEmpty() || failed.getAsInt() != 0) {
             errors.add("correctness fixture coverage failed");
         }
-        int categories = validation.path("categories").asInt(-1);
-        int jsonFiles = validation.path("jsonFiles").asInt(-1);
-        int diagnostics = Math.max(warningTotal, validation.path("diagnostics").asInt(-1));
+        OptionalInt categories = integer(validation, "categories");
+        OptionalInt jsonFiles = integer(validation, "jsonFiles");
+        OptionalInt validationDiagnostics = integer(validation, "diagnostics");
+        int diagnostics = validationDiagnostics.isPresent()
+                ? Math.max(warningTotal, validationDiagnostics.getAsInt())
+                : warningTotal;
         if (!"PASS".equals(validation.path("status").asText())
-                || categories != request.expectedCategories()
-                || jsonFiles != request.expectedJson()) {
+                || categories.isEmpty() || categories.getAsInt() != request.expectedCategories()
+                || jsonFiles.isEmpty() || jsonFiles.getAsInt() != request.expectedJson()
+                || validationDiagnostics.isEmpty()) {
             errors.add("sample-data result validation failed");
         }
         if (parityPairs != 4 || parityDifferences != 0) {
@@ -91,9 +96,9 @@ final class VerificationManifestBuilder {
             maven.put("noCacheStatus", request.noCacheStatus());
         }
         manifest.set("correctness", correctness);
-        manifest.putObject("parserMatrix")
-                .put("categories", categories)
-                .put("jsonFiles", jsonFiles);
+        ObjectNode parserMatrix = manifest.putObject("parserMatrix");
+        put(parserMatrix, "categories", categories);
+        put(parserMatrix, "jsonFiles", jsonFiles);
         manifest.putObject("diagnostics").put("total", diagnostics);
         manifest.putObject("observationParity")
                 .put("pairs", parityPairs)
@@ -114,6 +119,21 @@ final class VerificationManifestBuilder {
         if (!errors.isEmpty()) {
             throw new ReleaseVerificationException(
                     "verification manifest failed: " + String.join("; ", errors));
+        }
+    }
+
+    private OptionalInt integer(JsonNode parent, String field) {
+        JsonNode value = parent.get(field);
+        return value != null && value.isIntegralNumber() && value.canConvertToInt()
+                ? OptionalInt.of(value.intValue())
+                : OptionalInt.empty();
+    }
+
+    private void put(ObjectNode target, String field, OptionalInt value) {
+        if (value.isPresent()) {
+            target.put(field, value.getAsInt());
+        } else {
+            target.putNull(field);
         }
     }
 

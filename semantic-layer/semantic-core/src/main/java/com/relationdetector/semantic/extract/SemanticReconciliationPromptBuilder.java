@@ -79,9 +79,8 @@ final class SemanticReconciliationPromptBuilder {
                 Return one JSON patch only with exactly these arrays:
                 - resolutions: {section,id,selectedVariantHash} for every listed conflict.
                 - renames: optional {section,id,name,description} display-only changes.
-                - relations: optional semantic relations between existing entity ids with existing evidenceRefs.
 
-                Never create physical facts, entity ids, candidate refs, or evidence refs.
+                Never create semantic objects or relations, physical facts, entity ids, candidate refs, or evidence refs.
                 Never modify physical names, lineage, triplet candidate coverage, or governance status.
                 Return JSON only.
                 """;

@@ -14,7 +14,7 @@ fixture 报告写入 `relation-detector/target/generated-reports/` 并由 releas
 | [MySQL 5.7 / 8.0 资产差异](mysql57-vs-mysql80-naming-review.md) | MySQL sample-data | 两版自然 SQL 与 canonical output diff | SQL 资产分类变化时编辑 |
 | [Oracle sample-data 能力边界](oracle-sample-data-migration-review.md) | Oracle adaptor | Oracle natural SQL、correctness 与 runtime boundary | 能力或边界变化时编辑 |
 | [Oracle 版本 grammar 差异](oracle-version-grammar-diff.md) | Oracle grammar | 官方版本资料、G4 与 version fixtures | 新增版本语法边界时编辑 |
-| [Parser 能力与统计摘要](parser-comparison-summary.md) | sample-data verification | CLI summary TSV | 运行内部Java verification的`parser-summary --update` |
+| [Parser 能力与统计摘要](parser-comparison-summary.md) | sample-data verification + parser audit | 第1节数字表来自CLI summary TSV；其余解释来自人工SQL/parity审核 | 数字表用内部Java verification的`parser-summary --update`；解释段落需单独记录审核会话 |
 | [PostgreSQL PL/pgSQL 版本边界](postgres-plpgsql-version-review.md) | PostgreSQL routine | 官方 pin、PL/pgSQL G4 与 contract tests | routine 版本边界变化时编辑 |
 | [PostgreSQL 版本 golden 差异](postgres-version-golden-diff.md) | PostgreSQL adaptor | v16/v17/v18 version fixtures | version-only fixture 变化时编辑 |
 | [Sample-data 输出审计 backlog](sample-data-output-audit-backlog.md) | parser audit | SQL/JSON 审核中确认的未关闭项 | 问题进入或退出 backlog 时编辑 |

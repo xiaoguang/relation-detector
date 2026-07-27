@@ -27,7 +27,6 @@ final class SemanticReconciliationPatchValidatorTest {
                 .put("id", "entity:orders")
                 .put("selectedVariantHash", selectedHash);
         patch.putArray("renames");
-        patch.putArray("relations");
 
         ObjectNode resolved = new SemanticReconciliationPatchValidator().apply(
                 merge, patch, evidenceBundle());
@@ -36,7 +35,7 @@ final class SemanticReconciliationPatchValidatorTest {
     }
 
     @Test
-    void rejectsUnknownEvidenceInAddedRelation() {
+    void rejectsRelationCreationSection() {
         SemanticShardMergeResult merge = new SemanticShardResultMerger().merge(List.of(
                 new SemanticShardNormalizedResult("shard-0001", document("订单"))));
         ObjectNode patch = JSON.createObjectNode();
@@ -49,6 +48,19 @@ final class SemanticReconciliationPatchValidatorTest {
                 .put("fromEntityRef", "entity:orders")
                 .put("toEntityRef", "entity:orders")
                 .putArray("evidenceRefs").add("unknown");
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticReconciliationPatchValidator().apply(merge, patch, evidenceBundle()));
+    }
+
+    @Test
+    void rejectsAnyUnknownTopLevelPatchSection() {
+        SemanticShardMergeResult merge = new SemanticShardResultMerger().merge(List.of(
+                new SemanticShardNormalizedResult("shard-0001", document("订单"))));
+        ObjectNode patch = JSON.createObjectNode();
+        patch.putArray("resolutions");
+        patch.putArray("renames");
+        patch.putArray("futureActions");
 
         assertThrows(SemanticExtractionValidationException.class,
                 () -> new SemanticReconciliationPatchValidator().apply(merge, patch, evidenceBundle()));

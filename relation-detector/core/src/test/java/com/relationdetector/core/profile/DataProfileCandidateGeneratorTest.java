@@ -35,7 +35,7 @@ class DataProfileCandidateGeneratorTest {
 
         List<RelationshipCandidate> selected = generator.select(
                 List.of(candidate),
-                new MetadataSnapshot(),
+                metadataFor(candidate, "bigint", "bigint"),
                 List.of(),
                 DataProfileOptions.defaults().withMaxCandidatePairs(1));
 
@@ -47,15 +47,65 @@ class DataProfileCandidateGeneratorTest {
         RelationshipCandidate candidate = relation("orders", "customer_id", "customers", "id");
         candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, 0.98d,
                 EvidenceSourceType.METADATA, "metadata", "declared fk"));
+        MetadataSnapshot metadata = metadataFor(candidate, "bigint", "bigint");
 
-        assertTrue(generator.select(List.of(candidate), new MetadataSnapshot(), List.of(),
+        assertTrue(generator.select(List.of(candidate), metadata, List.of(),
                 DataProfileOptions.defaults()).isEmpty());
-        assertEquals(1, generator.select(List.of(candidate), new MetadataSnapshot(), List.of(),
+        assertEquals(1, generator.select(List.of(candidate), metadata, List.of(),
                 DataProfileOptions.defaults().withVerifyDeclaredForeignKeys(true)).size());
     }
 
     @Test
-    void namingEvidenceDiscoveryRequiresExplicitOptInAndTargetUnique() {
+    void existingCandidatesRequireInventoryAndCompatibleTypes() {
+        RelationshipCandidate candidate = relation("orders", "customer_id", "customers", "id");
+        candidate.evidence().add(joinEvidence());
+
+        assertTrue(generator.select(List.of(candidate), new MetadataSnapshot(), List.of(),
+                DataProfileOptions.defaults()).isEmpty());
+        assertTrue(generator.select(List.of(candidate),
+                metadataFor(candidate, "bigint", "varchar"), List.of(),
+                DataProfileOptions.defaults()).isEmpty());
+        assertEquals(List.of(candidate), generator.select(List.of(candidate),
+                metadataFor(candidate, "bigint", "bigint"), List.of(),
+                DataProfileOptions.defaults()));
+    }
+
+    @Test
+    void declaredForeignKeyBypassesUnindexedTargetGate() {
+        RelationshipCandidate candidate = relation("orders", "customer_id", "customers", "id");
+        candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, 0.98d,
+                EvidenceSourceType.METADATA, "metadata", "declared fk"));
+        MetadataSnapshot metadata = metadataFor(candidate, "bigint", "bigint");
+        metadata.indexFacts().add(new MetadataIndexFact(null, null, "other_table", "idx_other",
+                false, false, "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
+
+        assertEquals(List.of(candidate), generator.select(List.of(candidate), metadata, List.of(),
+                DataProfileOptions.defaults().withVerifyDeclaredForeignKeys(true)));
+    }
+
+    @Test
+    void candidatePriorityIsStableBeforeBudgetsAreApplied() {
+        RelationshipCandidate declared = relation("orders", "sales_rep_id", "employees", "id");
+        declared.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, 0.98d,
+                EvidenceSourceType.METADATA, "metadata", "declared fk"));
+        RelationshipCandidate predicate = relation("orders", "customer_id", "customers", "id");
+        predicate.evidence().add(joinEvidence());
+        MetadataSnapshot metadata = metadataFor(declared, "bigint", "bigint");
+        addColumns(metadata, predicate, "bigint", "bigint");
+        metadata.indexFacts().add(new MetadataIndexFact(null, null, "customers", "PRIMARY",
+                true, true, "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
+        DataProfileOptions options = DataProfileOptions.defaults()
+                .withVerifyDeclaredForeignKeys(true)
+                .withMaxCandidatePairs(1);
+
+        assertEquals(List.of(predicate), generator.select(
+                List.of(declared, predicate), metadata, List.of(), options));
+        assertEquals(List.of(predicate), generator.select(
+                List.of(predicate, declared), metadata, List.of(), options));
+    }
+
+    @Test
+    void namingEvidenceDiscoveryRequiresExplicitOptInTargetUniqueAndSourceIndex() {
         MetadataSnapshot metadata = metadataWithCustomerId();
         NamingEvidenceCandidate naming = new NamingEvidenceCandidate(
                 endpoint("orders", "customer_id"),
@@ -99,13 +149,14 @@ class DataProfileCandidateGeneratorTest {
 
         List<RelationshipCandidate> selected = generator.select(
                 List.of(first, second),
-                new MetadataSnapshot(),
+                metadataFor(List.of(first, second), "bigint"),
                 List.of(),
                 DataProfileOptions.defaults()
                         .withSkipUnindexedLargeTargets(false)
                         .withMaxTargetsPerSourceColumn(1));
 
-        assertEquals(List.of(first), selected);
+        assertEquals(List.of(second), selected,
+                "Equal-priority fan-out must use canonical target order before applying the source budget");
     }
 
     @Test
@@ -124,10 +175,17 @@ class DataProfileCandidateGeneratorTest {
                 RelationSubType.COLUMN_CO_OCCURRENCE);
         first.evidence().add(joinEvidence());
         second.evidence().add(joinEvidence());
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columnFacts().add(new MetadataColumnFact("shop", null, "orders", "customer_id",
+                "bigint", "bigint", true, null, "", null, 1));
+        metadata.columnFacts().add(new MetadataColumnFact("shop", null, "customers", "id",
+                "bigint", "bigint", false, null, "", null, 1));
+        metadata.columnFacts().add(new MetadataColumnFact("shop", null, "customer_archive", "id",
+                "bigint", "bigint", false, null, "", null, 1));
 
         List<RelationshipCandidate> selected = generator.select(
                 List.of(first, second),
-                new MetadataSnapshot(),
+                metadata,
                 List.of(),
                 DataProfileOptions.defaults()
                         .withSkipUnindexedLargeTargets(false)
@@ -135,8 +193,9 @@ class DataProfileCandidateGeneratorTest {
                 mysqlRules(),
                 new NamespaceContext("shop", null, List.of()));
 
-        assertEquals(List.of(first), selected,
-                "Bare and explicitly catalog-qualified sources must share one profile budget");
+        assertEquals(List.of(second), selected,
+                "Bare and explicitly catalog-qualified sources must share one profile budget "
+                        + "after canonical target ordering");
     }
 
     @Test
@@ -147,6 +206,8 @@ class DataProfileCandidateGeneratorTest {
         unindexed.evidence().add(joinEvidence());
 
         MetadataSnapshot metadata = new MetadataSnapshot();
+        addColumns(metadata, indexed, "bigint", "bigint");
+        addColumns(metadata, unindexed, "bigint", "bigint");
         metadata.indexFacts().add(new MetadataIndexFact(null, null, "customers", "PRIMARY", true, true,
                 "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
 
@@ -225,6 +286,10 @@ class DataProfileCandidateGeneratorTest {
     @Test
     void compositeOrdinaryIndexAllowsLookupOnlyOnLeadingColumn() {
         MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columnFacts().add(column("orders", "customer_id", "bigint"));
+        metadata.columnFacts().add(column("orders", "tenant_id", "bigint"));
+        metadata.columnFacts().add(column("customers", "id", "bigint"));
+        metadata.columnFacts().add(column("customers", "tenant_id", "bigint"));
         metadata.indexFacts().add(new MetadataIndexFact(null, null, "customers", "idx_customers_tenant_id",
                 false, false, "BTREE", true, List.of("tenant_id", "id"), List.of(), List.of(), List.of(1, 2)));
         RelationshipCandidate id = relation("orders", "customer_id", "customers", "id");
@@ -242,9 +307,45 @@ class DataProfileCandidateGeneratorTest {
         MetadataSnapshot metadata = new MetadataSnapshot();
         metadata.columnFacts().add(column("orders", "customer_id", "bigint"));
         metadata.columnFacts().add(column("customers", "id", "bigint"));
+        metadata.indexFacts().add(new MetadataIndexFact(null, null, "orders", "idx_orders_customer_id",
+                false, false, "BTREE", true, List.of("customer_id"), List.of(), List.of(), List.of(1)));
         metadata.indexFacts().add(new MetadataIndexFact(null, null, "customers", "PRIMARY", true, true,
                 "BTREE", true, List.of("id"), List.of(), List.of(), List.of(1)));
         return metadata;
+    }
+
+    private MetadataSnapshot metadataFor(
+            RelationshipCandidate candidate,
+            String sourceType,
+            String targetType
+    ) {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        addColumns(metadata, candidate, sourceType, targetType);
+        return metadata;
+    }
+
+    private MetadataSnapshot metadataFor(List<RelationshipCandidate> candidates, String type) {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        for (RelationshipCandidate candidate : candidates) {
+            addColumns(metadata, candidate, type, type);
+        }
+        return metadata;
+    }
+
+    private void addColumns(
+            MetadataSnapshot metadata,
+            RelationshipCandidate candidate,
+            String sourceType,
+            String targetType
+    ) {
+        metadata.columnFacts().add(column(
+                candidate.source().table().tableName(),
+                candidate.source().column().columnName(),
+                sourceType));
+        metadata.columnFacts().add(column(
+                candidate.target().table().tableName(),
+                candidate.target().column().columnName(),
+                targetType));
     }
 
     private MetadataColumnFact column(String table, String column, String type) {

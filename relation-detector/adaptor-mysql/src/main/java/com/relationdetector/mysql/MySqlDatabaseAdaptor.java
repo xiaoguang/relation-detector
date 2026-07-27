@@ -67,8 +67,7 @@ public final class MySqlDatabaseAdaptor extends AbstractDatabaseAdaptor {
                         AdaptorCapability.DDL_PARSING,
                         AdaptorCapability.DATABASE_OBJECTS,
                         AdaptorCapability.NATIVE_LOGS,
-                        AdaptorCapability.DATA_PROFILING,
-                        AdaptorCapability.EVIDENCE_WEIGHT_ADJUSTMENT),
+                        AdaptorCapability.DATA_PROFILING),
                 IDENTIFIER_RULES,
                 new AdaptorCollectors(
                         Optional.of(new MySqlMetadataCollector()),

@@ -94,7 +94,8 @@ provider；不使用 endpoint 名称特例，也不把 metadata 降级回 schema
 
 用途：
 
-- 判断 target 列是否唯一。
+- 保留组合 PK/UNIQUE 的完整列组和 ordinal。
+- 只有单列 PK/UNIQUE 才能证明一个 target endpoint 独立唯一。
 - 辅助 JOIN 推断方向。
 - 作为 `TARGET_UNIQUE` evidence。
 
@@ -131,8 +132,13 @@ score: 0.98
 用途：
 
 - 源列有索引时提供 `SOURCE_INDEX` evidence。
-- 唯一索引提供 `TARGET_UNIQUE` evidence。
+- 只有可见的单列唯一索引提供单 endpoint 的 `TARGET_UNIQUE` evidence。
+- 普通组合索引只允许物理首列提供 lookup / `SOURCE_INDEX` 支持；它不证明首列唯一，也不单独决定方向。
 - 复合索引按列序保留，后续可支持复合关系。
+
+MySQL 8 live reader读取`EXPRESSION/IS_VISIBLE`：functional member不被解释成物理列，包含表达式的
+索引不能证明物理单列唯一；不可见索引不提供unique或lookup证据。MySQL 5.7不具备这些字段，reader在
+字段不可用时执行兼容查询，并继续按真实`SEQ_IN_INDEX`保留物理key ordinal。
 
 ### 数据库内 DDL：SHOW CREATE TABLE
 
@@ -185,10 +191,10 @@ parser.mode = auto | full-grammar | token-event
 ## Correctness 与 golden 状态
 
 当前 MySQL correctness golden 分三类：root token-event baseline、MySQL 5.7 strict full-grammar 和
-MySQL 8.0 strict full-grammar。三者路径和当前数量以 verification session 的
-`reports/correctness-test-summary.md` 为唯一生成源；本 Phase 文档
-只维护版本职责，不复制会漂移的计数。5.7 资产分为原样兼容、5.7 语义等价改写和 8.0-only
-版本边界负向 fixture。
+MySQL 8.0 strict full-grammar。fixture目录和manifest是可执行资产，verification session 的
+`reports/correctness-test-summary.md`提供本次运行的描述性统计；release expected数量还由runner参数、
+Java verification默认值和generator tests共同校验。本 Phase 文档只维护版本职责，不复制会漂移的计数。
+5.7资产分为原样兼容、5.7语义等价改写和8.0-only版本边界负向fixture。
 
 当前 MySQL 5.7 / 8.0 full-grammar 都有独立 versioned golden，不再由 root token-event baseline 兜底。full-grammar 相对 token-event 能识别更多 procedure body、复杂 business query、sample-data DDL/SQL、derived projection、INSERT/UPDATE 写入映射和表达式来源；MySQL 8.0 还覆盖 CTE、window、`JSON_TABLE`、invisible index 等高版本语法。参数、literal、局部变量、JSON path、动态 SQL 和显式临时表仍不进入 v1 physical lineage。
 
@@ -311,7 +317,9 @@ SELECT
 
 ## 权重修正
 
-MySQL adaptor 可以修正：
+SPI v6 保留 score-only 权重调整扩展点，但当前内置 MySQL adaptor 返回 identity adjuster，
+且不声明`EVIDENCE_WEIGHT_ADJUSTMENT`，因为没有已实现的方言专属调分策略。以下是后续可实现的
+候选，不是当前能力：
 
 - slow log 中出现次数较高的 JOIN evidence。
 - general log 中重复同一 SQL 的 evidence。

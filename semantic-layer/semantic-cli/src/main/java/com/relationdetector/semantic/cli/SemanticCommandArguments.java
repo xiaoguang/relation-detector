@@ -11,8 +11,11 @@ import com.relationdetector.semantic.extract.SemanticShardMode;
 import com.relationdetector.semantic.extract.SemanticShardingOptions;
 
 /**
- * CN: 解析并合并 semantic CLI 参数与 extract 配置；输入是 argv 和环境默认值，输出不可变命令参数，失败时只抛配置异常，不执行命令或访问 scan 数据。
- * EN: Parses and merges semantic CLI arguments with extract configuration into immutable command input; it performs no command execution or scan-data access.
+ * CN: 解析并合并 semantic CLI 参数与 extract 配置；输入是 argv 和环境默认值，输出不可变命令参数，
+ * 参数、配置或 API key 缺失统一抛 usage 异常，不执行命令或访问 scan 数据。
+ * EN: Parses and merges semantic CLI arguments with extract configuration into immutable command input. Argument,
+ * configuration, and missing API-key failures use the usage exception; this type performs no command execution or
+ * scan-data access.
  */
 record SemanticCommandArguments(
         SemanticCommand command,
@@ -36,6 +39,16 @@ record SemanticCommandArguments(
         Path evidenceBundle
 ) {
     static SemanticCommandArguments parse(String[] args) {
+        try {
+            return parseArguments(args);
+        } catch (SemanticCliUsageException error) {
+            throw error;
+        } catch (IllegalArgumentException error) {
+            throw new SemanticCliUsageException("invalid semantic command configuration", error);
+        }
+    }
+
+    private static SemanticCommandArguments parseArguments(String[] args) {
         if (args == null || args.length == 0) {
             throw new IllegalArgumentException("missing semantic command");
         }
@@ -158,13 +171,16 @@ record SemanticCommandArguments(
         if (!help && command == SemanticCommand.NORMALIZE_EXTRACTION && values.evidenceBundle == null) {
             throw new IllegalArgumentException("semantic evidence bundle is required");
         }
+        if (!help && command == SemanticCommand.NORMALIZE_EXTRACTION && values.inputs.size() != 1) {
+            throw new IllegalArgumentException("normalize-extraction requires exactly one input");
+        }
         return values.toArguments(command, help);
     }
 
     String apiKey() {
         String key = System.getenv(apiKeyEnv);
         if (key == null || key.isBlank()) {
-            throw new IllegalArgumentException("semantic API key is required");
+            throw new SemanticCliUsageException("semantic API key is required");
         }
         return key;
     }

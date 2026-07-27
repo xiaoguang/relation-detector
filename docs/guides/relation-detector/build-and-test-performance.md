@@ -87,14 +87,20 @@ manifest，内部 correctness/sample-data 只验证并借用 owner token。锁�
 bash relation-detector/scripts/verify-all.sh
 ```
 
-该脚本先运行 matrix/模块验收，再调用隔离 correctness，最后复用已打包 CLI 生成 sample-data 结果并建立 verification manifest。它不是“单一 Maven reactor”，也不能以中途的 smoke summary 代替完整隔离结果。
+该脚本先运行 matrix/模块验收，再调用隔离 correctness，最后复用已打包 CLI 生成 sample-data 结果并建立
+verification manifest。它是验收会话组装入口，允许记录脏工作树；只有`verify-release.sh`先通过干净
+工作树和no-cache smoke、随后内部`verify-all.sh`最终manifest为PASS，才构成干净提交的发布证据。
 
 发布后处理由`run-release-verification-tool.sh`启动内部Java入口，默认
 `RELATION_DETECTOR_VERIFICATION_HEAP=512m`。结果校验按顶层数组逐项读取并使用外存引用索引；
 canonical/semantic fingerprint按对象字段分块外排、多路归并，规范字节直接进入SHA-256。
 `verification-manifest.json`只读取小型validation/summary/TSV，不再次物化38份大JSON。当前38份
 约9.8 GiB结果已与旧Python fingerprint完成canonical/semantic各38/38 SHA对照。外排会增加磁盘I/O，
-因此仍必须以最终manifest为PASS作为完成条件，不能把CLI文件已写出当作发布验收结束。
+因此仍必须以最终manifest为PASS作为会话完成条件，不能把CLI文件已写出当作验收结束。当前manifest
+登记fingerprint和hash完整性，但不读取预期SHA基线；回归比较由golden与observation parity负责。
+结果校验强制要求writer定义的10个summary计数字段存在且与流式计数一致；
+`providedSourceLocationsValid=PASS`只表示实际提供的位置均合法，报告同时记录
+`validatedSourceLocationCount`，不宣称每个live或derived fact都有文件位置。
 
 需要排除构建缓存时，使用 release wrapper：
 
@@ -110,6 +116,8 @@ wrapper 先运行无缓存 clean smoke reactor，再调用 `verify-all.sh` 的�
 
 ## 性能证据与停止条件
 
-性能报告写入 `relation-detector/target/verification/<session>/performance-report.json`。fixture 数量、parser category 数量和耗时均从当前 manifest/generated summary 读取，本指南不维护易漂移快照。
+性能报告写入 `relation-detector/target/verification/<session>/performance-report.json`。generated report
+提供描述性统计；release expected fixture/category/JSON baseline同时由shell参数、Java verification默认值
+和generator tests维护。新增资产时必须同步更新这些owner并核对manifest，本指南不复制具体数字。
 
 性能修改必须从最近通过相应完整验收的提交开始，只验证一个明确假设。新增缓存、线程池、调度器或生命周期机制必须有热点证据、前后 A/B 和停止条件；收益不明确时撤销实验并讨论，不继续叠加机制。

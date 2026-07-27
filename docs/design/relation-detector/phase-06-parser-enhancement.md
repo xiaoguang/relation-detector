@@ -1271,8 +1271,10 @@ direct/derived JSON；当前文件数量由 verification manifest 校验，不�
 `verify-all.sh`随后通过内部Java verification入口运行结构校验、canonical/semantic fingerprint和
 manifest integrity。校验器按顶层数组逐项处理，跨section引用写入外存索引；fingerprint对对象字段
 分块外排并多路归并，规范字节直接进入SHA-256。默认verification heap为512 MiB，manifest只消费
-小型`result-validation.json`而不再重读38份大JSON。CLI阶段完成仍不等于发布验收完成，只有最终
-manifest实际生成且为PASS才可作为发布证据；外排I/O耗时属于有界内存实现的已知代价。
+小型`result-validation.json`而不再重读38份大JSON。CLI阶段完成仍不等于验收会话完成；`verify-all`
+最终manifest为PASS证明该会话的门禁完成，但它只记录而不强制干净工作树。干净提交的发布证据必须由
+`verify-release.sh`成功完成。fingerprint是会话审计产物，当前不与预期SHA基线比较；外排I/O耗时属于
+有界内存实现的已知代价。
 
 `verify-release.sh`、`verify-all.sh`、`run-correctness-isolated.sh` 与
 `run-sample-data-isolated.sh` 默认使用同一个 heavy-job lock。最外层入口写入 `pid/job/token` 并从
@@ -1325,9 +1327,10 @@ ParserConfigRemovalTest
   -> parser.mode CLI/YAML parsing
 ```
 
-当前测试资产统计以 verification session 的 `reports/correctness-test-summary.md` 为唯一生成源；
-sample-data parser/category 统计以
-[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 为唯一生成源。
+verification session 的 `reports/correctness-test-summary.md` 和
+[`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)提供描述性统计。
+release expected fixture/category/JSON baseline同时存在于shell参数、Java verification默认值和generator
+tests；新增资产时必须同步这些owner并用manifest核对，不能把generated report称为唯一gate配置源。
 
 验证要求：代码或 fixture 变化后应至少运行 full correctness golden；需要刷新统计时只运行其所属
 generator，并由 verification manifest 记录产物摘要。Phase 文档和 validation 文档不得复制一份

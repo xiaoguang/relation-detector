@@ -27,7 +27,9 @@ PostgreSQL full-grammar 的设计目标是“按大版本严格表达官方语�
 ## 当前 live 实现边界
 
 - `PostgresMetadataCollector` 从 `pg_catalog` 读取 table/column、PK/UNIQUE/FK 和 index inventory，
-  并从显式 FK 生成 child-to-parent relationship。组合 constraint/index 保留 ordinal 和完整列组。
+  并从显式 FK 生成 child-to-parent relationship。组合 constraint/index 保留 ordinal 和列组。
+  index reader跳过`indpred`非空的partial index，并只保留`indnkeyatts`范围内的key member；
+  `INCLUDE` member不进入unique或lookup evidence。
 - `PostgresObjectCollector` 通过 `pg_get_functiondef` 返回完整 function/procedure declaration；view、
   materialized view 和 rule 返回数据库提供的 query/rule definition；non-internal trigger 通过
   `pg_trigger` / `pg_get_triggerdef` 返回完整 trigger declaration。trigger function 仍作为独立 function
@@ -110,8 +112,11 @@ PostgreSQL 特点：
 
 用途：
 
-- 推断 JOIN 方向。
-- 生成 `TARGET_UNIQUE` evidence。
+- 组合声明保留完整列组与 ordinal。
+- 只有单列 PK/UNIQUE 或单列全局 unique index 才能证明一个 endpoint 独立唯一。
+- 普通组合索引只允许物理首列提供 lookup evidence，不能单独决定 relationship 方向。
+- partial index 在没有保存 predicate guard 的模型中不得提供全局 `TARGET_UNIQUE` 或
+  `SOURCE_INDEX`；`INCLUDE` member 不属于 key column。
 
 ### 外键
 
@@ -314,7 +319,9 @@ SELECT (SELECT COUNT(*) FROM source_table s WHERE s.source_col IS NOT NULL) AS s
 
 ## 权重修正
 
-PostgreSQL adaptor 可以修正：
+SPI v6 保留 score-only 权重调整扩展点，但当前内置 PostgreSQL adaptor 返回 identity adjuster，
+且不声明`EVIDENCE_WEIGHT_ADJUSTMENT`，因为没有已实现的方言专属调分策略。以下是后续可实现的
+候选，不是当前能力：
 
 - `log_statement` 可信度。
 - view/function 定义中的 JOIN 可信度。

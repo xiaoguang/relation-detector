@@ -13,7 +13,9 @@ This document separates three questions that used to be mixed together:
 The direct and derived snapshot tables are synchronized from
 `relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv` by
 `relation-detector/scripts/run-release-verification-tool.sh parser-summary`. Refresh them with
-`--update`; do not edit the generated rows by hand.
+`--update`; do not edit the generated rows by hand. Only the two numeric tables are generated.
+The interpretation, benchmark classification, gap assessment, and output-audit notes are
+maintainer-reviewed statements and are not refreshed or proved by `parser-summary`.
 
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -38,6 +40,10 @@ The direct and derived snapshot tables are synchronized from
 | SQL Server full-grammar v2025 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
 
 Interpretation:
+
+The statements below describe the last recorded manual audit in this document. The automatic
+release gate compares four root-to-latest-full observation pairs; claims covering every version
+profile require a separately recorded audit session and must not be inferred from equal counts.
 
 - MySQL token-event and MySQL 5.7/8.0 full-grammar now cover the same sample-data surface. Their remaining differences come from natural 5.7/8.0 SQL rewrites, versioned DDL/routine coverage, and parser capability differences. The semantic-equivalent benchmark is the equality check; this table is a broad capability snapshot.
 - PostgreSQL token-event and v16/v17/v18 full-grammar now produce the same direct fact counts and exact semantic observations on the natural corpus. The non-trivial `UPDATE ... RETURNING` self-update is retained in every applicable profile.
@@ -113,13 +119,17 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 
 ## 4. Output Audit Notes
 
-The latest sample-data output audit checked every generated JSON in `relation-detector/target/sample-data-parser-cli/results`:
+The following is a historical/manual output-audit record, not a set of invariants automatically
+proved by every verification manifest. The streaming validator checks portable paths and validates
+locations that are present; it does not currently require every fact to carry `sourceFile/sourceLine`.
+Summary fields are compared when present rather than required as a complete object.
 
-- Summary counts match the corresponding output arrays.
+- Present summary counts matched the corresponding output arrays in the recorded audit.
 - Direct/derived observation counts equal the sum of raw evidence occurrences.
 - `warning-codes.tsv` is clean: every parser reports `NONE 0`.
 - `rawEvidence.source` no longer contains the local absolute workspace path.
-- Every SQL/DB_OBJECT lineage observation has a repo-relative file, statement/block id, and in-range source line.
+- The recorded audit found SQL/DB_OBJECT lineage locations complete and in range; the current
+  streaming gate alone only validates provided locations.
 - Merged lineage top-level provenance contains only attributes shared by every raw observation.
 - Every relationship `NAMING_MATCH.evidenceRef` resolves to top-level `namingEvidence`.
 

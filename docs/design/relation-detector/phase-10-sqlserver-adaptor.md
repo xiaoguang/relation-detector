@@ -47,6 +47,8 @@ SQL Server 的 SPI v6 `SqlServerScriptFramer` 使用 generated script lexer 的 
 - 五个 SQL Server full-grammar `.g4` 来自同一个 pinned `grammars-v4/sql/tsql` 快照，但已经按 Microsoft 官方文档做了首批逐版本裁剪。更广泛的官方 T-SQL family 覆盖仍是 backlog。
 - 当前 sample-data 为跨版本业务等价 baseline，不混入高版本专属 T-SQL。后续版本专属语法应单独进入 version-only fixture。
 - SQL Server live metadata 通过 `sys.tables/sys.schemas/sys.columns/sys.types`、key/FK constraints 和 `sys.indexes/sys.index_columns` 采集；object collector 通过 `sys.objects/sys.schemas/sys.sql_modules` 读取 procedure/function/view/trigger 定义。metadata组合约束/索引按 ordinal 保留，无权访问 definition 会产生 warning 而非空壳对象。metadata/object/database-DDL/profile 共用 scan boundary 解析后的 catalog：scope catalog为空时继承connection catalog；显式 catalog 必须在第一条 `sys.*` 或 profile SQL 前与 `Connection.getCatalog()` 按 SQL Server identifier rules 一致，否则拒绝扫描，不执行隐式跨 database 查询。`SqlServerDatabaseDdlCollector` 通过 `sys.foreign_keys/sys.foreign_key_columns` 的 `constraint_column_id` 对 composite FK 两端做ordinal-safe配对。该 collector 当前从 `INFORMATION_SCHEMA.COLUMNS` 重建关系解析用 table skeleton，只保留基础 data type、nullable 和 key/FK；length/precision/scale、default、identity、computed、collation 等未保留，因此不能当作完整可执行 table DDL。`SqlServerDataProfiler`执行exact aggregate query，独立返回四项profile metrics。当 `sys.sql_modules.definition` 为 null/blank 时，通过统一 `LiveDiagnosticSanitizer` 输出带 object context 的 `DEFINITION_UNAVAILABLE`。
+- live index reader跳过`has_filter=1`的filtered index、disabled index和INCLUDE column。条件索引
+  在当前模型不能保存filter guard时不会进入全局`TARGET_UNIQUE`或`SOURCE_INDEX`证据。
 
 详细迁移审计见 `docs/parser-audit/sqlserver-migration-review.md`；版本差异清单见 `docs/parser-audit/sqlserver-version-grammar-diff.md`。
 

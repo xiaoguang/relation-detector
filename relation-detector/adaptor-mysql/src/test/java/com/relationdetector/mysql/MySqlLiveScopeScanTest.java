@@ -45,8 +45,8 @@ class MySqlLiveScopeScanTest {
         config.databaseType = DatabaseType.MYSQL;
         config.jdbcUrl = JDBC_URL;
         config.databaseVersion = "8.0";
-        config.metadataEnabled = false;
-        config.dataProfileEnabled = true;
+        config.metadataEnabled = true;
+        config.dataProfileEnabled = false;
         config.logsEnabled = true;
         config.logFiles.add(Files.writeString(tempDir.resolve("query.sql"), "SELECT 1;"));
 

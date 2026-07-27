@@ -38,19 +38,30 @@ final class RelationshipSubtypeResolver {
     RelationSubType dominant(RelationSubType left, RelationSubType right) {
         if (right == null) return left;
         if (left == null) return right;
-        return priority(right) < priority(left) ? right : left;
+        return precedence(right).compareTo(precedence(left)) > 0 ? right : left;
     }
 
-    private int priority(RelationSubType type) {
+    private SubtypePrecedence precedence(RelationSubType type) {
         return switch (type) {
-            case DECLARED_FK -> 1;
-            case DDL_DECLARED_FK -> 2;
-            case PROFILE_SUPPORTED_FK -> 3;
-            case INFERRED_JOIN_FK -> 4;
-            case SUBQUERY_INFERRED_FK -> 5;
-            case NAMING_SUPPORTED_FK -> 6;
-            case COLUMN_CO_OCCURRENCE -> 7;
-            case TABLE_CO_OCCURRENCE -> 8;
+            case TABLE_CO_OCCURRENCE -> SubtypePrecedence.TABLE_CO_OCCURRENCE;
+            case COLUMN_CO_OCCURRENCE -> SubtypePrecedence.COLUMN_CO_OCCURRENCE;
+            case NAMING_SUPPORTED_FK -> SubtypePrecedence.NAMING_SUPPORTED_FK;
+            case SUBQUERY_INFERRED_FK -> SubtypePrecedence.SUBQUERY_INFERRED_FK;
+            case INFERRED_JOIN_FK -> SubtypePrecedence.INFERRED_JOIN_FK;
+            case PROFILE_SUPPORTED_FK -> SubtypePrecedence.PROFILE_SUPPORTED_FK;
+            case DDL_DECLARED_FK -> SubtypePrecedence.DDL_DECLARED_FK;
+            case DECLARED_FK -> SubtypePrecedence.DECLARED_FK;
         };
+    }
+
+    private enum SubtypePrecedence {
+        TABLE_CO_OCCURRENCE,
+        COLUMN_CO_OCCURRENCE,
+        NAMING_SUPPORTED_FK,
+        SUBQUERY_INFERRED_FK,
+        INFERRED_JOIN_FK,
+        PROFILE_SUPPORTED_FK,
+        DDL_DECLARED_FK,
+        DECLARED_FK
     }
 }

@@ -630,6 +630,10 @@ Step 7: Answer（最终输出）
   - 目标 SqlGenerator: plan 无表 → 终止
 ```
 
+Semantic CLI使用内部usage/config异常划分稳定退出码：参数、配置和API key缺失返回2；
+wire contract、sharding、normalization、HTTP transport和artifact I/O等执行期失败返回1。
+两类路径都输出固定脱敏stderr，不回显模型、业务payload或底层异常原文。
+
 ## 7. 性能预算
 
 | 链路 | 阶段 | 预算 |

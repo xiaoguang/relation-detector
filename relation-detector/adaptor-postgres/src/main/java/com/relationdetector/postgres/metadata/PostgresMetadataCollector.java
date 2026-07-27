@@ -151,6 +151,15 @@ public final class PostgresMetadataCollector implements MetadataCollector {
         }
     }
 
+    /**
+     * CN: 输入当前连接、扫描范围和已解析namespace，从pg_index读取非partial索引的真实key member，
+     * 排除INCLUDE列并按ordinal输出metadata index facts；单次catalog查询失败时只产生脱敏warning，
+     * 不清除其它catalog family已经采集的结果。
+     *
+     * EN: Reads physical key members of non-partial indexes from pg_index for the supplied connection, scope, and
+     * resolved namespace. It excludes INCLUDE columns and emits metadata index facts in ordinal order. A catalog
+     * query failure produces one sanitized warning without clearing results from other catalog families.
+     */
     private void collectIndexes(Connection connection, ScanScope scope, String catalog, String schema,
             MetadataSnapshot snapshot) {
         String sql = """
@@ -158,13 +167,16 @@ public final class PostgresMetadataCollector implements MetadataCollector {
                 SELECT n.nspname AS schema_name, t.relname AS table_name, i.relname AS index_name,
                        x.indisunique AS is_unique, x.indisprimary AS is_primary, am.amname AS index_type,
                        keys.ord AS position, a.attname AS column_name,
-                       CASE WHEN keys.attnum = 0 THEN pg_get_indexdef(i.oid, keys.ord::integer, true) ELSE '' END AS expression
+                       CASE WHEN keys.attnum = 0 THEN pg_get_indexdef(i.oid, keys.ord::integer, true) ELSE '' END AS expression,
+                       x.indpred IS NOT NULL AS is_partial,
+                       keys.ord <= x.indnkeyatts AS is_key_member
                 FROM pg_index x JOIN pg_class t ON t.oid = x.indrelid
                 JOIN pg_namespace n ON n.oid = t.relnamespace JOIN pg_class i ON i.oid = x.indexrelid
                 JOIN pg_am am ON am.oid = i.relam
                 JOIN unnest(x.indkey) WITH ORDINALITY keys(attnum, ord) ON true
                 LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = keys.attnum
-                WHERE n.nspname = ? ORDER BY t.relname, i.relname, keys.ord
+                WHERE n.nspname = ? AND x.indpred IS NULL AND keys.ord <= x.indnkeyatts
+                ORDER BY t.relname, i.relname, keys.ord
                 """;
         Map<String, IndexBuilder> groups = new LinkedHashMap<>();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -172,7 +184,9 @@ public final class PostgresMetadataCollector implements MetadataCollector {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String tableName = rs.getString("table_name");
-                    if (!inScope(scope, tableName)) continue;
+                    if (!inScope(scope, tableName)
+                            || bool(rs, "is_partial")
+                            || !bool(rs, "is_key_member")) continue;
                     String key = rs.getString("schema_name") + "|" + tableName + "|" + rs.getString("index_name");
                     IndexBuilder builder = groups.computeIfAbsent(key, ignored -> new IndexBuilder(
                             string(rs, "schema_name"), tableName, string(rs, "index_name"),
@@ -253,9 +267,19 @@ public final class PostgresMetadataCollector implements MetadataCollector {
         }
 
         private MetadataIndexFact build(String catalog) {
-            List<Integer> positions = List.copyOf(columns.keySet());
+            List<Integer> physicalPositions = columns.entrySet().stream()
+                    .filter(entry -> entry.getValue() != null && !entry.getValue().isBlank())
+                    .map(Map.Entry::getKey)
+                    .toList();
+            List<String> physicalColumns = physicalPositions.stream().map(columns::get).toList();
+            List<Integer> expressionPositions = expressions.entrySet().stream()
+                    .filter(entry -> entry.getValue() != null && !entry.getValue().isBlank())
+                    .map(Map.Entry::getKey)
+                    .toList();
+            List<String> expressionMembers = expressionPositions.stream().map(expressions::get).toList();
+            List<Integer> positions = physicalPositions.isEmpty() ? expressionPositions : physicalPositions;
             return new MetadataIndexFact(catalog, schema, table, name, unique, primary, type, true,
-                    new ArrayList<>(columns.values()), new ArrayList<>(expressions.values()), List.of(), positions);
+                    physicalColumns, expressionMembers, List.of(), positions);
         }
     }
 }
