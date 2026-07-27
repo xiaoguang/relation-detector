@@ -64,6 +64,18 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 2. semantic API执行通过package-private观察器把已完成shard和reconciliation原子写入同一staging；
    后续失败仍保留前序成功片的request/response/normalized审计材料，但不发布部分正式run。
 
+本次重新从代码反向核对设计后，两个具名实现差异已经闭合：
+
+1. `ParserBundleSelector`只在外部parser调用周围捕获普通runtime failure；返回值shape检查、
+   selection attributes装配和core校验位于fallback catch之外，null result/null attributes保持
+   `AdaptorContractException`并禁止token fallback。
+2. deterministic candidate与formal normalizer现在都使用长度分隔的`StableSemanticId`。
+   entity/event/metric/dimension、自动review和graph edge的缺省ID基于完整canonical identity；
+   显式输入ID保持不变。
+
+另有一项仅属于文档滞后：typed scan fact、evidence graph payload和diagnostics已经在构造与公开读取
+边界deep-copy，测试规范不应再描述为raw `JsonNode`可回写。
+
 ### 本轮反向审计复核结论
 
 上一轮冻结的四项实现已经按其当时的测试边界闭合：
@@ -78,12 +90,14 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 4. SQL runner 的空 policy helper、误导 Javadoc 和 direct execution 无效 config overload 已删除；
    fallback parser 通过 detached context 与统一结果契约后才转发。
 
-这些修改收紧了外部 v6 adaptor 的**生产主链**，不改变内置 parser 主事实语义或 golden。上一轮冻结的五项矩阵在其 runner/consumer 测试范围内已闭合：
+这些修改收紧了外部 v6 adaptor 的**生产主链**，不改变内置 parser 主事实语义或 golden。上一轮冻结的五项及parser selection前置shape处理均已闭合：
 
 1. `AdaptorParseResultContractValidator` 对 `SqlLogExtractor`、`DialectScriptFramer` 以及生产 runner 中的
    `StructuredSqlParser` / `StructuredDdlParser` stream/result/warning 执行 detached、allowlist 和延迟提交
    校验。普通 full-grammar runtime failure 可以 fallback，但失败尝试 warning 被丢弃且固定脱敏；
-   `AdaptorContractException` 不允许 fallback。
+   validator 已识别的`AdaptorContractException`不允许fallback。selector只捕获外部parser调用；
+   null result/null attributes的shape检查和selection attribute装配发生在catch之外，因此同样保持
+   contract violation类别且不会调用token parser。
 2. `EvidenceWeightAdjustmentService` 向外部 hook 提供 deep-detached evidence 与 deep-immutable
    `AdaptorContext.options`，只接受 score 变化，并由 core 从 baseline 重建返回 evidence。
 3. `ScanTaskExecutor` 在串行和并行路径原样保留 `AdaptorContractException`，CLI 均归类为
@@ -111,12 +125,14 @@ fake JDBC 和 adversarial unit tests 可以证明已覆盖的 core 合约；真�
 5. `StructuredSqlRelationshipParser`、`StructuredSqlParseExecutor` 与 `SqlRelationParserRunner` 的双语说明已按
    当前 facade、trust boundary 和 extractor delegation 职责校准，并由架构测试锁定 direct consumer。
 
-五项均已闭环。第 4 项现在使用精确 `sourceObjectType + sourceObjectIdentity`：
+候选生成侧的第4项已经闭环，并使用精确 `sourceObjectType + sourceObjectIdentity`：
 PostgreSQL full/live 路径使用只包含输入参数类型的 identity signature，pure `OUT`、参数名和默认值
 不会进入身份；compact token-event 使用 typed kind/name 与声明 statement identity，避免复制完整
 参数类型 grammar。`SemanticEventExtractor` 仍把 coarse semantic source type 分类为 `ROUTINE`，
-但 group key/stable ID 使用精确 provenance；formal normalization 的默认 event ID 从已验证的
-`eventCandidateRef` 派生，不再处理 `ROUTINE:` 字符串前缀。
+但 group key/stable ID 使用精确 provenance。formal normalization虽然从已验证的
+`eventCandidateRef`派生默认event ID且不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
+缺省ID现在统一通过`SemanticCanonicalIdentity`和`StableSemanticId`生成；物理/业务entity规则与shard
+canonicalizer复用。显式输入ID不变，自动review和graph edge也不再依赖display slug。
 未审计 SQL statement family 和真实数据库 runtime smoke 继续按各自 backlog/环境边界管理。
 
 ## 本轮代码结构注释审视
@@ -173,7 +189,9 @@ adaptor暴露的token-event parser。显式`parser.mode=full-grammar`选择失�
 
 如果full-grammar profile已经选中，full-grammar parser自己返回structured events、partial result和
 warning；它不会在event层委托token-event补齐事件。普通runtime hard failure会记录固定warning并
-fallback到token-event；contract violation直接失败。
+fallback到token-event。进入`AdaptorParseResultContractValidator`后的contract violation直接失败；
+selector在外部parser调用返回后才执行shape检查与selection attribute装配，因此null result/null attributes
+也直接失败，不会被误判为可恢复failure。
 
 ### 2. SQL relationship 与 Data Lineage 共享 structured result
 
@@ -317,9 +335,10 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     script framer 与 SQL/DDL parser 的 statement/event/warning 由独立的
     `AdaptorParseResultContractValidator` 全批校验并延迟提交。production runner、direct
     statement overload 与 relationship facade 共用 `StructuredSqlParseExecutor`，不再存在
-    structured SQL result 绕过契约边界的 core 旁路。`StructuredParseResult`和
+    validator之后绕过structured SQL结果契约的core旁路；selector在fallback catch之外附加selection
+    attributes并显式拒绝null result/null attributes。`StructuredParseResult`和
     `ScriptFrameResult`保留null collection和null element供core validator识别；所有可见shape
-    违约在事实或warning提交前原子失败。
+    违约在事实或warning提交前原子失败，所有已覆盖shape违约都保持禁止fallback的错误类别。
 11. `ScanInputPathResolver` 是 `files + paths + include` 的唯一展开 owner；CLI 以配置文件父目录调用
     `ScanConfig.resolve(baseDirectory)`，direct API 无参调用以当前工作目录为 base。运行态仅消费稳定排序、
     规范绝对路径且去重的 `*Files`，missing、non-regular 和 unreadable 输入均在 scan 前明确失败。
@@ -388,8 +407,10 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   failure 的 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
   脱敏文本。live namespace resolver 的 `LiveSourceConfigurationException` 已在 single-scan 映射为
   `CONFIG_FORMAT_ERROR`，batch case 保留同一 typed code，整体仍返回 `BATCH_PARTIAL_FAILURE`。adaptor
-  SPI/type/id/capability/implementation 以及全部 adaptor result-contract failure 使用
+  SPI/type/id/capability/implementation 以及validator已接收的adaptor result-contract failure使用
   `AdaptorContractException / ADAPTOR_ERROR`；`ScanTaskExecutor` 在串行和并行路径保留同一异常类型。
+  full-parser result的null attributes由selector/core wrapper显式转为`AdaptorContractException`，
+  SQL/DDL负向测试确认token parser调用次数为0且失败尝试warning不泄漏。
   profile outcome contract violation 同样保持该类别，single 与 batch 的直接契约测试覆盖安全文本和
   case 级 error code。
 - `DirectionConfidence` 和保留 error/evidence enum 继续作为 compatibility contract；所有 public production

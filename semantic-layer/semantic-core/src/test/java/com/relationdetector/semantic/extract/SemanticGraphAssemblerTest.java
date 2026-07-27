@@ -1,6 +1,7 @@
 package com.relationdetector.semantic.extract;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
@@ -26,5 +27,15 @@ final class SemanticGraphAssemblerTest {
                 "owner", "metric:one", "entity:orders", "OWNER", List.of("e1")));
         assertThrows(SemanticExtractionValidationException.class, () -> graph.addEdge(
                 "owner", "metric:one", "entity:orders", "OWNER", List.of("e2")));
+    }
+
+    @Test
+    void punctuationDistinctEdgeTypesProduceDistinctStableIds() {
+        SemanticGraphAssembler graph = new SemanticGraphAssembler();
+        graph.addEdge("owner", "metric:one", "entity:orders", "OWNER/A", List.of("e1"));
+
+        assertDoesNotThrow(() -> graph.addEdge(
+                "owner", "metric:one", "entity:orders", "OWNER_A", List.of("e1")));
+        assertEquals(2, graph.build().edges().size());
     }
 }

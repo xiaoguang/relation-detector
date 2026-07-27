@@ -543,8 +543,10 @@ final class SemanticCliIntegrationTest {
 
         assertEquals(0, exit);
         JsonNode normalized = JSON.readTree(output.toFile());
-        assertEquals("entity:sales_fact", normalized.path("entities").get(0).path("id").asText());
-        assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
+        assertEquals(StableSemanticId.of("entity-physical", "sales_fact"),
+                normalized.path("entities").get(0).path("id").asText());
+        assertEquals(StableSemanticId.of("entity-physical", "sales_orders"),
+                normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
         assertTrue(normalized.path("semanticGraph").path("nodes").isArray());
         assertTrue(normalized.path("validation").path("isRefClosed").isBoolean());
     }

@@ -28,7 +28,7 @@ reference closure、graph validation和模型 review candidate 已纳入本文�
 | 相同内容重排 | fact、candidate、node 和 edge ID集合不变 |
 | 相同ID不同内容 | 原子失败，不使用 last-write-wins |
 | 不可解析 evidence | 非 diagnostic fact/event、endpoint node或edge闭包失败 |
-| reader/graph state | 外层collection不可修改；当前raw `JsonNode` payload仍可变，不能测试为深度不可变 |
+| reader/graph state | 外层collection不可修改；typed fact `document()`、graph fact payload与diagnostics在构造和公开accessor边界均deep-copy，修改返回`JsonNode`不得改变内部状态 |
 
 ## 3. 完整 Extraction Bundle
 
@@ -72,7 +72,7 @@ Bundle测试必须证明：
 | graph node/edge冲突 | 完全相同可幂等去重，内容冲突失败 |
 | standalone normalization ownership | bundle必须携带有效`shardContext`，并复用自动分片的owner校验 |
 | missing review status | 正式对象补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`；`BUSINESS_APPROVED`拒绝 |
-| event ID collision | routine、trigger与SQL-write均使用长度分隔完整typed identity，显示slug不参与ID |
+| event/owner ID collision | deterministic event candidate与formal缺省entity/event/metric/dimension ID都使用长度分隔完整canonical identity；标点碰撞、grounding顺序、显式ID保真、review/edge碰撞及shard parity均由负向/等价测试覆盖 |
 
 ## 6. Artifact
 

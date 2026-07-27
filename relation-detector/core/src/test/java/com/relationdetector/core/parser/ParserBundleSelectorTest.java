@@ -115,6 +115,26 @@ class ParserBundleSelectorTest {
     }
 
     @Test
+    void selectedFullGrammarDdlRuntimeFailureFallsBackToTokenEvent() {
+        List<WarningMessage> warnings = new java.util.ArrayList<>();
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
+        ParserBundle bundle = new ParserBundleSelector(List.of(customDdlModule(
+                        "postgresql-18", DatabaseType.POSTGRESQL, 18, 0,
+                        (ddl, sourceName, context) -> {
+                            throw new IllegalStateException("sensitive DDL parser failure");
+                        })))
+                .select(new TestAdaptor(DatabaseType.POSTGRESQL), config, context(warnings));
+
+        StructuredParseResult parsed = bundle.ddlParser().parseDdl(
+                "CREATE TABLE t(id int)", "ddl.sql", context(warnings));
+
+        assertEquals("token-ddl", parsed.backend());
+        assertEquals("token-event", parsed.attributes().get("parserModeSelected"));
+        assertEquals(List.of("PARSER_MODE_FALLBACK"), warnings.stream().map(WarningMessage::code).toList());
+        assertTrue(!warnings.get(0).message().contains("sensitive DDL parser failure"));
+    }
+
+    @Test
     void failedFullGrammarAttemptDoesNotLeakPluginWarnings() {
         List<WarningMessage> warnings = new java.util.ArrayList<>();
         ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
@@ -147,6 +167,42 @@ class ParserBundleSelectorTest {
 
         assertThrows(AdaptorContractException.class,
                 () -> bundle.sqlParser().parseSql(statement(), context(warnings)));
+        assertTrue(warnings.isEmpty());
+    }
+
+    @Test
+    void nullFullGrammarSqlAttributesAreAContractFailureAndDoNotFallback() {
+        List<WarningMessage> warnings = new java.util.ArrayList<>();
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
+        TestAdaptor adaptor = new TestAdaptor(DatabaseType.POSTGRESQL);
+        ParserBundle bundle = new ParserBundleSelector(List.of(customSqlModule(
+                        "postgresql-18", DatabaseType.POSTGRESQL, 18, 0,
+                        (statement, context) -> new StructuredParseResult(
+                                "full-sql", DatabaseType.POSTGRESQL.name(), statement.sourceName(),
+                                List.of(), List.of(), null))))
+                .select(adaptor, config, context(warnings));
+
+        assertThrows(AdaptorContractException.class,
+                () -> bundle.sqlParser().parseSql(statement(), context(warnings)));
+        assertEquals(0, adaptor.tokenSqlCalls().get());
+        assertTrue(warnings.isEmpty());
+    }
+
+    @Test
+    void nullFullGrammarDdlAttributesAreAContractFailureAndDoNotFallback() {
+        List<WarningMessage> warnings = new java.util.ArrayList<>();
+        ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammar", "", "18.1");
+        TestAdaptor adaptor = new TestAdaptor(DatabaseType.POSTGRESQL);
+        ParserBundle bundle = new ParserBundleSelector(List.of(customDdlModule(
+                        "postgresql-18", DatabaseType.POSTGRESQL, 18, 0,
+                        (ddl, sourceName, context) -> new StructuredParseResult(
+                                "full-ddl", DatabaseType.POSTGRESQL.name(), sourceName,
+                                List.of(), List.of(), null))))
+                .select(adaptor, config, context(warnings));
+
+        assertThrows(AdaptorContractException.class,
+                () -> bundle.ddlParser().parseDdl("CREATE TABLE t(id int)", "ddl.sql", context(warnings)));
+        assertEquals(0, adaptor.tokenDdlCalls().get());
         assertTrue(warnings.isEmpty());
     }
 
@@ -263,7 +319,34 @@ class ParserBundleSelectorTest {
         };
     }
 
-    private record TestAdaptor(DatabaseType databaseType) implements DatabaseAdaptor {
+    private FullGrammarDialectModule customDdlModule(
+            String id,
+            DatabaseType databaseType,
+            int major,
+            int minor,
+            StructuredDdlParser ddlParser
+    ) {
+        SqlGrammarProfile profile = new SqlGrammarProfile(id, databaseType, major, minor, Set.of());
+        return new FullGrammarDialectModule() {
+            @Override public SqlGrammarProfile profile() { return profile; }
+            @Override public String implementationName() { return id + "-custom-test"; }
+            @Override public StructuredSqlParser sqlParser() {
+                return (statement, context) -> new StructuredParseResult(
+                        "full-sql", databaseType.name(), statement.sourceName(), List.of(), List.of(), Map.of());
+            }
+            @Override public StructuredDdlParser structuredDdlParser() { return ddlParser; }
+        };
+    }
+
+    private record TestAdaptor(
+            DatabaseType databaseType,
+            AtomicInteger tokenSqlCalls,
+            AtomicInteger tokenDdlCalls
+    ) implements DatabaseAdaptor {
+        private TestAdaptor(DatabaseType databaseType) {
+            this(databaseType, new AtomicInteger(), new AtomicInteger());
+        }
+
         @Override public int spiVersion() { return com.relationdetector.contracts.spi.AdaptorApiVersion.CURRENT; }
         @Override
         public String id() {
@@ -303,10 +386,16 @@ class ParserBundleSelectorTest {
         public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
             return new com.relationdetector.contracts.spi.AdaptorParsers(
                     (statement, context) -> List.of(),
-                    Optional.of((statement, context) -> new StructuredParseResult("token-sql",
-                            databaseType.name(), statement.sourceName(), List.of(), List.of(), Map.of())),
-                    Optional.of((ddl, sourceName, context) -> new StructuredParseResult("token-ddl",
-                            databaseType.name(), sourceName, List.of(), List.of(), Map.of())),
+                    Optional.of((statement, context) -> {
+                        tokenSqlCalls.incrementAndGet();
+                        return new StructuredParseResult("token-sql",
+                                databaseType.name(), statement.sourceName(), List.of(), List.of(), Map.of());
+                    }),
+                    Optional.of((ddl, sourceName, context) -> {
+                        tokenDdlCalls.incrementAndGet();
+                        return new StructuredParseResult("token-ddl",
+                                databaseType.name(), sourceName, List.of(), List.of(), Map.of());
+                    }),
                     request -> com.relationdetector.contracts.parse.ScriptFrameResult.empty());
         }
 

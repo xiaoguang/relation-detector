@@ -1,12 +1,10 @@
 package com.relationdetector.semantic.extract;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -100,35 +98,20 @@ final class SemanticShardIdentityCanonicalizer {
 
     private EntityIdentity identity(ObjectNode entity, Set<String> ownedReferences) {
         String physicalName = text(entity, "physicalName");
-        String name = normalizeText(text(entity, "name"));
-        String type = normalizeText(firstNonBlank(text(entity, "machineType"), text(entity, "type")));
-        if (!physicalName.isBlank()) {
-            return new EntityIdentity(
-                    "physical:" + physicalName,
-                    StableSemanticId.of("entity-physical", physicalName),
-                    name,
-                    type,
-                    List.of(),
-                    true);
-        }
         List<String> grounding = ownedGrounding(entity.path("ownedGroundingRefs"), ownedReferences);
-        if (grounding.isEmpty()) {
-            throw new SemanticExtractionValidationException(
-                    "pure business semantic entity requires owned grounding");
-        }
-        if (name.isBlank() || type.isBlank()) {
-            throw new SemanticExtractionValidationException(
-                    "pure business semantic entity requires name and type");
-        }
-        String signature = String.join("\u001f", grounding);
-        String canonicalId = StableSemanticId.of("entity-business", name, type, signature);
+        SemanticCanonicalIdentity.EntityIdentity identity = SemanticCanonicalIdentity.entity(
+                physicalName,
+                text(entity, "name"),
+                text(entity, "machineType"),
+                text(entity, "type"),
+                grounding);
         return new EntityIdentity(
-                "business:" + name + "\u0000" + type + "\u0000" + signature,
-                canonicalId,
-                name,
-                type,
-                grounding,
-                false);
+                identity.key(),
+                identity.canonicalId(),
+                identity.name(),
+                identity.type(),
+                identity.grounding(),
+                identity.physical());
     }
 
     private List<String> ownedGrounding(JsonNode evidenceRefs, Set<String> ownedReferences) {
@@ -177,7 +160,7 @@ final class SemanticShardIdentityCanonicalizer {
         Set<String> machineTypes = new LinkedHashSet<>();
         Set<String> physicalNames = new LinkedHashSet<>();
         for (EntityVariant variant : variants) {
-            String machineType = normalizeText(firstNonBlank(
+            String machineType = SemanticCanonicalIdentity.normalizeText(firstNonBlank(
                     text(variant.document(), "machineType"), text(variant.document(), "type")));
             if (!machineType.isBlank()) machineTypes.add(machineType);
             String physicalName = text(variant.document(), "physicalName");
@@ -268,11 +251,6 @@ final class SemanticShardIdentityCanonicalizer {
             }
         }
         return List.copyOf(reviews);
-    }
-
-    private String normalizeText(String value) {
-        return Normalizer.normalize(value == null ? "" : value.trim(), Normalizer.Form.NFKC)
-                .toLowerCase(Locale.ROOT);
     }
 
     private String text(ObjectNode node, String field) {

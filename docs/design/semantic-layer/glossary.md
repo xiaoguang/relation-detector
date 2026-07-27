@@ -98,8 +98,9 @@ Evidence 可以来自 metadata、DDL、SQL、procedure、trigger、comment、sca
 EvidenceRef 建议包含 scanRunId、scanVersion、parserMode、grammarProfile、sourceHash、detectorVersion、payloadSnapshot、reviewDecisionId 等字段，用于复现语义对象的来源。
 
 当前fact/evidence artifact使用内容稳定ID：fact id由规范化语义身份生成，evidence id由owner fact id与
-canonical evidence JSON生成，均不包含数组位置。routine、trigger和普通SQL-write event使用长度分隔的
-完整typed identity生成ID，显示slug不参与身份。
+canonical evidence JSON生成，均不包含数组位置。routine、trigger和普通SQL-write的deterministic event
+candidate以及formal normalized owner的缺省ID都使用长度分隔的完整canonical identity生成。
+显示slug不参与正式身份；显式输入ID继续原样保留。
 semantic extraction bundle顶层`evidence` registry与各section的字符串`evidenceRefs`构成文件内完整引用图。
 scanRunId、sourceHash、reviewDecisionId等跨运行治理元数据仍是后续Catalog Store扩展。
 

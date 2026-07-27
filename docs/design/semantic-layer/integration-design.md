@@ -218,7 +218,7 @@ Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extr
   ],
   "reviewItems": [
     {
-      "id": "review:auto:metric_customer_total_paid_amount",
+      "id": "review:<stable-sha256>",
       "targetRef": "metric:customer_total_paid_amount",
       "targetSection": "metrics",
       "type": "REVIEW_NEEDED",
@@ -590,9 +590,10 @@ Step 7: Answer（最终输出）
 - EvidenceGraph fact 保留 relation-detector payload；KG 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析。相同 ID/content 幂等复用，冲突 ID 原子失败。
 - KG 构建链路不调用 semantic extraction provider，也不创造新 fact
 - 只允许同一 `database.type`、`database.catalog` 与 `database.schema` 合并
-- 所有fact/evidence/candidate引用使用确定性ID并通过冲突gate；routine、trigger和SQL-write event均
-  使用长度分隔的完整typed identity，不使用显示slug。正式normalization必须通过bundle ID、物理endpoint、
-  文档内entity引用、shard ownership和semantic owner-id closure
+- 所有fact/evidence/candidate引用使用确定性ID并通过冲突gate；routine、trigger和SQL-write的
+  deterministic event candidate使用长度分隔的完整typed identity。正式normalization必须通过bundle ID、
+  物理endpoint、文档内entity引用、shard ownership和semantic owner-id closure；显式owner ID保持不变，
+  entity/event/metric/dimension缺省ID使用共享canonical identity与`StableSemanticId`
 - 正式semantic对象缺失reviewStatus时归一为`SYSTEM_PROPOSED`，review item归一为`REVIEW_NEEDED`；
   模型不能写`BUSINESS_APPROVED`
 

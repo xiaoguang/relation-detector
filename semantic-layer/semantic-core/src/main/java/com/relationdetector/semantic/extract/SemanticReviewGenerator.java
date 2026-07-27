@@ -44,7 +44,7 @@ final class SemanticReviewGenerator {
                 continue;
             }
             SemanticReviewItem review = new SemanticReviewItem();
-            review.id = "review:auto:" + SemanticNormalizationSupport.slug(item.id());
+            review.id = SemanticCanonicalIdentity.review(item.id(), targetSection, "REVIEW_NEEDED");
             review.targetRef = item.id();
             review.targetSection = targetSection;
             review.type = "REVIEW_NEEDED";

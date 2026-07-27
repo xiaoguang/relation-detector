@@ -142,8 +142,9 @@ public final class ParserBundleSelector {
             ParserSelectionResult fullSelection
     ) {
         return (statement, context) -> {
+            ParseAttempt attempt;
             try {
-                return invokeSql(fullGrammar, statement, context, fullSelection);
+                attempt = attemptSql(fullGrammar, statement, context);
             } catch (AdaptorContractException ex) {
                 throw ex;
             } catch (RuntimeException ex) {
@@ -152,6 +153,7 @@ public final class ParserBundleSelector {
                 warn(context, "PARSER_MODE_FALLBACK", reason, statement.sourceName(), statement.startLine());
                 return invokeSql(tokenEvent, statement, context, fallback);
             }
+            return completeAttempt(attempt, context, fullSelection);
         };
     }
 
@@ -161,8 +163,9 @@ public final class ParserBundleSelector {
             ParserSelectionResult fullSelection
     ) {
         return (ddl, sourceName, context) -> {
+            ParseAttempt attempt;
             try {
-                return invokeDdl(fullGrammar, ddl, sourceName, context, fullSelection);
+                attempt = attemptDdl(fullGrammar, ddl, sourceName, context);
             } catch (AdaptorContractException ex) {
                 throw ex;
             } catch (RuntimeException ex) {
@@ -171,6 +174,7 @@ public final class ParserBundleSelector {
                 warn(context, "PARSER_MODE_FALLBACK", reason, sourceName, 0);
                 return invokeDdl(tokenEvent, ddl, sourceName, context, fallback);
             }
+            return completeAttempt(attempt, context, fullSelection);
         };
     }
 
@@ -188,11 +192,18 @@ public final class ParserBundleSelector {
             AdaptorContext context,
             ParserSelectionResult selection
     ) {
+        return completeAttempt(attemptSql(parser, statement, context), context, selection);
+    }
+
+    private static ParseAttempt attemptSql(
+            StructuredSqlParser parser,
+            SqlStatementRecord statement,
+            AdaptorContext context
+    ) {
         List<WarningMessage> warnings = new ArrayList<>();
-        StructuredParseResult result = withAttributes(
-                parser.parseSql(statement, attemptContext(context, warnings)), selection);
-        forwardWarnings(context, warnings);
-        return result;
+        return new ParseAttempt(
+                parser.parseSql(statement, attemptContext(context, warnings)),
+                warnings);
     }
 
     private static StructuredParseResult invokeDdl(
@@ -202,10 +213,28 @@ public final class ParserBundleSelector {
             AdaptorContext context,
             ParserSelectionResult selection
     ) {
+        return completeAttempt(attemptDdl(parser, ddl, sourceName, context), context, selection);
+    }
+
+    private static ParseAttempt attemptDdl(
+            StructuredDdlParser parser,
+            String ddl,
+            String sourceName,
+            AdaptorContext context
+    ) {
         List<WarningMessage> warnings = new ArrayList<>();
-        StructuredParseResult result = withAttributes(
-                parser.parseDdl(ddl, sourceName, attemptContext(context, warnings)), selection);
-        forwardWarnings(context, warnings);
+        return new ParseAttempt(
+                parser.parseDdl(ddl, sourceName, attemptContext(context, warnings)),
+                warnings);
+    }
+
+    private static StructuredParseResult completeAttempt(
+            ParseAttempt attempt,
+            AdaptorContext context,
+            ParserSelectionResult selection
+    ) {
+        StructuredParseResult result = withAttributes(attempt.result(), selection);
+        forwardWarnings(context, attempt.warnings());
         return result;
     }
 
@@ -226,6 +255,10 @@ public final class ParserBundleSelector {
         if (parsed == null) {
             throw new AdaptorContractException(
                     "adaptor parse-result contract violation: structured parser result is null");
+        }
+        if (parsed.attributes() == null) {
+            throw new AdaptorContractException(
+                    "adaptor parse-result contract violation: structured parser attributes are null");
         }
         Map<String, Object> attributes = new LinkedHashMap<>(parsed.attributes());
         attributes.putAll(selection.attributes());
@@ -262,6 +295,9 @@ public final class ParserBundleSelector {
         if (context != null && message != null && !message.isBlank()) {
             context.warn(WarningMessage.warn(WarningType.PARSE_WARNING, code, message, sourceName, line));
         }
+    }
+
+    private record ParseAttempt(StructuredParseResult result, List<WarningMessage> warnings) {
     }
 
 }

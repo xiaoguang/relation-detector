@@ -173,7 +173,10 @@ statement/event/warning提交前原子拒绝后者。
 context，再由 `AdaptorParseResultContractValidator` 校验完整 typed result。边界按 sealed event family
 验证必需 payload，并在事实抽取前拒绝 statement 行范围、source/object/block identity 或 parser-origin
 不一致的 provenance。common correctness 的 direct 路径因此与 production runner 具有相同 SPI isolation；
-普通 runtime failure 仍只能在 parser selection 层触发 fallback，contract violation 不得被 fallback 掩盖。
+普通runtime failure只能在parser selection层触发fallback，contract violation不得被fallback掩盖。
+`ParserBundleSelector`的fallback catch只包围外部parser调用；调用返回后才检查result shape并装配
+selection attributes。null result/null attributes会显式转为`AdaptorContractException`，SQL/DDL均不会
+调用token parser，也不会转发失败尝试warning。
 该边界校验 parser 输出是否与输入 statement 的规范source一致。文件入口在调用parser前已由
 `SourceNameNormalizer`生成可移植source，因此validator无需接受或传播本机绝对路径。
 
@@ -355,7 +358,8 @@ SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipe
 `AdaptorParseResultContractValidator` 后，runner 才执行 provenance/fact 提取并一次提交 warning。
 `ParserBundleSelector` 允许普通 full-grammar runtime failure 回退到 token-event，但会丢弃失败尝试的
 warning，并使用不含插件异常消息的固定 fallback 文本；`AdaptorContractException` 表示 SPI 契约违约，
-必须原样上抛，禁止通过 fallback 掩盖。
+必须原样上抛，禁止通过 fallback 掩盖。selector与full-grammar core wrapper都显式拒绝被装配阶段触及的
+null attributes，负向测试确认SQL/DDL contract violation不会触发token parser。
 
 fallback `SqlRelationParser` 的 candidate/evidence 由 `AdaptorResultContractValidator` 校验 family、
 source type、endpoint 和 score；每条 evidence 的规范化 `source` 还必须等于输入 statement 的规范化

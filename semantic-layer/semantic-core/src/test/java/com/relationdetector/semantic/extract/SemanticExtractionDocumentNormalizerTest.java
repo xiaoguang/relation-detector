@@ -1,6 +1,7 @@
 package com.relationdetector.semantic.extract;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.StableSemanticId;
 
 final class SemanticExtractionDocumentNormalizerTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -147,6 +149,160 @@ final class SemanticExtractionDocumentNormalizerTest {
     }
 
     @Test
+    void derivesPhysicalEntityIdFromTheCompletePhysicalName() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"name":"订单","physicalName":"sales.orders","type":"BUSINESS_ENTITY","evidenceRefs":["e1"]}
+                  ],
+                  "events": [],
+                  "relations": [
+                    {"from":"订单","to":"订单","type":"SELF","evidenceRefs":["e1"]}
+                  ],
+                  "lineage": [], "metrics": [], "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("e1");
+        bundle.putArray("tables").add("sales.orders");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertEquals(StableSemanticId.of("entity-physical", "sales.orders"),
+                normalized.path("entities").get(0).path("id").asText());
+    }
+
+    @Test
+    void derivesBusinessEntityIdFromNormalizedTypeAndOwnedGrounding() throws Exception {
+        JsonNode first = businessEntityDocument("[\"e1\",\"e2\"]");
+        JsonNode reordered = businessEntityDocument("[\"e2\",\"e1\"]");
+        JsonNode differentGrounding = businessEntityDocument("[\"e1\",\"e3\"]");
+        ObjectNode bundle = evidenceBundle("e1", "e2", "e3");
+        SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
+
+        String firstId = normalizer.normalize(first, bundle).path("entities").get(0).path("id").asText();
+        String reorderedId = normalizer.normalize(reordered, bundle).path("entities").get(0).path("id").asText();
+        String differentId = normalizer.normalize(
+                differentGrounding, bundle).path("entities").get(0).path("id").asText();
+
+        assertEquals(firstId, reorderedId);
+        assertNotEquals(firstId, differentId);
+    }
+
+    @Test
+    void punctuationDistinctEventCandidateRefsProduceDistinctDefaultIds() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:orders","name":"订单","physicalName":"orders","evidenceRefs":["e1"]}
+                  ],
+                  "events": [
+                    {
+                      "name":"创建订单A","eventCandidateRef":"event-candidate:orders/a",
+                      "outputEntityRefs":["entity:orders"],
+                      "evidenceRefs":["event-candidate:orders/a"]
+                    },
+                    {
+                      "name":"创建订单B","eventCandidateRef":"event-candidate:orders_a",
+                      "outputEntityRefs":["entity:orders"],
+                      "evidenceRefs":["event-candidate:orders_a"]
+                    }
+                  ],
+                  "relations": [], "lineage": [], "metrics": [], "dimensions": [],
+                  "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("e1");
+        bundle.putArray("tables").add("orders");
+        bundle.withArray("eventCandidates").addObject().put("id", "event-candidate:orders/a");
+        bundle.withArray("eventCandidates").addObject().put("id", "event-candidate:orders_a");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertNotEquals(
+                normalized.path("events").get(0).path("id").asText(),
+                normalized.path("events").get(1).path("id").asText());
+    }
+
+    @Test
+    void punctuationDistinctMetricAndDimensionInputsProduceDistinctDefaultIds() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:facts","name":"事实","physicalName":"facts","evidenceRefs":["e1"]},
+                    {"id":"entity:dims","name":"维表","physicalName":"dims","evidenceRefs":["e1"]}
+                  ],
+                  "events": [], "relations": [], "lineage": [],
+                  "metrics": [
+                    {"name":"金额/A","physicalField":"facts.amount/a","sourceFields":["facts.source/a"],"evidenceRefs":["e1"]},
+                    {"name":"金额_A","physicalField":"facts.amount_a","sourceFields":["facts.source_a"],"evidenceRefs":["e1"]}
+                  ],
+                  "dimensions": [
+                    {"name":"维度/A","physicalField":"facts.key/a","dimensionTable":"dims","evidenceRefs":["e1"]},
+                    {"name":"维度_A","physicalField":"facts.key_a","dimensionTable":"dims","evidenceRefs":["e1"]}
+                  ],
+                  "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("e1");
+        bundle.putArray("tables").add("facts").add("dims");
+        ObjectNode lineage = bundle.putArray("lineage").addObject();
+        lineage.put("id", "lineage:identity-columns");
+        lineage.putArray("sources")
+                .add("facts.amount/a")
+                .add("facts.amount_a")
+                .add("facts.source/a")
+                .add("facts.source_a")
+                .add("facts.key/a")
+                .add("facts.key_a");
+        lineage.put("target", "facts.target");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertNotEquals(
+                normalized.path("metrics").get(0).path("id").asText(),
+                normalized.path("metrics").get(1).path("id").asText());
+        assertNotEquals(
+                normalized.path("dimensions").get(0).path("id").asText(),
+                normalized.path("dimensions").get(1).path("id").asText());
+    }
+
+    @Test
+    void punctuationDistinctOwnerIdsProduceDistinctGeneratedReviewIds() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:facts","name":"事实","physicalName":"facts","evidenceRefs":["e1"]}
+                  ],
+                  "events": [], "relations": [], "lineage": [],
+                  "metrics": [
+                    {
+                      "id":"metric:a/b","name":"金额A","physicalField":"facts.amount_a",
+                      "reviewStatus":"REVIEW_NEEDED","evidenceRefs":["e1"]
+                    },
+                    {
+                      "id":"metric:a_b","name":"金额B","physicalField":"facts.amount_b",
+                      "reviewStatus":"REVIEW_NEEDED","evidenceRefs":["e1"]
+                    }
+                  ],
+                  "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("e1");
+        bundle.putArray("tables").add("facts");
+        ObjectNode lineage = bundle.putArray("lineage").addObject();
+        lineage.put("id", "lineage:review-columns");
+        lineage.putArray("sources").add("facts.amount_a").add("facts.amount_b");
+        lineage.put("target", "facts.target");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertEquals(2, normalized.path("reviewItems").size());
+        assertNotEquals(
+                normalized.path("reviewItems").get(0).path("id").asText(),
+                normalized.path("reviewItems").get(1).path("id").asText());
+    }
+
+    @Test
     void reusesNormalizerConcurrentlyWithoutCrossDocumentValidationState() throws Exception {
         JsonNode raw = JSON.readTree("""
                 {
@@ -218,15 +374,17 @@ final class SemanticExtractionDocumentNormalizerTest {
                 .put("id", "triplet-candidate:lineage:0");
         JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle);
 
-        assertEquals("entity:sales_fact", normalized.path("entities").get(0).path("id").asText());
-        assertEquals("event:event-candidate_routine_erp.sp_rebuild_sales_fact",
+        String salesFactId = StableSemanticId.of("entity-physical", "sales_fact");
+        String salesOrdersId = StableSemanticId.of("entity-physical", "sales_orders");
+        assertEquals(salesFactId, normalized.path("entities").get(0).path("id").asText());
+        assertEquals(StableSemanticId.of("event", "event-candidate:routine:erp.sp_rebuild_sales_fact"),
                 normalized.path("events").get(0).path("id").asText());
-        assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
-        assertEquals("entity:sales_fact", normalized.path("events").get(0).path("outputEntityRefs").get(0).asText());
-        assertEquals("entity:sales_fact", normalized.path("relations").get(0).path("fromEntityRef").asText());
-        assertEquals("entity:sales_orders", normalized.path("relations").get(0).path("toEntityRef").asText());
-        assertEquals("entity:sales_fact", normalized.path("metrics").get(0).path("ownerEntityRef").asText());
-        assertEquals("entity:sales_orders", normalized.path("dimensions").get(0).path("dimensionEntityRef").asText());
+        assertEquals(salesOrdersId, normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
+        assertEquals(salesFactId, normalized.path("events").get(0).path("outputEntityRefs").get(0).asText());
+        assertEquals(salesFactId, normalized.path("relations").get(0).path("fromEntityRef").asText());
+        assertEquals(salesOrdersId, normalized.path("relations").get(0).path("toEntityRef").asText());
+        assertEquals(salesFactId, normalized.path("metrics").get(0).path("ownerEntityRef").asText());
+        assertEquals(salesOrdersId, normalized.path("dimensions").get(0).path("dimensionEntityRef").asText());
         for (String section : List.of(
                 "entities", "events", "relations", "lineage", "metrics", "dimensions", "triplets")) {
             assertEquals("SYSTEM_PROPOSED",
@@ -273,8 +431,8 @@ final class SemanticExtractionDocumentNormalizerTest {
         JsonNode raw = JSON.readTree("""
                 {
                   "entities": [
-                    {"name": "销售事实表", "physicalName": "sales_fact", "type": "分析事实表", "evidenceRefs": ["event-candidate:fact"]},
-                    {"name": "销售订单", "physicalName": "sales_orders", "type": "业务单据", "evidenceRefs": ["event-candidate:fact"]}
+                    {"id":"entity:sales_fact","name": "销售事实表", "physicalName": "sales_fact", "type": "分析事实表", "evidenceRefs": ["event-candidate:fact"]},
+                    {"id":"entity:sales_orders","name": "销售订单", "physicalName": "sales_orders", "type": "业务单据", "evidenceRefs": ["event-candidate:fact"]}
                   ],
                   "events": [
                     {
@@ -339,7 +497,8 @@ final class SemanticExtractionDocumentNormalizerTest {
 
         JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle);
 
-        assertEquals("event:event-candidate_routine_function_public.refresh_sales-bigint",
+        assertEquals(StableSemanticId.of(
+                        "event", "event-candidate:routine:function:public.refresh_sales-bigint"),
                 normalized.path("events").get(0).path("id").asText());
     }
 
@@ -371,7 +530,9 @@ final class SemanticExtractionDocumentNormalizerTest {
 
         assertEquals(1, normalized.path("reviewItems").size());
         JsonNode review = normalized.path("reviewItems").get(0);
-        assertEquals("metric:sales_fact.gross_margin_rate", review.path("targetRef").asText());
+        assertEquals(StableSemanticId.of(
+                        "metric", "毛利率", "", "sales_fact.gross_margin_rate", ""),
+                review.path("targetRef").asText());
         assertEquals("metrics", review.path("targetSection").asText());
         assertEquals("REVIEW_NEEDED", review.path("type").asText());
         assertEquals("REVIEW_NEEDED", review.path("reviewStatus").asText());
@@ -594,6 +755,24 @@ final class SemanticExtractionDocumentNormalizerTest {
         Set<String> ids = new LinkedHashSet<>();
         document.path(section).forEach(item -> ids.add(item.path("id").asText()));
         return ids;
+    }
+
+    private JsonNode businessEntityDocument(String ownedGroundingRefs) throws Exception {
+        return JSON.readTree("""
+                {
+                  "entities": [
+                    {
+                      "name":"订单","machineType":"BUSINESS_ENTITY",
+                      "ownedGroundingRefs":%s,"evidenceRefs":["e1"]
+                    }
+                  ],
+                  "events": [],
+                  "relations": [
+                    {"from":"订单","to":"订单","type":"SELF","evidenceRefs":["e1"]}
+                  ],
+                  "lineage": [], "metrics": [], "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """.formatted(ownedGroundingRefs));
     }
 
     private ObjectNode evidenceBundle(String... evidenceIds) {

@@ -330,11 +330,13 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-COMPLETE-INPUT-01` | `MATCHED` | 正式bundle不提供focus或事实数量裁剪；全部direct/derived facts、deterministic candidates、endpoint tables和evidence refs在分片前保持闭合，旧CLI/YAML字段明确拒绝。 |
 | `SEM-CANDIDATE-01` | `MATCHED` | deterministic candidates只来自typed facts/events；名称驱动`METRIC_SOURCE`和未使用review limit分支已删除。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
-| `SEM-EVENT-ID-01` | `MATCHED` | routine、trigger与普通SQL-write均使用长度分隔的完整typed identity生成group key和ID，显示slug不参与身份。 |
+| `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | 显式ID保持不变；entity/event/metric/dimension缺省ID、自动review与graph edge均由完整canonical content和`StableSemanticId`生成。物理/业务entity规则与shard canonicalizer复用。 |
 
-上述typed validation、完整输入、模型请求预算、owner-aware normalization、治理默认值、
-lossless event identity、deterministic candidate、artifact发布事务和失败运行逐片审计已经闭环，
-没有通过弱化evidence closure、删除overlap或截断事实规避问题。
+上述typed validation、完整输入、模型请求预算、owner-aware evidence closure、治理默认值、
+deterministic candidate、canonical owner identity、artifact发布事务和失败运行逐片审计已经闭环，
+没有通过弱化evidence closure、删除overlap或截断事实规避问题。自动生成ID的修正不改变显式输入ID，
+也不提供旧slug ID别名。
 
 独立归一化命令为：
 

@@ -65,6 +65,10 @@ public final class FullGrammarStructuredSqlParser implements StructuredSqlParser
             throw new AdaptorContractException(
                     "adaptor parse-result contract violation: full-grammar SQL result is null");
         }
+        if (result.attributes() == null) {
+            throw new AdaptorContractException(
+                    "adaptor parse-result contract violation: full-grammar SQL attributes are null");
+        }
         Map<String, Object> attributes = new LinkedHashMap<>(result.attributes());
         SqlGrammarProfile profile = profileSelection.profile();
         attributes.put("grammarProfile", profile.id());

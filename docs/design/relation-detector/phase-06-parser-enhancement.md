@@ -371,7 +371,10 @@ SQL 的 production runner、direct statement service 和 relationship facade 共
 使用 detached context 和临时 warning buffer；DDL runner 使用相同 validator 的 DDL 入口。
 `AdaptorParseResultContractValidator` 校验整个 `StructuredParseResult` 的 event family、必需 typed payload、
 statement source/line/object/block provenance、attributes 与 warnings 后，才允许事实抽取和 warning 提交。
-任何 contract violation 都不会留下前序部分状态，也不得触发 token-event fallback。
+任何进入validator的contract violation都不会留下前序部分状态，也不得触发token-event fallback。
+`ParserBundleSelector`只捕获外部parser调用的普通runtime failure；result shape检查、selection attributes
+装配和core校验都在fallback catch之外。null result/null attributes显式成为`AdaptorContractException`，
+因此全部已覆盖畸形结果都不会触发token-event parser。
 对外部文件，framing前统一生成可移植source：工作区内使用相对路径，工作区外使用完整内容摘要，
 读取失败使用`external/unavailable/<文件名>`。parser event、`sourceFile`、statement ID与warning都绑定
 同一规范source；validator拒绝不一致结果，公开JSON与verification artifact不传播本机绝对路径。
@@ -621,7 +624,7 @@ Script Framer只负责statement/object framing，不把`PLAIN_SQL`/`NATIVE_LOG`/
 系统运行模式：
 
 - `parser.mode=auto`：默认。能选中 full-grammar profile 时使用 full-grammar；否则 token-event。
-- `parser.mode=full-grammar`：显式要求 full-grammar。profile 缺失、版本不支持或普通 full-grammar runtime hard failure 时 warning + token-event fallback。profile 已选中后的 syntax warning / partial result 仍属于 full-grammar 结果；无效或缺失 structured result 属于 `AdaptorContractException`，直接失败且禁止 fallback。
+- `parser.mode=full-grammar`：显式要求 full-grammar。profile 缺失、版本不支持或普通 full-grammar runtime hard failure 时 warning + token-event fallback。profile 已选中后的 syntax warning / partial result 仍属于 full-grammar 结果；无效或缺失 structured result、null attributes及parser直接抛出的contract exception都属于`AdaptorContractException`并禁止fallback。
 - `parser.mode=token-event`：强制 token-event，不调用 full-grammar module。
 
 配置来源优先级：

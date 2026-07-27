@@ -35,7 +35,7 @@ final class SemanticGraphAssembler {
         if (blank(source) || blank(target)) {
             return;
         }
-        String id = prefix + ":" + source + "->" + target + ":" + SemanticNormalizationSupport.slug(type);
+        String id = SemanticCanonicalIdentity.edge(prefix, source, target, type);
         SemanticGraphEdge edge = new SemanticGraphEdge(id, source, target, type, copy(evidenceRefs));
         SemanticGraphEdge previous = edges.putIfAbsent(id, edge);
         if (previous != null && !previous.equals(edge)) {

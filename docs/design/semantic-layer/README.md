@@ -79,8 +79,9 @@ owner context；缺失、伪造或越界 context 会被拒绝。
 | `SEM-REF-01` | `MATCHED` | evidence/fact/candidate ID、文档内 entity 引用和 bundle 物理表列引用均执行精确闭包校验，不降级 catalog/schema。 |
 | `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线 `SemanticKgBuilder`。 |
 | `SEM-KG-01` | `MATCHED` | `SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析；identity registry 只允许完整内容相同的幂等重复，冲突 node/edge ID 原子失败。 |
-| `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。formal normalization的默认event ID从已验证`eventCandidateRef`派生。 |
-| `SEM-EVENT-ID-01` | `MATCHED` | routine、trigger和普通SQL-write event都使用长度分隔的完整typed identity生成group key与stable ID；显示slug不参与身份。 |
+| `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。 |
+| `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | 显式ID保持不变；entity/event/metric/dimension缺省ID、自动review与graph edge均使用完整canonical content和`StableSemanticId`。物理/业务entity规则与shard canonicalizer一致。 |
 | `SEM-CANDIDATE-01` | `MATCHED` | 完整bundle保留全部typed deterministic candidates；名称驱动的`METRIC_SOURCE`与未使用review limit分支已删除，正式metric仍必须由证据闭合的semantic normalization产生。 |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整输入的 fact/candidate owner、dependency closure、evidence closure和shard coverage在模型调用前验证；超预算 table owner按稳定root拆片且root closure保持原子。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | `SemanticExtractionService`中每个model-authored item必须用`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap与`evidenceRefs`只提供审计上下文，越界使整片在backfill前原子失败。 |
@@ -96,10 +97,11 @@ owner context；缺失、伪造或越界 context 会被拒绝。
 | `SEM-READER-STATE-01` | `MATCHED` | `ScanBundle`/`EvidenceGraph`外层集合不可修改；typed fact document、graph payload与diagnostics在构造和公开accessor边界deep-copy，调用方不能回写内部状态。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | normalizer拒绝模型写入`BUSINESS_APPROVED`；正式semantic对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`，backfill后不保留空状态。 |
 
-wire、reference closure、formal normalization ID、离线 KG evidence/identity gate、完整event identity、
+wire、reference closure、离线 KG evidence/identity gate、typed event candidate identity、
 deterministic candidate、typed sharding、完整输入、owner output、identity merge、统一模型请求预算、
 strict configuration、reader/graph公开状态、governance默认值、artifact发布事务与失败运行逐片审计
-已经闭环。详细
+以及formal normalization的canonical owner/event ID已经闭环。自动生成ID的修正不改变显式输入ID，
+也不提供旧slug ID别名。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。

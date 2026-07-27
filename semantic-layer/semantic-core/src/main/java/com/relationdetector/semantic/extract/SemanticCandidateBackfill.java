@@ -146,7 +146,8 @@ final class SemanticCandidateBackfill {
                 continue;
             }
             SemanticReviewItem review = new SemanticReviewItem();
-            review.id = firstPresent(candidate.id(), "review:" + SemanticNormalizationSupport.slug(candidate.targetRef()));
+            review.id = firstPresent(candidate.id(), SemanticCanonicalIdentity.review(
+                    candidate.targetRef(), candidate.targetSection(), candidate.type()));
             review.targetRef = candidate.targetRef();
             review.targetSection = firstPresent(candidate.targetSection(), "");
             review.type = firstPresent(candidate.type(), "REVIEW_NEEDED");
