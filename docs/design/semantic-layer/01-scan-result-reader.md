@@ -2,13 +2,16 @@
 
 ## 1. 目标与定位
 
-**职责：** 读取 relation-detector JSON 输出，校验完整性，归一化为 Semantic Layer 可消费的 `ScanBundle`。
+**职责：** 流式读取 relation-detector JSON，校验完整性并写入磁盘后备 typed store；只在有界
+component或兼容调用中物化`ScanBundle`。
 
 当前代码实现位于 `semantic-layer/semantic-core/src/main/java/com/relationdetector/semantic/reader`。它已经落地为轻量离线 reader：
 
-- `ScanResultReader.read(Path)` 读取单个 relation-detector JSON。
-- `ScanResultReader.readMerged(List<Path>)` 只合并 `database.type/catalog/schema` 完全一致的 JSON。
-- `ScanBundle` 保存 `databaseType`、`catalog`、`schema`、直接/推导事实、diagnostics、summary、sources 和输入文件列表。
+- `ScanResultReader.open(List<Path>, Path)` 是生产入口，返回可关闭的`SemanticInputStore`。
+- store逐条读取顶层数组，写入section spool及外排table/column/fact索引，不持有完整输入。
+- 多输入要求`database.type/catalog/schema`、inventory scope和完整inventory fingerprint一致。
+- `ScanResultReader.read/readMerged`只供明确有界的兼容调用和测试使用。
+- `ScanBundle`保存完整metadata inventory及一个有界component的typed事实。
 - relation-detector 的 `derivedNamingEvidence` 是阅读/统计视图；当前 semantic reader 不单独读取该数组，derived naming facts 通过 canonical top-level `namingEvidence` 进入 `NamingEvidenceFact`。
 - 当前 reader 不构建 `metadataIndex`、`relationshipIndex`、`lineageIndex`，也不在读取阶段做 relationship / lineage 去重；这些属于后续 catalog/search 阶段或上游 relation-detector merge 责任。
 
@@ -26,20 +29,21 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
 - database identity 是 `type + catalog + schema`；catalog 必须同时为空或精确相同，不能跨 catalog 合并同名对象。
 - 只做读取、标准化和合并，不判断业务实体、指标口径或 join path 是否业务正确。
 
-这意味着后续 Semantic Evidence Builder、Catalog、Question Planner 都只能消费 `ScanBundle` 或由它构建出的 evidence graph，不应直接绕过它读取零散 SQL、DDL 或 parser 内部结构。
+这意味着生产 Evidence Builder 只能消费`SemanticInputStore`产生的有界`ScanBundle` component或由其
+构建的evidence store，不应绕过reader读取零散SQL、DDL或parser内部结构。
 
 ## 2. 上游与下游
 
 ```
 上游: relation-detector
-  ↓ 输入: scan-result.json (JSON 文件, 1-100MB)
+  ↓ 输入: scan-result.json（含metadataInventory）
 
 [Scan Result Reader]
-  ↓ 输出: ScanBundle (内存对象)
+  ↓ 输出: SemanticInputStore（section spool + 外排索引）
+  ↓ 按需: bounded ScanBundle component
 
 下游: Semantic Evidence Builder
-  消费: ScanBundle.relationships, ScanBundle.dataLineages, ScanBundle.namingEvidence,
-        ScanBundle.derivedRelationships, ScanBundle.derivedDataLineages, ScanBundle.diagnostics
+  逐component消费完整inventory、direct/derived facts、naming和diagnostics
 ```
 
 ## 3. 接口契约
@@ -48,22 +52,26 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
 
 ```java
 public final class ScanResultReader {
+    SemanticInputStore open(List<Path> scanResultPaths, Path workspace);
     ScanBundle read(Path scanResultPath);
     ScanBundle readMerged(List<Path> scanResultPaths);
 }
 ```
 
-当前实现的合并规则：
+生产`open()`的合并规则：
 
-- 所有输入文件必须有相同 `database.type`、`database.catalog` 和 `database.schema`。
+- 所有输入必须有相同`database.type/catalog/schema`、inventory scope与COMPLETE fingerprint。
+- `NOT_REQUESTED/PARTIAL/UNAVAILABLE`及缺失inventory在任何模型调用和正式artifact写入前拒绝。
 - `sources` 去重后保留顺序。
 - `summary` 中整数值按 key 求和。
-- `relationships`、`dataLineages`、`derivedRelationships`、`derivedDataLineages`、`namingEvidence`、`diagnostics` 先 append，再由合并后的 `ScanBundle` 检查每个 section 的 stable fact id 唯一性；重复 identity 直接拒绝，不择优合并。
+- facts与四类metadata记录逐条验证、spool；stable ID与物理identity通过外排索引检查。
 - 不在 reader 层做 semantic 去重、confidence 重算或 evidence 合并。
+
+`read/readMerged`保留相同wire与COMPLETE inventory语义，但会物化完整`ScanBundle`，只适用于有界调用。
 
 ### 3.2 输入 Schema 与当前校验边界
 
-下列字段是 relation-detector 的正常输出契约。reader 在构建 typed fact 前拒绝缺失必需数组、空 endpoint、越界 confidence、非法 summary 数值、summary/数组计数不一致、无法解析的时间戳、未知枚举值以及不符合 writer 契约的 nested evidence/warning。`catalog`、`schema` 可为空，但存在时必须是字符串；未知顶层扩展字段仍保留并忽略。
+下列字段是 relation-detector 的正常输出契约。reader 在构建 typed fact 前拒绝缺失必需数组、空 endpoint、越界 confidence、非法 summary 数值、summary/数组计数不一致、无法解析的时间戳、未知枚举值以及不符合 writer 契约的 nested evidence/warning。`catalog`、`schema` 可为空，但存在时必须是字符串；未知顶层扩展字段被忽略，不进入 `ScanBundle`。
 
 ```pseudo-json
 {
@@ -85,6 +93,20 @@ public final class ScanResultReader {
     "totalNamingEvidenceCount": 45,
     "warningCount": 3,         // 必填，整数 >= 0
     "sources": ["metadata", "ddl", "logs"]  // 必填
+  },
+  "metadataInventory": {
+    "status": "COMPLETE", // relation-detector也可输出NOT_REQUESTED/PARTIAL/UNAVAILABLE；semantic只接受COMPLETE
+    "scope": {
+      "catalog": "shop",
+      "schema": "",
+      "includeTables": [],
+      "excludeTables": []
+    },
+    "counts": {"tables": 10, "columns": 120, "constraints": 14, "indexes": 22},
+    "tables": [...],
+    "columns": [...],
+    "constraints": [...],
+    "indexes": [...]
   },
   "relationships": [
     {
@@ -122,27 +144,29 @@ public final class ScanResultReader {
 }
 ```
 
-### 3.3 当前输出模型（ScanBundle）
+### 3.3 当前生产输出模型（SemanticInputStore）
 
 ```pseudo-json
 {
-  "databaseType": "mysql",
-  "catalog": "shop",
-  "schema": "",
-  "generatedAt": "2026-06-23T00:00:00Z",
-  "sources": ["ddl", "object-files", "logs"],
-  "inputFiles": ["relation-detector/target/.../mysql-v8_0-full.json"],
-  "summary": {"directRelationshipCount": 397, "totalNamingEvidenceCount": 1031},
-  "relationships": [ScanRelationshipFact],
-  "dataLineages": [ScanLineageFact],
-  "derivedRelationships": [ScanRelationshipFact],
-  "derivedDataLineages": [ScanLineageFact],
-  "namingEvidence": [ScanNamingEvidenceFact],
-  "diagnostics": [ScanDiagnosticFact] // 来自 relation-detector 顶层 warnings
+  "descriptor": {
+    "databaseType": "mysql",
+    "catalog": "shop",
+    "schema": "",
+    "inventory": {"status": "COMPLETE", "counts": {...}, "fingerprint": "..."}
+  },
+  "sectionSpools": {
+    "metadataTables": "...jsonl",
+    "relationships": "...jsonl",
+    "dataLineages": "...jsonl"
+  },
+  "externalIndexes": ["tables.index", "columns.index", "facts.index"]
 }
 ```
 
-`ScanBundle` 在 reader 边界把 relation-detector 事实一次性转为强类型 fact；每个 fact 同时保留原始 `document()` payload。下游 event、bundle 和 evidence graph 不再重复解析 endpoint、confidence 或 flowKind。relationship、lineage、naming 和 diagnostic id 根据规范化语义内容生成，不依赖数组位置；lineage source identity 先排序再哈希。重复 stable id 会被 contract 边界拒绝。relation-detector 顶层 `warnings` 映射为 `ScanBundle.diagnostics`；reader 不读取独立顶层 `diagnostics` 字段。`ScanBundle.jsonView()`、extraction bundle 和 KG build-run 共用 portable input path renderer：工作目录内路径相对化，外部绝对路径只保留文件名，因此不泄漏工作区绝对路径；该标签不等同于持久化的 repository identity。
+store按需把一个固定原始字节上限的connected-component chunk物化为`ScanBundle`。每个typed fact保留
+原始`document()` payload；下游不再重复解析endpoint、confidence或flowKind。relationship、lineage、
+naming和diagnostic ID不依赖数组位置；重复stable ID在store发布前拒绝。顶层`warnings`映射为
+diagnostics。portable input label不泄漏本机绝对路径，但不等同于持久repository identity。
 
 不可变边界覆盖外层list/map与公开JSON状态。typed fact的`document()`、`EvidenceGraphFact.payload()`
 和`EvidenceGraph.diagnostics()`在构造及公开读取时deep-copy；下游调用方修改返回`JsonNode`不会改变
@@ -155,23 +179,14 @@ reader或graph内部已验证状态。
 
 ```mermaid
 flowchart TD
-    A[读取 JSON 文件] --> B{文件存在?}
-    B -- 否 --> E1[抛出 INPUT_FILE_NOT_FOUND]
-    B -- 是 --> C[JSON 解析]
-    C --> D{JSON 合法?}
-    D -- 否 --> E2[抛出 INPUT_FORMAT_ERROR]
-    D -- 是 --> F[校验 wire 结构、必需数组与 summary 计数]
-    F --> G{结构与计数一致?}
-    G -- 否 --> E3[抛出 ScanResultContractException]
-    G -- 是 --> H[遍历 direct / derived facts]
-    H --> I[建立 typed relationship / lineage / naming / diagnostic facts并校验稳定ID唯一]
-    I --> J[读取 summary 整数统计与 sources]
-    J --> K{多输入合并?}
-    K -- 是 --> L[校验 database.type/catalog/schema 一致并 append arrays]
-    K -- 否 --> M[保留单文件 arrays]
-    L --> N[组装 ScanBundle]
-    M --> N
-    N --> O[输出]
+    A[流式读取 JSON] --> B[校验header与COMPLETE inventory]
+    B --> C[逐条写metadata和fact section spool]
+    C --> D[外排table column fact identity]
+    D --> E{多输入descriptor与fingerprint一致?}
+    E -- 否 --> F[原子失败并清理workspace]
+    E -- 是 --> G[发布SemanticInputStore]
+    G --> H[磁盘connected component]
+    H --> I[逐个物化bounded ScanBundle]
 ```
 
 </details>
@@ -181,28 +196,19 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Read JSON file] --> B{File exists?}
-    B -- no --> E1[Throw INPUT_FILE_NOT_FOUND]
-    B -- yes --> C[parse JSON]
-    C --> D{Valid JSON?}
-    D -- no --> E2[Throw INPUT_FORMAT_ERROR]
-    D -- yes --> F[Validate wire structure, required arrays, and summary counts]
-    F --> G{Structure and counts valid?}
-    G -- no --> E3[Throw ScanResultContractException]
-    G -- yes --> H[Iterate direct and derived facts]
-    H --> I[Create typed facts and reject duplicate stable IDs]
-    I --> J[Read summary integer stats and sources]
-    J --> K{Multiple inputs?}
-    K -- yes --> L[Validate database.type/catalog/schema and append arrays]
-    K -- no --> M[Keep single-file arrays]
-    L --> N[Assemble ScanBundle]
-    M --> N
-    N --> O[Output]
+    A[Stream JSON] --> B[Validate header and COMPLETE inventory]
+    B --> C[Spool metadata and facts record by record]
+    C --> D[Externally sort table column and fact identities]
+    D --> E{Multi-input descriptors and fingerprints match?}
+    E -- no --> F[Fail atomically and clean workspace]
+    E -- yes --> G[Publish SemanticInputStore]
+    G --> H[Build disk-backed connected components]
+    H --> I[Materialize one bounded ScanBundle at a time]
 ```
 
 </details>
 
-## 5. 交互时序图
+## 5. 生产交互时序图
 
 <details open>
 <summary>中文</summary>
@@ -211,18 +217,18 @@ flowchart TD
 sequenceDiagram
     participant FS as 文件系统
     participant SR as 扫描结果读取器
-    participant SB as 扫描包
+    participant DS as 磁盘后备Store
+    participant EB as Evidence Builder
 
     FS->>SR: scan-result.json
-    SR->>SR: 读取文件
-    SR->>SR: JSON 解析
-    alt 解析失败
-        SR-->>FS: IllegalArgumentException
+    SR->>SR: 流式校验header、summary和COMPLETE inventory
+    loop 每条metadata/fact
+        SR->>DS: 写section spool与raw identity
     end
-    SR->>SR: 校验 wire 结构、必需数组与 summary 计数
-    SR->>SR: 建立 typed facts并校验稳定ID唯一
-    SR->>SR: 读取 summary 中的整数统计和 sources
-    SR->>SB: 组装 ScanBundle
+    SR->>DS: 外排归并identity并发布store
+    loop 每个bounded component
+        DS->>EB: typed ScanBundle component
+    end
 ```
 
 </details>
@@ -234,25 +240,27 @@ sequenceDiagram
 sequenceDiagram
     participant FS as File System
     participant SR as Scan Result Reader
-    participant SB as Scan Bundle
+    participant DS as Disk-backed Store
+    participant EB as Evidence Builder
 
     FS->>SR: scan-result.json
-    SR->>SR: read file
-    SR->>SR: parse JSON
-    alt parse failed
-        SR-->>FS: IllegalArgumentException
+    SR->>SR: stream-validate header, summary, and COMPLETE inventory
+    loop each metadata/fact record
+        SR->>DS: write section spool and raw identity
     end
-    SR->>SR: validate wire structure, required arrays, and summary counts
-    SR->>SR: create typed facts and reject duplicate stable IDs
-    SR->>SR: read integer summary fields and sources
-    SR->>SB: Assemble ScanBundle
+    SR->>DS: external-merge identities and publish store
+    loop each bounded component
+        DS->>EB: typed ScanBundle component
+    end
 ```
 
 </details>
 
 ## 6. 处理逻辑详解
 
-### 6.1 当前读取流程（伪代码）
+### 6.1 有界兼容读取流程（伪代码）
+
+正式命令调用`open()`；下面的`read()`只用于测试和明确受限输入，不是大输入生产路径。
 
 ```java
 ScanBundle read(Path path) {
@@ -277,6 +285,7 @@ ScanBundle read(Path path) {
         readSources(root.path("summary").path("sources")),
         List.of(path),
         readIntegerSummary(root.path("summary")),
+        readCompleteMetadataInventory(root.path("metadataInventory")),
         relationshipFacts(root.path("relationships")),
         lineageFacts(root.path("dataLineages")),
         relationshipFacts(root.path("derivedRelationships")),

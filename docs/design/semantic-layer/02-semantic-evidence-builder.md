@@ -34,6 +34,11 @@ Builder 只消费 typed records。数组顺序可以影响公开展示顺序，�
 `ScanBundle`和`EvidenceGraph`冻结外层collection，并对typed fact document、graph payload和diagnostics
 执行deep-copy；公开accessor不能回写内部状态。
 
+relation-detector JSON携带scope内完整的table、column、constraint和index inventory及完整性状态。
+正式semantic链路只接受`COMPLETE`；四类catalog事实连同relationship、lineage、naming及derived
+endpoint共同进入`tables` registry。没有被关系事实引用的表列仍可成为grounded evidence/KG节点，
+Builder不得按名称或source文本补造inventory。
+
 ## 3. 输出结构
 
 ### 3.1 EvidenceGraph
@@ -59,7 +64,8 @@ evidence约束由 `SemanticKgBuilder` 和 `ReferenceIndex` 原子校验。完全
 `SemanticExtractionBundleBuilder` 从同一个 `ScanBundle` 生成完整 extraction bundle，顶层包含：
 
 - database identity 和 portable input files。
-- endpoint 闭合的 `tables`。
+- `COMPLETE` inventory与全部事实endpoint共同闭合得到的`tables`。
+- inventory状态、scope、counts和fingerprint，以及四类typed metadata facts。
 - 全部 direct/derived relationship、lineage 和 naming。
 - evidence inventory。
 - deterministic event、triplet 和 review candidates。

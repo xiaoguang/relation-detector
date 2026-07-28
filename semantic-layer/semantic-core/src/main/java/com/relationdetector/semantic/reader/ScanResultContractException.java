@@ -8,4 +8,8 @@ public final class ScanResultContractException extends IllegalArgumentException 
     public ScanResultContractException(String message) {
         super(message);
     }
+
+    public ScanResultContractException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

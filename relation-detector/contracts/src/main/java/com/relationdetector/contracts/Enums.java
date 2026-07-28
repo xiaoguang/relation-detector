@@ -28,6 +28,16 @@ public final class Enums {
     }
 
     /**
+     * Completeness of the metadata inventory emitted for the configured scan scope.
+     */
+    public enum MetadataInventoryStatus {
+        NOT_REQUESTED,
+        COMPLETE,
+        PARTIAL,
+        UNAVAILABLE
+    }
+
+    /**
      *
      * User-facing output format selected by --format or output.format.
      */

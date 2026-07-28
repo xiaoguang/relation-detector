@@ -640,13 +640,15 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void jsonResultWriterUsesJacksonObjectModel() throws IOException {
+    void jsonResultWriterStreamsProductionOutputWithJackson() throws IOException {
         Path root = repoRoot();
         Path writer = root.resolve("core/src/main/java/com/relationdetector/core/output/JsonResultWriter.java");
         String text = Files.readString(writer);
 
-        assertTrue(text.contains("ObjectMapper") && text.contains("ObjectNode"),
-                "JsonResultWriter should build JSON with Jackson ObjectMapper/ObjectNode");
+        assertTrue(text.contains("ObjectMapper") && text.contains("JsonGenerator"),
+                "JsonResultWriter should stream production JSON through Jackson JsonGenerator");
+        assertTrue(text.contains("writeMetadataInventory(generator"),
+                "JsonResultWriter should stream metadata inventory without a root JSON tree");
         assertFalse(text.contains("new StringBuilder(4096)"),
                 "JsonResultWriter should not hand-roll the top-level JSON document");
     }

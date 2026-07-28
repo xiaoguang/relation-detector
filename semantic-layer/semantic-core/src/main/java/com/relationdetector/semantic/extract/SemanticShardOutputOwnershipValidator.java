@@ -55,10 +55,13 @@ final class SemanticShardOutputOwnershipValidator {
         Set<String> factIds = itemIds(bundle, SemanticShardBundleIndex.FACT_SECTIONS);
         Set<String> candidateIds = itemIds(bundle, SemanticShardBundleIndex.CANDIDATE_SECTIONS);
         Set<String> allIds = new LinkedHashSet<>(factIds);
-        if (!allIds.addAll(candidateIds)) {
+        Set<String> duplicateIds = new LinkedHashSet<>(factIds);
+        duplicateIds.retainAll(candidateIds);
+        if (!duplicateIds.isEmpty()) {
             throw new SemanticExtractionValidationException(
                     "semantic evidence bundle item ids must be globally unique");
         }
+        allIds.addAll(candidateIds);
         if (!factIds.containsAll(ownedFacts)
                 || !candidateIds.containsAll(ownedCandidates)
                 || !allIds.containsAll(overlap)) {

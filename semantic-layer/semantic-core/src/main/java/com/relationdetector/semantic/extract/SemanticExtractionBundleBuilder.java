@@ -24,6 +24,7 @@ import com.relationdetector.semantic.reader.ScanDiagnosticFact;
 import com.relationdetector.semantic.reader.ScanLineageFact;
 import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
 import com.relationdetector.semantic.reader.ScanRelationshipFact;
+import com.relationdetector.semantic.reader.SemanticMetadataInventoryEnvelope;
 
 /**
  * CN: 从完整 typed ScanBundle 构造 evidence-closed bundle，保留全部 physical facts、deterministic candidates
@@ -56,6 +57,7 @@ public final class SemanticExtractionBundleBuilder {
         database.put("type", bundle.databaseType());
         database.put("catalog", bundle.catalog());
         database.put("schema", bundle.schema());
+        root.set("metadataInventory", SemanticMetadataInventoryEnvelope.from(bundle.metadataInventory()));
         List<SemanticEventCandidate> events = eventExtractor.extract(bundle);
         root.set("inputFiles", strings(bundle.inputFiles().stream()
                 .map(SemanticInputPathCanonicalizer::canonicalize)
@@ -63,6 +65,10 @@ public final class SemanticExtractionBundleBuilder {
         root.set("sources", strings(bundle.sources()));
         root.set("tables", strings(new ArrayList<>(physicalTables)));
         root.set("evidence", evidence(evidenceGraph.evidenceRefs()));
+        root.set("metadataTables", metadataFacts(evidenceGraph, "MetadataTableFact", "table"));
+        root.set("metadataColumns", metadataFacts(evidenceGraph, "MetadataColumnFact", "column"));
+        root.set("metadataConstraints", metadataFacts(evidenceGraph, "MetadataConstraintFact", "constraint"));
+        root.set("metadataIndexes", metadataFacts(evidenceGraph, "MetadataIndexFact", "index"));
         root.set("relationships", relationships(bundle.relationships(), evidenceRefsByFact));
         root.set("lineage", lineages(bundle.dataLineages(), evidenceRefsByFact));
         root.set("eventCandidates", eventCandidates(events));
@@ -82,6 +88,22 @@ public final class SemanticExtractionBundleBuilder {
 
     private Set<String> physicalTables(ScanBundle bundle) {
         Set<String> tables = new LinkedHashSet<>();
+        bundle.metadataInventory().tables().forEach(table -> tables.add(tableIdentity(
+                table.catalog(), table.schema(), table.tableName())));
+        bundle.metadataInventory().columns().forEach(column -> tables.add(tableIdentity(
+                column.catalog(), column.schema(), column.tableName())));
+        bundle.metadataInventory().constraints().forEach(constraint -> {
+            tables.add(tableIdentity(
+                    constraint.catalog(), constraint.schema(), constraint.tableName()));
+            if (constraint.referencedTable() != null && !constraint.referencedTable().isBlank()) {
+                tables.add(tableIdentity(
+                        constraint.referencedCatalog(),
+                        constraint.referencedSchema(),
+                        constraint.referencedTable()));
+            }
+        });
+        bundle.metadataInventory().indexes().forEach(index -> tables.add(tableIdentity(
+                index.catalog(), index.schema(), index.tableName())));
         for (ScanRelationshipFact relationship : bundle.relationships()) {
             addTable(tables, relationship.source());
             addTable(tables, relationship.target());
@@ -103,6 +125,36 @@ public final class SemanticExtractionBundleBuilder {
             addTable(tables, naming.target());
         }
         return tables;
+    }
+
+    private ArrayNode metadataFacts(EvidenceGraph graph, String type, String identityField) {
+        ArrayNode result = JSON.createArrayNode();
+        for (EvidenceGraphFact fact : graph.facts()) {
+            if (!type.equals(fact.type())) {
+                continue;
+            }
+            ObjectNode item = result.addObject();
+            item.put("id", fact.id());
+            item.put(identityField, fact.endpoints().get(0).displayName());
+            item.set("endpoints", strings(fact.endpoints().stream()
+                    .map(PhysicalEndpointRef::displayName)
+                    .toList()));
+            item.set("evidenceRefs", strings(fact.evidenceRefs()));
+            item.set("catalogFact", fact.payload());
+        }
+        return result;
+    }
+
+    private String tableIdentity(String catalog, String schema, String table) {
+        List<String> parts = new ArrayList<>();
+        if (catalog != null && !catalog.isBlank()) {
+            parts.add(catalog);
+        }
+        if (schema != null && !schema.isBlank()) {
+            parts.add(schema);
+        }
+        parts.add(table);
+        return String.join(".", parts);
     }
 
     private ArrayNode relationships(

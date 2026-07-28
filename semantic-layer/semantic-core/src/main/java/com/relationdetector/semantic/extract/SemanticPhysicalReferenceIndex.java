@@ -44,6 +44,12 @@ final class SemanticPhysicalReferenceIndex {
         tableValues.forEach(value -> addText(tables, value));
 
         Set<String> endpointValues = new LinkedHashSet<>();
+        for (JsonNode item : bundle.path("metadataTables")) {
+            addText(tables, item.path("table"));
+        }
+        for (JsonNode item : bundle.path("metadataColumns")) {
+            addText(endpointValues, item.path("column"));
+        }
         for (String section : ENDPOINT_SECTIONS) {
             for (JsonNode item : bundle.path(section)) {
                 addText(endpointValues, item.path("source"));

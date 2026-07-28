@@ -3,12 +3,10 @@ package com.relationdetector.semantic.cli;
 import java.nio.file.Path;
 
 import com.relationdetector.semantic.extract.OpenAiResponsesSemanticExtractor;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
-import com.relationdetector.semantic.extract.SemanticExtractionRunArtifactWriter;
-import com.relationdetector.semantic.extract.SemanticExtractionRunPlan;
-import com.relationdetector.semantic.extract.SemanticExtractionService;
-import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.extract.SemanticPathBackedPlanner;
+import com.relationdetector.semantic.extract.SemanticPathRunArtifactWriter;
+import com.relationdetector.semantic.extract.SemanticPathRunPlan;
+import com.relationdetector.semantic.reader.SemanticDiskBackedSession;
 
 /**
  * CN: 执行 extract 命令，生成 Codex 会话请求或调用 Responses API；输入是 scan bundle 和提取配置，输出是审计 artifact，禁止构造物理事实。
@@ -24,18 +22,57 @@ final class SemanticExtractCommandHandler {
      * configuration, model, closure, or I/O failures never publish a partial run.
      */
     SemanticCliExitCode execute(SemanticCommandArguments arguments) {
-        ScanBundle bundle = new SemanticScanBundleReader().read(arguments);
-        ObjectNode fullBundle = new SemanticExtractionBundleBuilder().build(bundle);
-        SemanticExtractionService service = new SemanticExtractionService();
-        SemanticExtractionRunPlan plan = service.plan(fullBundle, arguments.sharding());
-        SemanticExtractionRunArtifactWriter writer = new SemanticExtractionRunArtifactWriter();
-        java.util.function.Consumer<Path> deterministicArtifacts = staging ->
-                new SemanticKgBuildService().build(bundle, staging.resolve("deterministic-kg"));
-        Path published;
-        if (arguments.provider() == SemanticExtractProvider.CODEX_SESSION) {
-            published = writer.writeCodexSession(
+        try (SemanticDiskBackedSession session =
+                     SemanticDiskBackedSession.openForOutput(
+                             arguments.inputs(), arguments.output(), "extract")) {
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(), session.workPath("plan"), arguments.sharding());
+            SemanticPathRunArtifactWriter writer = new SemanticPathRunArtifactWriter();
+            java.util.function.Consumer<Path> deterministicArtifacts = staging ->
+                    session.writeKgArtifacts(staging.resolve("deterministic-kg"));
+            Path published;
+            if (arguments.provider() == SemanticExtractProvider.CODEX_SESSION) {
+                published = writer.writeCodexSession(
+                        arguments.output(),
+                        plan,
+                        arguments.model(),
+                        arguments.reasoningEffort(),
+                        arguments.artifactRetention(),
+                        deterministicArtifacts);
+                System.out.println(published);
+                return SemanticCliExitCode.SUCCESS;
+            }
+            String apiKey = arguments.requestOnly() ? "" : arguments.apiKey();
+            int shardOutputTokens = plan.shards().size() == 1
+                    ? arguments.maxOutputTokens()
+                    : arguments.shardMaxOutputTokens();
+            OpenAiResponsesSemanticExtractor shardExtractor = new OpenAiResponsesSemanticExtractor(
+                    arguments.baseUrl(), apiKey, arguments.model(), arguments.reasoningEffort(),
+                    shardOutputTokens, arguments.requestTimeoutSeconds(), arguments.maxTransportRetries());
+            OpenAiResponsesSemanticExtractor reconciliationExtractor = new OpenAiResponsesSemanticExtractor(
+                    arguments.baseUrl(), apiKey, arguments.model(), arguments.reasoningEffort(),
+                    arguments.reconciliationMaxOutputTokens(), arguments.requestTimeoutSeconds(),
+                    arguments.maxTransportRetries());
+            if (arguments.requestOnly()) {
+                published = writer.writeRequestOnly(
+                        arguments.output(),
+                        plan,
+                        shardExtractor::requestJson,
+                        reconciliationExtractor::requestJson,
+                        arguments.model(),
+                        arguments.reasoningEffort(),
+                        arguments.artifactRetention(),
+                        deterministicArtifacts);
+                System.out.println(published);
+                return SemanticCliExitCode.SUCCESS;
+            }
+            published = writer.executeAndWrite(
                     arguments.output(),
                     plan,
+                    session.evidenceStore(),
+                    shardExtractor,
+                    reconciliationExtractor,
+                    "openai-api",
                     arguments.model(),
                     arguments.reasoningEffort(),
                     arguments.artifactRetention(),
@@ -43,43 +80,6 @@ final class SemanticExtractCommandHandler {
             System.out.println(published);
             return SemanticCliExitCode.SUCCESS;
         }
-        String apiKey = arguments.requestOnly() ? "" : arguments.apiKey();
-        int shardOutputTokens = plan.shardRequests().size() == 1
-                ? arguments.maxOutputTokens()
-                : arguments.shardMaxOutputTokens();
-        OpenAiResponsesSemanticExtractor shardExtractor = new OpenAiResponsesSemanticExtractor(
-                arguments.baseUrl(), apiKey, arguments.model(), arguments.reasoningEffort(),
-                shardOutputTokens, arguments.requestTimeoutSeconds(), arguments.maxTransportRetries());
-        OpenAiResponsesSemanticExtractor reconciliationExtractor = new OpenAiResponsesSemanticExtractor(
-                arguments.baseUrl(), apiKey, arguments.model(), arguments.reasoningEffort(),
-                arguments.reconciliationMaxOutputTokens(), arguments.requestTimeoutSeconds(),
-                arguments.maxTransportRetries());
-        if (arguments.requestOnly()) {
-            published = writer.writeRequestOnly(
-                    arguments.output(),
-                    plan,
-                    shardExtractor::requestJson,
-                    reconciliationExtractor::requestJson,
-                    arguments.model(),
-                    arguments.reasoningEffort(),
-                    arguments.artifactRetention(),
-                    deterministicArtifacts);
-            System.out.println(published);
-            return SemanticCliExitCode.SUCCESS;
-        }
-        published = writer.executeAndWriteResult(
-                arguments.output(),
-                plan,
-                service,
-                shardExtractor,
-                reconciliationExtractor,
-                "openai-api",
-                arguments.model(),
-                arguments.reasoningEffort(),
-                arguments.artifactRetention(),
-                deterministicArtifacts);
-        System.out.println(published);
-        return SemanticCliExitCode.SUCCESS;
     }
 
 }

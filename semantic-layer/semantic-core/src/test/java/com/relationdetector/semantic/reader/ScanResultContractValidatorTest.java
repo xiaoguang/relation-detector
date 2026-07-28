@@ -2,6 +2,7 @@ package com.relationdetector.semantic.reader;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 
 final class ScanResultContractValidatorTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -24,6 +26,42 @@ final class ScanResultContractValidatorTest {
         root.remove("relationships");
 
         assertThrows(IllegalArgumentException.class, () -> read(root));
+    }
+
+    @Test
+    void rejectsMissingMetadataInventory() throws Exception {
+        ObjectNode root = validRoot();
+        root.remove("metadataInventory");
+
+        assertThrows(IllegalArgumentException.class, () -> read(root));
+    }
+
+    @Test
+    void rejectsMetadataInventoryThatIsNotComplete() throws Exception {
+        ObjectNode root = validRoot();
+        ((ObjectNode) root.path("metadataInventory")).put("status", "PARTIAL");
+
+        assertThrows(IllegalArgumentException.class, () -> read(root));
+    }
+
+    @Test
+    void rejectsMetadataInventoryCountMismatch() throws Exception {
+        ObjectNode root = validRoot();
+        ((ObjectNode) root.path("metadataInventory").path("counts")).put("tables", 3);
+
+        assertThrows(IllegalArgumentException.class, () -> read(root));
+    }
+
+    @Test
+    void preservesTypedCompleteMetadataInventory() throws Exception {
+        ScanBundle bundle = read(validRoot());
+
+        assertEquals(MetadataInventoryStatus.COMPLETE, bundle.metadataInventory().status());
+        assertEquals("shop", bundle.metadataInventory().scope().catalog());
+        assertEquals(2, bundle.metadataInventory().tables().size());
+        assertEquals(2, bundle.metadataInventory().columns().size());
+        assertEquals("orders", bundle.metadataInventory().tables().get(0).tableName());
+        assertEquals("customer_id", bundle.metadataInventory().columns().get(0).columnName());
     }
 
     @Test
@@ -191,6 +229,39 @@ final class ScanResultContractValidatorTest {
                     "totalNamingEvidenceCount": 0,
                     "warningCount": 0,
                     "sources": ["logs"]
+                  },
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "scope": {
+                      "catalog": "shop",
+                      "schema": "",
+                      "includeTables": [],
+                      "excludeTables": []
+                    },
+                    "counts": {
+                      "tables": 2,
+                      "columns": 2,
+                      "constraints": 0,
+                      "indexes": 0
+                    },
+                    "tables": [
+                      {"catalog": "shop", "schema": null, "tableName": "orders",
+                       "tableType": "TABLE", "engine": null, "comment": null},
+                      {"catalog": "shop", "schema": null, "tableName": "customers",
+                       "tableType": "TABLE", "engine": null, "comment": null}
+                    ],
+                    "columns": [
+                      {"catalog": "shop", "schema": null, "tableName": "orders",
+                       "columnName": "customer_id", "dataType": "bigint", "columnType": "bigint",
+                       "nullable": false, "defaultValue": null, "extra": "",
+                       "generationExpression": "", "ordinalPosition": 1},
+                      {"catalog": "shop", "schema": null, "tableName": "customers",
+                       "columnName": "id", "dataType": "bigint", "columnType": "bigint",
+                       "nullable": false, "defaultValue": null, "extra": "",
+                       "generationExpression": "", "ordinalPosition": 1}
+                    ],
+                    "constraints": [],
+                    "indexes": []
                   },
                   "relationships": [{
                     "source": {"table": "orders", "column": "customer_id"},

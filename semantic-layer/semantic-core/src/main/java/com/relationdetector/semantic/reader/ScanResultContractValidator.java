@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.contracts.Enums.DatabaseType;
@@ -12,6 +14,7 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
+import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.WarningSeverity;
@@ -40,6 +43,7 @@ final class ScanResultContractValidator {
         for (String field : REQUIRED_ARRAYS) {
             requireArray(root, field);
         }
+        validateMetadataInventory(requireObject(root, "metadataInventory"));
 
         validateRelationships(root.path("relationships"), "relationships");
         validateLineages(root.path("dataLineages"), "dataLineages");
@@ -49,6 +53,127 @@ final class ScanResultContractValidator {
         validateNaming(root.path("derivedNamingEvidence"), true);
         validateWarnings(root.path("warnings"), "warnings");
         validateCounts(root, summary);
+    }
+
+    void validateSectionItem(String section, JsonNode item) {
+        var values = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.arrayNode().add(item);
+        switch (section) {
+            case "relationships" -> validateRelationships(values, section);
+            case "dataLineages" -> validateLineages(values, section);
+            case "derivedRelationships" ->
+                    validateDerivedPaths(values, section, DerivedPathKind.RELATIONSHIP);
+            case "derivedDataLineages" ->
+                    validateDerivedPaths(values, section, DerivedPathKind.DATA_LINEAGE);
+            case "namingEvidence" -> validateNaming(values, false);
+            case "derivedNamingEvidence" -> validateNaming(values, true);
+            case "warnings" -> validateWarnings(values, section);
+            default -> throw new ScanResultContractException("unknown scan result section: " + section);
+        }
+    }
+
+    private void validateMetadataInventory(JsonNode inventory) {
+        MetadataInventoryStatus status = enumText(inventory, "status", MetadataInventoryStatus.class);
+        require(status == MetadataInventoryStatus.COMPLETE,
+                "metadataInventory.status must be COMPLETE for semantic processing");
+        JsonNode scope = requireObject(inventory, "scope");
+        optionalText(scope, "catalog");
+        optionalText(scope, "schema");
+        textArray(requireArray(scope, "includeTables"), "metadataInventory.scope.includeTables");
+        textArray(requireArray(scope, "excludeTables"), "metadataInventory.scope.excludeTables");
+
+        JsonNode counts = requireObject(inventory, "counts");
+        validateInventoryCount(inventory, counts, "tables");
+        validateInventoryCount(inventory, counts, "columns");
+        validateInventoryCount(inventory, counts, "constraints");
+        validateInventoryCount(inventory, counts, "indexes");
+        validateInventoryFacts(inventory);
+    }
+
+    /**
+     * CN: 校验 COMPLETE inventory 内表、列、约束和索引的完整身份及引用闭包；输入是已验证外壳，
+     * 无返回值，发现重复、悬空表或非法 ordinal 时抛出契约异常，禁止修补 inventory。
+     * EN: Validates complete table, column, constraint, and index identity and reference closure in a COMPLETE
+     * inventory. It returns no value and rejects duplicates, dangling tables, or invalid ordinals without repair.
+     */
+    private void validateInventoryFacts(JsonNode inventory) {
+        Set<String> tables = new HashSet<>();
+        int index = 0;
+        for (JsonNode table : inventory.path("tables")) {
+            String at = "metadataInventory.tables[" + index++ + "]";
+            String identity = tableIdentity(table, at);
+            requireText(table, "tableType", true);
+            require(tables.add(identity), at + " duplicates physical table identity");
+        }
+        index = 0;
+        Set<String> columns = new HashSet<>();
+        for (JsonNode column : inventory.path("columns")) {
+            String at = "metadataInventory.columns[" + index++ + "]";
+            String table = tableIdentity(column, at);
+            require(tables.contains(table), at + " references a table outside metadata inventory");
+            String columnName = requiredText(column, "columnName");
+            requireText(column, "dataType", true);
+            requireText(column, "columnType", true);
+            JsonNode ordinal = column.path("ordinalPosition");
+            require(ordinal.isIntegralNumber() && ordinal.asInt() > 0,
+                    at + ".ordinalPosition must be positive");
+            require(columns.add(table + "." + columnName), at + " duplicates physical column identity");
+        }
+        index = 0;
+        for (JsonNode constraint : inventory.path("constraints")) {
+            String at = "metadataInventory.constraints[" + index++ + "]";
+            require(tables.contains(tableIdentity(constraint, at)),
+                    at + " references a table outside metadata inventory");
+            requireText(constraint, "constraintName", true);
+            requireText(constraint, "constraintType", true);
+            textArray(requireArray(constraint, "columns"), at + ".columns");
+            textArray(requireArray(constraint, "referencedColumns"), at + ".referencedColumns");
+        }
+        index = 0;
+        for (JsonNode metadataIndex : inventory.path("indexes")) {
+            String at = "metadataInventory.indexes[" + index++ + "]";
+            require(tables.contains(tableIdentity(metadataIndex, at)),
+                    at + " references a table outside metadata inventory");
+            requireText(metadataIndex, "indexName", true);
+            textArray(requireArray(metadataIndex, "columns"), at + ".columns");
+            JsonNode ordinals = requireArray(metadataIndex, "seqInIndex");
+            for (JsonNode ordinal : ordinals) {
+                require(ordinal.isIntegralNumber() && ordinal.asInt() > 0,
+                        at + ".seqInIndex entries must be positive integers");
+            }
+        }
+    }
+
+    private String tableIdentity(JsonNode value, String at) {
+        optionalText(value, "catalog");
+        optionalText(value, "schema");
+        String table = requiredText(value, "tableName");
+        String catalog = value.path("catalog").asText("");
+        String schema = value.path("schema").asText("");
+        return catalog.length() + ":" + catalog + "|" + schema.length() + ":" + schema + "|"
+                + table.length() + ":" + table;
+    }
+
+    private String requiredText(JsonNode parent, String field) {
+        requireText(parent, field, true);
+        return parent.path(field).asText();
+    }
+
+    private void validateInventoryCount(JsonNode inventory, JsonNode counts, String field) {
+        JsonNode values = requireArray(inventory, field);
+        int expected = count(counts, field);
+        require(values.size() == expected,
+                "metadataInventory.counts." + field + " does not match metadata inventory array");
+        int index = 0;
+        for (JsonNode value : values) {
+            require(value.isObject(), "metadataInventory." + field + "[" + index++ + "] must be an object");
+        }
+    }
+
+    private void textArray(JsonNode values, String field) {
+        int index = 0;
+        for (JsonNode value : values) {
+            require(value.isTextual(), field + "[" + index++ + "] must be a string");
+        }
     }
 
     private void validateRelationships(JsonNode values, String field) {

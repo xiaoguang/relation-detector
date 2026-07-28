@@ -22,10 +22,20 @@ import com.relationdetector.semantic.reader.ScanFact;
 import com.relationdetector.semantic.reader.ScanLineageFact;
 import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
 import com.relationdetector.semantic.reader.ScanRelationshipFact;
+import com.relationdetector.contracts.metadata.MetadataColumnFact;
+import com.relationdetector.contracts.metadata.MetadataConstraintFact;
+import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataTableFact;
 
 /**
- * CN: 将 typed ScanBundle 的 direct/derived facts、naming、diagnostics 和 event candidates 一次性装配为确定性 EvidenceGraph；保留 evidence refs，不调用 LLM 或修改物理事实。
- * EN: Deterministically assembles direct and derived facts, naming, diagnostics, and event candidates from a typed ScanBundle into EvidenceGraph while preserving evidence and physical facts.
+ * CN: 将一个有界 typed ScanBundle component 的完整 metadata inventory、direct/derived facts、naming、
+ * diagnostics 和 event candidates 确定性装配为 EvidenceGraph。生产链路逐组件调用并外排合并；本类不
+ * 调用 LLM、修改物理事实或持有全局图。
+ *
+ * EN: Deterministically assembles the complete metadata inventory, direct and derived facts, naming, diagnostics,
+ * and event candidates of one bounded typed ScanBundle component into an EvidenceGraph. Production invokes it per
+ * component and externally merges results; this class neither calls an LLM, changes physical facts, nor retains the
+ * global graph.
  */
 public final class SemanticEvidenceBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -44,6 +54,8 @@ public final class SemanticEvidenceBuilder {
         Map<String, PhysicalEndpointRef> endpoints = new LinkedHashMap<>();
         Map<String, EvidenceReference> evidenceRefs = new LinkedHashMap<>();
         List<EvidenceGraphFact> facts = new ArrayList<>();
+
+        addMetadataFacts(scanBundle, endpoints, evidenceRefs, facts);
 
         for (ScanRelationshipFact relationship : scanBundle.relationships()) {
             PhysicalEndpointRef source = relationship.source();
@@ -120,6 +132,116 @@ public final class SemanticEvidenceBuilder {
                 .toList();
         return new EvidenceGraph(scanBundle, List.copyOf(endpoints.values()), facts,
                 List.copyOf(evidenceRefs.values()), diagnosticDocuments, scanBundle.summary());
+    }
+
+    /**
+     * CN: 将 COMPLETE inventory 的表、列、约束和索引转换为带稳定证据引用的 typed graph facts；
+     * 输入是已验证 ScanBundle，副作用仅限当前构建集合，非法 endpoint 会中止整次 graph 构建。
+     * EN: Converts tables, columns, constraints, and indexes from a COMPLETE inventory into typed graph facts
+     * with stable evidence references. It mutates only the current build collections and aborts the whole graph
+     * build when an endpoint is invalid.
+     */
+    private void addMetadataFacts(
+            ScanBundle scanBundle,
+            Map<String, PhysicalEndpointRef> endpoints,
+            Map<String, EvidenceReference> evidenceRefs,
+            List<EvidenceGraphFact> facts
+    ) {
+        for (MetadataTableFact table : scanBundle.metadataInventory().tables()) {
+            PhysicalEndpointRef endpoint = PhysicalEndpointRef.table(tableIdentity(
+                    table.catalog(), table.schema(), table.tableName()));
+            addMetadataFact("MetadataTableFact", endpoint.displayName(), List.of(endpoint),
+                    JSON.valueToTree(table), endpoints, evidenceRefs, facts);
+        }
+        for (MetadataColumnFact column : scanBundle.metadataInventory().columns()) {
+            PhysicalEndpointRef endpoint = new PhysicalEndpointRef(
+                    tableIdentity(column.catalog(), column.schema(), column.tableName()), column.columnName());
+            addMetadataFact("MetadataColumnFact", endpoint.displayName(), List.of(endpoint),
+                    JSON.valueToTree(column), endpoints, evidenceRefs, facts);
+        }
+        for (MetadataConstraintFact constraint : scanBundle.metadataInventory().constraints()) {
+            List<PhysicalEndpointRef> factEndpoints = new ArrayList<>();
+            addColumns(factEndpoints, constraint.catalog(), constraint.schema(), constraint.tableName(),
+                    constraint.columns());
+            addColumns(factEndpoints, constraint.referencedCatalog(), constraint.referencedSchema(),
+                    constraint.referencedTable(), constraint.referencedColumns());
+            if (factEndpoints.isEmpty()) {
+                factEndpoints.add(PhysicalEndpointRef.table(tableIdentity(
+                        constraint.catalog(), constraint.schema(), constraint.tableName())));
+            }
+            String identity = tableIdentity(constraint.catalog(), constraint.schema(), constraint.tableName())
+                    + ":" + constraint.constraintName();
+            addMetadataFact("MetadataConstraintFact", identity, factEndpoints,
+                    JSON.valueToTree(constraint), endpoints, evidenceRefs, facts);
+        }
+        for (MetadataIndexFact index : scanBundle.metadataInventory().indexes()) {
+            List<PhysicalEndpointRef> factEndpoints = new ArrayList<>();
+            addColumns(factEndpoints, index.catalog(), index.schema(), index.tableName(), index.columns());
+            if (factEndpoints.isEmpty()) {
+                factEndpoints.add(PhysicalEndpointRef.table(tableIdentity(
+                        index.catalog(), index.schema(), index.tableName())));
+            }
+            String identity = tableIdentity(index.catalog(), index.schema(), index.tableName())
+                    + ":" + index.indexName();
+            addMetadataFact("MetadataIndexFact", identity, factEndpoints,
+                    JSON.valueToTree(index), endpoints, evidenceRefs, facts);
+        }
+    }
+
+    private void addMetadataFact(
+            String type,
+            String identity,
+            List<PhysicalEndpointRef> factEndpoints,
+            JsonNode payload,
+            Map<String, PhysicalEndpointRef> endpoints,
+            Map<String, EvidenceReference> evidenceRefs,
+            List<EvidenceGraphFact> facts
+    ) {
+        String id = StableSemanticId.of(type, identity, StableSemanticId.canonicalJson(payload));
+        String evidenceId = StableSemanticId.of("evidence:metadata", id);
+        for (PhysicalEndpointRef endpoint : factEndpoints) {
+            addEndpoint(endpoints, endpoint);
+        }
+        EvidenceReference reference = new EvidenceReference(
+                evidenceId, type, "METADATA", BigDecimal.ONE,
+                "metadataInventory", identity, Map.of("inventoryStatus", "COMPLETE"));
+        evidenceRefs.put(evidenceId, reference);
+        facts.add(new EvidenceGraphFact(
+                id, type, identity, factEndpoints, List.of(evidenceId), BigDecimal.ONE, payload,
+                Map.of("inventoryStatus", "COMPLETE")));
+    }
+
+    private void addColumns(
+            List<PhysicalEndpointRef> endpoints,
+            String catalog,
+            String schema,
+            String table,
+            List<String> columns
+    ) {
+        if (table == null || table.isBlank()) {
+            return;
+        }
+        String tableIdentity = tableIdentity(catalog, schema, table);
+        for (String column : columns) {
+            if (column != null && !column.isBlank()) {
+                endpoints.add(new PhysicalEndpointRef(tableIdentity, column));
+            }
+        }
+    }
+
+    private String tableIdentity(String catalog, String schema, String table) {
+        List<String> parts = new ArrayList<>();
+        if (catalog != null && !catalog.isBlank()) {
+            parts.add(catalog);
+        }
+        if (schema != null && !schema.isBlank()) {
+            parts.add(schema);
+        }
+        if (table == null || table.isBlank()) {
+            throw new IllegalArgumentException("metadata table name is required");
+        }
+        parts.add(table);
+        return String.join(".", parts);
     }
 
     private void addEventFact(

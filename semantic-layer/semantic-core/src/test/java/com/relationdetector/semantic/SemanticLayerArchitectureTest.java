@@ -66,6 +66,9 @@ final class SemanticLayerArchitectureTest {
         String normalizeHandler = Files.readString(Path.of(
                 "../semantic-cli/src/main/java/com/relationdetector/semantic/cli/"
                         + "SemanticNormalizeExtractionCommandHandler.java"));
+        Path legacyBundleReader = Path.of(
+                "../semantic-cli/src/main/java/com/relationdetector/semantic/cli/"
+                        + "SemanticScanBundleReader.java");
 
         assertFalse(runWriter.contains("JSON.writeValueAsString(value)"),
                 "run artifacts must stream unbounded JSON directly to files");
@@ -75,5 +78,9 @@ final class SemanticLayerArchitectureTest {
                 "model execution and request rendering must remain separate responsibilities");
         assertFalse(normalizeHandler.contains("writeValueAsString(normalized)"),
                 "normalized semantic documents must stream directly to their output file");
+        assertFalse(normalizeHandler.contains("JSON.readTree(arguments.evidenceBundle().toFile())"),
+                "normalize-extraction must stream a bounded reference slice from the evidence bundle");
+        assertFalse(Files.exists(legacyBundleReader),
+                "production semantic commands must not retain a whole-scan bundle reader");
     }
 }

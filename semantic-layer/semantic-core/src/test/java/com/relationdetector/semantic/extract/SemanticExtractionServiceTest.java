@@ -186,7 +186,9 @@ final class SemanticExtractionServiceTest {
     private ObjectNode emptyBundle() {
         ObjectNode root = JSON.createObjectNode();
         root.putObject("database").put("type", "mysql").put("catalog", "shop").put("schema", "");
-        for (String section : List.of("inputFiles", "sources", "tables", "evidence", "relationships", "lineage",
+        for (String section : List.of("inputFiles", "sources", "tables", "evidence",
+                "metadataTables", "metadataColumns", "metadataConstraints", "metadataIndexes",
+                "relationships", "lineage",
                 "eventCandidates", "derivedRelationships", "derivedLineage", "namingEvidence",
                 "reviewItemCandidates", "tripletCandidates", "diagnostics")) {
             root.putArray(section);

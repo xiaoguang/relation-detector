@@ -128,11 +128,11 @@ fake JDBC 和 adversarial unit tests 可以证明已覆盖的 core 合约；真�
 PostgreSQL full/live 路径使用只包含输入参数类型的 identity signature，pure `OUT`、参数名和默认值
 不会进入身份；compact token-event 使用 typed kind/name 与声明 statement identity，避免复制完整
 参数类型 grammar。`SemanticEventExtractor` 仍把 coarse semantic source type 分类为 `ROUTINE`，
-但 group key/stable ID 使用精确 provenance。formal normalization虽然从已验证的
-   `eventCandidateRef`派生默认event ID且不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
-   缺省ID现在统一通过`SemanticCanonicalIdentity`和`StableSemanticId`生成；物理/业务entity规则与shard
-   canonicalizer复用。显式输入ID不变。graph edge已脱离display slug；自动review先规范化section，
-   再以`targetSection + targetRef + type`生成稳定ID，可变reason不参与identity。
+但 group key/stable ID 使用精确 provenance。formal normalization从已验证的
+`eventCandidateRef`派生默认event ID，不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
+缺省ID统一通过`SemanticCanonicalIdentity`和`StableSemanticId`生成；物理/业务entity规则与shard
+canonicalizer复用。显式输入ID不变。graph edge已脱离display slug；自动review先规范化section，
+再以`targetSection + targetRef + type`生成稳定ID，可变reason不参与identity。
 未审计 SQL statement family 和真实数据库 runtime smoke 继续按各自 backlog/环境边界管理。
 
 ## 本轮代码结构注释审视
@@ -455,6 +455,12 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   event 聚合是 routine/trigger 对象级、普通 SQL statement/source + target-table 级；routine identity
   使用精确对象类型与`sourceObjectIdentity`，PostgreSQL full/live signature和compact token statement
   identity分别守住各自能力边界。
+- relation-detector JSON现在始终携带metadata inventory status、scope、counts和四类typed facts；
+  `COMPLETE`只表示配置scan scope完整。`PARTIAL/UNAVAILABLE`不会被warning隐藏伪装，direct/derived输出
+  使用同一inventory。
+- semantic正式命令使用流式`SemanticInputStore`、section spool、外排identity/component索引和
+  path-backed shard，不持有完整scan、bundle、全部shard或全局KG。非COMPLETE inventory在模型调用和
+  正式artifact写入前失败；128 MiB/96 MiB与1 GiB/512 MiB子JVM门禁验证输入、build和request-only路径。
 - correctness fixture 唯一性已闭环：fixture-local input 在相同执行配置下按 content hash 去重，
   correctness tree 外的 tracked sample-data 以规范 repo-relative path 作为独立 source-asset identity。Common 重复 fixture 已合并，MySQL 5.7 三个独立资产路径继续分别验收。
 - release、correctness 与 sample-data 已共享 `heavy-job-lock.sh`。最外层 owner 从 smoke 开始持锁到

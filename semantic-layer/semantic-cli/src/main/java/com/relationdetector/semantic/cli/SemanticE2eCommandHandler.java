@@ -2,10 +2,10 @@ package com.relationdetector.semantic.cli;
 
 import java.nio.file.Path;
 
-import com.relationdetector.semantic.extract.SemanticExtractionPrompt;
-import com.relationdetector.semantic.extract.SemanticExtractionPromptBuilder;
-import com.relationdetector.semantic.extract.SemanticRequestArtifactWriter;
-import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.extract.SemanticPathBackedPlanner;
+import com.relationdetector.semantic.extract.SemanticPathRunArtifactWriter;
+import com.relationdetector.semantic.extract.SemanticPathRunPlan;
+import com.relationdetector.semantic.reader.SemanticDiskBackedSession;
 
 /**
  * CN: 执行确定性 e2e 命令，复用 KG service 并生成本地提取请求；输入是 scan bundle，输出两组 artifact，禁止调用外部模型。
@@ -13,13 +13,24 @@ import com.relationdetector.semantic.reader.ScanBundle;
  */
 final class SemanticE2eCommandHandler {
     SemanticCliExitCode execute(SemanticCommandArguments arguments) {
-        ScanBundle bundle = new SemanticScanBundleReader().read(arguments);
         String name = arguments.name().isBlank() ? defaultName(arguments.inputs().get(0)) : arguments.name();
         Path kgOutput = arguments.output().resolve("semantic-kg").resolve(name);
         Path extractionOutput = arguments.output().resolve("semantic-extraction").resolve(name);
-        new SemanticKgBuildService().build(bundle, kgOutput);
-        SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(bundle);
-        new SemanticRequestArtifactWriter().writeCodexSessionRequest(extractionOutput, prompt);
+        try (SemanticDiskBackedSession session =
+                     SemanticDiskBackedSession.openForOutput(
+                             arguments.inputs(), arguments.output(), "e2e")) {
+            session.writeKgArtifacts(kgOutput);
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(), session.workPath("plan"), arguments.sharding());
+            new SemanticPathRunArtifactWriter().writeCodexSession(
+                    extractionOutput,
+                    plan,
+                    arguments.model(),
+                    arguments.reasoningEffort(),
+                    arguments.artifactRetention(),
+                    ignored -> {
+                    });
+        }
         return SemanticCliExitCode.SUCCESS;
     }
 

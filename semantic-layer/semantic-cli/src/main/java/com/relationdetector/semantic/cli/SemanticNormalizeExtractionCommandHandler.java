@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.relationdetector.semantic.extract.SemanticEvidenceBundleSliceReader;
 import com.relationdetector.semantic.extract.SemanticExtractionDocumentNormalizer;
 
 /**
@@ -19,7 +20,8 @@ final class SemanticNormalizeExtractionCommandHandler {
     SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         try {
             JsonNode raw = JSON.readTree(arguments.inputs().get(0).toFile());
-            JsonNode evidenceBundle = JSON.readTree(arguments.evidenceBundle().toFile());
+            JsonNode evidenceBundle = new SemanticEvidenceBundleSliceReader()
+                    .read(arguments.evidenceBundle(), raw);
             JsonNode normalized = new SemanticExtractionDocumentNormalizer()
                     .normalizeOwnedShard(raw, evidenceBundle);
             Path parent = arguments.output().getParent();

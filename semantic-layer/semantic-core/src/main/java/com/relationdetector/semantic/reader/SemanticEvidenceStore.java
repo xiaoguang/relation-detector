@@ -1,0 +1,384 @@
+package com.relationdetector.semantic.reader;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
+import com.relationdetector.semantic.graph.EvidenceGraph;
+import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
+import com.relationdetector.semantic.kg.SemanticKgBuilder;
+import com.relationdetector.semantic.kg.SemanticKnowledgeGraph;
+
+/**
+ * CN: 将磁盘输入的bounded component逐个转换成完整semantic evidence sections，使用外排stable-ID去重后
+ * 流式写出full bundle；上游是SemanticInputStore，下游是path-backed shard/KG执行器，禁止持有完整bundle。
+ * EN: Converts bounded disk-backed components into complete semantic evidence sections one at a time, externally
+ * deduplicates stable IDs, and streams the full bundle. It sits between SemanticInputStore and path-backed shard/KG
+ * execution and never retains the complete bundle.
+ */
+public final class SemanticEvidenceStore implements AutoCloseable {
+    public static final long DEFAULT_COMPONENT_BYTES = 8L * 1024L * 1024L;
+
+    public enum Section {
+        TABLES("tables", false),
+        EVIDENCE("evidence", true),
+        METADATA_TABLES("metadataTables", true),
+        METADATA_COLUMNS("metadataColumns", true),
+        METADATA_CONSTRAINTS("metadataConstraints", true),
+        METADATA_INDEXES("metadataIndexes", true),
+        RELATIONSHIPS("relationships", true),
+        LINEAGE("lineage", true),
+        EVENT_CANDIDATES("eventCandidates", true),
+        DERIVED_RELATIONSHIPS("derivedRelationships", true),
+        DERIVED_LINEAGE("derivedLineage", true),
+        NAMING_EVIDENCE("namingEvidence", true),
+        REVIEW_ITEM_CANDIDATES("reviewItemCandidates", true),
+        TRIPLET_CANDIDATES("tripletCandidates", true),
+        DIAGNOSTICS("diagnostics", true);
+
+        private final String wireName;
+        private final boolean idRequired;
+
+        Section(String wireName, boolean idRequired) {
+            this.wireName = wireName;
+            this.idRequired = idRequired;
+        }
+
+        public String wireName() {
+            return wireName;
+        }
+    }
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private final SemanticInputStore input;
+    private final Path workspace;
+    private final Map<Section, ExternalJsonRecordStore> sections;
+    private final Path componentIndex;
+    private boolean closed;
+
+    public SemanticEvidenceStore(SemanticInputStore input, Path workspace) {
+        this(input, workspace, DEFAULT_COMPONENT_BYTES);
+    }
+
+    public SemanticEvidenceStore(SemanticInputStore input, Path workspace, long maxComponentBytes) {
+        if (input == null || workspace == null || maxComponentBytes <= 0) {
+            throw new IllegalArgumentException("semantic input, workspace and component limit are required");
+        }
+        this.input = input;
+        this.workspace = workspace;
+        this.sections = new EnumMap<>(Section.class);
+        try {
+            if (Files.exists(workspace)) {
+                throw new ScanResultContractException("semantic evidence workspace already exists");
+            }
+            Files.createDirectories(workspace);
+            for (Section section : Section.values()) {
+                sections.put(section, new ExternalJsonRecordStore(
+                        workspace.resolve("sections").resolve(section.wireName())));
+            }
+            this.componentIndex = workspace.resolve("components.tsv");
+            build(maxComponentBytes);
+            sections.values().forEach(ExternalJsonRecordStore::finish);
+        } catch (RuntimeException failure) {
+            closeAfterFailure(failure);
+            throw failure;
+        } catch (IOException failure) {
+            RuntimeException wrapped = new ScanResultContractException(
+                    "failed to create semantic evidence store", failure);
+            closeAfterFailure(wrapped);
+            throw wrapped;
+        }
+    }
+
+    public SemanticInputStore.Descriptor descriptor() {
+        ensureOpen();
+        return input.descriptor();
+    }
+
+    public long count(Section section) {
+        ensureOpen();
+        return sections.get(section).count();
+    }
+
+    public void forEach(Section section, Consumer<JsonNode> consumer) {
+        ensureOpen();
+        if (section == null || consumer == null) {
+            throw new IllegalArgumentException("semantic evidence section and consumer are required");
+        }
+        sections.get(section).forEach(record -> consumer.accept(record.value()));
+    }
+
+    public boolean containsReference(String reference) {
+        ensureOpen();
+        if (reference == null || reference.isBlank()) {
+            return false;
+        }
+        return sections.get(Section.EVIDENCE).containsKey(reference)
+                || sections.get(Section.METADATA_TABLES).containsKey(reference)
+                || sections.get(Section.METADATA_COLUMNS).containsKey(reference)
+                || sections.get(Section.METADATA_CONSTRAINTS).containsKey(reference)
+                || sections.get(Section.METADATA_INDEXES).containsKey(reference)
+                || sections.get(Section.RELATIONSHIPS).containsKey(reference)
+                || sections.get(Section.LINEAGE).containsKey(reference)
+                || sections.get(Section.DERIVED_RELATIONSHIPS).containsKey(reference)
+                || sections.get(Section.DERIVED_LINEAGE).containsKey(reference)
+                || sections.get(Section.NAMING_EVIDENCE).containsKey(reference)
+                || sections.get(Section.DIAGNOSTICS).containsKey(reference)
+                || sections.get(Section.EVENT_CANDIDATES).containsKey(reference)
+                || sections.get(Section.TRIPLET_CANDIDATES).containsKey(reference)
+                || sections.get(Section.REVIEW_ITEM_CANDIDATES).containsKey(reference);
+    }
+
+    public void forEachComponent(Consumer<ComponentBundle> consumer) {
+        ensureOpen();
+        if (consumer == null) {
+            throw new IllegalArgumentException("semantic component consumer is required");
+        }
+        try (BufferedReader reader = Files.newBufferedReader(componentIndex, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] fields = line.split("\\t", 6);
+                consumer.accept(new ComponentBundle(
+                        fields[0],
+                        Long.parseLong(fields[1]),
+                        Path.of(fields[2]),
+                        fields[3],
+                        Path.of(fields[4]),
+                        Path.of(fields[5])));
+            }
+        } catch (IOException failure) {
+            throw new ScanResultContractException("failed to iterate semantic component bundles", failure);
+        }
+    }
+
+    public void writeBundle(Path target) {
+        ensureOpen();
+        if (target == null) {
+            throw new IllegalArgumentException("semantic evidence bundle target is required");
+        }
+        try {
+            Path parent = target.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            try (OutputStream output = Files.newOutputStream(target);
+                 JsonGenerator generator = JSON.getFactory().createGenerator(output)) {
+                generator.useDefaultPrettyPrinter();
+                generator.writeStartObject();
+                writeDatabase(generator);
+                generator.writeObjectField(
+                        "metadataInventory",
+                        SemanticMetadataInventoryEnvelope.from(descriptor().inventory()));
+                writeStringArray(generator, "inputFiles", descriptor().inputFiles());
+                writeStringArray(generator, "sources", descriptor().sources());
+                for (Section section : Section.values()) {
+                    sections.get(section).writeArray(generator, section.wireName());
+                }
+                generator.writeObjectFieldStart("instructions");
+                generator.writeBooleanField("allOutputsMustUseEvidenceRefs", true);
+                generator.writeBooleanField("llmCannotCreateDatabaseFacts", true);
+                generator.writeBooleanField("businessApprovedIsForbidden", true);
+                generator.writeBooleanField("markUncertainItemsReviewNeeded", true);
+                generator.writeEndObject();
+                generator.writeEndObject();
+                generator.writeRaw('\n');
+            }
+        } catch (IOException failure) {
+            throw new ScanResultContractException("failed to stream semantic evidence bundle", failure);
+        }
+    }
+
+    public String writeBundleAndHash(Path target) {
+        writeBundle(target);
+        return sha256(target);
+    }
+
+    private void build(long maxComponentBytes) throws IOException {
+        Path componentDirectory = workspace.resolve("components");
+        Files.createDirectories(componentDirectory);
+        try (BufferedWriter index = Files.newBufferedWriter(
+                componentIndex, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+             SemanticComponentStore componentStore = new SemanticComponentStore(
+                     input, workspace.resolve("component-work"))) {
+            int[] sequence = {0};
+            componentStore.forEachChunk(maxComponentBytes, chunk -> {
+                int position = ++sequence[0];
+                ObjectNode bundle = new SemanticExtractionBundleBuilder().build(chunk.bundle());
+                appendBundle(bundle);
+                Path path = componentDirectory.resolve("component-%06d.json".formatted(position));
+                Path evidenceGraphPath = componentDirectory.resolve(
+                        "component-%06d-evidence-graph.json".formatted(position));
+                Path kgPath = componentDirectory.resolve("component-%06d-kg.json".formatted(position));
+                try {
+                    EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(chunk.bundle());
+                    SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
+                    JSON.writeValue(path.toFile(), bundle);
+                    JSON.writeValue(evidenceGraphPath.toFile(), evidenceGraph);
+                    JSON.writeValue(kgPath.toFile(), kg);
+                    index.write("component-%06d".formatted(position));
+                    index.write('\t');
+                    index.write(Long.toString(chunk.rawBytes()));
+                    index.write('\t');
+                    index.write(path.toAbsolutePath().normalize().toString());
+                    index.write('\t');
+                    index.write(chunk.id());
+                    index.write('\t');
+                    index.write(evidenceGraphPath.toAbsolutePath().normalize().toString());
+                    index.write('\t');
+                    index.write(kgPath.toAbsolutePath().normalize().toString());
+                    index.newLine();
+                } catch (IOException failure) {
+                    throw new ScanResultContractException(
+                            "failed to persist bounded semantic component bundle", failure);
+                }
+            });
+        }
+    }
+
+    private void appendBundle(ObjectNode bundle) {
+        for (Section section : Section.values()) {
+            JsonNode values = bundle.path(section.wireName());
+            if (!values.isArray()) {
+                throw new ScanResultContractException(
+                        "semantic component bundle section must be an array: " + section.wireName());
+            }
+            for (JsonNode item : values) {
+                String key = section.idRequired
+                        ? item.path("id").asText("")
+                        : item.asText("");
+                if (key.isBlank()) {
+                    throw new ScanResultContractException(
+                            "semantic component record key is missing in " + section.wireName());
+                }
+                sections.get(section).append(key, item);
+            }
+        }
+    }
+
+    private void writeDatabase(JsonGenerator generator) throws IOException {
+        generator.writeObjectFieldStart("database");
+        generator.writeStringField("type", descriptor().databaseType());
+        generator.writeStringField("catalog", descriptor().catalog());
+        generator.writeStringField("schema", descriptor().schema());
+        generator.writeEndObject();
+    }
+
+    private void writeStringArray(JsonGenerator generator, String field, List<String> values) throws IOException {
+        generator.writeArrayFieldStart(field);
+        for (String value : values) {
+            generator.writeString(value);
+        }
+        generator.writeEndArray();
+    }
+
+    private String sha256(Path path) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (var inputStream = Files.newInputStream(path)) {
+                byte[] buffer = new byte[64 * 1024];
+                int read;
+                while ((read = inputStream.read(buffer)) >= 0) {
+                    digest.update(buffer, 0, read);
+                }
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (IOException | NoSuchAlgorithmException failure) {
+            throw new ScanResultContractException("failed to hash semantic evidence bundle", failure);
+        }
+    }
+
+    private void ensureOpen() {
+        if (closed) {
+            throw new IllegalStateException("semantic evidence store is closed");
+        }
+    }
+
+    private void closeAfterFailure(RuntimeException failure) {
+        try {
+            close();
+        } catch (RuntimeException cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
+    }
+
+    @Override
+    public void close() {
+        if (closed) {
+            return;
+        }
+        closed = true;
+        RuntimeException failure = null;
+        for (ExternalJsonRecordStore section : sections.values()) {
+            try {
+                section.close();
+            } catch (RuntimeException error) {
+                if (failure == null) {
+                    failure = error;
+                } else {
+                    failure.addSuppressed(error);
+                }
+            }
+        }
+        try {
+            deleteRecursively(workspace);
+        } catch (IOException error) {
+            if (failure == null) {
+                failure = new IllegalStateException("failed to clean semantic evidence store", error);
+            } else {
+                failure.addSuppressed(error);
+            }
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private void deleteRecursively(Path root) throws IOException {
+        if (!Files.exists(root)) {
+            return;
+        }
+        try (var paths = Files.walk(root)) {
+            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+                Files.deleteIfExists(path);
+            }
+        }
+    }
+
+    public record ComponentBundle(
+            String id,
+            long rawBytes,
+            Path path,
+            String componentId,
+            Path evidenceGraphPath,
+            Path kgPath
+    ) {
+        public ComponentBundle {
+            if (id == null || id.isBlank() || rawBytes <= 0 || path == null
+                    || componentId == null || componentId.isBlank()
+                    || evidenceGraphPath == null || kgPath == null) {
+                throw new IllegalArgumentException("semantic component bundle descriptor is incomplete");
+            }
+        }
+    }
+}

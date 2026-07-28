@@ -19,6 +19,7 @@ public final class ScanBundle {
     private final List<String> sources;
     private final List<Path> inputFiles;
     private final Map<String, Integer> summary;
+    private final ScanMetadataInventory metadataInventory;
     private final List<ScanRelationshipFact> relationships;
     private final List<ScanLineageFact> dataLineages;
     private final List<ScanRelationshipFact> derivedRelationships;
@@ -40,8 +41,10 @@ public final class ScanBundle {
             List<?> namingEvidence,
             List<?> diagnostics
     ) {
-        this(databaseType, "", schema, generatedAt, sources, inputFiles, summary, relationships, dataLineages,
-                derivedRelationships, derivedDataLineages, namingEvidence, diagnostics);
+        this(databaseType, "", schema, generatedAt, sources, inputFiles, summary,
+                ScanMetadataInventory.emptyComplete("", schema), relationships, dataLineages,
+                derivedRelationships, derivedDataLineages,
+                namingEvidence, diagnostics);
     }
 
     public ScanBundle(
@@ -59,6 +62,27 @@ public final class ScanBundle {
             List<?> namingEvidence,
             List<?> diagnostics
     ) {
+        this(databaseType, catalog, schema, generatedAt, sources, inputFiles, summary,
+                ScanMetadataInventory.emptyComplete(catalog, schema), relationships, dataLineages,
+                derivedRelationships, derivedDataLineages, namingEvidence, diagnostics);
+    }
+
+    public ScanBundle(
+            String databaseType,
+            String catalog,
+            String schema,
+            String generatedAt,
+            List<String> sources,
+            List<Path> inputFiles,
+            Map<String, Integer> summary,
+            ScanMetadataInventory metadataInventory,
+            List<?> relationships,
+            List<?> dataLineages,
+            List<?> derivedRelationships,
+            List<?> derivedDataLineages,
+            List<?> namingEvidence,
+            List<?> diagnostics
+    ) {
         if (databaseType == null || databaseType.isBlank()) {
             throw new IllegalArgumentException("database type is required");
         }
@@ -69,6 +93,7 @@ public final class ScanBundle {
         this.sources = List.copyOf(sources == null ? List.of() : sources);
         this.inputFiles = List.copyOf(inputFiles == null ? List.of() : inputFiles);
         this.summary = Map.copyOf(summary == null ? Map.of() : summary);
+        this.metadataInventory = java.util.Objects.requireNonNull(metadataInventory, "metadataInventory");
         this.relationships = ScanFactFactory.relationships(relationships, false);
         this.dataLineages = ScanFactFactory.lineages(dataLineages, false);
         this.derivedRelationships = ScanFactFactory.relationships(derivedRelationships, true);
@@ -90,6 +115,7 @@ public final class ScanBundle {
     public List<String> sources() { return sources; }
     public List<Path> inputFiles() { return inputFiles; }
     public Map<String, Integer> summary() { return summary; }
+    public ScanMetadataInventory metadataInventory() { return metadataInventory; }
     public List<ScanRelationshipFact> relationships() { return relationships; }
     public List<ScanLineageFact> dataLineages() { return dataLineages; }
     public List<ScanRelationshipFact> derivedRelationships() { return derivedRelationships; }
@@ -108,6 +134,7 @@ public final class ScanBundle {
         view.put("sources", sources);
         view.put("inputFiles", inputFiles.stream().map(SemanticInputPathCanonicalizer::canonicalize).toList());
         view.put("summary", summary);
+        view.put("metadataInventory", metadataInventory);
         view.put("relationships", relationships.stream().map(ScanFact::document).toList());
         view.put("dataLineages", dataLineages.stream().map(ScanFact::document).toList());
         view.put("derivedRelationships", derivedRelationships.stream().map(ScanFact::document).toList());

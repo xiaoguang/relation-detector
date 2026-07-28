@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
+import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.TableId;
@@ -82,11 +83,19 @@ final class SourceCollectorPipeline {
                     .collect(connection, ctx.scope);
             MetadataSnapshot validated = resultContractValidator.validateMetadata(raw);
             ctx.metadataSnapshot = validated;
+            ctx.result.metadataInventory(MetadataInventory.from(
+                    validated.warnings().isEmpty()
+                            ? MetadataInventoryStatus.COMPLETE
+                            : MetadataInventoryStatus.PARTIAL,
+                    ctx.scope,
+                    validated));
             ctx.relationshipCandidates.addAll(validated.relationships());
             ctx.result.warnings().addAll(validated.warnings());
         } catch (LiveSourceConfigurationException | AdaptorContractException ex) {
             throw ex;
         } catch (Exception ex) {
+            ctx.result.metadataInventory(MetadataInventory.empty(
+                    MetadataInventoryStatus.UNAVAILABLE, ctx.scope));
             ctx.result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
                     "METADATA_COLLECT_FAILED", LiveDiagnosticSanitizer.Operation.METADATA,
                     "metadata", ex, java.util.Map.of(), ctx.adaptor.permissionDeniedVendorCodes()));

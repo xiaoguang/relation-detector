@@ -18,10 +18,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 final class SemanticShardBundleIndex {
     static final List<String> FACT_SECTIONS = List.of(
+            "metadataTables", "metadataColumns", "metadataConstraints", "metadataIndexes",
             "relationships", "lineage", "derivedRelationships", "derivedLineage", "namingEvidence", "diagnostics");
     static final List<String> CANDIDATE_SECTIONS = List.of(
             "eventCandidates", "reviewItemCandidates", "tripletCandidates");
     static final List<String> ITEM_SECTIONS = List.of(
+            "metadataTables", "metadataColumns", "metadataConstraints", "metadataIndexes",
             "relationships", "lineage", "eventCandidates", "derivedRelationships", "derivedLineage",
             "namingEvidence", "reviewItemCandidates", "tripletCandidates", "diagnostics");
     private static final List<String> REFERENCE_FIELDS = List.of(
@@ -121,6 +123,10 @@ final class SemanticShardBundleIndex {
     private Set<String> directTables(String section, JsonNode item) {
         Set<String> result = new LinkedHashSet<>();
         switch (section) {
+            case "metadataTables" -> result.addAll(endpointTables(item.path("table")));
+            case "metadataColumns" -> result.addAll(endpointTables(item.path("column")));
+            case "metadataConstraints", "metadataIndexes" ->
+                    result.addAll(endpointTables(item.path("endpoints")));
             case "relationships", "derivedRelationships", "namingEvidence" -> {
                 result.addAll(endpointTables(item.path("source")));
                 result.addAll(endpointTables(item.path("target")));

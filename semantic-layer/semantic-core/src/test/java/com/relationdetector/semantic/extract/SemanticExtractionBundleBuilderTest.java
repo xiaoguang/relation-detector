@@ -14,7 +14,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
+import com.relationdetector.semantic.reader.ScanMetadataInventory;
 import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.contracts.metadata.MetadataColumnFact;
+import com.relationdetector.contracts.metadata.MetadataTableFact;
+import com.relationdetector.contracts.spi.ScanScope;
 
 final class SemanticExtractionBundleBuilderTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -37,6 +41,38 @@ final class SemanticExtractionBundleBuilderTest {
         assertEquals(40, evidenceBundle.path("derivedRelationships").size());
         assertTrue(evidenceBundle.path("tables").toString().contains("orders_39"));
         assertTrue(evidenceBundle.path("tables").toString().contains("customers_39"));
+    }
+
+    @Test
+    void completeBundleIncludesInventoryOnlyTablesAndColumnsAsGroundedFacts() throws Exception {
+        ScanMetadataInventory inventory = ScanMetadataInventory.complete(
+                new ScanScope("shop", null, List.of(), List.of()),
+                List.of(new MetadataTableFact(
+                        "shop", null, "inventory_only", "TABLE", "InnoDB", "No relationship yet")),
+                List.of(new MetadataColumnFact(
+                        "shop", null, "inventory_only", "id", "bigint", "bigint",
+                        false, null, "", "", 1)),
+                List.of(),
+                List.of());
+        ScanBundle bundle = new ScanBundle(
+                "mysql", "shop", "", "", List.of("metadata"), List.of(), Map.of(),
+                inventory, List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        ObjectNode evidenceBundle = new SemanticExtractionBundleBuilder().build(bundle);
+
+        assertEquals("COMPLETE", evidenceBundle.path("metadataInventory").path("status").asText());
+        assertEquals(1, evidenceBundle.path("metadataInventory").path("counts").path("tables").asInt());
+        assertEquals(1, evidenceBundle.path("metadataInventory").path("counts").path("columns").asInt());
+        assertEquals(List.of("shop.inventory_only"),
+                JSON.readerForListOf(String.class).readValue(evidenceBundle.path("tables")));
+        assertEquals(1, evidenceBundle.path("metadataTables").size());
+        assertEquals(1, evidenceBundle.path("metadataColumns").size());
+        assertEquals("shop.inventory_only",
+                evidenceBundle.path("metadataTables").get(0).path("table").asText());
+        assertEquals("shop.inventory_only.id",
+                evidenceBundle.path("metadataColumns").get(0).path("column").asText());
+        assertFalse(evidenceBundle.path("metadataTables").get(0).path("evidenceRefs").isEmpty());
+        assertFalse(evidenceBundle.path("metadataColumns").get(0).path("evidenceRefs").isEmpty());
     }
 
     @Test

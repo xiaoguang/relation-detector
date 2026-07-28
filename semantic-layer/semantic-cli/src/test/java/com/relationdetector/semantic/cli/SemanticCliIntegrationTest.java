@@ -26,18 +26,19 @@ final class SemanticCliIntegrationTest {
     Path tempDir;
 
     @Test
-    void buildAndE2eHandlersShareTheOnlyKgBuildService() throws Exception {
+    void buildAndE2eHandlersShareTheDiskBackedKgSessionPath() throws Exception {
         Path sourceRoot = Path.of("src/main/java/com/relationdetector/semantic/cli");
         String buildHandler = Files.readString(sourceRoot.resolve("SemanticBuildCommandHandler.java"));
         String e2eHandler = Files.readString(sourceRoot.resolve("SemanticE2eCommandHandler.java"));
         String buildService = Files.readString(sourceRoot.resolve("SemanticKgBuildService.java"));
 
         assertTrue(buildHandler.contains("new SemanticKgBuildService().build("));
-        assertTrue(e2eHandler.contains("new SemanticKgBuildService().build("));
+        assertTrue(e2eHandler.contains("SemanticDiskBackedSession.openForOutput("));
+        assertTrue(e2eHandler.contains("session.writeKgArtifacts("));
+        assertTrue(e2eHandler.contains("session.evidenceStore()"));
         assertFalse(buildHandler.contains("new SemanticEvidenceBuilder"));
         assertFalse(e2eHandler.contains("new SemanticEvidenceBuilder"));
-        assertTrue(buildService.contains("new SemanticEvidenceBuilder().build("));
-        assertTrue(buildService.contains("new SemanticKgBuilder().build("));
+        assertTrue(buildService.contains("SemanticDiskBackedSession.openForOutput("));
         assertFalse(buildService.contains("SemanticEnricher"));
         assertFalse(buildService.contains(".enrich("));
     }
@@ -82,6 +83,7 @@ final class SemanticCliIntegrationTest {
         Path input = tempDir.resolve("api-key-input.json");
         Path output = tempDir.resolve("api-key-output");
         Files.writeString(input, emptyScanResult());
+        markMetadataInventoryComplete(input);
 
         CapturedFailure failure = captureFailure(() -> Main.run(new String[] {
                 "extract",
@@ -129,6 +131,7 @@ final class SemanticCliIntegrationTest {
                   "warnings": []
                 }
                 """);
+        markMetadataInventoryComplete(input);
 
         int exit = Main.run(new String[] {"build", "--input", input.toString(), "--output", output.toString()});
 
@@ -179,6 +182,7 @@ final class SemanticCliIntegrationTest {
                   "warnings": []
                 }
                 """);
+        markMetadataInventoryComplete(input);
 
         PrintStream original = System.out;
         ByteArrayOutputStream captured = new ByteArrayOutputStream();
@@ -240,6 +244,7 @@ final class SemanticCliIntegrationTest {
                   "warnings": []
                 }
                 """);
+        markMetadataInventoryComplete(input);
 
         for (String option : List.of("--focus", "--max-relationships", "--max-lineage", "--max-naming")) {
             int exit = Main.run(new String[] {
@@ -270,6 +275,7 @@ final class SemanticCliIntegrationTest {
                   "warnings": []
                 }
                 """);
+        markMetadataInventoryComplete(input);
 
         int exit = Main.run(new String[] {
                 "extract",
@@ -323,6 +329,7 @@ final class SemanticCliIntegrationTest {
             scan.putArray(section);
         }
         Files.writeString(input, JSON.writeValueAsString(scan));
+        markMetadataInventoryComplete(input);
 
         int exit = Main.run(new String[] {
                 "extract",
@@ -344,8 +351,9 @@ final class SemanticCliIntegrationTest {
         assertTrue(Files.exists(published.resolve("deterministic-kg/semantic-build-run.json")));
         assertTrue(Files.exists(published.resolve(
                 "reconciliation/template/semantic-extraction-request.json")));
-        assertTrue(Files.readString(published.resolve(
-                "reconciliation/template/semantic-extraction-prompt.md")).contains("\"template\" : true"));
+        assertTrue(JSON.readTree(published.resolve(
+                "reconciliation/template/semantic-extraction-evidence-bundle.json").toFile())
+                .path("template").asBoolean());
         assertEquals(32123, JSON.readTree(published.resolve(
                 "shards/shard-0001/semantic-extraction-request.json").toFile())
                 .path("max_output_tokens").asInt());
@@ -411,6 +419,7 @@ final class SemanticCliIntegrationTest {
                   "warnings": []
                 }
                 """);
+        markMetadataInventoryComplete(input);
 
         int exit = Main.run(new String[] {
                 "e2e",
@@ -421,7 +430,9 @@ final class SemanticCliIntegrationTest {
 
         assertEquals(0, exit);
         Path kgPath = output.resolve("semantic-kg/mysql-v8_0-full-derived/semantic-kg.json");
-        Path bundlePath = output.resolve("semantic-extraction/mysql-v8_0-full-derived/semantic-extraction-evidence-bundle.json");
+        Path extractionRun = onlyPublishedRun(
+                output.resolve("semantic-extraction/mysql-v8_0-full-derived"));
+        Path bundlePath = extractionRun.resolve("full-evidence-bundle.json");
         assertTrue(Files.exists(kgPath));
         assertTrue(Files.exists(bundlePath));
         JsonNode kg = JSON.readTree(kgPath.toFile());
@@ -456,6 +467,7 @@ final class SemanticCliIntegrationTest {
                   "warnings": []
                 }
                 """);
+        markMetadataInventoryComplete(input);
         Files.writeString(config, """
                 semanticExtraction:
                   provider: codex-session
@@ -537,6 +549,28 @@ final class SemanticCliIntegrationTest {
                 """;
     }
 
+    private void markMetadataInventoryComplete(Path input) throws Exception {
+        ObjectNode scan = (ObjectNode) JSON.readTree(input.toFile());
+        JsonNode database = scan.path("database");
+        ObjectNode inventory = scan.putObject("metadataInventory");
+        inventory.put("status", "COMPLETE");
+        ObjectNode scope = inventory.putObject("scope");
+        scope.put("catalog", database.path("catalog").asText(""));
+        scope.put("schema", database.path("schema").asText(""));
+        scope.putArray("includeTables");
+        scope.putArray("excludeTables");
+        ObjectNode counts = inventory.putObject("counts");
+        counts.put("tables", 0);
+        counts.put("columns", 0);
+        counts.put("constraints", 0);
+        counts.put("indexes", 0);
+        inventory.putArray("tables");
+        inventory.putArray("columns");
+        inventory.putArray("constraints");
+        inventory.putArray("indexes");
+        JSON.writeValue(input.toFile(), scan);
+    }
+
     private Path onlyPublishedRun(Path outputRoot) throws Exception {
         try (java.util.stream.Stream<Path> entries = Files.list(outputRoot)) {
             return entries.filter(Files::isDirectory)
@@ -609,12 +643,23 @@ final class SemanticCliIntegrationTest {
                 """);
         Files.writeString(evidenceBundle, """
                 {
+                  "database": {"type": "mysql", "catalog": "", "schema": "shop"},
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "scope": {"catalog": "", "schema": "shop", "includeTables": [], "excludeTables": []},
+                    "counts": {"tables": 0, "columns": 0, "constraints": 0, "indexes": 0},
+                    "fingerprint": "standalone-test"
+                  },
+                  "inputFiles": [], "sources": [],
                   "tables": ["sales_fact", "sales_orders"],
                   "evidence": [{"id": "sales_orders.id -> sales_fact.order_id"}],
+                  "metadataTables": [], "metadataColumns": [],
+                  "metadataConstraints": [], "metadataIndexes": [],
                   "relationships": [], "lineage": [], "derivedRelationships": [], "derivedLineage": [],
                   "namingEvidence": [], "diagnostics": [],
                   "eventCandidates": [{"id": "event-candidate:routine:erp.sp_rebuild_sales_fact"}],
                   "tripletCandidates": [], "reviewItemCandidates": [],
+                  "instructions": {"allOutputsMustUseEvidenceRefs": true},
                   "shardContext": {
                     "shardId": "standalone-0001",
                     "ownerKey": "sales_fact",

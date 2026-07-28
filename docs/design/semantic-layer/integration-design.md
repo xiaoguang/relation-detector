@@ -10,16 +10,19 @@
 
 当前代码实现边界：
 
-- 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> SemanticKgBuilder -> JSON artifacts`。
-- 已实现 `semantic extract`：从同一个 `ScanBundle` 并列写 deterministic KG 与完整 evidence bundle；
-  小输入保持单请求，大输入先按当前 table-touch component 建立 evidence closure，再把小型断开分量确定性装入
-  同一预算 shard。`codex-session`
+- 已实现`semantic build --input <scan-result.json> --output <dir>`：`ScanResultReader.open`流式写入
+  `SemanticInputStore`，磁盘component逐个通过Evidence/KG builder，最终由外排stable-ID合并并流式写artifact。
+- 已实现`semantic extract`：从同一个磁盘后备evidence store并列写deterministic KG与完整evidence bundle；
+  小输入保持单请求，大输入按typed table component建立evidence closure，再把小型断开分量确定性装入
+  同一预算shard。`codex-session`
   只写逐片本地 prompt 与 reconciliation template；`openai-api`固定使用`gpt-5.6-sol/xhigh`
   顺序执行 shards、片内归一化、canonical identity merge、受限协调和完整 bundle 最终闭包校验。
   component只消费typed endpoint/reference字段；raw model output必须携带当前片
   `ownedGroundingRefs`，物理实体和纯业务实体分别按完整物理名及owned grounding signature确定性合并。
-- 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
-- 已实现 `semantic normalize-extraction`：输入 raw semantic output 和带合法`shardContext`的必需
+- 已实现`semantic e2e`：同一磁盘后备session确定性写`semantic-kg/<case-name>/`与
+  `semantic-extraction/<case-name>/` artifacts，不调用模型。
+- 已实现`semantic normalize-extraction`：输入raw semantic output和带`COMPLETE` inventory描述及
+  合法`shardContext`的必需
   evidence bundle，复用自动分片的owned/overlap校验，再执行候选回填、typed reference/physical endpoint
   校验、semantic owner-id全局唯一性校验，并补齐`semanticGraph`与`validation`。任一所有权或闭包失败时
   命令失败，不输出半闭合正式结果。
@@ -75,6 +78,12 @@ Step 1: relation-detector 输出（文件）
 scan-result.json
 {
   "database": {"type": "mysql", "schema": "shop"},
+  "metadataInventory": {
+    "status": "COMPLETE",
+    "scope": {"catalog": "", "schema": "shop", "includeTables": [], "excludeTables": []},
+    "counts": {"tables": 10, "columns": 120, "constraints": 14, "indexes": 22},
+    "tables": [...], "columns": [...], "constraints": [...], "indexes": [...]
+  },
   "relationships": [
     {
       "source": {"table": "orders", "column": "customer_id"},
@@ -97,27 +106,25 @@ scan-result.json
 
         ↓ [Scan Result Reader: 纯规则，无 LLM]
 
-Step 2: ScanBundle（当前内存对象）
+Step 2: SemanticInputStore（当前生产对象）
 ─────────────────────────────────────────
-ScanBundle {
-  databaseType: "mysql",
-  catalog: "sample",
-  schema: "",
-  summary: {directRelationshipCount: 5, ...},
-  sources: ["ddl", "logs"],
-  relationships: [ScanRelationshipFact, ...],
-  dataLineages: [ScanLineageFact, ...],
-  derivedRelationships: [ScanRelationshipFact, ...],
-  derivedDataLineages: [ScanLineageFact, ...],
-  namingEvidence: [ScanNamingEvidenceFact, ...],
-  diagnostics: [ScanDiagnosticFact, ...] // 来自 relation-detector 顶层 warnings
+SemanticInputStore {
+  descriptor: {
+    databaseType: "mysql",
+    catalog: "sample",
+    schema: "",
+    inventory: {status: COMPLETE, scope: ..., counts: ..., fingerprint: ...}
+  },
+  sectionSpools: [metadata, relationship, lineage, naming, warning],
+  externalIndexes: [table, column, fact]
 }
 
-当前模型保存 relation-detector 顶层 `database.catalog`，并按完整
-`database.type + catalog + schema` 身份约束 multi-input merge。
+生产reader逐条验证和落盘，只接受COMPLETE inventory；multi-input还要求scope和inventory
+fingerprint一致。`ScanBundle`只在下游逐个有界component中物化。
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
-        ↓ [当前: 把 relationship / lineage / naming / derived / diagnostic / eventCandidate materialize 为 EvidenceGraph facts]
+        ↓ [当前: 逐component把metadata / relationship / lineage / naming / derived / diagnostic / eventCandidate materialize]
+        ↓ [当前: 外排合并EvidenceGraph与KG stable IDs]
         ↓ [当前: 从 rawEvidence / grouped evidence 生成 EvidenceReference]
         ↓ [未来: businessRole 推断、冲突初筛、catalog/search 索引]
 
@@ -422,14 +429,12 @@ Step 7: Answer（最终输出）
 
 ```
 [relation-detector]
-    ↓ 输出: scan-result.json (JSON 文件)
+    ↓ 输出: scan-result.json（含完整性状态与四类metadata inventory）
 [ScanResultReader]
-    ↓ 输出: ScanBundle (内存对象，typed facts 保留 raw payload)
-[SemanticEvidenceBuilder]
-    ↓ 输出: EvidenceGraph (内存对象)
-[SemanticKgBuilder]
-    ↓ 输出: SemanticKnowledgeGraph (内存对象)
-[JsonSemanticKgWriter]
+    ↓ 输出: SemanticInputStore（section spool + 外排索引）
+[SemanticComponentStore / SemanticEvidenceBuilder / SemanticKgBuilder]
+    ↓ 逐个bounded component构建并外排合并
+[SemanticDiskBackedArtifactWriter]
     ↓ 输出: semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
@@ -437,14 +442,14 @@ Step 7: Answer（最终输出）
 
 ```
 [relation-detector]
-    ↓ 输出: scan-result.json (JSON 文件)
+    ↓ 输出: scan-result.json（metadataInventory.status必须为COMPLETE）
 [ScanResultReader]
-    ↓ 输出: ScanBundle (内存对象)
-[SemanticKgBuildService]
+    ↓ 输出: SemanticInputStore / SemanticEvidenceStore（磁盘后备）
+[SemanticKgBuildService / SemanticDiskBackedArtifactWriter]
     ↓ 输出: deterministic-kg/ (并列 artifact，不交给模型改写)
-[SemanticExtractionBundleBuilder]
+[SemanticEvidenceStore]
     ↓ 输出: full-evidence-bundle.json
-[SemanticShardPlanner]
+[SemanticPathBackedPlanner]
     ↓ 输出: evidence-closed shards + fact/candidate owner manifest
 [SemanticExtractionPromptBuilder]
     ↓ 输出: shards/*/semantic-extraction-prompt.md
@@ -605,19 +610,23 @@ Step 7: Answer（最终输出）
 
 ## 6. 错误传播策略
 
+可恢复的局部信息缺失只影响对应可选增强，不得伪造事实：
+
+```text
+  - 当前 EvidenceBuilder: 不单独解释未知 rawEvidence 片段；保留上游已验证的原始 payload 和 fact 引用
+  - 目标 comment extraction: 单条注释解析失败 → 跳过该可选注释候选并记录 warning
+  - 目标 SqlValidator: 业务校验失败 → 返回 FAILED validation result，AnswerComposer 不输出 SQL
 ```
-模块内部错误 → 记录 warning/error → 不阻断下游
-  - 当前 EvidenceBuilder: 无法识别的 rawEvidence 片段 → 保留原始 payload，尽量生成 fact / evidenceRef
-  - 目标 EvidenceBuilder: 注释解析失败 → 跳过，记录 warning
+
+正式 wire、evidence closure、模型执行和 artifact 事务错误不可恢复，必须原子终止当前链路：
+
+```text
+  - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
+  - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
   - 当前 semantic extract: transport/429/5xx 在配置范围内重试，仍失败则整次执行失败，不返回部分
     `SemanticExtractionRunResult`；完整bundle/deterministic artifact先写staging，逐片成功结果和
     reconciliation分别经隐藏临时目录原子提交。后续失败时failure staging保留前序成功片及hash，
     但不发布部分正式run
-  - 目标 SqlValidator: 校验失败 → FAILED，AnswerComposer 不输出 SQL
-
-不可恢复错误 → 抛出异常 → 终止当前链路
-  - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
-  - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
   - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
   - 当前 SemanticKgBuilder: 非 diagnostic fact/event、physical endpoint node 或 edge 的 evidence 为空/无法解析，或相同 ID 的 node/edge 完整内容冲突 → 原子终止；完全相同的 ID/content 可幂等复用
   - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止

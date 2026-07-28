@@ -4,9 +4,10 @@
 
 ## 1. 背景与目标
 
-当前 relation-detector 已经能够从 metadata、DDL、SQL 日志和对象定义中识别数据库表关系，并输出一定的数据来源关系。它解决的是"数据库里真实存在什么结构证据"的问题，例如：
+当前 relation-detector 已经能够从 metadata、DDL、SQL 日志和对象定义中识别数据库表关系，并在
+scan result中同时输出带完整性状态的metadata inventory与可审计事实。例如：
 
-- 哪些表和字段存在。
+- scope内有哪些表、列、约束和索引，以及inventory是否完整。
 - 哪些字段可能构成 FK-like relationship。
 - 哪些字段写入依赖哪些来源字段。
 - 某条关系或血缘来自 DDL、metadata、SQL、procedure、trigger 还是 Data Lineage extractor。
@@ -19,7 +20,9 @@
 - Semantic Layer 负责把 facts 组织成业务语义对象。
 - LLM 负责解释、归纳、同义词扩展、指标候选和问题规划。
 - LLM 不负责创造数据库事实。
-- 每个语义结论都必须保存 `evidenceRefs`，可以回到 relationship、lineage、metadata、SQL source、SQL comment 或 DDL comment。
+- 每个正式语义结论都必须保存可解析的`evidenceRefs`。当前引用可回到metadata table/column/
+  constraint/index fact、relationship、lineage、naming、diagnostic及其metadata/DDL/SQL provenance；
+  独立comment仍需未来comment extraction扩展。
 
 第一版目标不是直接自动执行 SQL，而是先稳定回答：
 
@@ -93,7 +96,8 @@ physical endpoint、evidence/fact/candidate ID、文档内 entity 引用和跨 s
 | Rule | 业务口径和约束是什么 | 活跃客户定义、高价值客户阈值 | Phase 1 可产生候选和 warning，不自动确认。 |
 | Action | 未来可以触发什么动作 | 发预警、生成报告、创建任务 | Future Capability，不自动执行。 |
 
-relation-detector 输出的 relationship、Data Lineage、metadata 和 diagnostics 是事件建模的 evidence 底座，但不是事件本身。例如：
+relation-detector 输出的 relationship、Data Lineage、naming、diagnostics 及其中携带的
+metadata/DDL/SQL provenance 是事件建模的 evidence 底座，但不是事件本身。例如：
 
 ```text
 payments.order_id -> orders.id
@@ -104,7 +108,10 @@ payments.amount
 
 这些证据可以支撑一个 `PaymentEvent` 候选：参与对象可能是 Order 和 Customer，时间字段可能是 `payments.paid_at`，金额字段可能是 `payments.amount`。但这个候选默认只能是 `SYSTEM_PROPOSED` 或 `EVIDENCE_SUPPORTED`，正式业务事件定义需要 review 或治理流程确认，不能由 LLM 或 relation-detector 直接拍板。
 
-Data Lineage 可以帮助发现事件字段来源，例如支付金额从哪些字段计算而来；SQL log、procedure、trigger、DDL comment 和 SQL comment 也可以成为事件候选 evidence。但这些 evidence 只能说明“可能存在某类业务行为语义”，不能单独证明业务事件定义已经成立。
+Data Lineage 可以帮助发现事件字段来源，例如支付金额从哪些字段计算而来；SQL log、procedure 和
+trigger 已可通过 typed fact/provenance 支撑事件候选。独立 DDL/SQL comment evidence 需要后续
+comment extraction/wire 扩展。任何这些 evidence 都只能说明“可能存在某类业务行为语义”，不能单独
+证明业务事件定义已经成立。
 
 ## 2. 总体架构
 
@@ -170,7 +177,9 @@ flowchart TD
 
 ### 2.2 两条主链路
 
-离线构建链路负责把数据库事实变成语义资产：
+离线构建链路负责把数据库事实变成语义资产。下图展示当前 deterministic/extraction 基础与未来
+Catalog、Vector Index、Review Queue 的完整目标链路；当前代码只实现到前述 JSON KG 和 normalized
+semantic extraction artifact：
 
 <details open>
 <summary>中文</summary>
@@ -185,9 +194,9 @@ sequenceDiagram
   participant V as 向量索引
   participant Q as 审核队列
 
-  S->>R: 关系 + 血缘 + 元数据 + SQL 来源
+  S->>R: 关系 + 血缘 + 命名 + 诊断及其来源证据
   R->>E: 归一化扫描包
-  E->>E: 构建字段 / 表达式 / 注释证据图
+  E->>E: 物化 typed facts / endpoints / evidence refs
   E->>L: 证据包
   L->>C: 语义对象
   L->>Q: 系统建议项 / 风险项
@@ -210,9 +219,9 @@ sequenceDiagram
   participant V as Vector Index
   participant Q as Review Queue
 
-  S->>R: relationships + lineage + metadata + SQL source
+  S->>R: relationships + lineage + naming + diagnostics with provenance
   R->>E: normalized ScanBundle
-  E->>E: build field / expression / comment evidence graph
+  E->>E: materialize typed facts / endpoints / evidence refs
   E->>L: evidence bundle
   L->>C: semantic objects
   L->>Q: system-proposed / risky items
@@ -340,14 +349,14 @@ sources
   -> vector store / graph store / export / services
 ```
 
-本项目吸收这条链路的工程原则，但不把它写成当前已经完成的 KG 或 ontology 能力。对齐后的边界如下：
+本项目吸收这条链路的工程原则，但不把当前 JSON KG 写成已经完成的 Context Graph、Catalog Store 或 ontology 能力。对齐后的边界如下：
 
 | Semantica 层 | 官方文档中的职责 | 本项目 Phase 1 对应 | 边界 |
 | --- | --- | --- | --- |
 | Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result 和 ScanBundle 是语义层的标准 facts/evidence records。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
 | Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader 读取 relation-detector JSON arrays，校验当前 writer 的 timestamp、fact shape、枚举、nested evidence/warning 和 summary contract，并在多 input 时要求 database type / catalog / schema 完全一致。reader 不做业务去重；持久化 catalog index 仍是后续增强。 | 不调用 LLM，不发明事实。 |
-| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector 已抽数据库 relationship、lineage、namingEvidence、diagnostics；`semantic extract` 从同一 ScanBundle 并列生成 deterministic KG 和完整 evidence bundle，按 typed table-touch component 形成 evidence-closed shards；超预算 table owner按稳定root继续拆片，并在 `openai-api` 下经片内owner校验、canonical identity merge、受限协调和完整 bundle 复验生成 normalized semantic document。 | 模型不接收可改写的正式 KG；当前仍未实现超大源JSON的streaming/on-disk ingestion，也不把估算token门限称为provider精确上限。 |
-| Conflict / Dedup | 检测冲突、保留来源、去重合并。 | Evidence Builder 做规则初筛；LLM 只生成解释建议；Review Queue / governance 决定最终状态。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |
+| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector输出COMPLETE inventory与relationship、lineage、namingEvidence、diagnostics；生产链路流式写入section spool，以磁盘typed component逐个生成deterministic KG和evidence-closed shard。超预算table owner按稳定root拆片，并在`openai-api`下经片内owner校验、canonical identity merge、受限协调和完整bundle复验生成normalized document。 | 模型不接收可改写的正式KG；单component/shard受固定字节或token预算约束，估算门限不称为provider精确上限。 |
+| Conflict / Dedup | 检测冲突、保留来源、去重合并。 | 当前 builder 只校验稳定 ID 并物化事实；片内/跨片 canonical identity merge 只处理本次抽取中的确定性重复。持久冲突检测、Review Queue 和治理仍是后续能力。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |
 | KG / Context Graph | 构建可查询图，记录事实、决策和推理路径。 | 当前已落地 JSON `SemanticKnowledgeGraph` artifact；Semantic Catalog / Context Graph 是后续承载方式。 | Phase 1 不要求完整 graph store。 |
 | Ontology / Governance | OWL、SHACL、policy enforcement、合规规则。 | reviewStatus、SQL Validator、Review Queue 和治理决策。 | 不承诺完整 OWL/SHACL 本体平台。 |
 | Reasoning | Rete、Datalog、SPARQL、可解释推理路径。 | derived relationship / lineage / namingEvidence 和 Query Planner 的 bounded graph search。 | 推理结果必须保留 evidenceRefs 和 warning。 |
@@ -355,7 +364,8 @@ sources
 
 因此本项目后续设计应更强调三点：
 
-- **先标准化事实，再构建语义。** relation-detector JSON 进入 ScanBundle 后，才能被 Evidence Builder、Catalog 和 Planner 消费。
+- **先标准化事实，再构建语义。** relation-detector JSON进入`SemanticInputStore`后，才能以有界
+  `ScanBundle` component被Evidence Builder、Catalog和Planner消费。
 - **所有语义结论都要可追溯。** 每个字段、指标、join path、AnswerPlan 和 SQL draft element 都要能回到 evidenceRef 或 reviewDecision。
 - **LLM 是解释器和候选生成器，不是事实裁决者。** LLM 不确认业务口径、不生成物理关系、不做最终治理决策。
 
@@ -367,11 +377,13 @@ sources
 
 输入：
 
-- relationship JSON。
-- Data Lineage JSON。
-- metadata facts。
-- DDL / SQL / object source location。
-- warning 和 confidence。
+- 完整metadata inventory及其scope、counts、status。
+- relationship、Data Lineage、naming和derived fact arrays。
+- fact 中已有的 DDL / SQL / metadata evidence 与 source location。
+- 顶层 warning、summary、database identity 和 confidence。
+
+正式semantic处理要求inventory status为`COMPLETE`；`NOT_REQUESTED/PARTIAL/UNAVAILABLE`在模型调用
+和正式artifact写入前拒绝。没有被relationship、lineage或naming触达的表列仍进入evidence与KG。
 
 输出：
 
@@ -385,18 +397,24 @@ sources
 
 ### 3.2 Semantic Evidence Builder
 
-把关系、血缘、元数据、SQL 注释、DDL 注释、表达式来源组合成 evidence graph。
+当前实现逐个有界component把metadata table/column/constraint/index、typed relationship、lineage、
+naming、derived、diagnostic和deterministic event candidate物化为evidence graph，再以外排stable-ID
+合并正式KG，并保留上游fact payload与evidence refs。
 
-典型 evidence：
+当前可见 evidence：
 
-- 字段证据：`orders.customer_id` 有 DDL comment、JOIN evidence、metadata type。
-- 表达式证据：`SUM(payments.amount)` 来自 SQL projection alias 或 lineage transform。
-- Join path 证据：`payments.order_id -> orders.id -> customers.id`。
-- 注释证据：SQL 中的 `-- customer paid amount` 或 DDL comment。
+- 四类metadata inventory事实及其稳定evidence。
+- relationship fact的DDL、metadata、SQL predicate或naming evidence。
+- lineage fact 的 typed source、target、flow kind、transform 和 provenance。
+- naming fact 的 rule、direction hint 和 raw observations。
+- 由 relationship fact materialize 的 join path，以及 typed write lineage形成的 event candidate。
+
+独立SQL/DDL comment extraction、field/expression search index和持久冲突检测属于未来
+Catalog/Search能力，不由当前builder隐式完成。
 
 输出：
 
-- `semantic-evidence.json`。
+- `semantic-evidence-graph.json`。
 - 可供 LLM extraction 的 evidence-closed bundle；大输入由确定性 planner 切成有唯一 owner 的
   evidence-closed shards。planner、prompt 和 deterministic backfill 把 overlap 视为只读上下文；
   model-authored 输出必须以`ownedGroundingRefs`直接引用当前片owned fact/candidate；overlap和
@@ -433,9 +451,11 @@ sources
 
 - 每个输出必须带 `evidenceRefs`。
 - LLM 不能生成正式物理 relationship、正式 physical lineage 或 `BUSINESS_APPROVED` metric。
-- LLM 可以提出无 evidence join 的 `SYSTEM_PROPOSED` semantic object，但不能写入正式 catalog join path。
+- LLM 只能基于当前 shard 拥有的 fact/candidate 提出语义解释；仅有 overlap、不可解析引用或没有
+  owned grounding 的对象不能进入正式结果。模型不能新增物理 join。
 - 低置信度、冲突或指标口径进入 Review Queue。
-- 模型输出保存 `model`、`promptVersion`、`confidence`、`reviewStatus`。
+- 正式对象保存可解析证据、稳定身份和 reviewStatus；provider、model、reasoning 与
+  prompt/run 配置由运行 manifest 统一审计，不要求在每个对象上重复。
 
 ### 3.4 Future Capabilities
 
@@ -1298,14 +1318,14 @@ Validator 是最后一道防线。它负责拒绝：
 
 | 模块 | 输入 | 输出 | 在问答示例中的作用 |
 | --- | --- | --- | --- |
-| relation-detector 事实层 | metadata、DDL、SQL log、procedure、trigger、object SQL、comments | relationship、Data Lineage、diagnostics、evidence payload | 提供表字段、join evidence、lineage evidence 和 source location。 |
-| Scan Result Reader | relation-detector JSON output | normalized scan bundle | 把不同来源的 facts 归一化，供语义构建读取。 |
-| Semantic Evidence Builder | scan bundle | semantic evidence graph、EvidenceRef、初始 table/column evidence | 把 relationship、lineage、comment、SQL usage 组织成可引用证据。 |
-| LLM Semantic Enricher | evidence bundle、字段名、注释、SQL alias、已有 lexicon | SYSTEM_PROPOSED semantic objects、描述、同义词、review item | 只做解释、归纳、扩展和规划候选，不确认物理事实或 BUSINESS_APPROVED 指标。 |
-| Semantic Catalog Store | semantic objects、edges、evidenceRefs、review decisions | Semantic Catalog | 在线问答时的事实与语义资产中心。 |
-| Lexicon Manager | catalog objects、人工词库、SYSTEM_PROPOSED 同义词 | term -> semantic object mapping | 处理 "客户"、"活跃"、"库存风险" 等业务词精确匹配。 |
-| Embedding Indexer | semantic object texts、字段描述、指标描述、示例问法 | vector index | 处理多问法和模糊召回；召回结果仍需 evidence rerank。 |
-| Review Queue | SYSTEM_PROPOSED metric/entity/synonym、低置信度或冲突项 | review decisions、BUSINESS_APPROVED / REJECTED / NEEDS_MORE_EVIDENCE | 决定哪些指标或业务口径能成为正式默认回答依据。 |
+| relation-detector事实层（当前） | metadata、DDL、SQL log、procedure、trigger、object SQL | 完整metadata inventory、relationship、Data Lineage、naming、diagnostics及evidence payload | 提供scope内物理catalog、join/lineage evidence和source location。 |
+| Scan Result Reader | relation-detector JSON output | disk-backed semantic input/evidence store | 流式校验并归一化不同来源facts，拒绝非COMPLETE inventory。 |
+| Semantic Evidence Builder（当前） | bounded scan component | semantic evidence graph、EvidenceRef、完整catalog registry | 把metadata、relationship、lineage、naming、derived、diagnostic和typed event candidate物化为可引用证据。 |
+| LLM Semantic Enricher（当前可选） | 完整evidence bundle与owned shard context | SYSTEM_PROPOSED semantic objects、描述、同义词、review item | 只做有owned grounding的解释与归纳，不确认物理事实或BUSINESS_APPROVED指标。 |
+| Semantic Catalog Store（未来） | semantic objects、edges、evidenceRefs、review decisions | Semantic Catalog | 在线问答时的事实与语义资产中心。 |
+| Lexicon Manager（未来） | catalog objects、人工词库、SYSTEM_PROPOSED 同义词 | term -> semantic object mapping | 处理 "客户"、"活跃"、"库存风险" 等业务词精确匹配。 |
+| Embedding Indexer（未来） | semantic object texts、字段描述、指标描述、示例问法 | vector index | 处理多问法和模糊召回；召回结果仍需 evidence rerank。 |
+| Review Queue（未来） | SYSTEM_PROPOSED metric/entity/synonym、低置信度或冲突项 | review decisions、BUSINESS_APPROVED / REJECTED / NEEDS_MORE_EVIDENCE | 决定哪些指标或业务口径能成为正式默认回答依据。 |
 
 下面每个例子只展开在线问答链路：Question Standardization -> Question Understanding -> Semantic Search -> Query Planner -> SQL Draft Generator -> SQL Validator -> Answer Composer。为避免主文档表格过长，示例表中的 `Question Understanding` 行默认包含“已消费标准化问题”的结果；完整逐模块中间结果放在示例附录。
 
@@ -1746,33 +1766,34 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 
 ### 13.5 所有语义结果可追溯
 
-每个语义对象至少包含：
-
-- `evidenceRefs`
-- `model`
-- `promptVersion`
-- `reviewStatus`
-- `confidence`
-- `createdAt`
-- `updatedAt`
+当前 formal artifact 中，每个正式对象至少具有可解析的 `evidenceRefs`、稳定 ID、`reviewStatus`
+和适用于该 section 的 typed reference；模型生成对象还必须具有当前 shard 的 owned grounding。
+provider、model、reasoning、prompt/run 配置和运行时间记录在 run manifest，而不是复制到每个对象。
+未来持久 Semantic Catalog 可以在对象记录上增加 confidence、`createdAt`、`updatedAt`、版本和
+review decision 元数据，但这些字段不是当前 normalized document 的通用必填契约。
 
 ## 14. 第一版落地建议
 
-### 14.1 Phase A：Semantic Evidence Builder
+### 14.1 已实现基础：Semantic Evidence Builder
 
 先不调用 LLM，把 relation-detector 输出规范化为 evidence graph。
 
 产物：
 
-- `semantic-evidence.json`
-- 表字段 evidence 索引。
-- expression evidence 索引。
-- join path evidence 索引。
+- `semantic-evidence-graph.json`
+- `semantic-kg.json`
+- `semantic-build-run.json`
+- 由全部事实 endpoint 闭合得到的物理 endpoint registry。
+- 由 relationship fact materialize 的 join path 节点和 path-step edge。
 
 验收：
 
-- 任意 relationship / lineage 都能追溯到 source。
-- 表字段可以看到相关 DDL、SQL usage、comment。
+- 任意 relationship / lineage fact 都能追溯到可解析 evidence。
+- 非 diagnostic fact/event、物理 endpoint node 和 edge 的 evidence 闭合。
+- 相同 ID/content 幂等复用，冲突 ID 原子失败。
+
+comment extraction、field/expression search index是后续Catalog/Search阶段目标；完整metadata
+inventory已经属于当前Phase A输入与产物。
 
 ### 14.2 Phase B：LLM Semantic Enricher
 

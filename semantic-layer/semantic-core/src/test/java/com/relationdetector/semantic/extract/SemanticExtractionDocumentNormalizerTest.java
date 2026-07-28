@@ -584,6 +584,10 @@ final class SemanticExtractionDocumentNormalizerTest {
                 {
                   "tables": ["sales_fact", "sales_orders"],
                   "evidence": [],
+                  "metadataTables": [],
+                  "metadataColumns": [],
+                  "metadataConstraints": [],
+                  "metadataIndexes": [],
                   "relationships": [{"id": "relationship:fact"}],
                   "lineage": [{"id": "lineage:sales_orders.id->sales_fact.order_id:VALUE:DIRECT:0"}],
                   "derivedRelationships": [],
@@ -871,6 +875,10 @@ final class SemanticExtractionDocumentNormalizerTest {
 
     private ObjectNode evidenceBundle(String... evidenceIds) {
         ObjectNode root = JSON.createObjectNode();
+        root.putArray("metadataTables");
+        root.putArray("metadataColumns");
+        root.putArray("metadataConstraints");
+        root.putArray("metadataIndexes");
         var evidence = root.putArray("evidence");
         for (String id : evidenceIds) {
             evidence.addObject().put("id", id).put("type", "TEST").put("source", "test").put("detail", "test");

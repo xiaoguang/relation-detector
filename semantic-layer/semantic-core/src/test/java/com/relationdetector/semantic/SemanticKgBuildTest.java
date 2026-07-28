@@ -220,6 +220,7 @@ final class SemanticKgBuildTest {
                     "warningCount": 1,
                     "sources": ["ddl", "logs"]
                   },
+                  "metadataInventory": %s,
                   "relationships": [{
                     "source": {"table": "orders", "column": "customer_id"},
                     "target": {"table": "customers", "column": "id"},
@@ -269,6 +270,48 @@ final class SemanticKgBuildTest {
                   "derivedNamingEvidence": [],
                   "warnings": [{"type": "PARSE_WARNING", "severity": "WARN", "code": "FULL_GRAMMAR_SQL_PARSE_WARNING", "message": "sample warning", "source": "query.sql", "line": 7, "attributes": {}}]
                 }
-                """.formatted(databaseType, catalog, schema);
+                """.formatted(databaseType, catalog, schema, metadataInventory(catalog, schema));
+    }
+
+    private static String metadataInventory(String catalog, String schema) {
+        return """
+                {
+                  "status": "COMPLETE",
+                  "scope": {
+                    "catalog": "%s",
+                    "schema": "%s",
+                    "includeTables": [],
+                    "excludeTables": []
+                  },
+                  "counts": {"tables": 5, "columns": 6, "constraints": 0, "indexes": 0},
+                  "tables": [
+                    {"catalog": "%s", "schema": "%s", "tableName": "orders", "tableType": "TABLE"},
+                    {"catalog": "%s", "schema": "%s", "tableName": "customers", "tableType": "TABLE"},
+                    {"catalog": "%s", "schema": "%s", "tableName": "payments", "tableType": "TABLE"},
+                    {"catalog": "%s", "schema": "%s", "tableName": "customer_rollups", "tableType": "TABLE"},
+                    {"catalog": "%s", "schema": "%s", "tableName": "order_items", "tableType": "TABLE"}
+                  ],
+                  "columns": [
+                    {"catalog": "%s", "schema": "%s", "tableName": "orders", "columnName": "customer_id",
+                     "dataType": "bigint", "columnType": "bigint", "nullable": false, "ordinalPosition": 1},
+                    {"catalog": "%s", "schema": "%s", "tableName": "orders", "columnName": "id",
+                     "dataType": "bigint", "columnType": "bigint", "nullable": false, "ordinalPosition": 2},
+                    {"catalog": "%s", "schema": "%s", "tableName": "customers", "columnName": "id",
+                     "dataType": "bigint", "columnType": "bigint", "nullable": false, "ordinalPosition": 1},
+                    {"catalog": "%s", "schema": "%s", "tableName": "payments", "columnName": "amount",
+                     "dataType": "decimal", "columnType": "decimal", "nullable": false, "ordinalPosition": 1},
+                    {"catalog": "%s", "schema": "%s", "tableName": "customer_rollups", "columnName": "total_paid",
+                     "dataType": "decimal", "columnType": "decimal", "nullable": false, "ordinalPosition": 1},
+                    {"catalog": "%s", "schema": "%s", "tableName": "order_items", "columnName": "order_id",
+                     "dataType": "bigint", "columnType": "bigint", "nullable": false, "ordinalPosition": 1}
+                  ],
+                  "constraints": [],
+                  "indexes": []
+                }
+                """.formatted(
+                catalog, schema,
+                catalog, schema, catalog, schema, catalog, schema, catalog, schema, catalog, schema,
+                catalog, schema, catalog, schema, catalog, schema, catalog, schema, catalog, schema,
+                catalog, schema);
     }
 }

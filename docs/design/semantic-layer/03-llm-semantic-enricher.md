@@ -39,7 +39,9 @@
 - LLM 不接收可改写的正式 KG。确定性 KG 与模型 evidence bundle 是同一 `ScanBundle`
   的并列 artifact；模型只能返回语义候选或受限 reconciliation patch。
 
-LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。数据库事实来自 relation-detector 输出的 relationship、lineage、metadata、SQL source 和注释。
+LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。当前数据库事实来自 relation-detector
+输出的 relationship、lineage、naming、diagnostic 及其 metadata/DDL/SQL provenance；独立 metadata
+inventory 和 comment evidence 需要未来 wire/catalog 扩展。
 
 ## 1.1 Semantica 启发：LLM 不是 accountability layer
 
@@ -267,10 +269,10 @@ direct candidate/fact ref指向其他owner、只有overlap、或只用`evidenceR
 失败，不截断、不丢事实。`maxShardCount=128` 是默认运行保护，不是能力上限；大型 derived bundle
 需要调用方基于预计规模显式提高该值，manifest 仍记录实际 shard 数供审计。
 
-这里的预算只约束模型 request context，不约束 relation-detector JSON 的读取内存。当前
-`ScanResultReader` 会先把一个输入完整物化为 `ScanBundle`，随后才构建 deterministic KG 和 shard plan。
-因此，无法在配置堆内完成 typed materialization 的超大输入不属于本分片机制已经解决的范围；要支持
-这类输入，需要单独设计 streaming / on-disk ingestion，不能通过提高模型分片数来宣称支持。
+模型预算只约束单个request context；源JSON与完整evidence/KG使用另一条磁盘后备边界。
+`SemanticInputStore`流式校验并按section落盘，磁盘dictionary/union-find建立typed component，
+生产链路一次只物化一个固定字节上限component或一个受token门限约束的shard。完整bundle、KG和最终
+artifact均流式写出，因此堆使用不随完整输入、全部facts或全部shards线性增长。
 
 模型 shard 顺序执行。每片输出先用该片 bundle 执行 formal normalization；全部片成功后按输出中的
 canonical identity确定性合并。物理entity使用完整`physicalName`；无物理身份的业务entity使用
@@ -334,6 +336,8 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
+| `SEM-INGEST-MEMORY-01` | `MATCHED` | 正式命令使用流式scan reader、section spool、磁盘component与path-backed shard；128 MiB输入可在96 MiB堆、1 GiB输入可在512 MiB堆完成build/request-only门禁。 |
+| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；四类catalog facts及未被关系触达的表列进入evidence/KG/ownership，standalone bundle同时携带完整性描述。 |
 
 上述完整输入、模型请求预算、shard owner validation、治理默认值、deterministic candidate、
 formal逐引用闭包、自动review identity、reconciliation限制和`final-only`晚期失败审计均按矩阵闭合。

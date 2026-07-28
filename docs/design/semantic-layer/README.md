@@ -16,9 +16,11 @@ Relation Detector
 
 这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。EvidenceGraph 中的事件事实类型是 `SemanticEventCandidate`，KG 渲染为 `Event` 节点；它只来自 direct non-control write lineage，derived lineage 仅作 supporting evidence。事件 source/operation 只按 typed provenance 与 mapping kind 分类，缺失时使用 `SQL_WRITE/WRITE/SQL_WRITE_OPERATION` 中性默认值。完整 typed source identity 用于 raw contribution 去重和稳定排序；routine/trigger 最终按对象聚合，普通 SQL write 按 statement/source object 与 target table 聚合，同一 event 汇总多个 mapping kind 和不同证据位置。routine event identity 使用精确 `FUNCTION/PROCEDURE/PACKAGE/PACKAGE_BODY/EVENT` 类型与开放属性 `sourceObjectIdentity`；PostgreSQL full/live 路径使用输入参数类型签名区分 overload，compact token-event 使用 typed kind/name 与声明 statement identity，避免复制完整参数类型 grammar。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。所有非 diagnostic fact/event、物理 endpoint node 和 edge 必须具有非空可解析 evidence；完全相同 ID/content 可幂等复用，冲突 ID 会使整个 build 原子失败。
 
-`ScanResultReader` / `ScanBundle` 保留完整 `database.type + catalog + schema` 身份；多 input 合并会拒绝
-任一 identity 轴不同的输入。所有 semantic artifact 使用同一个 portable path renderer：工作目录内路径
-相对化，外部绝对路径只保留文件名；它用于防止本机绝对路径泄漏，不是跨仓库的持久 source identity。
+生产命令通过 `ScanResultReader.open()` 建立 `SemanticInputStore`：Jackson逐条校验并把四类
+metadata inventory 与事实写入磁盘section/index，多 input 会拒绝 database identity、scope 或完整
+inventory fingerprint 不一致。`ScanBundle` 保留为明确有界调用者及单个component的typed模型。
+所有semantic artifact使用同一个portable path renderer：工作目录内路径相对化，外部绝对路径只保留
+文件名；它用于防止本机绝对路径泄漏，不是跨仓库的持久source identity。
 
 当前还实现了语义抽取 artifact 链路：
 
@@ -39,7 +41,7 @@ Relation Detector JSON
        -> 严格验证 evidence/candidate refs，补齐 semanticGraph / validation
 ```
 
-模型不接收也不改写 deterministic KG；KG 与 extraction bundle 是同一个 `ScanBundle` 的并列输出。
+模型不接收也不改写 deterministic KG；KG 与 extraction bundle 来自同一个磁盘后备 evidence store。
 分片保留全部 fact/candidate，并由 planner 要求每项只有一个 canonical owner。超预算 table owner
 会按稳定 root ID 拆成 `table#part-NNNN`，但每个 root 及其 typed closure 仍不可切分。当前 prompt 和
 deterministic backfill 遵守 overlap 只读规则；`SemanticShardOutputOwnershipValidator` 还会在 backfill
@@ -57,9 +59,11 @@ staging已创建时writer会尽力
 `final-only`不修改完整staging，而是从中构建同级隐藏发布候选，只复制最终保留项和终态manifest。
 copy、manifest或publish晚期失败时，完整staging保留并标记`FAILED`；成功发布后才尽力清理staging。
 无界 evidence bundle、merged/final result和KG JSON直接写文件；prompt/request因token门限有界可保留
-字符串表示。所有分片payload统一位于`shards/shard-NNNN/`，单分片不生成root兼容副本。
-该分片边界只控制模型上下文；当前 reader 仍会先在内存中完整物化单个 relation-detector JSON。
-超大输入的 bounded-memory streaming / on-disk ingestion 尚未实现，不能由模型分片能力代替。
+字符串表示。所有分片payload统一位于`shards/shard-NNNN/`，单分片不生成root兼容副本。输入、evidence、
+component、KG和shard plan均以磁盘spool/外排索引为后备，内存边界为“最大单条record + 固定外排buffer +
+单个component/shard/prompt/response”。relation-detector JSON携带四类metadata inventory及
+`NOT_REQUESTED/COMPLETE/PARTIAL/UNAVAILABLE`状态；正式semantic命令只接受`COMPLETE`。未被
+relationship、lineage或naming触达的表列仍进入evidence、KG与shard ownership。
 
 `semantic e2e` 是 deterministic 验证入口：同一次读取 scan result 后同时写 `semantic-kg/<case-name>/` 和 `semantic-extraction/<case-name>/` 的 evidence bundle / prompt artifacts，但不调用模型。当前不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答；这些仍是后续阶段。
 
@@ -67,7 +71,8 @@ copy、manifest或publish晚期失败时，完整staging保留并标记`FAILED`�
 normalizer：候选回填后建立统一 reference index，验证每个 evidence/candidate ref、文档内 entity 引用和
 governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对象引用的表列存在于 evidence bundle，
 `SemanticOwnerIdRegistry` 保证所有 semantic section 的 owner ID 全局唯一。任一闭包失败都直接拒绝，不输出
-部分 artifact。独立命令要求 evidence bundle 携带合法 `shardContext`，并与自动执行链共用
+部分 artifact。独立命令要求 evidence bundle 携带`COMPLETE` inventory描述和合法`shardContext`，
+并与自动执行链共用
 `normalizeOwnedShard`：在 backfill 前验证 owned/overlap 集合及每个 model-authored object 的
 `ownedGroundingRefs`。它不需要接收完整 shard plan，但调用方必须提供 planner 生成或同契约构造的
 owner context；缺失、伪造或越界 context 会被拒绝。
@@ -102,11 +107,13 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | `SEM-READER-STATE-01` | `MATCHED` | `ScanBundle`/`EvidenceGraph`外层集合不可修改；typed fact document、graph payload与diagnostics在构造和公开accessor边界deep-copy，调用方不能回写内部状态。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | normalizer拒绝模型写入`BUSINESS_APPROVED`；正式semantic对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`，backfill后不保留空状态。 |
 | `SEM-CLI-ERROR-01` | `MATCHED` | CLI使用固定脱敏文案；参数、配置和API key缺失通过usage异常映射为exit 2，wire、sharding、normalization、模型调用和artifact I/O失败映射为runtime exit 1。 |
+| `SEM-INGEST-MEMORY-01` | `MATCHED` | 正式build/extract/e2e/normalize链路使用流式reader、section spool、外排identity/component索引与path-backed shard；只物化单条record和受预算约束的单component/shard。96 MiB/128 MiB与512 MiB/1 GiB子JVM门禁覆盖输入、build与request-only路径。 |
+| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | relation-detector direct/derived JSON输出同一四类metadata inventory、scope、counts与完整性状态；正式semantic命令只接受COMPLETE，相同多输入要求inventory fingerprint一致，未被关系事实触达的表列仍进入evidence/KG/shard ownership。 |
 
 离线 KG evidence/identity gate、typed event candidate identity、deterministic candidate、typed sharding、
 完整输入、统一模型请求预算、strict configuration、reader/graph公开状态和governance默认值已经闭环。
 wire path shape、formal semantic引用、自动review identity、reconciliation边界、`final-only`晚期失败
-审计及CLI错误分类已经按上述窄契约闭合。详细
+审计及CLI错误分类、磁盘后备reader与完整metadata inventory已经按上述窄契约闭合。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。
