@@ -12,17 +12,42 @@ public final class IndexEvidencePolicy {
                 && index.visible()
                 && (index.unique() || index.primary())
                 && index.columns().size() == 1
+                && hasValidPhysicalShape(index)
+                && index.seqInIndex().get(0) == 1
+                && hasNoPrefix(index, 0)
                 && index.expressions().stream().noneMatch(this::hasText)
                 && same(index.columns().get(0), column);
     }
 
     public boolean supportsLeadingColumnLookup(MetadataIndexFact index, String column) {
-        if (index == null || !index.visible() || index.columns().isEmpty()) {
+        if (index == null || !index.visible() || index.columns().isEmpty()
+                || !hasValidPhysicalShape(index)) {
             return false;
         }
         String first = index.columns().get(0);
-        int position = index.seqInIndex().isEmpty() ? 1 : index.seqInIndex().get(0);
+        int position = index.seqInIndex().get(0);
         return first != null && !first.isBlank() && position == 1 && same(first, column);
+    }
+
+    private boolean hasValidPhysicalShape(MetadataIndexFact index) {
+        return index.seqInIndex().size() == index.columns().size()
+                && (index.subParts().isEmpty() || index.subParts().size() == index.columns().size())
+                && strictlyIncreasingPositive(index.seqInIndex());
+    }
+
+    private boolean strictlyIncreasingPositive(java.util.List<Integer> positions) {
+        int previous = 0;
+        for (Integer position : positions) {
+            if (position == null || position <= previous) {
+                return false;
+            }
+            previous = position;
+        }
+        return true;
+    }
+
+    private boolean hasNoPrefix(MetadataIndexFact index, int member) {
+        return index.subParts().isEmpty() || !hasText(index.subParts().get(member));
     }
 
     private boolean same(String left, String right) {

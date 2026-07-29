@@ -62,7 +62,9 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 1. profiling候选以live metadata证明物理存在和类型兼容，稳定排序/去重后再消费配额，声明FK可按配置
    绕过unindexed-target gate。
 2. MySQL functional/invisible、PostgreSQL partial/INCLUDE、SQL Server filtered/INCLUDE/disabled index
-   不再被提升为无条件单列或lookup证据。
+   不再被提升为无条件单列或lookup证据。MySQL live policy同时校验`SUB_PART`、ordinal、visibility与
+   expression；token/full DDL分别保留typed prefix member。prefix/组合/expression unique不再证明
+   成员单列唯一，合法首个物理成员仍可支持lookup。
 3. 内置adaptor保留SPI v6 identity hook但不声明weight-adjustment capability；core只调用明确声明能力
    的实际策略。
 4. semantic derived path、逐项typed ref、review section和自动review identity均严格闭包。
@@ -74,6 +76,23 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 
 Fingerprint继续作为manifest中的审计产物，不另设tracked baseline；`verify-all`允许dirty，
 clean-worktree发布证明由`verify-release`负责。这些是冻结的窄契约，不是未闭合缺口。
+
+### 2026-07-28 四项反向审计的修复状态
+
+本轮按更新后的设计重新读取生产代码与测试，冻结并处理以下四项：
+
+1. MySQL live与token/full DDL已将index member显式分类为完整列、前缀列或表达式；prefix、expression
+   和composite unique不再产生成员单列`TARGET_UNIQUE`，合法首个物理成员仍可支持lookup。
+2. semantic内存validator与磁盘reader已共用metadata closure rules，完整验证成员column、FK引用端、
+   cardinality/ordinal、index shape及完整identity唯一性。
+3. semantic磁盘链路已改为全局event归并、typed component与唯一owner计划，raw-byte只控制I/O
+   window。128 MiB真实typed输入在96 MiB堆、1 GiB真实typed输入在512 MiB堆均完成完整e2e、KG、
+   request-only与workspace清理；1 GiB约100分15秒的结果只证明内存边界，不作为吞吐性能承诺。
+4. 400/450有效代码行门禁已扩展到relation-detector与semantic-layer全部目标职责后缀；原超限store、
+   artifact writer、output writer和fingerprinter已按真实职责拆分，无allowlist或改名绕过。
+
+以上状态以[Code / Design Traceability](code-design-traceability.md)为唯一矩阵。四项代码契约、
+结构门禁与指定内存门禁均已有直接证据；后续发布级回归仍按完整验收链执行。
 
 ### 历史已闭合边界
 
@@ -319,7 +338,11 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 
 1. Oracle/SQL Server `METADATA` 与 `DATABASE_OBJECTS` capability 已有非空 live collector，支持组合 constraint/index 和 partial-success warning；这证明代码契约可执行，但真实权限/版本组合仍需 runtime smoke。
 2. `AdaptorContractValidator` 在 JDBC 前一次性校验并冻结 adaptor 的 SPI/id/database types/capabilities/identifier rules/grouped collectors/parsers/profiling；`ScanCapabilityValidator`只消费该快照验证实际请求。`AdaptorCollectors`不再把null Optional member归一为空，null顶层grouped record、nested member、core可见的畸形shape和null scope统一为`AdaptorContractException`，single/batch稳定保持`ADAPTOR_ERROR`。live DDL要求structured DDL parser，live objects要求structured SQL parser，纯文件scan不新增live capability要求。
-3. `IndexEvidencePolicy` 不允许组合 PK/UNIQUE 成员证明单列唯一；普通组合索引仅首列可支持 lookup / `SOURCE_INDEX`，不单独决定方向。
+3. `IndexEvidencePolicy` 不允许组合 PK/UNIQUE 成员证明单列唯一；普通组合索引仅首列可支持 lookup /
+   `SOURCE_INDEX`，不单独决定方向。MySQL live metadata 的 `subParts`、visibility 和 expression 与
+   token-event、full v5.7、full v8.0 的 typed index member 语义一致：只有可见、无表达式、无前缀的
+   单物理列 unique/PK 才产生 `TARGET_UNIQUE`；前缀、组合和 expression unique 均不会伪造单列唯一，
+   但合法的首个物理成员仍可提供 lookup 证据。
 4. `DataLineageMerger` 对 source set canonical dedupe/sort，fact identity 不再依赖发射顺序。
 5. `ProfileOutcome` 区分 success/no-evidence/skip/permission/timeout/query-failure。`ProfileOutcomeContractValidator` 将外部 outcome 作为不可信输入原子校验，core 不转发 plugin warning 内容，而按已验证 status 重建脱敏 warning。四个方言 live SQL 独立测量 source non-null rows、source/target distinct 和 matched distinct，containment、overlap 与 negative gate 均基于真实统计。
 6. Metadata facts、live collector、statement source namespace、profile query 和 derived graph 均保留
@@ -384,14 +407,18 @@ PostgreSQL/SQL Server 重建 DDL 明确属于 relationship parser 使用的 stru
 可回放 declaration；若未来增加回放契约，需另行补齐 type modifier、default、identity/generated/
 computed/collation 并建立数据库执行测试。
 
-代码结构方面，`DialectGrammarArchitectureTest` 对 parser semantic package 中的
-Visitor/Collector 实施 400 有效代码行门禁，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade
-实施 450 有效代码行门禁；Javadoc、普通注释和空行不计入职责规模。generated Java、top-level record DTO 和 `package-info` 不参与行数约束，
-门禁没有永久 allowlist。expression、relationship 和 lineage 入口已经抽出 typed helper；
+代码结构方面，`DialectGrammarArchitectureTest` 对relation-detector与semantic-layer全部手写生产
+Java实施职责规模门禁：Visitor/Collector上限400，
+Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade/Store/Planner/Publisher/Fingerprinter/
+Canonicalizer/Handler/Writer上限450；
+Javadoc、普通注释和空行不计入职责规模。generated Java、top-level record DTO 和 `package-info`
+不参与行数约束，门禁没有永久allowlist。expression、relationship 和 lineage入口已经抽出typed helper；
 `StructuredScriptFramer` 只负责编排，并由 200 行门禁保护；MySQL、PostgreSQL、Oracle、common 和
 SQL Server 的 slice 算法位于五个独立 planner，各受 250 行门禁保护。行数和职责拆分已匹配，
 top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通类中的注释或字符串即使包含
-`record TypeName(` 也不能绕过门禁。该职责门禁状态为 `MATCHED`。
+`record TypeName(` 也不能绕过门禁。semantic input/result store、两套artifact writer、JSON writer
+和canonical fingerprinter已按生命周期、校验、事务、section rendering与对象字段外排排序职责拆分；
+原public facade保持不变。全仓职责规模状态为`MATCHED`。
 
 ## 后续技术债
 
@@ -458,9 +485,11 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - relation-detector JSON现在始终携带metadata inventory status、scope、counts和四类typed facts；
   `COMPLETE`只表示配置scan scope完整。`PARTIAL/UNAVAILABLE`不会被warning隐藏伪装，direct/derived输出
   使用同一inventory。
-- semantic正式命令使用流式`SemanticInputStore`、section spool、外排identity/component索引和
-  path-backed shard，不持有完整scan、bundle、全部shard或全局KG。非COMPLETE inventory在模型调用和
-  正式artifact写入前失败；128 MiB/96 MiB与1 GiB/512 MiB子JVM门禁验证输入、build和request-only路径。
+- semantic正式命令已使用流式`SemanticInputStore`、section spool、外排identity/offset/component索引、
+  全局owner plan和path-backed shard，不持有完整scan或最终全局KG。非COMPLETE或引用不闭合inventory
+  在模型调用和正式artifact写入前失败。128 MiB真实typed输入已在96 MiB堆完成e2e、KG、request-only
+  与workspace清理；1 GiB真实typed输入也已在512 MiB堆完成相同链路，耗时约100分15秒。该门禁证明
+  内存有界和spool清理，不宣称大型输入吞吐已优化。
 - correctness fixture 唯一性已闭环：fixture-local input 在相同执行配置下按 content hash 去重，
   correctness tree 外的 tracked sample-data 以规范 repo-relative path 作为独立 source-asset identity。Common 重复 fixture 已合并，MySQL 5.7 三个独立资产路径继续分别验收。
 - release、correctness 与 sample-data 已共享 `heavy-job-lock.sh`。最外层 owner 从 smoke 开始持锁到

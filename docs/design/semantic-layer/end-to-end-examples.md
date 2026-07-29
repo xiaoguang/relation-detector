@@ -5,9 +5,9 @@
 本文档提供 Semantic Layer 的端到端测试示例。当前代码已经落地两条离线链路：
 
 - KG JSON artifact 构建链路：`relation-detector scan-result.json -> ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> semantic-kg.json`
-- 语义抽取链路：`semantic extract` 从同一个 `ScanBundle` 并列写 deterministic KG 与完整
-  evidence bundle；大输入按当前 table-touch component 形成 evidence closure，并把小型断开分量确定性装箱为 bounded
-  shards。`codex-session` 只写逐片会话输入，
+- 语义抽取链路：`semantic extract` 从同一个全局磁盘evidence store并列写 deterministic KG 与完整
+  evidence bundle；大输入先全局归并typed event并计算table-touch component、stable-root closure和
+  唯一owner，再把有界root确定性装箱为shards。`codex-session` 只写逐片会话输入，
   `openai-api` 可逐片调用 Responses API，经 exact-ID merge、受限协调和完整 bundle 最终校验后产出
   normalized semantic document
 
@@ -70,7 +70,7 @@ CREATE TABLE order_items (
 
 ```json
 {
-  "database": {"type": "mysql", "schema": "shop"},
+  "database": {"type": "mysql", "catalog": "shop", "schema": ""},
   "generatedAt": "2026-06-23T00:00:00Z",
   "summary": {
     "directRelationshipCount": 5,

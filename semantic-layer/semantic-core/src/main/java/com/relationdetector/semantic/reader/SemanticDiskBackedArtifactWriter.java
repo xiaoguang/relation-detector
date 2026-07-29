@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,10 +13,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * CN: 将bounded component产生的KG与EvidenceGraph通过外排stable-ID合并并流式写成三个正式artifact；
- * 上游是SemanticEvidenceStore，下游是semantic CLI build/e2e，本类不重新解释物理事实或完整物化graph。
- * EN: Externally merges KG and EvidenceGraph records emitted by bounded components and streams the three formal
- * artifacts. It serves build/e2e without reinterpreting physical facts or materializing the complete graph.
+ * CN: 将 SemanticEvidenceStore 中已完成全局聚合的 KG 与 EvidenceGraph 记录通过外排 stable-ID 校验并流式
+ * 写成三个正式 artifact；下游是 semantic CLI build/e2e，本类不重新解释物理事实或完整物化 graph。
+ * EN: Validates the globally aggregated KG and EvidenceGraph records in SemanticEvidenceStore through external
+ * stable-ID stores and streams the three formal artifacts. It serves build/e2e without reinterpreting physical facts
+ * or materializing the complete graph.
  */
 public final class SemanticDiskBackedArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -30,104 +30,25 @@ public final class SemanticDiskBackedArtifactWriter {
         if (Files.exists(workspace)) {
             throw new ScanResultContractException("semantic artifact merge workspace already exists");
         }
-        Map<ArtifactSection, ExternalJsonRecordStore> stores = new EnumMap<>(ArtifactSection.class);
-        try {
+        try (SemanticDiskBackedKgStore kg =
+                     new SemanticDiskBackedKgStore(evidenceStore.graphRecords(), workspace.resolve("kg"))) {
             Files.createDirectories(outputDirectory);
-            for (ArtifactSection section : ArtifactSection.values()) {
-                stores.put(section, new ExternalJsonRecordStore(
-                        workspace.resolve(section.name().toLowerCase(java.util.Locale.ROOT))));
-            }
-            evidenceStore.forEachComponent(component -> appendComponent(component, stores));
-            stores.values().forEach(ExternalJsonRecordStore::finish);
             Map<String, Object> buildRun = buildRun(evidenceStore.descriptor());
-            writeKg(outputDirectory.resolve("semantic-kg.json"), stores, buildRun, evidenceStore);
+            writeKg(outputDirectory.resolve("semantic-kg.json"), kg, buildRun, evidenceStore);
             writeBuildRun(outputDirectory.resolve("semantic-build-run.json"), buildRun);
             writeEvidenceGraph(
                     outputDirectory.resolve("semantic-evidence-graph.json"),
-                    stores,
                     evidenceStore);
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to write disk-backed semantic artifacts", failure);
         } finally {
-            stores.values().forEach(store -> {
-                try {
-                    store.close();
-                } catch (RuntimeException ignored) {
-                    // The primary write failure is more useful than cleanup noise.
-                }
-            });
             deleteRecursivelyBestEffort(workspace);
         }
     }
 
-    private void appendComponent(
-            SemanticEvidenceStore.ComponentBundle component,
-            Map<ArtifactSection, ExternalJsonRecordStore> stores
-    ) {
-        try {
-            JsonNode kg = JSON.readTree(component.kgPath().toFile());
-            appendArray(stores.get(ArtifactSection.KG_NODES), kg.path("nodes"));
-            appendArray(stores.get(ArtifactSection.KG_EDGES), kg.path("edges"));
-            appendArray(stores.get(ArtifactSection.KG_EVIDENCE), kg.path("evidenceRefs"));
-            appendDiagnostics(stores.get(ArtifactSection.KG_DIAGNOSTICS), kg.path("diagnostics"));
-
-            JsonNode graph = JSON.readTree(component.evidenceGraphPath().toFile());
-            appendEndpoints(stores.get(ArtifactSection.GRAPH_ENDPOINTS), graph.path("endpoints"));
-            appendArray(stores.get(ArtifactSection.GRAPH_FACTS), graph.path("facts"));
-            appendArray(stores.get(ArtifactSection.GRAPH_EVIDENCE), graph.path("evidenceRefs"));
-            appendDiagnostics(stores.get(ArtifactSection.GRAPH_DIAGNOSTICS), graph.path("diagnostics"));
-        } catch (IOException failure) {
-            throw new ScanResultContractException("failed to merge bounded semantic component artifact", failure);
-        }
-    }
-
-    private void appendArray(ExternalJsonRecordStore store, JsonNode values) {
-        if (!values.isArray()) {
-            throw new ScanResultContractException("semantic component artifact section must be an array");
-        }
-        for (JsonNode value : values) {
-            store.append(requiredId(value), value);
-        }
-    }
-
-    private void appendEndpoints(ExternalJsonRecordStore store, JsonNode values) {
-        if (!values.isArray()) {
-            throw new ScanResultContractException("semantic graph endpoints must be an array");
-        }
-        for (JsonNode value : values) {
-            String table = value.path("table").asText("");
-            String column = value.path("column").asText("");
-            String key = column.isBlank() ? table : table + "." + column;
-            store.append(key, value);
-        }
-    }
-
-    private void appendDiagnostics(ExternalJsonRecordStore store, JsonNode values) {
-        if (!values.isArray()) {
-            throw new ScanResultContractException("semantic diagnostics must be an array");
-        }
-        int position = 0;
-        for (JsonNode value : values) {
-            String id = value.path("id").asText("");
-            store.append(id.isBlank()
-                    ? com.relationdetector.semantic.StableSemanticId.of(
-                            "semantic-diagnostic", Integer.toString(position), value.toString())
-                    : id, value);
-            position++;
-        }
-    }
-
-    private String requiredId(JsonNode value) {
-        String id = value.path("id").asText("");
-        if (id.isBlank()) {
-            throw new ScanResultContractException("semantic artifact record id is required");
-        }
-        return id;
-    }
-
     private void writeKg(
             Path target,
-            Map<ArtifactSection, ExternalJsonRecordStore> stores,
+            SemanticDiskBackedKgStore kg,
             Map<String, Object> buildRun,
             SemanticEvidenceStore evidence
     ) throws IOException {
@@ -137,10 +58,12 @@ public final class SemanticDiskBackedArtifactWriter {
             generator.writeStartObject();
             generator.writeObjectField("buildRun", buildRun);
             generator.writeObjectFieldStart("summary");
-            generator.writeNumberField("nodeCount", stores.get(ArtifactSection.KG_NODES).count());
-            generator.writeNumberField("edgeCount", stores.get(ArtifactSection.KG_EDGES).count());
-            generator.writeNumberField("evidenceRefCount", stores.get(ArtifactSection.KG_EVIDENCE).count());
-            generator.writeNumberField("diagnosticCount", stores.get(ArtifactSection.KG_DIAGNOSTICS).count());
+            generator.writeNumberField("nodeCount", kg.nodeCount());
+            generator.writeNumberField("edgeCount", kg.edgeCount());
+            generator.writeNumberField("evidenceRefCount",
+                    evidence.graphRecords().count(SemanticGraphRecordStore.Section.EVIDENCE));
+            generator.writeNumberField("diagnosticCount",
+                    evidence.graphRecords().count(SemanticGraphRecordStore.Section.DIAGNOSTICS));
             generator.writeNumberField("inputRelationshipCount",
                     evidence.count(SemanticEvidenceStore.Section.RELATIONSHIPS));
             generator.writeNumberField("inputDataLineageCount",
@@ -154,10 +77,12 @@ public final class SemanticDiskBackedArtifactWriter {
             generator.writeNumberField("eventCandidateCount",
                     evidence.count(SemanticEvidenceStore.Section.EVENT_CANDIDATES));
             generator.writeEndObject();
-            stores.get(ArtifactSection.KG_NODES).writeArray(generator, "nodes");
-            stores.get(ArtifactSection.KG_EDGES).writeArray(generator, "edges");
-            stores.get(ArtifactSection.KG_EVIDENCE).writeArray(generator, "evidenceRefs");
-            stores.get(ArtifactSection.KG_DIAGNOSTICS).writeArray(generator, "diagnostics");
+            kg.writeNodes(generator);
+            kg.writeEdges(generator);
+            evidence.graphRecords().writeArray(
+                    SemanticGraphRecordStore.Section.EVIDENCE, generator, "evidenceRefs");
+            evidence.graphRecords().writeArray(
+                    SemanticGraphRecordStore.Section.DIAGNOSTICS, generator, "diagnostics");
             generator.writeEndObject();
             generator.writeRaw('\n');
         }
@@ -174,7 +99,6 @@ public final class SemanticDiskBackedArtifactWriter {
 
     private void writeEvidenceGraph(
             Path target,
-            Map<ArtifactSection, ExternalJsonRecordStore> stores,
             SemanticEvidenceStore evidence
     ) throws IOException {
         try (OutputStream output = Files.newOutputStream(target);
@@ -182,10 +106,14 @@ public final class SemanticDiskBackedArtifactWriter {
             generator.useDefaultPrettyPrinter();
             generator.writeStartObject();
             writeScanBundleDescriptor(generator, evidence.descriptor());
-            stores.get(ArtifactSection.GRAPH_ENDPOINTS).writeArray(generator, "endpoints");
-            stores.get(ArtifactSection.GRAPH_FACTS).writeArray(generator, "facts");
-            stores.get(ArtifactSection.GRAPH_EVIDENCE).writeArray(generator, "evidenceRefs");
-            stores.get(ArtifactSection.GRAPH_DIAGNOSTICS).writeArray(generator, "diagnostics");
+            evidence.graphRecords().writeArray(
+                    SemanticGraphRecordStore.Section.ENDPOINTS, generator, "endpoints");
+            evidence.graphRecords().writeArray(
+                    SemanticGraphRecordStore.Section.FACTS, generator, "facts");
+            evidence.graphRecords().writeArray(
+                    SemanticGraphRecordStore.Section.EVIDENCE, generator, "evidenceRefs");
+            evidence.graphRecords().writeArray(
+                    SemanticGraphRecordStore.Section.DIAGNOSTICS, generator, "diagnostics");
             generator.writeObjectFieldStart("summary");
             generator.writeNumberField("relationshipCount",
                     evidence.count(SemanticEvidenceStore.Section.RELATIONSHIPS));
@@ -258,14 +186,4 @@ public final class SemanticDiskBackedArtifactWriter {
         }
     }
 
-    private enum ArtifactSection {
-        KG_NODES,
-        KG_EDGES,
-        KG_EVIDENCE,
-        KG_DIAGNOSTICS,
-        GRAPH_ENDPOINTS,
-        GRAPH_FACTS,
-        GRAPH_EVIDENCE,
-        GRAPH_DIAGNOSTICS
-    }
 }

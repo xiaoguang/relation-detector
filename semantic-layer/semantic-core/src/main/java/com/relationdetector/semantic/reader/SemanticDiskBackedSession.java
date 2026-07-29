@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * CN: 为一次production semantic命令拥有input/evidence/component磁盘工作区并统一清理；输入是完整scan文件，
+ * CN: 为一次 production semantic 命令拥有 input、evidence 和全局 owner 规划磁盘工作区并统一清理；输入是完整 scan 文件，
  * 输出是可流式使用的evidence store，本会话不执行业务构建或保留跨命令缓存。
- * EN: Owns and cleans the input, evidence, and component disk workspace for one production semantic command. It
+ * EN: Owns and cleans the input, evidence, and global-owner planning workspace for one production semantic command. It
  * exposes a streaming evidence store over complete scan files and provides neither business assembly nor caching.
  */
 public final class SemanticDiskBackedSession implements AutoCloseable {

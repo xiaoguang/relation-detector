@@ -1,30 +1,18 @@
 package com.relationdetector.cli.verification;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.HexFormat;
-import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -58,20 +46,17 @@ final class ExternalCanonicalJsonFingerprinter {
             "profileId",
             "resultName",
             "tokenEventNative");
-    private static final Comparator<String> CODE_POINT_ORDER =
-            ExternalCanonicalJsonFingerprinter::compareCodePoints;
     private static final JsonFactory JSON = JsonFactory.builder().build();
-    private static final int VALUE_MEMORY_LIMIT = 1024 * 1024;
 
     private final Path workspace;
-    private final int fieldsPerChunk;
+    private final CanonicalObjectFieldSorter objectSorter;
 
     ExternalCanonicalJsonFingerprinter(Path workspace, int fieldsPerChunk) {
         if (workspace == null || fieldsPerChunk < 1) {
             throw new IllegalArgumentException("fingerprint workspace and positive chunk size are required");
         }
         this.workspace = workspace;
-        this.fieldsPerChunk = fieldsPerChunk;
+        this.objectSorter = new CanonicalObjectFieldSorter(workspace, fieldsPerChunk);
     }
 
     String fingerprint(Path input, CanonicalFingerprintMode mode) {
@@ -152,133 +137,14 @@ final class ExternalCanonicalJsonFingerprinter {
             CanonicalFingerprintMode mode,
             int objectDepth
     ) throws IOException {
-        Path level = workspace.resolve("object-" + objectDepth);
-        ObjectWorkspace objectWorkspace = new ObjectWorkspace(level);
-        List<Path> chunks = new ArrayList<>();
-        List<FieldRecord> pending = new ArrayList<>(fieldsPerChunk);
-        try (ObjectSpool spool = new ObjectSpool(objectWorkspace)) {
-            JsonToken token;
-            while ((token = parser.nextToken()) != JsonToken.END_OBJECT) {
-                if (token != JsonToken.FIELD_NAME) {
-                    throw new ReleaseVerificationException("JSON object field name is required");
-                }
-                String key = parser.currentName();
-                JsonToken valueToken = parser.nextToken();
-                if (valueToken == null) {
-                    throw new ReleaseVerificationException("JSON object field value is required");
-                }
-                if (filtered(key, mode)) {
-                    parser.skipChildren();
-                    continue;
-                }
-                long offset = spool.position();
-                writeValue(parser, valueToken, spool, mode, objectDepth + 1);
-                pending.add(new FieldRecord(key, offset, spool.position() - offset));
-                if (pending.size() == fieldsPerChunk) {
-                    chunks.add(writeChunk(objectWorkspace, chunks.size(), pending));
-                    pending.clear();
-                }
-            }
-            if (chunks.isEmpty()) {
-                writeInMemoryObject(output, spool, pending);
-            } else {
-                if (!pending.isEmpty()) {
-                    chunks.add(writeChunk(objectWorkspace, chunks.size(), pending));
-                }
-                writeSortedObject(output, spool, chunks);
-            }
-        }
-    }
-
-    private Path writeChunk(
-            ObjectWorkspace workspace,
-            int index,
-            List<FieldRecord> records
-    ) throws IOException {
-        records.sort(Comparator.comparing(FieldRecord::key, CODE_POINT_ORDER));
-        workspace.prepare();
-        Path chunk = workspace.directory().resolve("fields-" + index + ".bin");
-        try (DataOutputStream output = new DataOutputStream(
-                new BufferedOutputStream(Files.newOutputStream(chunk)))) {
-            for (FieldRecord record : records) {
-                byte[] key = record.key().getBytes(StandardCharsets.UTF_8);
-                output.writeInt(key.length);
-                output.write(key);
-                output.writeLong(record.offset());
-                output.writeLong(record.length());
-            }
-        }
-        return chunk;
-    }
-
-    private void writeInMemoryObject(
-            OutputStream output,
-            ObjectSpool spool,
-            List<FieldRecord> records
-    ) throws IOException {
-        records.sort(Comparator.comparing(FieldRecord::key, CODE_POINT_ORDER));
-        output.write('{');
-        String previous = null;
-        boolean first = true;
-        for (FieldRecord record : records) {
-            if (record.key().equals(previous)) {
-                throw new ReleaseVerificationException("duplicate JSON object key");
-            }
-            if (!first) {
-                output.write(',');
-            }
-            writeQuoted(output, record.key());
-            output.write(':');
-            spool.copy(record.offset(), record.length(), output);
-            previous = record.key();
-            first = false;
-        }
-        output.write('}');
-    }
-
-    private void writeSortedObject(
-            OutputStream output,
-            ObjectSpool spool,
-            List<Path> chunks
-    ) throws IOException {
-        PriorityQueue<ChunkCursor> queue = new PriorityQueue<>(
-                Comparator.comparing(cursor -> cursor.current().key(), CODE_POINT_ORDER));
-        List<ChunkCursor> cursors = new ArrayList<>();
-        try {
-            for (Path chunk : chunks) {
-                ChunkCursor cursor = new ChunkCursor(chunk);
-                cursors.add(cursor);
-                if (cursor.advance()) {
-                    queue.add(cursor);
-                }
-            }
-            output.write('{');
-            String previous = null;
-            boolean first = true;
-            while (!queue.isEmpty()) {
-                ChunkCursor cursor = queue.remove();
-                FieldRecord record = cursor.current();
-                if (record.key().equals(previous)) {
-                    throw new ReleaseVerificationException("duplicate JSON object key");
-                }
-                if (!first) {
-                    output.write(',');
-                }
-                writeQuoted(output, record.key());
-                output.write(':');
-                spool.copy(record.offset(), record.length(), output);
-                previous = record.key();
-                first = false;
-                if (cursor.advance()) {
-                    queue.add(cursor);
-                }
-            }
-            output.write('}');
-        } finally {
-            for (ChunkCursor cursor : cursors) {
-                cursor.close();
-            }
-        }
+        objectSorter.write(
+                parser,
+                output,
+                mode,
+                objectDepth,
+                this::filtered,
+                this::writeValue,
+                this::writeQuoted);
     }
 
     private boolean filtered(String key, CanonicalFingerprintMode mode) {
@@ -372,193 +238,6 @@ final class ExternalCanonicalJsonFingerprinter {
     }
 
     static int compareCodePoints(String left, String right) {
-        int leftOffset = 0;
-        int rightOffset = 0;
-        while (leftOffset < left.length() && rightOffset < right.length()) {
-            int leftCodePoint = left.codePointAt(leftOffset);
-            int rightCodePoint = right.codePointAt(rightOffset);
-            if (leftCodePoint != rightCodePoint) {
-                return Integer.compare(leftCodePoint, rightCodePoint);
-            }
-            leftOffset += Character.charCount(leftCodePoint);
-            rightOffset += Character.charCount(rightCodePoint);
-        }
-        return Integer.compare(left.length() - leftOffset, right.length() - rightOffset);
-    }
-
-    private record FieldRecord(String key, long offset, long length) {
-    }
-
-    private static final class ChunkCursor implements AutoCloseable {
-        private final DataInputStream input;
-        private FieldRecord current;
-
-        private ChunkCursor(Path path) throws IOException {
-            input = new DataInputStream(new BufferedInputStream(Files.newInputStream(path)));
-        }
-
-        private boolean advance() throws IOException {
-            try {
-                int keyLength = input.readInt();
-                byte[] key = input.readNBytes(keyLength);
-                if (key.length != keyLength) {
-                    throw new ReleaseVerificationException("canonical field index ended unexpectedly");
-                }
-                current = new FieldRecord(
-                        new String(key, StandardCharsets.UTF_8), input.readLong(), input.readLong());
-                return true;
-            } catch (java.io.EOFException end) {
-                current = null;
-                return false;
-            }
-        }
-
-        private FieldRecord current() {
-            return current;
-        }
-
-        @Override
-        public void close() throws IOException {
-            input.close();
-        }
-    }
-
-    private final class ObjectWorkspace {
-        private final Path directory;
-        private boolean prepared;
-
-        private ObjectWorkspace(Path directory) {
-            this.directory = directory;
-        }
-
-        private void prepare() throws IOException {
-            if (!prepared) {
-                deleteRecursively(directory);
-                Files.createDirectories(directory);
-                prepared = true;
-            }
-        }
-
-        private Path directory() {
-            return directory;
-        }
-    }
-
-    private static final class ObjectSpool extends OutputStream implements AutoCloseable {
-        private final ObjectWorkspace workspace;
-        private ByteArrayOutputStream memory = new ByteArrayOutputStream();
-        private FileChannel file;
-        private long position;
-
-        private ObjectSpool(ObjectWorkspace workspace) {
-            this.workspace = workspace;
-        }
-
-        private long position() {
-            return position;
-        }
-
-        @Override
-        public void write(int value) throws IOException {
-            ensureStorage(1);
-            if (file == null) {
-                memory.write(value);
-            } else {
-                writeFile(ByteBuffer.wrap(new byte[] {(byte) value}));
-            }
-            position++;
-        }
-
-        @Override
-        public void write(byte[] bytes, int offset, int length) throws IOException {
-            ensureStorage(length);
-            if (file == null) {
-                memory.write(bytes, offset, length);
-            } else {
-                writeFile(ByteBuffer.wrap(bytes, offset, length));
-            }
-            position += length;
-        }
-
-        private void ensureStorage(int incoming) throws IOException {
-            if (file != null || position + incoming <= VALUE_MEMORY_LIMIT) {
-                return;
-            }
-            workspace.prepare();
-            file = FileChannel.open(
-                    workspace.directory().resolve("values.spool"),
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.READ,
-                    StandardOpenOption.WRITE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
-            writeFile(ByteBuffer.wrap(memory.toByteArray()));
-            memory = null;
-        }
-
-        private void writeFile(ByteBuffer buffer) throws IOException {
-            while (buffer.hasRemaining()) {
-                file.write(buffer);
-            }
-        }
-
-        private void copy(long offset, long length, OutputStream output) throws IOException {
-            if (file == null) {
-                memory.writeTo(new RangeOutputStream(output, offset, length));
-                return;
-            }
-            ByteBuffer buffer = ByteBuffer.allocate(64 * 1024);
-            long source = offset;
-            long remaining = length;
-            while (remaining > 0) {
-                buffer.clear();
-                buffer.limit((int) Math.min(buffer.capacity(), remaining));
-                int read = file.read(buffer, source);
-                if (read < 0) {
-                    throw new ReleaseVerificationException(
-                            "canonical value spool ended unexpectedly");
-                }
-                output.write(buffer.array(), 0, read);
-                source += read;
-                remaining -= read;
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            if (file != null) {
-                file.close();
-            }
-        }
-    }
-
-    private static final class RangeOutputStream extends OutputStream {
-        private final OutputStream target;
-        private final long offset;
-        private final long length;
-        private long position;
-
-        private RangeOutputStream(OutputStream target, long offset, long length) {
-            this.target = target;
-            this.offset = offset;
-            this.length = length;
-        }
-
-        @Override
-        public void write(int value) throws IOException {
-            if (position >= offset && position < offset + length) {
-                target.write(value);
-            }
-            position++;
-        }
-
-        @Override
-        public void write(byte[] bytes, int start, int count) throws IOException {
-            long from = Math.max(offset, position);
-            long to = Math.min(offset + length, position + count);
-            if (from < to) {
-                target.write(bytes, start + (int) (from - position), (int) (to - from));
-            }
-            position += count;
-        }
+        return CanonicalObjectFieldSorter.compareCodePoints(left, right);
     }
 }

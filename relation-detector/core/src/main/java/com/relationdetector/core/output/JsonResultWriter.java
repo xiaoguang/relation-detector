@@ -2,26 +2,17 @@ package com.relationdetector.core.output;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.relationdetector.contracts.model.DataLineageCandidate;
-import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.DerivedPathCandidate;
-import com.relationdetector.contracts.model.Endpoint;
-import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
-import com.relationdetector.contracts.model.RelationshipCandidate;
-import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 import com.relationdetector.core.scan.MetadataInventory;
 import com.relationdetector.core.scan.ScanResult;
 
@@ -39,6 +30,7 @@ public final class JsonResultWriter {
     private static final String TRANSITIVE_NAMING_PATH = "TRANSITIVE_NAMING_PATH";
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
+    private final JsonResultFactRenderer renderer = new JsonResultFactRenderer(JSON);
 
     /**
      *
@@ -155,11 +147,11 @@ public final class JsonResultWriter {
 
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");
-        database.put("type", safe(result.databaseType()));
+        database.put("type", JsonResultFactRenderer.safe(result.databaseType()));
         if (result.catalog() != null && !result.catalog().isBlank()) {
             database.put("catalog", result.catalog());
         }
-        database.put("schema", safe(result.schema()));
+        database.put("schema", JsonResultFactRenderer.safe(result.schema()));
         root.put("generatedAt", String.valueOf(result.generatedAt()));
 
         ObjectNode summary = root.putObject("summary");
@@ -173,12 +165,12 @@ public final class JsonResultWriter {
         summary.put("derivedNamingEvidenceCount", derivedNamingEvidenceCount);
         summary.put("totalNamingEvidenceCount", directNamingEvidenceCount + derivedNamingEvidenceCount);
         if (includeObservationCounts) {
-            int directRelationshipObservations = relationshipObservationCount(result.relationships());
-            int derivedRelationshipObservations = derivedPathObservationCount(derivedRelationshipFacts);
-            int directDataLineageObservations = dataLineageObservationCount(result.dataLineages());
-            int derivedDataLineageObservations = derivedPathObservationCount(derivedDataLineageFacts);
-            int directNamingObservations = namingEvidenceObservationCount(directNamingEvidence);
-            int derivedNamingObservations = namingEvidenceObservationCount(derivedNamingOutput);
+            int directRelationshipObservations = renderer.relationshipObservationCount(result.relationships());
+            int derivedRelationshipObservations = renderer.derivedPathObservationCount(derivedRelationshipFacts);
+            int directDataLineageObservations = renderer.dataLineageObservationCount(result.dataLineages());
+            int derivedDataLineageObservations = renderer.derivedPathObservationCount(derivedDataLineageFacts);
+            int directNamingObservations = renderer.namingEvidenceObservationCount(directNamingEvidence);
+            int derivedNamingObservations = renderer.namingEvidenceObservationCount(derivedNamingOutput);
             summary.put("directRelationshipObservationCount", directRelationshipObservations);
             summary.put("derivedRelationshipObservationCount", derivedRelationshipObservations);
             summary.put("totalRelationshipObservationCount",
@@ -195,62 +187,39 @@ public final class JsonResultWriter {
         ArrayNode sources = summary.putArray("sources");
         result.sources().forEach(sources::add);
 
-        root.set("metadataInventory", metadataInventoryNode(result.metadataInventory()));
+        root.set("metadataInventory", renderer.metadataInventoryNode(result.metadataInventory()));
 
         ArrayNode relationships = root.putArray("relationships");
         result.relationships().forEach(relation ->
-                relationships.add(relationshipNode(relation, includeEvidence, includeWarnings)));
+                relationships.add(renderer.relationshipNode(relation, includeEvidence, includeWarnings)));
 
         ArrayNode dataLineages = root.putArray("dataLineages");
         result.dataLineages().forEach(lineage ->
-                dataLineages.add(dataLineageNode(lineage, includeEvidence, includeWarnings)));
+                dataLineages.add(renderer.dataLineageNode(lineage, includeEvidence, includeWarnings)));
 
         ArrayNode derivedRelationships = root.putArray("derivedRelationships");
         derivedRelationshipFacts.forEach(candidate ->
-                derivedRelationships.add(derivedPathNode(candidate, includeEvidence)));
+                derivedRelationships.add(renderer.derivedPathNode(candidate, includeEvidence)));
 
         ArrayNode derivedDataLineages = root.putArray("derivedDataLineages");
         derivedDataLineageFacts.forEach(candidate ->
-                derivedDataLineages.add(derivedPathNode(candidate, includeEvidence)));
+                derivedDataLineages.add(renderer.derivedPathNode(candidate, includeEvidence)));
 
         ArrayNode naming = root.putArray("namingEvidence");
         namingEvidence.forEach(candidate ->
-                naming.add(namingEvidenceNode(candidate, includeEvidence)));
+                naming.add(renderer.namingEvidenceNode(candidate, includeEvidence)));
 
         ArrayNode derivedNaming = root.putArray("derivedNamingEvidence");
         derivedNamingOutput.forEach(candidate ->
-                derivedNaming.add(lightweightNamingEvidenceNode(candidate)));
+                derivedNaming.add(renderer.lightweightNamingEvidenceNode(candidate)));
 
         if (includeWarnings) {
-            root.set("warnings", warningsNode(result.warnings()));
+            root.set("warnings", renderer.warningsNode(result.warnings()));
         } else {
             root.set("warnings", JSON.createArrayNode());
         }
 
         return root;
-    }
-
-    private ObjectNode metadataInventoryNode(MetadataInventory inventory) {
-        ObjectNode node = JSON.createObjectNode();
-        node.put("status", inventory.status().name());
-        ObjectNode scope = node.putObject("scope");
-        scope.put("catalog", safe(inventory.scope().catalog()));
-        scope.put("schema", safe(inventory.scope().schema()));
-        ArrayNode includeTables = scope.putArray("includeTables");
-        inventory.scope().includeTables().forEach(includeTables::add);
-        ArrayNode excludeTables = scope.putArray("excludeTables");
-        inventory.scope().excludeTables().forEach(excludeTables::add);
-
-        ObjectNode counts = node.putObject("counts");
-        counts.put("tables", inventory.tables().size());
-        counts.put("columns", inventory.columns().size());
-        counts.put("constraints", inventory.constraints().size());
-        counts.put("indexes", inventory.indexes().size());
-        node.set("tables", JSON.valueToTree(inventory.tables()));
-        node.set("columns", JSON.valueToTree(inventory.columns()));
-        node.set("constraints", JSON.valueToTree(inventory.constraints()));
-        node.set("indexes", JSON.valueToTree(inventory.indexes()));
-        return node;
     }
 
     private String serialize(ObjectNode root) {
@@ -299,30 +268,32 @@ public final class JsonResultWriter {
             generator.useDefaultPrettyPrinter();
             generator.writeStartObject();
             generator.writeObjectFieldStart("database");
-            generator.writeStringField("type", safe(result.databaseType()));
+            generator.writeStringField("type", JsonResultFactRenderer.safe(result.databaseType()));
             if (result.catalog() != null && !result.catalog().isBlank()) {
                 generator.writeStringField("catalog", result.catalog());
             }
-            generator.writeStringField("schema", safe(result.schema()));
+            generator.writeStringField("schema", JsonResultFactRenderer.safe(result.schema()));
             generator.writeEndObject();
             generator.writeStringField("generatedAt", String.valueOf(result.generatedAt()));
             writeSummary(generator, result, directNamingEvidence, derivedRelationshipFacts,
                     derivedDataLineageFacts, derivedNamingOutput, includeWarnings, includeObservationCounts);
             writeMetadataInventory(generator, result.metadataInventory());
             writeArray(generator, "relationships", result.relationships().stream()
-                    .map(relation -> relationshipNode(relation, includeEvidence, includeWarnings)).iterator());
+                    .map(relation -> renderer.relationshipNode(
+                            relation, includeEvidence, includeWarnings)).iterator());
             writeArray(generator, "dataLineages", result.dataLineages().stream()
-                    .map(lineage -> dataLineageNode(lineage, includeEvidence, includeWarnings)).iterator());
+                    .map(lineage -> renderer.dataLineageNode(
+                            lineage, includeEvidence, includeWarnings)).iterator());
             writeArray(generator, "derivedRelationships", derivedRelationshipFacts.stream()
-                    .map(candidate -> derivedPathNode(candidate, includeEvidence)).iterator());
+                    .map(candidate -> renderer.derivedPathNode(candidate, includeEvidence)).iterator());
             writeArray(generator, "derivedDataLineages", derivedDataLineageFacts.stream()
-                    .map(candidate -> derivedPathNode(candidate, includeEvidence)).iterator());
+                    .map(candidate -> renderer.derivedPathNode(candidate, includeEvidence)).iterator());
             writeArray(generator, "namingEvidence", namingEvidence.stream()
-                    .map(candidate -> namingEvidenceNode(candidate, includeEvidence)).iterator());
+                    .map(candidate -> renderer.namingEvidenceNode(candidate, includeEvidence)).iterator());
             writeArray(generator, "derivedNamingEvidence", derivedNamingOutput.stream()
-                    .map(this::lightweightNamingEvidenceNode).iterator());
+                    .map(renderer::lightweightNamingEvidenceNode).iterator());
             writeArray(generator, "warnings", includeWarnings
-                    ? result.warnings().stream().map(this::warningNode).iterator()
+                    ? result.warnings().stream().map(renderer::warningNode).iterator()
                     : java.util.Collections.emptyIterator());
             generator.writeEndObject();
             generator.writeRaw('\n');
@@ -366,12 +337,12 @@ public final class JsonResultWriter {
         generator.writeNumberField("totalNamingEvidenceCount",
                 directNamingEvidenceCount + derivedNamingEvidenceCount);
         if (includeObservationCounts) {
-            int directRelationshipObservations = relationshipObservationCount(result.relationships());
-            int derivedRelationshipObservations = derivedPathObservationCount(derivedRelationshipFacts);
-            int directDataLineageObservations = dataLineageObservationCount(result.dataLineages());
-            int derivedDataLineageObservations = derivedPathObservationCount(derivedDataLineageFacts);
-            int directNamingObservations = namingEvidenceObservationCount(directNamingEvidence);
-            int derivedNamingObservations = namingEvidenceObservationCount(derivedNamingOutput);
+            int directRelationshipObservations = renderer.relationshipObservationCount(result.relationships());
+            int derivedRelationshipObservations = renderer.derivedPathObservationCount(derivedRelationshipFacts);
+            int directDataLineageObservations = renderer.dataLineageObservationCount(result.dataLineages());
+            int derivedDataLineageObservations = renderer.derivedPathObservationCount(derivedDataLineageFacts);
+            int directNamingObservations = renderer.namingEvidenceObservationCount(directNamingEvidence);
+            int derivedNamingObservations = renderer.namingEvidenceObservationCount(derivedNamingOutput);
             generator.writeNumberField("directRelationshipObservationCount", directRelationshipObservations);
             generator.writeNumberField("derivedRelationshipObservationCount", derivedRelationshipObservations);
             generator.writeNumberField("totalRelationshipObservationCount",
@@ -398,8 +369,8 @@ public final class JsonResultWriter {
         generator.writeObjectFieldStart("metadataInventory");
         generator.writeStringField("status", inventory.status().name());
         generator.writeObjectFieldStart("scope");
-        generator.writeStringField("catalog", safe(inventory.scope().catalog()));
-        generator.writeStringField("schema", safe(inventory.scope().schema()));
+        generator.writeStringField("catalog", JsonResultFactRenderer.safe(inventory.scope().catalog()));
+        generator.writeStringField("schema", JsonResultFactRenderer.safe(inventory.scope().schema()));
         writeStringArray(generator, "includeTables", inventory.scope().includeTables());
         writeStringArray(generator, "excludeTables", inventory.scope().excludeTables());
         generator.writeEndObject();
@@ -445,204 +416,7 @@ public final class JsonResultWriter {
         generator.writeEndArray();
     }
 
-    private int relationshipObservationCount(List<RelationshipCandidate> relationships) {
-        return relationships.stream()
-                .flatMap(relation -> (relation.rawEvidence().isEmpty()
-                        ? relation.evidence()
-                        : relation.rawEvidence()).stream())
-                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
-                .sum();
-    }
-
-    private int dataLineageObservationCount(List<DataLineageCandidate> lineages) {
-        return lineages.stream()
-                .flatMap(lineage -> (lineage.rawEvidence().isEmpty()
-                        ? lineage.evidence()
-                        : lineage.rawEvidence()).stream())
-                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
-                .sum();
-    }
-
-    private int namingEvidenceObservationCount(List<NamingEvidenceCandidate> namingEvidence) {
-        return namingEvidence.stream()
-                .flatMap(candidate -> candidate.rawEvidence().stream())
-                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
-                .sum();
-    }
-
-    private int derivedPathObservationCount(List<DerivedPathCandidate> candidates) {
-        return candidates.stream()
-                .flatMap(candidate -> (candidate.rawEvidence().isEmpty()
-                        ? candidate.evidence()
-                        : candidate.rawEvidence()).stream())
-                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
-                .sum();
-    }
-
     private boolean isDerivedNamingEvidence(NamingEvidenceCandidate candidate) {
         return TRANSITIVE_NAMING_PATH.equals(candidate.rule());
-    }
-
-    private ObjectNode relationshipNode(
-            RelationshipCandidate relation,
-            boolean includeEvidence,
-            boolean includeWarnings
-    ) {
-        ObjectNode node = JSON.createObjectNode();
-        node.set("source", endpointNode(relation.source()));
-        node.set("target", endpointNode(relation.target()));
-        node.put("relationType", relation.relationType().name());
-        node.put("relationSubType", relation.relationSubType().name());
-        node.put("confidence", relation.confidence().setScale(4, RoundingMode.HALF_UP));
-        node.set("rawEvidence", includeEvidence
-                ? evidenceNode(relation.rawEvidence().isEmpty() ? relation.evidence() : relation.rawEvidence())
-                : JSON.createArrayNode());
-        node.set("evidence", includeEvidence
-                ? evidenceNode(relation.evidence())
-                : JSON.createArrayNode());
-        node.set("warnings", includeWarnings ? warningsNode(relation.warnings()) : JSON.createArrayNode());
-        if (!relation.attributes().isEmpty()) {
-            node.set("attributes", attributesNode(relation.attributes()));
-        }
-        return node;
-    }
-
-    private ObjectNode dataLineageNode(
-            DataLineageCandidate lineage,
-            boolean includeEvidence,
-            boolean includeWarnings
-    ) {
-        ObjectNode node = JSON.createObjectNode();
-        ArrayNode sources = node.putArray("sources");
-        lineage.sources().forEach(source -> sources.add(endpointNode(source)));
-        node.set("target", endpointNode(lineage.target()));
-        node.put("flowKind", lineage.flowKind().name());
-        node.put("transformType", lineage.transformType().name());
-        node.put("confidence", lineage.confidence().setScale(4, RoundingMode.HALF_UP));
-        node.set("rawEvidence", includeEvidence
-                ? dataLineageEvidenceNode(lineage.rawEvidence().isEmpty() ? lineage.evidence() : lineage.rawEvidence())
-                : JSON.createArrayNode());
-        node.set("evidence", includeEvidence
-                ? dataLineageEvidenceNode(lineage.evidence())
-                : JSON.createArrayNode());
-        node.set("warnings", includeWarnings ? warningsNode(lineage.warnings()) : JSON.createArrayNode());
-        node.set("attributes", attributesNode(lineage.attributes()));
-        return node;
-    }
-
-    private ObjectNode namingEvidenceNode(NamingEvidenceCandidate naming, boolean includeEvidence) {
-        ObjectNode node = JSON.createObjectNode();
-        node.put("id", naming.id());
-        node.set("source", endpointNode(naming.source()));
-        node.set("target", endpointNode(naming.target()));
-        node.put("rule", safe(naming.rule()));
-        node.put("directionHint", naming.directionHint());
-        node.set("evidence", includeEvidence
-                ? evidenceNode(List.of(naming.evidence()))
-                : JSON.createArrayNode());
-        node.set("rawEvidence", includeEvidence
-                ? evidenceNode(naming.rawEvidence())
-                : JSON.createArrayNode());
-        return node;
-    }
-
-    private ObjectNode lightweightNamingEvidenceNode(NamingEvidenceCandidate naming) {
-        ObjectNode node = JSON.createObjectNode();
-        node.put("id", naming.id());
-        node.set("source", endpointNode(naming.source()));
-        node.set("target", endpointNode(naming.target()));
-        node.put("rule", safe(naming.rule()));
-        node.put("directionHint", naming.directionHint());
-        return node;
-    }
-
-    private ObjectNode derivedPathNode(DerivedPathCandidate candidate, boolean includeEvidence) {
-        ObjectNode node = JSON.createObjectNode();
-        node.put("kind", candidate.kind().name());
-        node.set("source", endpointNode(candidate.source()));
-        node.set("target", endpointNode(candidate.target()));
-        node.put("pathLength", candidate.pathLength());
-        node.put("confidence", candidate.confidence().setScale(4, RoundingMode.HALF_UP));
-        ArrayNode path = node.putArray("path");
-        candidate.path().forEach(endpoint -> path.add(endpointNode(endpoint)));
-        node.set("rawEvidence", includeEvidence
-                ? evidenceNode(candidate.rawEvidence().isEmpty() ? candidate.evidence() : candidate.rawEvidence())
-                : JSON.createArrayNode());
-        node.set("evidence", includeEvidence
-                ? evidenceNode(candidate.evidence())
-                : JSON.createArrayNode());
-        node.set("attributes", attributesNode(candidate.attributes()));
-        return node;
-    }
-
-    private ObjectNode endpointNode(Endpoint endpoint) {
-        ObjectNode node = JSON.createObjectNode();
-        node.put("table", endpoint.table().displayName());
-        if (endpoint.isColumnLevel()) {
-            node.put("column", endpoint.column().columnName());
-        } else {
-            node.putNull("column");
-        }
-        return node;
-    }
-
-    private ArrayNode evidenceNode(List<Evidence> evidence) {
-        ArrayNode array = JSON.createArrayNode();
-        evidence.forEach(item -> {
-            ObjectNode node = array.addObject();
-            node.put("type", item.type().name());
-            node.put("sourceType", item.sourceType().name());
-            node.put("score", item.score());
-            node.put("source", safe(item.source()));
-            node.put("detail", safe(item.detail()));
-            if (item.attributes().containsKey("evidenceRef")) {
-                node.put("evidenceRef", String.valueOf(item.attributes().get("evidenceRef")));
-            }
-            node.set("attributes", attributesNode(item.attributes()));
-        });
-        return array;
-    }
-
-    private ArrayNode dataLineageEvidenceNode(List<DataLineageEvidence> evidence) {
-        ArrayNode array = JSON.createArrayNode();
-        evidence.forEach(item -> {
-            ObjectNode node = array.addObject();
-            node.put("type", "DATA_LINEAGE");
-            node.put("transformType", item.transformType().name());
-            node.put("sourceType", item.sourceType().name());
-            node.put("score", item.score());
-            node.put("source", safe(item.source()));
-            node.put("detail", safe(item.detail()));
-            node.set("attributes", attributesNode(item.attributes()));
-        });
-        return array;
-    }
-
-    private ArrayNode warningsNode(List<WarningMessage> warnings) {
-        ArrayNode array = JSON.createArrayNode();
-        warnings.forEach(warning -> array.add(warningNode(warning)));
-        return array;
-    }
-
-    private ObjectNode warningNode(WarningMessage warning) {
-        ObjectNode node = JSON.createObjectNode();
-        node.put("type", warning.type().name());
-        node.put("severity", warning.severity().name());
-        node.put("code", safe(warning.code()));
-        node.put("message", safe(warning.message()));
-        node.put("source", safe(warning.source()));
-        node.put("line", warning.line());
-        node.set("attributes", attributesNode(warning.attributes()));
-        return node;
-    }
-
-    private ObjectNode attributesNode(Map<String, Object> attributes) {
-        ObjectNode node = JSON.createObjectNode();
-        attributes.forEach((key, value) -> node.set(key, JSON.valueToTree(value)));
-        return node;
-    }
-
-    private String safe(String value) {
-        return value == null ? "" : value;
     }
 }

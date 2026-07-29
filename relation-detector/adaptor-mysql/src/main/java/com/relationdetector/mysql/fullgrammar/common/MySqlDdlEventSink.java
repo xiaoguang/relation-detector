@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.ddl.DdlEventBuilder;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics.IndexVisibility;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics.Member;
 
 /**
  * CN: 接收 version visitor 已 typed 提取的 table、column、constraint 和 index 信息，委托 DdlEventBuilder 形成稳定 events；它不访问 generated context 或推断约束。
@@ -36,6 +39,20 @@ public final class MySqlDdlEventSink {
 
     public void addIndex(String table, List<String> columns, String role, String kind, long line) {
         builder.addIndex(table, columns, role, kind, line);
+    }
+
+    public void addIndexEvidence(
+            String table,
+            List<Member> members,
+            boolean unique,
+            IndexVisibility visibility,
+            String kind,
+            long line
+    ) {
+        for (MySqlIndexSemantics.IndexEvidence evidence
+                : MySqlIndexSemantics.evidence(members, unique, visibility, kind)) {
+            builder.addIndex(table, evidence.column(), evidence.role(), evidence.kind(), line);
+        }
     }
 
     public void addColumn(String table, String column, long line) {

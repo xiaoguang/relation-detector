@@ -77,10 +77,10 @@ Step 1: relation-detector 输出（文件）
 ─────────────────────────────────────────
 scan-result.json
 {
-  "database": {"type": "mysql", "schema": "shop"},
+  "database": {"type": "mysql", "catalog": "shop", "schema": ""},
   "metadataInventory": {
     "status": "COMPLETE",
-    "scope": {"catalog": "", "schema": "shop", "includeTables": [], "excludeTables": []},
+    "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
     "counts": {"tables": 10, "columns": 120, "constraints": 14, "indexes": 22},
     "tables": [...], "columns": [...], "constraints": [...], "indexes": [...]
   },
@@ -111,7 +111,7 @@ Step 2: SemanticInputStore（当前生产对象）
 SemanticInputStore {
   descriptor: {
     databaseType: "mysql",
-    catalog: "sample",
+    catalog: "shop",
     schema: "",
     inventory: {status: COMPLETE, scope: ..., counts: ..., fingerprint: ...}
   },
@@ -120,11 +120,13 @@ SemanticInputStore {
 }
 
 生产reader逐条验证和落盘，只接受COMPLETE inventory；multi-input还要求scope和inventory
-fingerprint一致。`ScanBundle`只在下游逐个有界component中物化。
+fingerprint一致。`ScanBundle`只在下游逐个有界root/shard中物化。`COMPLETE`只表示上游完成配置
+scope的采集；共享typed closure rules另行验证constraint/index identity与成员、FK引用端、
+cardinality、ordinal和`subParts`。scope缺少引用对象时正式semantic处理失败。
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
-        ↓ [当前: 逐component把metadata / relationship / lineage / naming / derived / diagnostic / eventCandidate materialize]
-        ↓ [当前: 外排合并EvidenceGraph与KG stable IDs]
+        ↓ [当前: 全局磁盘store归并event contribution、typed table component和唯一owner]
+        ↓ [当前: 逐个有界root/shard materialize；外排合并EvidenceGraph与KG stable IDs]
         ↓ [当前: 从 rawEvidence / grouped evidence 生成 EvidenceReference]
         ↓ [未来: businessRole 推断、冲突初筛、catalog/search 索引]
 
@@ -185,7 +187,8 @@ EvidenceGraph {
         ↓ [LLM 任务: 业务名/描述/同义词/实体/事件/指标/维度/lineage 解释/triplet]
         ↓ [normalize-extraction: raw result + evidence bundle，生成 ID/internal-ref-closed semantic document]
 
-Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extraction` 输出；Catalog 写入仍未实现）
+Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extraction` 输出；
+Semantic Catalog Store持久化仍未实现）
 ─────────────────────────────────────────
 {
   "entities": [
@@ -432,8 +435,8 @@ Step 7: Answer（最终输出）
     ↓ 输出: scan-result.json（含完整性状态与四类metadata inventory）
 [ScanResultReader]
     ↓ 输出: SemanticInputStore（section spool + 外排索引）
-[SemanticComponentStore / SemanticEvidenceBuilder / SemanticKgBuilder]
-    ↓ 逐个bounded component构建并外排合并
+[SemanticEvidenceStore / SemanticGlobalOwnerPlanner / SemanticKgBuilder]
+    ↓ 全局归并event/owner，逐个bounded root/shard构建并外排合并
 [SemanticDiskBackedArtifactWriter]
     ↓ 输出: semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```

@@ -26,12 +26,13 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /**
- * CN: 从SemanticInputStore的typed表边构建磁盘connected components，并按固定原始字节上限逐个materialize
- * bounded ScanBundle chunk；上游store保持完整输入，下游shard planner一次只接收一个chunk。
- * EN: Builds on-disk connected components from typed table edges in SemanticInputStore and materializes one bounded
- * ScanBundle chunk at a time under a fixed raw-byte ceiling. The downstream shard planner never receives all input.
+ * CN: 按typed table component稳定排列SemanticInputStore记录，并以原始字节上限逐个materialize输入运输窗口；
+ * 字节阈值只限制单次I/O内存，不定义event、owner、shard或KG语义边界。
+ * EN: Orders SemanticInputStore records stably by typed table component and materializes input transport windows
+ * under a raw-byte ceiling. The byte limit controls only per-window I/O memory and never defines event, owner,
+ * shard, or KG semantics.
  */
-public final class SemanticComponentStore implements AutoCloseable {
+public final class SemanticInputWindowStore implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final SemanticInputStore input;
     private final Path workspace;
@@ -40,15 +41,15 @@ public final class SemanticComponentStore implements AutoCloseable {
     private final Path assignments;
     private boolean closed;
 
-    public SemanticComponentStore(SemanticInputStore input, Path workspace) {
+    public SemanticInputWindowStore(SemanticInputStore input, Path workspace) {
         if (input == null || workspace == null) {
-            throw new IllegalArgumentException("semantic input store and component workspace are required");
+            throw new IllegalArgumentException("semantic input store and window workspace are required");
         }
         this.input = input;
         this.workspace = workspace;
         try {
             if (Files.exists(workspace)) {
-                throw new ScanResultContractException("semantic component workspace already exists");
+                throw new ScanResultContractException("semantic input window workspace already exists");
             }
             Files.createDirectories(workspace);
             Path rawTables = workspace.resolve("tables.raw");
@@ -69,60 +70,61 @@ public final class SemanticComponentStore implements AutoCloseable {
             new ExternalLineSorter().sort(
                     rawAssignments, assignments, workspace.resolve("assignment-sort-work"));
         } catch (IOException failure) {
-            throw new ScanResultContractException("failed to build semantic component store", failure);
+            throw new ScanResultContractException("failed to build semantic input window store", failure);
         }
     }
 
-    public void forEachChunk(long maxRawBytes, Consumer<ComponentChunk> consumer) {
+    public void forEachWindow(long maxRawBytes, Consumer<InputWindow> consumer) {
         ensureOpen();
         if (maxRawBytes <= 0 || consumer == null) {
-            throw new IllegalArgumentException("component chunk limit and consumer are required");
+            throw new IllegalArgumentException("input window byte limit and consumer are required");
         }
         try (BufferedReader reader = Files.newBufferedReader(assignments, StandardCharsets.UTF_8)) {
             String currentRoot = null;
-            int chunk = 0;
+            int window = 0;
             long bytes = 0;
-            Path chunkPath = null;
-            BufferedWriter chunkWriter = null;
+            Path windowPath = null;
+            BufferedWriter windowWriter = null;
             String line;
             while ((line = reader.readLine()) != null) {
                 String root = line.substring(0, line.indexOf('\t'));
                 long lineBytes = line.getBytes(StandardCharsets.UTF_8).length + 1L;
-                if (!root.equals(currentRoot) || chunkWriter != null && bytes > 0 && bytes + lineBytes > maxRawBytes) {
-                    if (chunkWriter != null) {
-                        chunkWriter.close();
-                        consume(currentRoot, chunk++, chunkPath, bytes, consumer);
+                if (!root.equals(currentRoot)
+                        || windowWriter != null && bytes > 0 && bytes + lineBytes > maxRawBytes) {
+                    if (windowWriter != null) {
+                        windowWriter.close();
+                        consume(currentRoot, window++, windowPath, bytes, consumer);
                     }
                     if (!root.equals(currentRoot)) {
                         currentRoot = root;
-                        chunk = 0;
+                        window = 0;
                     }
-                    chunkPath = workspace.resolve("component-" + root + "-%06d.chunk".formatted(chunk));
-                    chunkWriter = writer(chunkPath);
+                    windowPath = workspace.resolve("input-" + root + "-%06d.window".formatted(window));
+                    windowWriter = writer(windowPath);
                     bytes = 0;
                 }
-                chunkWriter.write(line.substring(line.indexOf('\t') + 1));
-                chunkWriter.newLine();
+                windowWriter.write(line.substring(line.indexOf('\t') + 1));
+                windowWriter.newLine();
                 bytes += lineBytes;
             }
-            if (chunkWriter != null) {
-                chunkWriter.close();
-                consume(currentRoot, chunk, chunkPath, bytes, consumer);
+            if (windowWriter != null) {
+                windowWriter.close();
+                consume(currentRoot, window, windowPath, bytes, consumer);
             }
         } catch (IOException failure) {
-            throw new ScanResultContractException("failed to iterate semantic component chunks", failure);
+            throw new ScanResultContractException("failed to iterate semantic input windows", failure);
         }
     }
 
     private void consume(
             String root,
-            int chunk,
+            int window,
             Path path,
             long bytes,
-            Consumer<ComponentChunk> consumer
+            Consumer<InputWindow> consumer
     ) throws IOException {
         try {
-            consumer.accept(new ComponentChunk(root + "-" + "%06d".formatted(chunk), bytes, materialize(path)));
+            consumer.accept(new InputWindow(root + "-" + "%06d".formatted(window), bytes, materialize(path)));
         } finally {
             Files.deleteIfExists(path);
         }
@@ -263,7 +265,7 @@ public final class SemanticComponentStore implements AutoCloseable {
             writer.write(encode(JSON.writeValueAsString(document)));
             writer.newLine();
         } catch (IOException failure) {
-            throw new ScanResultContractException("failed to spool semantic component assignment", failure);
+            throw new ScanResultContractException("failed to spool semantic input assignment", failure);
         }
     }
 
@@ -370,7 +372,7 @@ public final class SemanticComponentStore implements AutoCloseable {
 
     private void ensureOpen() {
         if (closed) {
-            throw new IllegalStateException("semantic component store is closed");
+            throw new IllegalStateException("semantic input window store is closed");
         }
     }
 
@@ -383,12 +385,14 @@ public final class SemanticComponentStore implements AutoCloseable {
             dictionary.close();
             components.close();
         } catch (IOException error) {
-            failure = new IllegalStateException("failed to close semantic component indexes", error);
+            failure = new IllegalStateException("failed to close semantic input window indexes", error);
         }
         try {
             deleteRecursively(workspace);
         } catch (IOException error) {
-            if (failure == null) failure = new IllegalStateException("failed to clean semantic component store", error);
+            if (failure == null) {
+                failure = new IllegalStateException("failed to clean semantic input window store", error);
+            }
             else failure.addSuppressed(error);
         }
         if (failure != null) throw failure;
@@ -403,10 +407,10 @@ public final class SemanticComponentStore implements AutoCloseable {
         }
     }
 
-    public record ComponentChunk(String id, long rawBytes, ScanBundle bundle) {
-        public ComponentChunk {
+    public record InputWindow(String id, long rawBytes, ScanBundle bundle) {
+        public InputWindow {
             if (id == null || id.isBlank() || rawBytes <= 0 || bundle == null) {
-                throw new IllegalArgumentException("semantic component chunk is incomplete");
+                throw new IllegalArgumentException("semantic input window is incomplete");
             }
         }
     }

@@ -8,6 +8,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.mysql.fullgrammar.common.MySqlDdlEventSink;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics.IndexVisibility;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics.Member;
 
 /**
  * MySQL full-grammar DDL event collector。
@@ -95,10 +97,12 @@ final class MySqlFullGrammarDdlEventCollector {
                 out.addColumn(currentTable, column, ctx.getStart().getLine());
             }
             if (hasInlinePrimaryKey(ctx.fieldDefinition())) {
-                out.addIndex(currentTable, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", ctx.getStart().getLine());
+                out.addIndexEvidence(currentTable, List.of(Member.fullColumn(column)),
+                        true, IndexVisibility.VISIBLE, "INLINE_PRIMARY_KEY", ctx.getStart().getLine());
             }
             if (hasInlineUnique(ctx.fieldDefinition())) {
-                out.addIndex(currentTable, column, "TARGET_UNIQUE", "INLINE_UNIQUE", ctx.getStart().getLine());
+                out.addIndexEvidence(currentTable, List.of(Member.fullColumn(column)),
+                        true, IndexVisibility.VISIBLE, "INLINE_UNIQUE", ctx.getStart().getLine());
             }
             String previous = currentColumn;
             currentColumn = column;
@@ -128,18 +132,18 @@ final class MySqlFullGrammarDdlEventCollector {
                 return null;
             }
             if (ctx.PRIMARY_SYMBOL() != null) {
-                out.addIndex(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
-                        "TARGET_UNIQUE", "PRIMARY_KEY", line);
+                out.addIndexEvidence(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
+                        true, visibility(ctx.indexOption()), "PRIMARY_KEY", line);
                 return null;
             }
             if (ctx.UNIQUE_SYMBOL() != null) {
-                out.addIndex(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
-                        "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
+                out.addIndexEvidence(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
+                        true, visibility(ctx.indexOption()), "UNIQUE_CONSTRAINT", line);
                 return null;
             }
             if (ctx.KEY_SYMBOL() != null || ctx.INDEX_SYMBOL() != null) {
-                out.addIndex(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
-                        "SOURCE_INDEX", "CREATE_TABLE_INDEX", line);
+                out.addIndexEvidence(currentTable, keyListWithExpression(ctx.keyListWithExpression()),
+                        false, visibility(ctx.indexOption()), "CREATE_TABLE_INDEX", line);
             }
             return null;
         }
@@ -151,8 +155,9 @@ final class MySqlFullGrammarDdlEventCollector {
             }
             String table = table(ctx.createIndexTarget().tableRef());
             boolean unique = ctx.UNIQUE_SYMBOL() != null;
-            out.addIndex(table, keyListWithExpression(ctx.createIndexTarget().keyListWithExpression()),
-                    unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
+            out.addIndexEvidence(table, keyListWithExpression(ctx.createIndexTarget().keyListWithExpression()),
+                    unique,
+                    visibility(ctx.indexOption()),
                     unique ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX", ctx.getStart().getLine());
             return null;
         }
@@ -187,17 +192,31 @@ final class MySqlFullGrammarDdlEventCollector {
                     .toList());
         }
 
-        private List<String> keyListWithExpression(MySqlFullGrammarParser.KeyListWithExpressionContext ctx) {
+        private List<Member> keyListWithExpression(MySqlFullGrammarParser.KeyListWithExpressionContext ctx) {
             if (ctx == null) {
                 return List.of();
             }
-            List<String> columns = new ArrayList<>();
+            List<Member> members = new ArrayList<>();
             for (MySqlFullGrammarParser.KeyPartOrExpressionContext part : ctx.keyPartOrExpression()) {
-                if (part.keyPart() != null && part.keyPart().fieldLength() == null) {
-                    columns.add(part.keyPart().identifier() == null ? "" : part.keyPart().identifier().getText());
+                if (part.keyPart() == null) {
+                    members.add(Member.expression());
+                    continue;
                 }
+                String column = out.clean(part.keyPart().identifier() == null
+                        ? "" : part.keyPart().identifier().getText());
+                members.add(part.keyPart().fieldLength() == null
+                        ? Member.fullColumn(column)
+                        : Member.prefixColumn(column));
             }
-            return out.nonBlank(columns);
+            return List.copyOf(members);
+        }
+
+        private IndexVisibility visibility(List<MySqlFullGrammarParser.IndexOptionContext> options) {
+            boolean invisible = options.stream()
+                    .map(MySqlFullGrammarParser.IndexOptionContext::commonIndexOption)
+                    .filter(option -> option != null && option.visibility() != null)
+                    .anyMatch(option -> option.visibility().INVISIBLE_SYMBOL() != null);
+            return invisible ? IndexVisibility.INVISIBLE : IndexVisibility.VISIBLE;
         }
 
         private List<String> identifierList(MySqlFullGrammarParser.IdentifierListWithParenthesesContext ctx) {

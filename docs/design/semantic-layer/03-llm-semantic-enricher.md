@@ -321,7 +321,7 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 
 | ID | 状态 | 已实现边界与剩余缺口 |
 | --- | --- | --- |
-| `SEM-SHARD-PLAN-01` | `MATCHED` | planner 对完整输入建立唯一 fact/candidate owner map，逐片补齐 dependency/evidence closure；超预算 table owner 按稳定 root 拆成 part，root closure 保持原子，并在模型调用前执行覆盖校验。 |
+| `SEM-SHARD-PLAN-01` | `MATCHED` | 完整磁盘evidence store先全局归并event并建立item/table/dependency/evidence索引，再计算typed component、唯一owner与stable-root closure。raw-byte只控制I/O window；不同window大小得到相同event、owner manifest、shard和KG，overlap不能获得owner资格。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard item的owned grounding已校验；reconciliation只接受`resolutions`和`renames`，不能新增对象或relation。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后完整reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
@@ -336,11 +336,12 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
-| `SEM-INGEST-MEMORY-01` | `MATCHED` | 正式命令使用流式scan reader、section spool、磁盘component与path-backed shard；128 MiB输入可在96 MiB堆、1 GiB输入可在512 MiB堆完成build/request-only门禁。 |
-| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；四类catalog facts及未被关系触达的表列进入evidence/KG/ownership，standalone bundle同时携带完整性描述。 |
+| `SEM-INGEST-MEMORY-01` | `MATCHED` | 正式命令使用流式scan reader、section spool、外排offset/component索引、全局owner与path-backed shard；128 MiB/96 MiB及1 GiB/512 MiB真实typed e2e门禁通过并清理workspace。 |
+| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory，四类catalog facts进入evidence/KG/ownership；共享typed closure rules完整验证identity、owner/member、FK引用端、cardinality、ordinal和index shape。COMPLETE仍仅表示采集scope，缺少被引用对象时consumer明确拒绝。 |
 
-上述完整输入、模型请求预算、shard owner validation、治理默认值、deterministic candidate、
-formal逐引用闭包、自动review identity、reconciliation限制和`final-only`晚期失败审计均按矩阵闭合。
+上述完整输入、模型请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
+identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner closure和metadata成员引用
+闭包和代表性大输入内存证明均按矩阵闭合；1 GiB门禁只证明bounded-memory，不作为吞吐性能承诺。
 
 独立归一化命令为：
 

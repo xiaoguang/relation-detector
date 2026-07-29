@@ -34,10 +34,13 @@ Builder 只消费 typed records。数组顺序可以影响公开展示顺序，�
 `ScanBundle`和`EvidenceGraph`冻结外层collection，并对typed fact document、graph payload和diagnostics
 执行deep-copy；公开accessor不能回写内部状态。
 
-relation-detector JSON携带scope内完整的table、column、constraint和index inventory及完整性状态。
+relation-detector JSON携带scope内table、column、constraint和index inventory及采集状态。
 正式semantic链路只接受`COMPLETE`；四类catalog事实连同relationship、lineage、naming及derived
 endpoint共同进入`tables` registry。没有被关系事实引用的表列仍可成为grounded evidence/KG节点，
-Builder不得按名称或source文本补造inventory。
+Builder不得按名称或source文本补造inventory。`COMPLETE`不替代consumer侧成员引用校验；内存与磁盘
+reader共用typed closure rules，验证constraint source/reference、FK两端、index member/cardinality/
+ordinal/`subParts`和完整identity唯一性。scope采集成功但缺少引用对象的inventory仍会被正式semantic
+入口拒绝。
 
 ## 3. 输出结构
 
@@ -146,7 +149,7 @@ Formal model output还必须满足：
 
 ## 6. 完整输入与 Typed Sharding
 
-模型上下文由 `SemanticShardPlanner` 控制，但完整 bundle 本身不裁剪。Planner：
+模型上下文由 `SemanticShardPlanner` 控制，但完整 bundle 本身不裁剪。内存内planner的目标契约是：
 
 1. 仅使用 typed endpoint 和 fact/candidate reference 建立 table-touch graph。
 2. 先按 connected component 划分。
@@ -162,6 +165,12 @@ planner生成或按同一契约构造的`shardContext`；缺失、伪造或越�
 
 Token 门限是带安全余量的确定性估算，不是模型精确 token 数。Shard request和reconciliation request都
 使用同一 `maxInputTokens` 门限。超过门限在模型调用前失败，不能截断 closure。
+
+生产磁盘链路先全局归并typed event contribution并建立`item -> table/dependency/evidence`外排索引，
+再计算typed table connected component和唯一owner。raw-byte阈值只控制外排buffer/window，不影响
+event、component、owner或shard。超预算component按table owner拆分，owner内按stable root拆分；
+root及其传递dependency/evidence closure不可再切分，单root超出hard estimate时在模型调用前失败。
+外部校验要求每个正式fact/candidate恰好owned一次，其他相关shard只能把它作为只读overlap。
 
 详细模型执行、合并与 artifact 事务见
 [LLM Semantic Extraction](03-llm-semantic-enricher.md)。
@@ -216,7 +225,7 @@ manifest。单 shard不再复制一套 root-level prompt/request/response/raw ar
 | Identity | 输入重排ID不变；冲突ID失败 |
 | Closure | 缺失fact/evidence/candidate/physical endpoint失败 |
 | Event | typed mapping分类；名称、路径、detail不能改变分类 |
-| Sharding | component、owner、root closure、overlap只读和唯一owner |
+| Sharding | component、owner、root closure、overlap只读和唯一owner；不同外排window大小产生相同event、owner map、shard与KG fingerprint |
 | Budget | shard与reconciliation低于/等于/超过门限 |
 | Merge | 同物理实体合并；业务实体按grounding合并或进入review |
 | Artifact | streaming写入、逐片原子审计目录、失败保留、staging原子发布、retention、hash和单分片无重复副本 |

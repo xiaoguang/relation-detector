@@ -1,6 +1,7 @@
 package com.relationdetector.mysql.tokenevent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -62,7 +63,7 @@ class MySqlDdlParserTest {
     }
 
     @Test
-    void mysqlParserHandlesIndexTypeBeforeOn() throws Exception {
+    void mysqlParserDoesNotUseInvisibleIndexAsUniqueEvidence() throws Exception {
         Path ddl = tempDir.resolve("mysql-index-type-before-on.sql");
         String ddlText = """
                 CREATE TABLE `shop`.`users` (
@@ -84,7 +85,8 @@ class MySqlDdlParserTest {
 
         List<RelationshipCandidate> mysqlRelations = parseDdl(ddl);
 
-        assertHasEvidence(mysqlRelations, "shop.orders.user_email", "shop.users.email", EvidenceType.TARGET_UNIQUE);
+        assertFalse(hasEvidence(mysqlRelations, "shop.orders.user_email", "shop.users.email",
+                EvidenceType.TARGET_UNIQUE));
     }
 
     @Test

@@ -20,19 +20,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 final class SemanticDiskBackedMemoryGateTest {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final int PADDING_RECORD_BYTES = 64 * 1024;
+    private static final int GENERATED_EXPRESSION_BYTES = 128 * 1024;
+    private static final int GENERATED_COLUMNS_PER_TABLE = 512;
+    private static final long DEFAULT_CHILD_TIMEOUT_MINUTES = 25;
+    private static final long MAX_GATE_TEST_MINUTES = 120;
 
     @TempDir
     Path tempDir;
 
     @Test
-    @Timeout(value = 30, unit = TimeUnit.MINUTES)
+    @Timeout(value = MAX_GATE_TEST_MINUTES, unit = TimeUnit.MINUTES)
     void completeBuildAndRequestOnlyRunWithinConfiguredChildHeap() throws Exception {
         int mebibytes = Integer.getInteger("semanticMemoryGateMiB", 1);
         String heap = System.getProperty("semanticMemoryGateHeap", "96m");
+        long childTimeoutMinutes = Long.getLong(
+                "semanticMemoryGateTimeoutMinutes", DEFAULT_CHILD_TIMEOUT_MINUTES);
         Path input = tempDir.resolve("scan-%04d-mib.json".formatted(mebibytes));
         Path output = tempDir.resolve("semantic-output");
-        writeCompleteScan(input, (long) mebibytes * 1024L * 1024L);
+        int maximumShards = writeCompleteScan(input, (long) mebibytes * 1024L * 1024L);
 
         Path stdout = tempDir.resolve("child.stdout");
         Path stderr = tempDir.resolve("child.stderr");
@@ -45,14 +50,15 @@ final class SemanticDiskBackedMemoryGateTest {
                 "--input", input.toString(),
                 "--output", output.toString(),
                 "--name", "memory-gate",
-                "--target-input-tokens", "10000",
-                "--max-input-tokens", "50000",
-                "--max-shards", "16")
+                "--target-input-tokens", "50000",
+                "--max-input-tokens", "100000",
+                "--max-shards", Integer.toString(maximumShards))
                 .redirectOutput(stdout.toFile())
                 .redirectError(stderr.toFile())
                 .start();
 
-        assertTrue(process.waitFor(Duration.ofMinutes(25).toMillis(), TimeUnit.MILLISECONDS),
+        assertTrue(process.waitFor(
+                        Duration.ofMinutes(childTimeoutMinutes).toMillis(), TimeUnit.MILLISECONDS),
                 "semantic memory-gate child JVM timed out");
         assertEquals(0, process.exitValue(), () -> {
             try {
@@ -71,8 +77,14 @@ final class SemanticDiskBackedMemoryGateTest {
         }
     }
 
-    private void writeCompleteScan(Path target, long minimumBytes) throws Exception {
-        String padding = "x".repeat(PADDING_RECORD_BYTES);
+    private int writeCompleteScan(Path target, long minimumBytes) throws Exception {
+        int generatedColumnCount = Math.max(
+                1,
+                Math.toIntExact((minimumBytes + GENERATED_EXPRESSION_BYTES - 1)
+                        / GENERATED_EXPRESSION_BYTES));
+        int tableCount = (generatedColumnCount + GENERATED_COLUMNS_PER_TABLE - 1)
+                / GENERATED_COLUMNS_PER_TABLE;
+        String generatedExpression = generatedExpression();
         try (OutputStream output = Files.newOutputStream(target);
              JsonGenerator generator = JSON.getFactory().createGenerator(output)) {
             generator.writeStartObject();
@@ -83,23 +95,17 @@ final class SemanticDiskBackedMemoryGateTest {
             generator.writeEndObject();
             generator.writeStringField("generatedAt", "2026-07-28T00:00:00Z");
             writeSummary(generator);
-            writeInventory(generator);
+            writeInventory(generator, tableCount, generatedColumnCount, generatedExpression);
             for (String section : List.of(
                     "relationships", "dataLineages", "derivedRelationships", "derivedDataLineages",
                     "namingEvidence", "derivedNamingEvidence", "warnings")) {
                 generator.writeArrayFieldStart(section);
                 generator.writeEndArray();
             }
-            generator.writeArrayFieldStart("syntheticPadding");
-            long written = 0;
-            while (written < minimumBytes) {
-                generator.writeString(padding);
-                written += PADDING_RECORD_BYTES;
-            }
-            generator.writeEndArray();
             generator.writeEndObject();
         }
         assertTrue(Files.size(target) >= minimumBytes);
+        return Math.max(16, (generatedColumnCount + tableCount * 3) * 2);
     }
 
     private void writeSummary(JsonGenerator generator) throws Exception {
@@ -117,7 +123,12 @@ final class SemanticDiskBackedMemoryGateTest {
         generator.writeEndObject();
     }
 
-    private void writeInventory(JsonGenerator generator) throws Exception {
+    private void writeInventory(
+            JsonGenerator generator,
+            int tableCount,
+            int generatedColumnCount,
+            String generatedExpression
+    ) throws Exception {
         generator.writeObjectFieldStart("metadataInventory");
         generator.writeStringField("status", "COMPLETE");
         generator.writeObjectFieldStart("scope");
@@ -129,36 +140,133 @@ final class SemanticDiskBackedMemoryGateTest {
         generator.writeEndArray();
         generator.writeEndObject();
         generator.writeObjectFieldStart("counts");
-        generator.writeNumberField("tables", 1);
-        generator.writeNumberField("columns", 1);
-        generator.writeNumberField("constraints", 0);
-        generator.writeNumberField("indexes", 0);
+        generator.writeNumberField("tables", tableCount);
+        generator.writeNumberField("columns", generatedColumnCount + tableCount);
+        generator.writeNumberField("constraints", tableCount);
+        generator.writeNumberField("indexes", tableCount);
         generator.writeEndObject();
         generator.writeArrayFieldStart("tables");
-        generator.writeStartObject();
-        generator.writeStringField("catalog", "shop");
-        generator.writeNullField("schema");
-        generator.writeStringField("tableName", "orders");
-        generator.writeStringField("tableType", "BASE TABLE");
-        generator.writeEndObject();
+        for (int table = 0; table < tableCount; table++) {
+            generator.writeStartObject();
+            generator.writeStringField("catalog", "shop");
+            generator.writeNullField("schema");
+            generator.writeStringField("tableName", tableName(table));
+            generator.writeStringField("tableType", "BASE TABLE");
+            generator.writeStringField("engine", "InnoDB");
+            generator.writeStringField("comment", "Disk-backed semantic memory-gate inventory table " + table);
+            generator.writeEndObject();
+        }
         generator.writeEndArray();
         generator.writeArrayFieldStart("columns");
+        int generated = 0;
+        for (int table = 0; table < tableCount; table++) {
+            writeColumn(generator, tableName(table), "id", "bigint", "bigint",
+                    false, "", "", 1);
+            int remaining = generatedColumnCount - generated;
+            int tableColumns = Math.min(GENERATED_COLUMNS_PER_TABLE, remaining);
+            for (int column = 0; column < tableColumns; column++) {
+                writeColumn(
+                        generator,
+                        tableName(table),
+                        "generated_%04d".formatted(column + 1),
+                        "varchar",
+                        "varchar(255)",
+                        true,
+                        "STORED GENERATED",
+                        generatedExpression,
+                        column + 2);
+                generated++;
+            }
+        }
+        generator.writeEndArray();
+        generator.writeArrayFieldStart("constraints");
+        for (int table = 0; table < tableCount; table++) {
+            generator.writeStartObject();
+            generator.writeStringField("catalog", "shop");
+            generator.writeNullField("schema");
+            generator.writeStringField("tableName", tableName(table));
+            generator.writeStringField("constraintName", "pk_" + tableName(table));
+            generator.writeStringField("constraintType", "PRIMARY_KEY");
+            generator.writeArrayFieldStart("columns");
+            generator.writeString("id");
+            generator.writeEndArray();
+            generator.writeNullField("referencedCatalog");
+            generator.writeNullField("referencedSchema");
+            generator.writeNullField("referencedTable");
+            generator.writeArrayFieldStart("referencedColumns");
+            generator.writeEndArray();
+            generator.writeNullField("updateRule");
+            generator.writeNullField("deleteRule");
+            generator.writeEndObject();
+        }
+        generator.writeEndArray();
+        generator.writeArrayFieldStart("indexes");
+        for (int table = 0; table < tableCount; table++) {
+            generator.writeStartObject();
+            generator.writeStringField("catalog", "shop");
+            generator.writeNullField("schema");
+            generator.writeStringField("tableName", tableName(table));
+            generator.writeStringField("indexName", "pk_" + tableName(table));
+            generator.writeBooleanField("unique", true);
+            generator.writeBooleanField("primary", true);
+            generator.writeStringField("indexType", "BTREE");
+            generator.writeBooleanField("visible", true);
+            generator.writeArrayFieldStart("columns");
+            generator.writeString("id");
+            generator.writeEndArray();
+            generator.writeArrayFieldStart("expressions");
+            generator.writeEndArray();
+            generator.writeArrayFieldStart("subParts");
+            generator.writeEndArray();
+            generator.writeArrayFieldStart("seqInIndex");
+            generator.writeNumber(1);
+            generator.writeEndArray();
+            generator.writeEndObject();
+        }
+        generator.writeEndArray();
+        generator.writeEndObject();
+    }
+
+    private void writeColumn(
+            JsonGenerator generator,
+            String table,
+            String column,
+            String dataType,
+            String columnType,
+            boolean nullable,
+            String extra,
+            String generationExpression,
+            int ordinal
+    ) throws Exception {
         generator.writeStartObject();
         generator.writeStringField("catalog", "shop");
         generator.writeNullField("schema");
-        generator.writeStringField("tableName", "orders");
-        generator.writeStringField("columnName", "id");
-        generator.writeStringField("dataType", "bigint");
-        generator.writeStringField("columnType", "bigint");
-        generator.writeBooleanField("nullable", false);
-        generator.writeNumberField("ordinalPosition", 1);
+        generator.writeStringField("tableName", table);
+        generator.writeStringField("columnName", column);
+        generator.writeStringField("dataType", dataType);
+        generator.writeStringField("columnType", columnType);
+        generator.writeBooleanField("nullable", nullable);
+        generator.writeNullField("defaultValue");
+        generator.writeStringField("extra", extra);
+        generator.writeStringField("generationExpression", generationExpression);
+        generator.writeNumberField("ordinalPosition", ordinal);
         generator.writeEndObject();
-        generator.writeEndArray();
-        generator.writeArrayFieldStart("constraints");
-        generator.writeEndArray();
-        generator.writeArrayFieldStart("indexes");
-        generator.writeEndArray();
-        generator.writeEndObject();
+    }
+
+    private String generatedExpression() {
+        String prefix = "CONCAT(CAST(id AS CHAR),";
+        String segment = "'semantic_memory_gate_segment',";
+        StringBuilder expression = new StringBuilder(GENERATED_EXPRESSION_BYTES + segment.length());
+        expression.append(prefix);
+        while (expression.length() + segment.length() + 3 < GENERATED_EXPRESSION_BYTES) {
+            expression.append(segment);
+        }
+        expression.append("'end')");
+        return expression.toString();
+    }
+
+    private String tableName(int index) {
+        return "memory_gate_%05d".formatted(index + 1);
     }
 
     private String javaExecutable() {

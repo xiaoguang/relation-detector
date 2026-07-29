@@ -1,21 +1,12 @@
 package com.relationdetector.semantic.extract;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HexFormat;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +30,8 @@ public final class SemanticPathRunArtifactWriter {
     private final SemanticRequestArtifactWriter requestWriter = new SemanticRequestArtifactWriter();
     private final SemanticExtractionPromptBuilder promptBuilder = new SemanticExtractionPromptBuilder();
     private final SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
+    private final RunArtifactFileStore files = new RunArtifactFileStore(JSON);
+    private final SemanticRunAuditArtifactWriter audits = new SemanticRunAuditArtifactWriter(files);
 
     public Path writeCodexSession(
             Path outputRoot,
@@ -121,15 +114,15 @@ public final class SemanticPathRunArtifactWriter {
             prepare(run.stagingDirectory(), plan);
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
             try (SemanticPathResultStore results = new SemanticPathResultStore(
-                    run.stagingDirectory().resolve(".result-work"), evidenceStore)) {
+                    run.stagingDirectory().resolve(".result-work"), evidenceStore, plan)) {
                 for (SemanticPathShard shard : plan.shards()) {
                     ObjectNode bundle = readObject(shard.bundlePath(), "semantic shard bundle");
                     SemanticExtractionPrompt prompt = promptBuilder.build(bundle);
                     requireBudget(prompt, plan.maxInputTokens());
                     SemanticExtractionResult response = shardClient.extract(prompt);
                     ObjectNode normalized = normalize(response.outputText(), bundle);
-                    results.append(shard, bundle, normalized, plan.fullBundleHash());
-                    writeShardAtomically(run.stagingDirectory(), shard.id(), prompt, response, normalized);
+                    results.append(shard, bundle, normalized);
+                    audits.writeShard(run.stagingDirectory(), shard.id(), prompt, response, normalized);
                     completed.add(new ShardAudit(shard, response));
                 }
                 results.finish();
@@ -143,7 +136,7 @@ public final class SemanticPathRunArtifactWriter {
                     JsonNode patch = parseObject(
                             response.outputText(), "semantic reconciliation patch");
                     results.applyReconciliationPatch(patch);
-                    writeReconciliationAtomically(
+                    audits.writeReconciliationPatch(
                             run.stagingDirectory(), prompt, response, patch);
                     reconciliationAudit[0] = new ReconciliationAudit(prompt, response);
                 } else {
@@ -206,7 +199,7 @@ public final class SemanticPathRunArtifactWriter {
                 }
             }
             if (plan.shards().size() > 1 && plan.reconcile()) {
-                SemanticExtractionPrompt template = reconciliationTemplate(plan);
+                SemanticExtractionPrompt template = new SemanticReconciliationPromptBuilder().template(plan);
                 Path directory = run.stagingDirectory().resolve("reconciliation").resolve("template");
                 if (codex) {
                     requestWriter.writeCodexSessionRequest(directory, template);
@@ -230,14 +223,10 @@ public final class SemanticPathRunArtifactWriter {
     }
 
     private void prepare(Path staging, SemanticPathRunPlan plan) {
-        try {
-            Files.copy(
-                    plan.fullBundlePath(),
-                    staging.resolve("full-evidence-bundle.json"),
-                    StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to persist semantic evidence bundle", failure);
-        }
+        files.copyFile(
+                plan.fullBundlePath(),
+                staging.resolve("full-evidence-bundle.json"),
+                "failed to persist semantic evidence bundle");
     }
 
     private ObjectNode normalize(String output, ObjectNode bundle) {
@@ -276,76 +265,6 @@ public final class SemanticPathRunArtifactWriter {
         if (new SemanticPromptBudgetEstimator().estimate(prompt) > maxInputTokens) {
             throw new SemanticShardingException(
                     "semantic prompt exceeds the configured estimated input-token limit");
-        }
-    }
-
-    private SemanticExtractionPrompt reconciliationTemplate(SemanticPathRunPlan plan) {
-        ObjectNode bundle = JSON.createObjectNode();
-        bundle.put("kind", "SEMANTIC_RECONCILIATION");
-        bundle.put("fullBundleHash", plan.fullBundleHash());
-        ArrayNode shards = bundle.putArray("shards");
-        plan.shards().forEach(shard -> shards.addObject()
-                .put("id", shard.id())
-                .put("ownerKey", shard.ownerKey())
-                .put("estimatedInputTokens", shard.estimatedInputTokens()));
-        bundle.putObject("semanticSummary");
-        bundle.putArray("conflicts");
-        bundle.put("template", true);
-        bundle.putObject("instructions")
-                .put("patchOnly", true)
-                .put("newPhysicalFactsForbidden", true)
-                .put("newEvidenceReferencesForbidden", true);
-        return new SemanticExtractionPrompt(
-                "Return a constrained reconciliation patch with resolutions and renames arrays only.",
-                "Use this template after all semantic shards are complete:\n" + bundle,
-                bundle);
-    }
-
-    private void writeShardAtomically(
-            Path staging,
-            String shardId,
-            SemanticExtractionPrompt prompt,
-            SemanticExtractionResult response,
-            JsonNode normalized
-    ) {
-        Path parent = staging.resolve("shards");
-        Path target = parent.resolve(shardId);
-        Path temporary = parent.resolve("." + shardId + ".tmp-" + UUID.randomUUID());
-        writeDirectoryAtomically(temporary, target, directory -> {
-            requestWriter.writeRequestOnly(directory, prompt, response.requestJson());
-            write(directory.resolve("semantic-extraction-response.json"), response.responseJson());
-            write(directory.resolve("semantic-extraction-result-raw.json"), response.outputText());
-            writeJson(directory.resolve("semantic-extraction-result.json"), normalized);
-        });
-    }
-
-    private void writeReconciliationAtomically(
-            Path staging,
-            SemanticExtractionPrompt prompt,
-            SemanticExtractionResult response,
-            JsonNode patch
-    ) {
-        Path target = staging.resolve("reconciliation");
-        Path temporary = staging.resolve(".reconciliation.tmp-" + UUID.randomUUID());
-        writeDirectoryAtomically(temporary, target, directory -> {
-            requestWriter.writeRequestOnly(directory, prompt, response.requestJson());
-            write(directory.resolve("semantic-extraction-response.json"), response.responseJson());
-            write(directory.resolve("semantic-extraction-result-raw.json"), response.outputText());
-            writeJson(directory.resolve("patch.json"), patch);
-        });
-    }
-
-    private void writeDirectoryAtomically(Path temporary, Path target, Consumer<Path> writer) {
-        try {
-            Files.createDirectories(temporary.getParent());
-            writer.accept(temporary);
-            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException failure) {
-            deleteRecursivelyBestEffort(temporary);
-            throw new IllegalArgumentException("failed to publish semantic audit directory", failure);
-        } catch (RuntimeException | Error failure) {
-            deleteRecursivelyBestEffort(temporary);
-            throw failure;
         }
     }
 
@@ -469,10 +388,10 @@ public final class SemanticPathRunArtifactWriter {
             finishManifest(manifest, candidate, retention, Instant.now());
             writeManifestAt(candidate, manifest);
             Path published = publisher.publishCandidate(run, candidate);
-            deleteRecursivelyBestEffort(run.stagingDirectory());
+            files.deleteRecursivelyBestEffort(run.stagingDirectory());
             return published;
         } catch (RuntimeException | Error failure) {
-            deleteRecursivelyBestEffort(candidate);
+            files.deleteRecursivelyBestEffort(candidate);
             throw failure;
         }
     }
@@ -487,32 +406,20 @@ public final class SemanticPathRunArtifactWriter {
         if (publishedAt == null) manifest.putNull("publishedAt");
         else manifest.put("publishedAt", publishedAt.toString());
         ArrayNode artifacts = manifest.putArray("artifacts");
-        for (Path file : regularFiles(artifactRoot)) {
-            String relative = relative(artifactRoot, file);
-            if ("run-manifest.json".equals(relative)) continue;
-            artifacts.addObject()
-                    .put("path", relative)
-                    .put("size", size(file))
-                    .put("sha256", sha256(file));
-        }
+        files.writeArtifactEntries(
+                artifacts,
+                files.artifactEntries(
+                        artifactRoot,
+                        relative -> !"run-manifest.json".equals(relative)));
     }
 
     private void copyRetained(Path source, Path target) {
-        for (Path file : regularFiles(source)) {
-            String relative = relative(source, file);
-            if (!"semantic-extraction-result.json".equals(relative)
-                    && !relative.startsWith("deterministic-kg/")) {
-                continue;
-            }
-            Path destination = target.resolve(relative);
-            try {
-                Files.createDirectories(destination.getParent());
-                Files.copy(file, destination);
-            } catch (IOException failure) {
-                throw new IllegalArgumentException(
-                        "failed to build semantic final-only publish candidate", failure);
-            }
-        }
+        files.copyMatching(
+                source,
+                target,
+                relative -> "semantic-extraction-result.json".equals(relative)
+                        || relative.startsWith("deterministic-kg/"),
+                "failed to build semantic final-only publish candidate");
     }
 
     private void writeManifest(RunArtifactPublisher.RunDirectory run, ObjectNode manifest) {
@@ -520,93 +427,11 @@ public final class SemanticPathRunArtifactWriter {
     }
 
     private void writeManifestAt(Path directory, ObjectNode manifest) {
-        Path target = directory.resolve("run-manifest.json");
-        Path temporary = directory.resolve("run-manifest.json.tmp");
-        try {
-            JSON.writeValue(temporary.toFile(), manifest);
-            Files.move(
-                    temporary, target,
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException failure) {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException cleanup) {
-                failure.addSuppressed(cleanup);
-            }
-            throw new IllegalArgumentException("failed to update semantic run manifest", failure);
-        }
+        files.writeManifest(directory, manifest);
     }
 
     private Consumer<Path> resolvedWriter(Consumer<Path> writer) {
         return writer == null ? NO_SHARED_ARTIFACTS : writer;
-    }
-
-    private void writeJson(Path path, Object value) {
-        try {
-            Files.createDirectories(path.getParent());
-            JSON.writeValue(path.toFile(), value);
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to write semantic JSON artifact", failure);
-        }
-    }
-
-    private void write(Path path, String value) {
-        try {
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, value == null ? "" : value);
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to write semantic text artifact", failure);
-        }
-    }
-
-    private List<Path> regularFiles(Path root) {
-        try (Stream<Path> paths = Files.walk(root)) {
-            return paths.filter(Files::isRegularFile)
-                    .sorted(Comparator.comparing(path -> relative(root, path)))
-                    .toList();
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to inspect semantic run artifacts", failure);
-        }
-    }
-
-    private String relative(Path root, Path file) {
-        return root.relativize(file).toString().replace('\\', '/');
-    }
-
-    private long size(Path file) {
-        try {
-            return Files.size(file);
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to size semantic artifact", failure);
-        }
-    }
-
-    private String sha256(Path file) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (InputStream input = Files.newInputStream(file)) {
-                byte[] buffer = new byte[64 * 1024];
-                int read;
-                while ((read = input.read(buffer)) >= 0) {
-                    digest.update(buffer, 0, read);
-                }
-            }
-            return HexFormat.of().formatHex(digest.digest());
-        } catch (IOException | NoSuchAlgorithmException failure) {
-            throw new IllegalArgumentException("failed to hash semantic artifact", failure);
-        }
-    }
-
-    private void deleteRecursivelyBestEffort(Path root) {
-        if (root == null || !Files.exists(root)) return;
-        try (Stream<Path> paths = Files.walk(root)) {
-            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
-        } catch (IOException ignored) {
-            // A published final artifact remains valid; failed staging is intentionally retained.
-        }
     }
 
     private String text(String value) {

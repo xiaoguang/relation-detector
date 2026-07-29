@@ -184,6 +184,10 @@ SPI v6 只暴露上述 live profiling 字段。旧的离线字段不会被忽略
   组合 PK/UNIQUE/index 是列组事实：`UNIQUE(a,b)` 不能证明 `a` 或 `b` 单列唯一。
   普通组合索引 `(a,b)` 只允许物理首列 `a` 作为 `SOURCE_INDEX` / profiling lookup 支持；
   非首列 `b` 不能单独通过 gate，且首列索引也不代表单列唯一、不能单独决定 relationship 方向。
+- MySQL prefix index只覆盖列值前缀。即使声明为单列`UNIQUE(email(8))`，也不能证明完整
+  `email`列唯一。live policy消费`subParts/seqInIndex/visibility/expression`；DDL token/full parser
+  分别保留typed prefix member。prefix或组合unique只允许首个物理成员提供`SOURCE_INDEX` lookup，
+  不产生`TARGET_UNIQUE`，也不能单独决定relationship方向。
 - DDL column inventory 或 metadata 显示两端都存在，且不属于临时表、pseudo rowset、参数或局部变量。
 
 B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINMENT_HIGH`，并且 target unique / type compatible 等结构 evidence 同时存在时，才可生成 `PROFILE_SUPPORTED_FK` 候选。

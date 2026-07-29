@@ -18,6 +18,11 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
+
 /**
  * Cross-parser semantic-equivalence guard.
  *
@@ -26,6 +31,17 @@ import org.junit.jupiter.api.function.Executable;
  * parser families match the same canonical relationship / lineage contract.
  */
 class SemanticEquivalentCorrectnessTest {
+    private static final String MYSQL_INDEX_DDL = """
+            CREATE TABLE users (
+              email VARCHAR(255),
+              tenant_id BIGINT,
+              UNIQUE KEY uq_users_email (email),
+              UNIQUE KEY uq_users_email_prefix (email(8)),
+              UNIQUE KEY uq_users_tenant_email (tenant_id, email),
+              KEY idx_users_email_prefix (email(12))
+            );
+            """;
+
     @Test
     void semanticEquivalentScenariosMatchCanonicalGoldens() throws Exception {
         Path root = workspaceRoot().resolve("test-fixtures/semantic-equivalent");
@@ -44,6 +60,59 @@ class SemanticEquivalentCorrectnessTest {
             checks.addAll(checkScenario(scenario));
         }
         assertAll("semantic-equivalent scenarios", checks);
+    }
+
+    @Test
+    void mysqlParserFamiliesEmitTheSameTypedIndexEvidence() {
+        List<String> expected = List.of(
+                "users.email|SOURCE_INDEX|CREATE_TABLE_INDEX",
+                "users.email|SOURCE_INDEX|UNIQUE_CONSTRAINT",
+                "users.email|SOURCE_INDEX|UNIQUE_CONSTRAINT",
+                "users.email|TARGET_UNIQUE|UNIQUE_CONSTRAINT",
+                "users.tenant_id|SOURCE_INDEX|UNIQUE_CONSTRAINT");
+
+        assertEquals(expected, mysqlIndexFingerprint(new MySqlTokenEventStructuredDdlParser(), MYSQL_INDEX_DDL));
+        assertEquals(expected, mysqlIndexFingerprint(
+                new com.relationdetector.mysql.fullgrammar.v5_7.FullGrammarDialectModule()
+                        .structuredDdlParser(),
+                MYSQL_INDEX_DDL));
+        assertEquals(expected, mysqlIndexFingerprint(
+                new com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule()
+                        .structuredDdlParser(),
+                MYSQL_INDEX_DDL));
+    }
+
+    @Test
+    void mysqlExpressionLeadingIndexHasNoPhysicalColumnEvidenceAcrossParserFamilies() {
+        String ddl = """
+                CREATE TABLE users (
+                  email VARCHAR(255),
+                  KEY idx_users_expression ((lower(email)))
+                );
+                """;
+
+        assertEquals(List.of(), mysqlIndexFingerprint(new MySqlTokenEventStructuredDdlParser(), ddl));
+        assertEquals(List.of(), mysqlIndexFingerprint(
+                new com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule()
+                        .structuredDdlParser(),
+                ddl));
+    }
+
+    @Test
+    void mysql80ParsersIgnoreInvisibleIndexEvidence() {
+        String ddl = """
+                CREATE TABLE users (
+                  email VARCHAR(255),
+                  UNIQUE KEY uq_users_email (email) INVISIBLE
+                );
+                CREATE UNIQUE INDEX idx_users_email ON users(email) INVISIBLE;
+                """;
+
+        assertEquals(List.of(), mysqlIndexFingerprint(new MySqlTokenEventStructuredDdlParser(), ddl));
+        assertEquals(List.of(), mysqlIndexFingerprint(
+                new com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule()
+                        .structuredDdlParser(),
+                ddl));
     }
 
     private List<Executable> checkScenario(Path scenario) throws Exception {
@@ -88,6 +157,18 @@ class SemanticEquivalentCorrectnessTest {
             values.add(item.group(1).replace("\\\"", "\"").replace("\\\\", "\\"));
         }
         return values;
+    }
+
+    private List<String> mysqlIndexFingerprint(StructuredDdlParser parser, String ddl) {
+        return parser.parseDdl(ddl, "mysql-index-evidence.sql", null).events().stream()
+                .filter(event -> event.type() == StructuredParseEventType.DDL_INDEX)
+                .map(this::mysqlIndexFingerprint)
+                .sorted()
+                .toList();
+    }
+
+    private String mysqlIndexFingerprint(StructuredSqlEvent event) {
+        return event.table() + "." + event.column() + "|" + event.role() + "|" + event.kind();
     }
 
     private static Path workspaceRoot() {

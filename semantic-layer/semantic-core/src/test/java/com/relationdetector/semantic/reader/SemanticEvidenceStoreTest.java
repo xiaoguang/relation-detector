@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -14,6 +13,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.StableSemanticId;
 
 final class SemanticEvidenceStoreTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -22,22 +23,19 @@ final class SemanticEvidenceStoreTest {
     Path tempDir;
 
     @Test
-    void streamsCompleteDeduplicatedBundleAndBoundedComponents() throws Exception {
+    void streamsCompleteDeduplicatedBundleWithoutTransportArtifacts() throws Exception {
         Path input = tempDir.resolve("scan.json");
         JSON.writeValue(input.toFile(), scanResult());
         Path inputWork = tempDir.resolve("input-work");
         Path evidenceWork = tempDir.resolve("evidence-work");
         Path bundlePath = tempDir.resolve("full-evidence-bundle.json");
 
-        List<SemanticEvidenceStore.ComponentBundle> components = new ArrayList<>();
         try (SemanticInputStore store = new ScanResultReader().open(List.of(input), inputWork);
              SemanticEvidenceStore evidence = new SemanticEvidenceStore(store, evidenceWork, 1024 * 1024)) {
             assertEquals(2, evidence.count(SemanticEvidenceStore.Section.METADATA_TABLES));
             assertEquals(3, evidence.count(SemanticEvidenceStore.Section.METADATA_COLUMNS));
             assertEquals(1, evidence.count(SemanticEvidenceStore.Section.RELATIONSHIPS));
-            evidence.forEachComponent(components::add);
-            assertEquals(1, components.size());
-            assertTrue(Files.size(components.get(0).path()) > 0);
+            assertFalse(Files.exists(evidenceWork.resolve("components")));
             assertEquals(64, evidence.writeBundleAndHash(bundlePath).length());
         }
 
@@ -51,29 +49,113 @@ final class SemanticEvidenceStoreTest {
     }
 
     @Test
-    void everyByteSplitMetadataChunkRetainsItsPhysicalTableOwner() throws Exception {
+    void rawBufferSizeDoesNotSplitRoutineEventOrChangeGlobalBundle() throws Exception {
+        ObjectNode root = (ObjectNode) scanResult();
+        addRoutineLineage(root, "lineage:order-id", "shop.orders", "customer_id", "id", "INSERT_SELECT");
+        addRoutineLineage(root, "lineage:customer-name", "shop.customers", "id", "name", "UPDATE_SET");
         Path input = tempDir.resolve("split-scan.json");
-        JSON.writeValue(input.toFile(), scanResult());
-        Path inputWork = tempDir.resolve("split-input-work");
-        Path evidenceWork = tempDir.resolve("split-evidence-work");
-        List<SemanticEvidenceStore.ComponentBundle> components = new ArrayList<>();
+        JSON.writeValue(input.toFile(), root);
 
-        try (SemanticInputStore store = new ScanResultReader().open(List.of(input), inputWork);
-             SemanticEvidenceStore evidence = new SemanticEvidenceStore(store, evidenceWork, 1)) {
-            evidence.forEachComponent(components::add);
-            assertTrue(components.size() > 1);
-            for (SemanticEvidenceStore.ComponentBundle component : components) {
-                JsonNode bundle = JSON.readTree(component.path().toFile());
-                boolean ownsMetadata = !bundle.path("metadataTables").isEmpty()
-                        || !bundle.path("metadataColumns").isEmpty()
-                        || !bundle.path("metadataConstraints").isEmpty()
-                        || !bundle.path("metadataIndexes").isEmpty();
-                if (ownsMetadata) {
-                    assertFalse(bundle.path("tables").isEmpty(),
-                            "metadata chunk lost its physical table owner: " + component.id());
-                }
-            }
+        JsonNode large = buildBundle(input, "large", 1024 * 1024);
+        JsonNode tiny = buildBundle(input, "tiny", 1);
+
+        assertEquals(
+                StableSemanticId.canonicalJson(large),
+                StableSemanticId.canonicalJson(tiny));
+        assertEquals(1, tiny.path("eventCandidates").size());
+        JsonNode event = tiny.path("eventCandidates").get(0);
+        assertEquals(2, event.path("lineageRefs").size());
+        assertEquals(2, event.path("operationKinds").size());
+    }
+
+    @Test
+    void rawBufferSizeDoesNotChangeEvidenceGraphOrKnowledgeGraph() throws Exception {
+        ObjectNode root = (ObjectNode) scanResult();
+        addRoutineLineage(root, "lineage:order-id", "shop.orders", "customer_id", "id", "INSERT_SELECT");
+        addRoutineLineage(root, "lineage:customer-name", "shop.customers", "id", "name", "UPDATE_SET");
+        Path input = tempDir.resolve("graph-scan.json");
+        JSON.writeValue(input.toFile(), root);
+
+        List<JsonNode> large = buildArtifacts(input, "large-graph", 1024 * 1024);
+        List<JsonNode> tiny = buildArtifacts(input, "tiny-graph", 1);
+
+        assertEquals(
+                StableSemanticId.canonicalJson(large.get(0)),
+                StableSemanticId.canonicalJson(tiny.get(0)));
+        assertEquals(
+                StableSemanticId.canonicalJson(withoutBuildTimestamp(large.get(1))),
+                StableSemanticId.canonicalJson(withoutBuildTimestamp(tiny.get(1))));
+    }
+
+    private JsonNode buildBundle(Path input, String prefix, long bufferBytes) throws Exception {
+        Path bundle = tempDir.resolve(prefix + "-bundle.json");
+        try (SemanticInputStore store = new ScanResultReader().open(
+                     List.of(input), tempDir.resolve(prefix + "-input-work"));
+             SemanticEvidenceStore evidence = new SemanticEvidenceStore(
+                     store, tempDir.resolve(prefix + "-evidence-work"), bufferBytes)) {
+            evidence.writeBundle(bundle);
         }
+        return JSON.readTree(bundle.toFile());
+    }
+
+    private List<JsonNode> buildArtifacts(Path input, String prefix, long bufferBytes) throws Exception {
+        Path output = tempDir.resolve(prefix + "-artifacts");
+        try (SemanticInputStore store = new ScanResultReader().open(
+                     List.of(input), tempDir.resolve(prefix + "-input-work"));
+             SemanticEvidenceStore evidence = new SemanticEvidenceStore(
+                     store, tempDir.resolve(prefix + "-evidence-work"), bufferBytes)) {
+            new SemanticDiskBackedArtifactWriter().writeArtifacts(evidence, output);
+        }
+        return List.of(
+                JSON.readTree(output.resolve("semantic-evidence-graph.json").toFile()),
+                JSON.readTree(output.resolve("semantic-kg.json").toFile()));
+    }
+
+    private JsonNode withoutBuildTimestamp(JsonNode value) {
+        ObjectNode copy = value.deepCopy();
+        ((ObjectNode) copy.path("buildRun")).remove("builtAt");
+        return copy;
+    }
+
+    private void addRoutineLineage(
+            ObjectNode root,
+            String id,
+            String sourceTable,
+            String sourceColumn,
+            String targetColumn,
+            String mappingKind
+    ) {
+        ObjectNode lineage = root.withArray("dataLineages").addObject();
+        lineage.put("id", id);
+        lineage.putArray("sources").addObject()
+                .put("table", sourceTable)
+                .put("column", sourceColumn);
+        lineage.putObject("target")
+                .put("table", "shop.audit_log")
+                .put("column", targetColumn);
+        lineage.put("flowKind", "VALUE");
+        lineage.put("transformType", "DIRECT");
+        lineage.put("confidence", 0.82);
+        ObjectNode evidence = lineage.putArray("evidence").addObject();
+        evidence.put("type", "DATA_LINEAGE");
+        evidence.put("transformType", "DIRECT");
+        evidence.put("sourceType", "PLAIN_SQL");
+        evidence.put("score", 0.82);
+        evidence.put("source", "procedures/audit.sql");
+        evidence.put("detail", "typed routine write");
+        evidence.putObject("attributes")
+                .put("sourceObjectType", "PROCEDURE")
+                .put("sourceObjectName", "sp_write_audit")
+                .put("sourceObjectIdentity", "shop.sp_write_audit(bigint)")
+                .put("sourceStatementId", "routine:sp_write_audit")
+                .put("mappingKind", mappingKind);
+        lineage.putArray("rawEvidence");
+        lineage.putArray("warnings");
+        lineage.putObject("attributes").put("mappingKind", mappingKind);
+        ObjectNode summary = (ObjectNode) root.path("summary");
+        int count = root.path("dataLineages").size();
+        summary.put("directDataLineageCount", count);
+        summary.put("totalDataLineageCount", count);
     }
 
     private JsonNode scanResult() throws Exception {

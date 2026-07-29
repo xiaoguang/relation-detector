@@ -39,9 +39,9 @@ class FullGrammarDdlBehaviorTest {
                 "sourceTable", "orders", "sourceColumn", "user_id", "targetTable", "users", "targetColumn", "id"));
         assertTrue(hasEvent(result, StructuredParseEventType.DDL_INDEX,
                 "table", "orders", "column", "id", "role", "TARGET_UNIQUE"));
-        assertTrue(hasEvent(result, StructuredParseEventType.DDL_INDEX,
-                "table", "users", "column", "email", "role", "TARGET_UNIQUE"));
         assertFalse(hasEvent(result, StructuredParseEventType.DDL_INDEX,
+                "table", "users", "column", "email", "role", "TARGET_UNIQUE"));
+        assertTrue(hasEvent(result, StructuredParseEventType.DDL_INDEX,
                 "table", "orders", "column", "email", "role", "SOURCE_INDEX"));
         assertTrue(result.warnings().isEmpty(), () -> "Unexpected full-grammar DDL warnings: " + result.warnings());
     }

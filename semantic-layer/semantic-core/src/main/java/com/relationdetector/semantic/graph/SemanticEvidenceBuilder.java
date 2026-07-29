@@ -28,14 +28,14 @@ import com.relationdetector.contracts.metadata.MetadataIndexFact;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 
 /**
- * CN: 将一个有界 typed ScanBundle component 的完整 metadata inventory、direct/derived facts、naming、
- * diagnostics 和 event candidates 确定性装配为 EvidenceGraph。生产链路逐组件调用并外排合并；本类不
- * 调用 LLM、修改物理事实或持有全局图。
+ * CN: 将一个有界 typed ScanBundle 输入窗口的 metadata inventory、direct/derived facts、naming、
+ * diagnostics 和 event contributions 确定性装配为 EvidenceGraph 记录。生产链路在窗口外全局聚合 event
+ * 和 stable-ID；本类不调用 LLM、修改物理事实或把输入窗口定义为语义边界。
  *
- * EN: Deterministically assembles the complete metadata inventory, direct and derived facts, naming, diagnostics,
- * and event candidates of one bounded typed ScanBundle component into an EvidenceGraph. Production invokes it per
- * component and externally merges results; this class neither calls an LLM, changes physical facts, nor retains the
- * global graph.
+ * EN: Deterministically assembles metadata inventory, direct and derived facts, naming, diagnostics, and event
+ * contributions from one bounded typed ScanBundle input window into EvidenceGraph records. Production globally
+ * merges events and stable IDs outside the window; this class neither calls an LLM, changes physical facts, nor
+ * treats a transport window as a semantic boundary.
  */
 public final class SemanticEvidenceBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -250,18 +250,29 @@ public final class SemanticEvidenceBuilder {
             Map<String, EvidenceReference> evidenceRefs,
             List<EvidenceGraphFact> facts
     ) {
+        EvidenceGraphFact fact = eventFact(event);
+        fact.endpoints().forEach(endpoint -> addEndpoint(endpoints, endpoint));
+        facts.add(fact);
+    }
+
+    /**
+     * CN: 将一个已经完成全局聚合的 typed event 转换为独立 graph fact；磁盘链路在所有运输窗口结束后
+     * 调用本方法，因此不会把 partial event 写入正式 graph。
+     * EN: Converts one globally finalized typed event into an independent graph fact. The disk-backed path invokes
+     * this only after every transport window has completed, so partial events never enter the formal graph.
+     */
+    public EvidenceGraphFact eventFact(SemanticEventCandidate event) {
+        if (event == null) {
+            throw new IllegalArgumentException("semantic event candidate is required");
+        }
         List<PhysicalEndpointRef> factEndpoints = new ArrayList<>();
         for (String endpointName : event.inputEndpoints()) {
-            PhysicalEndpointRef endpoint = PhysicalEndpointRef.column(endpointName);
-            addEndpoint(endpoints, endpoint);
-            factEndpoints.add(endpoint);
+            factEndpoints.add(PhysicalEndpointRef.column(endpointName));
         }
         for (String endpointName : event.outputEndpoints()) {
-            PhysicalEndpointRef endpoint = PhysicalEndpointRef.column(endpointName);
-            addEndpoint(endpoints, endpoint);
-            factEndpoints.add(endpoint);
+            factEndpoints.add(PhysicalEndpointRef.column(endpointName));
         }
-        facts.add(new EvidenceGraphFact(event.id(), "SemanticEventCandidate",
+        return new EvidenceGraphFact(event.id(), "SemanticEventCandidate",
                 event.readableNameHint().isBlank()
                         ? (event.sourceObject().isBlank() ? event.eventKind() : event.sourceObject())
                         : event.readableNameHint(),
@@ -273,7 +284,7 @@ public final class SemanticEvidenceBuilder {
                         "readableNameHint", event.readableNameHint(),
                         "businessActionHint", event.businessActionHint(),
                         "eventNameBasis", event.eventNameBasis(),
-                        "inputEndpointCount", event.inputEndpoints().size())));
+                        "inputEndpointCount", event.inputEndpoints().size()));
     }
 
     private void addDerivedFact(

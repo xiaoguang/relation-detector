@@ -29,6 +29,12 @@ reference closure、graph validation和模型 review candidate 已纳入本文�
 | 相同ID不同内容 | 原子失败，不使用 last-write-wins |
 | 不可解析 evidence | 非 diagnostic fact/event、endpoint node或edge闭包失败 |
 | reader/graph state | 外层collection不可修改；typed fact `document()`、graph fact payload与diagnostics在构造和公开accessor边界均deep-copy，修改返回`JsonNode`不得改变内部状态 |
+| metadata constraint closure | source member、FK referenced table/column必须存在，两端cardinality/ordinal必须配对 |
+| metadata index closure | member column存在，columns/seqInIndex/subParts shape一致，ordinal合法 |
+| metadata identity | 同table的constraint/index identity重复必须拒绝 |
+
+后三项由内存validator与磁盘reader的共享typed closure rules共同覆盖。inventory
+`status=COMPLETE`仍不能替代consumer引用闭包；scope缺少FK引用对象时必须明确失败。
 
 ## 3. 完整 Extraction Bundle
 
@@ -57,6 +63,14 @@ Bundle测试必须证明：
 | oversized owner | 按稳定root拆分，单root及其dependency/evidence closure不可截断 |
 | token gate | shard和reconciliation prompt低于/等于门限通过，超过门限时模型调用为0 |
 | model ownership | 每个model-authored item直接引用当前片owned grounding；越界整片失败 |
+
+磁盘后备测试覆盖同一connected root跨越多个I/O window的场景，并比较不同window大小下的event、
+owner map、shard与KG exact fingerprint。raw-byte阈值只能控制外排buffer；candidate、event、review
+和dependency closure必须使用同一全局owner计划。
+
+大输入内存门禁以真实typed metadata/facts形成主要体积，不得以reader会忽略的未知顶层padding代替。
+128 MiB输入在96 MiB堆、1 GiB输入在512 MiB堆均完成完整e2e、KG、request-only与workspace清理。
+1 GiB约100分15秒的结果证明内存边界和spool清理，不作为吞吐性能目标。
 
 ## 5. Normalization 与 Merge
 

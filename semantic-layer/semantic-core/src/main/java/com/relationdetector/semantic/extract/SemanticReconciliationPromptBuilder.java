@@ -47,6 +47,25 @@ final class SemanticReconciliationPromptBuilder {
         return new SemanticExtractionPrompt(prompt.developerPrompt(), userPrompt(bundle), bundle);
     }
 
+    SemanticExtractionPrompt template(SemanticPathRunPlan plan) {
+        ObjectNode bundle = JSON.createObjectNode();
+        bundle.put("kind", "SEMANTIC_RECONCILIATION");
+        bundle.put("fullBundleHash", plan.fullBundleHash());
+        ArrayNode shards = bundle.putArray("shards");
+        plan.shards().forEach(shard -> shards.addObject()
+                .put("id", shard.id())
+                .put("ownerKey", shard.ownerKey())
+                .put("estimatedInputTokens", shard.estimatedInputTokens()));
+        bundle.putObject("semanticSummary");
+        bundle.putArray("conflicts");
+        bundle.put("template", true);
+        bundle.putObject("instructions")
+                .put("patchOnly", true)
+                .put("newPhysicalFactsForbidden", true)
+                .put("newEvidenceReferencesForbidden", true);
+        return new SemanticExtractionPrompt(developerPrompt(), userPrompt(bundle), bundle);
+    }
+
     private ObjectNode compact(ObjectNode merged) {
         ObjectNode compact = JSON.createObjectNode();
         for (String section : java.util.List.of(

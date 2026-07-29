@@ -965,47 +965,28 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void parserVisitorsAndCollectorsRemainFocused() throws IOException {
-        Path root = repoRoot();
+    void repositoryProductionResponsibilityClassesRemainFocused() throws IOException {
+        Path root = repoRoot().getParent();
         try (Stream<Path> stream = Files.walk(root)) {
             List<String> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/fullgrammar/")
-                            || path.toString().contains("/tokenevent/")
-                            || path.toString().contains("/routine/"))
-                    .filter(path -> path.getFileName().toString().contains("Visitor")
-                            || path.getFileName().toString().contains("Collector"))
-                    .filter(path -> effectiveCodeLineCount(path) > 400)
-                    .map(path -> root.relativize(path) + "=" + effectiveCodeLineCount(path))
-                    .toList();
-            assertTrue(offenders.isEmpty(),
-                    "Parser visitors/collectors must delegate focused responsibilities, offenders=" + offenders);
-        }
-    }
-
-    @Test
-    void semanticProductionClassesRemainFocused() throws IOException {
-        Path root = repoRoot();
-        List<String> boundedSuffixes = List.of(
-                "Analyzer.java", "Support.java", "Extractor.java", "Resolver.java",
-                "Merger.java", "Framer.java", "Facade.java");
-        try (Stream<Path> stream = Files.walk(root)) {
-            List<String> offenders = stream
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> path.toString().contains("/src/main/java/"))
-                    .filter(path -> path.toString().contains("/core/src/main/java/com/relationdetector/core/")
-                            || isAdaptorSemanticSource(path))
-                    .filter(path -> boundedSuffixes.stream()
-                            .anyMatch(suffix -> path.getFileName().toString().endsWith(suffix)))
+                    .filter(path -> path.toString().contains("/relation-detector/")
+                            || path.toString().contains("/semantic-layer/"))
+                    .filter(path -> !path.toString().contains("/target/"))
                     .filter(path -> !path.getFileName().toString().equals("package-info.java"))
+                    .filter(path -> !isGeneratedJava(path))
                     .filter(path -> !isRecordDto(path))
-                    .filter(path -> effectiveCodeLineCount(path) > 450)
-                    .map(path -> root.relativize(path) + "=" + effectiveCodeLineCount(path))
+                    .filter(path -> responsibilityLineLimit(path) > 0)
+                    .filter(path -> effectiveCodeLineCount(path) > responsibilityLineLimit(path))
+                    .map(path -> root.relativize(path)
+                            + "=" + effectiveCodeLineCount(path)
+                            + " (limit " + responsibilityLineLimit(path) + ")")
                     .sorted()
                     .toList();
             assertTrue(offenders.isEmpty(),
-                    "Semantic production classes must delegate focused responsibilities, offenders=" + offenders);
+                    "Production responsibility classes must delegate focused responsibilities, offenders="
+                            + offenders);
         }
     }
 
@@ -1366,18 +1347,6 @@ class DialectGrammarArchitectureTest {
         }
     }
 
-    private static boolean isAdaptorSemanticSource(Path path) {
-        String value = path.toString();
-        boolean adaptor = value.contains("/adaptor-mysql/src/main/java/")
-                || value.contains("/adaptor-postgres/src/main/java/")
-                || value.contains("/adaptor-oracle/src/main/java/")
-                || value.contains("/adaptor-sqlserver/src/main/java/");
-        return adaptor && (value.contains("/fullgrammar/")
-                || value.contains("/tokenevent/")
-                || value.contains("/routine/")
-                || value.contains("/common/"));
-    }
-
     private static boolean isRecordDto(Path path) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
@@ -1401,6 +1370,39 @@ class DialectGrammarArchitectureTest {
             return false;
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to inspect " + path, exception);
+        }
+    }
+
+    private static int responsibilityLineLimit(Path path) {
+        String filename = path.getFileName().toString();
+        if (filename.endsWith("Visitor.java") || filename.endsWith("Collector.java")) {
+            return 400;
+        }
+        for (String suffix : List.of(
+                "Analyzer.java", "Support.java", "Extractor.java", "Resolver.java",
+                "Merger.java", "Framer.java", "Facade.java", "Store.java", "Planner.java",
+                "Publisher.java", "Fingerprinter.java", "Canonicalizer.java", "Handler.java",
+                "Writer.java")) {
+            if (filename.endsWith(suffix)) {
+                return 450;
+            }
+        }
+        return 0;
+    }
+
+    private static boolean isGeneratedJava(Path path) {
+        String value = path.toString();
+        if (value.contains("/generated-sources/") || value.contains("/src/generated/")) {
+            return true;
+        }
+        try {
+            String prefix = Files.readString(path);
+            return prefix.contains("Generated from ")
+                    || prefix.contains("@Generated(")
+                    || prefix.contains("@javax.annotation.Generated")
+                    || prefix.contains("@jakarta.annotation.Generated");
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to inspect generated source " + path, exception);
         }
     }
 

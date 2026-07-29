@@ -14,14 +14,18 @@ public record SemanticPathRunPlan(
         String fullBundleHash,
         List<SemanticPathShard> shards,
         boolean reconcile,
-        int maxInputTokens
+        int maxInputTokens,
+        Path ownerManifestPath,
+        String ownerManifestHash
 ) {
     public SemanticPathRunPlan {
         if (fullBundlePath == null || fullBundleHash == null || fullBundleHash.isBlank()
-                || shards == null || shards.isEmpty() || maxInputTokens <= 0) {
+                || shards == null || shards.isEmpty() || maxInputTokens <= 0
+                || ownerManifestPath == null || ownerManifestHash == null || ownerManifestHash.isBlank()) {
             throw new IllegalArgumentException("semantic path run plan is incomplete");
         }
         fullBundlePath = fullBundlePath.toAbsolutePath().normalize();
+        ownerManifestPath = ownerManifestPath.toAbsolutePath().normalize();
         shards = List.copyOf(shards);
     }
 

@@ -18,11 +18,11 @@ import java.util.PriorityQueue;
  * EN: Sorts UTF-8 line records in fixed-size chunks and performs bounded fan-in merges into a stable external-sort
  * result. It owns temporary spools only and never interprets business fields or retains an index.
  */
-final class ExternalLineSorter {
+public final class ExternalLineSorter {
     private static final long DEFAULT_CHUNK_BYTES = 4L * 1024L * 1024L;
     private static final int MERGE_FAN_IN = 32;
 
-    void sort(Path input, Path output, Path workspace) throws IOException {
+    public void sort(Path input, Path output, Path workspace) throws IOException {
         Files.createDirectories(workspace);
         List<Path> chunks = createChunks(input, workspace);
         if (chunks.isEmpty()) {

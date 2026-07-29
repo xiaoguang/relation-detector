@@ -3,11 +3,14 @@ package com.relationdetector.semantic.reader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Base64;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.function.Consumer;
 import java.util.function.BinaryOperator;
 
@@ -17,11 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.semantic.StableSemanticId;
 
 /**
- * CN: 以稳定key在磁盘上收集、外排并严格去重JSON记录；输入每次仅保留一条记录，输出可逐条迭代或直接
- * 写入JsonGenerator，同ID不同内容明确失败，本类不解释任何semantic section含义。
+ * CN: 以稳定key在磁盘上收集、外排并严格去重JSON记录，并用小型key到byte-offset索引执行有界随机
+ * 查找；输入每次仅保留一条记录，输出可逐条迭代或直接写入JsonGenerator，同ID不同内容明确失败，
+ * 本类不解释任何semantic section含义。
  * EN: Collects, externally sorts, and strictly deduplicates JSON records by stable key on disk. It retains one
- * record at a time and can iterate or stream records to a JsonGenerator. Conflicting content for one key fails,
- * while section-specific semantics remain outside this storage primitive.
+ * record at a time, uses a compact key-to-byte-offset index for bounded random lookup, and can iterate or stream
+ * records to a JsonGenerator. Conflicting content for one key fails, while section-specific semantics remain outside
+ * this storage primitive.
  */
 public final class ExternalJsonRecordStore implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -30,7 +35,7 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
     private final BufferedWriter writer;
     private final BinaryOperator<JsonNode> conflictMerger;
     private Path sorted;
-    private SortedTextIndex keyIndex;
+    private Path offsetIndex;
     private long count;
     private boolean closed;
 
@@ -82,13 +87,13 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
             Path ordered = workspace.resolve("records.ordered");
             new ExternalLineSorter().sort(raw, ordered, workspace.resolve("sort-work"));
             sorted = workspace.resolve("records.unique");
-            Path keys = workspace.resolve("records.keys");
+            offsetIndex = workspace.resolve("records.offsets");
+            Files.createFile(sorted);
             long unique = 0;
             try (BufferedReader reader = Files.newBufferedReader(ordered, StandardCharsets.UTF_8);
-                 BufferedWriter output = Files.newBufferedWriter(
-                         sorted, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
-                 BufferedWriter keyOutput = Files.newBufferedWriter(
-                         keys, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
+                 RandomAccessFile output = new RandomAccessFile(sorted.toFile(), "rw");
+                 BufferedWriter offsetOutput = Files.newBufferedWriter(
+                         offsetIndex, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
                 String currentKey = null;
                 String currentHash = null;
                 String currentPayload = null;
@@ -104,7 +109,7 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
                     String payload = line.substring(second + 1);
                     if (!key.equals(currentKey)) {
                         if (currentKey != null) {
-                            writeUnique(output, keyOutput, currentKey, currentHash, currentPayload);
+                            writeUnique(output, offsetOutput, currentKey, currentHash, currentPayload);
                             unique++;
                         }
                         currentKey = key;
@@ -132,11 +137,10 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
                             "external-json-record", StableSemanticId.canonicalJson(merged));
                 }
                 if (currentKey != null) {
-                    writeUnique(output, keyOutput, currentKey, currentHash, currentPayload);
+                    writeUnique(output, offsetOutput, currentKey, currentHash, currentPayload);
                     unique++;
                 }
             }
-            keyIndex = SortedTextIndex.openExisting(keys);
             count = unique;
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to finish external JSON record store", failure);
@@ -144,20 +148,27 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
     }
 
     private void writeUnique(
-            BufferedWriter output,
-            BufferedWriter keys,
+            RandomAccessFile output,
+            BufferedWriter offsets,
             String key,
             String hash,
             String payload
     ) throws IOException {
-        output.write(key);
+        long offset = output.getFilePointer();
+        writeAscii(output, key);
         output.write('\t');
-        output.write(hash);
+        writeAscii(output, hash);
         output.write('\t');
-        output.write(payload);
-        output.newLine();
-        keys.write(key);
-        keys.newLine();
+        writeAscii(output, payload);
+        output.write('\n');
+        offsets.write(key);
+        offsets.write('\t');
+        offsets.write(Long.toString(offset));
+        offsets.newLine();
+    }
+
+    private void writeAscii(RandomAccessFile output, String value) throws IOException {
+        output.write(value.getBytes(StandardCharsets.US_ASCII));
     }
 
     public long count() {
@@ -170,10 +181,27 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         if (key == null || key.isBlank()) {
             return false;
         }
-        try {
-            return keyIndex.contains(encode(key));
+        return findOffset(encode(key)).isPresent();
+    }
+
+    public Optional<Record> get(String key) {
+        finish();
+        if (key == null || key.isBlank()) {
+            return Optional.empty();
+        }
+        String encoded = encode(key);
+        OptionalLong offset = findOffset(encoded);
+        if (offset.isEmpty()) {
+            return Optional.empty();
+        }
+        try (RandomAccessFile file = new RandomAccessFile(sorted.toFile(), "r")) {
+            StoredLine line = readStoredLine(file, offset.getAsLong());
+            if (!line.key().equals(encoded)) {
+                throw new ScanResultContractException("external JSON record offset index is inconsistent");
+            }
+            return Optional.of(new Record(key, JSON.readTree(decode(line.payload()))));
         } catch (IOException failure) {
-            throw new ScanResultContractException("failed to query external JSON record key", failure);
+            throw new ScanResultContractException("failed to read external JSON record", failure);
         }
     }
 
@@ -238,6 +266,81 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
     }
 
+    private long lineStart(RandomAccessFile file, long offset) throws IOException {
+        if (offset <= 0) {
+            return 0;
+        }
+        long position = Math.min(offset, file.length() - 1);
+        while (position > 0) {
+            file.seek(position - 1);
+            if (file.read() == '\n') {
+                return position;
+            }
+            position--;
+        }
+        return 0;
+    }
+
+    private OptionalLong findOffset(String encodedKey) {
+        try (RandomAccessFile file = new RandomAccessFile(offsetIndex.toFile(), "r")) {
+            long low = 0;
+            long high = file.length();
+            while (low < high) {
+                long middle = (low + high) >>> 1;
+                long start = lineStart(file, middle);
+                OffsetLine line = readOffsetLine(file, start);
+                int comparison = line.key().compareTo(encodedKey);
+                if (comparison < 0) {
+                    low = Math.max(start + 1, line.next());
+                } else if (comparison > 0) {
+                    high = start;
+                } else {
+                    return OptionalLong.of(line.offset());
+                }
+            }
+            return OptionalLong.empty();
+        } catch (IOException failure) {
+            throw new ScanResultContractException("failed to query external JSON record offset", failure);
+        }
+    }
+
+    private OffsetLine readOffsetLine(RandomAccessFile file, long start) throws IOException {
+        file.seek(start);
+        String line = file.readLine();
+        if (line == null) {
+            throw new ScanResultContractException("external JSON record offset index is truncated");
+        }
+        int split = line.indexOf('\t');
+        if (split <= 0 || split == line.length() - 1) {
+            throw new ScanResultContractException("external JSON record offset line is malformed");
+        }
+        try {
+            long offset = Long.parseLong(line.substring(split + 1));
+            if (offset < 0) {
+                throw new NumberFormatException("negative offset");
+            }
+            return new OffsetLine(line.substring(0, split), offset, file.getFilePointer());
+        } catch (NumberFormatException failure) {
+            throw new ScanResultContractException("external JSON record offset is invalid");
+        }
+    }
+
+    private StoredLine readStoredLine(RandomAccessFile file, long start) throws IOException {
+        file.seek(start);
+        String line = file.readLine();
+        if (line == null) {
+            throw new ScanResultContractException("external JSON record index is truncated");
+        }
+        int first = line.indexOf('\t');
+        int second = line.indexOf('\t', first + 1);
+        if (first <= 0 || second <= first + 1 || second == line.length() - 1) {
+            throw new ScanResultContractException("external JSON record line is malformed");
+        }
+        return new StoredLine(
+                line.substring(0, first),
+                line.substring(second + 1));
+    }
+
     @Override
     public void close() {
         if (closed) {
@@ -245,9 +348,6 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         }
         closed = true;
         try {
-            if (keyIndex != null) {
-                keyIndex.close();
-            }
             if (sorted == null) {
                 writer.close();
             }
@@ -268,5 +368,11 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         public JsonNode value() {
             return value.deepCopy();
         }
+    }
+
+    private record OffsetLine(String key, long offset, long next) {
+    }
+
+    private record StoredLine(String key, String payload) {
     }
 }

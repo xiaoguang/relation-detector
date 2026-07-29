@@ -197,7 +197,21 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016
 
 版本由 package 表达，例如 `postgres.fullgrammar.v16`、`mysql.fullgrammar.v8_0`、`oracle.fullgrammar.v19c`、`sqlserver.fullgrammar.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammarDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar 实现。version package 不再持有 `.g4` 或 generated Java；它们依赖 `grammar/*` 中对应的独立 artifact，只保留 binding、profile/version policy 和少量 typed context adapter。
 
-Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，并对 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade 设置 450 行上限；generated Java、top-level record DTO 与 `package-info` 排除，不设永久 allowlist。`StructuredScriptFramer` 仅保留编排，五种 dialect slice 算法已分别进入独立 planner，并由额外的 200/250 行职责门禁保护。top-level record DTO 豁免通过 JDK compiler AST 检查真实顶层声明；普通类注释或字符串中的伪 `record` 不能绕过门禁。双语设计注释门禁覆盖 `Engine/Pipeline/Service/Collector/Extractor/Resolver/Merger/Framer/Analyzer/Visitor/Writer/Validator/Registry/Builder/Assembler/Assembly/Factory/Index/Facade/Executor/Runner/Scheduler/Loader/Normalizer/Dispatcher/Selector`；本轮实际命中的编排类及超过 40 行的方法均具有明确的输入、输出、上下游和失败/禁止职责说明。门禁验证结构，描述准确性仍由代码评审确认。
+Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试扫描relation-detector与semantic-layer全部手写生产Java：visitor/collector设置400行上限，
+`Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade/Store/Planner/Publisher/Fingerprinter/Canonicalizer/Handler/Writer`
+设置450行上限；generated Java、top-level record DTO 与`package-info`排除，不设永久allowlist。
+`StructuredScriptFramer`仅保留编排，
+五种 dialect slice算法已分别进入独立planner，并由额外的200/250行职责门禁保护。top-level record
+DTO豁免通过JDK compiler AST检查真实顶层声明；普通类注释或字符串中的伪`record`不能绕过门禁。
+
+全仓门禁失败时输出相对路径、实际有效代码行数与适用上限。`SemanticInputStore`已拆出流式loader和
+metadata inventory索引，`SemanticPathResultStore`已拆出selection/validation/document rendering，
+两套artifact writer已拆出事务文件、manifest与审计artifact职责，`JsonResultWriter`和
+`ExternalCanonicalJsonFingerprinter`分别拆出fact rendering与canonical object-field外排排序。
+保留原public facade，不允许改名、空wrapper或纯转发helper绕过门禁。双语设计注释门禁继续覆盖
+`Engine/Pipeline/Service/Collector/Extractor/Resolver/Merger/Framer/Analyzer/Visitor/Writer/Validator/Registry/Builder/Assembler/Assembly/Factory/Index/Facade/Executor/Runner/Scheduler/Loader/Normalizer/Dispatcher/Selector`，
+Javadoc门禁与职责规模门禁仍是两条独立契约：前者检查设计说明，后者检查有效代码规模；二者都不能
+单独代替代码评审。
 
 ## 代码结构注释索引
 
@@ -1103,7 +1117,10 @@ Common TokenEventStructuredDdlParser
   -> 如果 target 有 PK/unique，补 TARGET_UNIQUE
 ```
 
-DDL index 本身不会凭空创造 FK-like relationship。partial index、expression index、prefix index、函数 index、JSON path index 等只作为 parser 覆盖边界，不作为全局唯一或 FK-like 证据。
+DDL index 本身不会凭空创造 FK-like relationship。partial index、expression index、prefix index、函数 index、JSON path index 等不作为全局唯一或 FK-like 证据。MySQL token-event、full v5.7和
+full v8.0分别从自身typed index context保留完整列、前缀列与表达式成员：prefix/组合/expression
+unique不产生`TARGET_UNIQUE`，首个物理完整列或前缀列仍可产生`SOURCE_INDEX`，expression-leading
+index不产生物理列lookup。
 
 ## DDL full-grammar 链路
 

@@ -1,13 +1,9 @@
 package com.relationdetector.semantic.reader;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -17,6 +13,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -25,20 +22,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
+import com.relationdetector.semantic.StableSemanticId;
+import com.relationdetector.semantic.event.SemanticEventCandidate;
+import com.relationdetector.semantic.event.SemanticEventCandidateMerger;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
-import com.relationdetector.semantic.kg.SemanticKgBuilder;
-import com.relationdetector.semantic.kg.SemanticKnowledgeGraph;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /**
- * CN: 将磁盘输入的bounded component逐个转换成完整semantic evidence sections，使用外排stable-ID去重后
- * 流式写出full bundle；上游是SemanticInputStore，下游是path-backed shard/KG执行器，禁止持有完整bundle。
- * EN: Converts bounded disk-backed components into complete semantic evidence sections one at a time, externally
- * deduplicates stable IDs, and streams the full bundle. It sits between SemanticInputStore and path-backed shard/KG
- * execution and never retains the complete bundle.
+ * CN: 将磁盘输入窗口转换为全局 semantic evidence sections，使用外排 stable-ID 聚合跨窗口 event、
+ * graph 和候选后流式写出 full bundle。上游是 SemanticInputStore，下游是全局 owner/shard/KG 执行器；
+ * 输入窗口只限制单次物化内存，本类禁止把窗口当作语义边界或持有完整 bundle。
+ * EN: Converts disk-backed input windows into global semantic evidence sections, externally merging events, graph
+ * records, and candidates across windows before streaming the full bundle. It sits between SemanticInputStore and
+ * global owner/shard/KG execution; windows bound materialization memory and never define semantic boundaries.
  */
 public final class SemanticEvidenceStore implements AutoCloseable {
-    public static final long DEFAULT_COMPONENT_BYTES = 8L * 1024L * 1024L;
+    public static final long DEFAULT_WINDOW_BYTES = 8L * 1024L * 1024L;
 
     public enum Section {
         TABLES("tables", false),
@@ -74,16 +74,17 @@ public final class SemanticEvidenceStore implements AutoCloseable {
     private final SemanticInputStore input;
     private final Path workspace;
     private final Map<Section, ExternalJsonRecordStore> sections;
-    private final Path componentIndex;
+    private final ExternalJsonRecordStore eventContributions;
+    private final SemanticGraphRecordStore graphRecords;
     private boolean closed;
 
     public SemanticEvidenceStore(SemanticInputStore input, Path workspace) {
-        this(input, workspace, DEFAULT_COMPONENT_BYTES);
+        this(input, workspace, DEFAULT_WINDOW_BYTES);
     }
 
-    public SemanticEvidenceStore(SemanticInputStore input, Path workspace, long maxComponentBytes) {
-        if (input == null || workspace == null || maxComponentBytes <= 0) {
-            throw new IllegalArgumentException("semantic input, workspace and component limit are required");
+    public SemanticEvidenceStore(SemanticInputStore input, Path workspace, long maxWindowBytes) {
+        if (input == null || workspace == null || maxWindowBytes <= 0) {
+            throw new IllegalArgumentException("semantic input, workspace and window limit are required");
         }
         this.input = input;
         this.workspace = workspace;
@@ -97,9 +98,15 @@ public final class SemanticEvidenceStore implements AutoCloseable {
                 sections.put(section, new ExternalJsonRecordStore(
                         workspace.resolve("sections").resolve(section.wireName())));
             }
-            this.componentIndex = workspace.resolve("components.tsv");
-            build(maxComponentBytes);
+            SemanticEventCandidateMerger eventMerger = new SemanticEventCandidateMerger();
+            this.eventContributions = new ExternalJsonRecordStore(
+                    workspace.resolve("event-contributions"),
+                    (left, right) -> JSON.valueToTree(eventMerger.merge(
+                            eventCandidate(left), eventCandidate(right))));
+            this.graphRecords = new SemanticGraphRecordStore(workspace.resolve("graph-records"));
+            build(maxWindowBytes);
             sections.values().forEach(ExternalJsonRecordStore::finish);
+            graphRecords.finish();
         } catch (RuntimeException failure) {
             closeAfterFailure(failure);
             throw failure;
@@ -129,6 +136,19 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         sections.get(section).forEach(record -> consumer.accept(record.value()));
     }
 
+    public Optional<JsonNode> find(Section section, String id) {
+        ensureOpen();
+        if (section == null || id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        return sections.get(section).get(id).map(ExternalJsonRecordStore.Record::value);
+    }
+
+    SemanticGraphRecordStore graphRecords() {
+        ensureOpen();
+        return graphRecords;
+    }
+
     public boolean containsReference(String reference) {
         ensureOpen();
         if (reference == null || reference.isBlank()) {
@@ -148,28 +168,6 @@ public final class SemanticEvidenceStore implements AutoCloseable {
                 || sections.get(Section.EVENT_CANDIDATES).containsKey(reference)
                 || sections.get(Section.TRIPLET_CANDIDATES).containsKey(reference)
                 || sections.get(Section.REVIEW_ITEM_CANDIDATES).containsKey(reference);
-    }
-
-    public void forEachComponent(Consumer<ComponentBundle> consumer) {
-        ensureOpen();
-        if (consumer == null) {
-            throw new IllegalArgumentException("semantic component consumer is required");
-        }
-        try (BufferedReader reader = Files.newBufferedReader(componentIndex, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] fields = line.split("\\t", 6);
-                consumer.accept(new ComponentBundle(
-                        fields[0],
-                        Long.parseLong(fields[1]),
-                        Path.of(fields[2]),
-                        fields[3],
-                        Path.of(fields[4]),
-                        Path.of(fields[5])));
-            }
-        } catch (IOException failure) {
-            throw new ScanResultContractException("failed to iterate semantic component bundles", failure);
-        }
     }
 
     public void writeBundle(Path target) {
@@ -214,46 +212,17 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         return sha256(target);
     }
 
-    private void build(long maxComponentBytes) throws IOException {
-        Path componentDirectory = workspace.resolve("components");
-        Files.createDirectories(componentDirectory);
-        try (BufferedWriter index = Files.newBufferedWriter(
-                componentIndex, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
-             SemanticComponentStore componentStore = new SemanticComponentStore(
-                     input, workspace.resolve("component-work"))) {
-            int[] sequence = {0};
-            componentStore.forEachChunk(maxComponentBytes, chunk -> {
-                int position = ++sequence[0];
-                ObjectNode bundle = new SemanticExtractionBundleBuilder().build(chunk.bundle());
+    private void build(long maxWindowBytes) {
+        try (SemanticInputWindowStore windows = new SemanticInputWindowStore(
+                input, workspace.resolve("input-windows"))) {
+            windows.forEachWindow(maxWindowBytes, window -> {
+                ObjectNode bundle = new SemanticExtractionBundleBuilder().build(window.bundle());
                 appendBundle(bundle);
-                Path path = componentDirectory.resolve("component-%06d.json".formatted(position));
-                Path evidenceGraphPath = componentDirectory.resolve(
-                        "component-%06d-evidence-graph.json".formatted(position));
-                Path kgPath = componentDirectory.resolve("component-%06d-kg.json".formatted(position));
-                try {
-                    EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(chunk.bundle());
-                    SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
-                    JSON.writeValue(path.toFile(), bundle);
-                    JSON.writeValue(evidenceGraphPath.toFile(), evidenceGraph);
-                    JSON.writeValue(kgPath.toFile(), kg);
-                    index.write("component-%06d".formatted(position));
-                    index.write('\t');
-                    index.write(Long.toString(chunk.rawBytes()));
-                    index.write('\t');
-                    index.write(path.toAbsolutePath().normalize().toString());
-                    index.write('\t');
-                    index.write(chunk.id());
-                    index.write('\t');
-                    index.write(evidenceGraphPath.toAbsolutePath().normalize().toString());
-                    index.write('\t');
-                    index.write(kgPath.toAbsolutePath().normalize().toString());
-                    index.newLine();
-                } catch (IOException failure) {
-                    throw new ScanResultContractException(
-                            "failed to persist bounded semantic component bundle", failure);
-                }
+                EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(window.bundle());
+                graphRecords.append(evidenceGraph);
             });
         }
+        appendGlobalEvents();
     }
 
     private void appendBundle(ObjectNode bundle) {
@@ -261,18 +230,121 @@ public final class SemanticEvidenceStore implements AutoCloseable {
             JsonNode values = bundle.path(section.wireName());
             if (!values.isArray()) {
                 throw new ScanResultContractException(
-                        "semantic component bundle section must be an array: " + section.wireName());
+                        "semantic input window bundle section must be an array: " + section.wireName());
             }
             for (JsonNode item : values) {
+                if (section == Section.EVENT_CANDIDATES) {
+                    SemanticEventCandidate normalized = new SemanticEventCandidateMerger()
+                            .normalize(eventCandidate(item));
+                    eventContributions.append(normalized.id(), JSON.valueToTree(normalized));
+                    continue;
+                }
+                if (section == Section.TRIPLET_CANDIDATES
+                        && "EVENT_INPUT_OUTPUT".equals(item.path("type").asText())) {
+                    continue;
+                }
                 String key = section.idRequired
                         ? item.path("id").asText("")
                         : item.asText("");
                 if (key.isBlank()) {
                     throw new ScanResultContractException(
-                            "semantic component record key is missing in " + section.wireName());
+                            "semantic input window record key is missing in " + section.wireName());
                 }
                 sections.get(section).append(key, item);
             }
+        }
+    }
+
+    private void appendGlobalEvents() {
+        eventContributions.finish();
+        sections.get(Section.RELATIONSHIPS).finish();
+        sections.get(Section.DERIVED_LINEAGE).finish();
+        SemanticEventCandidateMerger merger = new SemanticEventCandidateMerger();
+        eventContributions.forEach(record -> {
+            SemanticEventCandidate event = eventCandidate(record.value());
+            List<String> relationships = new ArrayList<>();
+            sections.get(Section.RELATIONSHIPS).forEach(relationship -> {
+                if (relationshipTouchesEvent(relationship.value(), event)) {
+                    relationships.add(relationship.key());
+                }
+            });
+            List<String> derived = new ArrayList<>();
+            sections.get(Section.DERIVED_LINEAGE).forEach(lineage -> {
+                if (lineageTouchesEvent(lineage.value(), event)) {
+                    derived.add(lineage.key());
+                }
+            });
+            SemanticEventCandidate completed = merger.associate(event, relationships, derived);
+            sections.get(Section.EVENT_CANDIDATES).append(
+                    completed.id(), JSON.valueToTree(completed));
+            graphRecords.appendFact(new SemanticEvidenceBuilder().eventFact(completed));
+            appendEventTriplets(completed);
+        });
+    }
+
+    private boolean relationshipTouchesEvent(JsonNode relationship, SemanticEventCandidate event) {
+        String source = relationship.path("source").asText("");
+        String target = relationship.path("target").asText("");
+        if (event.outputEndpoints().contains(source) || event.outputEndpoints().contains(target)) {
+            return true;
+        }
+        String sourceTable = tableOf(source);
+        String targetTable = tableOf(target);
+        List<String> inputTables = event.inputEndpoints().stream().map(this::tableOf).distinct().toList();
+        List<String> outputTables = event.outputEndpoints().stream().map(this::tableOf).distinct().toList();
+        return outputTables.contains(sourceTable) && inputTables.contains(targetTable)
+                || outputTables.contains(targetTable) && inputTables.contains(sourceTable);
+    }
+
+    private boolean lineageTouchesEvent(JsonNode lineage, SemanticEventCandidate event) {
+        List<String> endpoints = new ArrayList<>();
+        lineage.path("sources").forEach(value -> endpoints.add(value.asText("")));
+        String target = lineage.path("target").asText("");
+        if (!target.isBlank()) {
+            endpoints.add(target);
+        }
+        List<String> eventEndpoints = new ArrayList<>(event.inputEndpoints());
+        eventEndpoints.addAll(event.outputEndpoints());
+        List<String> eventTables = eventEndpoints.stream().map(this::tableOf).distinct().toList();
+        return endpoints.stream().anyMatch(endpoint ->
+                eventEndpoints.contains(endpoint) || eventTables.contains(tableOf(endpoint)));
+    }
+
+    private void appendEventTriplets(SemanticEventCandidate event) {
+        List<String> inputs = event.inputEndpoints().stream().map(this::tableOf).distinct().toList();
+        List<String> outputs = event.outputEndpoints().stream().map(this::tableOf).distinct().toList();
+        for (String input : inputs) {
+            for (String output : outputs) {
+                String id = StableSemanticId.of(
+                        "triplet-candidate", "event", event.id(), input, output);
+                ObjectNode item = JSON.createObjectNode();
+                item.put("id", id);
+                item.put("type", "EVENT_INPUT_OUTPUT");
+                item.put("subject", input);
+                item.put("predicate", event.readableNameHint().isBlank()
+                        ? "写入" : "通过" + event.readableNameHint() + "写入");
+                item.put("object", output);
+                item.put("factRef", event.id());
+                item.put("eventCandidateRef", event.id());
+                item.put("readable", input + " " + item.path("predicate").asText() + " " + output);
+                ArrayNode refs = item.putArray("evidenceRefs");
+                event.evidenceRefs().forEach(refs::add);
+                sections.get(Section.TRIPLET_CANDIDATES).append(id, item);
+            }
+        }
+    }
+
+    private String tableOf(String endpoint) {
+        return endpoint == null || endpoint.isBlank()
+                ? ""
+                : PhysicalEndpointRef.column(endpoint).table();
+    }
+
+    private SemanticEventCandidate eventCandidate(JsonNode value) {
+        try {
+            return JSON.treeToValue(value, SemanticEventCandidate.class);
+        } catch (IOException failure) {
+            throw new ScanResultContractException("semantic event candidate is malformed", failure);
         }
     }
 
@@ -341,6 +413,24 @@ public final class SemanticEvidenceStore implements AutoCloseable {
             }
         }
         try {
+            eventContributions.close();
+        } catch (RuntimeException error) {
+            if (failure == null) {
+                failure = error;
+            } else {
+                failure.addSuppressed(error);
+            }
+        }
+        try {
+            graphRecords.close();
+        } catch (RuntimeException error) {
+            if (failure == null) {
+                failure = error;
+            } else {
+                failure.addSuppressed(error);
+            }
+        }
+        try {
             deleteRecursively(workspace);
         } catch (IOException error) {
             if (failure == null) {
@@ -361,23 +451,6 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         try (var paths = Files.walk(root)) {
             for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
                 Files.deleteIfExists(path);
-            }
-        }
-    }
-
-    public record ComponentBundle(
-            String id,
-            long rawBytes,
-            Path path,
-            String componentId,
-            Path evidenceGraphPath,
-            Path kgPath
-    ) {
-        public ComponentBundle {
-            if (id == null || id.isBlank() || rawBytes <= 0 || path == null
-                    || componentId == null || componentId.isBlank()
-                    || evidenceGraphPath == null || kgPath == null) {
-                throw new IllegalArgumentException("semantic component bundle descriptor is incomplete");
             }
         }
     }

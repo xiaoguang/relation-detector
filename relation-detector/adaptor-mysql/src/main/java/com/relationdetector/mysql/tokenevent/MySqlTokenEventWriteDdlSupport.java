@@ -9,6 +9,9 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics.IndexVisibility;
+import com.relationdetector.mysql.ddl.MySqlIndexSemantics.Member;
 
 /**
  *
@@ -131,22 +134,22 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
 
     @Override
     public Void visitPrimaryKeyConstraint(MySqlRelationSqlParser.PrimaryKeyConstraintContext ctx) {
-        addIndexEvents(currentDdlTable(), identifiers(ctx.identifierList()),
-                "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
+        emitIndexEvidence(currentDdlTable(), identifiers(ctx.identifierList()).stream()
+                .map(Member::fullColumn).toList(), true, IndexVisibility.VISIBLE, "PRIMARY_KEY", ctx);
         return null;
     }
 
     @Override
     public Void visitUniqueConstraint(MySqlRelationSqlParser.UniqueConstraintContext ctx) {
-        addIndexEvents(currentDdlTable(), identifiers(ctx.identifierList()),
-                "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
+        emitIndexEvidence(currentDdlTable(), indexMembers(ctx.indexPartList()),
+                true, visibility(ctx.indexVisibility()), "UNIQUE_CONSTRAINT", ctx);
         return null;
     }
 
     @Override
     public Void visitTableIndexConstraint(MySqlRelationSqlParser.TableIndexConstraintContext ctx) {
-        addIndexEvents(currentDdlTable(), safeIndexColumns(ctx.indexPartList()),
-                "SOURCE_INDEX", "CREATE_TABLE_INDEX", ctx);
+        emitIndexEvidence(currentDdlTable(), indexMembers(ctx.indexPartList()),
+                false, visibility(ctx.indexVisibility()), "CREATE_TABLE_INDEX", ctx);
         return null;
     }
 
@@ -161,9 +164,11 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
                 continue;
             }
             if (constraint.PRIMARY() != null) {
-                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", constraint);
+                emitIndexEvidence(table, List.of(Member.fullColumn(column)),
+                        true, IndexVisibility.VISIBLE, "INLINE_PRIMARY_KEY", constraint);
             } else if (constraint.UNIQUE() != null) {
-                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_UNIQUE", constraint);
+                emitIndexEvidence(table, List.of(Member.fullColumn(column)),
+                        true, IndexVisibility.VISIBLE, "INLINE_UNIQUE", constraint);
             } else if (constraint.REFERENCES() != null) {
                 List<String> targetColumns = constraint.identifierList() == null
                         ? List.of("id") : identifiers(constraint.identifierList());
@@ -176,10 +181,9 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
 
     @Override
     public Void visitCreateIndexStatement(MySqlRelationSqlParser.CreateIndexStatementContext ctx) {
-        String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
         String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
-        addIndexEvents(qualifiedName(ctx.qualifiedName()), safeIndexColumns(ctx.indexPartList()),
-                role, kind, ctx);
+        emitIndexEvidence(qualifiedName(ctx.qualifiedName()), indexMembers(ctx.indexPartList()),
+                ctx.UNIQUE() != null, visibility(ctx.createIndexTail()), kind, ctx);
         return null;
     }
 
@@ -231,13 +235,18 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
         emitter.addForeignKeyEvents(events, ctx, sourceTable, sourceColumns, targetTable, targetColumns);
     }
 
-    private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
-        emitter.addIndexEvent(events, ctx, table, column, role, kind);
-    }
-
-    private void addIndexEvents(String table, List<String> columns, String role, String kind,
-            ParserRuleContext ctx) {
-        emitter.addIndexEvents(events, ctx, table, columns, role, kind);
+    private void emitIndexEvidence(
+            String table,
+            List<Member> members,
+            boolean unique,
+            IndexVisibility visibility,
+            String kind,
+            ParserRuleContext ctx
+    ) {
+        for (MySqlIndexSemantics.IndexEvidence evidence
+                : MySqlIndexSemantics.evidence(members, unique, visibility, kind)) {
+            emitter.addIndexEvent(events, ctx, table, evidence.column(), evidence.role(), evidence.kind());
+        }
     }
 
     private void addDdlColumnEvent(String table, String column, ParserRuleContext ctx) {
@@ -252,13 +261,31 @@ abstract class MySqlTokenEventWriteDdlSupport extends MySqlTokenEventControlSupp
         return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
     }
 
-    private List<String> safeIndexColumns(MySqlRelationSqlParser.IndexPartListContext ctx) {
-        List<String> columns = new ArrayList<>();
+    private List<Member> indexMembers(MySqlRelationSqlParser.IndexPartListContext ctx) {
+        List<Member> members = new ArrayList<>();
         for (MySqlRelationSqlParser.IndexPartContext part : ctx.indexPart()) {
             if (part.identifier() != null) {
-                columns.add(clean(part.identifier().getText()));
+                String column = clean(part.identifier().getText());
+                members.add(part.NUMBER() == null
+                        ? Member.fullColumn(column)
+                        : Member.prefixColumn(column));
+            } else {
+                members.add(Member.expression());
             }
         }
-        return columns;
+        return List.copyOf(members);
+    }
+
+    private IndexVisibility visibility(MySqlRelationSqlParser.IndexVisibilityContext ctx) {
+        return ctx != null && ctx.INVISIBLE() != null
+                ? IndexVisibility.INVISIBLE
+                : IndexVisibility.VISIBLE;
+    }
+
+    private IndexVisibility visibility(List<MySqlRelationSqlParser.CreateIndexTailContext> options) {
+        boolean invisible = options.stream()
+                .map(MySqlRelationSqlParser.CreateIndexTailContext::indexVisibility)
+                .anyMatch(option -> option != null && option.INVISIBLE() != null);
+        return invisible ? IndexVisibility.INVISIBLE : IndexVisibility.VISIBLE;
     }
 }

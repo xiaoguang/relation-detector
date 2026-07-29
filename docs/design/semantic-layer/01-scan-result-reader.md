@@ -13,7 +13,10 @@ component或兼容调用中物化`ScanBundle`。
 - `ScanResultReader.read/readMerged`只供明确有界的兼容调用和测试使用。
 - `ScanBundle`保存完整metadata inventory及一个有界component的typed事实。
 - relation-detector 的 `derivedNamingEvidence` 是阅读/统计视图；当前 semantic reader 不单独读取该数组，derived naming facts 通过 canonical top-level `namingEvidence` 进入 `NamingEvidenceFact`。
-- 当前 reader 不构建 `metadataIndex`、`relationshipIndex`、`lineageIndex`，也不在读取阶段做 relationship / lineage 去重；这些属于后续 catalog/search 阶段或上游 relation-detector merge 责任。
+- 当前 reader 会构建外排table、column和fact identity索引，用于输入闭包与冲突检查；它不构建供
+  业务查询使用的`metadataIndex`、`relationshipIndex`或`lineageIndex`，也不在读取阶段做
+  relationship / lineage去重。这些查询索引属于后续catalog/search阶段，事实合并属于上游
+  relation-detector责任。
 
 **LLM 依赖：** 否。纯 JSON 读取、当前已实现的结构契约校验和同一 database identity 合并，是确定性规则操作。
 
@@ -39,11 +42,12 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
   ↓ 输入: scan-result.json（含metadataInventory）
 
 [Scan Result Reader]
-  ↓ 输出: SemanticInputStore（section spool + 外排索引）
-  ↓ 按需: bounded ScanBundle component
+  ↓ 输出: SemanticInputStore（section spool + 外排identity/closure索引）
+  ↓ 全局: SemanticEvidenceStore + typed owner plan
+  ↓ 按需: bounded root/shard ScanBundle
 
 下游: Semantic Evidence Builder
-  逐component消费完整inventory、direct/derived facts、naming和diagnostics
+  在全局store上归并event/owner，只逐个消费token受限root/shard
 ```
 
 ## 3. 接口契约
@@ -68,6 +72,18 @@ public final class ScanResultReader {
 - 不在 reader 层做 semantic 去重、confidence 重算或 evidence 合并。
 
 `read/readMerged`保留相同wire与COMPLETE inventory语义，但会物化完整`ScanBundle`，只适用于有界调用。
+
+`COMPLETE`是上游collector对配置scope的采集状态，不是consumer侧引用闭包证明。reader通过共享
+`MetadataInventoryClosureRules`同时约束内存和磁盘入口：
+
+- table、column、constraint和index完整identity唯一，column owner table必须存在。
+- constraint source column必须存在；FK两端非空、等长，referenced table/column必须存在并保留顺序。
+- 非FK constraint不得携带referenced endpoint。
+- index至少包含物理列或表达式；物理成员存在，ordinal正数、唯一、严格递增，
+  `columns/seqInIndex/subParts`shape对齐；纯表达式index的ordinal与expression对齐。
+
+因此上游scope若没有包含FK引用对象，仍可正确标记采集为`COMPLETE`，但正式semantic reader会因
+consumer引用不闭合而拒绝。
 
 ### 3.2 输入 Schema 与当前校验边界
 
@@ -163,7 +179,9 @@ public final class ScanResultReader {
 }
 ```
 
-store按需把一个固定原始字节上限的connected-component chunk物化为`ScanBundle`。每个typed fact保留
+store把原始字节阈值仅用作外排I/O window，不把window当作component、event或owner边界。全部typed
+records先进入全局`SemanticEvidenceStore`，event contribution按完整identity归并，table component和
+唯一owner在完整store上计算；只有单个token受限root/shard会物化为`ScanBundle`。每个typed fact保留
 原始`document()` payload；下游不再重复解析endpoint、confidence或flowKind。relationship、lineage、
 naming和diagnostic ID不依赖数组位置；重复stable ID在store发布前拒绝。顶层`warnings`映射为
 diagnostics。portable input label不泄漏本机绝对路径，但不等同于持久repository identity。
@@ -353,6 +371,10 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | 合并读取 | 2 个文件，facts identity 不同 | 数组 append，summary 整数求和，sources 去重 |
 | 合并重复事实 | 2 个文件含相同 stable fact id | 拒绝合并，不择优去重 |
 | 跨 catalog 合并 | type/schema 相同，catalog 不同 | 拒绝合并 |
+| constraint悬空成员 | source column或FK引用table/column不存在 | `ScanResultContractException` |
+| 组合FK形状错误 | source/referenced成员数量或ordinal不一致 | `ScanResultContractException` |
+| index成员形状错误 | member column不存在，或columns/seq/subParts不一致 | `ScanResultContractException` |
+| inventory identity重复 | 同table下constraint/index identity重复 | `ScanResultContractException` |
 | 输入重排 | 相同 facts 使用不同数组顺序 | stable fact/evidence/candidate id 集合不变 |
 | warning suppression | writer 隐藏内部非空 warning | 根/fact warning 数组为空且 count 为 0，可正常读取；人工构造的不一致 count/array 仍拒绝 |
 
@@ -367,7 +389,8 @@ void endToEndFromRelationDetectorOutput() {
 
     // 基础断言
     assertEquals("mysql", bundle.databaseType());
-    assertEquals("shop", bundle.schema());
+    assertEquals("shop", bundle.catalog());
+    assertTrue(bundle.schema() == null || bundle.schema().isBlank());
     assertTrue(bundle.relationships().size() > 0);
 
     // 当前 reader 在边界创建 typed fact，同时保留原始 document payload
@@ -381,9 +404,14 @@ void endToEndFromRelationDetectorOutput() {
 catalog 负向 contract test 已覆盖不同 catalog 拒绝合并；artifact test 验证 `ScanBundle`、extraction bundle
 和 build-run 均保留 catalog 并输出 canonical input path。
 
-### 7.3 性能测试
+### 7.3 性能目标与当前证据
 
-| 场景 | 数据量 | 预算 |
+下表中的业务规模时延仍是目标预算，不是发布承诺。child-JVM memory gate使用真实typed
+table/column/constraint/index记录形成输入体积；128 MiB输入在96 MiB堆、1 GiB输入在512 MiB堆均
+完成完整e2e、KG、request-only和workspace清理。1 GiB约100分15秒的结果只证明bounded-memory，
+不表示达到下表中的时延目标。
+
+| 场景 | 数据量 | 目标预算 |
 | --- | --- | --- |
 | 标准读取 | 100 条关系, 50 个表 | < 500ms |
 | 大规模读取 | 10000 条关系, 1000 个表 | < 5s |

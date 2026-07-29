@@ -65,6 +65,68 @@ final class ScanResultContractValidatorTest {
     }
 
     @Test
+    void acceptsClosedForeignKeyAndPrefixIndexInventory() throws Exception {
+        ObjectNode root = validRoot();
+        addForeignKey(root, "fk_orders_customer", "customer_id", "customers", "id");
+        addIndex(root, "idx_orders_customer_prefix", "customer_id", "8", 1);
+
+        assertDoesNotThrow(() -> read(root));
+    }
+
+    @Test
+    void rejectsDanglingConstraintAndIndexColumns() throws Exception {
+        ObjectNode constraint = validRoot();
+        addForeignKey(constraint, "fk_orders_customer", "missing_customer_id", "customers", "id");
+        assertThrows(IllegalArgumentException.class, () -> read(constraint));
+
+        ObjectNode referenced = validRoot();
+        addForeignKey(referenced, "fk_orders_customer", "customer_id", "customers", "missing_id");
+        assertThrows(IllegalArgumentException.class, () -> read(referenced));
+
+        ObjectNode index = validRoot();
+        addIndex(index, "idx_orders_missing", "missing_customer_id", "", 1);
+        assertThrows(IllegalArgumentException.class, () -> read(index));
+    }
+
+    @Test
+    void rejectsMalformedForeignKeyAndIndexCardinality() throws Exception {
+        ObjectNode foreignKey = validRoot();
+        addForeignKey(foreignKey, "fk_orders_customer", "customer_id", "customers", "id");
+        ((ObjectNode) foreignKey.path("metadataInventory").path("constraints").get(0))
+                .withArray("referencedColumns").removeAll();
+        assertThrows(IllegalArgumentException.class, () -> read(foreignKey));
+
+        ObjectNode index = validRoot();
+        addIndex(index, "idx_orders_customer", "customer_id", "8", 1);
+        ((ObjectNode) index.path("metadataInventory").path("indexes").get(0))
+                .withArray("subParts").add("");
+        assertThrows(IllegalArgumentException.class, () -> read(index));
+    }
+
+    @Test
+    void rejectsDuplicateConstraintAndIndexIdentity() throws Exception {
+        ObjectNode constraints = validRoot();
+        addForeignKey(constraints, "fk_orders_customer", "customer_id", "customers", "id");
+        addForeignKey(constraints, "fk_orders_customer", "customer_id", "customers", "id");
+        assertThrows(IllegalArgumentException.class, () -> read(constraints));
+
+        ObjectNode indexes = validRoot();
+        addIndex(indexes, "idx_orders_customer", "customer_id", "", 1);
+        addIndex(indexes, "idx_orders_customer", "customer_id", "", 1);
+        assertThrows(IllegalArgumentException.class, () -> read(indexes));
+    }
+
+    @Test
+    void rejectsReferencedFieldsOnNonForeignKeyConstraint() throws Exception {
+        ObjectNode root = validRoot();
+        addForeignKey(root, "uq_orders_customer", "customer_id", "customers", "id");
+        ((ObjectNode) root.path("metadataInventory").path("constraints").get(0))
+                .put("constraintType", "UNIQUE");
+
+        assertThrows(IllegalArgumentException.class, () -> read(root));
+    }
+
+    @Test
     void rejectsSummaryCountThatDoesNotMatchFacts() throws Exception {
         ObjectNode root = validRoot();
         ((ObjectNode) root.path("summary")).put("directRelationshipCount", 2);
@@ -210,6 +272,56 @@ final class ScanResultContractValidatorTest {
         Path input = tempDir.resolve("scan-result.json");
         Files.writeString(input, JSON.writeValueAsString(root));
         return new ScanResultReader().read(input);
+    }
+
+    private void addForeignKey(
+            ObjectNode root,
+            String name,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn
+    ) {
+        ObjectNode inventory = (ObjectNode) root.path("metadataInventory");
+        ObjectNode constraint = inventory.withArray("constraints").addObject();
+        constraint.put("catalog", "shop");
+        constraint.putNull("schema");
+        constraint.put("tableName", "orders");
+        constraint.put("constraintName", name);
+        constraint.put("constraintType", "FOREIGN KEY");
+        constraint.putArray("columns").add(sourceColumn);
+        constraint.put("referencedCatalog", "shop");
+        constraint.putNull("referencedSchema");
+        constraint.put("referencedTable", targetTable);
+        constraint.putArray("referencedColumns").add(targetColumn);
+        constraint.put("updateRule", "NO ACTION");
+        constraint.put("deleteRule", "NO ACTION");
+        ((ObjectNode) inventory.path("counts")).put(
+                "constraints", inventory.path("constraints").size());
+    }
+
+    private void addIndex(
+            ObjectNode root,
+            String name,
+            String column,
+            String subPart,
+            int ordinal
+    ) {
+        ObjectNode inventory = (ObjectNode) root.path("metadataInventory");
+        ObjectNode index = inventory.withArray("indexes").addObject();
+        index.put("catalog", "shop");
+        index.putNull("schema");
+        index.put("tableName", "orders");
+        index.put("indexName", name);
+        index.put("unique", false);
+        index.put("primary", false);
+        index.put("indexType", "BTREE");
+        index.put("visible", true);
+        index.putArray("columns").add(column);
+        index.putArray("expressions");
+        index.putArray("subParts").add(subPart);
+        index.putArray("seqInIndex").add(ordinal);
+        ((ObjectNode) inventory.path("counts")).put(
+                "indexes", inventory.path("indexes").size());
     }
 
     private ObjectNode validRoot() throws Exception {

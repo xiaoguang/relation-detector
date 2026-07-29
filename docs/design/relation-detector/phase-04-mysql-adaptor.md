@@ -140,6 +140,20 @@ MySQL 8 live reader读取`EXPRESSION/IS_VISIBLE`：functional member不被解释
 索引不能证明物理单列唯一；不可见索引不提供unique或lookup证据。MySQL 5.7不具备这些字段，reader在
 字段不可用时执行兼容查询，并继续按真实`SEQ_IN_INDEX`保留物理key ordinal。
 
+live与DDL producer现在共用同一证据语义，但不共享generated parser：
+
+- live reader保留`SUB_PART`、`SEQ_IN_INDEX`、`EXPRESSION`和`IS_VISIBLE`，core policy同时校验这些
+  typed字段。
+- token-event、full v5.7和full v8.0分别从自身typed context映射
+  `FULL_COLUMN/PREFIX_COLUMN/EXPRESSION`；table-level unique constraint和standalone index都保留
+  prefix length。
+- 只有单个、完整、可见、非表达式物理列的unique/PK产生`TARGET_UNIQUE`。
+- 普通或unique索引的首个物理成员可产生`SOURCE_INDEX`，包括prefix column；expression-leading、
+  invisible和非首列成员不产生物理列lookup。
+
+因此`UNIQUE(email(8))`只支持`email`的前缀lookup，不证明完整`email`列全局唯一；组合和表达式
+unique同样不能把任一成员提升为单列唯一。
+
 ### 数据库内 DDL：SHOW CREATE TABLE
 
 当 `sources.ddl.enabled: true` 且 `sources.ddl.fromDatabase: true` 时，MySQL adaptor 会对 scope 内表执行：
@@ -342,6 +356,8 @@ SPI v6 保留 score-only 权重调整扩展点，但当前内置 MySQL adaptor �
   Testcontainers/真实 MySQL 8 权限组合仍是环境性验收项。
 - 显式 FK 元数据采集测试。
 - unique/index 采集测试。
+- live和DDL两条路径中的单列unique prefix index都不产生`TARGET_UNIQUE`，但可按现有lookup口径
+  产生`SOURCE_INDEX`；table-level与standalone CREATE INDEX语法均需覆盖。
 - view definition 采集测试。
 - trigger action statement 采集测试。
 - event definition 采集测试。

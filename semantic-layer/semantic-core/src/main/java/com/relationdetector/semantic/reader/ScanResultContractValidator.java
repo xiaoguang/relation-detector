@@ -2,12 +2,12 @@ package com.relationdetector.semantic.reader;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
@@ -19,12 +19,17 @@ import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.WarningSeverity;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.contracts.metadata.MetadataColumnFact;
+import com.relationdetector.contracts.metadata.MetadataConstraintFact;
+import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataTableFact;
 
 /**
  * CN: 严格校验 JsonResultWriter 当前输出的 timestamp、database、fact shape、enum、evidence 和 warning contract；允许 attributes 扩展，但未知 enum 或错置 derived shape 失败。
  * EN: Strictly validates the current JsonResultWriter contract for timestamps, database identity, fact shapes, enums, evidence, and warnings. Attribute extensions are allowed, but unknown enums or misplaced derived shapes fail.
  */
 final class ScanResultContractValidator {
+    private static final ObjectMapper JSON = new ObjectMapper();
     private static final List<String> REQUIRED_ARRAYS = List.of(
             "relationships", "dataLineages", "derivedRelationships", "derivedDataLineages",
             "namingEvidence", "derivedNamingEvidence", "warnings");
@@ -96,66 +101,23 @@ final class ScanResultContractValidator {
      * inventory. It returns no value and rejects duplicates, dangling tables, or invalid ordinals without repair.
      */
     private void validateInventoryFacts(JsonNode inventory) {
-        Set<String> tables = new HashSet<>();
-        int index = 0;
-        for (JsonNode table : inventory.path("tables")) {
-            String at = "metadataInventory.tables[" + index++ + "]";
-            String identity = tableIdentity(table, at);
-            requireText(table, "tableType", true);
-            require(tables.add(identity), at + " duplicates physical table identity");
-        }
-        index = 0;
-        Set<String> columns = new HashSet<>();
-        for (JsonNode column : inventory.path("columns")) {
-            String at = "metadataInventory.columns[" + index++ + "]";
-            String table = tableIdentity(column, at);
-            require(tables.contains(table), at + " references a table outside metadata inventory");
-            String columnName = requiredText(column, "columnName");
-            requireText(column, "dataType", true);
-            requireText(column, "columnType", true);
-            JsonNode ordinal = column.path("ordinalPosition");
-            require(ordinal.isIntegralNumber() && ordinal.asInt() > 0,
-                    at + ".ordinalPosition must be positive");
-            require(columns.add(table + "." + columnName), at + " duplicates physical column identity");
-        }
-        index = 0;
-        for (JsonNode constraint : inventory.path("constraints")) {
-            String at = "metadataInventory.constraints[" + index++ + "]";
-            require(tables.contains(tableIdentity(constraint, at)),
-                    at + " references a table outside metadata inventory");
-            requireText(constraint, "constraintName", true);
-            requireText(constraint, "constraintType", true);
-            textArray(requireArray(constraint, "columns"), at + ".columns");
-            textArray(requireArray(constraint, "referencedColumns"), at + ".referencedColumns");
-        }
-        index = 0;
-        for (JsonNode metadataIndex : inventory.path("indexes")) {
-            String at = "metadataInventory.indexes[" + index++ + "]";
-            require(tables.contains(tableIdentity(metadataIndex, at)),
-                    at + " references a table outside metadata inventory");
-            requireText(metadataIndex, "indexName", true);
-            textArray(requireArray(metadataIndex, "columns"), at + ".columns");
-            JsonNode ordinals = requireArray(metadataIndex, "seqInIndex");
-            for (JsonNode ordinal : ordinals) {
-                require(ordinal.isIntegralNumber() && ordinal.asInt() > 0,
-                        at + ".seqInIndex entries must be positive integers");
+        MetadataInventoryClosureRules.validateInMemory(
+                typedFacts(inventory.path("tables"), MetadataTableFact.class, "metadata tables"),
+                typedFacts(inventory.path("columns"), MetadataColumnFact.class, "metadata columns"),
+                typedFacts(inventory.path("constraints"), MetadataConstraintFact.class, "metadata constraints"),
+                typedFacts(inventory.path("indexes"), MetadataIndexFact.class, "metadata indexes"));
+    }
+
+    private <T> List<T> typedFacts(JsonNode values, Class<T> type, String field) {
+        List<T> facts = new ArrayList<>();
+        for (JsonNode value : values) {
+            try {
+                facts.add(JSON.treeToValue(value, type));
+            } catch (Exception failure) {
+                throw new ScanResultContractException(field + " contains an invalid fact");
             }
         }
-    }
-
-    private String tableIdentity(JsonNode value, String at) {
-        optionalText(value, "catalog");
-        optionalText(value, "schema");
-        String table = requiredText(value, "tableName");
-        String catalog = value.path("catalog").asText("");
-        String schema = value.path("schema").asText("");
-        return catalog.length() + ":" + catalog + "|" + schema.length() + ":" + schema + "|"
-                + table.length() + ":" + table;
-    }
-
-    private String requiredText(JsonNode parent, String field) {
-        requireText(parent, field, true);
-        return parent.path(field).asText();
+        return List.copyOf(facts);
     }
 
     private void validateInventoryCount(JsonNode inventory, JsonNode counts, String field) {

@@ -340,11 +340,11 @@ primaryKeyConstraint
     ;
 
 uniqueConstraint
-    : constraintName? UNIQUE (KEY | INDEX)? identifier? LPAREN identifierList RPAREN
+    : constraintName? UNIQUE (KEY | INDEX)? identifier? LPAREN indexPartList RPAREN indexVisibility?
     ;
 
 tableIndexConstraint
-    : (KEY | INDEX) identifier? LPAREN indexPartList RPAREN (USING identifier)?
+    : (KEY | INDEX) identifier? LPAREN indexPartList RPAREN (USING identifier)? indexVisibility?
     ;
 
 columnDefinition
@@ -448,7 +448,8 @@ createIndexStatement
     ;
 
 createIndexTail
-    : INCLUDE LPAREN indexPartList RPAREN
+    : indexVisibility
+    | INCLUDE LPAREN indexPartList RPAREN
     | WHERE predicate
     | WITH LPAREN sqlToken* RPAREN
     | TABLESPACE identifier
@@ -456,6 +457,11 @@ createIndexTail
     | literal
     | EQ
     | COMMA
+    ;
+
+indexVisibility
+    : VISIBLE
+    | INVISIBLE
     ;
 
 constraintName
@@ -708,6 +714,8 @@ REFERENCES: R E F E R E N C E S;
 PRIMARY: P R I M A R Y;
 UNIQUE: U N I Q U E;
 INDEX: I N D E X;
+VISIBLE: V I S I B L E;
+INVISIBLE: I N V I S I B L E;
 CONCURRENTLY: C O N C U R R E N T L Y;
 ONLY: O N L Y;
 INCLUDE: I N C L U D E;
