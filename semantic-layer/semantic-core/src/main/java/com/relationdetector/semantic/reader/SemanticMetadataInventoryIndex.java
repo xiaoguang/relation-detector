@@ -22,6 +22,7 @@ import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.semantic.StableSemanticId;
@@ -254,9 +255,12 @@ final class SemanticMetadataInventoryIndex {
                 require(tables.contains(key(MetadataInventoryClosureRules.tableIdentity(
                                 index.catalog(), index.schema(), index.tableName()))),
                         "metadata index references a table outside metadata inventory");
-                for (String column : index.columns()) {
+                for (var member : index.members()) {
+                    if (member.kind() == MetadataIndexMemberKind.EXPRESSION) {
+                        continue;
+                    }
                     require(columns.contains(key(MetadataInventoryClosureRules.columnIdentity(
-                                    index.catalog(), index.schema(), index.tableName(), column))),
+                                    index.catalog(), index.schema(), index.tableName(), member.columnName()))),
                             "metadata index references a column outside metadata inventory");
                 }
             }

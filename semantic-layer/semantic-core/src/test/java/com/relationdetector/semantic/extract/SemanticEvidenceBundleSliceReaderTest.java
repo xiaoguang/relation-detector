@@ -5,10 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -88,7 +93,7 @@ class SemanticEvidenceBundleSliceReaderTest {
                 }
                 """);
 
-        ObjectNode slice = new SemanticEvidenceBundleSliceReader().read(bundle, raw);
+        ObjectNode slice = new SemanticEvidenceBundleSliceReader().read(bundle, raw, 20_000);
 
         assertEquals(1, slice.path("relationships").size());
         assertEquals("rel-owned", slice.path("relationships").get(0).path("id").asText());
@@ -153,7 +158,7 @@ class SemanticEvidenceBundleSliceReaderTest {
                 }
                 """);
 
-        ObjectNode slice = new SemanticEvidenceBundleSliceReader().read(bundle, raw);
+        ObjectNode slice = new SemanticEvidenceBundleSliceReader().read(bundle, raw, 20_000);
         JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalizeOwnedShard(raw, slice);
 
         assertEquals("shop.orders", slice.path("metadataTables").get(0).path("table").asText());
@@ -193,7 +198,177 @@ class SemanticEvidenceBundleSliceReaderTest {
                 """);
 
         assertThrows(SemanticExtractionValidationException.class,
-                () -> new SemanticEvidenceBundleSliceReader().read(bundle, raw));
+                () -> new SemanticEvidenceBundleSliceReader().read(bundle, raw, 20_000));
+    }
+
+    @Test
+    void rejectsSelectedEvidenceClosureBeyondTheConfiguredInputBudget() throws Exception {
+        Path bundle = tempDir.resolve("oversized-evidence-bundle.json");
+        Files.writeString(bundle, """
+                {
+                  "database": {"type": "MYSQL", "catalog": "shop", "schema": ""},
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
+                    "counts": {"tables": 1, "columns": 0, "constraints": 0, "indexes": 0},
+                    "fingerprint": "inventory-test"
+                  },
+                  "inputFiles": [], "sources": [], "tables": ["shop.orders"],
+                  "evidence": [
+                    {"id": "ev-owned", "type": "SQL_PREDICATE",
+                     "detail": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+                  ],
+                  "metadataTables": [], "metadataColumns": [], "metadataConstraints": [],
+                  "metadataIndexes": [], "relationships": [
+                    {"id": "rel-owned", "source": "shop.orders.customer_id",
+                     "target": "shop.orders.id", "evidenceRefs": ["ev-owned"]}
+                  ],
+                  "lineage": [], "derivedRelationships": [], "derivedLineage": [],
+                  "namingEvidence": [], "diagnostics": [], "eventCandidates": [],
+                  "tripletCandidates": [], "reviewItemCandidates": [],
+                  "instructions": {"allOutputsMustUseEvidenceRefs": true},
+                  "shardContext": {
+                    "shardId": "shard-0001", "ownerKey": "shop.orders",
+                    "outputOwnedReferencesOnly": true,
+                    "ownedFactRefs": ["rel-owned"], "ownedCandidateRefs": [], "overlapRefs": []
+                  }
+                }
+                """);
+        ObjectNode raw = (ObjectNode) JSON.readTree("""
+                {
+                  "entities": [
+                    {"name": "订单", "physicalName": "shop.orders", "type": "BUSINESS_ENTITY",
+                     "ownedGroundingRefs": ["rel-owned"], "evidenceRefs": ["ev-owned"]}
+                  ],
+                  "events": [], "relations": [], "lineage": [], "metrics": [],
+                  "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticEvidenceBundleSliceReader().read(bundle, raw, 80));
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
+    void skipsHugeUnselectedEvidenceWithoutMaterializingIt() throws Exception {
+        Path bundle = tempDir.resolve("huge-unselected-evidence-bundle.json");
+        Path raw = tempDir.resolve("raw.json");
+        writeBundleWithHugeUnselectedEvidence(bundle, 16L * 1024L * 1024L);
+        Files.writeString(raw, """
+                {
+                  "entities": [
+                    {"name": "订单", "physicalName": "shop.orders", "type": "BUSINESS_ENTITY",
+                     "ownedGroundingRefs": ["rel-owned"], "evidenceRefs": ["ev-owned"]}
+                  ],
+                  "events": [], "relations": [], "lineage": [], "metrics": [],
+                  "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        Path stdout = tempDir.resolve("slice-child.stdout");
+        Path stderr = tempDir.resolve("slice-child.stderr");
+
+        Process process = new ProcessBuilder(
+                javaExecutable(),
+                "-Xmx32m",
+                "-cp", testClasspath(),
+                LowHeapSliceProbe.class.getName(),
+                bundle.toString(),
+                raw.toString())
+                .redirectOutput(stdout.toFile())
+                .redirectError(stderr.toFile())
+                .start();
+
+        assertTrue(process.waitFor(Duration.ofMinutes(3).toMillis(), TimeUnit.MILLISECONDS));
+        assertEquals(0, process.exitValue(), () -> {
+            try {
+                return Files.readString(stderr);
+            } catch (Exception failure) {
+                return "could not read child stderr";
+            }
+        });
+        assertFalse(Files.readString(stderr).contains("OutOfMemoryError"));
+    }
+
+    private void writeBundleWithHugeUnselectedEvidence(Path bundle, long detailBytes) throws Exception {
+        String prefix = """
+                {
+                  "database": {"type": "MYSQL", "catalog": "shop", "schema": ""},
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
+                    "counts": {"tables": 1, "columns": 0, "constraints": 0, "indexes": 0},
+                    "fingerprint": "inventory-test"
+                  },
+                  "inputFiles": [], "sources": [], "tables": ["shop.orders"],
+                  "evidence": [
+                    {"id": "ev-unused", "type": "SQL_PREDICATE", "detail":
+                """;
+        String suffix = """
+                },
+                    {"id": "ev-owned", "type": "SQL_PREDICATE"}
+                  ],
+                  "metadataTables": [], "metadataColumns": [], "metadataConstraints": [],
+                  "metadataIndexes": [], "relationships": [
+                    {"id": "rel-owned", "source": "shop.orders.customer_id",
+                     "target": "shop.orders.id", "evidenceRefs": ["ev-owned"]}
+                  ],
+                  "lineage": [], "derivedRelationships": [], "derivedLineage": [],
+                  "namingEvidence": [], "diagnostics": [], "eventCandidates": [],
+                  "tripletCandidates": [], "reviewItemCandidates": [],
+                  "instructions": {"allOutputsMustUseEvidenceRefs": true},
+                  "shardContext": {
+                    "shardId": "shard-0001", "ownerKey": "shop.orders",
+                    "outputOwnedReferencesOnly": true,
+                    "ownedFactRefs": ["rel-owned"], "ownedCandidateRefs": [], "overlapRefs": []
+                  }
+                }
+                """;
+        byte[] chunk = new byte[64 * 1024];
+        java.util.Arrays.fill(chunk, (byte) 'x');
+        try (OutputStream output = Files.newOutputStream(bundle)) {
+            output.write(prefix.getBytes(StandardCharsets.UTF_8));
+            output.write('"');
+            long written = 0;
+            while (written < detailBytes) {
+                int length = (int) Math.min(chunk.length, detailBytes - written);
+                output.write(chunk, 0, length);
+                written += length;
+            }
+            output.write('"');
+            output.write(suffix.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private String javaExecutable() {
+        return Path.of(
+                System.getProperty("java.home"),
+                "bin",
+                System.getProperty("os.name", "").toLowerCase().contains("win")
+                        ? "java.exe"
+                        : "java").toString();
+    }
+
+    private String testClasspath() {
+        String surefire = System.getProperty("surefire.test.class.path");
+        return surefire == null || surefire.isBlank()
+                ? System.getProperty("java.class.path")
+                : surefire;
+    }
+
+    public static final class LowHeapSliceProbe {
+        private LowHeapSliceProbe() {
+        }
+
+        public static void main(String[] args) throws Exception {
+            ObjectNode raw = (ObjectNode) JSON.readTree(Path.of(args[1]).toFile());
+            ObjectNode slice = new SemanticEvidenceBundleSliceReader().read(
+                    Path.of(args[0]), raw, 20_000);
+            if (slice.path("evidence").size() != 1
+                    || !"ev-owned".equals(slice.path("evidence").get(0).path("id").asText())) {
+                throw new IllegalStateException("unexpected evidence slice");
+            }
+        }
     }
 
     private boolean contains(JsonNode values, String expected) {

@@ -99,6 +99,28 @@ final class SemanticEventExtractorTest {
     }
 
     @Test
+    void transportContributionsDeferRelationshipAndDerivedAssociations() {
+        JsonNode direct = lineage("orders", "amount", "sales_fact", "gross_amount",
+                "ROUTINE:erp.sp_rebuild_sales_fact", "INSERT_SELECT", "INSERT SELECT", "DIRECT");
+        ScanBundle bundle = new ScanBundle(
+                "mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
+                List.of(relationship("sales_fact", "order_id", "orders", "id")),
+                List.of(direct),
+                List.of(),
+                List.of(derivedLineage("payments.amount", "sales_fact.net_amount")),
+                List.of(),
+                List.of());
+
+        SemanticEventCandidate contribution =
+                new SemanticEventExtractor().extractTransportContributions(bundle).get(0);
+
+        assertEquals(1, contribution.lineageRefs().size());
+        assertTrue(contribution.relationshipRefs().isEmpty());
+        assertTrue(contribution.supportingDerivedLineageRefs().isEmpty());
+        assertEquals(contribution.lineageRefs(), contribution.evidenceRefs());
+    }
+
+    @Test
     void derivedOnlyLineageDoesNotCreateEvent() {
         ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(), List.of(), List.of(derivedLineage("payments.amount", "sales_fact.net_amount")),

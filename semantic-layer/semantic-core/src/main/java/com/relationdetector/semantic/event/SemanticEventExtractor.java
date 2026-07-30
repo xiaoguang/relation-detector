@@ -28,13 +28,31 @@ public final class SemanticEventExtractor {
     private final TypedSemanticEventClassifier classifier = new TypedSemanticEventClassifier();
 
     public List<SemanticEventCandidate> extract(ScanBundle bundle) {
+        return extract(bundle, true);
+    }
+
+    /**
+     * CN: 为磁盘运输窗口仅提取 typed direct-lineage event contribution；relationship和derived-lineage
+     * 关联由全局外排归并阶段完成，避免在每个窗口执行event乘facts扫描。
+     * EN: Extracts typed direct-lineage event contributions for disk transport windows only. Global external
+     * sort-merge attaches relationships and derived lineage, avoiding an event-by-facts scan in every window.
+     */
+    public List<SemanticEventCandidate> extractTransportContributions(ScanBundle bundle) {
+        return extract(bundle, false);
+    }
+
+    private List<SemanticEventCandidate> extract(ScanBundle bundle, boolean includeAssociations) {
         if (bundle == null) {
             throw new IllegalArgumentException("scan bundle is required");
         }
         Map<String, MutableEvent> events = new LinkedHashMap<>();
-        Map<String, ScanRelationshipFact> relationships = relationshipIndex(bundle);
+        Map<String, ScanRelationshipFact> relationships = includeAssociations
+                ? relationshipIndex(bundle)
+                : Map.of();
         addDirectLineages(events, bundle.dataLineages(), relationships);
-        addSupportingDerivedLineages(events, bundle.derivedDataLineages());
+        if (includeAssociations) {
+            addSupportingDerivedLineages(events, bundle.derivedDataLineages());
+        }
         return events.values().stream().map(MutableEvent::toCandidate).toList();
     }
 

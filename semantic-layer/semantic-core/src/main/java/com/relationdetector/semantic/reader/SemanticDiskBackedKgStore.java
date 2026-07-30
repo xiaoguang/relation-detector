@@ -5,12 +5,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.graph.EvidenceGraphFact;
 import com.relationdetector.semantic.kg.SemanticEdge;
 import com.relationdetector.semantic.kg.SemanticKgRecordFactory;
@@ -27,7 +25,8 @@ import com.relationdetector.semantic.model.PhysicalEndpointRef;
 final class SemanticDiskBackedKgStore implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final SemanticGraphRecordStore graph;
-    private final ExternalJsonRecordStore endpointEvidence;
+    private final SemanticEndpointEvidenceStore endpointEvidence;
+    private final SemanticReferenceClosureStore referenceClosure;
     private final ExternalJsonRecordStore nodes;
     private final ExternalJsonRecordStore edges;
     private final SemanticKgRecordFactory factory = new SemanticKgRecordFactory();
@@ -37,8 +36,10 @@ final class SemanticDiskBackedKgStore implements AutoCloseable {
             throw new IllegalArgumentException("semantic graph records and KG workspace are required");
         }
         this.graph = graph;
-        this.endpointEvidence = new ExternalJsonRecordStore(
-                workspace.resolve("endpoint-evidence"), this::mergeEvidence);
+        this.endpointEvidence = new SemanticEndpointEvidenceStore(
+                workspace.resolve("endpoint-evidence"));
+        this.referenceClosure = new SemanticReferenceClosureStore(
+                workspace.resolve("reference-closure"));
         this.nodes = new ExternalJsonRecordStore(workspace.resolve("nodes"));
         this.edges = new ExternalJsonRecordStore(workspace.resolve("edges"));
         build();
@@ -64,10 +65,9 @@ final class SemanticDiskBackedKgStore implements AutoCloseable {
         graph.forEach(SemanticGraphRecordStore.Section.FACTS, value -> {
             EvidenceGraphFact fact = fact(value);
             requireEvidence(fact);
-            ObjectNode refs = refs(fact.evidenceRefs());
             for (PhysicalEndpointRef endpoint : fact.endpoints()) {
-                endpointEvidence.append(endpoint.displayName(), refs);
-                endpointEvidence.append(endpoint.table(), refs);
+                endpointEvidence.append(endpoint.displayName(), fact.evidenceRefs());
+                endpointEvidence.append(endpoint.table(), fact.evidenceRefs());
             }
         });
         endpointEvidence.finish();
@@ -83,6 +83,8 @@ final class SemanticDiskBackedKgStore implements AutoCloseable {
             append(factory.endpoint(endpoint, columnRefs, tableRefs));
         });
         graph.forEach(SemanticGraphRecordStore.Section.FACTS, value -> append(factory.fact(fact(value))));
+        graph.provideReferences(referenceClosure);
+        referenceClosure.validate();
         nodes.finish();
         edges.finish();
     }
@@ -93,10 +95,7 @@ final class SemanticDiskBackedKgStore implements AutoCloseable {
                     "semantic graph fact requires evidence: " + fact.id());
         }
         for (String ref : fact.evidenceRefs()) {
-            if (!graph.containsReference(ref)) {
-                throw new ScanResultContractException(
-                        "semantic graph fact has unresolved evidence: " + fact.id());
-            }
+            referenceClosure.require(ref);
         }
     }
 
@@ -110,36 +109,14 @@ final class SemanticDiskBackedKgStore implements AutoCloseable {
                         "semantic KG edge requires evidence: " + edge.id());
             }
             for (String ref : edge.evidenceRefs()) {
-                if (!graph.containsReference(ref)) {
-                    throw new ScanResultContractException(
-                            "semantic KG edge has unresolved evidence: " + edge.id());
-                }
+                referenceClosure.require(ref);
             }
             edges.append(edge.id(), JSON.valueToTree(edge));
         }
     }
 
     private List<String> evidence(String endpoint) {
-        return endpointEvidence.get(endpoint)
-                .map(record -> {
-                    java.util.ArrayList<String> refs = new java.util.ArrayList<>();
-                    record.value().path("refs").forEach(value -> refs.add(value.asText()));
-                    return List.copyOf(refs);
-                })
-                .orElse(List.of());
-    }
-
-    private ObjectNode refs(List<String> values) {
-        ObjectNode result = JSON.createObjectNode();
-        values.stream().distinct().sorted().forEach(result.putArray("refs")::add);
-        return result;
-    }
-
-    private JsonNode mergeEvidence(JsonNode left, JsonNode right) {
-        TreeSet<String> refs = new TreeSet<>();
-        left.path("refs").forEach(value -> refs.add(value.asText()));
-        right.path("refs").forEach(value -> refs.add(value.asText()));
-        return refs(List.copyOf(refs));
+        return endpointEvidence.evidence(endpoint);
     }
 
     private EvidenceGraphFact fact(JsonNode value) {
@@ -180,7 +157,21 @@ final class SemanticDiskBackedKgStore implements AutoCloseable {
     @Override
     public void close() {
         RuntimeException failure = null;
-        for (ExternalJsonRecordStore store : List.of(endpointEvidence, nodes, edges)) {
+        try {
+            endpointEvidence.close();
+        } catch (RuntimeException error) {
+            failure = error;
+        }
+        try {
+            referenceClosure.close();
+        } catch (RuntimeException error) {
+            if (failure == null) {
+                failure = error;
+            } else {
+                failure.addSuppressed(error);
+            }
+        }
+        for (ExternalJsonRecordStore store : List.of(nodes, edges)) {
             try {
                 store.close();
             } catch (RuntimeException error) {

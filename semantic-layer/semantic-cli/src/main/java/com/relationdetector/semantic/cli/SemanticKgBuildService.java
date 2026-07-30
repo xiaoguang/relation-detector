@@ -11,9 +11,10 @@ import com.relationdetector.semantic.reader.SemanticDiskBackedSession;
  * EN: Owns the single scan-bundle to evidence-graph, KG, and artifact-writing path shared by build and e2e handlers; it neither parses CLI arguments nor calls a model.
  */
 final class SemanticKgBuildService {
-    void build(List<Path> inputs, Path output) {
+    void build(List<Path> inputs, Path output, int maxInputTokens) {
         try (SemanticDiskBackedSession session =
-                     SemanticDiskBackedSession.openForOutput(inputs, output, "kg")) {
+                     SemanticDiskBackedSession.openForOutput(
+                             inputs, output, "kg", maxInputTokens)) {
             session.writeKgArtifacts(output);
         }
     }

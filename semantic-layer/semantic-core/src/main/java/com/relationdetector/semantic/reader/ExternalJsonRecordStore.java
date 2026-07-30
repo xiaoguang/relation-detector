@@ -1,8 +1,12 @@
 package com.relationdetector.semantic.reader;
 
 import java.io.BufferedReader;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,12 +16,12 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.relationdetector.semantic.StableSemanticId;
 
 /**
  * CN: 以稳定key在磁盘上收集、外排并严格去重JSON记录，并用小型key到byte-offset索引执行有界随机
@@ -30,9 +34,10 @@ import com.relationdetector.semantic.StableSemanticId;
  */
 public final class ExternalJsonRecordStore implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final int LINE_SCAN_BUFFER_BYTES = 8 * 1024;
     private final Path workspace;
     private final Path raw;
-    private final BufferedWriter writer;
+    private final OutputStream output;
     private final BinaryOperator<JsonNode> conflictMerger;
     private Path sorted;
     private Path offsetIndex;
@@ -52,8 +57,8 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         try {
             Files.createDirectories(workspace);
             this.raw = workspace.resolve("records.raw");
-            this.writer = Files.newBufferedWriter(
-                    raw, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            this.output = new BufferedOutputStream(Files.newOutputStream(
+                    raw, StandardOpenOption.CREATE_NEW));
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to create external JSON record store", failure);
         }
@@ -65,13 +70,15 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
             throw new IllegalArgumentException("external JSON record key and value are required");
         }
         try {
-            String payload = JSON.writeValueAsString(value);
-            writer.write(encode(key));
-            writer.write('\t');
-            writer.write(StableSemanticId.of("external-json-record", StableSemanticId.canonicalJson(value)));
-            writer.write('\t');
-            writer.write(encode(payload));
-            writer.newLine();
+            writeAscii(output, encode(key));
+            output.write('\t');
+            output.write('-');
+            output.write('\t');
+            try (OutputStream encoded = Base64.getUrlEncoder().withoutPadding()
+                    .wrap(new NonClosingOutputStream(output))) {
+                JSON.writeValue(encoded, value);
+            }
+            output.write('\n');
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to append external JSON record", failure);
         }
@@ -83,7 +90,7 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
             return;
         }
         try {
-            writer.close();
+            output.close();
             Path ordered = workspace.resolve("records.ordered");
             new ExternalLineSorter().sort(raw, ordered, workspace.resolve("sort-work"));
             sorted = workspace.resolve("records.unique");
@@ -117,7 +124,12 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
                         currentPayload = payload;
                         continue;
                     }
-                    if (hash.equals(currentHash)) {
+                    if (payload.equals(currentPayload)) {
+                        continue;
+                    }
+                    JsonNode currentValue = JSON.readTree(decode(currentPayload));
+                    JsonNode candidateValue = JSON.readTree(decode(payload));
+                    if (currentValue.equals(candidateValue)) {
                         continue;
                     }
                     if (conflictMerger == null) {
@@ -125,16 +137,15 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
                                 "conflicting semantic record id: " + decode(key));
                     }
                     JsonNode merged = conflictMerger.apply(
-                            JSON.readTree(decode(currentPayload)),
-                            JSON.readTree(decode(payload)));
+                            currentValue,
+                            candidateValue);
                     if (merged == null) {
                         throw new ScanResultContractException(
                                 "semantic record merger returned null for id: " + decode(key));
                     }
                     String mergedJson = JSON.writeValueAsString(merged);
                     currentPayload = encode(mergedJson);
-                    currentHash = StableSemanticId.of(
-                            "external-json-record", StableSemanticId.canonicalJson(merged));
+                    currentHash = "-";
                 }
                 if (currentKey != null) {
                     writeUnique(output, offsetOutput, currentKey, currentHash, currentPayload);
@@ -171,6 +182,10 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         output.write(value.getBytes(StandardCharsets.US_ASCII));
     }
 
+    private void writeAscii(OutputStream output, String value) throws IOException {
+        output.write(value.getBytes(StandardCharsets.US_ASCII));
+    }
+
     public long count() {
         finish();
         return count;
@@ -195,7 +210,8 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
             return Optional.empty();
         }
         try (RandomAccessFile file = new RandomAccessFile(sorted.toFile(), "r")) {
-            StoredLine line = readStoredLine(file, offset.getAsLong());
+            StoredLine line = readStoredLine(
+                    file, offset.getAsLong(), new byte[LINE_SCAN_BUFFER_BYTES]);
             if (!line.key().equals(encoded)) {
                 throw new ScanResultContractException("external JSON record offset index is inconsistent");
             }
@@ -221,6 +237,26 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
             }
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to iterate external JSON records", failure);
+        }
+    }
+
+    public void forEachDescriptor(BiConsumer<String, Long> consumer) {
+        if (consumer == null) {
+            throw new IllegalArgumentException("external JSON record descriptor consumer is required");
+        }
+        finish();
+        try (BufferedReader reader = Files.newBufferedReader(sorted, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                int first = line.indexOf('\t');
+                int second = line.indexOf('\t', first + 1);
+                String payload = line.substring(second + 1);
+                consumer.accept(
+                        decode(line.substring(0, first)),
+                        decodedLength(payload));
+            }
+        } catch (IOException failure) {
+            throw new ScanResultContractException("failed to iterate external JSON record descriptors", failure);
         }
     }
 
@@ -266,17 +302,26 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
     }
 
-    private long lineStart(RandomAccessFile file, long offset) throws IOException {
+    private static long decodedLength(String value) {
+        return (long) value.length() * 3L / 4L;
+    }
+
+    private long lineStart(RandomAccessFile file, long offset, byte[] buffer) throws IOException {
         if (offset <= 0) {
             return 0;
         }
-        long position = Math.min(offset, file.length() - 1);
+        long position = Math.min(offset, file.length());
         while (position > 0) {
-            file.seek(position - 1);
-            if (file.read() == '\n') {
-                return position;
+            long blockStart = Math.max(0, position - buffer.length);
+            int length = Math.toIntExact(position - blockStart);
+            file.seek(blockStart);
+            file.readFully(buffer, 0, length);
+            for (int index = length - 1; index >= 0; index--) {
+                if (buffer[index] == '\n') {
+                    return blockStart + index + 1L;
+                }
             }
-            position--;
+            position = blockStart;
         }
         return 0;
     }
@@ -285,10 +330,11 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         try (RandomAccessFile file = new RandomAccessFile(offsetIndex.toFile(), "r")) {
             long low = 0;
             long high = file.length();
+            byte[] lineScanBuffer = new byte[LINE_SCAN_BUFFER_BYTES];
             while (low < high) {
                 long middle = (low + high) >>> 1;
-                long start = lineStart(file, middle);
-                OffsetLine line = readOffsetLine(file, start);
+                long start = lineStart(file, middle, lineScanBuffer);
+                OffsetLine line = readOffsetLine(file, start, lineScanBuffer);
                 int comparison = line.key().compareTo(encodedKey);
                 if (comparison < 0) {
                     low = Math.max(start + 1, line.next());
@@ -304,12 +350,13 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         }
     }
 
-    private OffsetLine readOffsetLine(RandomAccessFile file, long start) throws IOException {
-        file.seek(start);
-        String line = file.readLine();
-        if (line == null) {
-            throw new ScanResultContractException("external JSON record offset index is truncated");
-        }
+    private OffsetLine readOffsetLine(
+            RandomAccessFile file,
+            long start,
+            byte[] buffer
+    ) throws IOException {
+        AsciiLine asciiLine = readAsciiLine(file, start, buffer);
+        String line = asciiLine.value();
         int split = line.indexOf('\t');
         if (split <= 0 || split == line.length() - 1) {
             throw new ScanResultContractException("external JSON record offset line is malformed");
@@ -319,18 +366,50 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
             if (offset < 0) {
                 throw new NumberFormatException("negative offset");
             }
-            return new OffsetLine(line.substring(0, split), offset, file.getFilePointer());
+            return new OffsetLine(line.substring(0, split), offset, asciiLine.next());
         } catch (NumberFormatException failure) {
             throw new ScanResultContractException("external JSON record offset is invalid");
         }
     }
 
-    private StoredLine readStoredLine(RandomAccessFile file, long start) throws IOException {
+    private AsciiLine readAsciiLine(
+            RandomAccessFile file,
+            long start,
+            byte[] buffer
+    ) throws IOException {
         file.seek(start);
-        String line = file.readLine();
-        if (line == null) {
-            throw new ScanResultContractException("external JSON record index is truncated");
+        ByteArrayOutputStream lineBytes = new ByteArrayOutputStream();
+        long next = start;
+        boolean found = false;
+        int read;
+        while ((read = file.read(buffer)) >= 0) {
+            int length = read;
+            for (int index = 0; index < read; index++) {
+                if (buffer[index] == '\n') {
+                    length = index;
+                    next += index + 1L;
+                    found = true;
+                    break;
+                }
+            }
+            lineBytes.write(buffer, 0, length);
+            if (found) {
+                break;
+            }
+            next += read;
         }
+        if (lineBytes.size() == 0 && !found) {
+            throw new ScanResultContractException("external JSON record offset index is truncated");
+        }
+        return new AsciiLine(lineBytes.toString(StandardCharsets.US_ASCII), next);
+    }
+
+    private StoredLine readStoredLine(
+            RandomAccessFile file,
+            long start,
+            byte[] buffer
+    ) throws IOException {
+        String line = readAsciiLine(file, start, buffer).value();
         int first = line.indexOf('\t');
         int second = line.indexOf('\t', first + 1);
         if (first <= 0 || second <= first + 1 || second == line.length() - 1) {
@@ -349,7 +428,7 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
         closed = true;
         try {
             if (sorted == null) {
-                writer.close();
+                output.close();
             }
         } catch (IOException failure) {
             throw new IllegalStateException("failed to close external JSON record store", failure);
@@ -373,6 +452,21 @@ public final class ExternalJsonRecordStore implements AutoCloseable {
     private record OffsetLine(String key, long offset, long next) {
     }
 
+    private record AsciiLine(String value, long next) {
+    }
+
     private record StoredLine(String key, String payload) {
+    }
+
+    private static final class NonClosingOutputStream extends FilterOutputStream {
+        private NonClosingOutputStream(OutputStream delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public void close() {
+            // CN: Base64 wrapper已写完尾字节；共享raw buffer只由store按块flush。
+            // EN: Base64 has completed its tail bytes; the store alone flushes the shared raw buffer in blocks.
+        }
     }
 }

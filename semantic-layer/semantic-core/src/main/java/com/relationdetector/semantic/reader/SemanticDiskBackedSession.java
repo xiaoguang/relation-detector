@@ -30,6 +30,14 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
     }
 
     public static SemanticDiskBackedSession open(List<Path> inputs, Path workspace) {
+        return open(inputs, workspace, SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
+    }
+
+    public static SemanticDiskBackedSession open(
+            List<Path> inputs,
+            Path workspace,
+            int maxInputTokens
+    ) {
         if (inputs == null || inputs.isEmpty() || workspace == null) {
             throw new IllegalArgumentException("semantic inputs and workspace are required");
         }
@@ -41,7 +49,11 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
         try {
             Files.createDirectories(workspace);
             input = new ScanResultReader().open(inputs, workspace.resolve("input"));
-            evidence = new SemanticEvidenceStore(input, workspace.resolve("evidence"));
+            evidence = new SemanticEvidenceStore(
+                    input,
+                    workspace.resolve("evidence"),
+                    SemanticEvidenceStore.DEFAULT_WINDOW_BYTES,
+                    maxInputTokens);
             return new SemanticDiskBackedSession(workspace, input, evidence);
         } catch (IOException | RuntimeException failure) {
             if (evidence != null) {
@@ -71,6 +83,16 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
             Path output,
             String purpose
     ) {
+        return openForOutput(
+                inputs, output, purpose, SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
+    }
+
+    public static SemanticDiskBackedSession openForOutput(
+            List<Path> inputs,
+            Path output,
+            String purpose,
+            int maxInputTokens
+    ) {
         if (output == null) {
             throw new IllegalArgumentException("semantic output is required");
         }
@@ -85,7 +107,10 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
             throw new ScanResultContractException("failed to create semantic output parent", failure);
         }
         String label = purpose == null || purpose.isBlank() ? "semantic" : purpose;
-        return open(inputs, parent.resolve("." + label + "-work-" + UUID.randomUUID()));
+        return open(
+                inputs,
+                parent.resolve("." + label + "-work-" + UUID.randomUUID()),
+                maxInputTokens);
     }
 
     public SemanticEvidenceStore evidenceStore() {

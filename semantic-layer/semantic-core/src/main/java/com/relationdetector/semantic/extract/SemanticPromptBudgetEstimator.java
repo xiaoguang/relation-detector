@@ -11,8 +11,8 @@ final class SemanticPromptBudgetEstimator {
         if (text == null || text.isEmpty()) {
             return FIXED_OVERHEAD;
         }
-        int ascii = 0;
-        int nonAscii = 0;
+        long ascii = 0;
+        long nonAscii = 0;
         for (int offset = 0; offset < text.length();) {
             int codePoint = text.codePointAt(offset);
             if (codePoint <= 0x7f) {
@@ -22,8 +22,24 @@ final class SemanticPromptBudgetEstimator {
             }
             offset += Character.charCount(codePoint);
         }
-        long base = ((long) ascii + 3L) / 4L + nonAscii + FIXED_OVERHEAD;
+        return estimate(ascii, nonAscii);
+    }
+
+    static int estimate(long asciiCodePoints, long nonAsciiCodePoints) {
+        if (asciiCodePoints < 0 || nonAsciiCodePoints < 0) {
+            throw new IllegalArgumentException("semantic token-estimate counts cannot be negative");
+        }
+        long base = (asciiCodePoints + 3L) / 4L + nonAsciiCodePoints + FIXED_OVERHEAD;
         long withMargin = (base * 115L + 99L) / 100L;
+        return withMargin > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) withMargin;
+    }
+
+    static int minimumEstimateForUtf8Bytes(long bytes) {
+        if (bytes < 0) {
+            throw new IllegalArgumentException("semantic input size cannot be negative");
+        }
+        long minimumBase = (bytes + 3L) / 4L + FIXED_OVERHEAD;
+        long withMargin = (minimumBase * 115L + 99L) / 100L;
         return withMargin > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) withMargin;
     }
 

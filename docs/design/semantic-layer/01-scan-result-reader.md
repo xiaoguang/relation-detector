@@ -79,8 +79,10 @@ public final class ScanResultReader {
 - table、column、constraint和index完整identity唯一，column owner table必须存在。
 - constraint source column必须存在；FK两端非空、等长，referenced table/column必须存在并保留顺序。
 - 非FK constraint不得携带referenced endpoint。
-- index至少包含物理列或表达式；物理成员存在，ordinal正数、唯一、严格递增，
-  `columns/seqInIndex/subParts`shape对齐；纯表达式index的ordinal与expression对齐。
+- index至少包含一个有序typed member；ordinal从1连续递增。`FULL_COLUMN/PREFIX_COLUMN`必须引用存在的
+  物理列，`EXPRESSION`只携带表达式，prefix length只属于前缀列且为正数。
+- `members`是mixed physical/expression成员顺序的权威表示；旧`columns/expressions/subParts/seqInIndex`
+  只作为可确定投影，无法证明交错顺序的旧mixed shape会被拒绝。
 
 因此上游scope若没有包含FK引用对象，仍可正确标记采集为`COMPLETE`，但正式semantic reader会因
 consumer引用不闭合而拒绝。
@@ -407,9 +409,10 @@ catalog 负向 contract test 已覆盖不同 catalog 拒绝合并；artifact tes
 ### 7.3 性能目标与当前证据
 
 下表中的业务规模时延仍是目标预算，不是发布承诺。child-JVM memory gate使用真实typed
-table/column/constraint/index记录形成输入体积；128 MiB输入在96 MiB堆、1 GiB输入在512 MiB堆均
-完成完整e2e、KG、request-only和workspace清理。1 GiB约100分15秒的结果只证明bounded-memory，
-不表示达到下表中的时延目标。
+table/column/constraint/index记录形成主要输入体积；普通测试执行1 MiB/96 MiB smoke，
+`verify-release.sh`执行128 MiB/96 MiB发布门禁，1 GiB/512 MiB由extended profile按需执行。
+另有100,000节点parent链、高扇出event及standalone超预算raw的结构对抗测试，分别证明低栈查根、
+预算前置拒绝和低堆确定性错误；这些证据不表示达到下表中的时延目标。
 
 | 场景 | 数据量 | 目标预算 |
 | --- | --- | --- |

@@ -51,6 +51,29 @@ public final class SemanticEvidenceBuilder {
      * invents references or returns a KG.
      */
     public EvidenceGraph build(ScanBundle scanBundle) {
+        return build(scanBundle, true);
+    }
+
+    /**
+     * CN: 为磁盘运输窗口构造不含partial event fact的physical evidence graph；event在跨窗口归并和
+     * 全局关联完成后单独追加，避免窗口内重复关联全部facts。
+     * EN: Builds the physical evidence graph for one disk transport window without partial event facts. Events are
+     * appended only after cross-window merging and global association, avoiding repeated window-local fact joins.
+     */
+    public EvidenceGraph buildTransportWindow(ScanBundle scanBundle) {
+        return build(scanBundle, false);
+    }
+
+    /**
+     * CN: 消费一个已经通过 reader 契约校验的有界 ScanBundle，按稳定 section 顺序收集端点、事实和
+     * evidence references，并按 includeEvents 决定是否在本窗口物化 event。返回完整 EvidenceGraph；
+     * 除构造局部集合外没有外部副作用，输入缺少已验证端点或证据时由下游契约校验显式失败。
+     * EN: Consumes one reader-validated bounded ScanBundle, collecting endpoints, facts, and evidence references in
+     * stable section order and materializing events only when includeEvents requests it. It returns a complete
+     * EvidenceGraph without external side effects beyond local assembly; downstream contract validation rejects
+     * missing validated endpoints or evidence explicitly.
+     */
+    private EvidenceGraph build(ScanBundle scanBundle, boolean includeEvents) {
         Map<String, PhysicalEndpointRef> endpoints = new LinkedHashMap<>();
         Map<String, EvidenceReference> evidenceRefs = new LinkedHashMap<>();
         List<EvidenceGraphFact> facts = new ArrayList<>();
@@ -113,8 +136,10 @@ public final class SemanticEvidenceBuilder {
                     endpoints, evidenceRefs, facts);
         }
 
-        for (SemanticEventCandidate event : eventExtractor.extract(scanBundle)) {
-            addEventFact(event, endpoints, evidenceRefs, facts);
+        if (includeEvents) {
+            for (SemanticEventCandidate event : eventExtractor.extract(scanBundle)) {
+                addEventFact(event, endpoints, evidenceRefs, facts);
+            }
         }
 
         for (ScanDiagnosticFact diagnostic : scanBundle.diagnostics()) {

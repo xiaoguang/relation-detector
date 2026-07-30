@@ -58,13 +58,15 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
             Files.createDirectories(workspace);
             this.locator = new ExternalJsonRecordStore(workspace.resolve("item-locator"));
             for (Map.Entry<SemanticEvidenceStore.Section, String> entry : ITEM_SECTIONS.entrySet()) {
-                evidence.forEach(entry.getKey(), item -> {
-                    String id = item.path("id").asText("");
+                evidence.forEachDescriptor(entry.getKey(), (id, serializedBytes) -> {
                     if (id.isBlank()) {
                         throw new SemanticShardingException(
                                 "semantic evidence item is missing an id in " + entry.getValue());
                     }
-                    locator.append(id, JSON.createObjectNode().put("section", entry.getKey().name()));
+                    ObjectNode descriptor = JSON.createObjectNode();
+                    descriptor.put("section", entry.getKey().name());
+                    descriptor.put("serializedBytes", serializedBytes);
+                    locator.append(id, descriptor);
                 });
             }
             locator.finish();
@@ -88,12 +90,20 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
 
     Optional<Item> item(String id) {
         ensureOpen();
-        return locator.get(id).map(record -> {
-            SemanticEvidenceStore.Section section = section(record.value());
-            JsonNode document = evidence.find(section, id).orElseThrow(
-                    () -> new SemanticShardingException("semantic item locator points to a missing record"));
-            return new Item(id, section, document);
-        });
+        return locator.get(id).map(record -> materialize(id, section(record.value())));
+    }
+
+    private Item materialize(String id, SemanticEvidenceStore.Section section) {
+        JsonNode document = evidence.find(section, id).orElseThrow(
+                () -> new SemanticShardingException("semantic item locator points to a missing record"));
+        return new Item(id, section, document);
+    }
+
+    private Optional<LocatedItem> locate(String id) {
+        return locator.get(id).map(record -> new LocatedItem(
+                id,
+                section(record.value()),
+                record.value().path("serializedBytes").asLong(-1)));
     }
 
     private SemanticEvidenceStore.Section section(JsonNode locatorRecord) {
@@ -111,7 +121,6 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
      * maxInputTokens对应上限时在模型调用前失败，不返回部分闭包。
      *
      * EN: Builds an indivisible single-root closure from a stable root ID by following typed dependency and evidence
-     * references, collecting physical tables, and assembling a bounded bundle containing only required records.
      * Unresolved references or a conservative byte estimate beyond the max-input budget fail before model invocation,
      * and no partial closure is returned.
      */
@@ -132,22 +141,24 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
             if (items.containsKey(id)) {
                 continue;
             }
-            Item item = item(id).orElseThrow(
+            LocatedItem located = locate(id).orElseThrow(
                     () -> new SemanticShardingException("semantic root dependency is unresolved"));
-            items.put(id, item);
-            rawBytes += item.document().toString().length();
-            if (rawBytes > conservativeLimit) {
+            if (located.serializedBytes() < 0
+                    || rawBytes + located.serializedBytes() > conservativeLimit) {
                 throw new SemanticShardingException(
                         "atomic semantic root closure exceeds maximum input budget");
             }
+            Item item = materialize(id, located.section());
+            items.put(id, item);
+            rawBytes += located.serializedBytes();
             tables.addAll(directTables(item));
             for (String reference : dependencyRefs(item.document())) {
-                if (item(reference).isPresent()) {
+                if (locate(reference).isPresent()) {
                     pending.addLast(reference);
                 }
             }
             for (String reference : textValues(item.document().path("evidenceRefs"))) {
-                if (item(reference).isPresent()) {
+                if (locate(reference).isPresent()) {
                     pending.addLast(reference);
                 } else if (evidence.find(SemanticEvidenceStore.Section.EVIDENCE, reference).isPresent()) {
                     evidenceIds.add(reference);
@@ -367,6 +378,13 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
         Item {
             document = document.deepCopy();
         }
+    }
+
+    private record LocatedItem(
+            String id,
+            SemanticEvidenceStore.Section section,
+            long serializedBytes
+    ) {
     }
 
     record RootDescriptor(String id, SemanticEvidenceStore.Section section) {

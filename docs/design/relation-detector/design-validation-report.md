@@ -77,22 +77,27 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 Fingerprint继续作为manifest中的审计产物，不另设tracked baseline；`verify-all`允许dirty，
 clean-worktree发布证明由`verify-release`负责。这些是冻结的窄契约，不是未闭合缺口。
 
-### 2026-07-28 四项反向审计的修复状态
+### 2026-07-28 四项反向审计的当前状态
 
 本轮按更新后的设计重新读取生产代码与测试，冻结并处理以下四项：
 
-1. MySQL live与token/full DDL已将index member显式分类为完整列、前缀列或表达式；prefix、expression
-   和composite unique不再产生成员单列`TARGET_UNIQUE`，合法首个物理成员仍可支持lookup。
-2. semantic内存validator与磁盘reader已共用metadata closure rules，完整验证成员column、FK引用端、
-   cardinality/ordinal、index shape及完整identity唯一性。
-3. semantic磁盘链路已改为全局event归并、typed component与唯一owner计划，raw-byte只控制I/O
-   window。128 MiB真实typed输入在96 MiB堆、1 GiB真实typed输入在512 MiB堆均完成完整e2e、KG、
-   request-only与workspace清理；1 GiB约100分15秒的结果只证明内存边界，不作为吞吐性能承诺。
+1. MySQL live与token/full DDL已将index member分类为完整列、前缀列或表达式；prefix、expression
+   和composite unique不再产生成员单列`TARGET_UNIQUE`，合法首个物理成员仍可支持lookup。公共
+   `MetadataIndexFact.members`保存全部成员的typed kind、连续ordinal及mixed交错顺序；旧accessor
+   是兼容投影，顺序不明确的旧mixed shape由core拒绝。
+2. semantic内存validator与磁盘reader共用metadata closure rules，完整验证member column、FK引用端、
+   cardinality/ordinal、typed index member shape及identity唯一性；mixed index的表达式ordinal和
+   完整交错顺序已进入同一闭包。
+3. semantic磁盘链路已实现全局event归并、typed component与唯一owner计划，raw-byte只控制I/O
+   window。event关联改为外排typed-key排序归并，高扇出引用在物化前受token预算；disk union-find
+   迭代压缩路径并检测越界/环；standalone raw和evidence slice分别受现有output/input token门限。
+   默认、发布和extended memory profile分别固定为1 MiB/96 MiB、128 MiB/96 MiB和1 GiB/512 MiB。
 4. 400/450有效代码行门禁已扩展到relation-detector与semantic-layer全部目标职责后缀；原超限store、
    artifact writer、output writer和fingerprinter已按真实职责拆分，无allowlist或改名绕过。
 
-以上状态以[Code / Design Traceability](code-design-traceability.md)为唯一矩阵。四项代码契约、
-结构门禁与指定内存门禁均已有直接证据；后续发布级回归仍按完整验收链执行。
+以上状态以[Code / Design Traceability](code-design-traceability.md)为唯一矩阵。索引证据政策、
+typed mixed-member wire、consumer closure、结构对抗内存门禁和职责门禁均已闭合。内存门禁证明
+指定堆下的有界完成或有界拒绝，不应外推为业务吞吐承诺。后续发布级回归仍按完整验收链执行。
 
 ### 历史已闭合边界
 
@@ -485,11 +490,12 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - relation-detector JSON现在始终携带metadata inventory status、scope、counts和四类typed facts；
   `COMPLETE`只表示配置scan scope完整。`PARTIAL/UNAVAILABLE`不会被warning隐藏伪装，direct/derived输出
   使用同一inventory。
-- semantic正式命令已使用流式`SemanticInputStore`、section spool、外排identity/offset/component索引、
-  全局owner plan和path-backed shard，不持有完整scan或最终全局KG。非COMPLETE或引用不闭合inventory
-  在模型调用和正式artifact写入前失败。128 MiB真实typed输入已在96 MiB堆完成e2e、KG、request-only
-  与workspace清理；1 GiB真实typed输入也已在512 MiB堆完成相同链路，耗时约100分15秒。该门禁证明
-  内存有界和spool清理，不宣称大型输入吞吐已优化。
+- `build/extract/e2e`主链使用流式`SemanticInputStore`、section spool、外排identity/offset/component
+  索引、全局owner plan和path-backed shard，不持有完整scan或最终全局KG。非COMPLETE或引用不闭合
+  inventory在模型调用和正式artifact写入前失败。event关联通过外排typed-key排序归并，descriptor先
+  估算高扇出引用预算；disk union-find使用有界迭代路径压缩。standalone `normalize-extraction`在
+  `readTree()`前和流式解码期间校验raw预算，evidence slice按选中记录累计预算，输出采用同级临时文件
+  原子替换。发布128 MiB/96 MiB门禁及按需1 GiB/512 MiB extended门禁与结构对抗测试共同守住该边界。
 - correctness fixture 唯一性已闭环：fixture-local input 在相同执行配置下按 content hash 去重，
   correctness tree 外的 tracked sample-data 以规范 repo-relative path 作为独立 source-asset identity。Common 重复 fixture 已合并，MySQL 5.7 三个独立资产路径继续分别验收。
 - release、correctness 与 sample-data 已共享 `heavy-job-lock.sh`。最外层 owner 从 smoke 开始持锁到

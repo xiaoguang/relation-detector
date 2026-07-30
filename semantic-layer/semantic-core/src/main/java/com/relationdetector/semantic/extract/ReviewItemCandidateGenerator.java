@@ -18,16 +18,21 @@ final class ReviewItemCandidateGenerator {
         ArrayNode result = JSON.createArrayNode();
         java.util.List<ScanDiagnosticFact> diagnostics = bundle == null ? java.util.List.of() : bundle.diagnostics();
         for (ScanDiagnosticFact diagnostic : diagnostics) {
-            String targetRef = diagnostic.id();
-            ObjectNode item = result.addObject();
-            item.put("id", "review-candidate:" + targetRef);
-            item.put("targetRef", targetRef);
-            item.put("targetSection", "diagnostics");
-            item.put("type", "REVIEW_NEEDED");
-            item.put("severity", diagnostic.severity().isBlank() ? "MEDIUM" : diagnostic.severity());
-            item.put("reason", diagnostic.message().isBlank() ? "Diagnostic requires review." : diagnostic.message());
-            item.putArray("evidenceRefs").add(targetRef);
+            result.add(candidate(diagnostic));
         }
         return result;
+    }
+
+    ObjectNode candidate(ScanDiagnosticFact diagnostic) {
+        String targetRef = diagnostic.id();
+        ObjectNode item = JSON.createObjectNode();
+        item.put("id", "review-candidate:" + targetRef);
+        item.put("targetRef", targetRef);
+        item.put("targetSection", "diagnostics");
+        item.put("type", "REVIEW_NEEDED");
+        item.put("severity", diagnostic.severity().isBlank() ? "MEDIUM" : diagnostic.severity());
+        item.put("reason", diagnostic.message().isBlank() ? "Diagnostic requires review." : diagnostic.message());
+        item.putArray("evidenceRefs").add(targetRef);
+        return item;
     }
 }

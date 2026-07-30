@@ -30,7 +30,7 @@ reference closure、graph validation和模型 review candidate 已纳入本文�
 | 不可解析 evidence | 非 diagnostic fact/event、endpoint node或edge闭包失败 |
 | reader/graph state | 外层collection不可修改；typed fact `document()`、graph fact payload与diagnostics在构造和公开accessor边界均deep-copy，修改返回`JsonNode`不得改变内部状态 |
 | metadata constraint closure | source member、FK referenced table/column必须存在，两端cardinality/ordinal必须配对 |
-| metadata index closure | member column存在，columns/seqInIndex/subParts shape一致，ordinal合法 |
+| metadata index closure | typed member kind/column/expression/prefix shape合法，ordinal从1连续递增；mixed physical/expression完整交错顺序可验证，旧mixed shape不能证明顺序时拒绝 |
 | metadata identity | 同table的constraint/index identity重复必须拒绝 |
 
 后三项由内存validator与磁盘reader的共享typed closure rules共同覆盖。inventory
@@ -69,8 +69,9 @@ owner map、shard与KG exact fingerprint。raw-byte阈值只能控制外排buffe
 和dependency closure必须使用同一全局owner计划。
 
 大输入内存门禁以真实typed metadata/facts形成主要体积，不得以reader会忽略的未知顶层padding代替。
-128 MiB输入在96 MiB堆、1 GiB输入在512 MiB堆均完成完整e2e、KG、request-only与workspace清理。
-1 GiB约100分15秒的结果证明内存边界和spool清理，不作为吞吐性能目标。
+普通`mvn test`执行1 MiB/96 MiB smoke；发布门禁固定128 MiB/96 MiB，extended profile固定1 GiB/512 MiB。
+结构对抗门禁另覆盖100,000节点parent链、高扇出event在引用物化前的预算拒绝，以及standalone超大raw
+在低堆下的确定性预算错误。成功和失败路径都必须清理内部spool/workspace；这些门禁不证明业务吞吐。
 
 ## 5. Normalization 与 Merge
 

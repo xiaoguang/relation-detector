@@ -24,7 +24,10 @@ final class SemanticExtractCommandHandler {
     SemanticCliExitCode execute(SemanticCommandArguments arguments) {
         try (SemanticDiskBackedSession session =
                      SemanticDiskBackedSession.openForOutput(
-                             arguments.inputs(), arguments.output(), "extract")) {
+                             arguments.inputs(),
+                             arguments.output(),
+                             "extract",
+                             arguments.sharding().maxInputTokens())) {
             SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
                     session.evidenceStore(), session.workPath("plan"), arguments.sharding());
             SemanticPathRunArtifactWriter writer = new SemanticPathRunArtifactWriter();

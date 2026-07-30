@@ -54,6 +54,7 @@ grep -q 'heavy_job_lock_release' "$VERIFY_RELEASE"
 grep -q 'VERIFY_RELEASE_MVN' "$VERIFY_RELEASE"
 grep -q 'VERIFY_RELEASE_VERIFY_ALL_RUNNER' "$VERIFY_RELEASE"
 grep -q 'VERIFY_RELEASE_STALE_SUMMARY' "$VERIFY_RELEASE"
+grep -q -- '-Psemantic-memory-gate' "$VERIFY_RELEASE"
 
 no_cache_line="$(grep -n '^run_no_cache_acceptance$' "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"
 verify_all_line="$(grep -n '^run_active_child env' "$VERIFY_RELEASE" | head -n 1 | cut -d: -f1)"

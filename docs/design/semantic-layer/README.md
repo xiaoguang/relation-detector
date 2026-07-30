@@ -64,10 +64,12 @@ staging已创建时writer会尽力
 copy、manifest或publish晚期失败时，完整staging保留并标记`FAILED`；成功发布后才尽力清理staging。
 无界 evidence bundle、merged/final result和KG JSON直接写文件；prompt/request因token门限有界可保留
 字符串表示。所有分片payload统一位于`shards/shard-NNNN/`，单分片不生成root兼容副本。输入、evidence、
-component、KG和shard plan均以磁盘spool/外排索引为后备。目标内存边界是“最大单条record +
-固定外排buffer + 单个有界且闭合的root/shard/prompt/response”；128 MiB真实typed输入在96 MiB堆、
-1 GiB真实typed输入在512 MiB堆均完成完整e2e与workspace清理。1 GiB门禁约100分15秒，只证明
-bounded-memory与清理契约，不是吞吐基准。
+component、KG和shard plan主要以磁盘spool/外排索引为后备。目标内存边界是“最大单条record +
+固定外排buffer + 单个有界且闭合的root/shard/prompt/response”。event/fact关联使用typed key外排
+排序归并，单event引用在物化前按descriptor执行token门限；disk union-find使用迭代查根、路径压缩和
+损坏链检测。standalone raw在`readTree()`前和流式解码期间受`max-output-tokens`约束，选中的evidence
+closure按记录累计`max-input-tokens`。默认、发布及extended门禁分别为1 MiB/96 MiB、128 MiB/96 MiB
+和1 GiB/512 MiB；门禁证明有界完成或有界拒绝，不代表吞吐承诺。
 relation-detector JSON携带四类metadata inventory及
 `NOT_REQUESTED/COMPLETE/PARTIAL/UNAVAILABLE`状态；正式semantic命令只接受`COMPLETE`。未被
 relationship、lineage或naming触达的表列仍进入evidence、KG与shard ownership。这里的`COMPLETE`
@@ -85,6 +87,9 @@ governance 状态。`SemanticPhysicalReferenceIndex` 同时要求正式语义对
 `normalizeOwnedShard`：在 backfill 前验证 owned/overlap 集合及每个 model-authored object 的
 `ownedGroundingRefs`。它不需要接收完整 shard plan，但调用方必须提供 planner 生成或同契约构造的
 owner context；缺失、伪造或越界 context 会被拒绝。
+独立命令使用与prompt一致的保守估算：文件大小先做确定性快速拒绝，严格UTF-8 reader在Jackson解析期间
+再次逐码点计数，防止路径替换竞态；evidence slice按选中记录累计输入预算。只有通过两个门限的单份
+raw result与closure才允许物化，输出先写同级临时文件并原子替换，失败不留下部分结果。
 
 Formal section normalization采用严格typed-ref优先：显式typed ref存在时必须解析成功，只有缺失时
 才允许display fallback；event的每个display input/output分别校验。review先规范化`targetSection`，
@@ -116,14 +121,14 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | `SEM-READER-STATE-01` | `MATCHED` | `ScanBundle`/`EvidenceGraph`外层集合不可修改；typed fact document、graph payload与diagnostics在构造和公开accessor边界deep-copy，调用方不能回写内部状态。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | normalizer拒绝模型写入`BUSINESS_APPROVED`；正式semantic对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`，backfill后不保留空状态。 |
 | `SEM-CLI-ERROR-01` | `MATCHED` | CLI使用固定脱敏文案；参数、配置和API key缺失通过usage异常映射为exit 2，wire、sharding、normalization、模型调用和artifact I/O失败映射为runtime exit 1。 |
-| `SEM-INGEST-MEMORY-01` | `MATCHED` | 流式reader、section spool、外排identity/offset/component索引、全局owner与path-backed shard已实现；128 MiB/96 MiB及1 GiB/512 MiB真实typed e2e门禁通过并清理workspace。 |
-| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 四类inventory、scope、counts和状态进入direct/derived JSON；正式命令只接受COMPLETE，并完整校验constraint成员、FK引用端、index成员/cardinality/ordinal/`subParts`及全部identity唯一性。 |
+| `SEM-INGEST-MEMORY-01` | `MATCHED` | 流式reader、section spool、外排identity/offset/component/event-association索引、全局owner与path-backed shard已实现。高扇出event在引用物化前受token门限；disk union-find迭代压缩路径；standalone raw与evidence slice复用output/input token门限并原子写出。默认、发布和extended profile覆盖byte-volume与结构对抗边界。 |
+| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 四类inventory、scope、counts和状态进入direct/derived JSON；正式命令只接受COMPLETE。共享closure rules验证table/column/constraint/FK及有序typed index members，mixed physical/expression的kind、ordinal和交错顺序可完整表达。 |
 
 离线 KG evidence/identity gate、typed event candidate identity、deterministic candidate、typed sharding、
 完整输入、统一模型请求预算、strict configuration、reader/graph公开状态和governance默认值已经闭环。
 wire path shape、formal semantic引用、自动review identity、reconciliation边界、`final-only`晚期失败
-审计、CLI错误分类、全局磁盘owner与metadata inventory closure已经按上述窄契约闭合。当前仅剩发布级
-大输入内存门禁状态由矩阵明确标记。详细
+审计、CLI错误分类、全局磁盘owner、metadata mixed-index member顺序及bounded-memory结构边界已经
+按上述窄契约闭合。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。

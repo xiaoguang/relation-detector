@@ -12,6 +12,8 @@ VERIFICATION_RUNNER="$ROOT/relation-detector/scripts/run-release-verification-to
 
 grep -q '<id>matrix-smoke</id>' "$ROOT/pom.xml"
 grep -q '<id>acceptance</id>' "$ROOT/pom.xml"
+grep -q '<id>semantic-memory-gate</id>' "$ROOT/pom.xml"
+grep -q '<id>semantic-memory-gate-extended</id>' "$ROOT/pom.xml"
 [[ "$(grep -Ec '^[[:space:]]*"\$MVN_BIN"([[:space:]]|$)' "$VERIFY")" -eq 1 ]]
 grep -q -- '-Pacceptance' "$VERIFY"
 grep -q -- '-DcorrectnessFixtureProfile=smoke' "$VERIFY"
@@ -28,6 +30,7 @@ grep -q 'heavy-job-lock.sh' "$VERIFY_RELEASE"
 ! grep -q '^acquire_lock()' "$SAMPLE_DATA_ISOLATED_RUNNER"
 grep -q 'heavy_job_lock_acquire' "$VERIFY"
 grep -q 'heavy_job_lock_acquire' "$VERIFY_RELEASE"
+grep -q -- '-Psemantic-memory-gate' "$VERIFY_RELEASE"
 
 verify_lock_line="$(grep -n 'heavy_job_lock_acquire' "$VERIFY" | head -n 1 | cut -d: -f1)"
 verify_maven_line="$(grep -n '^run_acceptance_smoke$' "$VERIFY" | head -n 1 | cut -d: -f1)"

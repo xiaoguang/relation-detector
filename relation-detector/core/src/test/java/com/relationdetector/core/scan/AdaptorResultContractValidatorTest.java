@@ -19,6 +19,8 @@ import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
+import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
@@ -40,6 +42,32 @@ class AdaptorResultContractValidatorTest {
                 null, null, null, 0));
 
         assertThrows(AdaptorContractException.class, () -> validator.validateMetadata(snapshot));
+    }
+
+    @Test
+    void metadataIndexRejectsAmbiguousLegacyMixedShape() {
+        MetadataSnapshot snapshot = new MetadataSnapshot();
+        snapshot.indexFacts().add(new MetadataIndexFact(
+                "shop", null, "users", "idx_users_mixed", false, false, "BTREE", true,
+                List.of("tenant_id"), List.of("lower(email)"), List.of(), List.of(1)));
+
+        assertThrows(AdaptorContractException.class, () -> validator.validateMetadata(snapshot));
+    }
+
+    @Test
+    void metadataIndexPreservesOrderedTypedMembers() {
+        MetadataSnapshot snapshot = new MetadataSnapshot();
+        snapshot.indexFacts().add(new MetadataIndexFact(
+                "shop", null, "users", "idx_users_mixed", false, false, "BTREE", true,
+                List.of(
+                        MetadataIndexMemberFact.fullColumn(1, "tenant_id"),
+                        MetadataIndexMemberFact.expression(2, "lower(email)"))));
+
+        MetadataIndexFact validated = validator.validateMetadata(snapshot).indexFacts().get(0);
+
+        assertEquals(List.of(1, 2), validated.members().stream()
+                .map(MetadataIndexMemberFact::ordinal)
+                .toList());
     }
 
     @Test

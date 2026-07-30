@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.spi.ScanScope;
 
@@ -120,20 +121,20 @@ final class MySqlIndexMetadataReader {
 
         private MetadataIndexFact toFact() {
             entries.sort(Comparator.comparingInt(IndexEntry::seq));
-            List<IndexEntry> physicalColumns = entries.stream()
-                    .filter(entry -> entry.column() != null && !entry.column().isBlank())
-                    .toList();
-            List<IndexEntry> expressionMembers = entries.stream()
-                    .filter(entry -> entry.expression() != null && !entry.expression().isBlank())
-                    .toList();
-            List<Integer> positions = physicalColumns.isEmpty()
-                    ? expressionMembers.stream().map(IndexEntry::seq).toList()
-                    : physicalColumns.stream().map(IndexEntry::seq).toList();
+            List<MetadataIndexMemberFact> members = entries.stream().map(IndexBuilder::member).toList();
             return new MetadataIndexFact(catalog, null, table, name, unique, primary, type, visible,
-                    physicalColumns.stream().map(IndexEntry::column).toList(),
-                    expressionMembers.stream().map(IndexEntry::expression).toList(),
-                    physicalColumns.stream().map(entry -> entry.subPart() == null ? "" : entry.subPart()).toList(),
-                    positions);
+                    members);
+        }
+
+        private static MetadataIndexMemberFact member(IndexEntry entry) {
+            if (entry.expression() != null && !entry.expression().isBlank()) {
+                return MetadataIndexMemberFact.expression(entry.seq(), entry.expression());
+            }
+            if (entry.subPart() != null && !entry.subPart().isBlank()) {
+                return MetadataIndexMemberFact.prefixColumn(
+                        entry.seq(), entry.column(), Integer.parseInt(entry.subPart().strip()));
+            }
+            return MetadataIndexMemberFact.fullColumn(entry.seq(), entry.column());
         }
     }
 

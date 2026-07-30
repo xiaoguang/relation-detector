@@ -17,6 +17,7 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.model.ColumnRef;
@@ -205,7 +206,10 @@ public final class SqlServerMetadataCollector implements MetadataCollector {
             }
             for (IndexRows rows : groups.values()) snapshot.indexFacts().add(new MetadataIndexFact(catalog,
                     rows.schema, rows.table, rows.name, rows.unique, rows.primary, rows.type, rows.visible,
-                    rows.columns, List.of(), List.of(), rows.positions));
+                    java.util.stream.IntStream.range(0, rows.columns.size())
+                            .mapToObj(index -> MetadataIndexMemberFact.fullColumn(
+                                    rows.positions.get(index), rows.columns.get(index)))
+                            .toList()));
         } catch (Exception ex) {
             warn(snapshot, "SQLSERVER_METADATA_INDEXES_FAILED", ex, "sys.indexes");
         }

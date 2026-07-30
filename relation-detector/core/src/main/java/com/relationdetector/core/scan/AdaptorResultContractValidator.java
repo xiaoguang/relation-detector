@@ -3,7 +3,6 @@ package com.relationdetector.core.scan;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +15,8 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.model.ColumnRef;
@@ -373,16 +374,34 @@ public final class AdaptorResultContractValidator {
         require(fact != null, "metadata index fact is null");
         requireText(fact.tableName(), "metadata index table");
         requireText(fact.indexName(), "metadata index name");
-        require(!fact.columns().isEmpty() || !fact.expressions().isEmpty(), "metadata index members are empty");
-        fact.columns().forEach(value -> requireText(value, "metadata index column"));
-        fact.expressions().forEach(value -> requireText(value, "metadata index expression"));
-        require(!fact.seqInIndex().isEmpty()
-                        && fact.seqInIndex().stream().allMatch(value -> value != null && value > 0)
-                        && new LinkedHashSet<>(fact.seqInIndex()).size() == fact.seqInIndex().size(),
-                "metadata index ordinality is invalid");
+        require(!fact.members().isEmpty(), "metadata index members are empty or ambiguous");
+        java.util.ArrayList<MetadataIndexMemberFact> members = new java.util.ArrayList<>(fact.members().size());
+        int expectedOrdinal = 1;
+        for (MetadataIndexMemberFact member : fact.members()) {
+            require(member != null, "metadata index member is null");
+            require(member.kind() != null, "metadata index member kind is null");
+            require(member.ordinal() == expectedOrdinal++, "metadata index ordinality is invalid");
+            if (member.kind() == MetadataIndexMemberKind.FULL_COLUMN) {
+                requireText(member.columnName(), "metadata index column");
+                require(blank(member.expression()) && member.prefixLength() == null,
+                        "metadata full-column member shape is invalid");
+            } else if (member.kind() == MetadataIndexMemberKind.PREFIX_COLUMN) {
+                requireText(member.columnName(), "metadata index prefix column");
+                require(blank(member.expression())
+                                && member.prefixLength() != null
+                                && member.prefixLength() > 0,
+                        "metadata prefix-column member shape is invalid");
+            } else {
+                requireText(member.expression(), "metadata index expression");
+                require(blank(member.columnName()) && member.prefixLength() == null,
+                        "metadata expression member shape is invalid");
+            }
+            members.add(new MetadataIndexMemberFact(
+                    member.ordinal(), member.kind(), member.columnName(), member.expression(), member.prefixLength()));
+        }
         return new MetadataIndexFact(
                 fact.catalog(), fact.schema(), fact.tableName(), fact.indexName(), fact.unique(), fact.primary(),
-                fact.indexType(), fact.visible(), fact.columns(), fact.expressions(), fact.subParts(), fact.seqInIndex());
+                fact.indexType(), fact.visible(), List.copyOf(members));
     }
 
     private Endpoint copyEndpoint(Endpoint endpoint, boolean requireColumn, String boundary) {

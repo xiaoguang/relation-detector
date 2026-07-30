@@ -18,6 +18,7 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.model.ColumnRef;
@@ -267,19 +268,20 @@ public final class PostgresMetadataCollector implements MetadataCollector {
         }
 
         private MetadataIndexFact build(String catalog) {
-            List<Integer> physicalPositions = columns.entrySet().stream()
-                    .filter(entry -> entry.getValue() != null && !entry.getValue().isBlank())
-                    .map(Map.Entry::getKey)
+            java.util.TreeSet<Integer> positions = new java.util.TreeSet<>(columns.keySet());
+            positions.addAll(expressions.keySet());
+            List<MetadataIndexMemberFact> members = positions.stream()
+                    .map(position -> member(position, columns.get(position), expressions.get(position)))
                     .toList();
-            List<String> physicalColumns = physicalPositions.stream().map(columns::get).toList();
-            List<Integer> expressionPositions = expressions.entrySet().stream()
-                    .filter(entry -> entry.getValue() != null && !entry.getValue().isBlank())
-                    .map(Map.Entry::getKey)
-                    .toList();
-            List<String> expressionMembers = expressionPositions.stream().map(expressions::get).toList();
-            List<Integer> positions = physicalPositions.isEmpty() ? expressionPositions : physicalPositions;
             return new MetadataIndexFact(catalog, schema, table, name, unique, primary, type, true,
-                    physicalColumns, expressionMembers, List.of(), positions);
+                    members);
+        }
+
+        private static MetadataIndexMemberFact member(int position, String column, String expression) {
+            if (expression != null && !expression.isBlank()) {
+                return MetadataIndexMemberFact.expression(position, expression);
+            }
+            return MetadataIndexMemberFact.fullColumn(position, column);
         }
     }
 }

@@ -1,22 +1,20 @@
 package com.relationdetector.semantic.reader;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -39,6 +37,7 @@ import com.relationdetector.semantic.model.PhysicalEndpointRef;
  */
 public final class SemanticEvidenceStore implements AutoCloseable {
     public static final long DEFAULT_WINDOW_BYTES = 8L * 1024L * 1024L;
+    public static final int DEFAULT_MAX_INPUT_TOKENS = 800_000;
 
     public enum Section {
         TABLES("tables", false),
@@ -71,23 +70,37 @@ public final class SemanticEvidenceStore implements AutoCloseable {
     }
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final SemanticEvidenceBundleWriter BUNDLE_WRITER = new SemanticEvidenceBundleWriter();
     private final SemanticInputStore input;
     private final Path workspace;
     private final Map<Section, ExternalJsonRecordStore> sections;
     private final ExternalJsonRecordStore eventContributions;
+    private final SemanticEventAssociationStore eventAssociations;
     private final SemanticGraphRecordStore graphRecords;
+    private final int maxInputTokens;
     private boolean closed;
 
     public SemanticEvidenceStore(SemanticInputStore input, Path workspace) {
-        this(input, workspace, DEFAULT_WINDOW_BYTES);
+        this(input, workspace, DEFAULT_WINDOW_BYTES, DEFAULT_MAX_INPUT_TOKENS);
     }
 
     public SemanticEvidenceStore(SemanticInputStore input, Path workspace, long maxWindowBytes) {
-        if (input == null || workspace == null || maxWindowBytes <= 0) {
-            throw new IllegalArgumentException("semantic input, workspace and window limit are required");
+        this(input, workspace, maxWindowBytes, DEFAULT_MAX_INPUT_TOKENS);
+    }
+
+    public SemanticEvidenceStore(
+            SemanticInputStore input,
+            Path workspace,
+            long maxWindowBytes,
+            int maxInputTokens
+    ) {
+        if (input == null || workspace == null || maxWindowBytes <= 0 || maxInputTokens <= 0) {
+            throw new IllegalArgumentException(
+                    "semantic input, workspace, window limit and token limit are required");
         }
         this.input = input;
         this.workspace = workspace;
+        this.maxInputTokens = maxInputTokens;
         this.sections = new EnumMap<>(Section.class);
         try {
             if (Files.exists(workspace)) {
@@ -103,6 +116,8 @@ public final class SemanticEvidenceStore implements AutoCloseable {
                     workspace.resolve("event-contributions"),
                     (left, right) -> JSON.valueToTree(eventMerger.merge(
                             eventCandidate(left), eventCandidate(right))));
+            this.eventAssociations = new SemanticEventAssociationStore(
+                    workspace.resolve("event-associations"));
             this.graphRecords = new SemanticGraphRecordStore(workspace.resolve("graph-records"));
             build(maxWindowBytes);
             sections.values().forEach(ExternalJsonRecordStore::finish);
@@ -134,6 +149,14 @@ public final class SemanticEvidenceStore implements AutoCloseable {
             throw new IllegalArgumentException("semantic evidence section and consumer are required");
         }
         sections.get(section).forEach(record -> consumer.accept(record.value()));
+    }
+
+    public void forEachDescriptor(Section section, BiConsumer<String, Long> consumer) {
+        ensureOpen();
+        if (section == null || consumer == null) {
+            throw new IllegalArgumentException("semantic evidence section and descriptor consumer are required");
+        }
+        sections.get(section).forEachDescriptor(consumer);
     }
 
     public Optional<JsonNode> find(Section section, String id) {
@@ -172,87 +195,102 @@ public final class SemanticEvidenceStore implements AutoCloseable {
 
     public void writeBundle(Path target) {
         ensureOpen();
-        if (target == null) {
-            throw new IllegalArgumentException("semantic evidence bundle target is required");
-        }
-        try {
-            Path parent = target.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            try (OutputStream output = Files.newOutputStream(target);
-                 JsonGenerator generator = JSON.getFactory().createGenerator(output)) {
-                generator.useDefaultPrettyPrinter();
-                generator.writeStartObject();
-                writeDatabase(generator);
-                generator.writeObjectField(
-                        "metadataInventory",
-                        SemanticMetadataInventoryEnvelope.from(descriptor().inventory()));
-                writeStringArray(generator, "inputFiles", descriptor().inputFiles());
-                writeStringArray(generator, "sources", descriptor().sources());
-                for (Section section : Section.values()) {
-                    sections.get(section).writeArray(generator, section.wireName());
-                }
-                generator.writeObjectFieldStart("instructions");
-                generator.writeBooleanField("allOutputsMustUseEvidenceRefs", true);
-                generator.writeBooleanField("llmCannotCreateDatabaseFacts", true);
-                generator.writeBooleanField("businessApprovedIsForbidden", true);
-                generator.writeBooleanField("markUncertainItemsReviewNeeded", true);
-                generator.writeEndObject();
-                generator.writeEndObject();
-                generator.writeRaw('\n');
-            }
-        } catch (IOException failure) {
-            throw new ScanResultContractException("failed to stream semantic evidence bundle", failure);
-        }
+        BUNDLE_WRITER.write(this, target);
     }
 
     public String writeBundleAndHash(Path target) {
-        writeBundle(target);
-        return sha256(target);
+        ensureOpen();
+        return BUNDLE_WRITER.writeAndHash(this, target);
+    }
+
+    void writeSectionArray(com.fasterxml.jackson.core.JsonGenerator generator, Section section) throws IOException {
+        sections.get(section).writeArray(generator, section.wireName());
     }
 
     private void build(long maxWindowBytes) {
         try (SemanticInputWindowStore windows = new SemanticInputWindowStore(
                 input, workspace.resolve("input-windows"))) {
             windows.forEachWindow(maxWindowBytes, window -> {
-                ObjectNode bundle = new SemanticExtractionBundleBuilder().build(window.bundle());
-                appendBundle(bundle);
-                EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(window.bundle());
-                graphRecords.append(evidenceGraph);
+                Path transport = workspace.resolve("transport-" + window.id() + ".json");
+                try {
+                    appendWindowGraph(window.bundle(), transport);
+                    appendBundle(transport);
+                } finally {
+                    try {
+                        Files.deleteIfExists(transport);
+                    } catch (IOException failure) {
+                        throw new ScanResultContractException(
+                                "failed to clean semantic transport window", failure);
+                    }
+                }
             });
         }
         appendGlobalEvents();
     }
 
-    private void appendBundle(ObjectNode bundle) {
-        for (Section section : Section.values()) {
-            JsonNode values = bundle.path(section.wireName());
-            if (!values.isArray()) {
+    private void appendWindowGraph(ScanBundle bundle, Path transport) {
+        EvidenceGraph graph = new SemanticExtractionBundleBuilder()
+                .writeTransportWindow(bundle, transport);
+        graphRecords.append(graph);
+    }
+
+    private void appendBundle(Path bundle) {
+        try (JsonParser parser = JSON.getFactory().createParser(bundle.toFile())) {
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
                 throw new ScanResultContractException(
-                        "semantic input window bundle section must be an array: " + section.wireName());
+                        "semantic input window bundle must be an object");
             }
-            for (JsonNode item : values) {
-                if (section == Section.EVENT_CANDIDATES) {
-                    SemanticEventCandidate normalized = new SemanticEventCandidateMerger()
-                            .normalize(eventCandidate(item));
-                    eventContributions.append(normalized.id(), JSON.valueToTree(normalized));
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                String field = parser.currentName();
+                parser.nextToken();
+                Section section = section(field);
+                if (section == null) {
+                    parser.skipChildren();
                     continue;
                 }
-                if (section == Section.TRIPLET_CANDIDATES
-                        && "EVENT_INPUT_OUTPUT".equals(item.path("type").asText())) {
-                    continue;
-                }
-                String key = section.idRequired
-                        ? item.path("id").asText("")
-                        : item.asText("");
-                if (key.isBlank()) {
+                if (parser.currentToken() != JsonToken.START_ARRAY) {
                     throw new ScanResultContractException(
-                            "semantic input window record key is missing in " + section.wireName());
+                            "semantic input window bundle section must be an array: " + field);
                 }
-                sections.get(section).append(key, item);
+                while (parser.nextToken() != JsonToken.END_ARRAY) {
+                    JsonNode item = JSON.readTree(parser);
+                    appendRecord(section, item);
+                }
+            }
+        } catch (IOException failure) {
+            throw new ScanResultContractException(
+                    "failed to stream semantic input window bundle", failure);
+        }
+    }
+
+    private Section section(String wireName) {
+        for (Section section : Section.values()) {
+            if (section.wireName().equals(wireName)) {
+                return section;
             }
         }
+        return null;
+    }
+
+    private void appendRecord(Section section, JsonNode item) {
+        if (item == null) {
+            throw new ScanResultContractException(
+                    "semantic input window record is missing in " + section.wireName());
+        }
+        if (section == Section.EVENT_CANDIDATES) {
+            SemanticEventCandidate normalized = new SemanticEventCandidateMerger()
+                    .normalize(eventCandidate(item));
+            eventContributions.append(normalized.id(), JSON.valueToTree(normalized));
+            return;
+        }
+        String key = section.idRequired
+                ? item.path("id").asText("")
+                : item.asText("");
+        if (key.isBlank()) {
+            throw new ScanResultContractException(
+                    "semantic input window record key is missing in " + section.wireName());
+        }
+        sections.get(section).append(key, item);
     }
 
     private void appendGlobalEvents() {
@@ -260,21 +298,21 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         sections.get(Section.RELATIONSHIPS).finish();
         sections.get(Section.DERIVED_LINEAGE).finish();
         SemanticEventCandidateMerger merger = new SemanticEventCandidateMerger();
+        eventContributions.forEach(record ->
+                eventAssociations.appendEvent(eventCandidate(record.value())));
+        sections.get(Section.RELATIONSHIPS).forEach(record ->
+                eventAssociations.appendRelationship(record.value()));
+        sections.get(Section.DERIVED_LINEAGE).forEach(record ->
+                eventAssociations.appendDerivedLineage(record.value()));
+        eventAssociations.finish();
         eventContributions.forEach(record -> {
             SemanticEventCandidate event = eventCandidate(record.value());
-            List<String> relationships = new ArrayList<>();
-            sections.get(Section.RELATIONSHIPS).forEach(relationship -> {
-                if (relationshipTouchesEvent(relationship.value(), event)) {
-                    relationships.add(relationship.key());
-                }
-            });
-            List<String> derived = new ArrayList<>();
-            sections.get(Section.DERIVED_LINEAGE).forEach(lineage -> {
-                if (lineageTouchesEvent(lineage.value(), event)) {
-                    derived.add(lineage.key());
-                }
-            });
-            SemanticEventCandidate completed = merger.associate(event, relationships, derived);
+            eventAssociations.requireWithinEstimatedBudget(
+                    event.id(), serializedBytes(record.value()), maxInputTokens);
+            SemanticEventCandidate completed = merger.associate(
+                    event,
+                    eventAssociations.relationshipRefs(event.id()),
+                    eventAssociations.derivedLineageRefs(event.id()));
             sections.get(Section.EVENT_CANDIDATES).append(
                     completed.id(), JSON.valueToTree(completed));
             graphRecords.appendFact(new SemanticEvidenceBuilder().eventFact(completed));
@@ -282,32 +320,13 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         });
     }
 
-    private boolean relationshipTouchesEvent(JsonNode relationship, SemanticEventCandidate event) {
-        String source = relationship.path("source").asText("");
-        String target = relationship.path("target").asText("");
-        if (event.outputEndpoints().contains(source) || event.outputEndpoints().contains(target)) {
-            return true;
+    private long serializedBytes(JsonNode value) {
+        try {
+            return JSON.writeValueAsBytes(value).length;
+        } catch (IOException failure) {
+            throw new ScanResultContractException(
+                    "failed to estimate semantic event serialization", failure);
         }
-        String sourceTable = tableOf(source);
-        String targetTable = tableOf(target);
-        List<String> inputTables = event.inputEndpoints().stream().map(this::tableOf).distinct().toList();
-        List<String> outputTables = event.outputEndpoints().stream().map(this::tableOf).distinct().toList();
-        return outputTables.contains(sourceTable) && inputTables.contains(targetTable)
-                || outputTables.contains(targetTable) && inputTables.contains(sourceTable);
-    }
-
-    private boolean lineageTouchesEvent(JsonNode lineage, SemanticEventCandidate event) {
-        List<String> endpoints = new ArrayList<>();
-        lineage.path("sources").forEach(value -> endpoints.add(value.asText("")));
-        String target = lineage.path("target").asText("");
-        if (!target.isBlank()) {
-            endpoints.add(target);
-        }
-        List<String> eventEndpoints = new ArrayList<>(event.inputEndpoints());
-        eventEndpoints.addAll(event.outputEndpoints());
-        List<String> eventTables = eventEndpoints.stream().map(this::tableOf).distinct().toList();
-        return endpoints.stream().anyMatch(endpoint ->
-                eventEndpoints.contains(endpoint) || eventTables.contains(tableOf(endpoint)));
     }
 
     private void appendEventTriplets(SemanticEventCandidate event) {
@@ -348,38 +367,6 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         }
     }
 
-    private void writeDatabase(JsonGenerator generator) throws IOException {
-        generator.writeObjectFieldStart("database");
-        generator.writeStringField("type", descriptor().databaseType());
-        generator.writeStringField("catalog", descriptor().catalog());
-        generator.writeStringField("schema", descriptor().schema());
-        generator.writeEndObject();
-    }
-
-    private void writeStringArray(JsonGenerator generator, String field, List<String> values) throws IOException {
-        generator.writeArrayFieldStart(field);
-        for (String value : values) {
-            generator.writeString(value);
-        }
-        generator.writeEndArray();
-    }
-
-    private String sha256(Path path) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (var inputStream = Files.newInputStream(path)) {
-                byte[] buffer = new byte[64 * 1024];
-                int read;
-                while ((read = inputStream.read(buffer)) >= 0) {
-                    digest.update(buffer, 0, read);
-                }
-            }
-            return HexFormat.of().formatHex(digest.digest());
-        } catch (IOException | NoSuchAlgorithmException failure) {
-            throw new ScanResultContractException("failed to hash semantic evidence bundle", failure);
-        }
-    }
-
     private void ensureOpen() {
         if (closed) {
             throw new IllegalStateException("semantic evidence store is closed");
@@ -414,6 +401,15 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         }
         try {
             eventContributions.close();
+        } catch (RuntimeException error) {
+            if (failure == null) {
+                failure = error;
+            } else {
+                failure.addSuppressed(error);
+            }
+        }
+        try {
+            eventAssociations.close();
         } catch (RuntimeException error) {
             if (failure == null) {
                 failure = error;

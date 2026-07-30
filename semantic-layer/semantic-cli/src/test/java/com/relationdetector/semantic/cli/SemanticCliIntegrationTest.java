@@ -735,4 +735,29 @@ final class SemanticCliIntegrationTest {
         assertEquals(2, exit);
         assertTrue(Files.notExists(output));
     }
+
+    @Test
+    void semanticNormalizeExtractionRejectsOversizedRawInputWithoutReplacingOutput() throws Exception {
+        Path input = tempDir.resolve("semantic-extraction-result-oversized.json");
+        Path evidenceBundle = tempDir.resolve("semantic-extraction-evidence.json");
+        Path output = tempDir.resolve("semantic-extraction-result.json");
+        Files.writeString(input, """
+                {"entities": [], "events": [], "relations": [], "lineage": [], "metrics": [],
+                 "dimensions": [], "triplets": [], "reviewItems": [],
+                 "padding": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+                """);
+        Files.writeString(evidenceBundle, "{}");
+        Files.writeString(output, "existing-output");
+
+        int exit = Main.run(new String[] {
+                "normalize-extraction",
+                "--input", input.toString(),
+                "--evidence-bundle", evidenceBundle.toString(),
+                "--output", output.toString(),
+                "--max-output-tokens", "75"
+        });
+
+        assertEquals(1, exit);
+        assertEquals("existing-output", Files.readString(output));
+    }
 }

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
@@ -59,6 +60,10 @@ class OracleLiveCollectorsTest {
         assertEquals(1, metadata.columnFacts().size());
         assertEquals(1, metadata.constraintFacts().size());
         assertEquals(1, metadata.indexFacts().size());
+        assertEquals(List.of(MetadataIndexMemberKind.FULL_COLUMN),
+                metadata.indexFacts().get(0).members().stream().map(member -> member.kind()).toList());
+        assertEquals(List.of(1),
+                metadata.indexFacts().get(0).members().stream().map(member -> member.ordinal()).toList());
         assertEquals("ERP.ORDERS.USER_ID", metadata.relationships().get(0).source().displayName());
         assertEquals("ERP.USERS.ID", metadata.relationships().get(0).target().displayName());
         assertEquals("ERP.REBUILD_ORDERS", objects.get(0).schema() + "." + objects.get(0).name());

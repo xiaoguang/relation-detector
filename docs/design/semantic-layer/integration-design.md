@@ -25,7 +25,9 @@
   合法`shardContext`的必需
   evidence bundle，复用自动分片的owned/overlap校验，再执行候选回填、typed reference/physical endpoint
   校验、semantic owner-id全局唯一性校验，并补齐`semanticGraph`与`validation`。任一所有权或闭包失败时
-  命令失败，不输出半闭合正式结果。
+  命令失败，不输出半闭合正式结果。standalone raw在`readTree()`前和严格UTF-8解析期间受
+  `max-output-tokens`约束，evidence closure按选中记录累计`max-input-tokens`；只有有界输入才允许
+  物化为typed document，输出经同级临时文件原子替换。
 - `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链，两者各自守住证据和身份边界。`SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、physical endpoint node 和 edge 的 evidence 非空且可解析；`SemanticKgIdentityRegistry` 只允许 ID 与完整内容均相同的幂等重复，冲突 node/edge 使整个 build 原子失败。这些保证不能从 `SemanticGraphAssembler` 的测试外推，也不能反向外推到 formal normalization。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
@@ -462,7 +464,7 @@ Step 7: Answer（最终输出）
 [full-bundle normalization]
     ↓ 输出: merged-draft.json / semantic-extraction-result.json / run-manifest.json
 [semantic normalize-extraction]
-    ↓ 输入: raw result + evidence bundle
+    ↓ 输入: token预算内的raw result + 按选中记录预算闭合的evidence bundle slice
     ↓ 输出: ID/internal-ref-closed normalized semantic document
 ```
 
@@ -580,8 +582,8 @@ Step 7: Answer（最终输出）
 
 **当前代码预期输出：**
 
-1. ScanResultReader → ScanBundle（relationships、dataLineages、derived facts、namingEvidence、diagnostics 转为 typed facts，同时保留 raw payload）
-2. SemanticEvidenceBuilder → EvidenceGraph（facts、endpoints、evidenceRefs、diagnostics、summary）
+1. ScanResultReader.open → SemanticInputStore（流式spool typed facts与inventory；有界兼容调用才物化完整ScanBundle）
+2. SemanticEvidenceStore / bounded SemanticEvidenceBuilder → 外排EvidenceGraph records与逐root/shard图
 3. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）
 4. JsonSemanticKgWriter → `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
 5. 可选 `semantic extract / normalize-extraction` → owner-aware normalized semantic document

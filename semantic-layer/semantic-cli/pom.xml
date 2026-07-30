@@ -38,6 +38,19 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <!-- Memory-gate sizes belong to Maven profiles and must reach the forked test JVM. -->
+          <systemPropertyVariables>
+            <semanticMemoryGateMiB>${semanticMemoryGateMiB}</semanticMemoryGateMiB>
+            <semanticMemoryGateHeap>${semanticMemoryGateHeap}</semanticMemoryGateHeap>
+            <semanticMemoryGateTimeoutMinutes>${semanticMemoryGateTimeoutMinutes}</semanticMemoryGateTimeoutMinutes>
+            <semanticStandaloneRawMiB>${semanticStandaloneRawMiB}</semanticStandaloneRawMiB>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.6.1</version>

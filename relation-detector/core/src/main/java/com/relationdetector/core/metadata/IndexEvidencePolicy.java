@@ -1,6 +1,8 @@
 package com.relationdetector.core.metadata;
 
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 
 /**
  * CN: 明确组合索引对单 endpoint 的证据边界：首列可支持 lookup，但只有单列 unique 才证明单列唯一。
@@ -11,43 +13,46 @@ public final class IndexEvidencePolicy {
         return index != null
                 && index.visible()
                 && (index.unique() || index.primary())
-                && index.columns().size() == 1
-                && hasValidPhysicalShape(index)
-                && index.seqInIndex().get(0) == 1
-                && hasNoPrefix(index, 0)
-                && index.expressions().stream().noneMatch(this::hasText)
-                && same(index.columns().get(0), column);
+                && hasValidMemberShape(index)
+                && index.members().size() == 1
+                && index.members().get(0).kind() == MetadataIndexMemberKind.FULL_COLUMN
+                && same(index.members().get(0).columnName(), column);
     }
 
     public boolean supportsLeadingColumnLookup(MetadataIndexFact index, String column) {
-        if (index == null || !index.visible() || index.columns().isEmpty()
-                || !hasValidPhysicalShape(index)) {
+        if (index == null || !index.visible() || !hasValidMemberShape(index)) {
             return false;
         }
-        String first = index.columns().get(0);
-        int position = index.seqInIndex().get(0);
-        return first != null && !first.isBlank() && position == 1 && same(first, column);
+        MetadataIndexMemberFact first = index.members().get(0);
+        return first.kind() != MetadataIndexMemberKind.EXPRESSION
+                && same(first.columnName(), column);
     }
 
-    private boolean hasValidPhysicalShape(MetadataIndexFact index) {
-        return index.seqInIndex().size() == index.columns().size()
-                && (index.subParts().isEmpty() || index.subParts().size() == index.columns().size())
-                && strictlyIncreasingPositive(index.seqInIndex());
-    }
-
-    private boolean strictlyIncreasingPositive(java.util.List<Integer> positions) {
-        int previous = 0;
-        for (Integer position : positions) {
-            if (position == null || position <= previous) {
+    private boolean hasValidMemberShape(MetadataIndexFact index) {
+        if (index.members().isEmpty()) {
+            return false;
+        }
+        int expectedOrdinal = 1;
+        for (MetadataIndexMemberFact member : index.members()) {
+            if (member == null || member.kind() == null || member.ordinal() != expectedOrdinal++) {
                 return false;
             }
-            previous = position;
+            boolean column = hasText(member.columnName());
+            boolean expression = hasText(member.expression());
+            if (member.kind() == MetadataIndexMemberKind.FULL_COLUMN
+                    && (!column || expression || member.prefixLength() != null)) {
+                return false;
+            }
+            if (member.kind() == MetadataIndexMemberKind.PREFIX_COLUMN
+                    && (!column || expression || member.prefixLength() == null || member.prefixLength() <= 0)) {
+                return false;
+            }
+            if (member.kind() == MetadataIndexMemberKind.EXPRESSION
+                    && (column || !expression || member.prefixLength() != null)) {
+                return false;
+            }
         }
         return true;
-    }
-
-    private boolean hasNoPrefix(MetadataIndexFact index, int member) {
-        return index.subParts().isEmpty() || !hasText(index.subParts().get(member));
     }
 
     private boolean same(String left, String right) {

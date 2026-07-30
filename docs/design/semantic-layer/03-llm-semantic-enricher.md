@@ -134,6 +134,10 @@ public final class SemanticExtractionDocumentNormalizer {
 `SemanticModelClient` 只负责模型调用。request-only artifact 由调用方提供独立的请求渲染函数，
 不把序列化职责放回模型接口。normalizer 不提供无 evidence bundle 的入口；CLI 的
 `normalize-extraction` 同样强制要求 `--evidence-bundle`。
+该独立命令在物化raw model result前使用`max-output-tokens`做文件大小快速拒绝和严格UTF-8流式
+逐码点计数；选中的evidence closure按`max-input-tokens`逐记录累计。只有通过预算的单份raw与closure
+才允许进入typed normalization；输出经同级临时文件原子替换。该契约明确拒绝超过模型输出预算的
+任意大手工输入，而不是另建一套无界磁盘normalizer。
 它不接收完整shard plan，但 evidence bundle 必须携带 `shardContext`。CLI 与自动执行链都调用
 `normalizeOwnedShard`，在 backfill 前校验 owned/overlap 集合和 `ownedGroundingRefs`，随后再执行
 bundle reference/evidence/physical endpoint closure。调用方不能用一个没有owner context的完整bundle
@@ -336,12 +340,12 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
-| `SEM-INGEST-MEMORY-01` | `MATCHED` | 正式命令使用流式scan reader、section spool、外排offset/component索引、全局owner与path-backed shard；128 MiB/96 MiB及1 GiB/512 MiB真实typed e2e门禁通过并清理workspace。 |
-| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory，四类catalog facts进入evidence/KG/ownership；共享typed closure rules完整验证identity、owner/member、FK引用端、cardinality、ordinal和index shape。COMPLETE仍仅表示采集scope，缺少被引用对象时consumer明确拒绝。 |
+| `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event-association索引、全局owner与path-backed shard已实现。高扇出event在引用物化前受token门限，disk union-find迭代压缩路径，standalone raw/evidence slice分别受output/input预算并原子写出。默认1 MiB/96 MiB smoke、发布128 MiB/96 MiB和extended 1 GiB/512 MiB profile形成固定证据。 |
+| `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
 
 上述完整输入、模型请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
-identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner closure和metadata成员引用
-闭包和代表性大输入内存证明均按矩阵闭合；1 GiB门禁只证明bounded-memory，不作为吞吐性能承诺。
+identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及
+bounded-memory结构边界已按矩阵闭合。内存门禁只证明指定堆下有界完成或确定性预算拒绝，不作为吞吐承诺。
 
 独立归一化命令为：
 
@@ -455,7 +459,7 @@ flowchart TD
 | LLM 返回字段但没有对应 semantic entity | 正式 normalization 失败并报告 unresolved reference |
 | LLM 新建 entity 并填写 bundle 中不存在的物理表/字段 | 正式 normalization 失败，不输出部分 artifact |
 | LLM 在同一或不同 section 复用 semantic object id | 正式 normalization 失败；graph node/edge 也有独立冲突防御 |
-| 两个物理图连通分量 | 形成两个确定性 shard；每个 fact/candidate 只有一个 owner |
+| 两个物理图连通分量 | `FORCE`模式保持两个确定性shard；`AUTO`可在预算允许时把小型断开分量装入同一shard。两种模式下每个fact/candidate都只有一个owner |
 | shard 引用 bundle 外 evidence/fact/candidate | planning 或片内 normalization 失败 |
 | 一个最小 evidence closure 超过配置的估算门限 | 明确失败，不截断事实；另用 provider usage 审计实际 token |
 | 模型只使用 overlap ref 创建对象 | `SemanticShardOutputOwnershipValidator` 在 backfill 前原子拒绝，不产生部分结果 |

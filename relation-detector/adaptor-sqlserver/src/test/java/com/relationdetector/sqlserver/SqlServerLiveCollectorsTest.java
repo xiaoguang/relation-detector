@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.Enums.WarningType;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.sqlserver.metadata.SqlServerMetadataCollector;
 import com.relationdetector.sqlserver.objects.SqlServerObjectCollector;
 
@@ -61,6 +62,10 @@ class SqlServerLiveCollectorsTest {
         assertEquals(1, metadata.columnFacts().size());
         assertEquals(2, metadata.constraintFacts().size());
         assertEquals(1, metadata.indexFacts().size());
+        assertEquals(List.of(MetadataIndexMemberKind.FULL_COLUMN),
+                metadata.indexFacts().get(0).members().stream().map(member -> member.kind()).toList());
+        assertEquals(List.of(1),
+                metadata.indexFacts().get(0).members().stream().map(member -> member.ordinal()).toList());
         assertEquals("ERPDB.dbo.orders.user_id", metadata.relationships().get(0).source().displayName());
         assertEquals("ERPDB.dbo.users.id", metadata.relationships().get(0).target().displayName());
         assertEquals("ERPDB", objects.get(0).catalog());

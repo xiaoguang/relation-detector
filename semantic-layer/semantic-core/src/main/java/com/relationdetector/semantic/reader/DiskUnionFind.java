@@ -13,8 +13,13 @@ import java.nio.file.Path;
 final class DiskUnionFind implements AutoCloseable {
     private static final int WIDTH = Integer.BYTES;
     private final RandomAccessFile parents;
+    private final int size;
 
     DiskUnionFind(Path path, int size) throws IOException {
+        if (size < 0) {
+            throw new IllegalArgumentException("disk union-find size must not be negative");
+        }
+        this.size = size;
         parents = new RandomAccessFile(path.toFile(), "rw");
         parents.setLength((long) size * WIDTH);
         for (int id = 0; id < size; id++) {
@@ -23,13 +28,28 @@ final class DiskUnionFind implements AutoCloseable {
     }
 
     int find(int id) throws IOException {
-        int parent = read(id);
-        if (parent == id) {
-            return id;
+        requireValidId(id);
+        int root = id;
+        int traversed = 0;
+        while (true) {
+            int parent = read(root);
+            requireValidParent(parent);
+            if (parent == root) {
+                break;
+            }
+            root = parent;
+            if (++traversed >= size) {
+                throw new ScanResultContractException(
+                        "semantic component parent chain contains a cycle");
+            }
         }
-        int root = find(parent);
-        if (root != parent) {
-            write(id, root);
+
+        int cursor = id;
+        while (cursor != root) {
+            int parent = read(cursor);
+            requireValidParent(parent);
+            write(cursor, root);
+            cursor = parent;
         }
         return root;
     }
@@ -55,6 +75,20 @@ final class DiskUnionFind implements AutoCloseable {
     private void write(int id, int parent) throws IOException {
         parents.seek((long) id * WIDTH);
         parents.writeInt(parent);
+    }
+
+    private void requireValidId(int id) {
+        if (id < 0 || id >= size) {
+            throw new ScanResultContractException(
+                    "semantic component id is outside the parent array");
+        }
+    }
+
+    private void requireValidParent(int parent) {
+        if (parent < 0 || parent >= size) {
+            throw new ScanResultContractException(
+                    "semantic component parent is outside the parent array");
+        }
     }
 
     @Override

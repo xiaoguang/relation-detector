@@ -17,6 +17,7 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.model.ColumnRef;
@@ -173,7 +174,10 @@ public final class OracleMetadataCollector implements MetadataCollector {
             }
             for (IndexRows rows : groups.values()) snapshot.indexFacts().add(new MetadataIndexFact(null,
                     rows.owner, rows.table, rows.name, rows.unique, false, rows.type, true,
-                    rows.columns, List.of(), List.of(), rows.positions));
+                    java.util.stream.IntStream.range(0, rows.columns.size())
+                            .mapToObj(index -> MetadataIndexMemberFact.fullColumn(
+                                    rows.positions.get(index), rows.columns.get(index)))
+                            .toList()));
         } catch (Exception ex) {
             warn(snapshot, "ORACLE_METADATA_INDEXES_FAILED", ex, "ALL_INDEXES");
         }

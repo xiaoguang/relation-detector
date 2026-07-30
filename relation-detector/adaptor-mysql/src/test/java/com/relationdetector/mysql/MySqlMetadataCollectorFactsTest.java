@@ -18,6 +18,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.ScanScope;
@@ -180,13 +181,22 @@ class MySqlMetadataCollectorFactsTest {
                         "SUB_PART", null, "EXPRESSION", null, "IS_VISIBLE", "NO"),
                 row("TABLE_SCHEMA", "shop", "TABLE_NAME", "users", "INDEX_NAME", "uq_users_lower_email",
                         "NON_UNIQUE", 0, "SEQ_IN_INDEX", 1, "COLUMN_NAME", null, "INDEX_TYPE", "BTREE",
-                        "SUB_PART", null, "EXPRESSION", "lower(`email`)", "IS_VISIBLE", "YES")));
+                        "SUB_PART", null, "EXPRESSION", "lower(`email`)", "IS_VISIBLE", "YES"),
+                row("TABLE_SCHEMA", "shop", "TABLE_NAME", "users", "INDEX_NAME", "idx_users_mixed",
+                        "NON_UNIQUE", 1, "SEQ_IN_INDEX", 1, "COLUMN_NAME", "email", "INDEX_TYPE", "BTREE",
+                        "SUB_PART", 8, "EXPRESSION", null, "IS_VISIBLE", "YES"),
+                row("TABLE_SCHEMA", "shop", "TABLE_NAME", "users", "INDEX_NAME", "idx_users_mixed",
+                        "NON_UNIQUE", 1, "SEQ_IN_INDEX", 2, "COLUMN_NAME", null, "INDEX_TYPE", "BTREE",
+                        "SUB_PART", null, "EXPRESSION", "lower(`email`)", "IS_VISIBLE", "YES"),
+                row("TABLE_SCHEMA", "shop", "TABLE_NAME", "users", "INDEX_NAME", "idx_users_mixed",
+                        "NON_UNIQUE", 1, "SEQ_IN_INDEX", 3, "COLUMN_NAME", "tenant_id", "INDEX_TYPE", "BTREE",
+                        "SUB_PART", null, "EXPRESSION", null, "IS_VISIBLE", "YES")));
 
         MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
                 JdbcFake.connection(rows),
                 new ScanScope("shop", null, List.of("orders", "users"), List.of()));
 
-        assertEquals(2, snapshot.indexFacts().size());
+        assertEquals(3, snapshot.indexFacts().size());
         assertFalse(snapshot.indexFacts().stream()
                 .filter(index -> index.indexName().equals("idx_hidden_user_id"))
                 .findFirst().orElseThrow().visible());
@@ -196,6 +206,15 @@ class MySqlMetadataCollectorFactsTest {
         assertTrue(snapshot.indexFacts().stream()
                 .filter(index -> index.indexName().equals("uq_users_lower_email"))
                 .findFirst().orElseThrow().columns().isEmpty());
+        var mixed = snapshot.indexFacts().stream()
+                .filter(index -> index.indexName().equals("idx_users_mixed"))
+                .findFirst().orElseThrow();
+        assertEquals(List.of(1, 2, 3), mixed.members().stream().map(member -> member.ordinal()).toList());
+        assertEquals(List.of(
+                        MetadataIndexMemberKind.PREFIX_COLUMN,
+                        MetadataIndexMemberKind.EXPRESSION,
+                        MetadataIndexMemberKind.FULL_COLUMN),
+                mixed.members().stream().map(member -> member.kind()).toList());
     }
 
     @Test

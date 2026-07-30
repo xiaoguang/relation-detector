@@ -8,6 +8,8 @@ import java.util.Set;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberFact;
+import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 
 /**
@@ -123,39 +125,38 @@ final class MetadataInventoryClosureRules {
     static void validateIndexShape(MetadataIndexFact index) {
         require(index != null && hasText(index.tableName()) && hasText(index.indexName()),
                 "metadata index identity is required");
-        require(nonBlankDistinctOrEmpty(index.columns())
-                        && nonBlankDistinctOrEmpty(index.expressions()),
-                "metadata index members must be non-blank and distinct");
-        boolean physical = !index.columns().isEmpty();
-        boolean expression = !index.expressions().isEmpty();
-        require(physical || expression, "metadata index must contain a column or expression");
-        int expectedOrdinals = physical ? index.columns().size() : index.expressions().size();
-        require(index.seqInIndex().size() == expectedOrdinals,
-                "metadata index ordinals must align with indexed members");
-        int previous = 0;
-        for (Integer ordinal : index.seqInIndex()) {
-            require(ordinal != null && ordinal > previous,
-                    "metadata index ordinals must be positive and strictly increasing");
-            previous = ordinal;
-        }
-        if (physical) {
-            require(index.subParts().isEmpty() || index.subParts().size() == index.columns().size(),
-                    "metadata index prefix lengths must align with physical columns");
-            for (String subPart : index.subParts()) {
-                if (!hasText(subPart)) {
-                    continue;
-                }
-                try {
-                    require(Integer.parseInt(subPart.strip()) > 0,
-                            "metadata index prefix length must be positive");
-                } catch (NumberFormatException failure) {
-                    throw new ScanResultContractException(
-                            "metadata index prefix length must be a positive integer");
-                }
+        require(!index.members().isEmpty(), "metadata index members must be present and ordered");
+        Set<String> physicalColumns = new HashSet<>();
+        Set<String> expressions = new HashSet<>();
+        int expectedOrdinal = 1;
+        for (MetadataIndexMemberFact member : index.members()) {
+            require(member != null && member.kind() != null,
+                    "metadata index member and kind are required");
+            require(member.ordinal() == expectedOrdinal++,
+                    "metadata index ordinals must start at one and be continuous");
+            if (member.kind() == MetadataIndexMemberKind.FULL_COLUMN) {
+                require(hasText(member.columnName())
+                                && !hasText(member.expression())
+                                && member.prefixLength() == null,
+                        "metadata full-column member shape is invalid");
+                require(physicalColumns.add(member.columnName()),
+                        "metadata index physical columns must be distinct");
+            } else if (member.kind() == MetadataIndexMemberKind.PREFIX_COLUMN) {
+                require(hasText(member.columnName())
+                                && !hasText(member.expression())
+                                && member.prefixLength() != null
+                                && member.prefixLength() > 0,
+                        "metadata prefix-column member shape is invalid");
+                require(physicalColumns.add(member.columnName()),
+                        "metadata index physical columns must be distinct");
+            } else {
+                require(!hasText(member.columnName())
+                                && hasText(member.expression())
+                                && member.prefixLength() == null,
+                        "metadata expression member shape is invalid");
+                require(expressions.add(member.expression()),
+                        "metadata index expressions must be distinct");
             }
-        } else {
-            require(index.subParts().isEmpty(),
-                    "expression-only metadata index must not carry physical prefix lengths");
         }
     }
 

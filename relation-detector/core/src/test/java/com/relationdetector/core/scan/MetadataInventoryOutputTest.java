@@ -59,6 +59,10 @@ final class MetadataInventoryOutputTest {
         assertEquals("id", output.path("columns").get(0).path("columnName").asText());
         assertEquals("PRIMARY", output.path("constraints").get(0).path("constraintName").asText());
         assertEquals("PRIMARY", output.path("indexes").get(0).path("indexName").asText());
+        assertEquals("FULL_COLUMN",
+                output.path("indexes").get(0).path("members").get(0).path("kind").asText());
+        assertEquals(1,
+                output.path("indexes").get(0).path("members").get(0).path("ordinal").asInt());
     }
 
     @Test

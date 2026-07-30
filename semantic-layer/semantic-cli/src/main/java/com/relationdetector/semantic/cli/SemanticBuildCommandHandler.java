@@ -6,7 +6,8 @@ package com.relationdetector.semantic.cli;
  */
 final class SemanticBuildCommandHandler {
     SemanticCliExitCode execute(SemanticCommandArguments arguments) {
-        new SemanticKgBuildService().build(arguments.inputs(), arguments.output());
+        new SemanticKgBuildService().build(
+                arguments.inputs(), arguments.output(), arguments.sharding().maxInputTokens());
         return SemanticCliExitCode.SUCCESS;
     }
 }

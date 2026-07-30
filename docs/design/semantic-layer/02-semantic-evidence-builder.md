@@ -2,7 +2,8 @@
 
 ## 1. 职责
 
-`SemanticEvidenceBuilder` 将 relation-detector 的完整 `ScanBundle` 确定性物化为 `EvidenceGraph`。它负责：
+`SemanticEvidenceBuilder` 将一个已验证且有界的 `ScanBundle` 确定性物化为 `EvidenceGraph`。生产
+磁盘链路先由`SemanticEvidenceStore`全局归并并外排记录，再逐个root/shard调用该内存builder；它负责：
 
 - 保留 database、source、fact、observation 和 evidence reference。
 - 将 relationship、lineage、naming、derived fact 和 diagnostic 转成可审计图元素。
@@ -21,8 +22,8 @@
 
 ## 2. 输入契约
 
-输入是已经通过 `ScanResultReader` wire validation 的一个或多个 relation-detector 结果。合并后的
-`ScanBundle` 必须满足：
+输入是已经通过 `ScanResultReader` wire validation 的relation-detector结果。兼容入口可合并为完整
+`ScanBundle`，生产入口则从`SemanticInputStore`逐个物化有界component/root；二者必须满足：
 
 - database identity 的 `type/catalog/schema` 完全一致。
 - relationship、lineage、naming、derived 和 warning 数组与 summary 一致。
@@ -38,9 +39,9 @@ relation-detector JSON携带scope内table、column、constraint和index inventor
 正式semantic链路只接受`COMPLETE`；四类catalog事实连同relationship、lineage、naming及derived
 endpoint共同进入`tables` registry。没有被关系事实引用的表列仍可成为grounded evidence/KG节点，
 Builder不得按名称或source文本补造inventory。`COMPLETE`不替代consumer侧成员引用校验；内存与磁盘
-reader共用typed closure rules，验证constraint source/reference、FK两端、index member/cardinality/
-ordinal/`subParts`和完整identity唯一性。scope采集成功但缺少引用对象的inventory仍会被正式semantic
-入口拒绝。
+reader共用typed closure rules，验证constraint source/reference、FK两端、index member的kind、
+连续ordinal、column/expression/prefix shape及identity唯一性。`members`是mixed physical/expression
+顺序的权威表示，旧字段仅为兼容投影；scope采集成功但缺少引用对象的inventory仍会被正式semantic入口拒绝。
 
 ## 3. 输出结构
 

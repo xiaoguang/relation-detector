@@ -2,6 +2,7 @@ package com.relationdetector.semantic.extract;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -25,68 +26,80 @@ final class TripletCandidateBuilder {
 
     ArrayNode build(ScanBundle bundle, List<SemanticEventCandidate> events) {
         ArrayNode result = JSON.createArrayNode();
-        addRelationshipTriplets(result, bundle);
-        addEventTriplets(result, events);
-        addLineageTriplets(result, bundle);
-        addNamingTriplets(result, bundle);
+        forEachNonEvent(bundle, result::add);
+        addEventTriplets(result::add, events);
         return result;
     }
 
-    private void addRelationshipTriplets(ArrayNode result, ScanBundle bundle) {
+    void forEachNonEvent(ScanBundle bundle, Consumer<ObjectNode> consumer) {
+        addRelationshipTriplets(consumer, bundle);
+        addLineageTriplets(consumer, bundle);
+        addNamingTriplets(consumer, bundle);
+    }
+
+    private void addRelationshipTriplets(Consumer<ObjectNode> consumer, ScanBundle bundle) {
         for (ScanRelationshipFact relationship : bundle.relationships()) {
             PhysicalEndpointRef source = relationship.source();
             PhysicalEndpointRef target = relationship.target();
             String ref = relationship.id();
-            add(result, StableSemanticId.of("triplet-candidate", "relationship", ref), "ENTITY_RELATION",
-                    source.table(), "引用", target.table(), ref, List.of(ref));
-            add(result, StableSemanticId.of("triplet-candidate", "dimension", ref), "DIMENSION_OF",
-                    target.table(), "可作为维度分析", source.table(), ref, List.of(ref));
+            consumer.accept(item(
+                    StableSemanticId.of("triplet-candidate", "relationship", ref), "ENTITY_RELATION",
+                    source.table(), "引用", target.table(), ref, List.of(ref)));
+            consumer.accept(item(
+                    StableSemanticId.of("triplet-candidate", "dimension", ref), "DIMENSION_OF",
+                    target.table(), "可作为维度分析", source.table(), ref, List.of(ref)));
         }
     }
 
-    private void addEventTriplets(ArrayNode result, List<SemanticEventCandidate> events) {
+    private void addEventTriplets(
+            Consumer<ObjectNode> consumer,
+            List<SemanticEventCandidate> events
+    ) {
         for (SemanticEventCandidate event : events) {
             List<String> inputs = tables(event.inputEndpoints());
             List<String> outputs = tables(event.outputEndpoints());
             for (String input : inputs) {
                 for (String output : outputs) {
                     String id = StableSemanticId.of("triplet-candidate", "event", event.id(), input, output);
-                    ObjectNode item = add(result, id, "EVENT_INPUT_OUTPUT", input,
+                    ObjectNode item = item(id, "EVENT_INPUT_OUTPUT", input,
                             event.readableNameHint().isBlank() ? "写入" : "通过" + event.readableNameHint() + "写入",
                             output, event.id(), event.evidenceRefs());
                     item.put("eventCandidateRef", event.id());
+                    consumer.accept(item);
                 }
             }
         }
     }
 
-    private void addLineageTriplets(ArrayNode result, ScanBundle bundle) {
+    private void addLineageTriplets(Consumer<ObjectNode> consumer, ScanBundle bundle) {
         for (ScanLineageFact lineage : bundle.dataLineages()) {
             List<PhysicalEndpointRef> sources = new ArrayList<>(lineage.sources());
             PhysicalEndpointRef target = lineage.target();
             String ref = lineage.id();
             for (PhysicalEndpointRef source : sources) {
-                add(result, StableSemanticId.of("triplet-candidate", "lineage", ref,
+                consumer.accept(item(
+                        StableSemanticId.of("triplet-candidate", "lineage", ref,
                                 source.displayName(), target.displayName()),
                         "LINEAGE_TRANSFORM",
-                        source.displayName(), "加工为", target.displayName(), ref, List.of(ref));
+                        source.displayName(), "加工为", target.displayName(), ref, List.of(ref)));
             }
         }
     }
 
-    private void addNamingTriplets(ArrayNode result, ScanBundle bundle) {
+    private void addNamingTriplets(Consumer<ObjectNode> consumer, ScanBundle bundle) {
         for (ScanNamingEvidenceFact naming : bundle.namingEvidence()) {
             PhysicalEndpointRef source = naming.source();
             PhysicalEndpointRef target = naming.target();
             String ref = naming.id();
-            add(result, StableSemanticId.of("triplet-candidate", "naming", ref), "NAMING_ALIAS",
-                    source.displayName(), "命名指向", target.displayName(), ref, List.of(ref));
+            consumer.accept(item(
+                    StableSemanticId.of("triplet-candidate", "naming", ref), "NAMING_ALIAS",
+                    source.displayName(), "命名指向", target.displayName(), ref, List.of(ref)));
         }
     }
 
-    private ObjectNode add(ArrayNode result, String id, String type, String subject, String predicate, String object,
+    private ObjectNode item(String id, String type, String subject, String predicate, String object,
             String factRef, List<String> evidenceRefs) {
-        ObjectNode item = result.addObject();
+        ObjectNode item = JSON.createObjectNode();
         item.put("id", id);
         item.put("type", type);
         item.put("subject", subject);

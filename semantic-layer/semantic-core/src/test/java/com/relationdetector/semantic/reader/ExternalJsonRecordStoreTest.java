@@ -2,6 +2,7 @@ package com.relationdetector.semantic.reader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -42,6 +43,34 @@ final class ExternalJsonRecordStoreTest {
             assertFalse(store.get("record-missing").isPresent());
             assertTrue(store.containsKey("record-017"));
             assertFalse(store.containsKey("record-missing"));
+        }
+    }
+
+    @Test
+    void canonicalConflictHashIgnoresObjectFieldOrderButPreservesArrayOrder() {
+        try (ExternalJsonRecordStore store = new ExternalJsonRecordStore(tempDir.resolve("canonical"))) {
+            var first = JSON.createObjectNode();
+            first.put("first", 1);
+            first.putArray("values").add("a").add("b");
+            var reordered = JSON.createObjectNode();
+            reordered.putArray("values").add("a").add("b");
+            reordered.put("first", 1);
+            store.append("same", first);
+            store.append("same", reordered);
+
+            store.finish();
+            assertEquals(1, store.count());
+        }
+
+        try (ExternalJsonRecordStore store = new ExternalJsonRecordStore(tempDir.resolve("conflict"))) {
+            var first = JSON.createObjectNode();
+            first.putArray("values").add("a").add("b");
+            var reversed = JSON.createObjectNode();
+            reversed.putArray("values").add("b").add("a");
+            store.append("same", first);
+            store.append("same", reversed);
+
+            assertThrows(ScanResultContractException.class, store::finish);
         }
     }
 }

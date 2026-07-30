@@ -63,6 +63,15 @@ run_no_cache_acceptance() {
   wait_for_active_child
 }
 
+run_semantic_memory_gate() {
+  run_active_child "$MVN_BIN" \
+    -pl semantic-layer/semantic-cli \
+    -am \
+    -Psemantic-memory-gate \
+    -Dtest=SemanticDiskBackedMemoryGateTest \
+    test
+}
+
 cleanup() {
   status=$?
   trap - EXIT INT TERM
@@ -112,6 +121,16 @@ if [[ "$NO_CACHE_STATUS" -ne 0 ]]; then
   write_failure_manifest noCache "$NO_CACHE_STATUS" "no-cache acceptance failed"
   echo "no-cache acceptance failed; manifest: $VERIFY_DIR/verification-manifest.json" >&2
   exit "$NO_CACHE_STATUS"
+fi
+
+set +e
+run_semantic_memory_gate
+MEMORY_GATE_STATUS=$?
+set -e
+if [[ "$MEMORY_GATE_STATUS" -ne 0 ]]; then
+  write_failure_manifest semanticMemoryGate "$MEMORY_GATE_STATUS" \
+    "semantic memory gate failed"
+  exit "$MEMORY_GATE_STATUS"
 fi
 
 set +e

@@ -39,6 +39,10 @@
     <sqlserverSampleDataJdbcUrl></sqlserverSampleDataJdbcUrl>
     <sqlserverSampleDataJdbcUser></sqlserverSampleDataJdbcUser>
     <sqlserverSampleDataJdbcPassword></sqlserverSampleDataJdbcPassword>
+    <semanticMemoryGateMiB>1</semanticMemoryGateMiB>
+    <semanticMemoryGateHeap>96m</semanticMemoryGateHeap>
+    <semanticMemoryGateTimeoutMinutes>25</semanticMemoryGateTimeoutMinutes>
+    <semanticStandaloneRawMiB>16</semanticStandaloneRawMiB>
   </properties>
 
   <profiles>
@@ -59,6 +63,26 @@
         <correctnessFixtureTiming>true</correctnessFixtureTiming>
         <runGeneratedReportTests>true</runGeneratedReportTests>
         <cliTestForkCount>2</cliTestForkCount>
+      </properties>
+    </profile>
+    <profile>
+      <id>semantic-memory-gate</id>
+      <properties>
+        <semanticMemoryGateMiB>128</semanticMemoryGateMiB>
+        <semanticMemoryGateHeap>96m</semanticMemoryGateHeap>
+        <semanticMemoryGateTimeoutMinutes>45</semanticMemoryGateTimeoutMinutes>
+        <semanticStandaloneRawMiB>128</semanticStandaloneRawMiB>
+        <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
+      </properties>
+    </profile>
+    <profile>
+      <id>semantic-memory-gate-extended</id>
+      <properties>
+        <semanticMemoryGateMiB>1024</semanticMemoryGateMiB>
+        <semanticMemoryGateHeap>512m</semanticMemoryGateHeap>
+        <semanticMemoryGateTimeoutMinutes>120</semanticMemoryGateTimeoutMinutes>
+        <semanticStandaloneRawMiB>128</semanticStandaloneRawMiB>
+        <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
       </properties>
     </profile>
   </profiles>

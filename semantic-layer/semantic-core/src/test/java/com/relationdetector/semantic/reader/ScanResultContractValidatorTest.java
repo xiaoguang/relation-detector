@@ -104,6 +104,44 @@ final class ScanResultContractValidatorTest {
     }
 
     @Test
+    void acceptsOrderedMixedIndexMembersAndRejectsAmbiguousLegacyMixedShape() throws Exception {
+        ObjectNode ordered = validRoot();
+        ObjectNode inventory = (ObjectNode) ordered.path("metadataInventory");
+        ObjectNode index = inventory.withArray("indexes").addObject();
+        index.put("catalog", "shop");
+        index.putNull("schema");
+        index.put("tableName", "orders");
+        index.put("indexName", "idx_orders_mixed");
+        index.put("unique", false);
+        index.put("primary", false);
+        index.put("indexType", "BTREE");
+        index.put("visible", true);
+        index.putArray("columns").add("customer_id");
+        index.putArray("expressions").add("lower(customer_id::text)");
+        index.putArray("subParts");
+        index.putArray("seqInIndex").add(2);
+        ObjectNode expression = index.putArray("members").addObject();
+        expression.put("ordinal", 1);
+        expression.put("kind", "EXPRESSION");
+        expression.putNull("columnName");
+        expression.put("expression", "lower(customer_id::text)");
+        expression.putNull("prefixLength");
+        ObjectNode column = index.withArray("members").addObject();
+        column.put("ordinal", 2);
+        column.put("kind", "FULL_COLUMN");
+        column.put("columnName", "customer_id");
+        column.putNull("expression");
+        column.putNull("prefixLength");
+        ((ObjectNode) inventory.path("counts")).put("indexes", 1);
+
+        assertDoesNotThrow(() -> read(ordered));
+
+        ObjectNode ambiguous = ordered.deepCopy();
+        ((ObjectNode) ambiguous.path("metadataInventory").path("indexes").get(0)).remove("members");
+        assertThrows(IllegalArgumentException.class, () -> read(ambiguous));
+    }
+
+    @Test
     void rejectsDuplicateConstraintAndIndexIdentity() throws Exception {
         ObjectNode constraints = validRoot();
         addForeignKey(constraints, "fk_orders_customer", "customer_id", "customers", "id");

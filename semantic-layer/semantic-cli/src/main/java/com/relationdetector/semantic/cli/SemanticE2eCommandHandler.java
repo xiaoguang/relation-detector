@@ -18,7 +18,10 @@ final class SemanticE2eCommandHandler {
         Path extractionOutput = arguments.output().resolve("semantic-extraction").resolve(name);
         try (SemanticDiskBackedSession session =
                      SemanticDiskBackedSession.openForOutput(
-                             arguments.inputs(), arguments.output(), "e2e")) {
+                             arguments.inputs(),
+                             arguments.output(),
+                             "e2e",
+                             arguments.sharding().maxInputTokens())) {
             session.writeKgArtifacts(kgOutput);
             SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
                     session.evidenceStore(), session.workPath("plan"), arguments.sharding());

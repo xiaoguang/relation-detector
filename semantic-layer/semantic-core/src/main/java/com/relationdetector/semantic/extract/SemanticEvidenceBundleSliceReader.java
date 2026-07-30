@@ -1,7 +1,10 @@
 package com.relationdetector.semantic.extract;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,13 +39,16 @@ public final class SemanticEvidenceBundleSliceReader {
             "source", "target", "sources", "inputEndpoints", "outputEndpoints", "endpoints",
             "table", "column", "constraint", "index");
 
-    public ObjectNode read(Path bundlePath, JsonNode rawDocument) {
-        if (bundlePath == null || rawDocument == null || !rawDocument.isObject()) {
+    public ObjectNode read(Path bundlePath, JsonNode rawDocument, int maxEstimatedTokens) {
+        if (bundlePath == null || rawDocument == null || !rawDocument.isObject()
+                || maxEstimatedTokens <= 0) {
             throw new SemanticExtractionValidationException(
-                    "semantic evidence bundle path and raw shard document are required");
+                    "semantic evidence bundle, raw shard document and token limit are required");
         }
+        SliceBudget budget = new SliceBudget(maxEstimatedTokens);
         ObjectNode result = JSON.createObjectNode();
         readEnvelope(bundlePath, result);
+        budget.add(result);
         Set<String> requiredReferences = new LinkedHashSet<>();
         collectContextReferences(result.path("shardContext"), requiredReferences);
         collectRawReferences(rawDocument, requiredReferences);
@@ -59,15 +65,12 @@ public final class SemanticEvidenceBundleSliceReader {
         do {
             int beforeReferences = requiredReferences.size();
             int beforeItems = selected.values().stream().mapToInt(Map::size).sum();
-            scanArrays(bundlePath, (section, item) -> {
+            scanSelectedObjects(bundlePath, requiredReferences, selected, budget, (section, item) -> {
                 Map<String, JsonNode> sectionItems = selected.get(section);
-                if (sectionItems == null || !item.isObject()) {
+                if (sectionItems == null) {
                     return;
                 }
                 String id = item.path("id").asText("");
-                if (id.isBlank() || !requiredReferences.contains(id) || sectionItems.containsKey(id)) {
-                    return;
-                }
                 sectionItems.put(id, item.deepCopy());
                 collectReferences(item, requiredReferences);
                 collectPhysicalReferences(item, physicalReferences);
@@ -78,7 +81,7 @@ public final class SemanticEvidenceBundleSliceReader {
 
         requireReferenceClosure(requiredReferences, selected);
         writeSelectedSections(result, selected);
-        writeSelectedTables(bundlePath, result, physicalReferences);
+        writeSelectedTables(bundlePath, result, physicalReferences, budget);
         return result;
     }
 
@@ -221,10 +224,11 @@ public final class SemanticEvidenceBundleSliceReader {
     private void writeSelectedTables(
             Path bundlePath,
             ObjectNode result,
-            Set<String> physicalReferences
+            Set<String> physicalReferences,
+            SliceBudget budget
     ) {
         ArrayNode tables = result.putArray("tables");
-        scanArrays(bundlePath, (section, item) -> {
+        scanArrays(bundlePath, Set.of("tables"), (section, item) -> {
             if (!"tables".equals(section) || !item.isTextual()) {
                 return;
             }
@@ -232,16 +236,129 @@ public final class SemanticEvidenceBundleSliceReader {
             boolean required = physicalReferences.stream()
                     .anyMatch(reference -> reference.equals(table) || reference.startsWith(table + "."));
             if (required) {
+                budget.add(item);
                 tables.add(table);
             }
         });
     }
 
-    private void scanArrays(Path bundlePath, BiConsumer<String, JsonNode> consumer) {
+    private void scanSelectedObjects(
+            Path bundlePath,
+            Set<String> requiredReferences,
+            Map<String, Map<String, JsonNode>> selected,
+            SliceBudget budget,
+            BiConsumer<String, JsonNode> consumer
+    ) {
+        Path spool = createRecordSpool(bundlePath);
+        try {
+            scanTopLevel(bundlePath, (field, parser) -> {
+                if (!"evidence".equals(field)
+                        && !SemanticShardBundleIndex.ITEM_SECTIONS.contains(field)) {
+                    skipValue(parser);
+                    return;
+                }
+                if (parser.currentToken() != JsonToken.START_ARRAY) {
+                    throw new SemanticExtractionValidationException(
+                            "semantic evidence bundle section must be an array: " + field);
+                }
+                try {
+                    while (parser.nextToken() != JsonToken.END_ARRAY) {
+                        RecordLocation record = scanRecordLocation(parser, field);
+                        String id = record.id();
+                        Map<String, JsonNode> sectionItems = selected.get(field);
+                        if (id.isBlank()
+                                || sectionItems == null
+                                || !requiredReferences.contains(id)
+                                || sectionItems.containsKey(id)) {
+                            continue;
+                        }
+                        copyRecord(bundlePath, spool, record);
+                        budget.requireMayFit(spool);
+                        JsonNode item = JSON.readTree(spool.toFile());
+                        if (item == null || !item.isObject()) {
+                            throw new SemanticExtractionValidationException(
+                                    "semantic evidence bundle item must be an object: " + field);
+                        }
+                        budget.add(item);
+                        consumer.accept(field, item);
+                    }
+                } catch (IOException failure) {
+                    throw new SemanticExtractionValidationException(
+                            "failed to stream semantic evidence bundle section: " + field);
+                }
+            });
+        } finally {
+            try {
+                Files.deleteIfExists(spool);
+            } catch (IOException ignored) {
+                // A failed command never publishes its temporary normalization output.
+            }
+        }
+    }
+
+    private Path createRecordSpool(Path bundlePath) {
+        try {
+            Path parent = bundlePath.toAbsolutePath().normalize().getParent();
+            return Files.createTempFile(parent, ".semantic-evidence-record-", ".json");
+        } catch (IOException failure) {
+            throw new SemanticExtractionValidationException(
+                    "failed to create semantic evidence record spool");
+        }
+    }
+
+    private RecordLocation scanRecordLocation(JsonParser parser, String section) throws IOException {
+        if (parser.currentToken() != JsonToken.START_OBJECT) {
+            throw new SemanticExtractionValidationException(
+                    "semantic evidence bundle item must be an object: " + section);
+        }
+        long start = parser.currentTokenLocation().getByteOffset();
+        String id = "";
+        while (parser.nextToken() != JsonToken.END_OBJECT) {
+            if (parser.currentToken() != JsonToken.FIELD_NAME) {
+                throw new SemanticExtractionValidationException(
+                        "semantic evidence bundle item contains an invalid token: " + section);
+            }
+            String field = parser.currentName();
+            parser.nextToken();
+            if ("id".equals(field) && parser.currentToken() == JsonToken.VALUE_STRING) {
+                id = parser.getValueAsString("");
+            }
+            parser.skipChildren();
+        }
+        long end = parser.currentTokenLocation().getByteOffset() + 1L;
+        if (start < 0 || end <= start) {
+            throw new SemanticExtractionValidationException(
+                    "semantic evidence bundle item location is invalid: " + section);
+        }
+        return new RecordLocation(id, start, end);
+    }
+
+    private void copyRecord(Path bundlePath, Path spool, RecordLocation record) throws IOException {
+        try (FileChannel input = FileChannel.open(bundlePath, StandardOpenOption.READ);
+             FileChannel output = FileChannel.open(
+                     spool,
+                     StandardOpenOption.WRITE,
+                     StandardOpenOption.TRUNCATE_EXISTING)) {
+            long position = record.start();
+            long remaining = record.end() - record.start();
+            while (remaining > 0) {
+                long transferred = input.transferTo(position, remaining, output);
+                if (transferred <= 0) {
+                    throw new IOException("semantic evidence record transfer made no progress");
+                }
+                position += transferred;
+                remaining -= transferred;
+            }
+        }
+    }
+
+    private void scanArrays(
+            Path bundlePath,
+            Set<String> selectedSections,
+            BiConsumer<String, JsonNode> consumer
+    ) {
         scanTopLevel(bundlePath, (field, parser) -> {
-            if (!"tables".equals(field)
-                    && !"evidence".equals(field)
-                    && !SemanticShardBundleIndex.ITEM_SECTIONS.contains(field)) {
+            if (!selectedSections.contains(field)) {
                 skipValue(parser);
                 return;
             }
@@ -307,5 +424,65 @@ public final class SemanticEvidenceBundleSliceReader {
     @FunctionalInterface
     private interface TopLevelConsumer {
         void accept(String field, JsonParser parser);
+    }
+
+    private record RecordLocation(String id, long start, long end) {
+    }
+
+    private static final class SliceBudget {
+        private final int maxEstimatedTokens;
+        private long asciiCodePoints;
+        private long nonAsciiCodePoints;
+
+        private SliceBudget(int maxEstimatedTokens) {
+            this.maxEstimatedTokens = maxEstimatedTokens;
+            addText("{database,metadataInventory,inputFiles,sources,instructions,shardContext,"
+                    + "tables,evidence,metadataTables,metadataColumns,metadataConstraints,"
+                    + "metadataIndexes,relationships,lineage,derivedRelationships,derivedLineage,"
+                    + "namingEvidence,diagnostics,eventCandidates,tripletCandidates,"
+                    + "reviewItemCandidates}");
+        }
+
+        private void add(JsonNode value) {
+            try {
+                addText(JSON.writeValueAsString(value));
+            } catch (IOException failure) {
+                throw new SemanticExtractionValidationException(
+                        "failed to estimate semantic evidence slice");
+            }
+        }
+
+        private void addText(String value) {
+            for (int offset = 0; offset < value.length();) {
+                int codePoint = value.codePointAt(offset);
+                if (codePoint <= 0x7f) {
+                    asciiCodePoints++;
+                } else {
+                    nonAsciiCodePoints++;
+                }
+                offset += Character.charCount(codePoint);
+            }
+            if (SemanticPromptBudgetEstimator.estimate(asciiCodePoints, nonAsciiCodePoints)
+                    > maxEstimatedTokens) {
+                throw new SemanticExtractionValidationException(
+                        "semantic evidence closure exceeds the configured estimated input-token limit");
+            }
+        }
+
+        private void requireMayFit(Path value) {
+            try {
+                int current = SemanticPromptBudgetEstimator.estimate(
+                        asciiCodePoints, nonAsciiCodePoints);
+                int minimum = SemanticPromptBudgetEstimator.minimumEstimateForUtf8Bytes(
+                        Files.size(value));
+                if ((long) current + minimum > maxEstimatedTokens) {
+                    throw new SemanticExtractionValidationException(
+                            "semantic evidence closure exceeds the configured estimated input-token limit");
+                }
+            } catch (IOException failure) {
+                throw new SemanticExtractionValidationException(
+                        "failed to inspect semantic evidence record size");
+            }
+        }
     }
 }
