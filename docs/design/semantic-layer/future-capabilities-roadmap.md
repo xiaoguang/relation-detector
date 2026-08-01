@@ -9,10 +9,10 @@
 
 ```text
 relation-detector JSON
-  -> ScanResultReader / ScanBundle
-  -> SemanticEvidenceBuilder
-  -> EvidenceGraph
-  -> SemanticKgBuilder
+  -> ScanResultReader.open / SemanticInputStore
+  -> SemanticEvidenceStore
+  -> bounded component/root materialization
+  -> SemanticEvidenceBuilder / SemanticKgBuilder
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 

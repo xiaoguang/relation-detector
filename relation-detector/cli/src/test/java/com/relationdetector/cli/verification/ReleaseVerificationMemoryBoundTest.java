@@ -87,8 +87,9 @@ final class ReleaseVerificationMemoryBoundTest {
                         "totalNamingEvidenceCount": 0,
                         "warningCount": 0
                       },
+                      %s,
                       "relationships": [
-                    """.formatted(FACT_COUNT, FACT_COUNT));
+                    """.formatted(FACT_COUNT, FACT_COUNT, inventory()));
             for (int index = 0; index < FACT_COUNT; index++) {
                 if (index > 0) {
                     writer.write(',');
@@ -125,6 +126,7 @@ final class ReleaseVerificationMemoryBoundTest {
                     "totalNamingEvidenceCount": 0,
                     "warningCount": 0
                   },
+                  %s,
                   "relationships": [],
                   "derivedRelationships": [],
                   "dataLineages": [],
@@ -132,6 +134,45 @@ final class ReleaseVerificationMemoryBoundTest {
                   "namingEvidence": [],
                   "derivedNamingEvidence": [],
                   "warnings": []
+                }
+                """.formatted(inventory());
+    }
+
+    private String inventory() {
+        return """
+                "metadataInventory": {
+                  "status": "COMPLETE",
+                  "basis": "DDL_DECLARATIONS",
+                  "scope": {
+                    "catalog": "",
+                    "schema": "sample",
+                    "includeTables": [],
+                    "excludeTables": []
+                  },
+                  "counts": {
+                    "tables": 1,
+                    "columns": 1,
+                    "constraints": 0,
+                    "indexes": 0
+                  },
+                  "tables": [{
+                    "catalog": null,
+                    "schema": "sample",
+                    "tableName": "events",
+                    "tableType": "TABLE"
+                  }],
+                  "columns": [{
+                    "catalog": null,
+                    "schema": "sample",
+                    "tableName": "events",
+                    "columnName": "id",
+                    "dataType": "bigint",
+                    "columnType": "bigint",
+                    "nullable": false,
+                    "ordinalPosition": 1
+                  }],
+                  "constraints": [],
+                  "indexes": []
                 }
                 """;
     }

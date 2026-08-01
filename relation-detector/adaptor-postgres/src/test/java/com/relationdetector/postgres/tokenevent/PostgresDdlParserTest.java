@@ -60,6 +60,39 @@ class PostgresDdlParserTest {
     }
 
     @Test
+    void postgresTokenEventAcceptsTemporalConstraintsWithoutPromotingPeriodMembers() {
+        var structured = new PostgresTokenEventStructuredDdlParser().parseDdl("""
+                CREATE TABLE subscriptions (
+                  customer_id BIGINT NOT NULL,
+                  valid_at TSTZRANGE NOT NULL,
+                  PRIMARY KEY (customer_id, valid_at WITHOUT OVERLAPS)
+                );
+                CREATE TABLE invoices (
+                  customer_id BIGINT NOT NULL,
+                  covered_at TSTZRANGE NOT NULL,
+                  FOREIGN KEY (customer_id, PERIOD covered_at)
+                    REFERENCES subscriptions (customer_id, PERIOD valid_at)
+                );
+                """, "pg18-temporal.sql", null);
+
+        List<com.relationdetector.contracts.parse.StructuredSqlEvent> foreignKeys =
+                structured.events().stream()
+                        .filter(event -> event.type() == StructuredParseEventType.DDL_FOREIGN_KEY)
+                        .toList();
+        List<com.relationdetector.contracts.parse.StructuredSqlEvent> uniqueMembers =
+                structured.events().stream()
+                        .filter(event -> event.type() == StructuredParseEventType.DDL_INDEX)
+                        .filter(event -> "TARGET_UNIQUE".equals(event.role()))
+                        .toList();
+
+        assertEquals(1, foreignKeys.size(), () -> "Temporal member became an ordinary FK: " + foreignKeys);
+        assertEquals("customer_id", foreignKeys.get(0).sourceColumn());
+        assertEquals("customer_id", foreignKeys.get(0).targetColumn());
+        assertEquals(1, uniqueMembers.size(), () -> "Temporal member became an ordinary index: " + uniqueMembers);
+        assertEquals("customer_id", uniqueMembers.get(0).column());
+    }
+
+    @Test
     void postgresParserHandlesAlterTableOnlyAndIfNotExistsIndex() throws Exception {
         Path ddl = tempDir.resolve("schema.sql");
         Files.writeString(ddl, """

@@ -1,7 +1,6 @@
 package com.relationdetector.semantic.event;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,35 +15,6 @@ import java.util.Set;
  */
 public final class SemanticEventCandidateMerger {
     private final EventReadableNameSuggester nameSuggester = new EventReadableNameSuggester();
-
-    public SemanticEventCandidate merge(
-            SemanticEventCandidate left,
-            SemanticEventCandidate right
-    ) {
-        requireSame(left.id(), right.id(), "id");
-        requireSame(left.eventKind(), right.eventKind(), "event kind");
-        requireSame(left.sourceType(), right.sourceType(), "source type");
-        requireSame(left.sourceObject(), right.sourceObject(), "source object");
-        requireSame(left.sourceObjectType(), right.sourceObjectType(), "source object type");
-        requireSame(left.sourceObjectName(), right.sourceObjectName(), "source object name");
-        requireSame(left.sourceFile(), right.sourceFile(), "source file");
-        requireSame(left.sourceStatementId(), right.sourceStatementId(), "source statement");
-        int leftCount = count(left);
-        int rightCount = count(right);
-        BigDecimal confidence = left.confidence().multiply(BigDecimal.valueOf(leftCount))
-                .add(right.confidence().multiply(BigDecimal.valueOf(rightCount)))
-                .divide(BigDecimal.valueOf(leftCount + rightCount), 4, RoundingMode.HALF_UP);
-        return rebuild(
-                left,
-                union(left.operationKinds(), right.operationKinds()),
-                union(left.inputEndpoints(), right.inputEndpoints()),
-                union(left.outputEndpoints(), right.outputEndpoints()),
-                union(left.lineageRefs(), right.lineageRefs()),
-                List.of(),
-                List.of(),
-                confidence,
-                leftCount + rightCount);
-    }
 
     public SemanticEventCandidate normalize(SemanticEventCandidate candidate) {
         return rebuild(
@@ -127,19 +97,7 @@ public final class SemanticEventCandidateMerger {
         return value instanceof Number number && number.intValue() > 0 ? number.intValue() : 1;
     }
 
-    private List<String> union(List<String> left, List<String> right) {
-        Set<String> result = new LinkedHashSet<>(left);
-        result.addAll(right);
-        return result.stream().sorted().toList();
-    }
-
     private List<String> sorted(List<String> values) {
         return values == null ? List.of() : values.stream().distinct().sorted().toList();
-    }
-
-    private void requireSame(String left, String right, String field) {
-        if (!java.util.Objects.equals(left, right)) {
-            throw new IllegalArgumentException("event contributions disagree on " + field);
-        }
     }
 }

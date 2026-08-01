@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
@@ -77,6 +78,7 @@ final class SemanticMetadataInventoryIndex {
             throws IOException {
         require(token == JsonToken.START_OBJECT, "metadataInventory must be an object");
         MetadataInventoryStatus status = null;
+        MetadataInventoryBasis basis = null;
         ScanScope scope = null;
         JsonNode counts = null;
         Map<String, Long> actual = new LinkedHashMap<>();
@@ -93,6 +95,15 @@ final class SemanticMetadataInventoryIndex {
                         throw new ScanResultContractException("metadataInventory.status is unknown");
                     }
                     update(digest, "status", text);
+                }
+                case "basis" -> {
+                    String text = requireScalarText(parser, value, "metadataInventory.basis");
+                    try {
+                        basis = MetadataInventoryBasis.valueOf(text);
+                    } catch (IllegalArgumentException failure) {
+                        throw new ScanResultContractException("metadataInventory.basis is unknown");
+                    }
+                    update(digest, "basis", text);
                 }
                 case "scope" -> {
                     JsonNode node = readSmallObject(parser, value, "metadataInventory.scope");
@@ -117,9 +128,12 @@ final class SemanticMetadataInventoryIndex {
         }
         require(status == MetadataInventoryStatus.COMPLETE,
                 "metadataInventory.status must be COMPLETE for semantic processing");
+        require(basis != null && basis != MetadataInventoryBasis.NONE,
+                "metadataInventory.basis must identify an evidence-backed inventory");
         require(scope != null && counts != null, "metadataInventory scope and counts are required");
         return new SemanticInputStore.InventoryDescriptor(
                 status,
+                basis,
                 scope,
                 count(counts, actual, "tables"),
                 count(counts, actual, "columns"),

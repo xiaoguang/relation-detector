@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
+import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.TableId;
@@ -36,6 +38,8 @@ final class SourceCollectorPipeline {
             new AdaptorResultContractValidator();
     private final AdaptorParseResultContractValidator parseResultContractValidator =
             new AdaptorParseResultContractValidator();
+    private final DdlMetadataInventoryAssembler ddlMetadataInventoryAssembler =
+            new DdlMetadataInventoryAssembler();
     private final StatementParsePipeline statementParser;
 
     SourceCollectorPipeline(StatementParsePipeline statementParser) {
@@ -61,7 +65,8 @@ final class SourceCollectorPipeline {
 
         if (sources.objectsEnabled() && sources.objectsFromDatabase() && connection != null) {
             ctx.result.sources().add("database-objects");
-            Set<TableId> databaseKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
+            Set<TableId> databaseKnownPhysicalTables =
+                    statementParser.knownPhysicalTables(ctx.physicalInventorySnapshot);
             ParserBundle parserBundle = parserBundle(ctx);
             execute(ctx, collectDatabaseObjects(connection, ctx).stream()
                     .map(definition -> {
@@ -83,10 +88,12 @@ final class SourceCollectorPipeline {
                     .collect(connection, ctx.scope);
             MetadataSnapshot validated = resultContractValidator.validateMetadata(raw);
             ctx.metadataSnapshot = validated;
+            ctx.physicalInventorySnapshot = validated;
             ctx.result.metadataInventory(MetadataInventory.from(
                     validated.warnings().isEmpty()
                             ? MetadataInventoryStatus.COMPLETE
                             : MetadataInventoryStatus.PARTIAL,
+                    MetadataInventoryBasis.LIVE_METADATA,
                     ctx.scope,
                     validated));
             ctx.relationshipCandidates.addAll(validated.relationships());
@@ -95,7 +102,9 @@ final class SourceCollectorPipeline {
             throw ex;
         } catch (Exception ex) {
             ctx.result.metadataInventory(MetadataInventory.empty(
-                    MetadataInventoryStatus.UNAVAILABLE, ctx.scope));
+                    MetadataInventoryStatus.UNAVAILABLE,
+                    MetadataInventoryBasis.LIVE_METADATA,
+                    ctx.scope));
             ctx.result.warnings().add(LiveDiagnosticSanitizer.jdbcWarning(
                     "METADATA_COLLECT_FAILED", LiveDiagnosticSanitizer.Operation.METADATA,
                     "metadata", ex, java.util.Map.of(), ctx.adaptor.permissionDeniedVendorCodes()));
@@ -113,8 +122,8 @@ final class SourceCollectorPipeline {
         if (sources.ddlEnabled()) {
             ctx.result.sources().add("ddl");
             ParserBundle parserBundle = parserBundle(ctx);
-            Set<TableId> fileKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
-            List<ParseTask> tasks = new ArrayList<>();
+            List<ParseTask> ddlTasks = new ArrayList<>();
+            List<SqlStatementRecord> queryStatements = new ArrayList<>();
             for (Path file : sources.ddlFiles()) {
                 List<SqlStatementRecord> statements = scriptFileExtractor.extract(
                                 file, StatementSourceType.DDL_FILE, ctx.adaptor.parsers().scriptFramer(),
@@ -123,51 +132,98 @@ final class SourceCollectorPipeline {
                 StatementDispatchService.DdlFileDispatch dispatch = statementDispatch.dispatchDdlFile(
                         statements, ctx.config.database().databaseType());
                 if (!dispatch.ddlStatements().isEmpty()) {
-                    tasks.add(new ParseTask(
+                    ddlTasks.add(new ParseTask(
                             context -> statementParser.executeDdlStatements(
                                     parserBundle, ctx.adaptor, ctx.parserConfig, dispatch.ddlStatements(), context),
                             error -> DiagnosticWarnings.ddlParseFailed(file, error)));
                 }
-                for (SqlStatementRecord query : dispatch.queryStatements()) {
-                    tasks.add(new ParseTask(
-                            context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
-                                    query, context, fileKnownPhysicalTables),
-                            error -> DiagnosticWarnings.sqlParseFailed(query, error)));
-                }
+                queryStatements.addAll(dispatch.queryStatements());
             }
-            execute(ctx, tasks);
+            execute(ctx, ddlTasks);
+            refreshDdlInventory(ctx);
+            Set<TableId> fileKnownPhysicalTables =
+                    statementParser.knownPhysicalTables(ctx.physicalInventorySnapshot);
+            execute(ctx, queryStatements.stream()
+                    .map(query -> new ParseTask(
+                            context -> statementParser.executeStatement(
+                                    parserBundle, ctx.adaptor, ctx.parserConfig,
+                                    query, context, fileKnownPhysicalTables),
+                            error -> DiagnosticWarnings.sqlParseFailed(query, error)))
+                    .toList());
         }
 
         if (sources.objectsEnabled()) {
             ctx.result.sources().add("object-files");
-            Set<TableId> fileKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
             ParserBundle parserBundle = parserBundle(ctx);
-            List<ParseTask> tasks = new ArrayList<>();
+            List<SqlStatementRecord> statements = new ArrayList<>();
             for (Path file : sources.objectFiles()) {
                 scriptFileExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.adaptor.parsers().scriptFramer(),
                                 ctx.result.warnings()::add)
-                        .forEach(statement -> tasks.add(new ParseTask(
+                        .forEach(statements::add);
+            }
+            collectEmbeddedDdlDeclarations(ctx, parserBundle, statements);
+            Set<TableId> fileKnownPhysicalTables =
+                    statementParser.knownPhysicalTables(ctx.physicalInventorySnapshot);
+            List<ParseTask> tasks = statements.stream()
+                    .filter(statement -> statement.sourceType() != StatementSourceType.DDL_FILE)
+                    .map(statement -> new ParseTask(
                                 context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
                                         statement, context, fileKnownPhysicalTables),
-                                error -> DiagnosticWarnings.sqlParseFailed(statement, error))));
-            }
+                                error -> DiagnosticWarnings.sqlParseFailed(statement, error)))
+                    .toList();
             execute(ctx, tasks);
         }
 
         if (sources.logsEnabled()) {
             ctx.result.sources().add("logs");
-            Set<TableId> logKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
             ParserBundle parserBundle = parserBundle(ctx);
-            List<ParseTask> tasks = new ArrayList<>();
+            List<SqlStatementRecord> statements = new ArrayList<>();
             for (Path file : sources.logFiles()) {
-                extractLog(file, ctx)
-                        .forEach(statement -> tasks.add(new ParseTask(
+                extractLog(file, ctx).forEach(statements::add);
+            }
+            collectEmbeddedDdlDeclarations(ctx, parserBundle, statements);
+            Set<TableId> logKnownPhysicalTables =
+                    statementParser.knownPhysicalTables(ctx.physicalInventorySnapshot);
+            List<ParseTask> tasks = statements.stream()
+                    .filter(statement -> statement.sourceType() != StatementSourceType.DDL_FILE)
+                    .map(statement -> new ParseTask(
                                 context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
                                         statement, context, logKnownPhysicalTables),
-                                error -> DiagnosticWarnings.sqlParseFailed(statement, error))));
-            }
+                                error -> DiagnosticWarnings.sqlParseFailed(statement, error)))
+                    .toList();
             execute(ctx, tasks);
         }
+    }
+
+    private void collectEmbeddedDdlDeclarations(
+            ScanPipelineContext ctx,
+            ParserBundle parserBundle,
+            List<SqlStatementRecord> statements
+    ) {
+        if (ctx.config.sources().ddlInventoryCoverage() != DdlInventoryCoverage.COMPLETE_SCOPE) {
+            return;
+        }
+        execute(ctx, statements.stream()
+                .filter(statement -> statement.sourceType() == StatementSourceType.DDL_FILE)
+                .map(statement -> new ParseTask(
+                        context -> statementParser.executeDdlStatements(
+                                parserBundle, ctx.adaptor, ctx.parserConfig, List.of(statement), context),
+                        error -> DiagnosticWarnings.ddlTextParseFailed(
+                                statement.sourceName(), statement.sql(), error)))
+                .toList());
+        refreshDdlInventory(ctx);
+    }
+
+    private void refreshDdlInventory(ScanPipelineContext ctx) {
+        if (ctx.config.sources().ddlInventoryCoverage() != DdlInventoryCoverage.COMPLETE_SCOPE) {
+            return;
+        }
+        MetadataInventory inventory = ddlMetadataInventoryAssembler.assemble(
+                ctx.result.metadataInventory(), ctx.ddlCatalogInventory, ctx.scope);
+        ctx.result.metadataInventory(inventory);
+        // DDL declarations establish physical identity for parser filtering, but they are
+        // not live metadata evidence and must not run through metadata enhancement again.
+        ctx.physicalInventorySnapshot = ddlMetadataInventoryAssembler.snapshot(inventory);
     }
 
     private ParserBundle parserBundle(ScanPipelineContext ctx) {
@@ -210,6 +266,7 @@ final class SourceCollectorPipeline {
         ctx.lineageCandidates.addAll(outcome.lineageCandidates());
         ctx.namingEvidencePool.addAll(outcome.namingEvidence());
         ctx.ddlEvidenceInventory.merge(outcome.ddlEvidenceInventory());
+        ctx.ddlCatalogInventory.merge(outcome.ddlCatalogInventory());
         ctx.result.warnings().addAll(outcome.warnings());
         ctx.result.warnings().addAll(result.warnings());
     }

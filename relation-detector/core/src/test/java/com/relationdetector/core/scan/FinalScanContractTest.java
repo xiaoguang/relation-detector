@@ -2,6 +2,7 @@ package com.relationdetector.core.scan;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +16,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
+import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.core.common.CommonDatabaseAdaptor;
 
 class FinalScanContractTest {
@@ -65,16 +69,7 @@ class FinalScanContractTest {
 
     @Test
     void processesDdlPathsWhenScanEngineIsCalledDirectly() throws Exception {
-        Path ddl = tempDir.resolve("schema.sql");
-        Files.writeString(ddl, """
-                CREATE TABLE users (
-                  id BIGINT PRIMARY KEY
-                );
-                CREATE TABLE contracts (
-                  party_id BIGINT,
-                  FOREIGN KEY (party_id) REFERENCES users(id)
-                );
-                """);
+        Path ddl = writeSchema();
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;
         config.metadataEnabled = false;
@@ -86,6 +81,68 @@ class FinalScanContractTest {
 
         assertEquals(1, result.relationships().size(),
                 "direct ScanEngine use must process configured ddlPaths instead of silently ignoring them");
+    }
+
+    @Test
+    void completeScopeDdlPublishesEvidenceBackedMetadataInventory() throws Exception {
+        ScanConfig config = ddlOnlyConfig(writeSchema());
+        config.ddlInventoryCoverage = DdlInventoryCoverage.COMPLETE_SCOPE;
+
+        ScanResult result = new ScanEngine().scan(config, new CommonDatabaseAdaptor());
+
+        assertEquals(MetadataInventoryStatus.COMPLETE, result.metadataInventory().status());
+        assertEquals(MetadataInventoryBasis.DDL_DECLARATIONS, result.metadataInventory().basis());
+        assertEquals(List.of("contracts", "users"), result.metadataInventory().tables().stream()
+                .map(com.relationdetector.contracts.metadata.MetadataTableFact::tableName)
+                .sorted()
+                .toList());
+        assertEquals(List.of("contracts.party_id", "users.id"),
+                result.metadataInventory().columns().stream()
+                        .map(column -> column.tableName() + "." + column.columnName())
+                        .sorted()
+                        .toList());
+    }
+
+    @Test
+    void completeScopeIncludesTypedDdlDeclarationsFromMixedLogFilesBeforeSqlParsing() throws Exception {
+        Path mixed = Files.writeString(tempDir.resolve("mixed.sql"), """
+                CREATE TABLE margin_demo (
+                  sku VARCHAR(50),
+                  sales_amount DECIMAL(18,2)
+                );
+                UPDATE margin_demo
+                SET sales_amount = sales_amount * 1.05
+                WHERE sku = 'SKU-1';
+                """);
+        ScanConfig config = ddlOnlyConfig(writeSchema());
+        config.ddlInventoryCoverage = DdlInventoryCoverage.COMPLETE_SCOPE;
+        config.logsEnabled = true;
+        config.logFiles.add(mixed);
+
+        ScanResult result = new ScanEngine().scan(config, new CommonDatabaseAdaptor());
+
+        assertEquals(MetadataInventoryStatus.COMPLETE, result.metadataInventory().status());
+        assertEquals(List.of("contracts", "margin_demo", "users"),
+                result.metadataInventory().tables().stream()
+                        .map(com.relationdetector.contracts.metadata.MetadataTableFact::tableName)
+                        .sorted()
+                        .toList());
+        assertTrue(result.dataLineages().stream().anyMatch(lineage ->
+                lineage.target().table().tableName().equals("margin_demo")
+                        && lineage.sources().stream().anyMatch(source ->
+                                source.table().tableName().equals("margin_demo")
+                                        && source.column().columnName().equals("sales_amount"))
+                        && lineage.target().column().columnName().equals("sales_amount")));
+    }
+
+    @Test
+    void evidenceOnlyDdlDoesNotClaimCompleteMetadataInventory() throws Exception {
+        ScanResult result = new ScanEngine().scan(
+                ddlOnlyConfig(writeSchema()),
+                new CommonDatabaseAdaptor());
+
+        assertEquals(MetadataInventoryStatus.NOT_REQUESTED, result.metadataInventory().status());
+        assertEquals(MetadataInventoryBasis.NONE, result.metadataInventory().basis());
     }
 
     @Test
@@ -102,5 +159,27 @@ class FinalScanContractTest {
                 () -> new ScanEngine().scan(config, new CommonDatabaseAdaptor()));
 
         assertEquals(SQLException.class, failure.getCause().getClass());
+    }
+
+    private ScanConfig ddlOnlyConfig(Path ddl) {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.COMMON;
+        config.metadataEnabled = false;
+        config.ddlEnabled = true;
+        config.ddlFromDatabase = false;
+        config.ddlFiles.add(ddl);
+        return config;
+    }
+
+    private Path writeSchema() throws Exception {
+        return Files.writeString(tempDir.resolve("schema.sql"), """
+                CREATE TABLE users (
+                  id BIGINT PRIMARY KEY
+                );
+                CREATE TABLE contracts (
+                  party_id BIGINT,
+                  FOREIGN KEY (party_id) REFERENCES users(id)
+                );
+                """);
     }
 }

@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
- * Plans Oracle slash-terminated object blocks and ordinary statements.
+ * CN: 规划Oracle slash终止的routine/trigger/package block与普通分号SQL；输入是script lexer结构token，
+ * 输出statement slices。本类不把VIEW等普通DDL扩张成slash block，也不解析server SQL语义。
+ * EN: Plans slash-terminated Oracle routine, trigger, and package blocks alongside ordinary semicolon-terminated
+ * SQL from structural script-lexer tokens. It never expands VIEW DDL into slash blocks or parses server SQL semantics.
  */
 final class OracleScriptSlicePlanner extends ScriptFramingSupport implements ScriptSlicePlanner {
     @Override
@@ -51,7 +53,7 @@ final class OracleScriptSlicePlanner extends ScriptFramingSupport implements Scr
     }
 
     private void appendSegment(List<Slice> result, List<ScriptLexeme> lexemes, int start, int end) {
-        if (objectDescriptor(lexemes, start, end).isObject()) {
+        if (slashTerminated(objectDescriptor(lexemes, start, end))) {
             result.add(new Slice(start, end, false));
             return;
         }
@@ -68,10 +70,21 @@ final class OracleScriptSlicePlanner extends ScriptFramingSupport implements Scr
         for (ScriptLexeme token : lexemes) {
             if (token.kind() == ScriptLexemeKind.CREATE
                     && token.startOffset() >= start && token.startOffset() < end
-                    && objectDescriptor(lexemes, token.startOffset(), end).isObject()) {
+                    && slashTerminated(objectDescriptor(lexemes, token.startOffset(), end))) {
                 return token;
             }
         }
         return null;
+    }
+
+    private boolean slashTerminated(ObjectDescriptor descriptor) {
+        if (!descriptor.isObject()) {
+            return false;
+        }
+        return switch (descriptor.sourceType()) {
+            case PROCEDURE, FUNCTION, TRIGGER, PACKAGE, PACKAGE_BODY, EVENT -> true;
+            case VIEW, MATERIALIZED_VIEW -> false;
+            default -> false;
+        };
     }
 }

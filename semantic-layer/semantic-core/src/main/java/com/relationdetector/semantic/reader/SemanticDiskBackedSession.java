@@ -3,9 +3,10 @@ package com.relationdetector.semantic.reader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 
 /**
  * CN: 为一次 production semantic 命令拥有 input、evidence 和全局 owner 规划磁盘工作区并统一清理；输入是完整 scan 文件，
@@ -119,8 +120,15 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
     }
 
     public void writeKgArtifacts(Path outputDirectory) {
+        writeKgArtifacts(outputDirectory, SemanticKgArtifactMode.FULL);
+    }
+
+    public SemanticKgArtifactReport writeKgArtifacts(
+            Path outputDirectory,
+            SemanticKgArtifactMode mode
+    ) {
         ensureOpen();
-        new SemanticDiskBackedArtifactWriter().writeArtifacts(evidenceStore, outputDirectory);
+        return new SemanticDiskBackedArtifactWriter().writeArtifacts(evidenceStore, outputDirectory, mode);
     }
 
     public void writeEvidenceBundle(Path target) {
@@ -164,7 +172,7 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
             }
         }
         try {
-            deleteRecursively(workspace);
+            SemanticFileTreeOperations.deleteRecursively(workspace);
         } catch (IOException error) {
             if (failure == null) {
                 failure = new IllegalStateException("failed to clean semantic command workspace", error);
@@ -177,22 +185,7 @@ public final class SemanticDiskBackedSession implements AutoCloseable {
         }
     }
 
-    private static void deleteRecursively(Path root) throws IOException {
-        if (root == null || !Files.exists(root)) {
-            return;
-        }
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
-        }
-    }
-
     private static void deleteRecursivelyBestEffort(Path root) {
-        try {
-            deleteRecursively(root);
-        } catch (IOException ignored) {
-            // A construction failure remains primary; the caller receives the original typed error.
-        }
+        SemanticFileTreeOperations.deleteRecursivelyBestEffort(root);
     }
 }

@@ -13,10 +13,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HexFormat;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,14 +36,6 @@ import com.relationdetector.semantic.reader.SemanticEvidenceStore;
  */
 final class SemanticGlobalOwnerPlanner {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final List<String> FACT_SECTIONS = List.of(
-            "metadataTables", "metadataColumns", "metadataConstraints", "metadataIndexes",
-            "relationships", "lineage", "derivedRelationships", "derivedLineage",
-            "namingEvidence", "diagnostics");
-    private static final List<String> CANDIDATE_SECTIONS = List.of(
-            "eventCandidates", "reviewItemCandidates", "tripletCandidates");
-    private static final List<String> ITEM_SECTIONS = joinedSections();
-
     private final SemanticPromptBudgetEstimator estimator = new SemanticPromptBudgetEstimator();
     private final SemanticExtractionPromptBuilder promptBuilder = new SemanticExtractionPromptBuilder();
 
@@ -154,7 +144,7 @@ final class SemanticGlobalOwnerPlanner {
             if (drafts.isEmpty()) {
                 flushDraft(
                         workspace,
-                        new MutableShard(index.emptyBundle(), "global"),
+                        new SemanticShardDraftAccumulator(index.emptyBundle(), "global"),
                         drafts,
                         owners);
             }
@@ -186,7 +176,7 @@ final class SemanticGlobalOwnerPlanner {
             ExternalJsonRecordStore owners,
             List<Draft> drafts
     ) throws IOException {
-        MutableShard current = null;
+        SemanticShardDraftAccumulator current = null;
         try (BufferedReader reader = Files.newBufferedReader(assignments, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -196,32 +186,46 @@ final class SemanticGlobalOwnerPlanner {
                 String rootId = decode(fields[2]);
                 SemanticDiskBundleIndex.RootClosure root = index.closure(rootId, options.maxInputTokens());
                 if (current == null) {
-                    current = new MutableShard(index.emptyBundle(), component);
+                    current = new SemanticShardDraftAccumulator(index.emptyBundle(), component);
                 }
                 boolean forceBoundary = options.mode() == SemanticShardMode.FORCE
-                        && !current.rootIds.isEmpty()
-                        && !current.component.equals(component);
-                MutableShard candidate = current.copy();
+                        && !current.isEmpty()
+                        && !current.component().equals(component);
+                SemanticShardDraftAccumulator candidate = current.copy();
                 candidate.add(root, owner);
                 int estimate = estimate(candidate.probeBundle());
                 int target = options.mode() == SemanticShardMode.OFF
                         ? options.maxInputTokens()
                         : options.targetInputTokens();
-                if ((forceBoundary || !current.rootIds.isEmpty() && estimate > target)) {
+                if ((forceBoundary || !current.isEmpty() && estimate > target)) {
                     flushDraft(workspace, current, drafts, owners);
-                    current = new MutableShard(index.emptyBundle(), component);
+                    current = new SemanticShardDraftAccumulator(index.emptyBundle(), component);
                     current.add(root, owner);
                     estimate = estimate(current.probeBundle());
                 } else {
                     current = candidate;
                 }
                 if (estimate > options.maxInputTokens()) {
+                    ObjectNode probe = current.probeBundle();
                     throw new SemanticShardingException(
-                            "atomic semantic root closure exceeds maximum input token budget");
+                            "atomic semantic root closure exceeds maximum input token budget"
+                                    + " [section=" + root.rootSection()
+                                    + ", items=" + root.itemIds().size()
+                                    + ", externalAuditRefs=" + root.externalAuditRefs().size()
+                                    + ", rawBytes=" + root.rawBytes()
+                                    + ", rootJsonChars=" + root.bundle().toString().length()
+                                    + ", shardJsonChars=" + probe.toString().length()
+                                    + ", inventoryChars=" + probe.path("metadataInventory").toString().length()
+                                    + ", inputFilesChars=" + probe.path("inputFiles").toString().length()
+                                    + ", sourcesChars=" + probe.path("sources").toString().length()
+                                    + ", tablesChars=" + probe.path("tables").toString().length()
+                                    + ", evidenceChars=" + probe.path("evidence").toString().length()
+                                    + ", estimatedTokens=" + estimate
+                                    + ", maxInputTokens=" + options.maxInputTokens() + "]");
                 }
             }
         }
-        if (current != null && !current.rootIds.isEmpty()) {
+        if (current != null && !current.isEmpty()) {
             flushDraft(workspace, current, drafts, owners);
         }
         if (options.mode() == SemanticShardMode.OFF && drafts.size() != 1) {
@@ -232,7 +236,7 @@ final class SemanticGlobalOwnerPlanner {
 
     private void flushDraft(
             Path workspace,
-            MutableShard shard,
+            SemanticShardDraftAccumulator shard,
             List<Draft> drafts,
             ExternalJsonRecordStore owners
     ) throws IOException {
@@ -240,15 +244,15 @@ final class SemanticGlobalOwnerPlanner {
         Path directory = workspace.resolve("shards").resolve(id);
         Files.createDirectories(directory);
         Path path = directory.resolve("draft-evidence-bundle.json");
-        JSON.writeValue(path.toFile(), shard.bundle);
-        for (String rootId : shard.rootIds) {
-            SemanticDiskBundleIndex.Item root = shard.rootSections.get(rootId);
+        JSON.writeValue(path.toFile(), shard.bundle());
+        for (String rootId : shard.rootIds()) {
+            SemanticDiskBundleIndex.Item root = shard.rootSection(rootId);
             ObjectNode owner = JSON.createObjectNode();
             owner.put("shardId", id);
             owner.put("section", root.section().name());
             owners.append(rootId, owner);
         }
-        drafts.add(new Draft(id, shard.ownerKey(), path));
+        drafts.add(new Draft(id, shard.ownerKey(), path, shard.externalAuditRefs()));
     }
 
     private List<SemanticPathShard> finalizeShards(
@@ -264,7 +268,7 @@ final class SemanticGlobalOwnerPlanner {
             Set<String> ownedFacts = new LinkedHashSet<>();
             Set<String> ownedCandidates = new LinkedHashSet<>();
             Set<String> overlap = new LinkedHashSet<>();
-            for (String section : ITEM_SECTIONS) {
+            for (String section : SemanticShardDraftAccumulator.ITEM_SECTIONS) {
                 for (JsonNode item : bundle.path(section)) {
                     String id = item.path("id").asText("");
                     String owner = owners.get(id).orElseThrow(
@@ -272,7 +276,7 @@ final class SemanticGlobalOwnerPlanner {
                                     "semantic owner manifest is missing an item")).value()
                             .path("shardId").asText("");
                     if (draft.id().equals(owner)) {
-                        if (FACT_SECTIONS.contains(section)) {
+                        if (SemanticShardDraftAccumulator.FACT_SECTIONS.contains(section)) {
                             ownedFacts.add(id);
                         } else {
                             ownedCandidates.add(id);
@@ -289,6 +293,7 @@ final class SemanticGlobalOwnerPlanner {
             appendSorted(context.putArray("ownedFactRefs"), ownedFacts);
             appendSorted(context.putArray("ownedCandidateRefs"), ownedCandidates);
             appendSorted(context.putArray("overlapRefs"), overlap);
+            SemanticExternalAuditReferences.appendSummary(context, draft.externalAuditRefs());
             int estimate = estimate(bundle);
             if (estimate > options.maxInputTokens()) {
                 throw new SemanticShardingException(
@@ -296,6 +301,9 @@ final class SemanticGlobalOwnerPlanner {
             }
             Path finalPath = draft.path().getParent().resolve("evidence-bundle.json");
             JSON.writeValue(finalPath.toFile(), bundle);
+            SemanticExternalAuditReferences.write(
+                    SemanticExternalAuditReferences.sidecar(finalPath),
+                    draft.externalAuditRefs());
             Files.deleteIfExists(draft.path());
             result.add(new SemanticPathShard(
                     draft.id(),
@@ -372,92 +380,15 @@ final class SemanticGlobalOwnerPlanner {
         return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
     }
 
-    private static List<String> joinedSections() {
-        List<String> result = new ArrayList<>(FACT_SECTIONS);
-        result.addAll(CANDIDATE_SECTIONS);
-        return List.copyOf(result);
-    }
-
-    private record Draft(String id, String ownerKey, Path path) {
-    }
-
-    private static final class MutableShard {
-        private final ObjectNode bundle;
-        private final String component;
-        private final Set<String> rootIds = new LinkedHashSet<>();
-        private final Set<String> owners = new LinkedHashSet<>();
-        private final Map<String, SemanticDiskBundleIndex.Item> rootSections = new LinkedHashMap<>();
-        private final Map<String, Set<String>> idsBySection = new LinkedHashMap<>();
-        private final Set<String> evidenceIds = new LinkedHashSet<>();
-        private final Set<String> tables = new LinkedHashSet<>();
-
-        private MutableShard(ObjectNode bundle, String component) {
-            this.bundle = bundle;
-            this.component = component;
-            ITEM_SECTIONS.forEach(section -> idsBySection.put(section, new LinkedHashSet<>()));
-        }
-
-        private MutableShard copy() {
-            MutableShard copy = new MutableShard(bundle.deepCopy(), component);
-            copy.rootIds.addAll(rootIds);
-            copy.owners.addAll(owners);
-            copy.rootSections.putAll(rootSections);
-            idsBySection.forEach((section, ids) -> copy.idsBySection.get(section).addAll(ids));
-            copy.evidenceIds.addAll(evidenceIds);
-            copy.tables.addAll(tables);
-            return copy;
-        }
-
-        private void add(SemanticDiskBundleIndex.RootClosure root, String owner) {
-            rootIds.add(root.rootId());
-            owners.add(owner);
-            rootSections.put(root.rootId(), new SemanticDiskBundleIndex.Item(
-                    root.rootId(), root.rootSection(), root.bundle()));
-            root.tables().stream().sorted().forEach(table -> {
-                if (tables.add(table)) {
-                    bundle.withArray("tables").add(table);
-                }
-            });
-            for (String section : ITEM_SECTIONS) {
-                for (JsonNode item : root.bundle().path(section)) {
-                    String id = item.path("id").asText("");
-                    if (idsBySection.get(section).add(id)) {
-                        bundle.withArray(section).add(item.deepCopy());
-                    }
-                }
-            }
-            for (JsonNode evidence : root.bundle().path("evidence")) {
-                String id = evidence.path("id").asText("");
-                if (evidenceIds.add(id)) {
-                    bundle.withArray("evidence").add(evidence.deepCopy());
-                }
-            }
-        }
-
-        private ObjectNode probeBundle() {
-            ObjectNode probe = bundle.deepCopy();
-            ObjectNode context = probe.putObject("shardContext");
-            context.put("shardId", "shard-probe");
-            context.put("ownerKey", ownerKey());
-            context.put("outputOwnedReferencesOnly", true);
-            Set<String> facts = new LinkedHashSet<>();
-            Set<String> candidates = new LinkedHashSet<>();
-            FACT_SECTIONS.forEach(section -> facts.addAll(idsBySection.get(section)));
-            CANDIDATE_SECTIONS.forEach(section -> candidates.addAll(idsBySection.get(section)));
-            facts.stream().sorted().forEach(context.putArray("ownedFactRefs")::add);
-            candidates.stream().sorted().forEach(context.putArray("ownedCandidateRefs")::add);
-            context.putArray("overlapRefs");
-            return probe;
-        }
-
-        private String ownerKey() {
-            if (owners.isEmpty()) {
-                return "global";
-            }
-            if (owners.size() == 1) {
-                return owners.iterator().next();
-            }
-            return "component:" + component;
+    private record Draft(
+            String id,
+            String ownerKey,
+            Path path,
+            Set<String> externalAuditRefs
+    ) {
+        private Draft {
+            externalAuditRefs = Set.copyOf(externalAuditRefs);
         }
     }
+
 }

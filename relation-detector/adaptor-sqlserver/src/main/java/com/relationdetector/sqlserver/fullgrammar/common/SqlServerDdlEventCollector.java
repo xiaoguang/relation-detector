@@ -123,9 +123,9 @@ final class SqlServerDdlEventCollector extends SqlServerParseTreeSupport {
         }
         if (addConstraintColumnInventory) {
             sourceColumns.forEach(sourceColumn ->
-                    builder.addColumn(qualifiedTable(table), sourceColumn, line(constraint)));
+                    builder.addReferencedColumn(qualifiedTable(table), sourceColumn, line(constraint)));
             targetColumns.forEach(targetColumn ->
-                    builder.addColumn(qualifiedTable(targetTable), targetColumn, line(constraint)));
+                    builder.addReferencedColumn(qualifiedTable(targetTable), targetColumn, line(constraint)));
         }
         builder.addForeignKey(qualifiedTable(table), sourceColumns,
                 qualifiedTable(targetTable), targetColumns, line(constraint));

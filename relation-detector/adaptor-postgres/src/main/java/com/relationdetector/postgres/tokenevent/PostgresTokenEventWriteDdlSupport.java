@@ -129,21 +129,21 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
 
     @Override
     public Void visitTableForeignKey(PostgresRelationSqlParser.TableForeignKeyContext ctx) {
-        addForeignKeyEvents(currentDdlTable(), identifiers(ctx.identifierList(0)),
-                qualifiedName(ctx.qualifiedName()), identifiers(ctx.identifierList(1)), ctx);
+        addForeignKeyEvents(currentDdlTable(), ordinaryConstraintColumns(ctx.temporalIdentifierList(0)),
+                qualifiedName(ctx.qualifiedName()), ordinaryConstraintColumns(ctx.temporalIdentifierList(1)), ctx);
         return null;
     }
 
     @Override
     public Void visitPrimaryKeyConstraint(PostgresRelationSqlParser.PrimaryKeyConstraintContext ctx) {
-        addIndexEvents(currentDdlTable(), identifiers(ctx.identifierList()),
+        addIndexEvents(currentDdlTable(), ordinaryConstraintColumns(ctx.temporalIdentifierList()),
                 "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
         return null;
     }
 
     @Override
     public Void visitUniqueConstraint(PostgresRelationSqlParser.UniqueConstraintContext ctx) {
-        addIndexEvents(currentDdlTable(), identifiers(ctx.identifierList()),
+        addIndexEvents(currentDdlTable(), ordinaryConstraintColumns(ctx.temporalIdentifierList()),
                 "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
         return null;
     }
@@ -236,6 +236,16 @@ abstract class PostgresTokenEventWriteDdlSupport extends PostgresTokenEventExpre
     private List<String> identifiers(PostgresRelationSqlParser.IdentifierListContext ctx) {
         return ctx == null ? List.of()
                 : ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
+    }
+
+    private List<String> ordinaryConstraintColumns(
+            PostgresRelationSqlParser.TemporalIdentifierListContext ctx
+    ) {
+        if (ctx == null) return List.of();
+        return ctx.temporalIdentifier().stream()
+                .filter(member -> member.PERIOD() == null && member.WITHOUT() == null)
+                .map(member -> clean(member.identifier().getText()))
+                .toList();
     }
 
     private List<String> safeIndexColumns(PostgresRelationSqlParser.IndexPartListContext ctx) {

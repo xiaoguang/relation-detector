@@ -62,7 +62,11 @@ abstract class ScriptFramingSupport {
         String explicitBlock = markerBlockId(slice.explicitSource());
         String objectName = descriptor.isObject() ? descriptor.objectName() : markerObjectName(explicitBlock);
         if (!objectName.isBlank() || !explicitBlock.isBlank()) {
-            sourceName = slice.explicitSource().isBlank() ? sourceName(sourceType, objectName) : slice.explicitSource();
+            sourceName = slice.explicitSource().isBlank()
+                    ? sourceType == StatementSourceType.DDL_FILE
+                            ? normalizedFile
+                            : sourceName(sourceType, objectName)
+                    : slice.explicitSource();
             String blockId = explicitBlock.isBlank() ? objectName : explicitBlock;
             attributes.put("sourceBlockId", blockId);
             if (!objectName.isBlank()) {
@@ -224,6 +228,7 @@ abstract class ScriptFramingSupport {
     }
 
     private StatementSourceType objectType(List<ScriptLexeme> tokens, int index) {
+        if (kindAt(tokens, index, ScriptLexemeKind.TABLE)) return StatementSourceType.DDL_FILE;
         if (kindAt(tokens, index, ScriptLexemeKind.PROCEDURE)) return StatementSourceType.PROCEDURE;
         if (kindAt(tokens, index, ScriptLexemeKind.FUNCTION)) return StatementSourceType.FUNCTION;
         if (kindAt(tokens, index, ScriptLexemeKind.TRIGGER)) return StatementSourceType.TRIGGER;

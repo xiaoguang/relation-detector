@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 
 final class ScanResultContractValidatorTest {
@@ -45,6 +46,14 @@ final class ScanResultContractValidatorTest {
     }
 
     @Test
+    void rejectsCompleteMetadataInventoryWithoutEvidenceBasis() throws Exception {
+        ObjectNode root = validRoot();
+        ((ObjectNode) root.path("metadataInventory")).put("basis", "NONE");
+
+        assertThrows(IllegalArgumentException.class, () -> read(root));
+    }
+
+    @Test
     void rejectsMetadataInventoryCountMismatch() throws Exception {
         ObjectNode root = validRoot();
         ((ObjectNode) root.path("metadataInventory").path("counts")).put("tables", 3);
@@ -57,6 +66,7 @@ final class ScanResultContractValidatorTest {
         ScanBundle bundle = read(validRoot());
 
         assertEquals(MetadataInventoryStatus.COMPLETE, bundle.metadataInventory().status());
+        assertEquals(MetadataInventoryBasis.DDL_DECLARATIONS, bundle.metadataInventory().basis());
         assertEquals("shop", bundle.metadataInventory().scope().catalog());
         assertEquals(2, bundle.metadataInventory().tables().size());
         assertEquals(2, bundle.metadataInventory().columns().size());
@@ -382,6 +392,7 @@ final class ScanResultContractValidatorTest {
                   },
                   "metadataInventory": {
                     "status": "COMPLETE",
+                    "basis": "DDL_DECLARATIONS",
                     "scope": {
                       "catalog": "shop",
                       "schema": "",

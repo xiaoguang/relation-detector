@@ -20,6 +20,8 @@ import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.scan.AdaptorParseResultContractValidator;
 import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
+import com.relationdetector.core.ddl.DdlCatalogEventAssembler;
+import com.relationdetector.core.ddl.DdlCatalogInventory;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
@@ -60,6 +62,7 @@ public final class DdlRelationParserRunner {
     private final AdaptorParseResultContractValidator parseResultContractValidator =
             new AdaptorParseResultContractValidator();
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
+    private final DdlCatalogEventAssembler catalogAssembler = new DdlCatalogEventAssembler();
 
     /**
      *
@@ -177,6 +180,12 @@ public final class DdlRelationParserRunner {
         forwardWarnings(context, structured);
         var inventory = visitor.inventory(
                 structured.events(), sourceType, normalizedSourceName, identifierRules, namespace);
+        SqlStatementRecord statement = new SqlStatementRecord(
+                ddl, com.relationdetector.contracts.Enums.StatementSourceType.DDL_FILE,
+                normalizedSourceName, 1, Math.max(1L, ddl.lines().count()), Map.of());
+        var catalogEvent = catalogAssembler.assemble(statement, structured.events());
+        DdlCatalogInventory catalogInventory = new DdlCatalogInventory();
+        catalogInventory.add(catalogEvent, identifierRules, namespace);
         List<RelationshipCandidate> relationships = rewriteEvidenceSource(
                 visitor.extract(ddl, normalizedSourceName, structured, identifierRules, namespace),
                 sourceType, normalizedSourceName);
@@ -185,7 +194,8 @@ public final class DdlRelationParserRunner {
                 relationships,
                 namingEvidenceExtractor(identifierRules, namespace)
                         .extractFromDdlEvents(structured.events(), config),
-                inventory);
+                inventory,
+                catalogInventory);
     }
 
     public DdlParseOutcome parseStatementWithEvidence(
@@ -260,9 +270,11 @@ public final class DdlRelationParserRunner {
     ) {
         if (statements == null || statements.isEmpty()) {
             return new DdlParseOutcome(List.of(), List.of(),
-                    new com.relationdetector.core.ddl.DdlEvidenceInventory(identifierRules, namespace));
+                    new com.relationdetector.core.ddl.DdlEvidenceInventory(identifierRules, namespace),
+                    new DdlCatalogInventory());
         }
         List<StructuredSqlEvent> events = new ArrayList<>();
+        DdlCatalogInventory catalogInventory = new DdlCatalogInventory();
         List<WarningMessage> parserWarnings = new ArrayList<>();
         List<WarningMessage> provenanceWarnings = new ArrayList<>();
         for (SqlStatementRecord statement : statements) {
@@ -278,6 +290,9 @@ public final class DdlRelationParserRunner {
                     .map(event -> event.withProvenance(event.provenance().rebase(statement)))
                     .toList();
             events.addAll(rebasedEvents);
+            var catalogEvent = catalogAssembler.assemble(statement, rebasedEvents);
+            catalogInventory.add(catalogEvent, identifierRules, namespace);
+            events.add(catalogEvent);
             parserWarnings.addAll(parsed.warnings());
             StructuredParseResult rebased = new StructuredParseResult(
                     parsed.backend(), parsed.dialect(), parsed.sourceName(),
@@ -300,7 +315,8 @@ public final class DdlRelationParserRunner {
         return new DdlParseOutcome(
                 relationships,
                 namingEvidenceExtractor(identifierRules, namespace).extractFromDdlEvents(events, config),
-                inventory);
+                inventory,
+                catalogInventory);
     }
 
     private NamingEvidenceExtractor namingEvidenceExtractor(

@@ -170,11 +170,21 @@ public final class TokenEventEventEmitter {
 
     public void addDdlColumnEvent(List<StructuredSqlEvent> events, ParserRuleContext ctx,
             String table, String column) {
+        addDdlColumnEvent(events, ctx, table, column, "");
+    }
+
+    public void addDdlReferencedColumnEvent(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            String table, String column) {
+        addDdlColumnEvent(events, ctx, table, column, "REFERENCE");
+    }
+
+    private void addDdlColumnEvent(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            String table, String column, String kind) {
         if (table == null || table.isBlank() || column == null || column.isBlank()) {
             return;
         }
         add(events, new DdlEvent(StructuredParseEventType.DDL_COLUMN, provenance(ctx),
-                "", "", "", "", table, column, "", "", 1, 1));
+                "", "", "", "", table, column, "", kind, 1, 1));
     }
 
     public long line(ParserRuleContext ctx) {

@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
-import com.relationdetector.semantic.extract.SemanticShardingException;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /**
@@ -184,13 +184,10 @@ final class SemanticEventAssociationStore implements AutoCloseable {
         if (eventId == null || eventId.isBlank() || baseSerializedBytes < 0 || maxInputTokens <= 0) {
             throw new IllegalArgumentException("semantic event id, size and input budget are required");
         }
-        long maximumBytes = (long) maxInputTokens * 3L;
-        long associationBytes = estimatedReferenceBytes(eventId);
-        if (baseSerializedBytes > maximumBytes
-                || associationBytes > maximumBytes - baseSerializedBytes) {
-            throw new SemanticShardingException(
-                    "semantic event association closure exceeds maximum input budget");
-        }
+        SemanticEventInputBudget.requireWithin(
+                baseSerializedBytes,
+                estimatedReferenceBytes(eventId),
+                maxInputTokens);
     }
 
     private void join(Path sortedEvents, Path sortedFacts, Path output) throws IOException {
@@ -395,20 +392,9 @@ final class SemanticEventAssociationStore implements AutoCloseable {
             descriptors.close();
         }
         try {
-            deleteRecursively(workspace);
+            SemanticFileTreeOperations.deleteRecursively(workspace);
         } catch (IOException failure) {
             throw new IllegalStateException("failed to clean semantic event association store", failure);
-        }
-    }
-
-    private void deleteRecursively(Path root) throws IOException {
-        if (!Files.exists(root)) {
-            return;
-        }
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
         }
     }
 

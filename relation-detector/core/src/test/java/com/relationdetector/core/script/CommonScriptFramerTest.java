@@ -71,6 +71,20 @@ class CommonScriptFramerTest {
     }
 
     @Test
+    void classifiesTypedCreateTableInsidePlainSqlAsDdl() {
+        var result = new CommonScriptFramer().frame(new ScriptFrameRequest(
+                "CREATE TABLE margin_demo(id BIGINT PRIMARY KEY);\n"
+                        + "UPDATE margin_demo SET id = id + 1;",
+                "mixed.sql",
+                StatementSourceType.PLAIN_SQL));
+
+        assertEquals(StatementSourceType.DDL_FILE, result.statements().get(0).sourceType());
+        assertEquals("mixed.sql", result.statements().get(0).sourceName());
+        assertEquals("margin_demo", result.statements().get(0).attributes().get("sourceObjectName"));
+        assertEquals(StatementSourceType.PLAIN_SQL, result.statements().get(1).sourceType());
+    }
+
+    @Test
     void keepsPortableCompoundRoutineTogetherIncludingCaseExpressions() {
         String script = """
                 CREATE PROCEDURE record_payment()

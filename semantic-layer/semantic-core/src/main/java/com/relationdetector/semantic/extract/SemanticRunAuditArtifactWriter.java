@@ -28,14 +28,33 @@ final class SemanticRunAuditArtifactWriter {
             SemanticExtractionResult result,
             JsonNode normalized
     ) {
+        writeShard(output, shardId, null, prompt, result, normalized);
+    }
+
+    void writeShard(
+            Path output,
+            String shardId,
+            Path externalAuditSidecar,
+            SemanticExtractionPrompt prompt,
+            SemanticExtractionResult result,
+            JsonNode normalized
+    ) {
         Path parent = output.resolve("shards");
         Path target = parent.resolve(shardId);
         Path temporary = parent.resolve("." + shardId + ".tmp-" + UUID.randomUUID());
         files.writeDirectoryAtomically(
                 temporary,
                 target,
-                directory -> writePromptArtifacts(
-                        directory, prompt, result, normalized, "semantic-extraction-result.json"));
+                directory -> {
+                    writePromptArtifacts(
+                            directory, prompt, result, normalized, "semantic-extraction-result.json");
+                    if (externalAuditSidecar != null) {
+                        files.copyFile(
+                                externalAuditSidecar,
+                                directory.resolve("external-audit-refs.tsv"),
+                                "failed to persist semantic external audit references");
+                    }
+                });
     }
 
     void writeReconciliationWithResult(

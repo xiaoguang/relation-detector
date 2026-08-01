@@ -83,6 +83,42 @@ final class ReleaseVerificationMainTest {
     }
 
     @Test
+    void validateResultsRejectsInventoryThatWasNotBuiltFromDdl() throws Exception {
+        Path results = tempDir.resolve("not-requested-inventory-results");
+        Files.createDirectories(results);
+        String missing = emptyResult()
+                .replace("\"status\": \"COMPLETE\"", "\"status\": \"NOT_REQUESTED\"")
+                .replace("\"basis\": \"DDL_DECLARATIONS\"", "\"basis\": \"NONE\"");
+        Files.writeString(results.resolve("example.json"), missing);
+        Files.writeString(results.resolve("example-derived-fresh.json"), missing);
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("not-requested-inventory-report.json").toString()
+                }));
+    }
+
+    @Test
+    void validateResultsRejectsDifferentDirectAndDerivedInventories() throws Exception {
+        Path results = tempDir.resolve("inventory-mismatch-results");
+        Files.createDirectories(results);
+        Files.writeString(results.resolve("example.json"), emptyResult());
+        Files.writeString(results.resolve("example-derived-fresh.json"),
+                emptyResult().replace("\"schema\": \"sample_data\"", "\"schema\": \"other\""));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("inventory-mismatch-report.json").toString()
+                }));
+    }
+
+    @Test
     void invalidLastResultNeverWritesPassReport() throws Exception {
         Path results = tempDir.resolve("results");
         Files.createDirectories(results);
@@ -387,6 +423,49 @@ final class ReleaseVerificationMainTest {
     private String emptyResult() {
         return """
                 {
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "basis": "DDL_DECLARATIONS",
+                    "scope": {
+                      "catalog": null,
+                      "schema": "sample_data",
+                      "includeTables": [],
+                      "excludeTables": []
+                    },
+                    "counts": {
+                      "tables": 1,
+                      "columns": 1,
+                      "constraints": 0,
+                      "indexes": 0
+                    },
+                    "tables": [
+                      {
+                        "catalog": null,
+                        "schema": "sample_data",
+                        "tableName": "orders",
+                        "tableType": "TABLE",
+                        "engine": null,
+                        "comment": null
+                      }
+                    ],
+                    "columns": [
+                      {
+                        "catalog": null,
+                        "schema": "sample_data",
+                        "tableName": "orders",
+                        "columnName": "id",
+                        "dataType": "UNKNOWN",
+                        "columnType": "UNKNOWN",
+                        "nullable": false,
+                        "defaultValue": null,
+                        "extra": "",
+                        "generationExpression": "",
+                        "ordinalPosition": 1
+                      }
+                    ],
+                    "constraints": [],
+                    "indexes": []
+                  },
                   "summary": {
                     "directRelationshipCount": 0,
                     "derivedRelationshipCount": 0,
@@ -420,6 +499,49 @@ final class ReleaseVerificationMainTest {
     ) {
         return """
                 {
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "basis": "DDL_DECLARATIONS",
+                    "scope": {
+                      "catalog": null,
+                      "schema": "sample_data",
+                      "includeTables": [],
+                      "excludeTables": []
+                    },
+                    "counts": {
+                      "tables": 1,
+                      "columns": 1,
+                      "constraints": 0,
+                      "indexes": 0
+                    },
+                    "tables": [
+                      {
+                        "catalog": null,
+                        "schema": "sample_data",
+                        "tableName": "orders",
+                        "tableType": "TABLE",
+                        "engine": null,
+                        "comment": null
+                      }
+                    ],
+                    "columns": [
+                      {
+                        "catalog": null,
+                        "schema": "sample_data",
+                        "tableName": "orders",
+                        "columnName": "id",
+                        "dataType": "UNKNOWN",
+                        "columnType": "UNKNOWN",
+                        "nullable": false,
+                        "defaultValue": null,
+                        "extra": "",
+                        "generationExpression": "",
+                        "ordinalPosition": 1
+                      }
+                    ],
+                    "constraints": [],
+                    "indexes": []
+                  },
                   "summary": {
                     "directRelationshipCount": %d,
                     "derivedRelationshipCount": %d,

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -114,6 +115,7 @@ final class SemanticDiskBackedMemoryGateTest {
     }
 
     @Test
+    @Tag("semantic-adversarial-memory")
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     void highFanoutEventCompletesBuildAndKgWithinLowHeap() throws Exception {
         Path input = tempDir.resolve("high-fanout-scan.json");
@@ -268,6 +270,7 @@ final class SemanticDiskBackedMemoryGateTest {
     private void writeHighFanoutInventory(JsonGenerator generator) throws Exception {
         generator.writeObjectFieldStart("metadataInventory");
         generator.writeStringField("status", "COMPLETE");
+        generator.writeStringField("basis", "LIVE_METADATA");
         generator.writeObjectFieldStart("scope");
         generator.writeStringField("catalog", "shop");
         generator.writeNullField("schema");
@@ -415,6 +418,7 @@ final class SemanticDiskBackedMemoryGateTest {
     ) throws Exception {
         generator.writeObjectFieldStart("metadataInventory");
         generator.writeStringField("status", "COMPLETE");
+        generator.writeStringField("basis", "LIVE_METADATA");
         generator.writeObjectFieldStart("scope");
         generator.writeStringField("catalog", "shop");
         generator.writeNullField("schema");

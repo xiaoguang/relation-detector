@@ -3,6 +3,8 @@ package com.relationdetector.semantic.extract;
 import java.nio.file.Path;
 import java.util.List;
 
+import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
+
 /**
  * CN: semantic extraction command 的不可变 runtime config，规范 provider、inputs、model、sharding 和 output
  * defaults；完整事实输入不可裁剪，本类不读取环境变量或执行请求。
@@ -20,6 +22,7 @@ public record SemanticExtractionConfig(
         String apiKeyEnv,
         boolean requestOnly,
         ArtifactRetention artifactRetention,
+        SemanticKgArtifactMode kgOutput,
         SemanticShardingOptions sharding,
         int shardMaxOutputTokens,
         int reconciliationMaxOutputTokens,
@@ -45,6 +48,7 @@ public record SemanticExtractionConfig(
         baseUrl = blankDefault(baseUrl, "https://api.openai.com/v1");
         apiKeyEnv = blankDefault(apiKeyEnv, "OPENAI_API_KEY");
         artifactRetention = artifactRetention == null ? ArtifactRetention.FULL : artifactRetention;
+        kgOutput = kgOutput == null ? SemanticKgArtifactMode.FULL : kgOutput;
         sharding = sharding == null ? SemanticShardingOptions.defaults() : sharding;
         requirePositive(shardMaxOutputTokens, "shardMaxOutputTokens");
         requirePositive(reconciliationMaxOutputTokens, "reconciliationMaxOutputTokens");
@@ -56,7 +60,7 @@ public record SemanticExtractionConfig(
         return new SemanticExtractionConfig("codex-session", List.of(), null,
                 APPROVED_MODEL, APPROVED_REASONING_EFFORT, 12000,
                 "https://api.openai.com/v1", "OPENAI_API_KEY", false, ArtifactRetention.FULL,
-                SemanticShardingOptions.defaults(), 24000, 16000, 900, 2);
+                SemanticKgArtifactMode.FULL, SemanticShardingOptions.defaults(), 24000, 16000, 900, 2);
     }
 
     private static String blankDefault(String value, String defaultValue) {

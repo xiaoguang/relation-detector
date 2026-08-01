@@ -2,10 +2,14 @@ package com.relationdetector.semantic.reader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -15,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
+import com.relationdetector.semantic.extract.SemanticShardingException;
 
 final class SemanticEvidenceStoreTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -85,6 +90,88 @@ final class SemanticEvidenceStoreTest {
         assertEquals(
                 StableSemanticId.canonicalJson(withoutBuildTimestamp(large.get(1))),
                 StableSemanticId.canonicalJson(withoutBuildTimestamp(tiny.get(1))));
+    }
+
+    @Test
+    void digestOnlyRendersTheExactFullArtifactsWithoutPersistingLargeJson() throws Exception {
+        Path input = tempDir.resolve("digest-scan.json");
+        JSON.writeValue(input.toFile(), scanResult());
+        Path full = tempDir.resolve("full-artifacts");
+        Path digestOnly = tempDir.resolve("digest-artifacts");
+        Clock clock = Clock.fixed(Instant.parse("2026-07-31T12:00:00Z"), ZoneOffset.UTC);
+        SemanticKgArtifactReport fullReport;
+
+        try (SemanticInputStore store = new ScanResultReader().open(
+                     List.of(input), tempDir.resolve("digest-input-work"));
+             SemanticEvidenceStore evidence = new SemanticEvidenceStore(
+                     store, tempDir.resolve("digest-evidence-work"), 1024 * 1024)) {
+            fullReport = new SemanticDiskBackedArtifactWriter(clock)
+                    .writeArtifacts(evidence, full, SemanticKgArtifactMode.FULL);
+            SemanticKgArtifactReport digestReport = new SemanticDiskBackedArtifactWriter(clock)
+                    .writeArtifacts(evidence, digestOnly, SemanticKgArtifactMode.DIGEST_ONLY);
+            assertEquals(fullReport.artifacts(), digestReport.artifacts());
+            assertEquals(fullReport.summary(), digestReport.summary());
+        }
+
+        for (String file : List.of(
+                "semantic-kg.json", "semantic-evidence-graph.json", "semantic-build-run.json")) {
+            assertTrue(Files.isRegularFile(full.resolve(file)));
+            assertFalse(Files.exists(digestOnly.resolve(file)));
+        }
+        JsonNode report = JSON.readTree(digestOnly.resolve("semantic-kg-digests.json").toFile());
+        assertEquals("PASS", report.path("validation").path("referenceClosure").asText());
+        assertEquals(3, report.path("artifacts").size());
+
+        JsonNode kg = JSON.readTree(full.resolve("semantic-kg.json").toFile());
+        assertEquals(2, kg.path("artifactSchemaVersion").asInt());
+        assertFalse(kg.has("evidenceRefs"));
+        assertFalse(kg.has("diagnostics"));
+        assertEquals("semantic-evidence-graph.json", kg.path("evidenceGraph").path("path").asText());
+        SemanticKgArtifactReport.ArtifactDigest evidenceDigest = fullReport.artifacts().stream()
+                .filter(artifact -> "semantic-evidence-graph.json".equals(artifact.path()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(
+                evidenceDigest.sha256(),
+                kg.path("evidenceGraph").path("sha256").asText());
+        assertEquals(fullReport.summary().evidenceRefCount(),
+                kg.path("evidenceGraph").path("evidenceRefCount").asLong());
+        assertEquals(fullReport.summary().diagnosticCount(),
+                kg.path("evidenceGraph").path("diagnosticCount").asLong());
+    }
+
+    @Test
+    void rejectsOneEventAcrossManyTransportWindowsBeforeMemberMaterialization()
+            throws Exception {
+        ObjectNode root = (ObjectNode) scanResult();
+        for (int index = 0; index < 200; index++) {
+            addRoutineLineage(
+                    root,
+                    "lineage:budget:%04d".formatted(index),
+                    "shop.orders",
+                    "customer_id",
+                    "id_%04d".formatted(index),
+                    "INSERT_SELECT");
+        }
+        Path input = tempDir.resolve("event-budget-scan.json");
+        JSON.writeValue(input.toFile(), root);
+        Path evidenceWork = tempDir.resolve("event-budget-evidence-work");
+
+        try (SemanticInputStore store = new ScanResultReader().open(
+                List.of(input), tempDir.resolve("event-budget-input-work"))) {
+            assertThrows(
+                    SemanticShardingException.class,
+                    () -> {
+                        try (SemanticEvidenceStore ignored = new SemanticEvidenceStore(
+                                store,
+                                evidenceWork,
+                                1,
+                                2_000)) {
+                            // Construction performs the full disk-backed build.
+                        }
+                    });
+        }
+        assertFalse(Files.exists(evidenceWork));
     }
 
     private JsonNode buildBundle(Path input, String prefix, long bufferBytes) throws Exception {
@@ -178,6 +265,7 @@ final class SemanticEvidenceStoreTest {
                   },
                   "metadataInventory": {
                     "status": "COMPLETE",
+                    "basis": "LIVE_METADATA",
                     "scope": {
                       "catalog": "shop",
                       "schema": "",

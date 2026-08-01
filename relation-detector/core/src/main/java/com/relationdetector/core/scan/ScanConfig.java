@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.contracts.spi.DataProfileOptions;
@@ -30,6 +31,7 @@ public final class ScanConfig {
     public boolean metadataEnabled = true;
     public boolean ddlEnabled;
     public boolean ddlFromDatabase = true;
+    public DdlInventoryCoverage ddlInventoryCoverage = DdlInventoryCoverage.EVIDENCE_ONLY;
     public List<Path> ddlFiles = new ArrayList<>();
     public List<Path> ddlPaths = new ArrayList<>();
     public List<String> ddlIncludes = new ArrayList<>();

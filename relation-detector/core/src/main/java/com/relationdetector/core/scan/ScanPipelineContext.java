@@ -11,6 +11,7 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.ddl.DdlEvidenceInventory;
+import com.relationdetector.core.ddl.DdlCatalogInventory;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 
@@ -26,9 +27,11 @@ final class ScanPipelineContext implements AutoCloseable {
     final CanonicalEndpointKeyProvider endpointKeys;
     final NamingEvidencePool namingEvidencePool;
     final DdlEvidenceInventory ddlEvidenceInventory;
+    final DdlCatalogInventory ddlCatalogInventory;
     final ScanTaskExecutor taskExecutor;
     ParserBundle parserBundle;
     MetadataSnapshot metadataSnapshot;
+    MetadataSnapshot physicalInventorySnapshot;
 
     ScanPipelineContext(
             ResolvedScanConfig config,
@@ -52,6 +55,7 @@ final class ScanPipelineContext implements AutoCloseable {
         this.namingEvidencePool = new NamingEvidencePool(endpointKeys);
         this.ddlEvidenceInventory = new DdlEvidenceInventory(
                 adaptor.identifierRules(), namespace);
+        this.ddlCatalogInventory = new DdlCatalogInventory();
         this.taskExecutor = new ScanTaskExecutor(config.execution().parallelism());
     }
 

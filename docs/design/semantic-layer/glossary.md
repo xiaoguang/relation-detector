@@ -11,8 +11,9 @@
 Phase 1 Scope 重点是 evidence-grounded semantic catalog、lexicon/embedding search、question plan 和 SQL draft validator 的基础闭环。它不承诺复杂 BI 指标平台、跨系统 fuzzy match、方言 SQL 自动改写、成本估计或 SQL 自动执行。
 
 当前代码尚未覆盖完整 Phase 1 Scope；已落地的是离线 artifact 阶段：读取 relation-detector JSON，
-构建 `ScanBundle`、`EvidenceGraph`、可审计 `semantic-kg.json`，并可从完整 evidence bundle 经 typed
-sharding、owner-aware normalization 和可选模型调用生成 normalized semantic extraction result。
+通过磁盘后备`SemanticInputStore/SemanticEvidenceStore`构建 `EvidenceGraph`、可审计
+`semantic-kg.json`，并可从完整 evidence bundle 经 typed sharding、owner-aware normalization 和
+可选模型调用生成 normalized semantic extraction result。`ScanBundle`保留为明确有界的typed视图。
 Catalog Store、Lexicon、Embedding、Question Plan、SQL Draft Validator 和在线问答仍是后续实现范围。
 
 ### Phase 2+
@@ -122,7 +123,9 @@ Provenance 不只是展示用文本。它应能回答“这个结论来自哪次
 
 它把表、字段、relationship、lineage、SQL usage、comment、procedure、trigger 和 review decision 串成可搜索、可解释、可审核的 evidence graph。
 
-当前代码中的 `EvidenceGraph` 是更薄的 JSON artifact 中间层，包含 endpoints、facts、evidenceRefs、diagnostics 和原始 payload snapshot；comment、review decision、catalog object 和 search index 仍是后续扩展。
+当前代码中的 `EvidenceGraph` 是更薄的 JSON artifact 中间层，包含 metadata table/column/constraint/index、
+endpoints、facts、evidenceRefs、diagnostics 和原始 payload snapshot；独立comment extraction、
+review decision、持久化Semantic Catalog Store和search index仍是后续扩展。
 
 ### Conflict Detection
 

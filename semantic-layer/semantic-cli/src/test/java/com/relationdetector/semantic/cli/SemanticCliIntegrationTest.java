@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
+import com.relationdetector.semantic.extract.SemanticRequestBundleReconstructor;
 
 final class SemanticCliIntegrationTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -41,6 +42,31 @@ final class SemanticCliIntegrationTest {
         assertTrue(buildService.contains("SemanticDiskBackedSession.openForOutput("));
         assertFalse(buildService.contains("SemanticEnricher"));
         assertFalse(buildService.contains(".enrich("));
+    }
+
+    @Test
+    void semanticProductionEntrypointsDocumentTheDiskBackedSessionBoundary() throws Exception {
+        Path sourceRoot = Path.of("src/main/java/com/relationdetector/semantic/cli");
+        List<String> sourceFiles = List.of(
+                "SemanticKgBuildService.java",
+                "SemanticE2eCommandHandler.java",
+                "SemanticExtractCommandHandler.java");
+
+        for (String sourceFile : sourceFiles) {
+            String source = Files.readString(sourceRoot.resolve(sourceFile));
+            String normalized = source.toLowerCase();
+
+            assertTrue(source.contains("SemanticDiskBackedSession.openForOutput("), sourceFile);
+            assertTrue(normalized.contains("bounded compatibility/window model"), sourceFile);
+            assertTrue(source.contains("有界兼容/窗口模型"), sourceFile);
+            assertFalse(normalized.contains("complete scan bundle"), sourceFile);
+            assertFalse(normalized.contains("input is a scan bundle"), sourceFile);
+            assertFalse(normalized.contains("scan-bundle to"), sourceFile);
+            assertFalse(source.contains("完整scan bundle"), sourceFile);
+            assertFalse(source.contains("完整 scan bundle"), sourceFile);
+            assertFalse(source.contains("输入是 scan bundle"), sourceFile);
+            assertFalse(source.contains("scan bundle 到"), sourceFile);
+        }
     }
 
     @Test
@@ -143,6 +169,42 @@ final class SemanticCliIntegrationTest {
         assertEquals("mysql", kg.path("buildRun").path("database").path("type").asText());
         assertTrue(kg.path("nodes").isArray());
         assertTrue(kg.path("edges").isArray());
+    }
+
+    @Test
+    void semanticBuildDigestOnlyWritesTheSmallDigestReportWithoutLargeArtifacts() throws Exception {
+        Path input = tempDir.resolve("digest-scan-result.json");
+        Path output = tempDir.resolve("semantic-digest-output");
+        Files.writeString(input, """
+                {
+                  "database": {"type": "mysql", "schema": "shop"},
+                  "generatedAt": "2026-07-05T00:00:00Z",
+                  "summary": {"directRelationshipCount": 0, "derivedRelationshipCount": 0, "totalRelationshipCount": 0, "directDataLineageCount": 0, "derivedDataLineageCount": 0, "totalDataLineageCount": 0, "directNamingEvidenceCount": 0, "derivedNamingEvidenceCount": 0, "totalNamingEvidenceCount": 0, "warningCount": 0, "sources": ["logs"]},
+                  "relationships": [],
+                  "dataLineages": [],
+                  "derivedRelationships": [],
+                  "derivedDataLineages": [],
+                  "namingEvidence": [],
+                  "derivedNamingEvidence": [],
+                  "warnings": []
+                }
+                """);
+        markMetadataInventoryComplete(input);
+
+        int exit = Main.run(new String[] {
+                "build", "--input", input.toString(), "--output", output.toString(),
+                "--kg-output", "digest-only"
+        });
+
+        assertEquals(0, exit);
+        assertTrue(Files.isRegularFile(output.resolve("semantic-kg-digests.json")));
+        assertFalse(Files.exists(output.resolve("semantic-kg.json")));
+        assertFalse(Files.exists(output.resolve("semantic-build-run.json")));
+        assertFalse(Files.exists(output.resolve("semantic-evidence-graph.json")));
+        JsonNode report = JSON.readTree(output.resolve("semantic-kg-digests.json").toFile());
+        assertEquals("DIGEST_ONLY", report.path("mode").asText());
+        assertEquals("PASS", report.path("validation").path("referenceClosure").asText());
+        assertEquals(3, report.path("artifacts").size());
     }
 
     @Test
@@ -432,8 +494,11 @@ final class SemanticCliIntegrationTest {
         Path kgPath = output.resolve("semantic-kg/mysql-v8_0-full-derived/semantic-kg.json");
         Path extractionRun = onlyPublishedRun(
                 output.resolve("semantic-extraction/mysql-v8_0-full-derived"));
-        Path bundlePath = extractionRun.resolve("full-evidence-bundle.json");
+        Path bundlePath = tempDir.resolve("e2e-reconstructed-evidence-bundle.json");
         assertTrue(Files.exists(kgPath));
+        assertFalse(Files.exists(extractionRun.resolve("full-evidence-bundle.json")));
+        assertTrue(Files.exists(extractionRun.resolve("request-bundle-index.json")));
+        new SemanticRequestBundleReconstructor().reconstruct(extractionRun, bundlePath);
         assertTrue(Files.exists(bundlePath));
         JsonNode kg = JSON.readTree(kgPath.toFile());
         JsonNode event = firstNodeOfType(kg, "Event");
@@ -554,6 +619,7 @@ final class SemanticCliIntegrationTest {
         JsonNode database = scan.path("database");
         ObjectNode inventory = scan.putObject("metadataInventory");
         inventory.put("status", "COMPLETE");
+        inventory.put("basis", "LIVE_METADATA");
         ObjectNode scope = inventory.putObject("scope");
         scope.put("catalog", database.path("catalog").asText(""));
         scope.put("schema", database.path("schema").asText(""));
@@ -646,6 +712,7 @@ final class SemanticCliIntegrationTest {
                   "database": {"type": "mysql", "catalog": "", "schema": "shop"},
                   "metadataInventory": {
                     "status": "COMPLETE",
+                    "basis": "LIVE_METADATA",
                     "scope": {"catalog": "", "schema": "shop", "includeTables": [], "excludeTables": []},
                     "counts": {"tables": 0, "columns": 0, "constraints": 0, "indexes": 0},
                     "fingerprint": "standalone-test"

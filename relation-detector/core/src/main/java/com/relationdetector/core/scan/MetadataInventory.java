@@ -2,6 +2,7 @@ package com.relationdetector.core.scan;
 
 import java.util.List;
 
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
@@ -18,6 +19,7 @@ import com.relationdetector.contracts.spi.ScanScope;
  */
 public record MetadataInventory(
         MetadataInventoryStatus status,
+        MetadataInventoryBasis basis,
         ScanScope scope,
         List<MetadataTableFact> tables,
         List<MetadataColumnFact> columns,
@@ -25,8 +27,12 @@ public record MetadataInventory(
         List<MetadataIndexFact> indexes
 ) {
     public MetadataInventory {
-        if (status == null || scope == null) {
-            throw new IllegalArgumentException("metadata inventory status and scope are required");
+        if (status == null || basis == null || scope == null) {
+            throw new IllegalArgumentException("metadata inventory status, basis, and scope are required");
+        }
+        if (status == MetadataInventoryStatus.NOT_REQUESTED && basis != MetadataInventoryBasis.NONE
+                || status == MetadataInventoryStatus.COMPLETE && basis == MetadataInventoryBasis.NONE) {
+            throw new IllegalArgumentException("metadata inventory status and basis are inconsistent");
         }
         tables = List.copyOf(tables == null ? List.of() : tables);
         columns = List.copyOf(columns == null ? List.of() : columns);
@@ -36,6 +42,7 @@ public record MetadataInventory(
 
     public static MetadataInventory from(
             MetadataInventoryStatus status,
+            MetadataInventoryBasis basis,
             ScanScope scope,
             MetadataSnapshot snapshot
     ) {
@@ -44,6 +51,7 @@ public record MetadataInventory(
         }
         return new MetadataInventory(
                 status,
+                basis,
                 scope,
                 snapshot.tableFacts(),
                 snapshot.columnFacts(),
@@ -51,7 +59,26 @@ public record MetadataInventory(
                 snapshot.indexFacts());
     }
 
+    public static MetadataInventory from(
+            MetadataInventoryStatus status,
+            ScanScope scope,
+            MetadataSnapshot snapshot
+    ) {
+        return from(status, MetadataInventoryBasis.LIVE_METADATA, scope, snapshot);
+    }
+
+    public static MetadataInventory empty(
+            MetadataInventoryStatus status,
+            MetadataInventoryBasis basis,
+            ScanScope scope
+    ) {
+        return new MetadataInventory(status, basis, scope, List.of(), List.of(), List.of(), List.of());
+    }
+
     public static MetadataInventory empty(MetadataInventoryStatus status, ScanScope scope) {
-        return new MetadataInventory(status, scope, List.of(), List.of(), List.of(), List.of());
+        MetadataInventoryBasis basis = status == MetadataInventoryStatus.NOT_REQUESTED
+                ? MetadataInventoryBasis.NONE
+                : MetadataInventoryBasis.LIVE_METADATA;
+        return empty(status, basis, scope);
     }
 }

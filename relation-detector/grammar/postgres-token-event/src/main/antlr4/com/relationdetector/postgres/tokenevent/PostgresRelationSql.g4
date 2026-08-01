@@ -350,15 +350,15 @@ tableElement
     ;
 
 tableForeignKey
-    : constraintName? FOREIGN KEY LPAREN identifierList RPAREN REFERENCES qualifiedName LPAREN identifierList RPAREN foreignKeyTail*
+    : constraintName? FOREIGN KEY LPAREN temporalIdentifierList RPAREN REFERENCES qualifiedName LPAREN temporalIdentifierList RPAREN foreignKeyTail*
     ;
 
 primaryKeyConstraint
-    : constraintName? PRIMARY KEY LPAREN identifierList RPAREN (USING identifier)?
+    : constraintName? PRIMARY KEY LPAREN temporalIdentifierList RPAREN (USING identifier)?
     ;
 
 uniqueConstraint
-    : constraintName? UNIQUE (KEY | INDEX)? identifier? LPAREN identifierList RPAREN
+    : constraintName? UNIQUE (KEY | INDEX)? identifier? LPAREN temporalIdentifierList RPAREN
     ;
 
 tableIndexConstraint
@@ -604,6 +604,14 @@ identifierList
     : identifier (COMMA identifier)*
     ;
 
+temporalIdentifierList
+    : temporalIdentifier (COMMA temporalIdentifier)*
+    ;
+
+temporalIdentifier
+    : PERIOD? identifier (WITHOUT OVERLAPS)?
+    ;
+
 qualifiedName
     : identifier (DOT identifier)*
     ;
@@ -615,6 +623,9 @@ identifier
     | INTERVAL
     | LAST
     | REPLACE
+    | PERIOD
+    | WITHOUT
+    | OVERLAPS
     ;
 
 literal
@@ -637,6 +648,7 @@ sqlToken
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
+    | PERIOD | WITHOUT | OVERLAPS
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER | PARTITION
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | TYPECAST | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
@@ -724,6 +736,9 @@ UNIQUE: U N I Q U E;
 INDEX: I N D E X;
 CONCURRENTLY: C O N C U R R E N T L Y;
 ONLY: O N L Y;
+PERIOD: P E R I O D;
+WITHOUT: W I T H O U T;
+OVERLAPS: O V E R L A P S;
 INCLUDE: I N C L U D E;
 TABLESPACE: T A B L E S P A C E;
 MATERIALIZED: M A T E R I A L I Z E D;

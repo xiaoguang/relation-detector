@@ -34,6 +34,7 @@ class SemanticEvidenceBundleSliceReaderTest {
                   "database": {"type": "MYSQL", "catalog": "shop", "schema": ""},
                   "metadataInventory": {
                     "status": "COMPLETE",
+                    "basis": "LIVE_METADATA",
                     "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
                     "counts": {"tables": 3, "columns": 2, "constraints": 0, "indexes": 0},
                     "fingerprint": "inventory-test"
@@ -113,6 +114,7 @@ class SemanticEvidenceBundleSliceReaderTest {
                   "database": {"type": "MYSQL", "catalog": "shop", "schema": ""},
                   "metadataInventory": {
                     "status": "COMPLETE",
+                    "basis": "LIVE_METADATA",
                     "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
                     "counts": {"tables": 1, "columns": 1, "constraints": 0, "indexes": 0},
                     "fingerprint": "inventory-test"
@@ -250,6 +252,110 @@ class SemanticEvidenceBundleSliceReaderTest {
     }
 
     @Test
+    void rejectsEachOversizedEnvelopeFieldWithinTheSharedSliceBudget() throws Exception {
+        ObjectNode raw = emptyRawDocument();
+        for (String field : java.util.List.of(
+                "inputFiles", "sources", "instructions", "shardContext")) {
+            Path bundle = writeBundleWithOversizedEnvelope(field);
+
+            assertThrows(
+                    SemanticExtractionValidationException.class,
+                    () -> new SemanticEvidenceBundleSliceReader().read(bundle, raw, 256),
+                    field);
+        }
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
+    void rejectsHugeEnvelopeWithinLowHeapBeforeTreeMaterialization() throws Exception {
+        Path bundle = tempDir.resolve("huge-envelope-bundle.json");
+        Path raw = tempDir.resolve("empty-raw.json");
+        Path stdout = tempDir.resolve("envelope-child.stdout");
+        Path stderr = tempDir.resolve("envelope-child.stderr");
+        writeBundleWithHugeInputFiles(bundle, 64L * 1024L * 1024L);
+        JSON.writeValue(raw.toFile(), emptyRawDocument());
+
+        Process process = new ProcessBuilder(
+                javaExecutable(),
+                "-Xmx32m",
+                "-cp", testClasspath(),
+                LowHeapOversizedEnvelopeProbe.class.getName(),
+                bundle.toString(),
+                raw.toString())
+                .redirectOutput(stdout.toFile())
+                .redirectError(stderr.toFile())
+                .start();
+
+        assertTrue(process.waitFor(Duration.ofMinutes(3).toMillis(), TimeUnit.MILLISECONDS));
+        assertEquals(0, process.exitValue(), () -> {
+            try {
+                return Files.readString(stderr);
+            } catch (Exception failure) {
+                return "could not read child stderr";
+            }
+        });
+        assertFalse(Files.readString(stderr).contains("OutOfMemoryError"));
+    }
+
+    private ObjectNode emptyRawDocument() throws Exception {
+        return (ObjectNode) JSON.readTree("""
+                {
+                  "entities": [], "events": [], "relations": [], "lineage": [], "metrics": [],
+                  "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+    }
+
+    private Path writeBundleWithOversizedEnvelope(String field) throws Exception {
+        ObjectNode root = JSON.createObjectNode();
+        root.putObject("database")
+                .put("type", "MYSQL")
+                .put("catalog", "shop")
+                .put("schema", "");
+        ObjectNode inventory = root.putObject("metadataInventory");
+        inventory.put("status", "COMPLETE");
+        inventory.put("basis", "LIVE_METADATA");
+        inventory.putObject("scope")
+                .put("catalog", "shop")
+                .put("schema", "")
+                .putArray("includeTables");
+        inventory.withObject("/scope").putArray("excludeTables");
+        inventory.putObject("counts")
+                .put("tables", 0)
+                .put("columns", 0)
+                .put("constraints", 0)
+                .put("indexes", 0);
+        inventory.put("fingerprint", "inventory-test");
+        root.putArray("inputFiles");
+        root.putArray("sources");
+        root.putObject("instructions").put("allOutputsMustUseEvidenceRefs", true);
+        ObjectNode context = root.putObject("shardContext");
+        context.put("shardId", "shard-0001");
+        context.put("ownerKey", "global");
+        context.put("outputOwnedReferencesOnly", true);
+        context.putArray("ownedFactRefs");
+        context.putArray("ownedCandidateRefs");
+        context.putArray("overlapRefs");
+        for (String section : java.util.List.of(
+                "tables", "evidence", "metadataTables", "metadataColumns",
+                "metadataConstraints", "metadataIndexes", "relationships", "lineage",
+                "derivedRelationships", "derivedLineage", "namingEvidence", "diagnostics",
+                "eventCandidates", "tripletCandidates", "reviewItemCandidates")) {
+            root.putArray(section);
+        }
+        if ("instructions".equals(field)) {
+            root.withObject("/instructions").put("large", "x".repeat(100_000));
+        } else if ("shardContext".equals(field)) {
+            root.withObject("/shardContext").put("large", "x".repeat(100_000));
+        } else {
+            root.withArray("/" + field).add("x".repeat(100_000));
+        }
+        Path bundle = tempDir.resolve("oversized-" + field + ".json");
+        JSON.writeValue(bundle.toFile(), root);
+        return bundle;
+    }
+
+    @Test
     @Timeout(value = 5, unit = TimeUnit.MINUTES)
     void skipsHugeUnselectedEvidenceWithoutMaterializingIt() throws Exception {
         Path bundle = tempDir.resolve("huge-unselected-evidence-bundle.json");
@@ -296,6 +402,7 @@ class SemanticEvidenceBundleSliceReaderTest {
                   "database": {"type": "MYSQL", "catalog": "shop", "schema": ""},
                   "metadataInventory": {
                     "status": "COMPLETE",
+                    "basis": "LIVE_METADATA",
                     "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
                     "counts": {"tables": 1, "columns": 0, "constraints": 0, "indexes": 0},
                     "fingerprint": "inventory-test"
@@ -340,6 +447,51 @@ class SemanticEvidenceBundleSliceReaderTest {
         }
     }
 
+    private void writeBundleWithHugeInputFiles(Path bundle, long valueBytes) throws Exception {
+        String prefix = """
+                {
+                  "database": {"type": "MYSQL", "catalog": "shop", "schema": ""},
+                  "metadataInventory": {
+                    "status": "COMPLETE",
+                    "basis": "LIVE_METADATA",
+                    "scope": {"catalog": "shop", "schema": "", "includeTables": [], "excludeTables": []},
+                    "counts": {"tables": 0, "columns": 0, "constraints": 0, "indexes": 0},
+                    "fingerprint": "inventory-test"
+                  },
+                  "inputFiles": [
+                """;
+        String suffix = """
+                ],
+                  "sources": [], "tables": [], "evidence": [],
+                  "metadataTables": [], "metadataColumns": [], "metadataConstraints": [],
+                  "metadataIndexes": [], "relationships": [], "lineage": [],
+                  "derivedRelationships": [], "derivedLineage": [], "namingEvidence": [],
+                  "diagnostics": [], "eventCandidates": [], "tripletCandidates": [],
+                  "reviewItemCandidates": [],
+                  "instructions": {"allOutputsMustUseEvidenceRefs": true},
+                  "shardContext": {
+                    "shardId": "shard-0001", "ownerKey": "global",
+                    "outputOwnedReferencesOnly": true,
+                    "ownedFactRefs": [], "ownedCandidateRefs": [], "overlapRefs": []
+                  }
+                }
+                """;
+        byte[] chunk = new byte[64 * 1024];
+        java.util.Arrays.fill(chunk, (byte) 'x');
+        try (OutputStream output = Files.newOutputStream(bundle)) {
+            output.write(prefix.getBytes(StandardCharsets.UTF_8));
+            output.write('"');
+            long written = 0;
+            while (written < valueBytes) {
+                int length = (int) Math.min(chunk.length, valueBytes - written);
+                output.write(chunk, 0, length);
+                written += length;
+            }
+            output.write('"');
+            output.write(suffix.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
     private String javaExecutable() {
         return Path.of(
                 System.getProperty("java.home"),
@@ -367,6 +519,22 @@ class SemanticEvidenceBundleSliceReaderTest {
             if (slice.path("evidence").size() != 1
                     || !"ev-owned".equals(slice.path("evidence").get(0).path("id").asText())) {
                 throw new IllegalStateException("unexpected evidence slice");
+            }
+        }
+    }
+
+    public static final class LowHeapOversizedEnvelopeProbe {
+        private LowHeapOversizedEnvelopeProbe() {
+        }
+
+        public static void main(String[] args) throws Exception {
+            ObjectNode raw = (ObjectNode) JSON.readTree(Path.of(args[1]).toFile());
+            try {
+                new SemanticEvidenceBundleSliceReader().read(
+                        Path.of(args[0]), raw, 256);
+                throw new IllegalStateException("oversized envelope was accepted");
+            } catch (SemanticExtractionValidationException expected) {
+                // Expected budget rejection before the complete field is materialized.
             }
         }
     }

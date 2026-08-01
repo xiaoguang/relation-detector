@@ -97,6 +97,12 @@ class CliEndToEndGoldenTest {
                   total_amount DECIMAL(12, 2),
                   CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
                 );
+
+                CREATE TABLE customer_order_summary (
+                  customer_id INTEGER PRIMARY KEY,
+                  total_amount DECIMAL(12, 2),
+                  CONSTRAINT fk_summary_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+                );
                 """);
         Files.writeString(sql, """
                 INSERT INTO customer_order_summary (customer_id, total_amount)
@@ -115,6 +121,7 @@ class CliEndToEndGoldenTest {
                   ddl:
                     enabled: true
                     fromDatabase: false
+                    inventoryCoverage: COMPLETE_SCOPE
                     files:
                       - %s
                   logs:
@@ -145,8 +152,11 @@ class CliEndToEndGoldenTest {
         assertEquals(0, exitCode, "common CLI scan should succeed");
         String json = Files.readString(output);
         assertTrue(json.contains("\"type\" : \"COMMON\""), json);
+        assertTrue(json.contains("\"status\" : \"COMPLETE\""), json);
+        assertTrue(json.contains("\"basis\" : \"DDL_DECLARATIONS\""), json);
         assertTrue(relationshipFingerprints(json).stream()
-                        .anyMatch(fingerprint -> fingerprint.contains("orders.customer_id->customers.id")),
+                        .anyMatch(fingerprint -> fingerprint.contains(
+                                "portable.orders.customer_id->portable.customers.id")),
                 json);
         assertTrue(lineageFingerprints(json).stream()
                         .anyMatch(fingerprint -> fingerprint.contains("orders.total_amount")

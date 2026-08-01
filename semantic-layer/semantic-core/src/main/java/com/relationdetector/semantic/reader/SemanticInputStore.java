@@ -12,11 +12,13 @@ import java.util.function.Consumer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 
 /**
  * CN: 提供磁盘后备semantic输入的稳定读取facade和生命周期边界；输入加载、metadata闭包与外排索引构建
@@ -207,14 +209,7 @@ public final class SemanticInputStore implements AutoCloseable {
     }
 
     static void deleteRecursively(Path root) throws IOException {
-        if (!Files.exists(root)) {
-            return;
-        }
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
-        }
+        SemanticFileTreeOperations.deleteRecursively(root);
     }
 
     private boolean contains(SortedTextIndex index, String key) {
@@ -244,6 +239,7 @@ public final class SemanticInputStore implements AutoCloseable {
 
     public record InventoryDescriptor(
             MetadataInventoryStatus status,
+            MetadataInventoryBasis basis,
             ScanScope scope,
             long tableCount,
             long columnCount,
@@ -252,7 +248,8 @@ public final class SemanticInputStore implements AutoCloseable {
             String fingerprint
     ) {
         public InventoryDescriptor {
-            if (status != MetadataInventoryStatus.COMPLETE || scope == null
+            if (status != MetadataInventoryStatus.COMPLETE || basis == null
+                    || basis == MetadataInventoryBasis.NONE || scope == null
                     || fingerprint == null || fingerprint.isBlank()) {
                 throw new ScanResultContractException("semantic inventory descriptor is incomplete");
             }

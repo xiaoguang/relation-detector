@@ -9,11 +9,20 @@ CORRECTNESS_RUNNER="$ROOT/relation-detector/scripts/run-correctness-isolated.sh"
 SAMPLE_DATA_ISOLATED_RUNNER="$ROOT/relation-detector/scripts/run-sample-data-isolated.sh"
 LOCK_LIBRARY="$ROOT/relation-detector/scripts/heavy-job-lock.sh"
 VERIFICATION_RUNNER="$ROOT/relation-detector/scripts/run-release-verification-tool.sh"
+SEMANTIC_SAMPLE_DATA_RUNNER="$ROOT/semantic-layer/scripts/verify-sample-data-semantic.sh"
 
 grep -q '<id>matrix-smoke</id>' "$ROOT/pom.xml"
 grep -q '<id>acceptance</id>' "$ROOT/pom.xml"
 grep -q '<id>semantic-memory-gate</id>' "$ROOT/pom.xml"
 grep -q '<id>semantic-memory-gate-extended</id>' "$ROOT/pom.xml"
+grep -q '<semanticTestExcludedGroups>semantic-adversarial-memory</semanticTestExcludedGroups>' \
+  "$ROOT/pom.xml"
+[[ "$(grep -c '<semanticTestExcludedGroups>none</semanticTestExcludedGroups>' \
+  "$ROOT/pom.xml")" -eq 2 ]]
+grep -q '<excludedGroups>${semanticTestExcludedGroups}</excludedGroups>' \
+  "$ROOT/semantic-layer/semantic-cli/pom.xml"
+grep -q '@Tag("semantic-adversarial-memory")' \
+  "$ROOT/semantic-layer/semantic-cli/src/test/java/com/relationdetector/semantic/cli/SemanticDiskBackedMemoryGateTest.java"
 [[ "$(grep -Ec '^[[:space:]]*"\$MVN_BIN"([[:space:]]|$)' "$VERIFY")" -eq 1 ]]
 grep -q -- '-Pacceptance' "$VERIFY"
 grep -q -- '-DcorrectnessFixtureProfile=smoke' "$VERIFY"
@@ -22,6 +31,7 @@ grep -q 'run-correctness-isolated.sh' "$VERIFY"
 [[ -x "$SAMPLE_DATA_ISOLATED_RUNNER" ]]
 [[ -f "$LOCK_LIBRARY" ]]
 [[ -x "$VERIFICATION_RUNNER" ]]
+[[ -x "$SEMANTIC_SAMPLE_DATA_RUNNER" ]]
 grep -q 'heavy-job-lock.sh' "$CORRECTNESS_RUNNER"
 grep -q 'heavy-job-lock.sh' "$SAMPLE_DATA_ISOLATED_RUNNER"
 grep -q 'heavy-job-lock.sh' "$VERIFY"
@@ -53,9 +63,12 @@ grep -q 'SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1' "$VERIFY"
 grep -q 'SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1' \
   "$ROOT/relation-detector/scripts/reconstruct-grammar-migration-baseline.sh"
 grep -q 'CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-1}"' "$RUNNER"
+grep -q "printf '    inventoryCoverage: COMPLETE_SCOPE" "$RUNNER"
 grep -q 'oracle-v12c oracle-v19c oracle-v21c oracle-v26ai' "$SAMPLE_DATA_ISOLATED_RUNNER"
 grep -q 'run-release-verification-tool.sh' "$VERIFY"
 grep -q 'validate-results' "$VERIFY"
+grep -q 'verify-sample-data-semantic.sh' "$VERIFY"
+grep -q 'semantic-sample-data/summary.tsv' "$VERIFY"
 grep -q 'parser-summary' "$VERIFY"
 grep -q 'performance' "$VERIFY"
 grep -q 'fingerprint' "$VERIFY"

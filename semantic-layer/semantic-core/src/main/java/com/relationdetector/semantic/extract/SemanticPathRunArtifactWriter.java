@@ -32,6 +32,8 @@ public final class SemanticPathRunArtifactWriter {
     private final SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
     private final RunArtifactFileStore files = new RunArtifactFileStore(JSON);
     private final SemanticRunAuditArtifactWriter audits = new SemanticRunAuditArtifactWriter(files);
+    private final SemanticRequestBundlePackageWriter requestPackages =
+            new SemanticRequestBundlePackageWriter(files);
 
     public Path writeCodexSession(
             Path outputRoot,
@@ -111,7 +113,7 @@ public final class SemanticPathRunArtifactWriter {
             writeManifest(run, manifest(
                     run, plan, "IN_PROGRESS", provider, model, reasoningEffort,
                     resolved, completed, null, null));
-            prepare(run.stagingDirectory(), plan);
+            prepareFullBundle(run.stagingDirectory(), plan);
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
             try (SemanticPathResultStore results = new SemanticPathResultStore(
                     run.stagingDirectory().resolve(".result-work"), evidenceStore, plan)) {
@@ -122,7 +124,13 @@ public final class SemanticPathRunArtifactWriter {
                     SemanticExtractionResult response = shardClient.extract(prompt);
                     ObjectNode normalized = normalize(response.outputText(), bundle);
                     results.append(shard, bundle, normalized);
-                    audits.writeShard(run.stagingDirectory(), shard.id(), prompt, response, normalized);
+                    audits.writeShard(
+                            run.stagingDirectory(),
+                            shard.id(),
+                            SemanticExternalAuditReferences.sidecar(shard.bundlePath()),
+                            prompt,
+                            response,
+                            normalized);
                     completed.add(new ShardAudit(shard, response));
                 }
                 results.finish();
@@ -185,7 +193,6 @@ public final class SemanticPathRunArtifactWriter {
             writeManifest(run, manifest(
                     run, plan, "IN_PROGRESS", codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, null));
-            prepare(run.stagingDirectory(), plan);
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
             for (SemanticPathShard shard : plan.shards()) {
                 ObjectNode bundle = readObject(shard.bundlePath(), "semantic shard bundle");
@@ -208,6 +215,7 @@ public final class SemanticPathRunArtifactWriter {
                             directory, template, reconciliationRenderer.apply(template));
                 }
             }
+            requestPackages.write(run.stagingDirectory(), plan);
             ObjectNode ready = manifest(
                     run, plan, status, codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, null);
@@ -222,7 +230,7 @@ public final class SemanticPathRunArtifactWriter {
         }
     }
 
-    private void prepare(Path staging, SemanticPathRunPlan plan) {
+    private void prepareFullBundle(Path staging, SemanticPathRunPlan plan) {
         files.copyFile(
                 plan.fullBundlePath(),
                 staging.resolve("full-evidence-bundle.json"),

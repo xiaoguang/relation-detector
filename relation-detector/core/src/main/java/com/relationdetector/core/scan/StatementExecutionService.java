@@ -129,7 +129,8 @@ public final class StatementExecutionService {
                 List.of(),
                 parsed.namingEvidence(),
                 List.of(),
-                parsed.inventory());
+                parsed.inventory(),
+                parsed.catalogInventory());
     }
 
     private NamespaceContext namespace(AdaptorContext context) {

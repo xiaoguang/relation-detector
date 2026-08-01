@@ -36,6 +36,7 @@ final class JsonResultFactRenderer {
     ObjectNode metadataInventoryNode(MetadataInventory inventory) {
         ObjectNode node = json.createObjectNode();
         node.put("status", inventory.status().name());
+        node.put("basis", inventory.basis().name());
         ObjectNode scope = node.putObject("scope");
         scope.put("catalog", safe(inventory.scope().catalog()));
         scope.put("schema", safe(inventory.scope().schema()));

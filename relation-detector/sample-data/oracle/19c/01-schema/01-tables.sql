@@ -740,6 +740,7 @@ CREATE TABLE customers (
     credit_days NUMBER(10) DEFAULT 30,
     balance NUMBER(18,2) DEFAULT 0.00,
     payment_method VARCHAR2(40) DEFAULT 'normal',
+    membership_level VARCHAR2(40) DEFAULT 'normal',
     status VARCHAR2(40) DEFAULT 'active',
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
@@ -747,7 +748,7 @@ CREATE TABLE customers (
 
 CREATE INDEX idx_customer_type ON customers(type);
 CREATE INDEX idx_customer_status ON customers(status);
-CREATE INDEX idx_customer_membership ON customers(VARCHAR2(40));
+CREATE INDEX idx_customer_membership ON customers(membership_level);
 
 COMMENT ON COLUMN customers.credit_limit IS '信用额度';
 COMMENT ON COLUMN customers.credit_days IS '账期天数';

@@ -66,6 +66,7 @@ public final class ScanResultReader {
 
 - 所有输入必须有相同`database.type/catalog/schema`、inventory scope与COMPLETE fingerprint。
 - `NOT_REQUESTED/PARTIAL/UNAVAILABLE`及缺失inventory在任何模型调用和正式artifact写入前拒绝。
+- inventory basis必须是`LIVE_METADATA`、`DDL_DECLARATIONS`或`MERGED`；`NONE`不能为正式输入。
 - `sources` 去重后保留顺序。
 - `summary` 中整数值按 key 求和。
 - facts与四类metadata记录逐条验证、spool；stable ID与物理identity通过外排索引检查。
@@ -75,6 +76,10 @@ public final class ScanResultReader {
 
 `COMPLETE`是上游collector对配置scope的采集状态，不是consumer侧引用闭包证明。reader通过共享
 `MetadataInventoryClosureRules`同时约束内存和磁盘入口：
+
+file-only结果只有在上游显式声明`inventoryCoverage=COMPLETE_SCOPE`并成功处理全部typed DDL
+catalog事件时才使用`basis=DDL_DECLARATIONS`。该basis不承诺live metadata精度；parser未提供
+类型payload时允许`dataType/columnType=UNKNOWN`，但表列、FK和index引用仍必须满足下列闭包。
 
 - table、column、constraint和index完整identity唯一，column owner table必须存在。
 - constraint source column必须存在；FK两端非空、等长，referenced table/column必须存在并保留顺序。
@@ -114,6 +119,7 @@ consumer引用不闭合而拒绝。
   },
   "metadataInventory": {
     "status": "COMPLETE", // relation-detector也可输出NOT_REQUESTED/PARTIAL/UNAVAILABLE；semantic只接受COMPLETE
+    "basis": "DDL_DECLARATIONS", // 也可为LIVE_METADATA或MERGED；NONE不能进入正式semantic
     "scope": {
       "catalog": "shop",
       "schema": "",
@@ -411,8 +417,10 @@ catalog 负向 contract test 已覆盖不同 catalog 拒绝合并；artifact tes
 下表中的业务规模时延仍是目标预算，不是发布承诺。child-JVM memory gate使用真实typed
 table/column/constraint/index记录形成主要输入体积；普通测试执行1 MiB/96 MiB smoke，
 `verify-release.sh`执行128 MiB/96 MiB发布门禁，1 GiB/512 MiB由extended profile按需执行。
-另有100,000节点parent链、高扇出event及standalone超预算raw的结构对抗测试，分别证明低栈查根、
-预算前置拒绝和低堆确定性错误；这些证据不表示达到下表中的时延目标。
+另有100,000节点parent链、relationship/derived-lineage association高扇出、同一event跨窗口的大量
+typed contribution、standalone超预算raw与64 MiB envelope，以及20,000临时路径的结构对抗测试，
+分别证明低栈查根、列表物化前预算拒绝、字段树物化前拒绝和路径数量有界清理。这些证据也不表示达到
+下表中的时延目标。
 
 | 场景 | 数据量 | 目标预算 |
 | --- | --- | --- |

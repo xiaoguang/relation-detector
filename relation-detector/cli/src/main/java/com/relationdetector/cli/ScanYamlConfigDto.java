@@ -31,7 +31,7 @@ final class ScanYamlConfigDto {
 
     static final class Sources {
         public Metadata metadata = new Metadata();
-        public SqlSource ddl = new SqlSource();
+        public DdlSource ddl = new DdlSource();
         public SqlSource objects = new SqlSource();
         public Logs logs = new Logs();
         public DataProfile dataProfile = new DataProfile();
@@ -47,6 +47,10 @@ final class ScanYamlConfigDto {
         public List<String> files = new ArrayList<>();
         public List<String> paths = new ArrayList<>();
         public List<String> include = new ArrayList<>();
+    }
+
+    static final class DdlSource extends SqlSource {
+        public String inventoryCoverage;
     }
 
     static final class Logs extends SqlSource {

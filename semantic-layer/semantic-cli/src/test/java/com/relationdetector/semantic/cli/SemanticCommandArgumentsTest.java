@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.semantic.extract.ArtifactRetention;
+import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
 
 final class SemanticCommandArgumentsTest {
     @TempDir
@@ -58,11 +59,29 @@ final class SemanticCommandArgumentsTest {
         assertEquals(ArtifactRetention.FULL, arguments.artifactRetention());
     }
 
+    @Test
+    void cliKgOutputOverridesConfigAndDefaultsToFull() throws Exception {
+        Path config = writeConfig(300, 600, "full", "full");
+        SemanticCommandArguments overridden = SemanticCommandArguments.parse(new String[] {
+                "extract", "--config", config.toString(), "--kg-output", "digest-only"
+        });
+        SemanticCommandArguments defaults = SemanticCommandArguments.parse(new String[] {
+                "build", "--input", "input.json", "--output", "output"
+        });
+        assertEquals(SemanticKgArtifactMode.DIGEST_ONLY, overridden.kgOutput());
+        assertEquals(SemanticKgArtifactMode.FULL, defaults.kgOutput());
+    }
+
     private Path writeConfig(int targetInputTokens, int maxInputTokens) throws Exception {
         return writeConfig(targetInputTokens, maxInputTokens, "full");
     }
 
     private Path writeConfig(int targetInputTokens, int maxInputTokens, String artifactRetention) throws Exception {
+        return writeConfig(targetInputTokens, maxInputTokens, artifactRetention, "full");
+    }
+
+    private Path writeConfig(int targetInputTokens, int maxInputTokens, String artifactRetention, String kgOutput)
+            throws Exception {
         Path directory = Files.createDirectories(tempDir.resolve("config"));
         Path config = directory.resolve("semantic-extraction.yml");
         Files.writeString(config, """
@@ -70,10 +89,11 @@ final class SemanticCommandArgumentsTest {
                   input: input.json
                   output: output
                   artifactRetention: %s
+                  kgOutput: %s
                   sharding:
                     targetInputTokens: %d
                     maxInputTokens: %d
-                """.formatted(artifactRetention, targetInputTokens, maxInputTokens));
+                """.formatted(artifactRetention, kgOutput, targetInputTokens, maxInputTokens));
         return config;
     }
 }

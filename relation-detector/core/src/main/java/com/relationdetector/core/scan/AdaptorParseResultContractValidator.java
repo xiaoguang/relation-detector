@@ -64,7 +64,8 @@ public final class AdaptorParseResultContractValidator {
     private static final Set<StructuredParseEventType> DDL_EVENTS = EnumSet.of(
             StructuredParseEventType.DDL_FOREIGN_KEY,
             StructuredParseEventType.DDL_INDEX,
-            StructuredParseEventType.DDL_COLUMN);
+            StructuredParseEventType.DDL_COLUMN,
+            StructuredParseEventType.DDL_CATALOG);
     private static final Set<StructuredParseEventType> DYNAMIC_EVENTS = EnumSet.of(
             StructuredParseEventType.DYNAMIC_SQL);
     private static final Set<String> ROUTINE_OBJECT_SUBTYPES = Set.of(
@@ -295,6 +296,10 @@ public final class AdaptorParseResultContractValidator {
                 requireText(event.table(), boundary + " DDL column table");
                 requireText(event.column(), boundary + " DDL column");
                 validateComposite(event, boundary);
+            }
+            case DDL_CATALOG -> {
+                require(event instanceof com.relationdetector.contracts.parse.DdlCatalogEvent,
+                        boundary + " DDL catalog event shape is invalid");
             }
             case DYNAMIC_SQL -> requireText(event.reason(), boundary + " dynamic SQL reason");
         }

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.core.naming.NamingRuleConfigLoader;
@@ -119,6 +120,10 @@ public final class SimpleYamlConfigLoader {
         mapSqlSource(sources.ddl, config.ddlFiles, config.ddlPaths, config.ddlIncludes);
         if (sources.ddl.enabled != null) config.ddlEnabled = sources.ddl.enabled;
         if (sources.ddl.fromDatabase != null) config.ddlFromDatabase = sources.ddl.fromDatabase;
+        if (sources.ddl.inventoryCoverage != null) {
+            config.ddlInventoryCoverage = DdlInventoryCoverage.valueOf(
+                    resolveEnv(sources.ddl.inventoryCoverage).trim().toUpperCase().replace('-', '_'));
+        }
         mapSqlSource(sources.objects, config.objectFiles, config.objectPaths, config.objectIncludes);
         if (sources.objects.enabled != null) config.objectsEnabled = sources.objects.enabled;
         if (sources.objects.fromDatabase != null) config.objectsFromDatabase = sources.objects.fromDatabase;

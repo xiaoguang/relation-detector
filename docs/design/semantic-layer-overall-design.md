@@ -52,17 +52,22 @@ scan result中同时输出带完整性状态的metadata inventory与可审计事
 
 ```text
 relation-detector JSON
-  -> ScanResultReader
+  -> ScanResultReader.open / SemanticInputStore
+  -> SemanticEvidenceStore
   -> [deterministic branch]
-       SemanticEvidenceBuilder
-       -> SemanticKgBuilder
+       disk-backed graph/KG validation and streaming writer
        -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
   -> [semantic extraction branch]
-       SemanticExtractionBundleBuilder
-       -> typed sharding / optional model calls
+       SemanticGlobalOwnerPlanner
+       -> path-backed typed sharding / optional model calls
        -> owner-aware normalization / merge / full-bundle closure
        -> semantic-extraction-result.json / run-manifest.json
 ```
+
+正式输入的`metadataInventory`除`status`外还携带`basis`。live采集使用`LIVE_METADATA`，显式声明
+覆盖完整scope的file DDL可使用`DDL_DECLARATIONS`，两者合并为`MERGED`；`NONE`不能进入正式
+semantic链路。DDL basis只证明配置scope内typed声明的处理完整性，不等价于整个数据库实例快照，
+也不补猜parser未提供的列类型。
 
 也就是说，当前已实现 evidence-backed KG 生成和 evidence-closed semantic extraction artifact，但不是完整
 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator
@@ -220,7 +225,7 @@ sequenceDiagram
   participant Q as Review Queue
 
   S->>R: relationships + lineage + naming + diagnostics with provenance
-  R->>E: normalized ScanBundle
+  R->>E: bounded typed component/root from disk-backed stores
   E->>E: materialize typed facts / endpoints / evidence refs
   E->>L: evidence bundle
   L->>C: semantic objects
@@ -353,7 +358,7 @@ sources
 
 | Semantica 层 | 官方文档中的职责 | 本项目 Phase 1 对应 | 边界 |
 | --- | --- | --- | --- |
-| Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result 和 ScanBundle 是语义层的标准 facts/evidence records。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
+| Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result是外部标准输入；生产链使用`SemanticInputStore/SemanticEvidenceStore`，`ScanBundle`仅是有界typed视图。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
 | Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader 读取 relation-detector JSON arrays，校验当前 writer 的 timestamp、fact shape、枚举、nested evidence/warning 和 summary contract，并在多 input 时要求 database type / catalog / schema 完全一致。reader 不做业务去重；持久化 catalog index 仍是后续增强。 | 不调用 LLM，不发明事实。 |
 | Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector输出COMPLETE inventory与relationship、lineage、namingEvidence、diagnostics；生产链路流式写入section spool，在完整磁盘evidence store上全局归并event、计算typed table component与唯一owner，再逐个token受限root/shard生成deterministic KG和模型请求。 | 模型不接收可改写的正式KG；raw-byte阈值只控制外排I/O window，不能定义semantic boundary。owner/overlap、canonical merge、受限协调和完整bundle复验均使用全局计划，估算门限不称为provider精确上限。 |
 | Conflict / Dedup | 检测冲突、保留来源、去重合并。 | 当前 builder 只校验稳定 ID 并物化事实；片内/跨片 canonical identity merge 只处理本次抽取中的确定性重复。持久冲突检测、Review Queue 和治理仍是后续能力。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |

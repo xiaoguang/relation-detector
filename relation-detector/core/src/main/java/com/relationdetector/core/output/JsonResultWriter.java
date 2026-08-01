@@ -368,6 +368,7 @@ public final class JsonResultWriter {
     private void writeMetadataInventory(JsonGenerator generator, MetadataInventory inventory) throws IOException {
         generator.writeObjectFieldStart("metadataInventory");
         generator.writeStringField("status", inventory.status().name());
+        generator.writeStringField("basis", inventory.basis().name());
         generator.writeObjectFieldStart("scope");
         generator.writeStringField("catalog", JsonResultFactRenderer.safe(inventory.scope().catalog()));
         generator.writeStringField("schema", JsonResultFactRenderer.safe(inventory.scope().schema()));

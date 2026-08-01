@@ -1,5 +1,6 @@
 package com.relationdetector.cli;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -37,6 +38,19 @@ final class DialectSqlAssetHygieneSupport {
                     "\\bSELECT\\s+id\\s*,\\s*promotion_type\\b"),
             forbidden("unqualified RETURNS TABLE product_id source",
                     "\\bSELECT\\s+product_id\\s*,\\s*SUM\\s*\\(\\s*quantity\\s*\\)"));
+
+    static void oracleCustomerMembershipColumnIsDeclaredBeforeItsIndex() throws IOException {
+        for (String version : List.of("12c", "19c", "21c", "26ai")) {
+            String sql = Files.readString(repoRoot().resolve(
+                    "sample-data/oracle/" + version + "/01-schema/01-tables.sql"));
+            assertTrue(sql.contains("membership_level VARCHAR2(40)"),
+                    () -> "Oracle " + version + " must declare customers.membership_level");
+            assertTrue(sql.contains("CREATE INDEX idx_customer_membership ON customers(membership_level);"),
+                    () -> "Oracle " + version + " must index the declared membership column");
+            assertFalse(sql.contains("CREATE INDEX idx_customer_membership ON customers(VARCHAR2(40));"),
+                    () -> "Oracle " + version + " must not use a datatype as an index column");
+        }
+    }
     private static final List<ForbiddenSqlPattern> MYSQL_FORBIDDEN = List.of(
             forbidden("PostgreSQL PL/pgSQL language marker", "\\bLANGUAGE\\s+plpgsql\\b"),
             forbidden("PostgreSQL cast operator", "::[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?"),

@@ -2,6 +2,7 @@ package com.relationdetector.semantic.reader;
 
 import java.util.List;
 
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
@@ -17,6 +18,7 @@ import com.relationdetector.contracts.spi.ScanScope;
  */
 public record ScanMetadataInventory(
         MetadataInventoryStatus status,
+        MetadataInventoryBasis basis,
         ScanScope scope,
         List<MetadataTableFact> tables,
         List<MetadataColumnFact> columns,
@@ -24,11 +26,14 @@ public record ScanMetadataInventory(
         List<MetadataIndexFact> indexes
 ) {
     public ScanMetadataInventory {
-        if (status == null || scope == null) {
-            throw new ScanResultContractException("metadata inventory status and scope are required");
+        if (status == null || basis == null || scope == null) {
+            throw new ScanResultContractException("metadata inventory status, basis, and scope are required");
         }
         if (status != MetadataInventoryStatus.COMPLETE) {
             throw new ScanResultContractException("semantic metadata inventory must be COMPLETE");
+        }
+        if (basis == MetadataInventoryBasis.NONE) {
+            throw new ScanResultContractException("semantic metadata inventory basis must be evidence-backed");
         }
         tables = List.copyOf(tables == null ? List.of() : tables);
         columns = List.copyOf(columns == null ? List.of() : columns);
@@ -44,7 +49,20 @@ public record ScanMetadataInventory(
             List<MetadataIndexFact> indexes
     ) {
         return new ScanMetadataInventory(
-                MetadataInventoryStatus.COMPLETE, scope, tables, columns, constraints, indexes);
+                MetadataInventoryStatus.COMPLETE, MetadataInventoryBasis.LIVE_METADATA,
+                scope, tables, columns, constraints, indexes);
+    }
+
+    public static ScanMetadataInventory complete(
+            MetadataInventoryBasis basis,
+            ScanScope scope,
+            List<MetadataTableFact> tables,
+            List<MetadataColumnFact> columns,
+            List<MetadataConstraintFact> constraints,
+            List<MetadataIndexFact> indexes
+    ) {
+        return new ScanMetadataInventory(
+                MetadataInventoryStatus.COMPLETE, basis, scope, tables, columns, constraints, indexes);
     }
 
     static ScanMetadataInventory emptyComplete(String catalog, String schema) {

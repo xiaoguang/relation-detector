@@ -9,7 +9,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
  * EN: Defines the sealed typed parser-event contract shared by token-event and full-grammar frontends.
  */
 public sealed interface StructuredSqlEvent permits RowsetEvent, PredicateEvent,
-        ProjectionEvent, WriteEvent, DdlEvent, DynamicSqlEvent {
+        ProjectionEvent, WriteEvent, DdlEvent, DdlCatalogEvent, DynamicSqlEvent {
 
     StructuredParseEventType type();
 

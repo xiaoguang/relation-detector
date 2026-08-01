@@ -3,6 +3,7 @@ package com.relationdetector.core.scan;
 import java.nio.file.Path;
 import java.util.List;
 
+import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 
 /**
@@ -13,6 +14,7 @@ public record SourceConfig(
         boolean metadataEnabled,
         boolean ddlEnabled,
         boolean ddlFromDatabase,
+        DdlInventoryCoverage ddlInventoryCoverage,
         List<Path> ddlFiles,
         List<Path> ddlPaths,
         List<String> ddlIncludes,
@@ -43,6 +45,9 @@ public record SourceConfig(
         logSystemSchemas = immutable(logSystemSchemas);
         logMetadataQueryMarkers = immutable(logMetadataQueryMarkers);
         logFormatHint = logFormatHint == null ? LogFormatHint.AUTO : logFormatHint;
+        ddlInventoryCoverage = ddlInventoryCoverage == null
+                ? DdlInventoryCoverage.EVIDENCE_ONLY
+                : ddlInventoryCoverage;
     }
 
     private static <T> List<T> immutable(List<T> values) {

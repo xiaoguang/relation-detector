@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
@@ -37,6 +38,7 @@ final class MetadataInventoryOutputTest {
                 List.of("id"), List.of(), List.of(), List.of(1)));
         MetadataInventory inventory = MetadataInventory.from(
                 MetadataInventoryStatus.COMPLETE,
+                MetadataInventoryBasis.LIVE_METADATA,
                 new ScanScope("shop", null, List.of("orders"), List.of("audit_log")),
                 snapshot);
         ScanResult result = new ScanResult("MYSQL", "shop", null, inventory);
@@ -45,6 +47,7 @@ final class MetadataInventoryOutputTest {
         JsonNode output = root.path("metadataInventory");
 
         assertEquals("COMPLETE", output.path("status").asText());
+        assertEquals("LIVE_METADATA", output.path("basis").asText());
         assertEquals("shop", output.path("scope").path("catalog").asText());
         assertEquals("", output.path("scope").path("schema").asText());
         assertEquals(List.of("orders"),
@@ -69,6 +72,7 @@ final class MetadataInventoryOutputTest {
     void warningSuppressionDoesNotHidePartialInventoryState() throws Exception {
         MetadataInventory inventory = MetadataInventory.from(
                 MetadataInventoryStatus.PARTIAL,
+                MetadataInventoryBasis.DDL_DECLARATIONS,
                 new ScanScope("shop", null, List.of(), List.of()),
                 new MetadataSnapshot());
         ScanResult result = new ScanResult("MYSQL", "shop", null, inventory);
@@ -76,6 +80,7 @@ final class MetadataInventoryOutputTest {
         JsonNode root = JSON.readTree(new JsonResultWriter().write(result, true, false));
 
         assertEquals("PARTIAL", root.path("metadataInventory").path("status").asText());
+        assertEquals("DDL_DECLARATIONS", root.path("metadataInventory").path("basis").asText());
         assertFalse(root.path("metadataInventory").isMissingNode());
         assertEquals(0, root.path("summary").path("warningCount").asInt());
     }
@@ -88,6 +93,7 @@ final class MetadataInventoryOutputTest {
                 .path("metadataInventory");
 
         assertEquals("NOT_REQUESTED", inventory.path("status").asText());
+        assertEquals("NONE", inventory.path("basis").asText());
         assertEquals(0, inventory.path("counts").path("tables").asInt());
         assertEquals(0, inventory.path("counts").path("columns").asInt());
         assertEquals(0, inventory.path("counts").path("constraints").asInt());

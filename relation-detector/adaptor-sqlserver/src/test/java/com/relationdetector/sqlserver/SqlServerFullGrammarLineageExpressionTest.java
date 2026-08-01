@@ -799,12 +799,14 @@ class SqlServerFullGrammarLineageExpressionTest {
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
                                 && "dbo.departments".equals(event.table())
-                                && "manager_id".equals(event.column())),
+                                && "manager_id".equals(event.column())
+                                && "REFERENCE".equals(event.kind())),
                 () -> parser + " must emit source DDL column evidence, events=" + result.events());
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
                                 && "dbo.employees".equals(event.table())
-                                && "id".equals(event.column())),
+                                && "id".equals(event.column())
+                                && "REFERENCE".equals(event.kind())),
                 () -> parser + " must emit target DDL column evidence, events=" + result.events());
         assertTrue(result.events().stream().noneMatch(event ->
                         event.type() == StructuredParseEventType.DDL_INDEX

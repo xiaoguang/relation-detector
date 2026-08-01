@@ -150,8 +150,10 @@ abstract class SqlServerTokenEventWriteDdlSupport extends SqlServerTokenEventExp
         String targetTable = qualifiedName(constraint.foreign_key_options().table_name().full_table_name());
         List<String> sourceColumns = identifiers(constraint.column_name_list());
         List<String> targetColumns = identifiers(constraint.foreign_key_options().column_name_list());
-        sourceColumns.forEach(column -> emitter.addDdlColumnEvent(events, constraint, sourceTable, column));
-        targetColumns.forEach(column -> emitter.addDdlColumnEvent(events, constraint, targetTable, column));
+        sourceColumns.forEach(column ->
+                emitter.addDdlReferencedColumnEvent(events, constraint, sourceTable, column));
+        targetColumns.forEach(column ->
+                emitter.addDdlReferencedColumnEvent(events, constraint, targetTable, column));
         addForeignKeyEvents(constraint, sourceTable, sourceColumns, targetTable, targetColumns);
         return null;
     }

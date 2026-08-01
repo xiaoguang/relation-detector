@@ -23,7 +23,8 @@ public final class StructuredParseProvenanceNormalizer {
     private static final Set<StructuredParseEventType> DDL_EVENTS = EnumSet.of(
             StructuredParseEventType.DDL_FOREIGN_KEY,
             StructuredParseEventType.DDL_INDEX,
-            StructuredParseEventType.DDL_COLUMN);
+            StructuredParseEventType.DDL_COLUMN,
+            StructuredParseEventType.DDL_CATALOG);
 
     public StructuredParseResult normalize(SqlStatementRecord statement, StructuredParseResult result) {
         if (result == null || result.events().isEmpty() || hasExplicitObjectType(statement.sourceType())) {

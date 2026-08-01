@@ -453,13 +453,14 @@ Step 7: Answer（最终输出）
 [SemanticKgBuildService / SemanticDiskBackedArtifactWriter]
     ↓ 输出: deterministic-kg/ (并列 artifact，不交给模型改写)
 [SemanticEvidenceStore]
-    ↓ 输出: full-evidence-bundle.json
+    ↓ 输出: 内部完整bundle流，仅真实模型执行保留full-evidence-bundle.json
 [SemanticPathBackedPlanner]
     ↓ 输出: evidence-closed shards + fact/candidate owner manifest
 [SemanticExtractionPromptBuilder]
     ↓ 输出: shards/*/semantic-extraction-prompt.md
 [semantic extract]
-    ↓ codex-session: 写逐片 prompt / bundle / session 与 reconciliation template
+    ↓ request-only/codex-session: 写逐片prompt/bundle、可逆sidecar、压缩evidence archive与request-bundle-index
+    ↓ 可移植请求包在不依赖原始scan时重建完整bundle并验证canonical hash/owner coverage
     ↓ openai-api: 顺序调用 Responses API，执行片内 normalization、exact-ID merge、受限 reconciliation
 [full-bundle normalization]
     ↓ 输出: merged-draft.json / semantic-extraction-result.json / run-manifest.json

@@ -43,9 +43,18 @@ final class StatementParsePipeline {
             List<SqlStatementRecord> statements,
             AdaptorContext context
     ) {
-        return statementExecutionService.executeDdlStatements(
+        StatementExecutionOutcome outcome = statementExecutionService.executeDdlStatements(
                 parserBundle, statements, EvidenceSourceType.DDL_FILE, context, config,
                 adaptor.identifierRules(), namespace(context));
+        NamespaceContext statementNamespace = namespace(context);
+        return new StatementExecutionOutcome(
+                qualifyDatabaseDdlCandidates(
+                        outcome.relationshipCandidates(), adaptor, statementNamespace),
+                outcome.lineageCandidates(),
+                outcome.namingEvidence(),
+                outcome.warnings(),
+                outcome.ddlEvidenceInventory(),
+                outcome.ddlCatalogInventory());
     }
 
     StatementExecutionOutcome executeDatabaseDdl(
@@ -65,7 +74,8 @@ final class StatementParsePipeline {
                 outcome.lineageCandidates(),
                 outcome.namingEvidence(),
                 outcome.warnings(),
-                outcome.ddlEvidenceInventory());
+                outcome.ddlEvidenceInventory(),
+                outcome.ddlCatalogInventory());
     }
 
     StatementExecutionOutcome executeStatement(
@@ -98,10 +108,10 @@ final class StatementParsePipeline {
         }
         Set<TableId> tables = new java.util.LinkedHashSet<>(metadataSnapshot.tables());
         for (MetadataTableFact fact : metadataSnapshot.tableFacts()) {
-            String normalizedName = fact.schema() == null || fact.schema().isBlank()
-                    ? fact.tableName()
-                    : fact.schema() + "." + fact.tableName();
-            tables.add(new TableId(fact.catalog(), fact.schema(), fact.tableName(), normalizedName));
+            // The structural catalog/schema fields own namespace identity. Keeping normalizedName
+            // table-local lets the consuming dialect rules apply case folding exactly once.
+            tables.add(new TableId(
+                    fact.catalog(), fact.schema(), fact.tableName(), fact.tableName()));
         }
         return tables;
     }

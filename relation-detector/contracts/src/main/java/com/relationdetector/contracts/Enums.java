@@ -38,6 +38,24 @@ public final class Enums {
     }
 
     /**
+     * Evidence family from which the emitted metadata inventory was assembled.
+     */
+    public enum MetadataInventoryBasis {
+        NONE,
+        LIVE_METADATA,
+        DDL_DECLARATIONS,
+        MERGED
+    }
+
+    /**
+     * Whether configured DDL files are fragments or a complete declaration set for the scan scope.
+     */
+    public enum DdlInventoryCoverage {
+        EVIDENCE_ONLY,
+        COMPLETE_SCOPE
+    }
+
+    /**
      *
      * User-facing output format selected by --format or output.format.
      */
@@ -212,6 +230,7 @@ public final class Enums {
         DDL_FOREIGN_KEY,
         DDL_INDEX,
         DDL_COLUMN,
+        DDL_CATALOG,
         DYNAMIC_SQL
     }
 

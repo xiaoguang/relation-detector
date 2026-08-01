@@ -47,7 +47,7 @@ final class SemanticKgBuildTest {
         assertEquals("TABLE_ID", bundle.namingEvidence().get(0).rule());
         EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(bundle);
         SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
-        JsonNode json = JSON.readTree(new JsonSemanticKgWriter().writeKg(kg));
+        JsonNode json = JSON.readTree(new JsonSemanticKgWriter().writeKg(kg, evidenceGraph));
 
         assertEquals("mysql", json.path("buildRun").path("database").path("type").asText());
         assertEquals("shop", json.path("buildRun").path("database").path("schema").asText());
@@ -66,10 +66,11 @@ final class SemanticKgBuildTest {
         assertTrue(nodeIds.contains(bundle.namingEvidence().get(0).id()));
         assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("event-candidate:sql-write:")));
 
-        Set<String> evidenceIds = JSON.readerForListOf(JsonNode.class)
-                .<java.util.List<JsonNode>>readValue(json.path("evidenceRefs"))
-                .stream()
-                .map(node -> node.path("id").asText())
+        assertEquals(2, json.path("artifactSchemaVersion").asInt());
+        assertFalse(json.has("evidenceRefs"));
+        assertFalse(json.has("diagnostics"));
+        Set<String> evidenceIds = evidenceGraph.evidenceRefs().stream()
+                .map(com.relationdetector.semantic.graph.EvidenceReference::id)
                 .collect(Collectors.toSet());
         assertFalse(evidenceIds.isEmpty());
         for (JsonNode node : json.path("nodes")) {
@@ -124,8 +125,8 @@ final class SemanticKgBuildTest {
         SemanticKgBuilder builder = new SemanticKgBuilder(clock);
         JsonSemanticKgWriter writer = new JsonSemanticKgWriter();
 
-        String first = writer.writeKg(builder.build(graph));
-        String second = writer.writeKg(builder.build(graph));
+        String first = writer.writeKg(builder.build(graph), graph);
+        String second = writer.writeKg(builder.build(graph), graph);
 
         assertEquals(first, second);
         JsonNode json = JSON.readTree(first);
@@ -144,7 +145,7 @@ final class SemanticKgBuildTest {
         SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(graph);
         JsonSemanticKgWriter writer = new JsonSemanticKgWriter();
 
-        JsonNode kgJson = JSON.readTree(writer.writeKg(kg));
+        JsonNode kgJson = JSON.readTree(writer.writeKg(kg, graph));
         JsonNode evidenceJson = JSON.readTree(writer.writeEvidenceGraph(graph));
         JsonNode extractionJson = new SemanticExtractionBundleBuilder().build(bundle);
 
@@ -277,6 +278,7 @@ final class SemanticKgBuildTest {
         return """
                 {
                   "status": "COMPLETE",
+                  "basis": "LIVE_METADATA",
                   "scope": {
                     "catalog": "%s",
                     "schema": "%s",

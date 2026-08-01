@@ -39,13 +39,18 @@ Phase 2+: 按服务边界拆分或引入消息队列
 
 当前已实现的离线 artifact 阶段采用同进程 Java interface + 构造函数注入：
 
-- 离线构建：`ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> JSON artifacts`。
+- 离线构建：`SemanticInputStore -> SemanticEvidenceStore -> bounded component/root ->
+  EvidenceGraph -> SemanticKnowledgeGraph -> JSON artifacts`。
 - 输出 artifact：`semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`。
-- 离线抽取：`ScanBundle -> deterministic KG + complete evidence bundle -> SemanticShardPlanner ->
-  per-shard prompt/normalization -> exact-ID merge -> constrained reconciliation -> full-bundle normalization`。
-- 输出 artifact：`deterministic-kg/`、`full-evidence-bundle.json`、`shards/*`、可选
+- 离线抽取：`SemanticEvidenceStore -> deterministic KG + streamed complete evidence bundle ->
+  SemanticGlobalOwnerPlanner -> per-shard prompt/normalization -> exact-ID merge ->
+  constrained reconciliation -> full-bundle normalization`。
+- `ScanBundle`只保留给明确有界的兼容调用者和单个component/root物化，不是大输入生产主容器。
+- 真实模型执行保留`deterministic-kg/`、`full-evidence-bundle.json`、`shards/*`、可选
   `reconciliation/`、`merged-draft.json`、`semantic-extraction-result.json` 和带 hash/token/attempt
-  统计的 `run-manifest.json`。
+  统计的 `run-manifest.json`。`request-only`/Codex-session不复制完整bundle，而是发布
+  `request-bundle-index.json`、压缩evidence记录、owned shard bundle和可逆sidecar；该包在
+  删除原始scan后仍必须能重建完整、引用闭合的evidence bundle并复核canonical hash。
 - 当前 input token budget 是确定性字符估算与 safety margin，不是 model-specific tokenizer。
   artifact writer 在可复用output root中使用唯一staging/run目录、流式hash和原子rename；任何payload前
   原子写`IN_PROGRESS`，普通失败写`FAILED`，终态写入失败时保留最后一个可解析状态，且失败不发布

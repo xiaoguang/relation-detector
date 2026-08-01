@@ -42,16 +42,22 @@ are the only model-context controls; they partition the complete input without t
 | `codex-session` | Development and manual testing inside Codex | No | Not required |
 | `openai-api` | Production or automated LLM extraction | Yes | Required |
 
-Development default is `codex-session`. It writes the deterministic KG plus one directory per planned shard:
+Development default is `codex-session`. It writes the deterministic KG plus a reconstructable request package and one
+directory per planned shard:
 
 - `deterministic-kg/semantic-kg.json`
-- `full-evidence-bundle.json`
+- `request-bundle-index.json`
+- `request-bundle/evidence-records.json.gz`
 - `shards/shard-NNNN/semantic-extraction-evidence-bundle.json`
 - `shards/shard-NNNN/semantic-extraction-prompt.md`
 - `shards/shard-NNNN/semantic-extraction-codex-session.md`
+- `shards/shard-NNNN/external-audit-refs.tsv`
 - `run-manifest.json`
 
-It does not call an external model provider and does not require `OPENAI_API_KEY`.
+It does not call an external model provider and does not require `OPENAI_API_KEY`. The request package can reconstruct
+the complete evidence bundle after the original scan input has been removed; reconstruction verifies owner coverage,
+sidecar integrity, and the canonical bundle hash. Only a real model execution retains
+`full-evidence-bundle.json` directly.
 Single-shard and multi-shard runs use the same layout: request payloads exist only under `shards/shard-NNNN/`.
 Multiple shards also receive a constrained reconciliation template. A Codex session or human supplies each result,
 which must be normalized against that shard's bundle before deterministic merge and final full-bundle normalization.

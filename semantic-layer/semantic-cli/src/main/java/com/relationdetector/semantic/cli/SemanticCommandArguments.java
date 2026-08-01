@@ -9,6 +9,7 @@ import com.relationdetector.semantic.extract.SemanticExtractionConfig;
 import com.relationdetector.semantic.extract.SemanticExtractionConfigLoader;
 import com.relationdetector.semantic.extract.SemanticShardMode;
 import com.relationdetector.semantic.extract.SemanticShardingOptions;
+import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
 
 /**
  * CN: 解析并合并 semantic CLI 参数与 extract 配置；输入是 argv 和环境默认值，输出不可变命令参数，
@@ -30,6 +31,7 @@ record SemanticCommandArguments(
         String apiKeyEnv,
         boolean requestOnly,
         ArtifactRetention artifactRetention,
+        SemanticKgArtifactMode kgOutput,
         SemanticShardingOptions sharding,
         int shardMaxOutputTokens,
         int reconciliationMaxOutputTokens,
@@ -117,6 +119,10 @@ record SemanticCommandArguments(
                 case "--artifact-retention" -> {
                     values.artifactRetention = ArtifactRetention.parse(requireValue(args, index++, arg));
                     values.artifactRetentionSet = true;
+                }
+                case "--kg-output" -> {
+                    values.kgOutput = SemanticKgArtifactMode.parse(requireValue(args, index++, arg));
+                    values.kgOutputSet = true;
                 }
                 case "--shard-mode" -> {
                     values.shardMode = SemanticShardMode.parse(requireValue(args, index++, arg));
@@ -217,6 +223,8 @@ record SemanticCommandArguments(
                   --request-only         Write request artifacts without calling the model.
                   --artifact-retention <v>
                                          full or final-only. Defaults to full.
+                  --kg-output <mode>     full or digest-only. Defaults to full. Digest-only validates and hashes
+                                         logical KG artifacts without persisting the three large JSON files.
                   --shard-mode <mode>    auto, off, or force. Defaults to auto.
                   --target-input-tokens <n>
                                          Preferred conservative estimated input budget. Defaults to 240000.
@@ -283,6 +291,7 @@ record SemanticCommandArguments(
         private String apiKeyEnv = "OPENAI_API_KEY";
         private boolean requestOnly;
         private ArtifactRetention artifactRetention = ArtifactRetention.FULL;
+        private SemanticKgArtifactMode kgOutput = SemanticKgArtifactMode.FULL;
         private SemanticShardMode shardMode = SemanticShardMode.AUTO;
         private int targetInputTokens = 240000;
         private int maxInputTokens = 800000;
@@ -302,6 +311,7 @@ record SemanticCommandArguments(
         private boolean apiKeyEnvSet;
         private boolean requestOnlySet;
         private boolean artifactRetentionSet;
+        private boolean kgOutputSet;
         private boolean shardModeSet;
         private boolean targetInputTokensSet;
         private boolean maxInputTokensSet;
@@ -323,6 +333,7 @@ record SemanticCommandArguments(
             if (!apiKeyEnvSet) apiKeyEnv = loaded.apiKeyEnv();
             if (!requestOnlySet) requestOnly = loaded.requestOnly();
             if (!artifactRetentionSet) artifactRetention = loaded.artifactRetention();
+            if (!kgOutputSet) kgOutput = loaded.kgOutput();
             if (!shardModeSet) shardMode = loaded.sharding().mode();
             if (!targetInputTokensSet) targetInputTokens = loaded.sharding().targetInputTokens();
             if (!maxInputTokensSet) maxInputTokens = loaded.sharding().maxInputTokens();
@@ -342,13 +353,13 @@ record SemanticCommandArguments(
             SemanticExtractionConfig validated = new SemanticExtractionConfig(
                     provider == SemanticExtractProvider.OPENAI_API ? "openai-api" : "codex-session",
                     inputs, output, model, reasoningEffort, maxOutputTokens, baseUrl, apiKeyEnv,
-                    requestOnly, artifactRetention, sharding,
+                    requestOnly, artifactRetention, kgOutput, sharding,
                     shardMaxOutputTokens, reconciliationMaxOutputTokens, requestTimeoutSeconds,
                     maxTransportRetries);
             return new SemanticCommandArguments(command, validated.inputs(), validated.output(), help, provider,
                     validated.model(), validated.reasoningEffort(), validated.maxOutputTokens(),
                     validated.baseUrl(), validated.apiKeyEnv(), validated.requestOnly(), validated.artifactRetention(),
-                    validated.sharding(),
+                    validated.kgOutput(), validated.sharding(),
                     validated.shardMaxOutputTokens(), validated.reconciliationMaxOutputTokens(),
                     validated.requestTimeoutSeconds(), validated.maxTransportRetries(), name, evidenceBundle);
         }

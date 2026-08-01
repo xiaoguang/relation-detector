@@ -13,7 +13,9 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -47,8 +49,7 @@ public final class SemanticEvidenceBundleSliceReader {
         }
         SliceBudget budget = new SliceBudget(maxEstimatedTokens);
         ObjectNode result = JSON.createObjectNode();
-        readEnvelope(bundlePath, result);
-        budget.add(result);
+        readEnvelope(bundlePath, result, budget);
         Set<String> requiredReferences = new LinkedHashSet<>();
         collectContextReferences(result.path("shardContext"), requiredReferences);
         collectRawReferences(rawDocument, requiredReferences);
@@ -85,10 +86,15 @@ public final class SemanticEvidenceBundleSliceReader {
         return result;
     }
 
-    private void readEnvelope(Path bundlePath, ObjectNode result) {
-        scanTopLevel(bundlePath, (field, parser) -> {
+    private void readEnvelope(
+            Path bundlePath,
+            ObjectNode result,
+            SliceBudget budget
+    ) {
+        scanTopLevel(bundlePath, budget.constrainedFactory(), (field, parser) -> {
             if (ENVELOPE_FIELDS.contains(field)) {
-                result.set(field, readValue(parser, "semantic evidence bundle " + field));
+                result.set(field, budget.readValue(
+                        parser, "semantic evidence bundle " + field));
             } else {
                 skipValue(parser);
             }
@@ -378,7 +384,15 @@ public final class SemanticEvidenceBundleSliceReader {
     }
 
     private void scanTopLevel(Path bundlePath, TopLevelConsumer consumer) {
-        try (JsonParser parser = JSON.getFactory().createParser(bundlePath.toFile())) {
+        scanTopLevel(bundlePath, JSON.getFactory(), consumer);
+    }
+
+    private void scanTopLevel(
+            Path bundlePath,
+            JsonFactory factory,
+            TopLevelConsumer consumer
+    ) {
+        try (JsonParser parser = factory.createParser(bundlePath.toFile())) {
             if (parser.nextToken() != JsonToken.START_OBJECT) {
                 throw new SemanticExtractionValidationException(
                         "semantic evidence bundle must be a JSON object");
@@ -400,18 +414,6 @@ public final class SemanticEvidenceBundleSliceReader {
         }
     }
 
-    private JsonNode readValue(JsonParser parser, String label) {
-        try {
-            JsonNode value = JSON.readTree(parser);
-            if (value == null) {
-                throw new SemanticExtractionValidationException(label + " is required");
-            }
-            return value;
-        } catch (IOException failure) {
-            throw new SemanticExtractionValidationException("failed to read " + label);
-        }
-    }
-
     private void skipValue(JsonParser parser) {
         try {
             parser.skipChildren();
@@ -430,12 +432,10 @@ public final class SemanticEvidenceBundleSliceReader {
     }
 
     private static final class SliceBudget {
-        private final int maxEstimatedTokens;
-        private long asciiCodePoints;
-        private long nonAsciiCodePoints;
+        private final SemanticTokenEstimateBudget budget;
 
         private SliceBudget(int maxEstimatedTokens) {
-            this.maxEstimatedTokens = maxEstimatedTokens;
+            budget = new SemanticTokenEstimateBudget(maxEstimatedTokens);
             addText("{database,metadataInventory,inputFiles,sources,instructions,shardContext,"
                     + "tables,evidence,metadataTables,metadataColumns,metadataConstraints,"
                     + "metadataIndexes,relationships,lineage,derivedRelationships,derivedLineage,"
@@ -453,32 +453,24 @@ public final class SemanticEvidenceBundleSliceReader {
         }
 
         private void addText(String value) {
-            for (int offset = 0; offset < value.length();) {
-                int codePoint = value.codePointAt(offset);
-                if (codePoint <= 0x7f) {
-                    asciiCodePoints++;
-                } else {
-                    nonAsciiCodePoints++;
-                }
-                offset += Character.charCount(codePoint);
-            }
-            if (SemanticPromptBudgetEstimator.estimate(asciiCodePoints, nonAsciiCodePoints)
-                    > maxEstimatedTokens) {
-                throw new SemanticExtractionValidationException(
-                        "semantic evidence closure exceeds the configured estimated input-token limit");
-            }
+            budget.addText(value);
+        }
+
+        private JsonNode readValue(JsonParser parser, String label) {
+            return budget.readValue(parser, JSON, label);
+        }
+
+        private JsonFactory constrainedFactory() {
+            return JsonFactory.builder()
+                    .streamReadConstraints(StreamReadConstraints.builder()
+                            .maxStringLength(budget.maximumSingleStringLength())
+                            .build())
+                    .build();
         }
 
         private void requireMayFit(Path value) {
             try {
-                int current = SemanticPromptBudgetEstimator.estimate(
-                        asciiCodePoints, nonAsciiCodePoints);
-                int minimum = SemanticPromptBudgetEstimator.minimumEstimateForUtf8Bytes(
-                        Files.size(value));
-                if ((long) current + minimum > maxEstimatedTokens) {
-                    throw new SemanticExtractionValidationException(
-                            "semantic evidence closure exceeds the configured estimated input-token limit");
-                }
+                budget.requireMayFitUtf8Bytes(Files.size(value));
             } catch (IOException failure) {
                 throw new SemanticExtractionValidationException(
                         "failed to inspect semantic evidence record size");

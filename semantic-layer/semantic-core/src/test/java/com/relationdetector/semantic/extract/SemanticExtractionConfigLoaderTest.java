@@ -11,6 +11,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
+
+
 final class SemanticExtractionConfigLoaderTest {
     @TempDir
     Path tempDir;
@@ -32,6 +35,7 @@ final class SemanticExtractionConfigLoaderTest {
                   apiKeyEnv: TEST_OPENAI_API_KEY
                   requestOnly: true
                   artifactRetention: final-only
+                  kgOutput: digest-only
                   sharding:
                     mode: force
                     targetInputTokens: 220000
@@ -56,6 +60,7 @@ final class SemanticExtractionConfigLoaderTest {
         assertEquals("TEST_OPENAI_API_KEY", loaded.apiKeyEnv());
         assertTrue(loaded.requestOnly());
         assertEquals(ArtifactRetention.FINAL_ONLY, loaded.artifactRetention());
+        assertEquals(SemanticKgArtifactMode.DIGEST_ONLY, loaded.kgOutput());
         assertEquals(SemanticShardMode.FORCE, loaded.sharding().mode());
         assertEquals(220000, loaded.sharding().targetInputTokens());
         assertEquals(700000, loaded.sharding().maxInputTokens());
@@ -75,6 +80,7 @@ final class SemanticExtractionConfigLoaderTest {
         assertEquals("xhigh", defaults.reasoningEffort());
         assertEquals(SemanticShardingOptions.defaults(), defaults.sharding());
         assertEquals(ArtifactRetention.FULL, defaults.artifactRetention());
+        assertEquals(SemanticKgArtifactMode.FULL, defaults.kgOutput());
     }
 
     @Test

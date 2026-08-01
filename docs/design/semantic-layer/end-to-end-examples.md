@@ -4,7 +4,8 @@
 
 本文档提供 Semantic Layer 的端到端测试示例。当前代码已经落地两条离线链路：
 
-- KG JSON artifact 构建链路：`relation-detector scan-result.json -> ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> semantic-kg.json`
+- KG JSON artifact 构建链路：`relation-detector scan-result.json -> SemanticInputStore ->
+  SemanticEvidenceStore -> disk-backed KG records -> semantic-kg.json`
 - 语义抽取链路：`semantic extract` 从同一个全局磁盘evidence store并列写 deterministic KG 与完整
   evidence bundle；大输入先全局归并typed event并计算table-touch component、stable-root closure和
   唯一owner，再把有界root确定性装箱为shards。`codex-session` 只写逐片会话输入，
@@ -149,50 +150,43 @@ CREATE TABLE order_items (
 
 ### 3.2 逐步验证
 
-**Step 1: ScanResultReader**
+**Step 1: ScanResultReader.open + SemanticInputStore**
 
 ```
 输入: test-fixtures/scan-result-shop.json
 
-预期输出: ScanBundle
-- relationships: 5 条
-- dataLineages: 1 条
-- derivedRelationships / derivedDataLineages / namingEvidence / diagnostics: 按输入 JSON 原样进入对应数组
-- summary: 只保留整数统计字段
-- sources: 来自 summary.sources
+预期输出: 磁盘后备 SemanticInputStore
+- metadata table/column/constraint/index 与各fact section逐条校验并落盘
+- database identity、scope、evidence-backed basis和COMPLETE inventory fingerprint进入小型descriptor
+- 多输入只有identity、scope和inventory一致时才能合并
 
 验收检查点:
-[✓] database.type 存在
-[✓] 文件不存在、JSON 非对象、database.type 缺失时抛出 IllegalArgumentException
-[✓] reader 不做 relationship/lineage 去重，不做 confidence clamp，不构建 metadataIndex/relationshipIndex
+[✓] database.type/catalog/schema和metadata inventory完整
+[✓] live输入使用LIVE_METADATA；完整file DDL输入使用DDL_DECLARATIONS且必须显式声明COMPLETE_SCOPE
+[✓] 文件不存在、wire损坏、inventory非COMPLETE或引用不闭合时明确失败
+[✓] 生产入口不把完整fact arrays物化为一个ScanBundle
 ```
 
-**Step 2: SemanticEvidenceBuilder**
+**Step 2: SemanticEvidenceStore**
 
 ```
-输入: ScanBundle（5 表，5 关系，1 lineage）
+输入: SemanticInputStore（5 表，5 关系，1 lineage）
 
-预期输出: EvidenceGraph
-- endpoints: 从 relationship / lineage / namingEvidence fact 中出现的 endpoint 提取
-- facts: RelationshipFact、LineageFact、NamingEvidenceFact、DerivedRelationshipFact、DerivedLineageFact、Diagnostic
-- evidenceRefs: 优先来自 rawEvidence，缺失时来自 grouped evidence
-- summary: 继承 ScanBundle summary
+预期输出: 全局归并、按section索引的evidence与graph records
+- metadata inventory和relationship / lineage / naming / derived / diagnostic形成typed facts
+- event contributions按完整typed identity归并
+- relationship与derived-lineage关联通过外排typed key排序归并
 
 验收检查点:
-[✓] 每个 relationship / lineage / namingEvidence 至少生成一个 fact
+[✓] 每个metadata / relationship / lineage / namingEvidence记录至少生成一个可引用fact
 [✓] derived relationship / derived lineage 进入独立 fact kind
-[✓] `SemanticEvidenceBuilder` 不生成历史 `CompactEvidenceBundle`，不做 BFS join path 搜索，不做 conflict detection
+[✓] 每个非diagnostic fact、endpoint node和edge具有可解析evidence
 ```
 
-**Step 3: SemanticKgBuilder + JsonSemanticKgWriter**
+**Step 3: SemanticDiskBackedArtifactWriter**
 
 ```
-SemanticKgBuilder 输出:
-  SemanticKnowledgeGraph:
-    nodes: PhysicalTable / PhysicalColumn / RelationshipFact / LineageFact / NamingEvidenceFact / Diagnostic
-    edges: table-column / fact-source / fact-target / supported-by / derived-path-step
-
-JsonSemanticKgWriter 输出:
+流式输出:
   semantic-kg.json
   semantic-evidence-graph.json
   semantic-build-run.json
@@ -200,6 +194,7 @@ JsonSemanticKgWriter 输出:
 验收检查点:
 [✓] 三个 JSON 文件均生成
 [✓] KG fact 和边都可回溯到 evidenceRefs 或原始 relation-detector payload
+[✓] writer不完整物化全局graph
 [✓] 文件可被 JSON parser 解析
 ```
 
@@ -212,19 +207,16 @@ JsonSemanticKgWriter 输出:
 sequenceDiagram
     participant RD as relation-detector
     participant SR as 扫描结果读取器
-    participant EB as 语义证据构建器
-    participant NOOP as Noop 语义增强器
-    participant KG as KG 构建器
-    participant JW as JSON 输出器
+    participant IS as 磁盘输入存储
+    participant ES as 全局证据存储
+    participant JW as 磁盘后备输出器
 
     RD->>SR: scan-result.json
-    SR->>SR: 校验 root/database.type + 拷贝 JSON fact arrays
-    SR->>EB: ScanBundle
-    EB->>EB: materialize facts / endpoints / evidenceRefs
-    EB->>NOOP: EvidenceGraph
-    NOOP->>KG: EvidenceGraph unchanged
-    KG->>JW: SemanticKnowledgeGraph
-    JW->>JW: 写 semantic-kg/evidence-graph/build-run JSON
+    SR->>IS: 流式校验并按 section 落盘
+    IS->>ES: 有界窗口中的 typed records
+    ES->>ES: 全局归并 event / evidence / graph records
+    ES->>JW: 已校验的磁盘记录游标
+    JW->>JW: 流式写 semantic-kg/evidence-graph/build-run JSON
 ```
 
 </details>
@@ -236,19 +228,16 @@ sequenceDiagram
 sequenceDiagram
     participant RD as relation-detector
     participant SR as Scan Result Reader
-    participant EB as Semantic Evidence Builder
-    participant NOOP as Noop Semantic Enricher
-    participant KG as KG Builder
-    participant JW as JSON Writer
+    participant IS as Disk-backed Input Store
+    participant ES as Global Evidence Store
+    participant JW as Disk-backed Artifact Writer
 
     RD->>SR: scan-result.json
-    SR->>SR: validate root/database.type + copy JSON fact arrays
-    SR->>EB: ScanBundle
-    EB->>EB: materialize facts / endpoints / evidenceRefs
-    EB->>NOOP: EvidenceGraph
-    NOOP->>KG: EvidenceGraph unchanged
-    KG->>JW: SemanticKnowledgeGraph
-    JW->>JW: write semantic-kg/evidence-graph/build-run JSON
+    SR->>IS: stream validation into section spools
+    IS->>ES: bounded windows of typed records
+    ES->>ES: globally merge events / evidence / graph records
+    ES->>JW: validated disk-record cursors
+    JW->>JW: stream semantic-kg/evidence-graph/build-run JSON
 ```
 
 </details>

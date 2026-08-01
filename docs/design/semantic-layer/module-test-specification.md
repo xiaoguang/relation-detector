@@ -35,6 +35,9 @@ reference closure、graph validation和模型 review candidate 已纳入本文�
 
 后三项由内存validator与磁盘reader的共享typed closure rules共同覆盖。inventory
 `status=COMPLETE`仍不能替代consumer引用闭包；scope缺少FK引用对象时必须明确失败。
+inventory还必须验证`basis`：`NONE`拒绝，`LIVE_METADATA/DDL_DECLARATIONS/MERGED`保留并参与
+多输入fingerprint。file DDL只有显式`COMPLETE_SCOPE`才可产生`DDL_DECLARATIONS`；普通DDL片段
+保持`EVIDENCE_ONLY`，不能为了让semantic通过而伪造完整状态。
 
 ## 3. 完整 Extraction Bundle
 
@@ -70,8 +73,15 @@ owner map、shard与KG exact fingerprint。raw-byte阈值只能控制外排buffe
 
 大输入内存门禁以真实typed metadata/facts形成主要体积，不得以reader会忽略的未知顶层padding代替。
 普通`mvn test`执行1 MiB/96 MiB smoke；发布门禁固定128 MiB/96 MiB，extended profile固定1 GiB/512 MiB。
-结构对抗门禁另覆盖100,000节点parent链、高扇出event在引用物化前的预算拒绝，以及standalone超大raw
-在低堆下的确定性预算错误。成功和失败路径都必须清理内部spool/workspace；这些门禁不证明业务吞吐。
+结构对抗门禁覆盖100,000节点parent链、relationship/derived-lineage association高扇出、跨transport
+window的大量同event typed contributions在成员列表物化前的预算拒绝，以及standalone超大raw与
+64 MiB envelope在低堆下的确定性预算错误。`inputFiles/sources/instructions/shardContext`逐字段
+验证共享累计预算；20,000路径和symlink测试验证清理不收集完整路径树且不跟随链接。成功和失败路径
+都必须清理内部spool/workspace。这些门禁只证明内存边界，不证明业务吞吐。
+
+sample-data发布验收覆盖19类parser的38份direct/derived JSON：Java流式validator要求每份均为
+evidence-backed COMPLETE且同类direct/derived inventory一致；随后38份全部构建deterministic KG，
+19份derived输入生成固定`gpt-5.6-sol/xhigh` request-only artifact。该门禁不发送真实API请求。
 
 ## 5. Normalization 与 Merge
 

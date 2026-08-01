@@ -12,6 +12,7 @@ LOCK_JOB="verify-all"
 MVN_BIN="${VERIFY_ALL_MVN:-mvn}"
 CORRECTNESS_RUNNER="${VERIFY_ALL_CORRECTNESS_RUNNER:-$ROOT/relation-detector/scripts/run-correctness-isolated.sh}"
 SAMPLE_DATA_RUNNER="${VERIFY_ALL_SAMPLE_DATA_RUNNER:-$ROOT/relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
+SEMANTIC_SAMPLE_DATA_RUNNER="${VERIFY_ALL_SEMANTIC_SAMPLE_DATA_RUNNER:-$ROOT/semantic-layer/scripts/verify-sample-data-semantic.sh}"
 STALE_SUMMARY="${VERIFY_ALL_STALE_SUMMARY:-$ROOT/relation-detector/target/sample-data-parser-cli/summary-with-derived.tsv}"
 VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$ROOT/relation-detector/scripts/run-release-verification-tool.sh}"
 ACTIVE_CHILD_PID=""
@@ -117,6 +118,12 @@ run_active_child env \
   --expected-categories 19 \
   --output "$VERIFY_DIR/result-validation.json"
 
+run_active_child env \
+  SAMPLE_DATA_SEMANTIC_RESULT_DIR="$ROOT/relation-detector/target/sample-data-parser-cli/results" \
+  SAMPLE_DATA_SEMANTIC_OUTPUT_ROOT="$VERIFY_DIR/semantic-sample-data" \
+  SAMPLE_DATA_SEMANTIC_EXPECTED_CATEGORIES=19 \
+  bash "$SEMANTIC_SAMPLE_DATA_RUNNER"
+
 "$VERIFICATION_RUNNER" fingerprint \
   --workspace "$VERIFY_DIR/fingerprint-work/canonical" \
   --output "$VERIFY_DIR/fingerprints.tsv" \
@@ -180,6 +187,7 @@ fi
   --expected-json 38 \
   "${MANIFEST_OPTIONAL_ARGS[@]}" \
   --artifact "$VERIFY_DIR/result-validation.json" \
+  --artifact "$VERIFY_DIR/semantic-sample-data/summary.tsv" \
   --artifact "$VERIFY_DIR/fingerprints.tsv" \
   --artifact "$VERIFY_DIR/semantic-fingerprints.tsv" \
   --artifact "$VERIFY_DIR/acceptance.log" \

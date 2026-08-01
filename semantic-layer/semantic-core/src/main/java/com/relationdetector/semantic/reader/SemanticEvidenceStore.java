@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +24,7 @@ import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.event.SemanticEventCandidateMerger;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /**
@@ -74,7 +74,7 @@ public final class SemanticEvidenceStore implements AutoCloseable {
     private final SemanticInputStore input;
     private final Path workspace;
     private final Map<Section, ExternalJsonRecordStore> sections;
-    private final ExternalJsonRecordStore eventContributions;
+    private final SemanticEventContributionStore eventContributions;
     private final SemanticEventAssociationStore eventAssociations;
     private final SemanticGraphRecordStore graphRecords;
     private final int maxInputTokens;
@@ -111,11 +111,8 @@ public final class SemanticEvidenceStore implements AutoCloseable {
                 sections.put(section, new ExternalJsonRecordStore(
                         workspace.resolve("sections").resolve(section.wireName())));
             }
-            SemanticEventCandidateMerger eventMerger = new SemanticEventCandidateMerger();
-            this.eventContributions = new ExternalJsonRecordStore(
-                    workspace.resolve("event-contributions"),
-                    (left, right) -> JSON.valueToTree(eventMerger.merge(
-                            eventCandidate(left), eventCandidate(right))));
+            this.eventContributions = new SemanticEventContributionStore(
+                    workspace.resolve("event-contributions"));
             this.eventAssociations = new SemanticEventAssociationStore(
                     workspace.resolve("event-associations"));
             this.graphRecords = new SemanticGraphRecordStore(workspace.resolve("graph-records"));
@@ -280,7 +277,7 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         if (section == Section.EVENT_CANDIDATES) {
             SemanticEventCandidate normalized = new SemanticEventCandidateMerger()
                     .normalize(eventCandidate(item));
-            eventContributions.append(normalized.id(), JSON.valueToTree(normalized));
+            eventContributions.append(normalized);
             return;
         }
         String key = section.idRequired
@@ -298,35 +295,28 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         sections.get(Section.RELATIONSHIPS).finish();
         sections.get(Section.DERIVED_LINEAGE).finish();
         SemanticEventCandidateMerger merger = new SemanticEventCandidateMerger();
-        eventContributions.forEach(record ->
-                eventAssociations.appendEvent(eventCandidate(record.value())));
+        eventContributions.forEachEventId(eventId ->
+                eventAssociations.appendEvent(eventContributions.materializeWithinBudget(
+                        eventId, 0, maxInputTokens)));
         sections.get(Section.RELATIONSHIPS).forEach(record ->
                 eventAssociations.appendRelationship(record.value()));
         sections.get(Section.DERIVED_LINEAGE).forEach(record ->
                 eventAssociations.appendDerivedLineage(record.value()));
         eventAssociations.finish();
-        eventContributions.forEach(record -> {
-            SemanticEventCandidate event = eventCandidate(record.value());
-            eventAssociations.requireWithinEstimatedBudget(
-                    event.id(), serializedBytes(record.value()), maxInputTokens);
+        eventContributions.forEachEventId(eventId -> {
+            SemanticEventCandidate event = eventContributions.materializeWithinBudget(
+                    eventId,
+                    eventAssociations.estimatedReferenceBytes(eventId),
+                    maxInputTokens);
             SemanticEventCandidate completed = merger.associate(
                     event,
-                    eventAssociations.relationshipRefs(event.id()),
-                    eventAssociations.derivedLineageRefs(event.id()));
+                    eventAssociations.relationshipRefs(eventId),
+                    eventAssociations.derivedLineageRefs(eventId));
             sections.get(Section.EVENT_CANDIDATES).append(
                     completed.id(), JSON.valueToTree(completed));
             graphRecords.appendFact(new SemanticEvidenceBuilder().eventFact(completed));
             appendEventTriplets(completed);
         });
-    }
-
-    private long serializedBytes(JsonNode value) {
-        try {
-            return JSON.writeValueAsBytes(value).length;
-        } catch (IOException failure) {
-            throw new ScanResultContractException(
-                    "failed to estimate semantic event serialization", failure);
-        }
     }
 
     private void appendEventTriplets(SemanticEventCandidate event) {
@@ -427,7 +417,7 @@ public final class SemanticEvidenceStore implements AutoCloseable {
             }
         }
         try {
-            deleteRecursively(workspace);
+            SemanticFileTreeOperations.deleteRecursively(workspace);
         } catch (IOException error) {
             if (failure == null) {
                 failure = new IllegalStateException("failed to clean semantic evidence store", error);
@@ -437,17 +427,6 @@ public final class SemanticEvidenceStore implements AutoCloseable {
         }
         if (failure != null) {
             throw failure;
-        }
-    }
-
-    private void deleteRecursively(Path root) throws IOException {
-        if (!Files.exists(root)) {
-            return;
-        }
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
         }
     }
 }

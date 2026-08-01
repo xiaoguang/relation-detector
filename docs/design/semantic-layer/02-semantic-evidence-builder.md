@@ -173,6 +173,15 @@ event、component、owner或shard。超预算component按table owner拆分，own
 root及其传递dependency/evidence closure不可再切分，单root超出hard estimate时在模型调用前失败。
 外部校验要求每个正式fact/candidate恰好owned一次，其他相关shard只能把它作为只读overlap。
 
+Evidence store不区分live与file DDL的物理事实权限，但会保留inventory basis。`DDL_DECLARATIONS`
+必须来自上游显式COMPLETE_SCOPE和typed catalog事件；它可为没有relationship的声明表列建立catalog、
+KG节点与owner，不得补猜未声明对象或把`UNKNOWN`类型改写为具体数据库类型。
+
+同一event的typed direct contributions按标量、计数和operation/input/output/lineage成员分别落盘，
+经外排排序去重后先形成只含数量和保守序列化大小的descriptor。base门限通过后才物化一个有界event
+并生成association key；association完成后再以event base和引用估算执行组合门限。跨窗口输出顺序、
+加权confidence、candidate、triplet和KG fingerprint保持稳定。
+
 详细模型执行、合并与 artifact 事务见
 [LLM Semantic Extraction](03-llm-semantic-enricher.md)。
 
@@ -187,6 +196,9 @@ root及其传递dependency/evidence closure不可再切分，单root超出hard e
 - deterministic KG、evidence graph 和 build run
 
 Prompt 和 transport request受 token 门限约束，可以保留字符串表示。
+高扇出fact/candidate的四类审计引用数组在shard prompt中投影为稳定count和SHA-256，精确引用保存在
+同一shard的`external-audit-refs.tsv`。owner校验必须同时验证sidecar内容、digest和reference closure；
+该投影只缩小模型上下文，不改变完整bundle或最终审计证据。
 
 一次 extraction run 的模型中间材料写在：
 

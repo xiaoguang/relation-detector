@@ -2,7 +2,6 @@ package com.relationdetector.semantic.extract;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.reader.ScanBundle;
 
@@ -11,7 +10,7 @@ import com.relationdetector.semantic.reader.ScanBundle;
  * EN: Assembles an evidence-closed bundle into developer and user prompts that enforce evidence grounding and reference closure. It does not execute a model request.
  */
 public final class SemanticExtractionPromptBuilder {
-    private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper JSON = new ObjectMapper();
     private final SemanticExtractionBundleBuilder bundleBuilder;
 
     public SemanticExtractionPromptBuilder() {
@@ -48,6 +47,10 @@ public final class SemanticExtractionPromptBuilder {
                 - Do not invent database facts, physical tables, columns, joins, metrics, or lineage.
                 - When shardContext is present, create output only for ownedFactRefs and ownedCandidateRefs.
                   overlapRefs are read-only context and must not become independently owned output.
+                  Fact or candidate audit-reference arrays may be projected as *RefCount and *RefsSha256 fields.
+                  Their exact IDs remain in the complete audit store and shard sidecar, not in this model context.
+                  shardContext records the aggregate count and digest. Do not recreate or copy summarized refs into
+                  model output; use the owned fact or candidate id as output evidence instead.
                 - Every model-authored output item must include a non-empty ownedGroundingRefs array containing
                   current-shard ownedFactRefs or ownedCandidateRefs. evidenceRefs are audit context only and never
                   establish output ownership.
@@ -62,9 +65,9 @@ public final class SemanticExtractionPromptBuilder {
                 - Events must be grounded in eventCandidates. Include eventCandidateRef on each event and do not
                   create events that have no eventCandidate.
                 - Do not omit eventCandidates. If you cannot improve one, emit a conservative event using its
-                  readableNameHint, input/output tables, and evidenceRefs.
+                  readableNameHint, input/output tables, and candidate id as evidence.
                 - Prefer eventCandidates[].readableNameHint and businessActionHint when naming events, but keep
-                  eventCandidateRef and evidenceRefs unchanged.
+                  eventCandidateRef unchanged and use that owned candidate id as evidence.
                 - Never create an event only from derivedLineage. Derived lineage may only explain a candidate through
                   supportingDerivedLineageRefs already present on that eventCandidate.
                 - Relations must include fromEntityRef/toEntityRef when their endpoints match entities.
@@ -75,7 +78,7 @@ public final class SemanticExtractionPromptBuilder {
                   as readable summaries across entity relations, event input/output, metrics, dimensions, lineage
                   transforms, and naming aliases; do not use triplets as a replacement for lineage.
                 - Do not omit tripletCandidates. If a candidate is repetitive, still emit the triplet with its
-                  candidateRef and evidenceRefs so downstream KG construction remains complete.
+                  candidateRef and that owned candidate id as evidence so downstream KG construction remains complete.
                 - Review items should come from reviewItemCandidates or from unresolved/uncertain output items.
                   Preserve targetRef and targetSection whenever present.
                 - Include semanticGraph with nodes and edges, using the same ids as the top-level sections.
@@ -84,7 +87,7 @@ public final class SemanticExtractionPromptBuilder {
                 Required JSON output sections:
                 - entities: business objects, master data, business documents, document lines, facts, dimensions.
                 - events: business or data-processing actions derived from eventCandidates; use readable names and
-                  descriptions, but preserve eventCandidateRef and evidenceRefs.
+                  descriptions, preserve eventCandidateRef, and ground evidence in that owned candidate id.
                 - relations: human-readable business relationships between entities.
                 - lineage: field-level data flow explanations.
                 - metrics: metric candidates, aggregation suggestions, source fields, and review status.

@@ -180,6 +180,7 @@ final class SemanticInputStoreTest {
         summary.putArray("sources").add("metadata");
         ObjectNode inventory = root.putObject("metadataInventory");
         inventory.put("status", status);
+        inventory.put("basis", "DDL_DECLARATIONS");
         ObjectNode scope = inventory.putObject("scope");
         scope.put("catalog", catalog);
         scope.putNull("schema");

@@ -168,6 +168,7 @@ write_config() {
     printf '  ddl:\n'
     printf '    enabled: true\n'
     printf '    fromDatabase: false\n'
+    printf '    inventoryCoverage: COMPLETE_SCOPE\n'
     printf '    files:\n'
     local schema_file
     for schema_file in "$schema_dir"/*.sql; do

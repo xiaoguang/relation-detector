@@ -7,8 +7,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.graph.EvidenceReference;
 
 /**
- * CN: 最终 evidence-backed KG artifact，聚合 deterministic build metadata、summary、nodes、edges、evidence 和 diagnostics；所有集合在构造时冻结。
- * EN: Final evidence-backed KG artifact containing deterministic build metadata, summary, nodes, edges, evidence, and diagnostics, with collections frozen at construction.
+ * CN: 保存KG构建阶段的build metadata、nodes、edges及用于闭包校验的evidence/diagnostic inventory；wire v2
+ * 只序列化nodes/edges并引用独立Evidence Graph，避免重复payload。所有集合在构造时冻结。
+ * EN: Holds KG build metadata, nodes, edges, and the evidence/diagnostic inventory used for closure validation.
+ * Wire v2 serializes nodes and edges while referencing a separate Evidence Graph to avoid duplicate payloads.
  */
 public record SemanticKnowledgeGraph(
         Map<String, Object> buildRun,

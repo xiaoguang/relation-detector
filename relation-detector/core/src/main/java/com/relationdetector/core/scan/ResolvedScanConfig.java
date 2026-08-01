@@ -38,6 +38,7 @@ public record ResolvedScanConfig(
                 new DatabaseConfig(input.databaseType, input.adaptorId, input.jdbcUrl, input.username, input.password,
                         input.catalog, input.schema, input.includeTables, input.excludeTables),
                 new SourceConfig(input.metadataEnabled, input.ddlEnabled, input.ddlFromDatabase,
+                        input.ddlInventoryCoverage,
                         input.ddlEnabled
                                 ? pathResolver.resolve(input.ddlFiles, input.ddlPaths, input.ddlIncludes, baseDirectory)
                                 : java.util.List.of(),
@@ -93,6 +94,7 @@ public record ResolvedScanConfig(
         copy.metadataEnabled = sources.metadataEnabled();
         copy.ddlEnabled = sources.ddlEnabled();
         copy.ddlFromDatabase = sources.ddlFromDatabase();
+        copy.ddlInventoryCoverage = sources.ddlInventoryCoverage();
         copy.ddlFiles = new ArrayList<>(sources.ddlFiles());
         copy.ddlPaths = new ArrayList<>(sources.ddlPaths());
         copy.ddlIncludes = new ArrayList<>(sources.ddlIncludes());

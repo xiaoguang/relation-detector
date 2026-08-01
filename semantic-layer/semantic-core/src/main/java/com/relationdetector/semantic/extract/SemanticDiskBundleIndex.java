@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 import com.relationdetector.semantic.reader.ExternalJsonRecordStore;
 import com.relationdetector.semantic.reader.ScanResultContractException;
@@ -35,9 +36,10 @@ import com.relationdetector.semantic.reader.SemanticMetadataInventoryEnvelope;
  */
 final class SemanticDiskBundleIndex implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final List<String> REFERENCE_FIELDS = List.of(
-            "factRef", "eventCandidateRef", "targetRef", "lineageRefs",
-            "supportingDerivedLineageRefs", "relationshipRefs");
+    private static final List<String> DEPENDENCY_REFERENCE_FIELDS = List.of(
+            "factRef", "eventCandidateRef", "targetRef");
+    private static final List<String> AUDIT_REFERENCE_FIELDS = List.of(
+            "lineageRefs", "supportingDerivedLineageRefs", "relationshipRefs");
     private static final Map<SemanticEvidenceStore.Section, String> ITEM_SECTIONS = itemSections();
 
     private final SemanticEvidenceStore evidence;
@@ -130,7 +132,7 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
             throw new IllegalArgumentException("semantic root id and input budget are required");
         }
         Map<String, Item> items = new LinkedHashMap<>();
-        Set<String> evidenceIds = new LinkedHashSet<>();
+        Set<String> externalAuditIds = new LinkedHashSet<>();
         Set<String> tables = new LinkedHashSet<>();
         Deque<String> pending = new ArrayDeque<>();
         pending.add(rootId);
@@ -157,11 +159,22 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
                     pending.addLast(reference);
                 }
             }
+            for (String reference : auditRefs(item.document())) {
+                if (locate(reference).isEmpty()) {
+                    throw new SemanticShardingException(
+                            "semantic root contains an unresolved audit reference");
+                }
+                externalAuditIds.add(reference);
+            }
             for (String reference : textValues(item.document().path("evidenceRefs"))) {
                 if (locate(reference).isPresent()) {
-                    pending.addLast(reference);
+                    if (isCandidate(item.section())) {
+                        externalAuditIds.add(reference);
+                    } else {
+                        pending.addLast(reference);
+                    }
                 } else if (evidence.find(SemanticEvidenceStore.Section.EVIDENCE, reference).isPresent()) {
-                    evidenceIds.add(reference);
+                    externalAuditIds.add(reference);
                 } else {
                     throw new SemanticShardingException(
                             "semantic root contains an unresolved evidence reference");
@@ -171,16 +184,15 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
         ObjectNode bundle = emptyBundle();
         tables.stream().sorted().forEach(bundle.withArray("tables")::add);
         for (Item item : items.values()) {
-            bundle.withArray(wireName(item.section())).add(item.document().deepCopy());
+            bundle.withArray(wireName(item.section())).add(
+                    SemanticExternalAuditReferences.project(item.document()));
         }
-        for (String evidenceId : evidenceIds.stream().sorted().toList()) {
-            bundle.withArray("evidence").add(evidence.find(
-                    SemanticEvidenceStore.Section.EVIDENCE, evidenceId).orElseThrow().deepCopy());
-        }
+        externalAuditIds.removeAll(items.keySet());
         return new RootClosure(
                 rootId,
                 items.get(rootId).section(),
                 Set.copyOf(items.keySet()),
+                Set.copyOf(externalAuditIds),
                 Set.copyOf(tables),
                 bundle,
                 rawBytes);
@@ -247,7 +259,7 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
 
     private Set<String> dependencyRefs(JsonNode item) {
         Set<String> result = new LinkedHashSet<>();
-        for (String field : REFERENCE_FIELDS) {
+        for (String field : DEPENDENCY_REFERENCE_FIELDS) {
             JsonNode value = item.path(field);
             if (value.isTextual() && !value.asText().isBlank()) {
                 result.add(value.asText());
@@ -256,6 +268,20 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
             }
         }
         return result;
+    }
+
+    private Set<String> auditRefs(JsonNode item) {
+        Set<String> result = new LinkedHashSet<>();
+        for (String field : AUDIT_REFERENCE_FIELDS) {
+            result.addAll(textValues(item.path(field)));
+        }
+        return result;
+    }
+
+    private boolean isCandidate(SemanticEvidenceStore.Section section) {
+        return section == SemanticEvidenceStore.Section.EVENT_CANDIDATES
+                || section == SemanticEvidenceStore.Section.TRIPLET_CANDIDATES
+                || section == SemanticEvidenceStore.Section.REVIEW_ITEM_CANDIDATES;
     }
 
     private Set<String> textValues(JsonNode values) {
@@ -331,7 +357,7 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
             failure = error;
         }
         try {
-            deleteRecursively(workspace);
+            SemanticFileTreeOperations.deleteRecursively(workspace);
         } catch (IOException error) {
             if (failure == null) {
                 failure = new IllegalStateException("failed to clean semantic disk bundle index", error);
@@ -341,17 +367,6 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
         }
         if (failure != null) {
             throw failure;
-        }
-    }
-
-    private void deleteRecursively(Path root) throws IOException {
-        if (!Files.exists(root)) {
-            return;
-        }
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
         }
     }
 
@@ -399,12 +414,14 @@ final class SemanticDiskBundleIndex implements AutoCloseable {
             String rootId,
             SemanticEvidenceStore.Section rootSection,
             Set<String> itemIds,
+            Set<String> externalAuditRefs,
             Set<String> tables,
             ObjectNode bundle,
             long rawBytes
     ) {
         RootClosure {
             itemIds = Set.copyOf(itemIds);
+            externalAuditRefs = Set.copyOf(externalAuditRefs);
             tables = Set.copyOf(tables);
             bundle = bundle.deepCopy();
         }

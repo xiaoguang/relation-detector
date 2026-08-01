@@ -276,7 +276,17 @@ direct candidate/fact ref指向其他owner、只有overlap、或只用`evidenceR
 模型预算只约束单个request context；源JSON与完整evidence/KG使用另一条磁盘后备边界。
 `SemanticInputStore`流式校验并按section落盘，磁盘dictionary/union-find建立typed component，
 生产链路一次只物化一个固定字节上限component或一个受token门限约束的shard。完整bundle、KG和最终
-artifact均流式写出，因此堆使用不随完整输入、全部facts或全部shards线性增长。
+artifact均流式写出，run plan只保留受`maxShardCount`约束的小型descriptor集合。event contribution
+将标量、聚合值和集合成员分别外排，先对base descriptor执行门限，再逐个物化有界event并生成
+association key；association完成后执行组合门限。standalone evidence envelope的单个字符串先受
+Jackson parser约束，整个字段再通过有界writer累计统一码点预算，只有通过后才物化。临时workspace
+由`walkFileTree`逐项清理，不随路径总数建立堆内list。
+
+高扇出fact/candidate的`evidenceRefs`、`lineageRefs`、`supportingDerivedLineageRefs`和
+`relationshipRefs`不会整组复制进模型prompt。shard bundle只保留各字段的稳定count和SHA-256；
+精确、排序后的引用按行写入同片`external-audit-refs.tsv`，owner validator同时校验count、digest、
+引用可解析性和owned/overlap边界。sidecar是审计材料，不扩大模型可见上下文，也不能替代owned
+fact/candidate grounding。
 
 模型 shard 顺序执行。每片输出先用该片 bundle 执行 formal normalization；全部片成功后按输出中的
 canonical identity确定性合并。物理entity使用完整`physicalName`；无物理身份的业务entity使用
@@ -340,12 +350,14 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
-| `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event-association索引、全局owner与path-backed shard已实现。高扇出event在引用物化前受token门限，disk union-find迭代压缩路径，standalone raw/evidence slice分别受output/input预算并原子写出。默认1 MiB/96 MiB smoke、发布128 MiB/96 MiB和extended 1 GiB/512 MiB profile形成固定证据。 |
+| `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base和association组合分别在对应列表物化前受同一预算；standalone raw、envelope和已选evidence共享硬门限；递归清理内存只随目录深度增长。低堆测试覆盖跨窗口宽event、64 MiB envelope和20,000路径。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
+| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才可输出COMPLETE/DDL_DECLARATIONS。完整sample-data semantic门禁已对38份结果构建KG，并以gpt-5.6-sol/xhigh对19份derived结果生成request-only artifact；132个request与132份精确引用sidecar一一对应，所有估算输入均低于统一门限。 |
 
 上述完整输入、模型请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
 identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及
-bounded-memory结构边界已按矩阵闭合。内存门禁只证明指定堆下有界完成或确定性预算拒绝，不作为吞吐承诺。
+上述结构边界已按矩阵闭合。现有内存门禁只证明指定输入形状在指定堆下有界完成或确定性预算拒绝，
+不作为吞吐承诺。
 
 独立归一化命令为：
 

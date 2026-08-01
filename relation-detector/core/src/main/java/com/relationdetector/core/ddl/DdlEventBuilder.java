@@ -57,11 +57,19 @@ public final class DdlEventBuilder {
     }
 
     public void addColumn(String table, String column, long line) {
+        addColumn(table, column, "", line);
+    }
+
+    public void addReferencedColumn(String table, String column, long line) {
+        addColumn(table, column, "REFERENCE", line);
+    }
+
+    private void addColumn(String table, String column, String kind, long line) {
         if (table == null || table.isBlank() || column == null || column.isBlank()) {
             return;
         }
         events.add(new DdlEvent(StructuredParseEventType.DDL_COLUMN,
                 SourceProvenance.source(sourceName, line), "", "", "", "",
-                table, column, "", "", 1, 1));
+                table, column, "", kind, 1, 1));
     }
 }

@@ -41,6 +41,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.5.2</version>
         <configuration>
+          <excludedGroups>${semanticTestExcludedGroups}</excludedGroups>
           <!-- Memory-gate sizes belong to Maven profiles and must reach the forked test JVM. -->
           <systemPropertyVariables>
             <semanticMemoryGateMiB>${semanticMemoryGateMiB}</semanticMemoryGateMiB>

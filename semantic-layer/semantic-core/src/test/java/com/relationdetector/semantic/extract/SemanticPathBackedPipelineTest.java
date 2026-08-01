@@ -119,6 +119,8 @@ final class SemanticPathBackedPipelineTest {
         assertEquals("PENDING", manifest.path("shards").get(1).path("status").asText());
         assertTrue(Files.isRegularFile(staging.resolve(
                 "shards/shard-0001/semantic-extraction-result.json")));
+        assertTrue(Files.isRegularFile(staging.resolve(
+                "shards/shard-0001/external-audit-refs.tsv")));
         assertFalse(hasDirectory(output, "run-"));
     }
 
@@ -133,6 +135,250 @@ final class SemanticPathBackedPipelineTest {
         assertEquals(shardFingerprints(large), shardFingerprints(tiny));
         assertOwnerCoverage(large);
         assertOwnerCoverage(tiny);
+    }
+
+    @Test
+    void shardsKeepStableEvidenceRefsWithoutDuplicatingFullEvidencePayloads() throws Exception {
+        Path input = writeMetadataOnlyScan();
+
+        try (SemanticDiskBackedSession session = SemanticDiskBackedSession.open(
+                List.of(input), tempDir.resolve("external-evidence-session"))) {
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false));
+
+            assertFalse(read(plan.fullBundlePath()).path("evidence").isEmpty());
+            for (SemanticPathShard shard : plan.shards()) {
+                ObjectNode bundle = (ObjectNode) read(shard.bundlePath());
+                assertTrue(bundle.path("evidence").isEmpty());
+                int externalAuditRefCount =
+                        bundle.path("shardContext").path("externalAuditRefCount").asInt();
+                assertTrue(externalAuditRefCount > 0);
+                assertEquals(
+                        externalAuditRefCount,
+                        SemanticExternalAuditReferences.read(
+                                SemanticExternalAuditReferences.sidecar(shard.bundlePath())).size());
+                assertPromptAuditReferencesAreSummarized(bundle);
+            }
+
+            Path run = new SemanticPathRunArtifactWriter().writeRequestOnly(
+                    tempDir.resolve("external-evidence-requests"),
+                    plan,
+                    ignored -> "{}",
+                    null,
+                    "test-model",
+                    "xhigh",
+                    ArtifactRetention.FULL,
+                    ignored -> {
+                    });
+            for (SemanticPathShard shard : plan.shards()) {
+                Path planned = SemanticExternalAuditReferences.sidecar(shard.bundlePath());
+                Path published = run.resolve("shards").resolve(shard.id())
+                        .resolve("external-audit-refs.tsv");
+                assertEquals(
+                        SemanticExternalAuditReferences.read(planned),
+                        SemanticExternalAuditReferences.read(published));
+                assertTrue(Files.readString(published).startsWith(
+                        "#semantic-external-audit-refs-v2"));
+            }
+        }
+    }
+
+    @Test
+    void requestOnlyPackageReconstructsCompleteBundleWithoutOriginalScanOrPlannerWorkspace()
+            throws Exception {
+        Path input = writeMetadataOnlyScan();
+        Path output = tempDir.resolve("portable-request-package");
+        Path run;
+
+        try (SemanticDiskBackedSession session = SemanticDiskBackedSession.open(
+                List.of(input), tempDir.resolve("portable-request-session"))) {
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false));
+            run = new SemanticPathRunArtifactWriter().writeRequestOnly(
+                    output,
+                    plan,
+                    ignored -> "{}",
+                    null,
+                    "test-model",
+                    "xhigh",
+                    ArtifactRetention.FULL,
+                    ignored -> {
+                    });
+        }
+
+        Files.delete(input);
+        assertFalse(Files.exists(run.resolve("full-evidence-bundle.json")));
+        Path indexPath = run.resolve("request-bundle-index.json");
+        JsonNode index = read(indexPath);
+        assertEquals(2, index.path("shards").size());
+        assertTrue(Files.isRegularFile(run.resolve(
+                index.path("evidenceArchive").path("path").asText())));
+
+        Path reconstructed = tempDir.resolve("reconstructed-evidence-bundle.json");
+        SemanticRequestBundleReconstructor.Result result =
+                new SemanticRequestBundleReconstructor().reconstruct(run, reconstructed);
+
+        assertEquals(index.path("fullBundleCanonicalSha256").asText(), result.canonicalSha256());
+        assertTrue(Files.isRegularFile(reconstructed));
+        JsonNode bundle = read(reconstructed);
+        assertEquals(2, bundle.path("metadataTables").size());
+        assertEquals(2, bundle.path("metadataColumns").size());
+        assertFalse(bundle.path("evidence").isEmpty());
+    }
+
+    @Test
+    void requestOnlyPackageAcceptsBareRelativeInputFileForAuditDigest() throws Exception {
+        Path input = Path.of("request-package-relative-input-" + System.nanoTime() + ".json");
+        try {
+            JSON.writeValue(input.toFile(), writeMetadataOnlyScanDocument());
+            Path run;
+            try (SemanticDiskBackedSession session = SemanticDiskBackedSession.open(
+                    List.of(input), tempDir.resolve("relative-input-session"))) {
+                SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                        session.evidenceStore(),
+                        session.workPath("plan"),
+                        new SemanticShardingOptions(
+                                SemanticShardMode.AUTO, 10_000, 50_000, 8, false));
+                run = new SemanticPathRunArtifactWriter().writeRequestOnly(
+                        tempDir.resolve("relative-input-package"),
+                        plan,
+                        ignored -> "{}",
+                        null,
+                        "test-model",
+                        "xhigh",
+                        ArtifactRetention.FULL,
+                        ignored -> {
+                        });
+            }
+
+            JsonNode inputAudit = read(run.resolve("request-bundle-index.json"))
+                    .path("inputScans").get(0);
+            assertEquals(input.toString(), inputAudit.path("path").asText());
+            assertEquals(Files.size(input), inputAudit.path("bytes").asLong());
+            assertEquals(sha256(input), inputAudit.path("sha256").asText());
+        } finally {
+            Files.deleteIfExists(input);
+        }
+    }
+
+    @Test
+    void requestOnlyPackageRejectsTamperedSidecarWithoutPartialReconstruction() throws Exception {
+        Path input = writeMetadataOnlyScan();
+        Path output = tempDir.resolve("tampered-request-package");
+        Path run;
+
+        try (SemanticDiskBackedSession session = SemanticDiskBackedSession.open(
+                List.of(input), tempDir.resolve("tampered-request-session"))) {
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 8, false));
+            run = new SemanticPathRunArtifactWriter().writeRequestOnly(
+                    output,
+                    plan,
+                    ignored -> "{}",
+                    null,
+                    "test-model",
+                    "xhigh",
+                    ArtifactRetention.FULL,
+                    ignored -> {
+                    });
+        }
+
+        JsonNode index = read(run.resolve("request-bundle-index.json"));
+        Path sidecar = run.resolve(index.path("shards").get(0)
+                .path("sidecar").path("path").asText());
+        Files.writeString(sidecar, "tampered", java.nio.file.StandardOpenOption.APPEND);
+        Path reconstructed = tempDir.resolve("tampered-reconstruction.json");
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticRequestBundleReconstructor().reconstruct(run, reconstructed));
+        assertFalse(Files.exists(reconstructed));
+    }
+
+    @Test
+    void highFanoutEventKeepsAllFactsGloballyOwnedWithoutExpandingThemIntoOneShard()
+            throws Exception {
+        ObjectNode root = (ObjectNode) writeMetadataOnlyScanDocument();
+        addRoutineLineage(root, "lineage:event", "shop.orders", "id", "id", "INSERT_SELECT");
+        for (int index = 0; index < 40; index++) {
+            addFanoutRelationship(root, index);
+        }
+        Path input = tempDir.resolve("high-fanout-event.json");
+        JSON.writeValue(input.toFile(), root);
+
+        try (SemanticDiskBackedSession session = SemanticDiskBackedSession.open(
+                List.of(input), tempDir.resolve("high-fanout-session-work"))) {
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false));
+
+            assertOwnerCoverage(plan);
+            SemanticPathShard eventShard = plan.shards().stream()
+                    .filter(shard -> !read(shard.bundlePath()).path("eventCandidates").isEmpty())
+                    .findFirst()
+                    .orElseThrow();
+            ObjectNode eventBundle = (ObjectNode) read(eventShard.bundlePath());
+            JsonNode eventContext = eventBundle.path("shardContext");
+            assertFalse(eventContext.has("externalAuditRefs"));
+            assertTrue(eventContext.path("externalAuditRefCount").asInt() >= 40);
+            assertEquals(64, eventContext.path("externalAuditRefsSha256").asText().length());
+            JsonNode eventCandidate = eventBundle.path("eventCandidates").get(0);
+            assertFalse(eventCandidate.has("relationshipRefs"));
+            assertTrue(eventCandidate.path("relationshipRefCount").asInt() >= 40);
+            assertEquals(64, eventCandidate.path("relationshipRefsSha256").asText().length());
+            JsonNode fullEventCandidate =
+                    read(plan.fullBundlePath()).path("eventCandidates").get(0);
+            assertTrue(fullEventCandidate.path("relationshipRefs").size() >= 40);
+            SemanticExternalAuditReferences.Snapshot relationshipSnapshot =
+                    SemanticExternalAuditReferences.snapshot(
+                            textSet(fullEventCandidate.path("relationshipRefs")));
+            assertEquals(
+                    relationshipSnapshot.count(),
+                    eventCandidate.path("relationshipRefCount").asInt());
+            assertEquals(
+                    relationshipSnapshot.sha256(),
+                    eventCandidate.path("relationshipRefsSha256").asText());
+            assertEquals(
+                    eventContext.path("externalAuditRefCount").asInt(),
+                    SemanticExternalAuditReferences.read(
+                            SemanticExternalAuditReferences.sidecar(eventShard.bundlePath())).size());
+
+            ObjectNode tampered = eventBundle.deepCopy();
+            tampered.withObject("/shardContext").put(
+                    "externalAuditRefCount",
+                    eventContext.path("externalAuditRefCount").asInt() + 1);
+            try (SemanticPathResultStore results = new SemanticPathResultStore(
+                    tempDir.resolve("external-audit-tamper-results"),
+                    session.evidenceStore(),
+                    plan)) {
+                assertThrows(SemanticExtractionValidationException.class,
+                        () -> results.append(eventShard, tampered, emptySemanticDocument()));
+            }
+
+            Path sidecar = SemanticExternalAuditReferences.sidecar(eventShard.bundlePath());
+            Files.delete(sidecar);
+            Set<String> unresolved = Set.of("unresolved:audit-reference");
+            SemanticExternalAuditReferences.write(sidecar, unresolved);
+            SemanticExternalAuditReferences.Snapshot unresolvedSnapshot =
+                    SemanticExternalAuditReferences.snapshot(unresolved);
+            ObjectNode unresolvedBundle = eventBundle.deepCopy();
+            unresolvedBundle.withObject("/shardContext")
+                    .put("externalAuditRefCount", unresolvedSnapshot.count())
+                    .put("externalAuditRefsSha256", unresolvedSnapshot.sha256());
+            try (SemanticPathResultStore results = new SemanticPathResultStore(
+                    tempDir.resolve("external-audit-unresolved-results"),
+                    session.evidenceStore(),
+                    plan)) {
+                assertThrows(SemanticExtractionValidationException.class,
+                        () -> results.append(eventShard, unresolvedBundle, emptySemanticDocument()));
+            }
+        }
     }
 
     @Test
@@ -250,6 +496,28 @@ final class SemanticPathBackedPipelineTest {
         assertEquals(Files.readAllLines(plan.ownerManifestPath()).size(), owned.size());
     }
 
+    private void assertPromptAuditReferencesAreSummarized(ObjectNode bundle) {
+        for (String section : List.of(
+                "metadataTables", "metadataColumns", "metadataConstraints", "metadataIndexes",
+                "relationships", "lineage", "derivedRelationships", "derivedLineage",
+                "namingEvidence", "diagnostics", "eventCandidates",
+                "reviewItemCandidates", "tripletCandidates")) {
+            for (JsonNode item : bundle.path(section)) {
+                for (String field : List.of(
+                        "evidenceRefs", "lineageRefs",
+                        "supportingDerivedLineageRefs", "relationshipRefs")) {
+                    assertFalse(item.has(field), () -> section + " retains audit field " + field);
+                }
+            }
+        }
+    }
+
+    private Set<String> textSet(JsonNode values) {
+        Set<String> result = new LinkedHashSet<>();
+        values.forEach(value -> result.add(value.asText()));
+        return result;
+    }
+
     private String sha256(Path path) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         try (var input = Files.newInputStream(path)) {
@@ -263,6 +531,13 @@ final class SemanticPathBackedPipelineTest {
     }
 
     private Path writeMetadataOnlyScan() throws Exception {
+        ObjectNode root = writeMetadataOnlyScanDocument();
+        Path input = tempDir.resolve("metadata-only-scan.json");
+        JSON.writeValue(input.toFile(), root);
+        return input;
+    }
+
+    private ObjectNode writeMetadataOnlyScanDocument() {
         ObjectNode root = JSON.createObjectNode();
         root.putObject("database").put("type", "mysql").put("catalog", "shop").put("schema", "");
         root.put("generatedAt", "2026-07-28T00:00:00Z");
@@ -277,6 +552,7 @@ final class SemanticPathBackedPipelineTest {
         summary.putArray("sources").add("metadata");
         ObjectNode inventory = root.putObject("metadataInventory");
         inventory.put("status", "COMPLETE");
+        inventory.put("basis", "LIVE_METADATA");
         ObjectNode scope = inventory.putObject("scope");
         scope.put("catalog", "shop");
         scope.putNull("schema");
@@ -298,9 +574,84 @@ final class SemanticPathBackedPipelineTest {
                 "namingEvidence", "derivedNamingEvidence", "warnings")) {
             root.putArray(section);
         }
-        Path input = tempDir.resolve("metadata-only-scan.json");
-        JSON.writeValue(input.toFile(), root);
-        return input;
+        return root;
+    }
+
+    private void addRoutineLineage(
+            ObjectNode root,
+            String id,
+            String sourceTable,
+            String sourceColumn,
+            String targetColumn,
+            String mappingKind
+    ) {
+        ObjectNode lineage = root.withArray("dataLineages").addObject();
+        lineage.put("id", id);
+        lineage.putArray("sources").addObject()
+                .put("table", sourceTable)
+                .put("column", sourceColumn);
+        lineage.putObject("target")
+                .put("table", "shop.audit_log")
+                .put("column", targetColumn);
+        lineage.put("flowKind", "VALUE");
+        lineage.put("transformType", "DIRECT");
+        lineage.put("confidence", 0.82);
+        ObjectNode evidence = lineage.putArray("evidence").addObject();
+        evidence.put("type", "DATA_LINEAGE");
+        evidence.put("transformType", "DIRECT");
+        evidence.put("sourceType", "PLAIN_SQL");
+        evidence.put("score", 0.82);
+        evidence.put("source", "procedures/audit.sql");
+        evidence.put("detail", "typed routine write");
+        evidence.putObject("attributes")
+                .put("sourceObjectType", "PROCEDURE")
+                .put("sourceObjectName", "sp_write_audit")
+                .put("sourceObjectIdentity", "shop.sp_write_audit(bigint)")
+                .put("sourceStatementId", "routine:sp_write_audit")
+                .put("mappingKind", mappingKind);
+        lineage.putArray("rawEvidence");
+        lineage.putArray("warnings");
+        lineage.putObject("attributes").put("mappingKind", mappingKind);
+        ObjectNode summary = (ObjectNode) root.path("summary");
+        int count = root.path("dataLineages").size();
+        summary.put("directDataLineageCount", count);
+        summary.put("totalDataLineageCount", count);
+    }
+
+    private void addFanoutRelationship(ObjectNode root, int index) {
+        ObjectNode relationship = root.withArray("relationships").addObject();
+        relationship.put("id", "relationship:fanout:%04d".formatted(index));
+        relationship.putObject("source")
+                .put("table", "shop.orders")
+                .put("column", "id");
+        relationship.putObject("target")
+                .put("table", "shop.audit_log")
+                .put("column", "id_%04d".formatted(index));
+        relationship.put("relationType", "CO_OCCURRENCE");
+        relationship.put("relationSubType", "COLUMN_CO_OCCURRENCE");
+        relationship.put("confidence", 0.8);
+        ObjectNode evidence = relationship.putArray("evidence").addObject();
+        evidence.put("type", "PROCEDURE_JOIN");
+        evidence.put("sourceType", "PLAIN_SQL");
+        evidence.put("score", 0.8);
+        evidence.put("source", "procedures/audit.sql");
+        evidence.put("detail", "x".repeat(20_000));
+        evidence.putObject("attributes");
+        relationship.putArray("rawEvidence");
+        relationship.putArray("warnings");
+        relationship.putObject("attributes");
+        ObjectNode summary = (ObjectNode) root.path("summary");
+        int count = root.path("relationships").size();
+        summary.put("directRelationshipCount", count);
+        summary.put("totalRelationshipCount", count);
+    }
+
+    private JsonNode read(Path path) {
+        try {
+            return JSON.readTree(path.toFile());
+        } catch (Exception failure) {
+            throw new IllegalStateException(failure);
+        }
     }
 
     private Path writeEmptyScan() throws Exception {
@@ -318,6 +669,7 @@ final class SemanticPathBackedPipelineTest {
         summary.putArray("sources").add("metadata");
         ObjectNode inventory = root.putObject("metadataInventory");
         inventory.put("status", "COMPLETE");
+        inventory.put("basis", "LIVE_METADATA");
         ObjectNode scope = inventory.putObject("scope");
         scope.put("catalog", "shop");
         scope.putNull("schema");

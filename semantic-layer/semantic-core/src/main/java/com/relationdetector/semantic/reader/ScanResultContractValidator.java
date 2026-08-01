@@ -15,6 +15,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.WarningSeverity;
@@ -78,8 +79,11 @@ final class ScanResultContractValidator {
 
     private void validateMetadataInventory(JsonNode inventory) {
         MetadataInventoryStatus status = enumText(inventory, "status", MetadataInventoryStatus.class);
+        MetadataInventoryBasis basis = enumText(inventory, "basis", MetadataInventoryBasis.class);
         require(status == MetadataInventoryStatus.COMPLETE,
                 "metadataInventory.status must be COMPLETE for semantic processing");
+        require(basis != MetadataInventoryBasis.NONE,
+                "metadataInventory.basis must identify an evidence-backed inventory");
         JsonNode scope = requireObject(inventory, "scope");
         optionalText(scope, "catalog");
         optionalText(scope, "schema");

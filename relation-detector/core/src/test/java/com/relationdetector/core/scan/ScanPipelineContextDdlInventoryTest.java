@@ -18,6 +18,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
+import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.RelationshipCandidate;
@@ -28,8 +29,29 @@ import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.ddl.DdlEvidenceInventory;
 import com.relationdetector.core.identity.CanonicalEndpointKey;
+import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.identity.NamespaceContext;
 
 class ScanPipelineContextDdlInventoryTest {
+    @Test
+    void knownPhysicalTablesRemainCanonicalUnderCaseFoldingIdentifierRules() {
+        MetadataSnapshot snapshot = new MetadataSnapshot();
+        snapshot.tableFacts().add(new MetadataTableFact(
+                null, "sample_data", "inventory", "TABLE", null, null));
+        IdentifierRules oracleRules = identifier -> identifier == null
+                ? null
+                : identifier.toUpperCase(java.util.Locale.ROOT);
+        NamespaceContext namespace = new NamespaceContext("", "sample_data", List.of());
+        CanonicalIdentifierResolver identifiers = new CanonicalIdentifierResolver(oracleRules);
+        String expectedKey = identifiers.tableKey(
+                identifiers.resolveQualified("inventory", namespace), namespace);
+
+        Set<TableId> known = new StatementParsePipeline().knownPhysicalTables(snapshot);
+
+        assertTrue(known.stream().anyMatch(table ->
+                expectedKey.equals(identifiers.tableKey(table, namespace))));
+    }
+
     @Test
     void aggregateInventoryUsesAdaptorRulesAndExplicitScanNamespace() {
         ScanConfig config = new ScanConfig();

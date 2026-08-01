@@ -11,9 +11,35 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.core.scan.ScanConfig;
 
 class ParserConfigRemovalTest {
+    @Test
+    void yamlMapsExplicitCompleteDdlInventoryCoverage() throws Exception {
+        Path file = Files.createTempFile("relation-detector-ddl-inventory", ".yml");
+        Files.writeString(file.resolveSibling("schema.sql"), "CREATE TABLE sample_table (id bigint);");
+        Files.writeString(file, """
+                database:
+                  type: common
+                sources:
+                  metadata:
+                    enabled: false
+                  ddl:
+                    enabled: true
+                    fromDatabase: false
+                    inventoryCoverage: COMPLETE_SCOPE
+                    files:
+                      - schema.sql
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals(DdlInventoryCoverage.COMPLETE_SCOPE, config.ddlInventoryCoverage);
+        assertEquals(DdlInventoryCoverage.COMPLETE_SCOPE, config.resolve(file.getParent())
+                .sources().ddlInventoryCoverage());
+    }
+
     @Test
     void yamlConfigRejectsRemovedParserModes() throws Exception {
         Path file = Files.createTempFile("relation-detector-parser-mode", ".yml");

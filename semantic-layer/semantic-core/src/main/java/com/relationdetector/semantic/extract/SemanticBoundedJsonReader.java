@@ -65,24 +65,20 @@ public final class SemanticBoundedJsonReader {
     }
 
     private static final class TokenBudgetReader extends FilterReader {
-        private final int maxEstimatedTokens;
         private final String label;
-        private long asciiCodePoints;
-        private long nonAsciiCodePoints;
-        private boolean previousWasHighSurrogate;
+        private final SemanticTokenEstimateBudget budget;
 
         private TokenBudgetReader(Reader delegate, int maxEstimatedTokens, String label) {
             super(delegate);
-            this.maxEstimatedTokens = maxEstimatedTokens;
             this.label = label;
+            this.budget = new SemanticTokenEstimateBudget(maxEstimatedTokens);
         }
 
         @Override
         public int read() throws IOException {
             int value = super.read();
             if (value >= 0) {
-                account((char) value);
-                requireWithinBudget();
+                budget.add((char) value);
             }
             return value;
         }
@@ -90,38 +86,14 @@ public final class SemanticBoundedJsonReader {
         @Override
         public int read(char[] buffer, int offset, int length) throws IOException {
             int read = super.read(buffer, offset, length);
-            for (int index = 0; index < read; index++) {
-                account(buffer[offset + index]);
+            if (read > 0) {
+                budget.add(buffer, offset, read);
             }
-            requireWithinBudget();
             return read;
         }
 
-        private void account(char value) {
-            if (Character.isLowSurrogate(value) && previousWasHighSurrogate) {
-                previousWasHighSurrogate = false;
-                return;
-            }
-            previousWasHighSurrogate = Character.isHighSurrogate(value);
-            if (value <= 0x7f) {
-                asciiCodePoints++;
-            } else {
-                nonAsciiCodePoints++;
-            }
-        }
-
-        private void requireWithinBudget() {
-            if (SemanticPromptBudgetEstimator.estimate(asciiCodePoints, nonAsciiCodePoints)
-                    > maxEstimatedTokens) {
-                throw budgetExceeded(label);
-            }
-        }
-
         private void requireCompleteCodePoint() {
-            if (previousWasHighSurrogate) {
-                throw new SemanticExtractionValidationException(
-                        label + " contains an incomplete Unicode code point");
-            }
+            budget.requireCompleteCodePoint(label);
         }
     }
 }

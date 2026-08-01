@@ -3,7 +3,6 @@ package com.relationdetector.semantic.extract;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -16,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.reader.ExternalJsonRecordStore;
 import com.relationdetector.semantic.reader.ScanResultContractException;
 import com.relationdetector.semantic.reader.SemanticEvidenceStore;
@@ -50,7 +50,7 @@ final class SemanticPathResultStore implements AutoCloseable {
         }
         this.workspace = workspace;
         this.runPlan = runPlan;
-        this.ownerManifestValidator = new SemanticOwnerManifestValidator(runPlan);
+        this.ownerManifestValidator = new SemanticOwnerManifestValidator(runPlan, evidenceStore);
         try {
             if (Files.exists(workspace)) {
                 throw new SemanticExtractionValidationException(
@@ -317,24 +317,13 @@ final class SemanticPathResultStore implements AutoCloseable {
             }
         }
         try {
-            deleteRecursively(workspace);
+            SemanticFileTreeOperations.deleteRecursively(workspace);
         } catch (IOException error) {
             if (failure == null) failure = new IllegalStateException("failed to clean semantic result store", error);
             else failure.addSuppressed(error);
         }
         if (failure != null) {
             throw failure;
-        }
-    }
-
-    private void deleteRecursively(Path root) throws IOException {
-        if (!Files.exists(root)) {
-            return;
-        }
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
         }
     }
 

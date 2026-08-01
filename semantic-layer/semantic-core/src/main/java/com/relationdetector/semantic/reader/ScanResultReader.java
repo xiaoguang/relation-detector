@@ -13,6 +13,7 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
@@ -126,6 +127,7 @@ public final class ScanResultReader {
         JsonNode scope = node.path("scope");
         return new ScanMetadataInventory(
                 MetadataInventoryStatus.valueOf(node.path("status").asText()),
+                MetadataInventoryBasis.valueOf(node.path("basis").asText()),
                 new ScanScope(
                         nullableText(scope.get("catalog")),
                         nullableText(scope.get("schema")),

@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +22,7 @@ import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /**
@@ -163,6 +163,7 @@ public final class SemanticInputWindowStore implements AutoCloseable {
         }
         ScanScope scope = input.descriptor().inventory().scope();
         ScanMetadataInventory inventory = ScanMetadataInventory.complete(
+                input.descriptor().inventory().basis(),
                 new ScanScope(scope.catalog(), scope.schema(), List.of(), List.of()),
                 tables, columns, constraints, indexes);
         return new ScanBundle(
@@ -388,7 +389,7 @@ public final class SemanticInputWindowStore implements AutoCloseable {
             failure = new IllegalStateException("failed to close semantic input window indexes", error);
         }
         try {
-            deleteRecursively(workspace);
+            SemanticFileTreeOperations.deleteRecursively(workspace);
         } catch (IOException error) {
             if (failure == null) {
                 failure = new IllegalStateException("failed to clean semantic input window store", error);
@@ -396,15 +397,6 @@ public final class SemanticInputWindowStore implements AutoCloseable {
             else failure.addSuppressed(error);
         }
         if (failure != null) throw failure;
-    }
-
-    private void deleteRecursively(Path root) throws IOException {
-        if (!Files.exists(root)) return;
-        try (var paths = Files.walk(root)) {
-            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
-        }
     }
 
     public record InputWindow(String id, long rawBytes, ScanBundle bundle) {

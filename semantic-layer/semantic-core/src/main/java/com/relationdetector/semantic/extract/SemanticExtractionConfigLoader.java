@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
 
 /**
  * CN: 从 YAML/JSON transport 读取 semantic extraction fields 并构造 typed config；文件/结构错误明确失败，不执行 scan、LLM 或 artifact writing。
@@ -25,6 +26,7 @@ public final class SemanticExtractionConfigLoader {
             "apiKeyEnv", "api-key-env",
             "requestOnly", "request-only",
             "artifactRetention", "artifact-retention",
+            "kgOutput", "kg-output",
             "sharding",
             "shardMaxOutputTokens", "reconciliationMaxOutputTokens",
             "requestTimeoutSeconds", "maxTransportRetries");
@@ -102,6 +104,7 @@ public final class SemanticExtractionConfigLoader {
                 text(extract, "apiKeyEnv", "api-key-env", "OPENAI_API_KEY"),
                 bool(extract, "requestOnly", "request-only", false),
                 ArtifactRetention.parse(text(extract, "artifactRetention", "artifact-retention", "full")),
+                SemanticKgArtifactMode.parse(text(extract, "kgOutput", "kg-output", "full")),
                 new SemanticShardingOptions(
                         SemanticShardMode.parse(text(sharding, "mode", null, "auto")),
                         integer(sharding, "targetInputTokens", null, 240000),

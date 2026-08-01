@@ -23,10 +23,10 @@ maintainer-reviewed statements and are not refreshed or proved by `parser-summar
 | MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 448 | 248 | 0 |
 | MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 331 | 428 | 244 | 0 |
 | MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 448 | 248 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 |
-| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 |
-| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 |
-| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 367 | 384 | 248 | 0 |
+| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 |
+| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 |
+| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 367 | 384 | 248 | 0 |
 | Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
 | Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 |
 | Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
@@ -46,7 +46,12 @@ release gate compares four root-to-latest-full observation pairs; claims coverin
 profile require a separately recorded audit session and must not be inferred from equal counts.
 
 - MySQL token-event and MySQL 5.7/8.0 full-grammar now cover the same sample-data surface. Their remaining differences come from natural 5.7/8.0 SQL rewrites, versioned DDL/routine coverage, and parser capability differences. The semantic-equivalent benchmark is the equality check; this table is a broad capability snapshot.
-- PostgreSQL token-event and v16/v17/v18 full-grammar now produce the same direct fact counts and exact semantic observations on the natural corpus. The non-trivial `UPDATE ... RETURNING` self-update is retained in every applicable profile.
+- PostgreSQL token-event and v18 full-grammar produce the same exact semantic observations on the
+  natural v18 corpus. The v16/v17 compatibility assets use an ordinary two-column period foreign
+  key and therefore expose one additional physical column pair; v18 uses a temporal
+  `PERIOD ... WITHOUT OVERLAPS` constraint, whose temporal member is not promoted to an ordinary
+  column relationship. The non-trivial `UPDATE ... RETURNING` self-update is retained in every
+  applicable profile.
 - Oracle token-event and v26ai full-grammar match exactly on semantic observations. v12c retains a small lineage count difference caused by its version-specific natural SQL assets; relationships and direct naming counts remain aligned.
 - SQL Server natural assets now conform to their DDL contract. Token-event and all five full-grammar profiles produce the same audited direct relationship, lineage fingerprint, and direct naming-id sets on the natural corpus.
 - `sample-data` counts should not be used as a semantic equality score because each dialect has native syntax and version-specific assets.
@@ -61,10 +66,10 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 | MySQL token-event root sample-data | 38 | 32 / 6 | 361 | 448 | 248 | 0 | 1266 | 89 | 907 |
 | MySQL full-grammar v5_7 sample-data | 38 | 32 / 6 | 331 | 428 | 244 | 0 | 1166 | 100 | 848 |
 | MySQL full-grammar v8_0 sample-data | 38 | 32 / 6 | 361 | 448 | 248 | 0 | 1266 | 89 | 907 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
-| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
-| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
-| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 366 | 384 | 248 | 0 | 1264 | 62 | 905 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 367 | 384 | 248 | 0 | 1264 | 62 | 905 |
+| PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 | 1264 | 62 | 905 |
+| PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 | 1264 | 62 | 905 |
+| PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 367 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
 | Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 | 984 | 57 | 724 |
 | Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
@@ -111,7 +116,7 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 | Area | Current evidence | Classification | Next action |
 | --- | --- | --- | --- |
 | MySQL token-event vs MySQL full-grammar on broad sample-data | root/v8.0 `361 / 448 / 248` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage observations, and direct naming ids match between root token-event and v8_0 full. |
-| PostgreSQL token-event vs PostgreSQL full-grammar on broad sample-data | all profiles `366 / 384 / 248` | `AUDITED_SET_MATCH` | Exact semantic observations match between root token-event and v18 full; v16/v17/v18 direct counts are also aligned. |
+| PostgreSQL token-event vs PostgreSQL full-grammar on broad sample-data | root/v18 `367 / 384 / 248`; v16/v17 `368 / 384 / 248` | `AUDITED_SET_MATCH` | Exact semantic observations match between root token-event and v18 full. v16/v17 retain one additional ordinary FK member pair because their compatibility SQL cannot use the v18 temporal `PERIOD` member. |
 | Oracle full-grammar vs Oracle token-event on broad sample-data | root/v26ai `366 / 328 / 248` | `AUDITED_SET_MATCH` | Exact observations match for the same v26ai asset; the v12c lineage count difference is a version-specific SQL asset delta. |
 | SQL Server full-grammar vs token-event on broad sample-data | all profiles `342 / 756 / 246` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage observations, and direct naming ids match across root and all five full profiles. |
 | Cross-dialect semantic-equivalent scenarios | all scenarios are `MATCHED` | `NO_CONFIRMED_GAP` | Use this benchmark as the primary proof that equivalent SQL can converge across parser categories. |

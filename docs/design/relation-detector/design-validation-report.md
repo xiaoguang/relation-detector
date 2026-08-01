@@ -77,6 +77,21 @@ Closure 状态的唯一所有者是 [Code / Design Traceability](code-design-tra
 Fingerprint继续作为manifest中的审计产物，不另设tracked baseline；`verify-all`允许dirty，
 clean-worktree发布证明由`verify-release`负责。这些是冻结的窄契约，不是未闭合缺口。
 
+### 2026-07-30 File DDL inventory 与 Semantic 发布门禁
+
+file-only scan不再因为未连接JDBC而必然输出`NOT_REQUESTED`。只有配置显式声明DDL文件覆盖完整扫描
+scope时，core才把各parser独立产生并经契约校验的typed table、column、foreign-key和index事件组装为
+metadata inventory，并输出`status=COMPLETE, basis=DDL_DECLARATIONS`。默认
+`EVIDENCE_ONLY`仍不声明完整性；typed gap、冲突、空catalog或consumer引用不闭合继续失败。
+
+DDL basis证明的是“配置scope内的声明集合已完整处理”，不是整个数据库实例的live snapshot，也不
+虚构parser没有提供的数据类型。类型payload缺失时列类型保持`UNKNOWN`。发布链新增两层验证：Java
+流式结果校验要求19类parser的38份direct/derived JSON均为evidence-backed COMPLETE且inventory一致；
+随后对38份结果逐一构建deterministic KG，并对19份derived结果生成
+`gpt-5.6-sol/xhigh` request-only artifact，不调用真实API。完整门禁实际得到38/38 KG PASS、
+19/19 request-only PASS；132个shard request均有精确引用sidecar，最大估算输入239,995，低于
+800,000统一门限。该项状态为`MATCHED`。
+
 ### 2026-07-28 四项反向审计的当前状态
 
 本轮按更新后的设计重新读取生产代码与测试，冻结并处理以下四项：
@@ -89,15 +104,18 @@ clean-worktree发布证明由`verify-release`负责。这些是冻结的窄契�
    cardinality/ordinal、typed index member shape及identity唯一性；mixed index的表达式ordinal和
    完整交错顺序已进入同一闭包。
 3. semantic磁盘链路已实现全局event归并、typed component与唯一owner计划，raw-byte只控制I/O
-   window。event关联改为外排typed-key排序归并，高扇出引用在物化前受token预算；disk union-find
-   迭代压缩路径并检测越界/环；standalone raw和evidence slice分别受现有output/input token门限。
-   默认、发布和extended memory profile分别固定为1 MiB/96 MiB、128 MiB/96 MiB和1 GiB/512 MiB。
+   window。event contribution的标量、计数和成员分开落盘并外排归并，base descriptor在成员列表
+   与association key物化前受token门限，association完成后再执行组合门限。standalone envelope通过
+   Jackson单字符串上限和有界writer执行共享累计码点预算，字段通过后才物化`JsonNode`。临时树使用
+   不跟随符号链接的`walkFileTree`逐项清理。默认、发布和extended memory profile分别固定为
+   1 MiB/96 MiB、128 MiB/96 MiB和1 GiB/512 MiB。
 4. 400/450有效代码行门禁已扩展到relation-detector与semantic-layer全部目标职责后缀；原超限store、
    artifact writer、output writer和fingerprinter已按真实职责拆分，无allowlist或改名绕过。
 
 以上状态以[Code / Design Traceability](code-design-traceability.md)为唯一矩阵。索引证据政策、
 typed mixed-member wire、consumer closure、结构对抗内存门禁和职责门禁均已闭合。内存门禁证明
-指定堆下的有界完成或有界拒绝，不应外推为业务吞吐承诺。后续发布级回归仍按完整验收链执行。
+指定输入形状在固定堆下有界完成或确定性拒绝，不能外推为业务吞吐承诺。后续发布级回归仍按完整
+验收链执行。
 
 ### 历史已闭合边界
 
@@ -492,10 +510,11 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   使用同一inventory。
 - `build/extract/e2e`主链使用流式`SemanticInputStore`、section spool、外排identity/offset/component
   索引、全局owner plan和path-backed shard，不持有完整scan或最终全局KG。非COMPLETE或引用不闭合
-  inventory在模型调用和正式artifact写入前失败。event关联通过外排typed-key排序归并，descriptor先
-  估算高扇出引用预算；disk union-find使用有界迭代路径压缩。standalone `normalize-extraction`在
-  `readTree()`前和流式解码期间校验raw预算，evidence slice按选中记录累计预算，输出采用同级临时文件
-  原子替换。发布128 MiB/96 MiB门禁及按需1 GiB/512 MiB extended门禁与结构对抗测试共同守住该边界。
+  inventory在模型调用和正式artifact写入前失败。event contribution与association分别以磁盘descriptor
+  在对应列表物化前执行预算；disk union-find使用有界迭代路径压缩。standalone
+  `normalize-extraction`在`readTree()`前限制raw结果，evidence envelope以parser string constraint和
+  有界writer累计输入预算。临时树通过`walkFileTree`逐项清理。发布128 MiB/96 MiB及按需
+  1 GiB/512 MiB门禁与结构对抗测试共同守住该边界。
 - correctness fixture 唯一性已闭环：fixture-local input 在相同执行配置下按 content hash 去重，
   correctness tree 外的 tracked sample-data 以规范 repo-relative path 作为独立 source-asset identity。Common 重复 fixture 已合并，MySQL 5.7 三个独立资产路径继续分别验收。
 - release、correctness 与 sample-data 已共享 `heavy-job-lock.sh`。最外层 owner 从 smoke 开始持锁到

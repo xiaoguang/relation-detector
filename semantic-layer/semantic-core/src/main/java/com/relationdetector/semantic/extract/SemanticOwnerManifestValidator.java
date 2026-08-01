@@ -16,6 +16,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.reader.SemanticEvidenceStore;
 
 /**
  * CN: 验证全局owner manifest的hash、唯一identity、section类别及单个shard的owned/overlap完整分类；
@@ -32,12 +33,18 @@ final class SemanticOwnerManifestValidator {
     private static final List<String> CANDIDATE_SECTIONS = List.of(
             "eventCandidates", "reviewItemCandidates", "tripletCandidates");
     private final SemanticPathRunPlan runPlan;
+    private final SemanticEvidenceStore evidenceStore;
 
-    SemanticOwnerManifestValidator(SemanticPathRunPlan runPlan) {
-        if (runPlan == null) {
-            throw new IllegalArgumentException("semantic owner run plan is required");
+    SemanticOwnerManifestValidator(
+            SemanticPathRunPlan runPlan,
+            SemanticEvidenceStore evidenceStore
+    ) {
+        if (runPlan == null || evidenceStore == null) {
+            throw new IllegalArgumentException(
+                    "semantic owner run plan and evidence store are required");
         }
         this.runPlan = runPlan;
+        this.evidenceStore = evidenceStore;
         requireManifestHash();
     }
 
@@ -73,6 +80,9 @@ final class SemanticOwnerManifestValidator {
         }
 
         Map<String, Boolean> bundleIds = bundleIds(bundle);
+        Set<String> externalAudit = SemanticExternalAuditReferences.read(
+                SemanticExternalAuditReferences.sidecar(descriptor.bundlePath()));
+        requireExternalAuditSummary(context, externalAudit);
         Set<String> classified = new LinkedHashSet<>(ownedFacts);
         classified.addAll(ownedCandidates);
         classified.addAll(overlap);
@@ -80,10 +90,15 @@ final class SemanticOwnerManifestValidator {
             throw new SemanticExtractionValidationException(
                     "semantic shard ownership does not classify every bundle item exactly once");
         }
+        if (!java.util.Collections.disjoint(classified, externalAudit)) {
+            throw new SemanticExtractionValidationException(
+                    "semantic shard external audit identities must not be local items");
+        }
         ownedFacts.forEach(id -> requireKind(bundleIds, id, true));
         ownedCandidates.forEach(id -> requireKind(bundleIds, id, false));
 
         Set<String> matched = new LinkedHashSet<>();
+        Set<String> matchedExternal = new LinkedHashSet<>();
         try (BufferedReader reader = Files.newBufferedReader(
                 runPlan.ownerManifestPath(), StandardCharsets.UTF_8)) {
             String line;
@@ -94,6 +109,9 @@ final class SemanticOwnerManifestValidator {
                             "semantic owner manifest contains a malformed record");
                 }
                 String id = decode(fields[0]);
+                if (externalAudit.contains(id)) {
+                    matchedExternal.add(id);
+                }
                 if (!bundleIds.containsKey(id)) {
                     continue;
                 }
@@ -121,6 +139,29 @@ final class SemanticOwnerManifestValidator {
         if (!matched.equals(bundleIds.keySet())) {
             throw new SemanticExtractionValidationException(
                     "semantic owner manifest does not cover every shard item");
+        }
+        Set<String> externalEvidence = new LinkedHashSet<>(externalAudit);
+        externalEvidence.removeAll(matchedExternal);
+        for (String reference : externalEvidence) {
+            if (evidenceStore.find(SemanticEvidenceStore.Section.EVIDENCE, reference).isEmpty()) {
+                throw new SemanticExtractionValidationException(
+                        "semantic external audit identity is unresolved");
+            }
+        }
+    }
+
+    private void requireExternalAuditSummary(JsonNode context, Set<String> externalAudit) {
+        JsonNode count = context.path("externalAuditRefCount");
+        JsonNode hash = context.path("externalAuditRefsSha256");
+        if (!count.canConvertToInt() || !hash.isTextual()) {
+            throw new SemanticExtractionValidationException(
+                    "semantic shard external audit summary is missing or invalid");
+        }
+        SemanticExternalAuditReferences.Snapshot actual =
+                SemanticExternalAuditReferences.snapshot(externalAudit);
+        if (count.asInt() != actual.count() || !hash.asText().equals(actual.sha256())) {
+            throw new SemanticExtractionValidationException(
+                    "semantic shard external audit summary does not match typed references");
         }
     }
 

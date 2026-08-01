@@ -1,9 +1,13 @@
 package com.relationdetector.cli.verification;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -66,11 +70,22 @@ final class SampleDataResultValidator {
             }
             int diagnostics = 0;
             long validatedSourceLocations = 0;
+            Map<String, InventoryValidation> inventories = new LinkedHashMap<>();
             for (int index = 0; index < paths.size(); index++) {
                 FileValidation validation = validateFile(
                         paths.get(index), workspace.resolve("file-" + index));
                 diagnostics += validation.diagnostics();
                 validatedSourceLocations += validation.validatedSourceLocations();
+                String stem = stem(paths.get(index));
+                String category = stem.endsWith(DERIVED_SUFFIX)
+                        ? stem.substring(0, stem.length() - DERIVED_SUFFIX.length())
+                        : stem;
+                InventoryValidation existing = inventories.putIfAbsent(
+                        category, validation.inventory());
+                if (existing != null && !existing.equals(validation.inventory())) {
+                    throw failure(paths.get(index),
+                            "direct and derived metadata inventories differ");
+                }
             }
             if (diagnostics != 0) {
                 throw new ReleaseVerificationException("sample-data results contain diagnostics");
@@ -81,12 +96,14 @@ final class SampleDataResultValidator {
             report.put("jsonFiles", paths.size());
             report.put("diagnostics", diagnostics);
             report.put("validatedSourceLocationCount", validatedSourceLocations);
+            report.put("completeDdlInventoryFiles", paths.size());
             report.putObject("integrity")
                     .put("evidenceRefs", "PASS")
                     .put("sourcePaths", "PASS")
                     .put("providedSourceLocationsValid", "PASS")
                     .put("rawObservationDuplicates", "PASS")
-                    .put("derivedCycles", "PASS");
+                    .put("derivedCycles", "PASS")
+                    .put("metadataInventory", "PASS");
             ReleaseVerificationJson.write(output, report);
             return report;
         } finally {
@@ -94,6 +111,13 @@ final class SampleDataResultValidator {
         }
     }
 
+    /**
+     * CN: 流式读取单份sample-data JSON，只保留当前fact和有界计数/外存索引，返回该文件的诊断、位置和
+     * inventory摘要；任何wire、引用、位置、重复observation或cycle违约均在返回前失败，且不写PASS报告。
+     * EN: Streams one sample-data JSON while retaining only the current fact plus bounded counters and disk indexes,
+     * then returns its diagnostic, location, and inventory summary. Any wire, reference, location, duplicate-observation,
+     * or cycle violation fails before return and cannot produce a PASS report.
+     */
     private FileValidation validateFile(Path path, Path workspace) {
         FileState state = new FileState(path, workspace);
         try (JsonParser parser = ReleaseVerificationJson.MAPPER.getFactory().createParser(path.toFile())) {
@@ -112,6 +136,11 @@ final class SampleDataResultValidator {
                 }
                 if ("summary".equals(field)) {
                     state.summary = ReleaseVerificationJson.MAPPER.readTree(parser);
+                } else if ("metadataInventory".equals(field)) {
+                    if (state.inventory != null) {
+                        throw failure(path, "metadataInventory must appear once");
+                    }
+                    state.inventory = readInventory(parser, value, path);
                 } else if (arraySection(field) && value == JsonToken.START_ARRAY) {
                     readSection(parser, field, state);
                 } else {
@@ -127,7 +156,144 @@ final class SampleDataResultValidator {
             throw new ReleaseVerificationException("failed to stream sample-data result: " + path, error);
         }
         state.finish();
-        return new FileValidation(state.count("warnings"), state.validatedSourceLocations);
+        return new FileValidation(
+                state.count("warnings"), state.validatedSourceLocations, state.inventory);
+    }
+
+    /**
+     * CN: 从已定位到metadataInventory值的parser流中读取scope、counts和四类事实数组，并在读取过程中
+     * 计算稳定摘要；返回只含有界计数和摘要的校验结果。状态、DDL basis、数组形状或流式计数不一致时失败，
+     * 不完整物化inventory，也不改变parser以外的发布状态。
+     * EN: Reads scope, counts, and the four fact arrays from a parser positioned at metadataInventory while computing a
+     * stable digest during streaming, returning only bounded counts and the digest. Invalid status, DDL basis, array
+     * shape, or streamed counts fails; the method never materializes the complete inventory or mutates release state.
+     */
+    private InventoryValidation readInventory(JsonParser parser, JsonToken token, Path path)
+            throws IOException {
+        if (token != JsonToken.START_OBJECT) {
+            throw failure(path, "metadataInventory must be an object");
+        }
+        String status = "";
+        String basis = "";
+        JsonNode scope = null;
+        JsonNode counts = null;
+        Map<String, Long> actual = new LinkedHashMap<>();
+        MessageDigest digest = sha256();
+        while (parser.nextToken() != JsonToken.END_OBJECT) {
+            String field = parser.currentName();
+            JsonToken value = parser.nextToken();
+            if (value == null) {
+                throw failure(path, "metadataInventory field value is required");
+            }
+            switch (field) {
+                case "status" -> status = scalarText(parser, value, path, field);
+                case "basis" -> basis = scalarText(parser, value, path, field);
+                case "scope" -> {
+                    scope = ReleaseVerificationJson.MAPPER.readTree(parser);
+                    if (scope == null || !scope.isObject()) {
+                        throw failure(path, "metadataInventory.scope must be an object");
+                    }
+                }
+                case "counts" -> {
+                    counts = ReleaseVerificationJson.MAPPER.readTree(parser);
+                    if (counts == null || !counts.isObject()) {
+                        throw failure(path, "metadataInventory.counts must be an object");
+                    }
+                }
+                case "tables", "columns", "constraints", "indexes" ->
+                        actual.put(field, readInventoryArray(parser, value, path, field, digest));
+                default -> parser.skipChildren();
+            }
+        }
+        if (!"COMPLETE".equals(status)) {
+            throw failure(path, "metadataInventory.status must be COMPLETE");
+        }
+        if (!"DDL_DECLARATIONS".equals(basis) && !"MERGED".equals(basis)) {
+            throw failure(path, "metadataInventory.basis must include DDL declarations");
+        }
+        if (scope == null || counts == null) {
+            throw failure(path, "metadataInventory scope and counts are required");
+        }
+        updateDigest(digest, "status", status);
+        updateDigest(digest, "basis", basis);
+        updateDigest(digest, "scope", canonicalTree(scope));
+        for (String section : List.of("tables", "columns", "constraints", "indexes")) {
+            JsonNode expected = counts.get(section);
+            long resolved = actual.getOrDefault(section, -1L);
+            if (expected == null || !expected.isIntegralNumber()
+                    || expected.longValue() < 0L
+                    || expected.longValue() != resolved) {
+                throw failure(path,
+                        "metadataInventory.counts." + section + " does not match streamed count");
+            }
+            updateDigest(digest, "count:" + section, Long.toString(resolved));
+        }
+        if (actual.getOrDefault("tables", 0L) == 0L
+                || actual.getOrDefault("columns", 0L) == 0L) {
+            throw failure(path, "sample-data metadata inventory must contain tables and columns");
+        }
+        return new InventoryValidation(
+                HexFormat.of().formatHex(digest.digest()),
+                actual.get("tables"),
+                actual.get("columns"),
+                actual.get("constraints"),
+                actual.get("indexes"));
+    }
+
+    private long readInventoryArray(
+            JsonParser parser,
+            JsonToken token,
+            Path path,
+            String section,
+            MessageDigest digest
+    ) throws IOException {
+        if (token != JsonToken.START_ARRAY) {
+            throw failure(path, "metadataInventory." + section + " must be an array");
+        }
+        long count = 0;
+        JsonToken itemToken;
+        while ((itemToken = parser.nextToken()) != JsonToken.END_ARRAY) {
+            if (itemToken == null) {
+                throw failure(path, "unterminated metadataInventory." + section);
+            }
+            JsonNode item = ReleaseVerificationJson.MAPPER.readTree(parser);
+            if (item == null || !item.isObject()) {
+                throw failure(path, "metadataInventory." + section + " item must be an object");
+            }
+            updateDigest(digest, section, canonicalTree(item));
+            count++;
+        }
+        return count;
+    }
+
+    private String scalarText(
+            JsonParser parser,
+            JsonToken token,
+            Path path,
+            String field
+    ) throws IOException {
+        if (token != JsonToken.VALUE_STRING) {
+            throw failure(path, "metadataInventory." + field + " must be a string");
+        }
+        return parser.getText();
+    }
+
+    private MessageDigest sha256() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable", impossible);
+        }
+    }
+
+    private void updateDigest(MessageDigest digest, String field, String value) {
+        byte[] encoded = (value == null ? "" : value).getBytes(StandardCharsets.UTF_8);
+        digest.update(field.getBytes(StandardCharsets.UTF_8));
+        digest.update((byte) 0);
+        digest.update(Integer.toString(encoded.length).getBytes(StandardCharsets.US_ASCII));
+        digest.update((byte) ':');
+        digest.update(encoded);
+        digest.update((byte) 0);
     }
 
     private boolean arraySection(String field) {
@@ -382,6 +548,7 @@ final class SampleDataResultValidator {
         private final ExternalStringIndex namingReferences;
         private final ExternalStringIndex derivedNamingViewIds;
         private JsonNode summary;
+        private InventoryValidation inventory;
         private int derivedNamingCount;
         private long validatedSourceLocations;
 
@@ -402,6 +569,10 @@ final class SampleDataResultValidator {
         }
 
         private void finish() {
+            if (inventory == null) {
+                throw new ReleaseVerificationException(
+                        path + ": metadataInventory is required");
+            }
             ExternalStringIndex.SortedIndex ids = namingIds.finish(true);
             ExternalStringIndex.SortedIndex references = namingReferences.finish(false);
             ExternalStringIndex.SortedIndex derivedView = derivedNamingViewIds.finish(true);
@@ -452,6 +623,19 @@ final class SampleDataResultValidator {
     private record StatementSpan(long start, long end) {
     }
 
-    private record FileValidation(int diagnostics, long validatedSourceLocations) {
+    private record FileValidation(
+            int diagnostics,
+            long validatedSourceLocations,
+            InventoryValidation inventory
+    ) {
+    }
+
+    private record InventoryValidation(
+            String fingerprint,
+            long tables,
+            long columns,
+            long constraints,
+            long indexes
+    ) {
     }
 }

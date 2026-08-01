@@ -213,7 +213,7 @@ final class SemanticShardPlannerTest {
                 .findFirst()
                 .orElseThrow();
         assertTrue(new SemanticExtractionPromptBuilder().build(overlap.bundle()).userPrompt()
-                .contains("\"outputOwnedReferencesOnly\" : true"));
+                .contains("\"outputOwnedReferencesOnly\":true"));
     }
 
     @Test

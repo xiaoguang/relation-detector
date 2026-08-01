@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.spi.ScanScope;
 
 /**
@@ -35,6 +36,7 @@ public final class SemanticMetadataInventoryEnvelope {
             throw new IllegalArgumentException("semantic metadata inventory is required");
         }
         return envelope(
+                inventory.basis(),
                 inventory.scope(),
                 inventory.tables().size(),
                 inventory.columns().size(),
@@ -48,6 +50,7 @@ public final class SemanticMetadataInventoryEnvelope {
             throw new IllegalArgumentException("semantic metadata inventory descriptor is required");
         }
         return envelope(
+                inventory.basis(),
                 inventory.scope(),
                 inventory.tableCount(),
                 inventory.columnCount(),
@@ -57,6 +60,7 @@ public final class SemanticMetadataInventoryEnvelope {
     }
 
     private static ObjectNode envelope(
+            MetadataInventoryBasis basis,
             ScanScope scope,
             long tables,
             long columns,
@@ -66,6 +70,7 @@ public final class SemanticMetadataInventoryEnvelope {
     ) {
         ObjectNode result = JSON.createObjectNode();
         result.put("status", "COMPLETE");
+        result.put("basis", basis.name());
         result.set("scope", scope(scope));
         ObjectNode counts = result.putObject("counts");
         counts.put("tables", tables);
