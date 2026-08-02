@@ -72,6 +72,8 @@ public final class AdaptorParseResultContractValidator {
             "PROCEDURE", "FUNCTION", "PACKAGE", "PACKAGE_BODY", "EVENT");
 
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
+    private final StructuredEventDiscriminatorValidator discriminators =
+            new StructuredEventDiscriminatorValidator();
 
     public ScriptFrameResult validateFrame(ScriptFrameRequest request, ScriptFrameResult raw) {
         require(request != null, "script frame request is null");
@@ -242,6 +244,7 @@ public final class AdaptorParseResultContractValidator {
             case COLUMN_EQUALITY, PREDICATE_EQUALITY, EXISTS_PREDICATE -> {
                 requireExpressionSource(event.left(), boundary + " left source");
                 requireExpressionSource(event.right(), boundary + " right source");
+                discriminators.validatePredicate(event, boundary);
                 validateGuards(event.predicateGuards(), boundary);
             }
             case JOIN_USING_COLUMNS -> {
@@ -249,12 +252,14 @@ public final class AdaptorParseResultContractValidator {
                 requireText(event.right().alias(), boundary + " USING right alias");
                 require(!event.usingColumns().isEmpty(), boundary + " USING columns are empty");
                 event.usingColumns().forEach(column -> requireText(column, boundary + " USING column"));
+                discriminators.validatePredicate(event, boundary);
                 validateGuards(event.predicateGuards(), boundary);
             }
             case IN_SUBQUERY_PREDICATE -> {
                 require(event.verifiedColumnSubquery(), boundary + " IN subquery is not verified");
                 validateSources(event.outerSources(), boundary + " IN outer sources", true);
                 validateSources(event.innerSources(), boundary + " IN inner sources", true);
+                discriminators.validatePredicate(event, boundary);
                 validateGuards(event.predicateGuards(), boundary);
             }
             case TUPLE_IN_SUBQUERY_PREDICATE -> {
@@ -263,6 +268,7 @@ public final class AdaptorParseResultContractValidator {
                 validateSources(event.innerSources(), boundary + " tuple-IN inner sources", true);
                 require(event.outerSources().size() == event.innerSources().size(),
                         boundary + " tuple-IN arity does not match");
+                discriminators.validatePredicate(event, boundary);
                 validateGuards(event.predicateGuards(), boundary);
             }
             case WRITE_TARGET ->
@@ -270,7 +276,7 @@ public final class AdaptorParseResultContractValidator {
             case UPDATE_ASSIGNMENT, INSERT_SELECT_MAPPING, MERGE_WRITE_MAPPING -> {
                 require(anyText(event.targetTable(), event.targetAlias()), boundary + " write owner is missing");
                 requireText(event.targetColumn(), boundary + " write target column");
-                requireText(event.mappingKind(), boundary + " write mapping kind");
+                discriminators.validateWrite(event, boundary);
                 validateTrace(event.expression(), boundary + " write expression", false);
             }
             case PROJECTION_ITEM -> {
@@ -288,13 +294,13 @@ public final class AdaptorParseResultContractValidator {
             case DDL_INDEX -> {
                 requireText(event.table(), boundary + " index table");
                 requireText(event.column(), boundary + " index column");
-                requireText(event.role(), boundary + " index role");
-                requireText(event.kind(), boundary + " index kind");
+                discriminators.validateIndex(event, boundary);
                 validateComposite(event, boundary);
             }
             case DDL_COLUMN -> {
                 requireText(event.table(), boundary + " DDL column table");
                 requireText(event.column(), boundary + " DDL column");
+                discriminators.validateColumn(event, boundary);
                 validateComposite(event, boundary);
             }
             case DDL_CATALOG -> {

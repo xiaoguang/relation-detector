@@ -23,6 +23,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.PredicateJoinKind;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.PredicateGuard;
 
@@ -211,7 +212,7 @@ public final class PredicateEventSink {
         recorder.predicate(ctx, StructuredParseEventType.JOIN_USING_COLUMNS,
                 new ExpressionSource(source.clean(leftAlias), ""),
                 new ExpressionSource(source.clean(rightAlias), ""),
-                List.of(), List.of(), "", "", columns.stream()
+                List.of(), List.of(), "", PredicateJoinKind.USING_JOIN.name(), columns.stream()
                         .map(source::clean).filter(s -> !s.isBlank()).toList(), false);
     }
 
@@ -278,14 +279,14 @@ public final class PredicateEventSink {
                     outerColumns.stream().map(this::expressionSource).toList(),
                     innerColumns.stream().map(this::expressionSource).toList(),
                     inner.table().isBlank() ? rowsets.tableFor(innerColumns.get(0).qualifier()) : inner.table(),
-                    "", List.of(), true, currentPredicateGuards());
+                    PredicateJoinKind.IN_SUBQUERY.name(), List.of(), true, currentPredicateGuards());
         } else if (outerColumns.size() > 1 && outerColumns.size() == innerColumns.size()) {
             recorder.predicate(ctx, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE,
                     ExpressionSource.EMPTY, ExpressionSource.EMPTY,
                     outerColumns.stream().map(this::expressionSource).toList(),
                     innerColumns.stream().map(this::expressionSource).toList(),
                     inner.table().isBlank() ? rowsets.tableFor(innerColumns.get(0).qualifier()) : inner.table(),
-                    "", List.of(), true, currentPredicateGuards());
+                    PredicateJoinKind.TUPLE_IN_SUBQUERY.name(), List.of(), true, currentPredicateGuards());
         }
     }
 

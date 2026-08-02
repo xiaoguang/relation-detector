@@ -159,7 +159,7 @@ class CommonTokenEventStructuredSqlParserAdditionalTest {
                 new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY, provenance,
                         new ExpressionSource("shop.orders", "customer_id"),
                         new ExpressionSource("shop.customers", "id"),
-                        List.of(), List.of(), "", "INNER", List.of(), false)), List.of(), java.util.Map.of());
+                        List.of(), List.of(), "", "JOIN_ON", List.of(), false)), List.of(), java.util.Map.of());
 
         List<RelationshipCandidate> relationships = new StructuredRelationshipExtractor().extract(statement, result);
 

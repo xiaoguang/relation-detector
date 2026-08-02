@@ -10,6 +10,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.PredicateJoinKind;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.ExpressionTrace;
 import com.relationdetector.contracts.parse.DdlEvent;
@@ -79,7 +80,7 @@ public final class OracleSqlEventVisitorCore {
     public void joinUsing(ParserRuleContext ctx, List<String> columns) {
         events.add(new PredicateEvent(StructuredParseEventType.JOIN_USING_COLUMNS,
                 provenance(ctx), ExpressionSource.EMPTY, ExpressionSource.EMPTY,
-                List.of(), List.of(), "", "", columns, false));
+                List.of(), List.of(), "", PredicateJoinKind.USING_JOIN.name(), columns, false));
     }
 
     public void inSubquery(ParserRuleContext ctx, String outerAlias, String outerColumn,
@@ -88,7 +89,7 @@ public final class OracleSqlEventVisitorCore {
         ExpressionSource inner = new ExpressionSource(innerAlias, innerColumn);
         events.add(new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
                 provenance(ctx), outer, inner, List.of(outer), List.of(inner), innerTable,
-                "", List.of(), true, currentPredicateGuards()));
+                PredicateJoinKind.IN_SUBQUERY.name(), List.of(), true, currentPredicateGuards()));
     }
 
     public void projection(ParserRuleContext ctx, String outputAlias, String outputColumn,

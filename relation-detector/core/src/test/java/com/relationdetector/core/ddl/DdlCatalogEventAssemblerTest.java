@@ -85,7 +85,7 @@ final class DdlCatalogEventAssemblerTest {
         DdlCatalogEvent event = new DdlCatalogEventAssembler().assemble(statement, List.of(
                 new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance,
                         "", "", "", "", "orders", "customer_id",
-                        "SOURCE_INDEX", "INDEX", 1, 1)));
+                        "SOURCE_INDEX", "CREATE_INDEX", 1, 1)));
 
         assertTrue(event.tables().isEmpty());
         assertTrue(event.columns().isEmpty());
@@ -135,7 +135,7 @@ final class DdlCatalogEventAssemblerTest {
         DdlCatalogEvent event = new DdlCatalogEventAssembler().assemble(statement, List.of(
                 new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance,
                         "", "", "", "", "orders", "customer_id",
-                        "SOURCE_INDEX", "INDEX", 1, 1)));
+                        "SOURCE_INDEX", "CREATE_INDEX", 1, 1)));
 
         assertEquals(1, event.indexes().size());
         assertTrue(event.gaps().isEmpty());

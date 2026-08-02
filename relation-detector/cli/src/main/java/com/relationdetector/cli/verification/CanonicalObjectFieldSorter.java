@@ -31,15 +31,25 @@ import com.fasterxml.jackson.core.JsonToken;
  */
 final class CanonicalObjectFieldSorter {
     private static final int VALUE_MEMORY_LIMIT = 1024 * 1024;
+    private static final int DEFAULT_MERGE_FAN_IN = 32;
     private static final Comparator<String> CODE_POINT_ORDER =
             CanonicalObjectFieldSorter::compareCodePoints;
 
     private final Path workspace;
     private final int fieldsPerChunk;
+    private final int mergeFanIn;
 
     CanonicalObjectFieldSorter(Path workspace, int fieldsPerChunk) {
+        this(workspace, fieldsPerChunk, DEFAULT_MERGE_FAN_IN);
+    }
+
+    CanonicalObjectFieldSorter(Path workspace, int fieldsPerChunk, int mergeFanIn) {
+        if (mergeFanIn < 2) {
+            throw new IllegalArgumentException("canonical field merge fan-in must be at least two");
+        }
         this.workspace = workspace;
         this.fieldsPerChunk = fieldsPerChunk;
+        this.mergeFanIn = mergeFanIn;
     }
 
     void write(
@@ -142,6 +152,58 @@ final class CanonicalObjectFieldSorter {
             List<Path> chunks,
             QuotedStringWriter quotedWriter
     ) throws IOException {
+        List<Path> finalChunks = reduceChunks(chunks);
+        output.write('{');
+        boolean[] first = {true};
+        mergeRecords(finalChunks, record -> {
+            if (!first[0]) {
+                output.write(',');
+            }
+            quotedWriter.write(output, record.key());
+            output.write(':');
+            spool.copy(record.offset(), record.length(), output);
+            first[0] = false;
+        });
+        output.write('}');
+    }
+
+    private List<Path> reduceChunks(List<Path> chunks) throws IOException {
+        List<Path> current = new ArrayList<>(chunks);
+        int pass = 0;
+        while (current.size() > mergeFanIn) {
+            List<Path> merged = new ArrayList<>();
+            for (int start = 0; start < current.size(); start += mergeFanIn) {
+                List<Path> group = current.subList(start, Math.min(start + mergeFanIn, current.size()));
+                Path target = current.get(0).getParent()
+                        .resolve("merge-%03d-%06d.bin".formatted(pass, merged.size()));
+                writeMergedChunk(group, target);
+                merged.add(target);
+            }
+            for (Path chunk : current) {
+                Files.deleteIfExists(chunk);
+            }
+            current = merged;
+            pass++;
+        }
+        return current;
+    }
+
+    private void writeMergedChunk(List<Path> chunks, Path target) throws IOException {
+        try (DataOutputStream output = new DataOutputStream(
+                new BufferedOutputStream(Files.newOutputStream(target)))) {
+            mergeRecords(chunks, record -> writeRecord(output, record));
+        }
+    }
+
+    private void writeRecord(DataOutputStream output, FieldRecord record) throws IOException {
+        byte[] key = record.key().getBytes(StandardCharsets.UTF_8);
+        output.writeInt(key.length);
+        output.write(key);
+        output.writeLong(record.offset());
+        output.writeLong(record.length());
+    }
+
+    private void mergeRecords(List<Path> chunks, FieldRecordConsumer consumer) throws IOException {
         PriorityQueue<ChunkCursor> queue = new PriorityQueue<>(
                 Comparator.comparing(cursor -> cursor.current().key(), CODE_POINT_ORDER));
         List<ChunkCursor> cursors = new ArrayList<>();
@@ -153,28 +215,19 @@ final class CanonicalObjectFieldSorter {
                     queue.add(cursor);
                 }
             }
-            output.write('{');
             String previous = null;
-            boolean first = true;
             while (!queue.isEmpty()) {
                 ChunkCursor cursor = queue.remove();
                 FieldRecord record = cursor.current();
                 if (record.key().equals(previous)) {
                     throw new ReleaseVerificationException("duplicate JSON object key");
                 }
-                if (!first) {
-                    output.write(',');
-                }
-                quotedWriter.write(output, record.key());
-                output.write(':');
-                spool.copy(record.offset(), record.length(), output);
+                consumer.accept(record);
                 previous = record.key();
-                first = false;
                 if (cursor.advance()) {
                     queue.add(cursor);
                 }
             }
-            output.write('}');
         } finally {
             for (ChunkCursor cursor : cursors) {
                 cursor.close();
@@ -219,6 +272,11 @@ final class CanonicalObjectFieldSorter {
     @FunctionalInterface
     interface QuotedStringWriter {
         void write(OutputStream output, String value) throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface FieldRecordConsumer {
+        void accept(FieldRecord record) throws IOException;
     }
 
     private static final class ChunkCursor implements AutoCloseable {

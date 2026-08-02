@@ -9,11 +9,11 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.DdlIndexKind;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
@@ -173,7 +173,8 @@ public final class DdlCatalogEventAssembler {
                         map -> List.copyOf(map.values())));
         TableKey table = tableKey(group.table());
         boolean unique = ordered.stream().anyMatch(event -> "TARGET_UNIQUE".equals(event.role()));
-        boolean primary = group.kind().toUpperCase(Locale.ROOT).contains("PRIMARY");
+        DdlIndexKind kind = DdlIndexKind.valueOf(group.kind());
+        boolean primary = kind == DdlIndexKind.PRIMARY_KEY || kind == DdlIndexKind.INLINE_PRIMARY_KEY;
         List<MetadataIndexMemberFact> members = new ArrayList<>();
         int ordinal = 1;
         for (StructuredSqlEvent event : ordered) {

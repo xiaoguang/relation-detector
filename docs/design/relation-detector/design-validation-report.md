@@ -89,7 +89,8 @@ DDL basis证明的是“配置scope内的声明集合已完整处理”，不是
 流式结果校验要求19类parser的38份direct/derived JSON均为evidence-backed COMPLETE且inventory一致；
 随后对38份结果逐一构建完整deterministic KG，并为全部direct/derived结果生成可重建
 `gpt-5.6-sol/xhigh` Codex-session request package。确定性矩阵得到38/38 KG与bundle reconstruction
-PASS；232个owned shard均有精确引用sidecar，最大估算输入240,000，低于800,000统一门限。
+PASS；每个owned shard均有一份精确引用sidecar。shard数量和最大估算输入属于运行产物，由ignored
+verification summary/manifest记录；设计契约只要求估算值不超过统一hard门限。
 模型响应、reconciliation和最终closure由独立enrichment tier验证，不能以request-only替代。该项状态为`MATCHED`。
 
 ### 2026-07-28 四项反向审计的当前状态
@@ -190,8 +191,9 @@ canonicalizer复用。显式输入ID不变。graph edge已脱离display slug；�
 ```text
 contracts
 contracts.model / metadata / parse / spi / scoring
-core.scan / parser / tokenevent / fullgrammar / relation / lineage / ddl
-core.parse / log / metadata / output / diagnostics / scoring
+core.scan / config / input / adaptor / execution / result
+core.parser.antlr / parser.runtime / parser.tokenevent / parser.fullgrammar
+core.relation / lineage / ddl / log / metadata / output / diagnostics / scoring
 cli
 mysql / mysql.tokenevent / mysql.fullgrammar.v5_7 / mysql.fullgrammar.v8_0
 postgres / postgres.tokenevent / postgres.fullgrammar.common / postgres.fullgrammar.v16 / v17 / v18
@@ -202,8 +204,9 @@ sqlserver / sqlserver.tokenevent / sqlserver.fullgrammar.common / sqlserver.full
 逐包审视结论：
 
 - `contracts` 只承载跨模块契约、模型、SPI、parse result 和默认 score 常量，不依赖 core。
-- `core.scan` 负责扫描编排；`core.parser` 负责 parser mode/profile 选择；二者没有承载数据库版本实现。
-- `core.tokenevent` 与 `core.fullgrammar` 是事件来源基础设施；relationship / lineage 语义被隔离在 `core.relation` 与 `core.lineage`。
+- `core.scan`只负责扫描编排与运行上下文；配置、输入、adaptor契约、statement执行和结果模型分别位于`core.config/input/adaptor/execution/result`。
+- `core.parser.runtime`负责parser mode/profile选择；`core.parser.tokenevent`与`core.parser.fullgrammar`是事件来源基础设施，均不承载数据库版本实现。
+- relationship / lineage语义被隔离在`core.relation`与`core.lineage`。
 - `core.ddl` 是 token-event DDL event 支撑；DDL relationship 转换仍在 `core.relation.DdlRelationExtractionVisitor`。
 - `adaptor-mysql` / `adaptor-postgres` / `adaptor-oracle` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammar 位于 `fullgrammar/v8_0`、PostgreSQL `fullgrammar/v16|v17|v18` 或 Oracle `fullgrammar/v12c|v19c|v21c|v26ai`，PostgreSQL/Oracle 公共抽象位于 `fullgrammar/common`。
 - 没有发现 core 直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar implementation 的职责倒置。
@@ -467,8 +470,9 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   必须同时提供 typed producer、sample completeness 契约、资源边界和独立 SPI 升级。
 - CLI argument、config file、config format、adaptor、input、connection、runtime 和 output write
   failure 的 mapping 已有测试；batch partial failure 保持 exit 13，并只写 typed error code 与固定
-  脱敏文本。live namespace resolver 的 `LiveSourceConfigurationException` 已在 single-scan 映射为
-  `CONFIG_FORMAT_ERROR`，batch case 保留同一 typed code，整体仍返回 `BATCH_PARTIAL_FAILURE`。adaptor
+  脱敏文本。`LiveSourceConfigurationException`已在single-scan映射为`CONFIG_FORMAT_ERROR`，batch case
+  保留同一typed code；MySQL catalog/schema canonicalization冲突也使用同一typed异常，并在连接或查询前
+  失败。adaptor
   SPI/type/id/capability/implementation 以及validator已接收的adaptor result-contract failure使用
   `AdaptorContractException / ADAPTOR_ERROR`；`ScanTaskExecutor` 在串行和并行路径保留同一异常类型。
   full-parser result的null attributes由selector/core wrapper显式转为`AdaptorContractException`，
@@ -516,6 +520,10 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   `normalize-extraction`在`readTree()`前限制raw结果，evidence envelope以parser string constraint和
   有界writer累计输入预算。临时树通过`walkFileTree`逐项清理。发布128 MiB/96 MiB及按需
   1 GiB/512 MiB门禁与结构对抗测试共同守住该边界。
+- 当前外排字符串索引的chunk排序、多路归并及整行/tab-key二分统一使用unsigned UTF-8 byte order，
+  supplementary Unicode与组合字符测试固定写入/查找一致性。canonical JSON object field sorter采用
+  固定32路多阶段归并，中间chunk只引用value spool区间；超宽object、低文件描述符、跨组重复键和
+  历史SHA测试共同固定bounded descriptor与canonical byte兼容边界。
 - correctness fixture 唯一性已闭环：fixture-local input 在相同执行配置下按 content hash 去重，
   correctness tree 外的 tracked sample-data 以规范 repo-relative path 作为独立 source-asset identity。Common 重复 fixture 已合并，MySQL 5.7 三个独立资产路径继续分别验收。
 - release、correctness 与 sample-data 已共享 `heavy-job-lock.sh`。最外层 owner 从 smoke 开始持锁到

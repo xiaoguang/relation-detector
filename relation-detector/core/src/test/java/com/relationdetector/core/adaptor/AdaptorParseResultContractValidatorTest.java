@@ -277,6 +277,42 @@ class AdaptorParseResultContractValidatorTest {
     }
 
     @Test
+    void structuredResultRejectsUnknownOrMismatchedTypedDiscriminators() {
+        SqlStatementRecord statement = statement(
+                "SELECT 1", StatementSourceType.PLAIN_SQL, "input.sql", 1, 1,
+                Map.of("sourceFile", "input.sql", "sourceStatementId", "input.sql:1-1"));
+        SourceProvenance provenance = SourceProvenance.source("input.sql", 1);
+        ExpressionSource left = new ExpressionSource("l", "id");
+        ExpressionSource right = new ExpressionSource("r", "id");
+        ExpressionTrace trace = new ExpressionTrace(
+                List.of(left), com.relationdetector.contracts.Enums.LineageFlowKind.VALUE,
+                com.relationdetector.contracts.Enums.LineageTransformType.DIRECT, true);
+        List<StructuredSqlEvent> invalidEvents = List.of(
+                new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY, provenance,
+                        left, right, List.of(), List.of(), "", "NOT_A_LEFT_JOIN", List.of(), false),
+                new WriteEvent(StructuredParseEventType.INSERT_SELECT_MAPPING, provenance,
+                        "", "", "", "", "orders", "id", "UPDATE_SET", trace),
+                new WriteEvent(StructuredParseEventType.UPDATE_ASSIGNMENT, provenance,
+                        "", "", "", "", "orders", "id", "MERGE_UPDATE", trace),
+                new WriteEvent(StructuredParseEventType.MERGE_WRITE_MAPPING, provenance,
+                        "", "", "", "", "orders", "id", "INSERT_SELECT", trace),
+                new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance,
+                        "", "", "", "", "orders", "id", "NOT_A_ROLE", "PRIMARY_KEY", 1, 1),
+                new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance,
+                        "", "", "", "", "orders", "id", "TARGET_UNIQUE", "NOT_PRIMARY", 1, 1),
+                new DdlEvent(StructuredParseEventType.DDL_COLUMN, provenance,
+                        "", "", "", "", "orders", "id", "", "NOT_PRIMARY", 1, 1));
+
+        for (StructuredSqlEvent invalid : invalidEvents) {
+            StructuredParseResult raw = new StructuredParseResult(
+                    "plugin", "mysql", "input.sql", List.of(invalid), List.of(), Map.of());
+            assertThrows(AdaptorContractException.class,
+                    () -> validator.validateSql(statement, raw, List.of()),
+                    () -> "Expected invalid discriminator to be rejected for " + invalid.type());
+        }
+    }
+
+    @Test
     void structuredResultRejectsUnsafeOrConflictingProvenance() {
         SqlStatementRecord statement = statement(
                 "SELECT * FROM orders", StatementSourceType.PLAIN_SQL, "input.sql", 4, 4,

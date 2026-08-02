@@ -20,9 +20,16 @@ import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
 import com.relationdetector.semantic.ingest.ScanBundle;
 import com.relationdetector.semantic.ingest.ScanFact;
+import com.relationdetector.semantic.ingest.ScanMetadataInventory;
+import com.relationdetector.semantic.ingest.ScanMetadataInventoryFixture;
 
 final class SemanticStableIdTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ScanMetadataInventory INVENTORY = ScanMetadataInventoryFixture.complete(
+            "shop", "",
+            "orders.customer_id", "orders.id", "customers.id", "payments.order_id",
+            "payments.amount", "refunds.amount", "sales_fact.net_amount", "payments.customer_id",
+            "invoices.customer_id", "order_facts.amount", "invoice_facts.amount", "customer_facts.amount");
 
     @TempDir
     Path tempDir;
@@ -70,6 +77,7 @@ final class SemanticStableIdTest {
                 "DATA_LINEAGE");
 
         ScanBundle bundle = new ScanBundle("mysql", "shop", "", "", List.of(), List.of(), Map.of(),
+                INVENTORY,
                 List.of(), List.of(),
                 List.of(relationshipViaOrders, relationshipViaInvoices),
                 List.of(lineageViaOrders, lineageViaInvoices),
@@ -81,6 +89,7 @@ final class SemanticStableIdTest {
 
     private ScanBundle bundle(List<JsonNode> relationships, List<JsonNode> lineages, List<JsonNode> diagnostics) {
         return new ScanBundle("mysql", "shop", "", "", List.of("logs"), List.of(), Map.of(),
+                INVENTORY,
                 relationships, lineages, List.of(), List.of(), List.of(), diagnostics);
     }
 

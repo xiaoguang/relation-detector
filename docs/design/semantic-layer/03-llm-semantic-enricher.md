@@ -365,7 +365,7 @@ request package中并用于owner、backfill和closure。确定性`tripletCandida
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
 | `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base和association组合分别在对应列表物化前受同一预算；standalone raw、envelope和已选evidence共享硬门限；递归清理内存只随目录深度增长。低堆测试覆盖跨窗口宽event、64 MiB envelope和20,000路径。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
-| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才可输出COMPLETE/DDL_DECLARATIONS。完整sample-data semantic门禁已对38份direct/derived结果构建完整KG、request package并完成重建/closure；232个owned shard与232份精确引用sidecar一一对应，全部请求为`gpt-5.6-sol/xhigh`且最大估算输入240,000，低于统一门限。 |
+| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才可输出COMPLETE/DDL_DECLARATIONS。完整sample-data semantic门禁已对38份direct/derived结果构建完整KG、request package并完成重建/closure；每个owned shard与一份精确引用sidecar一一对应，全部请求为`gpt-5.6-sol/xhigh`且必须通过统一hard estimate gate。运行时数量和最大估算值由ignored verification summary/manifest记录。 |
 
 上述完整输入、模型请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
 identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及

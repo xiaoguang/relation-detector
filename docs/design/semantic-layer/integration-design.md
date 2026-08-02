@@ -586,7 +586,7 @@ Step 7: Answer（最终输出）
 
 **当前代码预期输出：**
 
-1. ScanResultReader.open → SemanticInputStore（流式spool typed facts与inventory；有界兼容调用才物化完整ScanBundle）
+1. ScanResultReader.open → SemanticInputStore（流式spool typed facts与inventory；后续只为单个有界运输窗口物化ScanBundle）
 2. SemanticEvidenceStore → 外排EvidenceGraph records、event/triplet/review candidates与全局owner索引
 3. SemanticKgStore → 逐记录生成并校验PhysicalTable/PhysicalColumn/fact/event节点与结构边
 4. SemanticKgArtifactWriter → 流式写`semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`

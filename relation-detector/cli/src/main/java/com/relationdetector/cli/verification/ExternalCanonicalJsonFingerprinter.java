@@ -52,11 +52,15 @@ final class ExternalCanonicalJsonFingerprinter {
     private final CanonicalObjectFieldSorter objectSorter;
 
     ExternalCanonicalJsonFingerprinter(Path workspace, int fieldsPerChunk) {
+        this(workspace, fieldsPerChunk, 32);
+    }
+
+    ExternalCanonicalJsonFingerprinter(Path workspace, int fieldsPerChunk, int mergeFanIn) {
         if (workspace == null || fieldsPerChunk < 1) {
             throw new IllegalArgumentException("fingerprint workspace and positive chunk size are required");
         }
         this.workspace = workspace;
-        this.objectSorter = new CanonicalObjectFieldSorter(workspace, fieldsPerChunk);
+        this.objectSorter = new CanonicalObjectFieldSorter(workspace, fieldsPerChunk, mergeFanIn);
     }
 
     String fingerprint(Path input, CanonicalFingerprintMode mode) {

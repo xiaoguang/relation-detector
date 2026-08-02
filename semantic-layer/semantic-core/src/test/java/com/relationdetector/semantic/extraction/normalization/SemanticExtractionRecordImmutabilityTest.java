@@ -25,6 +25,7 @@ import com.relationdetector.semantic.ingest.ScanBundle;
 import com.relationdetector.semantic.ingest.ScanDiagnosticFact;
 import com.relationdetector.semantic.ingest.ScanFact;
 import com.relationdetector.semantic.ingest.ScanLineageFact;
+import com.relationdetector.semantic.ingest.ScanMetadataInventoryFixture;
 import com.relationdetector.semantic.ingest.ScanNamingEvidenceFact;
 import com.relationdetector.semantic.ingest.ScanRelationshipFact;
 
@@ -79,7 +80,8 @@ final class SemanticExtractionRecordImmutabilityTest {
 
         ObjectNode diagnostic = nestedDocument();
         EvidenceGraph graph = new EvidenceGraph(
-                new ScanBundle("common", "", "", List.of(), List.of(), Map.of(),
+                new ScanBundle("common", "", "", "", List.of(), List.of(), Map.of(),
+                        ScanMetadataInventoryFixture.complete("", ""),
                         List.of(), List.of(), List.of(), List.of(), List.of(), List.of()),
                 List.of(), List.of(fact), List.of(), List.of(diagnostic), Map.of());
         diagnostic.withObject("nested").put("value", "constructor mutation");

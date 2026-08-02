@@ -65,8 +65,4 @@ public record ScanMetadataInventory(
                 MetadataInventoryStatus.COMPLETE, basis, scope, tables, columns, constraints, indexes);
     }
 
-    static ScanMetadataInventory emptyComplete(String catalog, String schema) {
-        return complete(new ScanScope(catalog, schema, List.of(), List.of()),
-                List.of(), List.of(), List.of(), List.of());
-    }
 }

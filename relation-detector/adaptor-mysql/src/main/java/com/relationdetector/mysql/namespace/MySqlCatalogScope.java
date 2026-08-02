@@ -19,7 +19,7 @@ public final class MySqlCatalogScope {
         String catalog = clean(scope.catalog());
         String legacySchema = clean(scope.schema());
         if (!catalog.isBlank() && !legacySchema.isBlank() && !catalog.equals(legacySchema)) {
-            throw new IllegalArgumentException(
+            throw new LiveSourceConfigurationException(
                     "MySQL database.catalog and database.schema must identify the same database");
         }
         String database = catalog.isBlank() ? legacySchema : catalog;

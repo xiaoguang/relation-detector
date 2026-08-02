@@ -16,13 +16,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.ingest.ScanBundle;
+import com.relationdetector.semantic.ingest.ScanMetadataInventory;
+import com.relationdetector.semantic.ingest.ScanMetadataInventoryFixture;
 
 final class SemanticEventExtractorTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String[] EVENT_COLUMNS = {
+            "sales_orders.id", "sales_fact.order_id", "payments.amount", "sales_fact.paid_amount",
+            "orders.customer_id", "customers.id", "inventory_transactions.quantity", "inventory.quantity",
+            "orders.status", "order_audit.status", "orders.amount", "sales_fact.gross_amount",
+            "sales_fact.net_amount", "sales_fact.sales_rep_id", "employees.id", "unrelated.owner_id",
+            "users.id", "sales_fact.customer_id", "sales_fact.status", "inventory_dimension.approved_status",
+            "orders.id"
+    };
 
     @Test
     void groupsRoutineLineageIntoEvidenceBackedFactRefreshEvent() {
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(
                 lineage("sales_orders", "id", "sales_fact", "order_id", "ROUTINE:erp.sp_rebuild_sales_fact",
                         "INSERT_SELECT", "INSERT SELECT", "DIRECT"),
@@ -52,7 +62,7 @@ final class SemanticEventExtractorTest {
 
     @Test
     void extractsStandaloneSqlWriteAndTriggerEventsButIgnoresPureRelationships() {
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(relationship("orders", "customer_id", "customers", "id")), List.of(
                 lineage("inventory_transactions", "quantity", "inventory", "quantity", "04-queries/stock.sql",
                         "UPDATE_SET", "UPDATE inventory SET quantity = quantity - x.quantity", "ARITHMETIC"),
@@ -75,7 +85,7 @@ final class SemanticEventExtractorTest {
 
     @Test
     void doesNotCreateEventsWithoutWriteLineage() {
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(relationship("orders", "customer_id", "customers", "id")), List.of(),
                 List.of(), List.of(), List.of(), List.of());
 
@@ -87,7 +97,7 @@ final class SemanticEventExtractorTest {
         JsonNode direct = lineage("orders", "amount", "sales_fact", "gross_amount",
                 "ROUTINE:erp.sp_rebuild_sales_fact", "INSERT_SELECT", "INSERT SELECT", "DIRECT");
         JsonNode derived = derivedLineage("payments.amount", "sales_fact.net_amount");
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(direct), List.of(), List.of(derived), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -102,7 +112,7 @@ final class SemanticEventExtractorTest {
     void transportContributionsDeferRelationshipAndDerivedAssociations() {
         JsonNode direct = lineage("orders", "amount", "sales_fact", "gross_amount",
                 "ROUTINE:erp.sp_rebuild_sales_fact", "INSERT_SELECT", "INSERT SELECT", "DIRECT");
-        ScanBundle bundle = new ScanBundle(
+        ScanBundle bundle = scanBundle(
                 "mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(relationship("sales_fact", "order_id", "orders", "id")),
                 List.of(direct),
@@ -122,7 +132,7 @@ final class SemanticEventExtractorTest {
 
     @Test
     void derivedOnlyLineageDoesNotCreateEvent() {
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(), List.of(), List.of(derivedLineage("payments.amount", "sales_fact.net_amount")),
                 List.of(), List.of());
 
@@ -131,7 +141,7 @@ final class SemanticEventExtractorTest {
 
     @Test
     void relationshipRefsOnlyIncludeDirectTouchingRelationships() {
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(
                         relationship("orders", "customer_id", "customers", "id"),
                         relationship("sales_fact", "order_id", "orders", "id"),
@@ -170,7 +180,7 @@ final class SemanticEventExtractorTest {
         evidenceAttributes.put("sourceStatementId", "typed_write");
         evidenceAttributes.put("sourceFile", "02-procedures/trigger.sql");
 
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         SemanticEventCandidate event = new SemanticEventExtractor().extract(bundle).get(0);
@@ -197,7 +207,7 @@ final class SemanticEventExtractorTest {
         evidenceAttributes.put("sourceFile", "02-procedures/trigger.sql");
         evidenceAttributes.put("sourceBlockId", "TRIGGER:must-not-be-used");
 
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         SemanticEventCandidate event = new SemanticEventExtractor().extract(bundle).get(0);
@@ -236,7 +246,7 @@ final class SemanticEventExtractorTest {
         var raw = lineage.putArray("rawEvidence");
         raw.add(typedEvidence("SQL_WRITE", "refresh.sql", "refresh.sql:1-3", "INSERT_SELECT"));
         raw.add(typedEvidence("SQL_WRITE", "refresh.sql", "refresh.sql:1-3", "UPDATE_SET"));
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         SemanticEventCandidate event = new SemanticEventExtractor().extract(bundle).get(0);
@@ -257,7 +267,7 @@ final class SemanticEventExtractorTest {
         raw.add(typedRoutineEvidence(
                 "PROCEDURE", "public.refresh_sales", "public.refresh_sales(bigint)",
                 "public.refresh_sales", "UPDATE_SET"));
-        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -285,7 +295,7 @@ final class SemanticEventExtractorTest {
         raw.add(typedRoutineEvidence(
                 "FUNCTION", "public.refresh_sales", "public.refresh_sales(text)",
                 "public.refresh_sales", "MERGE_UPDATE"));
-        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -312,7 +322,7 @@ final class SemanticEventExtractorTest {
         raw.add(typedRoutineEvidence(
                 "FUNCTION", "public.f", "public.f(a_b)",
                 "public.f", "UPDATE_SET"));
-        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("postgres", "erp", "public", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -336,7 +346,7 @@ final class SemanticEventExtractorTest {
                 "public.trigger a", "UPDATE_SET"));
         raw.add(typedEvidence("SQL_WRITE", "jobs/a.sql", "jobs/a.sql:1-2", "INSERT_SELECT"));
         raw.add(typedEvidence("SQL_WRITE", "jobs a.sql", "jobs a.sql:1-2", "UPDATE_SET"));
-        ScanBundle bundle = new ScanBundle("postgres", "erp", "public", List.of("logs"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("postgres", "erp", "public", List.of("logs"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -358,7 +368,7 @@ final class SemanticEventExtractorTest {
         raw.add(typedRoutineEvidence(
                 "EVENT", "nightly_rollup", "nightly_rollup",
                 "nightly_rollup", "UPDATE_SET"));
-        ScanBundle bundle = new ScanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
+        ScanBundle bundle = scanBundle("mysql", "erp", "", List.of("object-files"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
 
         List<SemanticEventCandidate> events = new SemanticEventExtractor().extract(bundle);
@@ -384,8 +394,28 @@ final class SemanticEventExtractorTest {
             raw.add(routine);
             raw.add(write);
         }
-        return new ScanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
+        return scanBundle("mysql", "erp", "", List.of("logs"), List.of(), Map.of(),
                 List.of(), List.of(lineage), List.of(), List.of(), List.of(), List.of());
+    }
+
+    private ScanBundle scanBundle(
+            String databaseType,
+            String catalog,
+            String schema,
+            List<String> sources,
+            List<java.nio.file.Path> inputFiles,
+            Map<String, Integer> summary,
+            List<?> relationships,
+            List<?> dataLineages,
+            List<?> derivedRelationships,
+            List<?> derivedDataLineages,
+            List<?> namingEvidence,
+            List<?> diagnostics
+    ) {
+        ScanMetadataInventory inventory = ScanMetadataInventoryFixture.complete(catalog, schema, EVENT_COLUMNS);
+        return new ScanBundle(
+                databaseType, catalog, schema, "", sources, inputFiles, summary, inventory,
+                relationships, dataLineages, derivedRelationships, derivedDataLineages, namingEvidence, diagnostics);
     }
 
     private ObjectNode typedEvidence(

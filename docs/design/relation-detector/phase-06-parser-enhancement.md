@@ -240,19 +240,25 @@ Javadoc门禁与职责规模门禁仍是两条独立契约：前者检查设计�
 | `contracts.parse` | SQL/DDL/object 解析输入输出契约，包括 statement、event、parse result。 |
 | `contracts.spi` | DatabaseAdaptor、collector、parser、profile、scope 等 SPI。 |
 | `contracts.scoring` | 默认 evidence score 常量。 |
-| `core.scan` | 扫描编排：连接配置、adaptor、metadata、parser、merger 和 ScanResult。 |
-| `core.parser` | SQL/DDL runner：执行 parser.mode/profile 选择并调用语义 extractor。 |
-| `core.tokenevent` | token-event 事件来源：common typed grammar、方言 typed parser 生命周期和结构事件模型。 |
-| `core.common` | Common portable SQL 的 CLI adaptor 装配：把 common token-event SQL/DDL parser 暴露为 `database.type: common`，只支持离线 file sources，不做 live catalog。 |
-| `core.fullgrammar` | full-grammar 通用基础设施：profile/module registry、bundle factory、共享 event helper。 |
+| `core.scan` | 扫描总编排与运行上下文：`ScanEngine`、source collection和statement pipeline；不拥有配置模型、adaptor契约、statement执行或结果模型。 |
+| `core.config` | `ScanConfig/ResolvedScanConfig`、source/parser/output/evidence配置及统一运行时校验。 |
+| `core.input` | file/path/include展开、规范化、去重及输入错误分类。 |
+| `core.adaptor` | adaptor shape/capability/result契约校验、detachment和已验证快照。 |
+| `core.adaptor.common` | Common portable SQL adaptor装配；只支持离线file sources，不做live catalog。 |
+| `core.execution` | statement调度、串并行执行和执行结果边界。 |
+| `core.result` | `ScanResult`、metadata inventory和最终result assembly。 |
+| `core.parser` | parser基础设施的总包，不承载具体方言或版本实现。 |
+| `core.parser.runtime` | SQL/DDL runner、parser mode/profile选择、fallback边界与结果转发。 |
+| `core.parser.tokenevent` | common token-event typed grammar visitor、parser生命周期和结构事件模型。 |
+| `core.parser.fullgrammar` | full-grammar profile/module registry、bundle factory及共享typed event helper。 |
+| `core.parser.antlr` | 通用ANTLR parse support、syntax diagnostics和dialect标识。 |
 | `core.relation` | relationship 语义：SQL/DDL events -> RelationshipCandidate，以及 relationship merge。 |
 | `core.naming` | 唯一的命名启发式边界：top-level naming evidence 的抽取/合并、`NamingRuleEngine` 和已有关系的 `NAMING_MATCH` 引用增强。 |
 | `core.identity` | 基于方言 `IdentifierRules` 和显式 namespace context 的精确标识符解析与 endpoint key；不执行命名猜测。 |
 | `core.script` | 由 dialect generated script lexeme 驱动的 client-script framing 和 file extraction。 |
 | `core.lineage` | Data Lineage 语义：write mapping/projection/derived lineage -> DataLineageCandidate。 |
 | `core.lineage.model` | ProjectionTrace、ExpressionSourceSet、AssignmentMapping 等结构化字段血缘中间模型。 |
-| `core.ddl` | DDL 职责边界说明包；当前 token-event DDL parser 实现在 `core.tokenevent`，DDL relationship 转换在 `core.relation`。 |
-| `core.parse` | 通用 ANTLR parse support、syntax diagnostics 和 dialect 标识。 |
+| `core.ddl` | typed DDL catalog event组装与evidence inventory；token-event DDL parser位于`core.parser.tokenevent`，DDL relationship转换位于`core.relation`。 |
 | `core.log` | source-name normalization 和 structured parse 后的 `TypedLogNoiseClassifier`。 |
 | `core.metadata` | metadata evidence 增强：unique/index/type evidence。 |
 | `core.output` | ScanResult JSON/table 渲染。 |
@@ -400,6 +406,10 @@ SQL 的 production runner、direct statement service 和 relationship facade 共
 使用 detached context 和临时 warning buffer；DDL runner 使用相同 validator 的 DDL 入口。
 `AdaptorParseResultContractValidator` 校验整个 `StructuredParseResult` 的 event family、必需 typed payload、
 statement source/line/object/block provenance、attributes 与 warnings 后，才允许事实抽取和 warning 提交。
+predicate join、write mapping、DDL index role与DDL index kind虽然为保持SPI v6二进制兼容仍由record的
+`String`字段承载，但其合法值由contracts typed enum定义。core按event type执行精确闭集和组合校验；
+内置producer只输出枚举名称，relationship与DDL组装不再使用substring分类。未知或错配值属于
+`AdaptorContractException`，不能成为token-event fallback条件。
 任何进入validator的contract violation都不会留下前序部分状态，也不得触发token-event fallback。
 `ParserBundleSelector`只捕获外部parser调用的普通runtime failure；result shape检查、selection attributes
 装配和core校验都在fallback catch之外。null result/null attributes显式成为`AdaptorContractException`，
@@ -1302,7 +1312,8 @@ direct/derived JSON；当前文件数量由 verification manifest 校验，不�
 
 `verify-all.sh`随后通过内部Java verification入口运行结构校验、canonical/semantic fingerprint和
 manifest integrity。校验器按顶层数组逐项处理，跨section引用写入外存索引；fingerprint对对象字段
-分块外排并多路归并，规范字节直接进入SHA-256。默认verification heap为512 MiB，manifest只消费
+分块外排并以固定32路扇入进行多阶段归并，中间chunk只保存字段名及value spool区间，规范字节直接
+进入SHA-256。超宽object不会使同时打开的chunk数量随字段数增长。默认verification heap为512 MiB，manifest只消费
 小型`result-validation.json`而不再重读38份大JSON。CLI阶段完成仍不等于验收会话完成；`verify-all`
 最终manifest为PASS证明该会话的门禁完成，但它只记录而不强制干净工作树。干净提交的发布证据必须由
 `verify-release.sh`成功完成。fingerprint是会话审计产物，当前不与预期SHA基线比较；外排I/O耗时属于

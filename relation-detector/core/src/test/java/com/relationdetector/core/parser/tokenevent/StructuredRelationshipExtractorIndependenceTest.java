@@ -286,7 +286,7 @@ class StructuredRelationshipExtractorIndependenceTest {
                 new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY,
                         provenance(12), new ExpressionSource("c", "party_id"),
                         new ExpressionSource("cu", "id"), List.of(), List.of(),
-                        "", "SCALAR_SUBQUERY", List.of(), false,
+                        "", "WHERE_OR_UNKNOWN", List.of(), false,
                         List.of(new PredicateGuard(
                                 new ExpressionSource("c", "party_type"), "EQUALS", "customer"))));
 

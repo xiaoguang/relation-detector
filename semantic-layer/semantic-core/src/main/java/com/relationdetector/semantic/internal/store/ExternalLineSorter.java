@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -68,7 +67,7 @@ public final class ExternalLineSorter {
     }
 
     private Path writeChunk(List<String> values, Path workspace, int index) throws IOException {
-        values.sort(Comparator.naturalOrder());
+        values.sort(Utf8ByteOrder::compare);
         Path chunk = workspace.resolve("chunk-%06d.txt".formatted(index));
         try (BufferedWriter writer = Files.newBufferedWriter(
                 chunk, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
@@ -82,8 +81,10 @@ public final class ExternalLineSorter {
 
     private void merge(List<Path> inputs, Path output) throws IOException {
         List<BufferedReader> readers = new ArrayList<>();
-        PriorityQueue<Head> pending = new PriorityQueue<>(
-                Comparator.comparing(Head::value).thenComparingInt(Head::reader));
+        PriorityQueue<Head> pending = new PriorityQueue<>((left, right) -> {
+            int comparison = Utf8ByteOrder.compare(left.value(), right.value());
+            return comparison != 0 ? comparison : Integer.compare(left.reader(), right.reader());
+        });
         try {
             for (int index = 0; index < inputs.size(); index++) {
                 BufferedReader reader = Files.newBufferedReader(inputs.get(index), StandardCharsets.UTF_8);

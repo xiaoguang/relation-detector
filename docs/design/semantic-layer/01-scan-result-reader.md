@@ -2,16 +2,16 @@
 
 ## 1. 目标与定位
 
-**职责：** 流式读取 relation-detector JSON，校验完整性并写入磁盘后备 typed store；只在有界
-component或兼容调用中物化`ScanBundle`。
+**职责：** 流式读取 relation-detector JSON，校验完整性并写入磁盘后备 typed store；后续只由
+`SemanticInputWindowStore`为单个有界运输窗口物化`ScanBundle`。
 
-当前代码实现位于 `semantic-layer/semantic-core/src/main/java/com/relationdetector/semantic/reader`。它已经落地为轻量离线 reader：
+当前代码实现位于 `semantic-layer/semantic-core/src/main/java/com/relationdetector/semantic/ingest`。它已经落地为磁盘后备 reader：
 
 - `ScanResultReader.open(List<Path>, Path)` 是生产入口，返回可关闭的`SemanticInputStore`。
 - store逐条读取顶层数组，写入section spool及外排table/column/fact索引，不持有完整输入。
 - 多输入要求`database.type/catalog/schema`、inventory scope和完整inventory fingerprint一致。
-- `ScanResultReader.read/readMerged`只供明确有界的兼容调用和测试使用。
-- `ScanBundle`保存完整metadata inventory及一个有界component的typed事实。
+- `ScanResultReader`不提供整份scan JSON的内存物化入口。
+- `SemanticInputWindowStore`按typed table component排序记录，并只为一个受原始字节上限约束的运输窗口构造`ScanBundle`；该窗口不是event、owner或shard语义边界。
 - relation-detector 的 `derivedNamingEvidence` 是阅读/统计视图；当前 semantic reader 不单独读取该数组，derived naming facts 通过 canonical top-level `namingEvidence` 进入 `NamingEvidenceFact`。
 - 当前 reader 会构建外排table、column和fact identity索引，用于输入闭包与冲突检查；它不构建供
   业务查询使用的`metadataIndex`、`relationshipIndex`或`lineageIndex`，也不在读取阶段做
@@ -22,9 +22,9 @@ component或兼容调用中物化`ScanBundle`。
 
 **为什么不需要 LLM：** 输入是结构化 JSON，输出是结构化内存对象。当前操作是类型转换、必要字段检查和数组保留；LLM 无法比规则更可靠地完成这些操作，反而可能引入错误。
 
-## 1.1 Semantica 启发：ScanBundle 是本项目的 Raw Records 层
+## 1.1 Semantica 启发：SemanticInputStore 是 Raw Records 层
 
-Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，再进入 parse、normalize、split 和 semantic extract。本项目的数据源不是任意文档，而是 relation-detector 的标准 JSON 输出；因此 `ScanBundle` 承担的是同类职责：
+Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，再进入 parse、normalize、split 和 semantic extract。本项目的数据源不是任意文档，而是 relation-detector 的标准 JSON 输出；因此`SemanticInputStore`承担同类持久运输职责，`ScanBundle`只表达其中一个有界typed窗口：
 
 - 把relationship、Data Lineage、namingEvidence、derived facts和diagnostics统一成可处理records；direct
   facts消费`rawEvidence`，derived relationship/lineage消费typed `evidenceSets`并拒绝旧笛卡尔积wire。
@@ -33,8 +33,9 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
 - database identity 是 `type + catalog + schema`；catalog 必须同时为空或精确相同，不能跨 catalog 合并同名对象。
 - 只做读取、标准化和合并，不判断业务实体、指标口径或 join path 是否业务正确。
 
-这意味着生产 Evidence Builder 只能消费`SemanticInputStore`产生的有界`ScanBundle` component或由其
-构建的evidence store，不应绕过reader读取零散SQL、DDL或parser内部结构。
+严格地说，生产Raw Records载体是`SemanticInputStore`；`ScanBundle`只是它为单个运输窗口提供的
+有界typed视图。这意味着Evidence链路只能消费该store或其窗口，不应绕过reader读取零散SQL、DDL
+或parser内部结构。
 
 ## 2. 上游与下游
 
@@ -45,7 +46,7 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
 [Scan Result Reader]
   ↓ 输出: SemanticInputStore（section spool + 外排identity/closure索引）
   ↓ 全局: SemanticEvidenceStore + typed owner plan
-  ↓ 按需: bounded root/shard ScanBundle
+  ↓ 按需: bounded transport-window ScanBundle
 
 下游: Semantic Evidence Builder
   在全局store上归并event/owner，只逐个消费token受限root/shard
@@ -57,9 +58,7 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
 
 ```java
 public final class ScanResultReader {
-    SemanticInputStore open(List<Path> scanResultPaths, Path workspace);
-    ScanBundle read(Path scanResultPath);
-    ScanBundle readMerged(List<Path> scanResultPaths);
+    public SemanticInputStore open(List<Path> scanResultPaths, Path workspace);
 }
 ```
 
@@ -73,7 +72,8 @@ public final class ScanResultReader {
 - facts与四类metadata记录逐条验证、spool；stable ID与物理identity通过外排索引检查。
 - 不在 reader 层做 semantic 去重、confidence 重算或 evidence 合并。
 
-`read/readMerged`保留相同wire与COMPLETE inventory语义，但会物化完整`ScanBundle`，只适用于有界调用。
+需要内存typed视图时，下游通过`SemanticInputWindowStore`从已验证store逐个物化有界窗口；reader自身
+不存在绕过流式校验与磁盘store的whole-file兼容路径。
 
 `COMPLETE`是上游collector对配置scope的采集状态，不是consumer侧引用闭包证明。reader通过共享
 `MetadataInventoryClosureRules`同时约束内存和磁盘入口：
@@ -190,7 +190,8 @@ consumer引用不闭合而拒绝。
 
 store把原始字节阈值仅用作外排I/O window，不把window当作component、event或owner边界。全部typed
 records先进入全局`SemanticEvidenceStore`，event contribution按完整identity归并，table component和
-唯一owner在完整store上计算；只有单个token受限root/shard会物化为`ScanBundle`。每个typed fact保留
+唯一owner在完整store上计算；只有单个原始字节受限的运输窗口会物化为`ScanBundle`，窗口随后写回
+全局evidence store，不能定义root/shard边界。每个typed fact保留
 原始`document()` payload；下游不再重复解析endpoint、confidence或flowKind。relationship、lineage、
 naming和diagnostic ID不依赖数组位置；重复stable ID在store发布前拒绝。顶层`warnings`映射为
 diagnostics。portable input label不泄漏本机绝对路径，但不等同于持久repository identity。
@@ -212,8 +213,8 @@ flowchart TD
     D --> E{多输入descriptor与fingerprint一致?}
     E -- 否 --> F[原子失败并清理workspace]
     E -- 是 --> G[发布SemanticInputStore]
-    G --> H[磁盘connected component]
-    H --> I[逐个物化bounded ScanBundle]
+    G --> H[按typed table component排列运输记录]
+    H --> I[逐个物化bounded transport window]
 ```
 
 </details>
@@ -229,8 +230,8 @@ flowchart TD
     D --> E{Multi-input descriptors and fingerprints match?}
     E -- no --> F[Fail atomically and clean workspace]
     E -- yes --> G[Publish SemanticInputStore]
-    G --> H[Build disk-backed connected components]
-    H --> I[Materialize one bounded ScanBundle at a time]
+    G --> H[Order transport records by typed table component]
+    H --> I[Materialize one bounded transport window at a time]
 ```
 
 </details>
@@ -253,8 +254,8 @@ sequenceDiagram
         SR->>DS: 写section spool与raw identity
     end
     SR->>DS: 外排归并identity并发布store
-    loop 每个bounded component
-        DS->>EB: typed ScanBundle component
+    loop 每个bounded transport window
+        DS->>EB: typed ScanBundle window
     end
 ```
 
@@ -276,8 +277,8 @@ sequenceDiagram
         SR->>DS: write section spool and raw identity
     end
     SR->>DS: external-merge identities and publish store
-    loop each bounded component
-        DS->>EB: typed ScanBundle component
+    loop each bounded transport window
+        DS->>EB: typed ScanBundle window
     end
 ```
 
@@ -285,41 +286,22 @@ sequenceDiagram
 
 ## 6. 处理逻辑详解
 
-### 6.1 有界兼容读取流程（伪代码）
+### 6.1 生产读取与有界窗口流程（伪代码）
 
-正式命令调用`open()`；下面的`read()`只用于测试和明确受限输入，不是大输入生产路径。
+正式命令只调用`open()`。需要`ScanBundle`的兼容算法从已发布store逐个消费有界窗口，不能直接对整份
+scan JSON执行`readTree()`。
+
+`ScanBundle`没有隐式生成`COMPLETE/LIVE_METADATA` inventory的便捷构造器。每个有界窗口都必须由
+`SemanticInputWindowStore`显式传入已经验证且引用闭合的`ScanMetadataInventory`；测试若需要构造窗口，
+也只能使用test-only typed fixture明确声明相关表列，不能以空inventory为正式物理端点背书。
 
 ```java
-ScanBundle read(Path path) {
-    // 1. 文件存在性检查
-    if (!Files.isRegularFile(path)) throw new IllegalArgumentException("scan result file does not exist");
-
-    // 2. JSON 解析
-    JsonNode root;
-    try { root = objectMapper.readTree(path.toFile()); }
-    catch (IOException e) { throw new IllegalArgumentException("failed to read scan result JSON", e); }
-
-    // 3. 校验当前 reader 已拥有的 wire contract
-    contractValidator.validate(root);
-    String databaseType = root.path("database").path("type").asText("");
-
-    // 4. 在 reader 边界建立 typed facts，每个 fact 仍保留原始 payload
-    return new ScanBundle(
-        databaseType,
-        root.path("database").path("catalog").asText(""),
-        root.path("database").path("schema").asText(""),
-        root.path("generatedAt").asText(""),
-        readSources(root.path("summary").path("sources")),
-        List.of(path),
-        readIntegerSummary(root.path("summary")),
-        readCompleteMetadataInventory(root.path("metadataInventory")),
-        relationshipFacts(root.path("relationships")),
-        lineageFacts(root.path("dataLineages")),
-        relationshipFacts(root.path("derivedRelationships")),
-        lineageFacts(root.path("derivedDataLineages")),
-        namingFacts(root.path("namingEvidence")),
-        diagnosticFacts(root.path("warnings"))
-    );
+try (SemanticInputStore input = reader.open(paths, inputWorkspace);
+     SemanticInputWindowStore windows = new SemanticInputWindowStore(input, windowWorkspace)) {
+    windows.forEachWindow(maxRawBytes, window -> {
+        ScanBundle bounded = window.bundle();
+        consumeBoundedWindow(bounded);
+    });
 }
 ```
 
@@ -368,8 +350,8 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 
 | 测试场景 | 输入 | 预期输出 |
 | --- | --- | --- |
-| 正常读取 | 标准 scan-result.json（24条关系） | ScanBundle 含 24 条关系，并保留输入数组顺序 |
-| 空关系 | relationships: [] | ScanBundle 含 0 条关系 |
+| 正常读取 | 标准 scan-result.json（24条关系） | store包含24条relationship记录；窗口合计仍为24且保留稳定顺序 |
+| 空关系 | relationships: [] | store的relationship count为0 |
 | 缺失 dataLineages | 无 dataLineages 字段 | `ScanResultContractException` |
 | 文件不存在 | 不存在路径 | `IllegalArgumentException` |
 | JSON 格式错误 | 非 JSON 文本 | `IllegalArgumentException` |
@@ -390,23 +372,20 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 ### 7.2 集成测试
 
 ```java
-// 端到端：从 relation-detector 输出到 ScanBundle
+// 端到端：从 relation-detector 输出到磁盘store，再逐个消费有界ScanBundle窗口
 @Test
 void endToEndFromRelationDetectorOutput() {
     Path scanResult = Path.of("test-fixtures/scan-result-mysql.json");
-    ScanBundle bundle = reader.read(scanResult);
-
-    // 基础断言
-    assertEquals("mysql", bundle.databaseType());
-    assertEquals("shop", bundle.catalog());
-    assertTrue(bundle.schema() == null || bundle.schema().isBlank());
-    assertTrue(bundle.relationships().size() > 0);
-
-    // 当前 reader 在边界创建 typed fact，同时保留原始 document payload
-    ScanRelationshipFact rel = bundle.relationships().get(0);
-    assertFalse(rel.source().isBlank());
-    assertTrue(rel.document().isObject());
-    assertTrue(bundle.summary().containsKey("directRelationshipCount"));
+    try (SemanticInputStore input = reader.open(List.of(scanResult), inputWorkspace);
+         SemanticInputWindowStore windows = new SemanticInputWindowStore(input, windowWorkspace)) {
+        assertEquals("mysql", input.descriptor().databaseType());
+        assertEquals("shop", input.descriptor().catalog());
+        long expected = input.count(SemanticInputStore.Section.RELATIONSHIPS);
+        AtomicLong observed = new AtomicLong();
+        windows.forEachWindow(MAX_WINDOW_BYTES, window ->
+                observed.addAndGet(window.bundle().relationships().size()));
+        assertEquals(expected, observed.get());
+    }
 }
 ```
 

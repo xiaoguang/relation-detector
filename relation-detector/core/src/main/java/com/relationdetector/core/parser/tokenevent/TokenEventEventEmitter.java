@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.PredicateJoinKind;
 import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.ExpressionTrace;
@@ -75,7 +76,8 @@ public final class TokenEventEventEmitter {
             String leftAlias, String rightAlias, List<String> columns) {
         add(events, new PredicateEvent(StructuredParseEventType.JOIN_USING_COLUMNS,
                 provenance(ctx), new ExpressionSource(leftAlias, ""),
-                new ExpressionSource(rightAlias, ""), List.of(), List.of(), "", "",
+                new ExpressionSource(rightAlias, ""), List.of(), List.of(), "",
+                PredicateJoinKind.USING_JOIN.name(),
                 columns, false));
     }
 
@@ -85,7 +87,10 @@ public final class TokenEventEventEmitter {
         add(events, new PredicateEvent(type, provenance(ctx),
                 sourceAt(outerAliases, outerColumns, 0), sourceAt(innerAliases, innerColumns, 0),
                 sources(outerAliases, outerColumns), sources(innerAliases, innerColumns),
-                innerTable, "", List.of(), true, currentPredicateGuards()));
+                innerTable,
+                (type == StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE
+                        ? PredicateJoinKind.TUPLE_IN_SUBQUERY : PredicateJoinKind.IN_SUBQUERY).name(),
+                List.of(), true, currentPredicateGuards()));
     }
 
     public void withPredicateGuard(PredicateGuard guard, Runnable visitor) {

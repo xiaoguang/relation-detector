@@ -11,6 +11,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.PredicateJoinKind;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
@@ -87,18 +88,18 @@ abstract class RelationshipCandidateFactory extends RelationshipAliasResolver {
     }
 
     private String canonicalJoinKind(String raw) {
-        String value = raw == null ? "" : raw.strip().toUpperCase(Locale.ROOT).replace("_", "");
-        if (value.contains("LEFT")) return "LEFT_JOIN";
-        if (value.contains("RIGHT")) return "RIGHT_JOIN";
-        if (value.contains("FULL")) return "FULL_JOIN";
-        if (value.contains("CROSS")) return "CROSS_JOIN";
-        if (value.contains("APPLY")) return value.contains("OUTER") ? "OUTER_APPLY" : "CROSS_APPLY";
-        if (value.contains("EXISTS")) return "EXISTS";
-        if (value.contains("IN_SUBQUERY") || value.contains("INSUBQUERY")) return "IN_SUBQUERY";
-        if (value.contains("MERGE")) return "MERGE_ON";
-        if (value.equals("JOIN") || value.equals("JOINON") || value.equals("INNER")
-                || value.equals("INNERJOIN")) return "JOIN_ON";
-        return "WHERE_OR_UNKNOWN";
+        PredicateJoinKind kind = PredicateJoinKind.valueOf(raw);
+        return switch (kind) {
+            case LEFT_JOIN -> "LEFT_JOIN";
+            case RIGHT_JOIN -> "RIGHT_JOIN";
+            case FULL_JOIN -> "FULL_JOIN";
+            case CROSS_JOIN -> "CROSS_JOIN";
+            case EXISTS -> "EXISTS";
+            case IN_SUBQUERY, TUPLE_IN_SUBQUERY -> "IN_SUBQUERY";
+            case MERGE_ON, MERGE_OR_USING -> "MERGE_ON";
+            case JOIN, JOIN_ON -> "JOIN_ON";
+            case WHERE_OR_UNKNOWN, STRAIGHT_JOIN, USING_JOIN -> "WHERE_OR_UNKNOWN";
+        };
     }
 
     private String outputOrderKey(ColumnRef column) {

@@ -6,7 +6,8 @@
 
 ```text
 relation-detector JSON
-  -> ScanResultReader / ScanBundle
+  -> ScanResultReader / SemanticInputStore
+  -> bounded ScanBundle windows
   -> EvidenceGraph / deterministic KG
   -> complete extraction bundle
   -> typed sharding

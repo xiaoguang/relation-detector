@@ -244,6 +244,58 @@ public final class Enums {
         DYNAMIC_SQL
     }
 
+    /** Typed predicate discriminator carried through the v6 string field. */
+    public enum PredicateJoinKind {
+        WHERE_OR_UNKNOWN,
+        JOIN,
+        JOIN_ON,
+        LEFT_JOIN,
+        RIGHT_JOIN,
+        FULL_JOIN,
+        CROSS_JOIN,
+        STRAIGHT_JOIN,
+        USING_JOIN,
+        EXISTS,
+        IN_SUBQUERY,
+        TUPLE_IN_SUBQUERY,
+        MERGE_ON,
+        MERGE_OR_USING
+    }
+
+    /** Typed write-mapping discriminator carried through the v6 string field. */
+    public enum WriteMappingKind {
+        INSERT_SELECT,
+        INSERT_VALUES,
+        INSERT_CONTROL,
+        INSERT_GROUP_BY,
+        UPDATE_SET,
+        UPDATE_LOCATOR,
+        UPDATE_WHERE,
+        MERGE_UPDATE,
+        MERGE_UPDATE_SET,
+        MERGE_ON,
+        MERGE_INSERT
+    }
+
+    /** Typed DDL index evidence role carried through the v6 string field. */
+    public enum DdlIndexRole {
+        SOURCE_INDEX,
+        TARGET_UNIQUE
+    }
+
+    /** Typed DDL declaration kind carried through the v6 string field. */
+    public enum DdlIndexKind {
+        PRIMARY_KEY,
+        UNIQUE_CONSTRAINT,
+        CREATE_TABLE_INDEX,
+        INLINE_PRIMARY_KEY,
+        INLINE_UNIQUE,
+        CREATE_INDEX,
+        CREATE_UNIQUE_INDEX,
+        INLINE_CONSTRAINT,
+        TABLE_CONSTRAINT
+    }
+
     /**
      *
      * Hint used by adaptors when extracting SQL from raw log files.

@@ -29,46 +29,6 @@ public final class ScanBundle {
 
     public ScanBundle(
             String databaseType,
-            String schema,
-            String generatedAt,
-            List<String> sources,
-            List<Path> inputFiles,
-            Map<String, Integer> summary,
-            List<?> relationships,
-            List<?> dataLineages,
-            List<?> derivedRelationships,
-            List<?> derivedDataLineages,
-            List<?> namingEvidence,
-            List<?> diagnostics
-    ) {
-        this(databaseType, "", schema, generatedAt, sources, inputFiles, summary,
-                ScanMetadataInventory.emptyComplete("", schema), relationships, dataLineages,
-                derivedRelationships, derivedDataLineages,
-                namingEvidence, diagnostics);
-    }
-
-    public ScanBundle(
-            String databaseType,
-            String catalog,
-            String schema,
-            String generatedAt,
-            List<String> sources,
-            List<Path> inputFiles,
-            Map<String, Integer> summary,
-            List<?> relationships,
-            List<?> dataLineages,
-            List<?> derivedRelationships,
-            List<?> derivedDataLineages,
-            List<?> namingEvidence,
-            List<?> diagnostics
-    ) {
-        this(databaseType, catalog, schema, generatedAt, sources, inputFiles, summary,
-                ScanMetadataInventory.emptyComplete(catalog, schema), relationships, dataLineages,
-                derivedRelationships, derivedDataLineages, namingEvidence, diagnostics);
-    }
-
-    public ScanBundle(
-            String databaseType,
             String catalog,
             String schema,
             String generatedAt,

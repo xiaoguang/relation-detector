@@ -84,15 +84,7 @@ public final class DiskSortedTextFile implements AutoCloseable {
                 keyLength++;
             }
         }
-        int length = Math.min(keyLength, expected.length);
-        for (int index = 0; index < length; index++) {
-            int comparison = Integer.compare(
-                    Byte.toUnsignedInt(line[index]), Byte.toUnsignedInt(expected[index]));
-            if (comparison != 0) {
-                return comparison;
-            }
-        }
-        return Integer.compare(keyLength, expected.length);
+        return Utf8ByteOrder.compare(line, keyLength, expected, expected.length);
     }
 
     @Override

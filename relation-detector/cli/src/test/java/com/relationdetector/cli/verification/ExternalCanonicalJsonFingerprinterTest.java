@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -66,5 +67,38 @@ final class ExternalCanonicalJsonFingerprinterTest {
                 () -> new ExternalCanonicalJsonFingerprinter(workspace, 2)
                         .fingerprint(input, CanonicalFingerprintMode.CANONICAL));
         assertTrue(Files.notExists(workspace));
+    }
+
+    @Test
+    void fingerprintsWideObjectsUnderABoundedFileDescriptorLimit() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeFalse(
+                System.getProperty("os.name", "").toLowerCase().contains("windows"));
+        String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
+        String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+        ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c",
+                "ulimit -n 96; exec \"$JAVA_BIN\" -cp \"$TEST_CP\" "
+                        + CanonicalFingerprintFileDescriptorProbe.class.getName() + " \"$PROBE_DIR\" 32")
+                .redirectErrorStream(true)
+                .redirectOutput(tempDir.resolve("probe.log").toFile());
+        builder.environment().put("JAVA_BIN", java);
+        builder.environment().put("TEST_CP", classPath);
+        builder.environment().put("PROBE_DIR", tempDir.resolve("probe").toString());
+
+        Process process = builder.start();
+        assertTrue(process.waitFor(30, TimeUnit.SECONDS), "wide-object probe timed out");
+        assertEquals(0, process.exitValue(), Files.readString(tempDir.resolve("probe.log")));
+
+        ProcessBuilder constrainedBuilder = new ProcessBuilder("/bin/bash", "-c",
+                "ulimit -n 64; exec \"$JAVA_BIN\" -cp \"$TEST_CP\" "
+                        + CanonicalFingerprintFileDescriptorProbe.class.getName() + " \"$PROBE_DIR\" 4")
+                .redirectErrorStream(true)
+                .redirectOutput(tempDir.resolve("constrained-probe.log").toFile());
+        constrainedBuilder.environment().put("JAVA_BIN", java);
+        constrainedBuilder.environment().put("TEST_CP", classPath);
+        constrainedBuilder.environment().put("PROBE_DIR", tempDir.resolve("constrained-probe").toString());
+
+        Process constrained = constrainedBuilder.start();
+        assertTrue(constrained.waitFor(30, TimeUnit.SECONDS), "constrained wide-object probe timed out");
+        assertEquals(0, constrained.exitValue(), Files.readString(tempDir.resolve("constrained-probe.log")));
     }
 }

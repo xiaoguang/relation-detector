@@ -130,7 +130,7 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | `SEM-CLI-ERROR-01` | `MATCHED` | CLI使用固定脱敏文案；参数、配置和API key缺失通过usage异常映射为exit 2，wire、sharding、normalization、模型调用和artifact I/O失败映射为runtime exit 1。 |
 | `SEM-INGEST-MEMORY-01` | `MATCHED` | 流式reader、section spool、外排identity/offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base与association组合分别在列表物化前受预算；raw、envelope和已选evidence共用硬门限；临时树清理内存只随目录深度增长。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 四类inventory、scope、counts和状态进入direct/derived JSON；正式命令只接受COMPLETE。共享closure rules验证table/column/constraint/FK及有序typed index members，mixed physical/expression的kind、ordinal和交错顺序可完整表达。 |
-| `SEM-DDL-INVENTORY-01` | `MATCHED` | 显式COMPLETE_SCOPE的typed file DDL可生成`COMPLETE/DDL_DECLARATIONS` inventory；19类parser的38份direct/derived均通过inventory一致性、完整KG、request package重建与跨文件closure。共232个owned shard及232份精确引用sidecar，全部请求固定为`gpt-5.6-sol/xhigh`，最大估算输入240,000，低于800,000门限。 |
+| `SEM-DDL-INVENTORY-01` | `MATCHED` | 显式COMPLETE_SCOPE的typed file DDL可生成`COMPLETE/DDL_DECLARATIONS` inventory；19类parser的38份direct/derived均通过inventory一致性、完整KG、request package重建与跨文件closure。每个owned shard必须有一份精确引用sidecar，全部请求固定为`gpt-5.6-sol/xhigh`并通过统一hard estimate gate；具体shard数量和最大估算输入由ignored verification summary/manifest记录。 |
 
 离线 KG evidence/identity gate、typed event candidate identity、deterministic candidate、typed sharding、
 完整输入、统一模型请求预算、strict configuration、reader/graph公开状态和governance默认值已经闭环。

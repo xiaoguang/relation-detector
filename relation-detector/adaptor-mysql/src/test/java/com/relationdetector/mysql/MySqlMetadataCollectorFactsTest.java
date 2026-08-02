@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.metadata.MetadataIndexMemberKind;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
 import com.relationdetector.core.identity.NamespaceContext;
@@ -68,7 +69,7 @@ class MySqlMetadataCollectorFactsTest {
 
     @Test
     void rejectsConflictingMysqlCatalogAndLegacySchema() {
-        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+        LiveSourceConfigurationException failure = assertThrows(LiveSourceConfigurationException.class,
                 () -> new MySqlDatabaseAdaptor().canonicalizeScope(
                         new ScanScope("shop_a", "shop_b", List.of(), List.of())));
 
@@ -84,7 +85,7 @@ class MySqlMetadataCollectorFactsTest {
                     throw new AssertionError("JDBC must not be called for an invalid MySQL namespace");
                 });
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(LiveSourceConfigurationException.class,
                 () -> new MySqlDatabaseAdaptor().collectors().metadata().orElseThrow().collect(
                         connection,
                         new ScanScope("shop_a", "shop_b", List.of(), List.of())));

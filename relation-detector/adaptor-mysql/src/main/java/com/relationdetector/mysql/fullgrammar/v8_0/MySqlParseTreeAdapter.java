@@ -2,11 +2,11 @@ package com.relationdetector.mysql.fullgrammar.v8_0;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import com.relationdetector.contracts.Enums.PredicateJoinKind;
 import com.relationdetector.core.parser.fullgrammar.tree.AbstractFullGrammarParseTreeAdapter;
 import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarColumnReference;
 import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarIdentifiers;
@@ -256,11 +256,24 @@ final class MySqlParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter
 
     @Override
     public String joinKind(ParseTree tree) {
-        if (!(tree instanceof JoinedTableContext joined)) return "JOIN_ON";
-        if (joined.outerJoinType() != null) return joined.outerJoinType().getText().toUpperCase(Locale.ROOT);
-        if (joined.innerJoinType() != null) return joined.innerJoinType().getText().toUpperCase(Locale.ROOT);
-        if (joined.naturalJoinType() != null) return joined.naturalJoinType().getText().toUpperCase(Locale.ROOT);
-        return "JOIN_ON";
+        if (!(tree instanceof JoinedTableContext joined)) return PredicateJoinKind.JOIN_ON.name();
+        if (joined.outerJoinType() != null) {
+            return joined.outerJoinType().LEFT_SYMBOL() != null
+                    ? PredicateJoinKind.LEFT_JOIN.name() : PredicateJoinKind.RIGHT_JOIN.name();
+        }
+        if (joined.innerJoinType() != null) {
+            if (joined.innerJoinType().CROSS_SYMBOL() != null) return PredicateJoinKind.CROSS_JOIN.name();
+            if (joined.innerJoinType().STRAIGHT_JOIN_SYMBOL() != null) {
+                return PredicateJoinKind.STRAIGHT_JOIN.name();
+            }
+            return PredicateJoinKind.JOIN_ON.name();
+        }
+        if (joined.naturalJoinType() != null) {
+            if (joined.naturalJoinType().LEFT_SYMBOL() != null) return PredicateJoinKind.LEFT_JOIN.name();
+            if (joined.naturalJoinType().RIGHT_SYMBOL() != null) return PredicateJoinKind.RIGHT_JOIN.name();
+            return PredicateJoinKind.WHERE_OR_UNKNOWN.name();
+        }
+        return PredicateJoinKind.JOIN_ON.name();
     }
 
     @Override

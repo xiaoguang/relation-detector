@@ -213,7 +213,7 @@ class DdlRelationParserRunnerTest {
                         new DdlEvent(StructuredParseEventType.DDL_INDEX,
                                 SourceProvenance.source(sourceName, 2),
                                 "", "", "", "", "orders", "customer_id",
-                                "SOURCE_INDEX", "INDEX", 1, 1),
+                                "SOURCE_INDEX", "CREATE_INDEX", 1, 1),
                         new DdlEvent(StructuredParseEventType.DDL_INDEX,
                                 SourceProvenance.source(sourceName, 3),
                                 "", "", "", "", "customers", "id",
@@ -244,7 +244,7 @@ class DdlRelationParserRunnerTest {
                         new DdlEvent(StructuredParseEventType.DDL_INDEX,
                                 SourceProvenance.source(sourceName, 2),
                                 "", "", "", "", "\"Orders\"", "customer_id",
-                                "SOURCE_INDEX", "INDEX", 1, 1)),
+                                "SOURCE_INDEX", "CREATE_INDEX", 1, 1)),
                 List.of(), Map.of());
 
         RelationshipCandidate relation = new DdlRelationParserRunner().parseTextWithEvidence(
@@ -263,12 +263,12 @@ class DdlRelationParserRunnerTest {
                                 StructuredParseEventType.DDL_COLUMN,
                                 SourceProvenance.source(sourceName, 8),
                                 "", "", "", "", "orders", "id",
-                                "COLUMN", "BIGINT", 1, 1),
+                                "", "", 1, 1),
                         new DdlEvent(
                                 StructuredParseEventType.DDL_COLUMN,
                                 SourceProvenance.source(sourceName, 9),
                                 "", "", "", "", "orders", "customer_id",
-                                "COLUMN", "BIGINT", 1, 1)),
+                                "", "", 1, 1)),
                 List.of(), Map.of());
         SqlStatementRecord statement = new SqlStatementRecord(
                 "CREATE TABLE orders (id BIGINT)", StatementSourceType.DDL_FILE,
