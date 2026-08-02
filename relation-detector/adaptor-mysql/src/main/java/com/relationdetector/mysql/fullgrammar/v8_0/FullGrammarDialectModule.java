@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.fullgrammar.v8_0;
 
-import com.relationdetector.core.fullgrammar.*;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 import java.util.Set;
 
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
@@ -19,7 +19,7 @@ import com.relationdetector.mysql.fullgrammar.common.MySqlFullGrammarVersionPoli
  * core depends only on FullGrammarDialectModule.
  */
 public final class FullGrammarDialectModule
-        implements com.relationdetector.core.fullgrammar.FullGrammarDialectModule {
+        implements com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule {
     private static final MySqlFullGrammarVersionPolicy POLICY = new MySqlFullGrammarVersionPolicy(
             8,
             0,

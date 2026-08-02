@@ -1,10 +1,10 @@
 package com.relationdetector.mysql.fullgrammar.common;
 
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.fullgrammar.FullGrammarEventMerger;
-import com.relationdetector.core.fullgrammar.FullGrammarNativeEventTypes;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventMerger;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarNativeEventTypes;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import com.relationdetector.mysql.routine.MySqlRoutineScopePolicy;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

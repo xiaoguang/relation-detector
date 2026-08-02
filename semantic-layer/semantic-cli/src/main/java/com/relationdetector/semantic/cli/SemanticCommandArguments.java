@@ -4,12 +4,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.relationdetector.semantic.extract.ArtifactRetention;
-import com.relationdetector.semantic.extract.SemanticExtractionConfig;
-import com.relationdetector.semantic.extract.SemanticExtractionConfigLoader;
-import com.relationdetector.semantic.extract.SemanticShardMode;
-import com.relationdetector.semantic.extract.SemanticShardingOptions;
-import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
+import com.relationdetector.semantic.extraction.config.ArtifactRetention;
+import com.relationdetector.semantic.extraction.config.SemanticExtractionConfig;
+import com.relationdetector.semantic.extraction.config.SemanticExtractionConfigLoader;
+import com.relationdetector.semantic.extraction.config.SemanticShardMode;
+import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
+import com.relationdetector.semantic.kg.store.SemanticKgArtifactMode;
 
 /**
  * CN: 解析并合并 semantic CLI 参数与 extract 配置；输入是 argv 和环境默认值，输出不可变命令参数，

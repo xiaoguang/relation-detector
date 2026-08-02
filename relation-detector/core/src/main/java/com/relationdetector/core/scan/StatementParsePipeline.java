@@ -14,10 +14,13 @@ import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.core.parser.ParserBundle;
-import com.relationdetector.core.parser.ParserBundleSelector;
+import com.relationdetector.core.parser.runtime.ParserBundle;
+import com.relationdetector.core.parser.runtime.ParserBundleSelector;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.identity.CanonicalIdentifierResolver;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.execution.StatementExecutionOutcome;
+import com.relationdetector.core.execution.StatementExecutionService;
 
 /**
  * CN: 为 scan 选择一致的 SQL/DDL parser bundle，并将 framed statements 交给正式 statement execution service。

@@ -1,11 +1,11 @@
 package com.relationdetector.core;
 
-import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.parser.antlr.SqlDialect;
 import com.relationdetector.core.lineage.*;
-import com.relationdetector.core.parser.*;
+import com.relationdetector.core.parser.runtime.*;
 import com.relationdetector.core.relation.*;
 
-import com.relationdetector.core.tokenevent.*;
+import com.relationdetector.core.parser.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

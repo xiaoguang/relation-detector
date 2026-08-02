@@ -26,7 +26,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.core.naming.NamingEvidencePool;
-import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 
 class EvidenceWeightAdjustmentServiceTest {
     @Test

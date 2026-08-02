@@ -184,7 +184,7 @@ The repair is accepted only after all of these run on the same working tree:
 
 ```bash
 # Fast, scoped feedback while changing a dialect or shared core.
-bash relation-detector/scripts/test-scope.sh core,mysql,postgres,oracle,sqlserver,assets
+bash relation-detector/scripts/audit/test-scope.sh core,mysql,postgres,oracle,sqlserver,assets
 
 # Final acceptance: full fixture golden, all parser CLI cases, report validation,
 # and the complete Maven suite. The script uses bounded fixture/case parallelism

@@ -16,7 +16,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.provenance.SemanticObservationFingerprint;
+import com.relationdetector.core.provenance.ParserObservationFingerprint;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
@@ -246,8 +246,8 @@ class OracleObservationConsistencyTest {
         SqlStatementRecord statement = statement(sql);
         StructuredParseResult tokenResult = token.parseSql(statement, null);
         StructuredParseResult fullResult = full.parseSql(statement, null);
-        List<SemanticObservationFingerprint> tokenObservations = observations(statement, tokenResult);
-        List<SemanticObservationFingerprint> fullObservations = observations(statement, fullResult);
+        List<ParserObservationFingerprint> tokenObservations = observations(statement, tokenResult);
+        List<ParserObservationFingerprint> fullObservations = observations(statement, fullResult);
 
         assertFalse(tokenObservations.isEmpty() && fullObservations.isEmpty(),
                 "At least one Oracle parser must produce typed observations");
@@ -256,15 +256,15 @@ class OracleObservationConsistencyTest {
                         + " full=" + fullObservations + " fullAttributes=" + fullResult.attributes());
     }
 
-    private List<SemanticObservationFingerprint> observations(
+    private List<ParserObservationFingerprint> observations(
             SqlStatementRecord statement,
             StructuredParseResult structured
     ) {
-        List<SemanticObservationFingerprint> observations = new ArrayList<>();
+        List<ParserObservationFingerprint> observations = new ArrayList<>();
         new StructuredRelationshipExtractor().extract(statement, structured).forEach(candidate ->
-                observations.addAll(SemanticObservationFingerprint.relationships(candidate)));
+                observations.addAll(ParserObservationFingerprint.relationships(candidate)));
         new StructuredDataLineageExtractor().extract(statement, structured).forEach(candidate ->
-                observations.addAll(SemanticObservationFingerprint.lineages(candidate)));
+                observations.addAll(ParserObservationFingerprint.lineages(candidate)));
         return observations.stream().sorted().toList();
     }
 

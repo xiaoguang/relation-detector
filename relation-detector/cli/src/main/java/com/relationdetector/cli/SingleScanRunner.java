@@ -5,13 +5,13 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.output.JsonResultWriter;
 import com.relationdetector.core.output.TableResultWriter;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
-import com.relationdetector.core.scan.ScanResult;
-import com.relationdetector.core.scan.ResolvedScanConfig;
+import com.relationdetector.core.result.ScanResult;
+import com.relationdetector.core.config.ResolvedScanConfig;
 import com.relationdetector.core.scan.DatabaseConnectionException;
-import com.relationdetector.core.scan.ScanInputException;
-import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.input.ScanInputException;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 import java.nio.file.Path;
 import java.io.IOException;
 

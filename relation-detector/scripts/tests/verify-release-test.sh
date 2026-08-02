@@ -112,7 +112,7 @@ RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR="$TMP_DIR/release.lock" \
 VERIFY_RELEASE_MVN="$TMP_DIR/mvn-stub" \
 VERIFY_RELEASE_VERIFY_ALL_RUNNER="$TMP_DIR/verify-all-stub" \
 VERIFY_RELEASE_STALE_SUMMARY="$TMP_DIR/stale-summary.tsv" \
-VERIFY_RELEASE_TEST_LOCK_LIBRARY="$ROOT/relation-detector/scripts/heavy-job-lock.sh" \
+VERIFY_RELEASE_TEST_LOCK_LIBRARY="$ROOT/relation-detector/scripts/lib/heavy-job-lock.sh" \
 VERIFY_RELEASE_TEST_MAVEN="$TMP_DIR/release-maven" \
 VERIFY_RELEASE_TEST_CHILD="$TMP_DIR/release-child" \
   "$VERIFY_RELEASE" >"$TMP_DIR/release.out" 2>"$TMP_DIR/release.err"
@@ -222,6 +222,16 @@ cat >"$TMP_DIR/result.json" <<'JSON'
     "derivedNamingEvidenceCount": 0,
     "totalNamingEvidenceCount": 0,
     "warningCount": 0
+  },
+  "metadataInventory": {
+    "status": "COMPLETE",
+    "basis": "DDL_DECLARATIONS",
+    "scope": {"catalog": "test", "schema": "", "includeTables": [], "excludeTables": []},
+    "counts": {"tables": 1, "columns": 1, "constraints": 0, "indexes": 0},
+    "tables": [{"tableName": "orders"}],
+    "columns": [{"tableName": "orders", "columnName": "id", "ordinalPosition": 1}],
+    "constraints": [],
+    "indexes": []
   },
   "relationships": [],
   "dataLineages": [],

@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
 
 /**
  * CN: 隔离 versioned generated lexer/parser 与共享 SQL Server collector，返回 typed root、tokens 和语法错误数；不解释事件语义。

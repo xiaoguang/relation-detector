@@ -2,7 +2,7 @@ package com.relationdetector.semantic.cli;
 
 import java.nio.file.Path;
 
-import com.relationdetector.semantic.extract.SemanticRequestBundleReconstructor;
+import com.relationdetector.semantic.facade.SemanticExtractionFacade;
 
 /**
  * CN: 为仓库验证脚本提供request-only分片包重建入口；输入是已发布run目录和目标bundle路径，输出canonical
@@ -20,8 +20,8 @@ public final class SemanticRequestBundleReconstructorMain {
             throw new IllegalArgumentException(
                     "semantic request bundle run and reconstruction target are required");
         }
-        SemanticRequestBundleReconstructor.Result result =
-                new SemanticRequestBundleReconstructor().reconstruct(
+        SemanticExtractionFacade.ReconstructionResult result =
+                new SemanticExtractionFacade().reconstructRequestBundle(
                         Path.of(args[0]), Path.of(args[1]));
         System.out.println(result.canonicalSha256());
     }

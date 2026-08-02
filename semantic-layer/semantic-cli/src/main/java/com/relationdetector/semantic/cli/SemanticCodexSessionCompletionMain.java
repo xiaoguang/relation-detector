@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.relationdetector.semantic.extract.SemanticCodexSessionCompletionService;
+import com.relationdetector.semantic.facade.SemanticExtractionFacade;
 
 /**
  * CN: 为发布验证消费Codex-session响应的内部入口；输入是不可变request run、独立response目录和输出根，
@@ -27,12 +27,12 @@ public final class SemanticCodexSessionCompletionMain {
     static SemanticCliExitCode run(String[] args) {
         try {
             Map<String, String> values = parse(args);
-            SemanticCodexSessionCompletionService.Result result =
-                    new SemanticCodexSessionCompletionService().complete(
+            SemanticExtractionFacade.CompletionResult result =
+                    new SemanticExtractionFacade().completeCodexSession(
                             Path.of(values.get("--request-run")),
                             Path.of(values.get("--responses")),
                             Path.of(values.get("--output")));
-            if (result.status() == SemanticCodexSessionCompletionService.Status.PENDING) {
+            if (result.pending()) {
                 System.out.println(result.pendingManifest());
                 return SemanticCliExitCode.PENDING;
             }

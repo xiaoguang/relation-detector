@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.contracts.Enums.ErrorCode;
-import com.relationdetector.core.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
 
 class RuntimeConfigurationCliTest {
     @TempDir

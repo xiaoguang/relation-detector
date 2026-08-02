@@ -7,12 +7,12 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.AbstractFullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
-import com.relationdetector.core.fullgrammar.FullGrammarIdentifiers;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.EqualityOperands;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.RowsetBinding;
+import com.relationdetector.core.parser.fullgrammar.tree.AbstractFullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarColumnReference;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarIdentifiers;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.EqualityOperands;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.OperatorSemantic;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.RowsetBinding;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter;
 import com.relationdetector.mysql.fullgrammar.v5_7.MySqlFullGrammarParser.*;
 

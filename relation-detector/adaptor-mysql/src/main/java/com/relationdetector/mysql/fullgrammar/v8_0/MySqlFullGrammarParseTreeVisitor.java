@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.fullgrammar.v8_0;
 
-import com.relationdetector.core.fullgrammar.*;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import java.util.List;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;

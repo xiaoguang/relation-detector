@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 
 class ParserConfigRemovalTest {
     @Test

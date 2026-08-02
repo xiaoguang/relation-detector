@@ -9,10 +9,10 @@ import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalyzer;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.CaseParts;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.OperatorSemantic;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalyzer;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.CaseParts;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.OperatorSemantic;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
@@ -29,7 +29,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
             "isnull", LineageTransformType.COALESCE);
 
     public SqlServerExpressionAnalyzer(
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter parseTreeAdapter
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter parseTreeAdapter
     ) {
         super(parseTreeAdapter);
     }
@@ -44,7 +44,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
         return scalarSubquery(expression) != null || containsCase(expression)
                 || containsRole(expression,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE);
+                com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE);
     }
 
     @Override
@@ -96,9 +96,9 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
 
     private FullGrammarExpressionAnalysis scalarProjection(ParseTree scalar, String defaultQualifier) {
         ParseTree selectItem = parseTreeAdapter().firstDescendant(
-                scalar, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.SELECT_TARGET_ITEM);
+                scalar, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.SELECT_TARGET_ITEM);
         ParseTree projection = selectItem == null ? null : parseTreeAdapter().firstDescendant(
-                selectItem, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.EXPRESSION);
+                selectItem, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.EXPRESSION);
         if (projection == null) {
             return empty("VALUE");
         }
@@ -111,7 +111,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
             return false;
         }
         if (parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION)) {
+                tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION)) {
             return true;
         }
         for (ParseTree child : parseTreeAdapter().typedChildren(tree)) {
@@ -124,7 +124,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
 
     private boolean containsRole(
             ParseTree tree,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role) {
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role role) {
         if (tree == null) {
             return false;
         }
@@ -144,7 +144,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
             String defaultQualifier,
             List<FullGrammarExpressionAnalysis> analyses) {
         FullGrammarExpressionAnalysis window = roleAnalysis(expression, defaultQualifier,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE,
+                com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE,
                 "WINDOW_DERIVED");
         if (!window.hasSources()) {
             return List.copyOf(analyses);
@@ -178,7 +178,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     private FullGrammarExpressionAnalysis roleAnalysis(
             ParseTree tree,
             String defaultQualifier,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role role,
             String transform) {
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
@@ -190,7 +190,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
     private void collectRoleAnalysis(
             ParseTree tree,
             String defaultQualifier,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role role,
             List<String> aliases,
             List<String> columns,
             Set<String> seen) {
@@ -244,7 +244,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
 
     private boolean isCaseContext(ParseTree tree) {
         return parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION);
+                tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION);
     }
 
     private LineageTransformType enclosingValueTransform(ParseTree tree) {
@@ -352,7 +352,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
             return;
         }
         if (parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)) {
+                tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)) {
             result.add(tree);
             return;
         }
@@ -379,7 +379,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammarExpressionAnal
 
     private boolean isScalarBoundary(ParseTree tree) {
         return parseTreeAdapter().hasRole(
-                tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.SCALAR_SUBQUERY);
+                tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.SCALAR_SUBQUERY);
     }
 
     private void append(

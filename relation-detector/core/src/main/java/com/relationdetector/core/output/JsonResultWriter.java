@@ -13,8 +13,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.contracts.model.DerivedPathCandidate;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
-import com.relationdetector.core.scan.MetadataInventory;
-import com.relationdetector.core.scan.ScanResult;
+import com.relationdetector.core.result.MetadataInventory;
+import com.relationdetector.core.result.ScanResult;
 
 /**
  * JSON output writer for bounded string rendering and streaming file output.

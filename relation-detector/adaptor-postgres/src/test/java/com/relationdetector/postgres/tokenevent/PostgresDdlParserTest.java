@@ -15,8 +15,8 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
-import com.relationdetector.core.parser.DdlRelationParserRunner;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.parser.runtime.DdlRelationParserRunner;
+import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
 /**

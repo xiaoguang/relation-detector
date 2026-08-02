@@ -12,7 +12,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.RowsetEvent;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 
 /**
  * CN: 仅根据 parse 后 typed physical rowset events 判断 native-log system-schema 噪声，structured parse 不可用时不猜测跳过。

@@ -6,7 +6,7 @@ import java.util.function.Function;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import com.relationdetector.mysql.fullgrammar.common.MySqlSqlEventVisitorCore.ColumnParts;
 
 /**

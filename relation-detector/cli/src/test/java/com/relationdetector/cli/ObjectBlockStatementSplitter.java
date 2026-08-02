@@ -7,7 +7,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.core.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.oracle.OracleDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;

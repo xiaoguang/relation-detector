@@ -12,6 +12,16 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
+import com.relationdetector.core.adaptor.AdaptorContractValidator;
+import com.relationdetector.core.adaptor.ScanCapabilityValidator;
+import com.relationdetector.core.config.DatabaseConfig;
+import com.relationdetector.core.config.ResolvedScanConfig;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.config.ScanConfigurationValidator;
+import com.relationdetector.core.evidence.EvidenceEnhancementPipeline;
+import com.relationdetector.core.profile.DataProfilePipeline;
+import com.relationdetector.core.result.ResultAssembler;
+import com.relationdetector.core.result.ScanResult;
 
 /**
  * 默认扫描编排器。

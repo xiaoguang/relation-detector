@@ -18,7 +18,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.core.provenance.SemanticObservationFingerprint;
+import com.relationdetector.core.provenance.ParserObservationFingerprint;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule;
@@ -160,8 +160,8 @@ class PostgresObservationConsistencyTest {
     }
 
     private void assertConsistent(SqlStatementRecord statement) {
-        List<SemanticObservationFingerprint> tokenObservations = observations(token, statement);
-        List<SemanticObservationFingerprint> fullObservations = observations(full, statement);
+        List<ParserObservationFingerprint> tokenObservations = observations(token, statement);
+        List<ParserObservationFingerprint> fullObservations = observations(full, statement);
 
         assertFalse(tokenObservations.isEmpty(), "The compact parser must produce typed observations");
         assertEquals(tokenObservations, fullObservations,
@@ -169,13 +169,13 @@ class PostgresObservationConsistencyTest {
                         + " token=" + tokenObservations + " full=" + fullObservations);
     }
 
-    private List<SemanticObservationFingerprint> observations(
+    private List<ParserObservationFingerprint> observations(
             StructuredSqlParser parser,
             SqlStatementRecord statement
     ) {
         var structured = parser.parseSql(statement, null);
         return new StructuredRelationshipExtractor().extract(statement, structured).stream()
-                .flatMap(candidate -> SemanticObservationFingerprint.relationships(candidate).stream())
+                .flatMap(candidate -> ParserObservationFingerprint.relationships(candidate).stream())
                 .sorted()
                 .toList();
     }

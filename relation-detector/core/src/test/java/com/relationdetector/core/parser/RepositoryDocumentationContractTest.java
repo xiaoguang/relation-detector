@@ -134,6 +134,29 @@ class RepositoryDocumentationContractTest {
     }
 
     @Test
+    void scriptRootContainsOnlyReleaseEntrypointsAndOwnedToolDirectories() throws IOException {
+        Path scripts = repoRoot().resolve("relation-detector/scripts");
+        Set<String> entrypoints = Set.of(
+                "run-cli.sh",
+                "run-correctness-isolated.sh",
+                "run-release-verification-tool.sh",
+                "run-sample-data-isolated.sh",
+                "verify-all.sh",
+                "verify-release.sh");
+        Set<String> toolDirectories = Set.of("audit", "benchmark", "lib", "migration", "tests");
+        List<String> unexpected = new ArrayList<>();
+        try (Stream<Path> children = Files.list(scripts)) {
+            children.forEach(path -> {
+                String name = path.getFileName().toString();
+                if (Files.isDirectory(path) ? !toolDirectories.contains(name) : !entrypoints.contains(name)) {
+                    unexpected.add(name);
+                }
+            });
+        }
+        assertTrue(unexpected.isEmpty(), "Unowned scripts root entries: " + unexpected);
+    }
+
+    @Test
     void parserAuditReadmeIndexesEveryCurrentAudit() throws IOException {
         Path auditRoot = repoRoot().resolve("docs/parser-audit");
         Path readme = auditRoot.resolve("README.md");

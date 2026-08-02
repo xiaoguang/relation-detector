@@ -9,9 +9,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.fullgrammar.FullGrammarEventMerger;
-import com.relationdetector.core.fullgrammar.FullGrammarNativeEventTypes;
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventMerger;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarNativeEventTypes;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
 
 /**
@@ -36,7 +36,7 @@ public final class PostgresSqlEventVisitorCore {
 
     public PostgresSqlEventVisitorCore(
             SqlStatementRecord statement,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter adapter
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter adapter
     ) {
         this.statement = statement;
         this.sink = new FullGrammarEventFacade(statement, new PostgresExpressionAnalyzer(
@@ -180,7 +180,7 @@ public final class PostgresSqlEventVisitorCore {
 
     public boolean isExpressionContext(ParserRuleContext ctx) {
         return sink.parseTreeAdapter().hasRole(ctx,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.EXPRESSION);
+                com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.EXPRESSION);
     }
 
     private void collectExpressionChildren(ParseTree tree, List<ParseTree> result) {
@@ -188,7 +188,7 @@ public final class PostgresSqlEventVisitorCore {
             return;
         }
         if (sink.parseTreeAdapter().hasRole(tree,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.ROOT_EXPRESSION)) {
+                com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.ROOT_EXPRESSION)) {
             result.add(tree);
             return;
         }

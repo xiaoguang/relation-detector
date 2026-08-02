@@ -1,9 +1,9 @@
 package com.relationdetector.core.identity;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.relationdetector.contracts.identifier.QualifiedIdentifierParser;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.IdentifierRules;
 
@@ -41,7 +41,7 @@ public final class CanonicalIdentifierResolver {
      * Parses a qualified identifier without dropping an explicit catalog or schema.
      */
     public TableId resolveQualified(String qualified, NamespaceContext namespace) {
-        List<String> parts = qualifiedParts(qualified);
+        List<String> parts = QualifiedIdentifierParser.parts(qualified);
         if (parts.isEmpty()) {
             throw new IllegalArgumentException("qualified table name is required");
         }
@@ -152,48 +152,6 @@ public final class CanonicalIdentifierResolver {
     private String joinParts(List<String> parts) {
         return parts.stream().filter(value -> !value.isBlank()).reduce((left, right) -> left + "." + right)
                 .orElse("");
-    }
-
-    private List<String> qualifiedParts(String raw) {
-        String value = raw == null ? "" : raw.strip();
-        if (value.isBlank()) {
-            return List.of();
-        }
-        List<String> parts = new ArrayList<>();
-        StringBuilder part = new StringBuilder();
-        char quote = 0;
-        for (int index = 0; index < value.length(); index++) {
-            char current = value.charAt(index);
-            if (quote == 0) {
-                if (current == '"' || current == '`' || current == '[') {
-                    quote = current == '[' ? ']' : current;
-                    part.append(current);
-                } else if (current == '.') {
-                    addPart(parts, part);
-                } else {
-                    part.append(current);
-                }
-                continue;
-            }
-            part.append(current);
-            if (current == quote) {
-                if (index + 1 < value.length() && value.charAt(index + 1) == quote) {
-                    part.append(value.charAt(++index));
-                } else {
-                    quote = 0;
-                }
-            }
-        }
-        addPart(parts, part);
-        return List.copyOf(parts);
-    }
-
-    private void addPart(List<String> parts, StringBuilder part) {
-        String value = part.toString().strip();
-        if (!value.isBlank()) {
-            parts.add(value);
-        }
-        part.setLength(0);
     }
 
     private boolean blank(String value) {

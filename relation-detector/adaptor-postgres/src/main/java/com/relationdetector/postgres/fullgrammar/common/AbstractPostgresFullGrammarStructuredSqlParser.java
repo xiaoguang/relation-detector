@@ -1,7 +1,7 @@
 package com.relationdetector.postgres.fullgrammar.common;
 
-import com.relationdetector.core.fullgrammar.FullGrammarEventMerger;
-import com.relationdetector.core.fullgrammar.FullGrammarNativeEventTypes;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventMerger;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarNativeEventTypes;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;

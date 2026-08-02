@@ -16,6 +16,7 @@ import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.ddl.MySqlDatabaseDdlCollector;
 import com.relationdetector.mysql.log.MySqlLogExtractor;
 import com.relationdetector.mysql.metadata.MySqlMetadataCollector;
+import com.relationdetector.mysql.namespace.MySqlCatalogScope;
 import com.relationdetector.mysql.objects.MySqlObjectCollector;
 import com.relationdetector.mysql.profile.MySqlDataProfiler;
 import com.relationdetector.mysql.script.MySqlScriptFramer;

@@ -9,7 +9,7 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.core.parser.StructuredSqlParseExecutor;
+import com.relationdetector.core.parser.runtime.StructuredSqlParseExecutor;
 
 /**
  * 基于结构事件的 SQL relationship parser facade。

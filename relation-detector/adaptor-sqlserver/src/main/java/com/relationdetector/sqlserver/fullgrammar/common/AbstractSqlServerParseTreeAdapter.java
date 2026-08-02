@@ -8,9 +8,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.AbstractFullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
-import com.relationdetector.core.fullgrammar.FullGrammarIdentifiers;
+import com.relationdetector.core.parser.fullgrammar.tree.AbstractFullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarColumnReference;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarIdentifiers;
 
 /**
  * CN: 为 version-local T-SQL adapters 提供 identifier、function 和 rowset 的公共无状态规范化；generated context 分类仍由版本子类显式注册，不通过 rule name 或反射。

@@ -1,10 +1,10 @@
 package com.relationdetector.cli;
 
-import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.fullgrammar.*;
+import com.relationdetector.core.parser.antlr.SqlDialect;
+import com.relationdetector.core.parser.fullgrammar.profile.*;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.relation.*;
-import com.relationdetector.core.tokenevent.*;
+import com.relationdetector.core.parser.tokenevent.*;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -787,11 +787,14 @@ class FullGrammarSqlBehaviorTest {
             SqlDialect dialect,
             SqlStatementRecord statement
     ) {
-        return FullGrammarStructuredSqlParserFactory.create(
-                        databaseType,
-                        version,
-                        new CommonTokenEventStructuredSqlParser(dialect))
-                .parser()
+        return FullGrammarParserBundleFactory.create(
+                        FullGrammarProfileRequest.builder()
+                                .databaseType(databaseType)
+                                .configuredVersion(version)
+                                .build(),
+                        new CommonTokenEventStructuredSqlParser(dialect),
+                        null)
+                .sqlParser()
                 .parseSql(statement, null);
     }
 

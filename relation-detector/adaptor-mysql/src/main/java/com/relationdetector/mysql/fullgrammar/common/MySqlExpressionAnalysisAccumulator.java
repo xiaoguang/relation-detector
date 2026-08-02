@@ -3,7 +3,7 @@ package com.relationdetector.mysql.fullgrammar.common;
 import java.util.List;
 import java.util.Set;
 
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis;
 
 /**
  *

@@ -2,20 +2,14 @@ package com.relationdetector.semantic.cli;
 
 import java.nio.file.Path;
 
-import com.relationdetector.semantic.extract.SemanticPathBackedPlanner;
-import com.relationdetector.semantic.extract.SemanticPathRunArtifactWriter;
-import com.relationdetector.semantic.extract.SemanticPathRunPlan;
-import com.relationdetector.semantic.reader.SemanticDiskBackedSession;
+import com.relationdetector.semantic.facade.SemanticExtractionFacade;
 
 /**
- * CN: 通过 {@link SemanticDiskBackedSession} 将输入路径汇入全局磁盘 evidence store，流式生成 KG，
- * 再从该 store 建立 path-backed shard plan 和本地提取请求。{@code ScanBundle} 仅是有界兼容/窗口模型；
- * 本 handler 的上游是 CLI 分发，下游是磁盘 planner/writer，禁止完整物化输入或调用外部模型。
- *
- * EN: Uses {@link SemanticDiskBackedSession} to ingest input paths into the global disk evidence store,
- * streams the KG, and then builds a path-backed shard plan and local extraction request from that store.
- * {@code ScanBundle} is only a bounded compatibility/window model. The CLI dispatcher is upstream and the
- * disk planner/writer is downstream; this handler must not materialize the complete input or call a model.
+ * CN: 将已验证CLI参数交给semantic-core extraction facade，一次生成KG与Codex-session请求；上游是命令分发，
+ * 下游仅是facade，禁止直接依赖磁盘session、planner、writer或外部模型。
+ * EN: Sends validated CLI arguments to the semantic-core extraction facade to produce KG and Codex-session requests
+ * together. Command dispatch is upstream and only the facade is downstream; this handler must not depend directly on
+ * disk sessions, planners, writers, or external models.
  */
 final class SemanticE2eCommandHandler {
     /**
@@ -30,24 +24,10 @@ final class SemanticE2eCommandHandler {
         String name = arguments.name().isBlank() ? defaultName(arguments.inputs().get(0)) : arguments.name();
         Path kgOutput = arguments.output().resolve("semantic-kg").resolve(name);
         Path extractionOutput = arguments.output().resolve("semantic-extraction").resolve(name);
-        try (SemanticDiskBackedSession session =
-                     SemanticDiskBackedSession.openForOutput(
-                             arguments.inputs(),
-                             arguments.output(),
-                             "e2e",
-                             arguments.sharding().maxInputTokens())) {
-            session.writeKgArtifacts(kgOutput, arguments.kgOutput());
-            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
-                    session.evidenceStore(), session.workPath("plan"), arguments.sharding());
-            new SemanticPathRunArtifactWriter().writeCodexSession(
-                    extractionOutput,
-                    plan,
-                    arguments.model(),
-                    arguments.reasoningEffort(),
-                    arguments.artifactRetention(),
-                    ignored -> {
-                    });
-        }
+        new SemanticExtractionFacade().writeE2eRequest(new SemanticExtractionFacade.E2eRequest(
+                arguments.inputs(), arguments.output(), kgOutput, extractionOutput, arguments.model(),
+                arguments.reasoningEffort(), arguments.artifactRetention(), arguments.kgOutput(),
+                arguments.sharding()));
         return SemanticCliExitCode.SUCCESS;
     }
 

@@ -19,7 +19,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
+import com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;

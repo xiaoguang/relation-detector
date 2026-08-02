@@ -177,7 +177,7 @@ PostgreSQL adaptor 负责：
   - string body缺省 `LANGUAGE` 输出 missing-language diagnostic；`BEGIN ATOMIC` 缺省 language按 SQL处理；
   - 两条路径只共享 sealed body descriptor、provenance 和无状态 helper，禁止互相 delegate；dynamic `EXECUTE` 只产生 unresolved diagnostic。
 
-full-grammar module 由 `META-INF/services/com.relationdetector.core.fullgrammar.FullGrammarDialectModule` 注册。core 只按 profile 选择 module，不直接 import `v16`、`v17`、`v18` 类。
+full-grammar module 由 `META-INF/services/com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule` 注册。core 只按 profile 选择 module，不直接 import `v16`、`v17`、`v18` 类。
 
 ## PostgreSQL versioned correctness golden
 

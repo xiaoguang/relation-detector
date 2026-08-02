@@ -28,7 +28,7 @@
   命令失败，不输出半闭合正式结果。standalone raw在`readTree()`前和严格UTF-8解析期间受
   `max-output-tokens`约束，evidence closure按选中记录累计`max-input-tokens`；只有有界输入才允许
   物化为typed document，输出经同级临时文件原子替换。
-- `semantic build` 的 `SemanticKgBuilder` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链，两者各自守住证据和身份边界。`SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、physical endpoint node 和 edge 的 evidence 非空且可解析；`SemanticKgIdentityRegistry` 只允许 ID 与完整内容均相同的幂等重复，冲突 node/edge 使整个 build 原子失败。这些保证不能从 `SemanticGraphAssembler` 的测试外推，也不能反向外推到 formal normalization。
+- `semantic build` 的 `SemanticKgStore/SemanticReferenceClosureStore` 与 formal normalizer 的 `SemanticGraphAssembler` 是两条独立装配链，两者各自守住证据和身份边界。磁盘KG链要求非 diagnostic fact/event、physical endpoint node 和 edge 的 evidence 非空且可解析；`ExternalJsonRecordStore` 只允许 ID 与完整内容均相同的幂等重复，冲突 node/edge 使整个 build 原子失败。这些保证不能从 `SemanticGraphAssembler` 的测试外推，也不能反向外推到 formal normalization。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
 
@@ -437,9 +437,9 @@ Step 7: Answer（最终输出）
     ↓ 输出: scan-result.json（含完整性状态与四类metadata inventory）
 [ScanResultReader]
     ↓ 输出: SemanticInputStore（section spool + 外排索引）
-[SemanticEvidenceStore / SemanticGlobalOwnerPlanner / SemanticKgBuilder]
+[SemanticEvidenceStore / SemanticGlobalOwnerPlanner / SemanticKgStore]
     ↓ 全局归并event/owner，逐个bounded root/shard构建并外排合并
-[SemanticDiskBackedArtifactWriter]
+[SemanticKgArtifactWriter]
     ↓ 输出: semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
@@ -450,11 +450,11 @@ Step 7: Answer（最终输出）
     ↓ 输出: scan-result.json（metadataInventory.status必须为COMPLETE）
 [ScanResultReader]
     ↓ 输出: SemanticInputStore / SemanticEvidenceStore（磁盘后备）
-[SemanticKgBuildService / SemanticDiskBackedArtifactWriter]
+[SemanticKgFacade / SemanticKgArtifactWriter]
     ↓ 输出: deterministic-kg/ (并列 artifact，不交给模型改写)
 [SemanticEvidenceStore]
     ↓ 输出: 内部完整bundle流，仅真实模型执行保留full-evidence-bundle.json
-[SemanticPathBackedPlanner]
+[SemanticShardPlanner]
     ↓ 输出: evidence-closed shards + fact/candidate owner manifest
 [SemanticExtractionPromptBuilder]
     ↓ 输出: shards/*/semantic-extraction-prompt.md
@@ -587,9 +587,9 @@ Step 7: Answer（最终输出）
 **当前代码预期输出：**
 
 1. ScanResultReader.open → SemanticInputStore（流式spool typed facts与inventory；有界兼容调用才物化完整ScanBundle）
-2. SemanticEvidenceStore / bounded SemanticEvidenceBuilder → 外排EvidenceGraph records与逐root/shard图
-3. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）
-4. JsonSemanticKgWriter → `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
+2. SemanticEvidenceStore → 外排EvidenceGraph records、event/triplet/review candidates与全局owner索引
+3. SemanticKgStore → 逐记录生成并校验PhysicalTable/PhysicalColumn/fact/event节点与结构边
+4. SemanticKgArtifactWriter → 流式写`semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
 5. 可选 `semantic extract / normalize-extraction` → owner-aware normalized semantic document
    （entities、events、relations、lineage、metrics、dimensions、triplets、reviewItems、semanticGraph、validation）
 
@@ -633,13 +633,13 @@ Step 7: Answer（最终输出）
   - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
   - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
   - 当前 semantic extract: transport/429/5xx 在配置范围内重试，仍失败则整次执行失败，不返回部分
-    `SemanticExtractionRunResult`；完整bundle/deterministic artifact先写staging，逐片成功结果和
+    正式结果；deterministic artifact先写staging，逐片成功结果和
     reconciliation分别经隐藏临时目录原子提交。后续失败时failure staging保留前序成功片及hash，
     但不发布部分正式run
   - 当前 SemanticExtractionDocumentNormalizer: evidence bundle 缺失，ID/物理 endpoint/entity 引用闭包失败，或 owner ID 冲突 → 终止
-  - 当前 SemanticKgBuilder: 非 diagnostic fact/event、physical endpoint node 或 edge 的 evidence 为空/无法解析，或相同 ID 的 node/edge 完整内容冲突 → 原子终止；完全相同的 ID/content 可幂等复用
-  - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
-  - 当前 SemanticExtractionRunArtifactWriter: 每次run先写唯一staging并在任何payload前原子写
+  - 当前 SemanticKgStore/SemanticReferenceClosureStore: 非 diagnostic fact/event、physical endpoint node 或 edge 的 evidence 为空/无法解析，或相同ID的记录内容冲突 → 原子终止；完全相同的ID/content可幂等复用
+  - 当前 SemanticKgArtifactWriter: 输出目录不可写或跨文件closure失败 → 终止
+  - 当前 SemanticRunArtifactWriter: 每次run先写唯一staging并在任何payload前原子写
     `IN_PROGRESS`；codex-session、
     request-only和模型执行分别在本模式交付物完成后发布`AWAITING_MODEL_RESULTS`、
     `REQUESTS_READY`或`COMPLETE` run。普通失败原子写`FAILED`且不发布半成品；若终态写入本身失败，

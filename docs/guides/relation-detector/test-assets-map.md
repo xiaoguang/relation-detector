@@ -33,7 +33,7 @@ Relationship、Lineage、diagnostics 与 naming evidence 的当前 per-fixture �
 
 ## 当前默认策略
 
-- correctness、CLI E2E 和手工 SQL 分析前，先运行 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 与 `relation-detector/scripts/check-no-jls-bad-classes.sh`。后者会拒绝 VS Code Java Language Server / Eclipse 编译器写入的 `Unresolved compilation problems` 占位 class，以及未真实实现 `DatabaseAdaptor` SPI 的坏 adaptor class。
+- correctness、CLI E2E 和手工 SQL 分析前，先运行 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 与 `relation-detector/scripts/audit/check-no-jls-bad-classes.sh`。后者会拒绝 VS Code Java Language Server / Eclipse 编译器写入的 `Unresolved compilation problems` 占位 class，以及未真实实现 `DatabaseAdaptor` SPI 的坏 adaptor class。
 - 手工 CLI 使用 `relation-detector/scripts/run-cli.sh ...`。该脚本先生成 Maven main jar，再执行坏 class 检查并组装运行 classpath；不要直接拼接未检查的 `*/target/classes`。
 - MySQL/PostgreSQL/Oracle/SQL Server root correctness fixture 显式以方言 token-event 输出作为 baseline gold；versioned fixture 显式以 full-grammar 输出作为对应版本 gold。full-grammar 不再通过 token-event baseline 做跨 parser 保护，漏识别必须在自己的 versioned golden 中直接暴露。
 - MySQL/PostgreSQL/Oracle/SQL Server root DDL correctness fixture 显式以方言 token-event DDL pipeline 作为 baseline gold；versioned DDL fixture 显式以 full-grammar DDL 输出作为对应版本 gold。full-grammar DDL 同样只由 versioned golden 验收，不再用 token-event DDL baseline 兜底。
@@ -196,7 +196,7 @@ Relationship、Lineage、diagnostics 与 naming evidence 的当前 per-fixture �
 
 ```bash
 mvn clean -pl relation-detector/cli -am -DskipTests test-compile
-relation-detector/scripts/check-no-jls-bad-classes.sh
+relation-detector/scripts/audit/check-no-jls-bad-classes.sh
 ```
 
 默认 `mvn test` 不再运行目录/命名/迁移过程守卫测试。需要人工检查代码结构残留时，使用：

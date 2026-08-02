@@ -13,7 +13,7 @@ import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.mysql.script.MySqlScriptFramer;
 

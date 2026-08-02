@@ -19,7 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
 
 class PostgresLiveScopeScanTest {

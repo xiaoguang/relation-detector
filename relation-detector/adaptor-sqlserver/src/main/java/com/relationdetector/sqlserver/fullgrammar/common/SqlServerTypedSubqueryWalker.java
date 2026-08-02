@@ -6,7 +6,7 @@ import java.util.function.Predicate;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
 
 final class SqlServerTypedSubqueryWalker {
     private SqlServerTypedSubqueryWalker() {

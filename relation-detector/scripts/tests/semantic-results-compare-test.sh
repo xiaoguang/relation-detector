@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-COMPARE="$ROOT/relation-detector/scripts/compare-semantic-results.py"
+COMPARE="$ROOT/relation-detector/scripts/audit/compare-semantic-results.py"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 

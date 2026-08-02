@@ -30,8 +30,8 @@ import com.relationdetector.core.derived.DerivedPathInferenceResult;
 import com.relationdetector.core.derived.DerivedPathInferenceService;
 import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
-import com.relationdetector.core.scan.EvidenceEnhancementService;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.evidence.EvidenceEnhancementService;
+import com.relationdetector.core.config.ScanConfig;
 
 class DerivedPathInferenceServiceTest {
     private final DerivedPathInferenceService service = new DerivedPathInferenceService();

@@ -13,8 +13,8 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.ProfileOutcome;
 import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
-import com.relationdetector.core.scan.AdaptorContractException;
-import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
+import com.relationdetector.core.adaptor.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorResultDetachmentSupport;
 
 /**
  * CN: 在 core 消费 adaptor 画像结果前原子验证 status、evidence 和 warning envelope，并重建安全 warning；

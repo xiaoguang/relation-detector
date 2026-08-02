@@ -24,14 +24,22 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
-import com.relationdetector.core.parser.ParserBundle;
+import com.relationdetector.core.parser.runtime.ParserBundle;
 import com.relationdetector.core.script.ScriptFileExtractor;
+import com.relationdetector.core.adaptor.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorParseResultContractValidator;
+import com.relationdetector.core.adaptor.AdaptorResultContractValidator;
+import com.relationdetector.core.config.SourceConfig;
+import com.relationdetector.core.execution.StatementDispatchService;
+import com.relationdetector.core.execution.StatementExecutionOutcome;
+import com.relationdetector.core.metadata.DdlMetadataInventoryAssembler;
+import com.relationdetector.core.result.MetadataInventory;
 
 /**
  * CN: 按 metadata、DDL、object 与 log source 边界编排采集，对 live definition 做脱敏防御后才交给 statement parser。
  * EN: Orchestrates metadata, DDL, object, and log collection and sanitizes live definitions before delegating them to statement parsing.
  */
-final class SourceCollectorPipeline {
+public final class SourceCollectorPipeline {
     private final ScriptFileExtractor scriptFileExtractor = new ScriptFileExtractor();
     private final StatementDispatchService statementDispatch = new StatementDispatchService();
     private final AdaptorResultContractValidator resultContractValidator =

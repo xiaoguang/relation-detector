@@ -7,8 +7,8 @@ import java.util.Set;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalyzer;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalyzer;
 
 /**
  * Shared PostgreSQL full-grammar expression analyzer.
@@ -27,20 +27,20 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     private final PostgresTransformSupport transforms;
     private final PostgresExpressionTreeSupport treeSupport;
 
-    public PostgresExpressionAnalyzer(com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter adapter) {
+    public PostgresExpressionAnalyzer(com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter adapter) {
         this(adapter, false);
     }
 
     @Override
-    protected com.relationdetector.core.fullgrammar.DialectFunctionSemanticRegistry functionRegistry() {
-        var standard = com.relationdetector.core.fullgrammar.DialectFunctionSemanticRegistry.standard();
+    protected com.relationdetector.core.parser.fullgrammar.expression.DialectFunctionSemanticRegistry functionRegistry() {
+        var standard = com.relationdetector.core.parser.fullgrammar.expression.DialectFunctionSemanticRegistry.standard();
         return routineSql ? standard.withExtensions(java.util.Map.of(
                 "to_char", com.relationdetector.contracts.Enums.LineageTransformType.FUNCTION_CALL))
                 : standard;
     }
 
     public PostgresExpressionAnalyzer(
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter adapter,
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter adapter,
             boolean routineSql
     ) {
         super(adapter);
@@ -54,7 +54,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         return treeSupport.scalarSubquery(expression) != null
                 || transforms.containsAggregateFunction(expression)
                 || transforms.containsRole(expression,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION);
+                com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.CASE_EXPRESSION);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             String valueTransform = analysis.transformType();
             if (transforms.containsAggregateFunction(expression)) {
                 valueTransform = transforms.containsRole(expression,
-                        com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)
+                        com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.WINDOW_FUNCTION)
                         ? "CUMULATIVE" : "AGGREGATE";
             }
             Set<String> valueKeys = new LinkedHashSet<>();
@@ -189,11 +189,11 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
 
     private String scalarQualifier(ParseTree scalar, String defaultQualifier) {
         ParseTree from = parseTreeAdapter().firstDescendant(
-                scalar, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.FROM_CLAUSE);
+                scalar, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.FROM_CLAUSE);
         ParseTree table = from == null ? null : parseTreeAdapter().firstDescendant(
-                from, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.TABLE_SOURCE_ITEM);
+                from, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.TABLE_SOURCE_ITEM);
         return table == null ? defaultQualifier : parseTreeAdapter().rowsetBinding(table)
-                .map(com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.RowsetBinding::qualifier)
+                .map(com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.RowsetBinding::qualifier)
                 .filter(value -> !value.isBlank())
                 .orElse(defaultQualifier);
     }
@@ -279,7 +279,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
             String qualifier = scalarQualifier(tree, defaultQualifier);
             List<ParseTree> groupings = new ArrayList<>();
             treeSupport.collectDirectRoleContexts(tree, tree,
-                    com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE,
+                    com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE,
                     groupings);
             for (ParseTree grouping : groupings) {
                 append(aliases, columns, seen, analyze(grouping, qualifier));
@@ -295,7 +295,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         collectRoleAnalyses(tree, defaultQualifier,
-                com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE,
+                com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE,
                 aliases, columns, seen);
         return new FullGrammarExpressionAnalysis(aliases, columns, "WINDOW_DERIVED", "CONTROL");
     }
@@ -303,7 +303,7 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     private void collectRoleAnalyses(
             ParseTree tree,
             String defaultQualifier,
-            com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role role,
+            com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role role,
             List<String> aliases,
             List<String> columns,
             Set<String> seen
@@ -333,11 +333,11 @@ public class PostgresExpressionAnalyzer extends FullGrammarExpressionAnalyzer {
     private void collectNonControlValueKeys(ParseTree tree, String defaultQualifier, Set<String> result) {
         if (tree == null || treeSupport.isScalarBoundary(tree)
                 || parseTreeAdapter().hasRole(
-                        tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)
+                        tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.CONTROL_SCOPE)
                 || parseTreeAdapter().hasRole(
-                        tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE)
+                        tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.GROUPING_SCOPE)
                 || parseTreeAdapter().hasRole(
-                        tree, com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE)) {
+                        tree, com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role.WINDOW_CONTROL_SCOPE)) {
             return;
         }
         var caseParts = parseTreeAdapter().caseParts(tree);

@@ -15,9 +15,9 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.parse.AntlrSllParseSupport;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
-import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.parser.antlr.AntlrSllParseSupport;
+import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parser.antlr.SqlDialect;
 
 /**
  * CN: 使用 PostgreSQL compact grammar 直接生成 DDL events 和 diagnostics，供 root token-event profile 使用；不借用 common/full parser，也不做 scanner fallback。

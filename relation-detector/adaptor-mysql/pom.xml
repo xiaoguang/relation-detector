@@ -37,6 +37,14 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <version>8.4.0</version>

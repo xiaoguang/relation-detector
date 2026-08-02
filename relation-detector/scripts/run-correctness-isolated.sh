@@ -4,7 +4,7 @@ set -m
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=heavy-job-lock.sh
-source "$ROOT/relation-detector/scripts/heavy-job-lock.sh"
+source "$ROOT/relation-detector/scripts/lib/heavy-job-lock.sh"
 MVN_BIN="${CORRECTNESS_MVN:-mvn}"
 PARALLELISM="${CORRECTNESS_PARALLELISM:-6}"
 HEAP="${CORRECTNESS_HEAP:-6g}"

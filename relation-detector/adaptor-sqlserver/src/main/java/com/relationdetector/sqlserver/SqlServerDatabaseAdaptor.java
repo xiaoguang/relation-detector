@@ -16,6 +16,7 @@ import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.sqlserver.ddl.SqlServerDatabaseDdlCollector;
 import com.relationdetector.sqlserver.log.SqlServerLogExtractor;
 import com.relationdetector.sqlserver.metadata.SqlServerMetadataCollector;
+import com.relationdetector.sqlserver.namespace.SqlServerCatalogResolver;
 import com.relationdetector.sqlserver.objects.SqlServerObjectCollector;
 import com.relationdetector.sqlserver.profile.SqlServerDataProfiler;
 import com.relationdetector.sqlserver.script.SqlServerScriptFramer;

@@ -8,7 +8,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>relation-detector-semantic-layer</artifactId>
+  <artifactId>relation-detector-semantic-core</artifactId>
 
   <dependencies>
     <dependency>

@@ -1,5 +1,7 @@
 package com.relationdetector.semantic.model;
 
+import com.relationdetector.contracts.identifier.QualifiedIdentifierParser;
+
 /**
  * CN: 表示 relation-detector 证据中的物理表或物理列。调用方必须明确选择表级或列级工厂，
  * 从而避免把 {@code schema.table} 猜成 {@code table.column}；本类型不读取 JSON，也不补全命名空间。
@@ -30,12 +32,8 @@ public record PhysicalEndpointRef(String table, String column) {
         if (qualifiedColumn == null || qualifiedColumn.isBlank()) {
             throw new IllegalArgumentException("column endpoint is required");
         }
-        String value = qualifiedColumn.strip();
-        int split = value.lastIndexOf('.');
-        if (split <= 0 || split == value.length() - 1) {
-            throw new IllegalArgumentException("column endpoint must contain table and column");
-        }
-        return new PhysicalEndpointRef(value.substring(0, split), value.substring(split + 1));
+        QualifiedIdentifierParser.LastSegment endpoint = QualifiedIdentifierParser.splitLast(qualifiedColumn);
+        return new PhysicalEndpointRef(endpoint.qualifier(), endpoint.name());
     }
 
     public boolean isColumnLevel() {
@@ -44,8 +42,8 @@ public record PhysicalEndpointRef(String table, String column) {
 
     /** Returns the unqualified table segment without changing physical identity. */
     public String bareTableName() {
-        int split = table.lastIndexOf('.');
-        return split < 0 ? table : table.substring(split + 1);
+        var parts = QualifiedIdentifierParser.parts(table);
+        return parts.isEmpty() ? "" : parts.get(parts.size() - 1);
     }
 
     public String displayName() {

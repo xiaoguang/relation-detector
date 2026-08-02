@@ -5,9 +5,9 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role;
 
 /**
  *

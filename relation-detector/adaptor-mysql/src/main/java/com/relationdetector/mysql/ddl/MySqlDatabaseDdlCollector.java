@@ -15,7 +15,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.mysql.MySqlCatalogScope;
+import com.relationdetector.mysql.namespace.MySqlCatalogScope;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**

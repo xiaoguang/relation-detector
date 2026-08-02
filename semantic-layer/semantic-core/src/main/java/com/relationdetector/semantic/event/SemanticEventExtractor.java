@@ -15,10 +15,10 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
-import com.relationdetector.semantic.reader.ScanBundle;
-import com.relationdetector.semantic.reader.ScanLineageFact;
-import com.relationdetector.semantic.reader.ScanRelationshipFact;
-import com.relationdetector.semantic.reader.SemanticInputPathCanonicalizer;
+import com.relationdetector.semantic.ingest.ScanBundle;
+import com.relationdetector.semantic.ingest.ScanLineageFact;
+import com.relationdetector.semantic.ingest.ScanRelationshipFact;
+import com.relationdetector.semantic.ingest.SemanticInputPathCanonicalizer;
 
 /**
  * CN: 按 source object 与 target table 聚合 direct VALUE write lineage，附加 touching relationships 和仅作支持的 derived lineage，生成 deterministic event candidates；不从 derived 单独创建事件。

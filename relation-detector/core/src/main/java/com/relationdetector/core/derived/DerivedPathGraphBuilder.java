@@ -21,7 +21,7 @@ import com.relationdetector.contracts.model.DerivedEvidenceSet;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 
 /**
  * CN: 从已合并的 direct facts 构建不可变邻接表，并在配额内枚举无环 derived paths。

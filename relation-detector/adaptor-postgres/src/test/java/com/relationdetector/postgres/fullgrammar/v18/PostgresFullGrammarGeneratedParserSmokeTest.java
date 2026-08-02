@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.core.fullgrammar.FullGrammarSyntaxErrorCounter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarSyntaxErrorCounter;
 
 class PostgresFullGrammarGeneratedParserSmokeTest {
     @Test

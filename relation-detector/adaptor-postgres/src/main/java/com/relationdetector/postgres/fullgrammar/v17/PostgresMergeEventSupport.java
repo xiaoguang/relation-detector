@@ -3,7 +3,7 @@ package com.relationdetector.postgres.fullgrammar.v17;
 import java.util.List;
 import java.util.function.Consumer;
 import org.antlr.v4.runtime.tree.ParseTree;
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import com.relationdetector.postgres.fullgrammar.common.PostgresSqlEventVisitorCore;
 import com.relationdetector.postgres.fullgrammar.v17.PostgresFullGrammarParser.*;
 

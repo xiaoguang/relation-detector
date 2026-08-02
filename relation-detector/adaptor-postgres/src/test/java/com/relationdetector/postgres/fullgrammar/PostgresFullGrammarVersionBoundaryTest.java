@@ -43,7 +43,7 @@ class PostgresFullGrammarVersionBoundaryTest {
 
     @Test
     void fullGrammarPreservesNonTrivialArithmeticSelfUpdateAcrossVersions() {
-        List<com.relationdetector.core.fullgrammar.FullGrammarDialectModule> modules = List.of(
+        List<com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule> modules = List.of(
                 new com.relationdetector.postgres.fullgrammar.v16.FullGrammarDialectModule(),
                 new com.relationdetector.postgres.fullgrammar.v17.FullGrammarDialectModule(),
                 new com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule());
@@ -262,7 +262,7 @@ class PostgresFullGrammarVersionBoundaryTest {
 
     @Test
     void fullGrammarTreatsIsNotDistinctFromAsNullSafeEqualityAcrossVersions() {
-        List<com.relationdetector.core.fullgrammar.FullGrammarDialectModule> modules = List.of(
+        List<com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule> modules = List.of(
                 new com.relationdetector.postgres.fullgrammar.v16.FullGrammarDialectModule(),
                 new com.relationdetector.postgres.fullgrammar.v17.FullGrammarDialectModule(),
                 new com.relationdetector.postgres.fullgrammar.v18.FullGrammarDialectModule());

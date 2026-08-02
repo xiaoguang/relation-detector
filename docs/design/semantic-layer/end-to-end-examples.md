@@ -183,7 +183,7 @@ CREATE TABLE order_items (
 [✓] 每个非diagnostic fact、endpoint node和edge具有可解析evidence
 ```
 
-**Step 3: SemanticDiskBackedArtifactWriter**
+**Step 3: SemanticKgArtifactWriter**
 
 ```
 流式输出:

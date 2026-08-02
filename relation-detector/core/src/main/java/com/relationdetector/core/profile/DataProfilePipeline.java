@@ -1,0 +1,102 @@
+package com.relationdetector.core.profile;
+
+import java.sql.Connection;
+import java.util.List;
+
+import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.spi.ProfileOutcome;
+import com.relationdetector.contracts.spi.ProfileRequest;
+import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.RelationSubType;
+import com.relationdetector.core.profile.DataProfileCandidateGenerator;
+import com.relationdetector.core.profile.ProfileOutcomeContractValidator;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.adaptor.AdaptorResultDetachmentSupport;
+import com.relationdetector.core.config.EvidenceConfig;
+import com.relationdetector.core.scan.ScanPipelineContext;
+
+/**
+ * CN: 选择有界 live profiling candidates，调用 adaptor profiler 并在增强前原子验证 evidence 契约。
+ * EN: Selects bounded live-profiling candidates, invokes the adaptor profiler, and atomically validates its evidence contract before enhancement.
+ */
+public final class DataProfilePipeline {
+    private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
+    private final DataProfileNamespacePolicy namespacePolicy = new DataProfileNamespacePolicy();
+    private final ProfileOutcomeContractValidator outcomeContract = new ProfileOutcomeContractValidator();
+    private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
+
+    /**
+     * CN: 对当前 scan 的有界 candidates 完成全部 adaptor profile 调用和契约校验后，再统一写入 evidence、warning
+     * 与新增 candidate；无 JDBC/未启用时返回空，任一 outcome 违规时抛错且本阶段不产生部分修改。
+     * EN: Profiles bounded candidates for the current scan, validates every adaptor outcome, and only then applies
+     * evidence, warnings, and new candidates. Missing JDBC or disabled profiling returns empty; any contract violation
+     * fails before this stage mutates scan state.
+     */
+    public List<RelationshipCandidate> profile(Connection connection, ScanPipelineContext ctx) {
+        EvidenceConfig evidenceConfig = ctx.config.evidence();
+        if (connection == null || !evidenceConfig.dataProfileEnabled()) {
+            return List.of();
+        }
+        List<RelationshipCandidate> added = new java.util.ArrayList<>();
+        ctx.adaptor.profiling().dataProfiler().ifPresent(profiler -> {
+            List<RelationshipCandidate> selected = candidateGenerator.select(
+                    ctx.relationshipCandidates,
+                    ctx.metadataSnapshot,
+                    ctx.namingEvidencePool.merged(),
+                    evidenceConfig.dataProfileOptions(),
+                    ctx.adaptor.identifierRules(),
+                    new NamespaceContext(ctx.scope.catalog(), ctx.scope.schema(), List.of()));
+            List<ProfileApplication> applications = new java.util.ArrayList<>();
+            for (RelationshipCandidate candidate : selected) {
+                if (!namespacePolicy.supports(ctx.config.database().databaseType(), ctx.scope,
+                        ctx.adaptor.identifierRules(), candidate)) {
+                    continue;
+                }
+                boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
+                var negativeEligibility = outcomeContract.captureNegativeEligibility(candidate);
+                ProfileRequest request = new ProfileRequest(profileView(candidate), evidenceConfig.dataProfileOptions());
+                ProfileOutcome outcome = profiler.profile(connection, request);
+                var validated = outcomeContract.validate(negativeEligibility, outcome, ctx.adaptor.id());
+                applications.add(new ProfileApplication(candidate, existingCandidate,
+                        validated.evidence(), validated.warnings()));
+            }
+            ctx.result.sources().add("data-profile");
+            for (ProfileApplication application : applications) {
+                RelationshipCandidate candidate = application.candidate();
+                List<Evidence> evidence = application.evidence();
+                ctx.result.warnings().addAll(application.warnings());
+                if (evidence.isEmpty()) {
+                    continue;
+                }
+                if (!application.existingCandidate() && !profileCanCreateRelationship(candidate, evidence)) {
+                    continue;
+                }
+                candidate.evidence().addAll(evidence);
+                if (!application.existingCandidate()) {
+                    ctx.relationshipCandidates.add(candidate);
+                    added.add(candidate);
+                }
+            }
+        });
+        return List.copyOf(added);
+    }
+
+    private RelationshipCandidate profileView(RelationshipCandidate source) {
+        return detachment.relationshipCandidate(source, "data profile request candidate");
+    }
+
+    private record ProfileApplication(
+            RelationshipCandidate candidate,
+            boolean existingCandidate,
+            List<Evidence> evidence,
+            List<WarningMessage> warnings
+    ) {
+    }
+
+    private boolean profileCanCreateRelationship(RelationshipCandidate candidate, List<Evidence> evidence) {
+        return candidate.relationSubType() == RelationSubType.PROFILE_SUPPORTED_FK
+                && evidence.stream().anyMatch(item -> item.type() == EvidenceType.VALUE_CONTAINMENT_HIGH);
+    }
+}

@@ -2,7 +2,7 @@
 
 本文档沉淀 `亿问/` 目录中关于 DataAgent、SemanticDB、NL2LF2SQL 和本体化语义层的材料，对 Evidence-Grounded Semantic Layer 的启发、可吸收点、不可照搬点和后续设计建议。
 
-本文是外部参考分析，不是当前实现说明。文中提到的亿问能力只表示参考材料中的设计主张，不表示本项目已经实现，也不评价其真实产品实现效果。所有进入本项目设计的能力仍以 [Evidence-Grounded Semantic Layer 整体设计](../semantic-layer-overall-design.md) 和 [Semantic Layer 术语表](glossary.md) 为准。
+本文是外部参考分析，不是当前实现说明。文中提到的亿问能力只表示参考材料中的设计主张，不表示本项目已经实现，也不评价其真实产品实现效果。所有进入本项目设计的能力仍以 [Evidence-Grounded Semantic Layer 整体设计](overall-design.md) 和 [Semantic Layer 术语表](glossary.md) 为准。
 
 ## 1. 背景与阅读边界
 
@@ -238,14 +238,14 @@ Natural Language
 
 | 优先级 | 建议 | 影响文档 | 能力分层 |
 | --- | --- | --- | --- |
-| P0 | 在整体设计中明确 `QuestionPlan / AnswerPlan` 是 LogicForm-like 中间表达。 | `semantic-layer-overall-design.md`, `future-capabilities-roadmap.md` | Phase 1 Scope |
-| P0 | 在 Answer Composer 中强化“每个数字/字段/SQL draft 的 evidence explanation”。 | `future-capabilities-roadmap.md`, `semantic-layer-examples.md` | Phase 1 Scope |
+| P0 | 在整体设计中明确 `QuestionPlan / AnswerPlan` 是 LogicForm-like 中间表达。 | `overall-design.md`, `future-capabilities-roadmap.md` | Phase 1 Scope |
+| P0 | 在 Answer Composer 中强化“每个数字/字段/SQL draft 的 evidence explanation”。 | `future-capabilities-roadmap.md`, `examples.md` | Phase 1 Scope |
 | P1 | 在 SQL Validator 中补充 `AnswerPlan -> SQL Draft -> Validation Result` 的追溯规则。 | `future-capabilities-roadmap.md` | Phase 1 Scope |
 | P1 | 在术语表中补 `LogicForm-like intermediate representation` 或把 `QuestionPlan / AnswerPlan` 描述得更像中间语义表达。 | `glossary.md` | Phase 1 Scope |
 | P1 | 补充 `Time Semantics` 小节，区分简单时间范围、同比环比、业务日历和数据延迟。 | `future-capabilities-roadmap.md` | Phase 1 / Phase 2+ |
 | P2 | 新增或扩展 `SemanticEvent` 设计，说明事件候选来自哪些 evidence，如何 review。 | `02-semantic-evidence-builder.md`, `future-capabilities-roadmap.md` | Phase 2+ |
-| P2 | 把指标语义层和本体化语义层的关系写入总体设计，避免“只做指标字典”的误读。 | `semantic-layer-overall-design.md` | Phase 2+ |
-| P3 | 动作语义、API/URL 执行、主动预警、动态报告作为 Future Capability 单独归档。 | `semantic-layer-examples.md` 或未来 roadmap | Future Capability |
+| P2 | 把指标语义层和本体化语义层的关系写入总体设计，避免“只做指标字典”的误读。 | `overall-design.md` | Phase 2+ |
+| P3 | 动作语义、API/URL 执行、主动预警、动态报告作为 Future Capability 单独归档。 | `examples.md` 或未来 roadmap | Future Capability |
 
 ## 7. 对现有模块的影响表
 

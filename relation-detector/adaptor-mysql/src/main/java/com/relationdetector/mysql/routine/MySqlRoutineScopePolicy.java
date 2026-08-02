@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.routine;
 
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import java.util.Locale;
 import java.util.Set;
 

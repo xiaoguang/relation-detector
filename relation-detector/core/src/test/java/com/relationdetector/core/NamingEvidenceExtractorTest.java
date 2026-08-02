@@ -27,14 +27,14 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.parse.DdlEvent;
 import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
-import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.parser.antlr.SqlDialect;
 import com.relationdetector.core.naming.NamingEvidenceExtractor;
 import com.relationdetector.core.naming.NamingRuleConfigLoader;
 import com.relationdetector.core.naming.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.naming.NamingEvidenceMerger;
-import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.parser.tokenevent.TokenEventStructuredDdlParser;
 
 class NamingEvidenceExtractorTest {
     private static final YAMLMapper YAML = new YAMLMapper();

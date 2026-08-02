@@ -24,7 +24,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
+import com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 

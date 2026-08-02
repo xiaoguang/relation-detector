@@ -15,9 +15,9 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.parse.AntlrSllParseSupport;
-import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parser.antlr.AntlrSllParseSupport;
+import com.relationdetector.core.parser.antlr.SqlDialect;
+import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
  * Oracle DDL token-event parser.

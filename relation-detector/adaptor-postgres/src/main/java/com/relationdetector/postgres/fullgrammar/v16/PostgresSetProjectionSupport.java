@@ -12,7 +12,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import com.relationdetector.postgres.common.PostgresSetProjectionLayout;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.Select_clauseContext;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.Select_with_parensContext;

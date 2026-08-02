@@ -143,8 +143,24 @@ class GrammarOwnershipArchitectureTest {
                 "adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammar/common/OracleExpressionAnalyzer.java",
                 "adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/routine/SqlServerRoutineScopePolicy.java",
                 "core/src/main/java/com/relationdetector/core/ddl/DdlConstraintAccumulator.java",
-                "core/src/main/java/com/relationdetector/core/fullgrammar/FullGrammarParseTreeTokenSupport.java")) {
+                "core/src/main/java/com/relationdetector/core/parser/fullgrammar/tree/FullGrammarParseTreeTokenSupport.java")) {
             assertFalse(Files.exists(root.resolve(relative)), "Confirmed dead type must be removed: " + relative);
+        }
+    }
+
+    @Test
+    void fullGrammarServiceDescriptorsFollowTheProfilePackage() throws IOException {
+        Path root = repoRoot();
+        String service = "META-INF/services/"
+                + "com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule";
+        for (String module : List.of(
+                "adaptor-mysql", "adaptor-postgres", "adaptor-oracle", "adaptor-sqlserver")) {
+            Path resources = root.resolve(module).resolve("src/main/resources");
+            assertTrue(Files.isRegularFile(resources.resolve(service)),
+                    module + " must register the relocated full-grammar profile SPI");
+            assertFalse(Files.exists(resources.resolve(
+                    "META-INF/services/com.relationdetector.core.fullgrammar.FullGrammarDialectModule")),
+                    module + " retains the retired full-grammar service name");
         }
     }
 

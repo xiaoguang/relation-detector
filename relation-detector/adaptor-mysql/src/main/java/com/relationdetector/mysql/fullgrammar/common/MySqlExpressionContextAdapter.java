@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarColumnReference;
 
 /**
  * CN: 将 version-local generated expression contexts 映射为共享 typed roles、columns 和 projection views；共享 analyzer 只依赖本接口，不接触 parser 类或 SQL 文本。

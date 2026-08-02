@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
 
 /**
  *

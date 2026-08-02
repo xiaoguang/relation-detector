@@ -2,7 +2,7 @@
 
 relation-detector 是 Evidence-Grounded Semantic Layer 的事实层子系统，负责从 metadata、DDL、SQL、对象定义和日志中生成可追溯的 relationship、Data Lineage、warning、confidence 与 evidence。它不负责业务同义词、指标口径审核、自然语言问答或 SQL draft 的最终业务语义决策。
 
-本目录只放 relation-detector 子模块的详细设计；整体语义层设计保留在上一层的 `semantic-layer-overall-design.md`。
+本目录只放 relation-detector 子模块的详细设计；整体语义层设计位于 `../semantic-layer/overall-design.md`。
 
 ## 阶段设计
 

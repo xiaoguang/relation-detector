@@ -85,7 +85,7 @@ Any difference fails the run and is written to `observation-diffs/`.
 Run the explicit serial-versus-parallel consistency check for all 38 JSON artifacts:
 
 ```bash
-bash relation-detector/scripts/verify-sample-data-parser-concurrency.sh
+bash relation-detector/scripts/benchmark/verify-sample-data-parser-concurrency.sh
 ```
 
 It canonicalizes each JSON document after removing `generatedAt`; any relationship,

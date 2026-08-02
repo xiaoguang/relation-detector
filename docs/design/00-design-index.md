@@ -4,8 +4,8 @@
 
 ## 总体设计
 
-- [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
-- [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
+- [Evidence-Grounded Semantic Layer 整体设计](semantic-layer/overall-design.md)
+- [Evidence-Grounded Semantic Layer 示例附录](semantic-layer/examples.md)
 - [Semantic Layer 术语表](semantic-layer/glossary.md)
 - [参考亿问改进分析](semantic-layer/yiyiwen-reference-improvement.md)
 

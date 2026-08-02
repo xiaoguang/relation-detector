@@ -1,8 +1,8 @@
 package com.relationdetector.cli;
 
-import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.fullgrammar.*;
-import com.relationdetector.core.tokenevent.*;
+import com.relationdetector.core.parser.antlr.SqlDialect;
+import com.relationdetector.core.parser.fullgrammar.profile.*;
+import com.relationdetector.core.parser.tokenevent.*;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,11 +28,8 @@ class FullGrammarStructuredSqlParserTest {
                 SET p.audit_shop_id = s.id
                 """, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 3, java.util.Map.of());
 
-        StructuredParseResult result = FullGrammarStructuredSqlParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL))
-                .parser()
+        StructuredParseResult result = fullGrammarSqlParser(
+                        DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL)
                 .parseSql(statement, null);
 
         assertEquals("FULL_GRAMMAR_PROFILE_PRIMARY", result.backend());
@@ -56,11 +53,8 @@ class FullGrammarStructuredSqlParserTest {
                 JOIN users u ON o.user_id = u.id
                 """, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 4, java.util.Map.of());
 
-        StructuredParseResult result = FullGrammarStructuredSqlParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL))
-                .parser()
+        StructuredParseResult result = fullGrammarSqlParser(
+                        DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL)
                 .parseSql(statement, null);
 
         assertEquals("FULL_GRAMMAR_PROFILE_PRIMARY", result.backend());
@@ -77,15 +71,26 @@ class FullGrammarStructuredSqlParserTest {
                 1,
                 java.util.Map.of());
 
-        StructuredParseResult result = FullGrammarStructuredSqlParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL))
-                .parser()
+        StructuredParseResult result = fullGrammarSqlParser(
+                        DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL)
                 .parseSql(statement, null);
 
         assertTrue(result.events().stream().anyMatch(event -> event.type().name().equals("PREDICATE_EQUALITY")));
         assertTrue(result.warnings().stream().anyMatch(warning -> warning.code().equals("FULL_GRAMMAR_SQL_PARSE_WARNING")));
         assertTrue(((Number) result.attributes().get("fullGrammarSyntaxErrors")).intValue() > 0);
+    }
+
+    private com.relationdetector.contracts.spi.Collectors.StructuredSqlParser fullGrammarSqlParser(
+            DatabaseType databaseType,
+            String version,
+            SqlDialect dialect
+    ) {
+        return FullGrammarParserBundleFactory.create(
+                FullGrammarProfileRequest.builder()
+                        .databaseType(databaseType)
+                        .configuredVersion(version)
+                        .build(),
+                new CommonTokenEventStructuredSqlParser(dialect),
+                null).sqlParser();
     }
 }

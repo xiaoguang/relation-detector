@@ -13,7 +13,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 
 /**
  * CN: 通过选定 SQL Server version binding 解析 DDL 并产生 typed DDL events；不读取 live catalog 或增强 relationship。

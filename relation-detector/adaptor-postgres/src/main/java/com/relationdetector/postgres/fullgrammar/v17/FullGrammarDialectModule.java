@@ -3,7 +3,7 @@ package com.relationdetector.postgres.fullgrammar.v17;
 import java.util.Set;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 import com.relationdetector.postgres.fullgrammar.common.AbstractFullGrammarDialectModule;
 
 /**

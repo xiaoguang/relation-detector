@@ -13,9 +13,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role;
 /**
  * CN: 在一次 full-grammar parse 内按 version adapter 的 typed roles 收集 SQL/DDL events，维护 alias、projection、EXISTS 和 write-control state；不调用 token-event 或扫描 raw SQL。
  * EN: Collects SQL and DDL events for one full-grammar parse using typed roles from the version adapter while maintaining alias, projection, EXISTS, and write-control state. It never invokes token-event or scans raw SQL.
@@ -162,7 +162,7 @@ public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSu
                     continue;
                 }
                 String output = aliasForProjection(item).orElseGet(() -> directColumnExpression(expression.get())
-                        .map(com.relationdetector.core.fullgrammar.FullGrammarColumnReference::column)
+                        .map(com.relationdetector.core.parser.fullgrammar.expression.FullGrammarColumnReference::column)
                         .orElse(""));
                 if (output.isBlank()) {
                     continue;

@@ -12,7 +12,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 
 /**
  * CN: 通过选定版本 binding 解析 framed T-SQL，并把 typed parse tree 转为结构化事件和版本 provenance；不回退到 token-event parser。

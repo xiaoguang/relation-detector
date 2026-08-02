@@ -1,6 +1,6 @@
 package com.relationdetector.postgres.fullgrammar.v16;
 
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.Set_clauseContext;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.UpdatestmtContext;
 

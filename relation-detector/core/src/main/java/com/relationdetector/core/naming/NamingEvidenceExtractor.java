@@ -47,7 +47,7 @@ public final class NamingEvidenceExtractor {
         return extractFromMetadata(metadata, null);
     }
 
-    public List<NamingEvidenceCandidate> extractFromMetadata(MetadataSnapshot metadata, com.relationdetector.core.scan.ScanConfig config) {
+    public List<NamingEvidenceCandidate> extractFromMetadata(MetadataSnapshot metadata, com.relationdetector.core.config.ScanConfig config) {
         if (metadata == null) {
             return List.of();
         }
@@ -72,7 +72,7 @@ public final class NamingEvidenceExtractor {
 
     public List<NamingEvidenceCandidate> extractFromDdlEvents(
             List<StructuredSqlEvent> events,
-            com.relationdetector.core.scan.ScanConfig config
+            com.relationdetector.core.config.ScanConfig config
     ) {
         if (events == null || events.isEmpty()) {
             return List.of();
@@ -103,7 +103,7 @@ public final class NamingEvidenceExtractor {
 
     public List<NamingEvidenceCandidate> extractFromRelationshipCandidates(
             List<RelationshipCandidate> candidates,
-            com.relationdetector.core.scan.ScanConfig config
+            com.relationdetector.core.config.ScanConfig config
     ) {
         if (candidates == null || candidates.isEmpty()) {
             return List.of();
@@ -348,7 +348,7 @@ public final class NamingEvidenceExtractor {
                 match.attributes());
     }
 
-    private NamingRuleSet ruleSet(com.relationdetector.core.scan.ScanConfig config) {
+    private NamingRuleSet ruleSet(com.relationdetector.core.config.ScanConfig config) {
         return config == null ? NamingRuleSet.systemDefault() : config.namingRuleSet();
     }
 

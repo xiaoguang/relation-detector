@@ -15,11 +15,11 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.parse.AntlrSllParseSupport;
+import com.relationdetector.core.parser.antlr.AntlrSllParseSupport;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
-import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parser.antlr.SqlDialect;
 
 /**
  * MySQL DDL token-event parser backed by the MySQL typed structural grammar.

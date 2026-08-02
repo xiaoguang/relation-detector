@@ -8,7 +8,7 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
 import com.relationdetector.core.naming.NamingEvidenceMerger;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 
 /**
  * CN: 在已合并的 typed direct facts 上编排 relationship、lineage 和 naming derived inference，不重新运行 parser 或 naming rules。

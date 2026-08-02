@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.fullgrammar.common;
 
-import com.relationdetector.core.fullgrammar.FullGrammarSyntaxErrorCounter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarSyntaxErrorCounter;
 import java.util.List;
 import java.util.function.Function;
 import org.antlr.v4.runtime.CharStream;

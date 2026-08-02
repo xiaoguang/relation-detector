@@ -26,8 +26,8 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.parser.runtime.SqlRelationParserRunner;
 
 /**
  * Manual, read-only fixture exporter for anonymized MySQL basic correctness fixtures.

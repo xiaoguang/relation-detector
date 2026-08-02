@@ -1,12 +1,12 @@
 package com.relationdetector.core;
 
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
 import com.relationdetector.core.lineage.*;
-import com.relationdetector.core.parser.*;
+import com.relationdetector.core.parser.runtime.*;
 import com.relationdetector.core.relation.*;
 
-import com.relationdetector.core.tokenevent.*;
+import com.relationdetector.core.parser.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -55,7 +55,7 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.WarningType;
-import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 
 /**
  * Tests SQL parser dispatch without running a full scan.

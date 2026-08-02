@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis;
 
 final class SqlServerExpressionState {
     boolean aggregate;

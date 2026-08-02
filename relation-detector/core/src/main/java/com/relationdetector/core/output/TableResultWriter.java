@@ -2,7 +2,7 @@ package com.relationdetector.core.output;
 
 import java.util.stream.Collectors;
 
-import com.relationdetector.core.scan.ScanResult;
+import com.relationdetector.core.result.ScanResult;
 
 /**
  * CN: 将已合并 ScanResult 渲染为终端可读表格，不改变候选、证据或 confidence。

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
+import com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule;
 
 class SqlServerParserArchitectureTest {
     private static final List<String> VERSIONS = List.of("v2016", "v2017", "v2019", "v2022", "v2025");

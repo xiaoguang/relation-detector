@@ -29,7 +29,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.sqlserver.SqlServerCatalogResolver;
+import com.relationdetector.sqlserver.namespace.SqlServerCatalogResolver;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 
 /**

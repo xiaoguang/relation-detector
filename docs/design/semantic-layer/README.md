@@ -1,6 +1,6 @@
 # Semantic Layer 子系统设计索引
 
-本目录包含 Evidence-Grounded Semantic Layer 中除 relation-detector 事实层以外的子系统详细设计。总体边界以 [Evidence-Grounded Semantic Layer 整体设计](../semantic-layer-overall-design.md) 为准；术语口径以 [Semantic Layer 术语表](glossary.md) 为准。
+本目录包含 Evidence-Grounded Semantic Layer 中除 relation-detector 事实层以外的子系统详细设计。总体边界以 [Evidence-Grounded Semantic Layer 整体设计](overall-design.md) 为准；术语口径以 [Semantic Layer 术语表](glossary.md) 为准。
 
 ## 架构概览
 
@@ -10,8 +10,8 @@
 Relation Detector JSON
   -> ScanResultReader.open / SemanticInputStore
   -> SemanticEvidenceStore
-  -> bounded component/root materialization
-  -> SemanticEvidenceBuilder / SemanticKgBuilder
+  -> global event/owner records and bounded root/shard materialization
+  -> SemanticKgStore / SemanticKgArtifactWriter
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
@@ -29,7 +29,7 @@ inventory fingerprint 不一致。随后全局`SemanticEvidenceStore`归并event
 ```text
 Relation Detector JSON
   -> Scan Result Reader
-  -> deterministic-kg/ + SemanticExtractionBundleBuilder
+  -> deterministic-kg/ + SemanticEvidenceWindowProjector
   -> SemanticGlobalOwnerPlanner (全局连通分量 / root closure / 唯一 owner)
   -> per-shard SemanticExtractionPromptBuilder
   -> semantic extract
@@ -108,8 +108,8 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | --- | --- | --- |
 | `SEM-WIRE-01` | `MATCHED` | derived path至少包含三个endpoint，`pathLength == path.size()-1`，source/target与path两端一致；必需结构、枚举和嵌套evidence继续严格校验。 |
 | `SEM-REF-01` | `MATCHED` | 显式typed ref必须解析成功，缺失时才允许display fallback；event display ref逐项校验，review target按规范化section查询owner。 |
-| `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线 `SemanticKgBuilder`。 |
-| `SEM-KG-01` | `MATCHED` | `SemanticKgBuilder/ReferenceIndex` 要求非 diagnostic fact/event、endpoint node 与结构edge的 evidence refs非空且可解析；Evidence Graph唯一保存完整payload，标准KG不复制逐引用`SUPPORTED_BY_EVIDENCE`边。identity registry只允许完整内容相同的幂等重复，冲突node/edge ID原子失败。 |
+| `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线磁盘KG链。 |
+| `SEM-KG-01` | `MATCHED` | `SemanticKgStore/SemanticReferenceClosureStore` 要求非 diagnostic fact/event、endpoint node 与结构edge的 evidence refs非空且可解析；Evidence Graph唯一保存完整payload，标准KG不复制逐引用`SUPPORTED_BY_EVIDENCE`边。外排record store只允许完整内容相同的幂等重复，冲突node/edge ID原子失败。 |
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review都使用长度分隔canonical identity；review先规范化section，ID使用`targetSection + targetRef + type`且不包含可变reason。 |
@@ -221,11 +221,11 @@ Semantic Layer 在这些事实之上构建业务语义，不修改 relation-dete
 
 ## 相关文档
 
-- [Evidence-Grounded Semantic Layer 整体设计](../semantic-layer-overall-design.md)
+- [Evidence-Grounded Semantic Layer 整体设计](overall-design.md)
 - [Semantic Layer 术语表](glossary.md)
-- [Semantic Layer 示例附录](../semantic-layer-examples.md)
+- [Semantic Layer 示例附录](examples.md)
 - [参考亿问改进分析](yiyiwen-reference-improvement.md)
-- Semantica 架构启发已归入[整体设计](../semantic-layer-overall-design.md)及各子系统文档；不依赖仓库外的本地研究笔记作为设计契约。
+- Semantica 架构启发已归入[整体设计](overall-design.md)及各子系统文档；不依赖仓库外的本地研究笔记作为设计契约。
 - [集成设计与端到端数据流](integration-design.md)
 - [技术选型文档](technology-selection.md)
 - [端到端测试示例](end-to-end-examples.md)

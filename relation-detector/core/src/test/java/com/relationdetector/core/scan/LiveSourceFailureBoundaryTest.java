@@ -1,5 +1,13 @@
 package com.relationdetector.core.scan;
 
+import com.relationdetector.core.scan.ScanEngine;
+
+import com.relationdetector.core.adaptor.AdaptorContractException;
+
+import com.relationdetector.core.result.ScanResult;
+
+import com.relationdetector.core.config.ScanConfig;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +50,7 @@ import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.IdentifierRules;
-import com.relationdetector.core.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
 
 class LiveSourceFailureBoundaryTest {
     private static final String JDBC_URL = "jdbc:task9:metadata-boundary";

@@ -7,9 +7,9 @@
 当前代码分两条独立链路：
 
 - `semantic build` / `semantic e2e` 的 KG 构建链路直接执行
-  `SemanticEvidenceBuilder -> SemanticKgBuilder`，不创建 semantic fact，也不调用 LLM。
-- `semantic extract` 的语义抽取链路已经实现：先从同一个 `ScanBundle` 写
-  `deterministic-kg/`，再由 `SemanticExtractionBundleBuilder` 构造完整 evidence bundle。
+  `SemanticEvidenceStore -> SemanticKgStore -> SemanticKgArtifactWriter`，不创建 semantic fact，也不调用 LLM。
+- `semantic extract` 的语义抽取链路已经实现：`SemanticProcessingSession`从完整scan输入建立磁盘evidence
+  store并写`deterministic-kg/`，再由`SemanticEvidenceWindowProjector`投影单个有界root/shard bundle。
   `SemanticShardPlanner` 按当前 table-touch 连通分量形成 evidence-closed shard；`codex-session`
   只写逐片 prompt / bundle / 协调模板，`openai-api` 默认使用
   `gpt-5.6-sol`、`xhigh` 调用 Responses API。逐片结果先在片内归一化，再确定性合并、
@@ -66,9 +66,9 @@ Semantica 官方 README 将 Semantica 定位为 LLM 旁边的 Context and Accoun
 ## 2. 上游与下游
 
 ```text
-Semantic Evidence Builder
-  -> EvidenceGraph
-  -> SemanticKgBuilder
+Semantic Evidence Store
+  -> global EvidenceGraph records
+  -> SemanticKgStore / SemanticKgArtifactWriter
   -> semantic-kg.json / semantic-evidence-graph.json
 ```
 
@@ -77,7 +77,7 @@ KG 构建链路不调用 LLM，也不会修改 evidence graph。
 ```text
 ScanBundle
   -> deterministic-kg/ (规则构建，不交给模型改写)
-  -> SemanticExtractionBundleBuilder (完整 bundle)
+  -> SemanticEvidenceWindowProjector (完整 bundle)
   -> SemanticShardPlanner (连通分量 / evidence closure / 唯一 owner)
   -> SemanticExtractionPromptBuilder (逐片)
   -> semantic extract
@@ -110,26 +110,25 @@ KG 构建链路没有 enrichment 扩展接口。正式 LLM 能力只通过独立
 不得原地修改 `EvidenceGraph`。语义抽取链路使用以下 API：
 
 ```java
-public final class SemanticExtractionBundleBuilder {
-    ObjectNode build(ScanBundle bundle);
+public final class SemanticExtractionFacade {
+    Path extract(Request request);
+    CompletionResult completeCodexSession(
+        Path requestRun, Path responseDirectory, Path outputRoot);
 }
 
-public final class SemanticExtractionService {
-    SemanticExtractionRunPlan plan(ObjectNode fullBundle, SemanticShardingOptions options);
-    SemanticExtractionRunResult execute(
-        SemanticExtractionRunPlan plan,
-        SemanticModelClient shardClient,
-        SemanticModelClient reconciliationClient);
+public final class SemanticNormalizationFacade {
+    void normalize(
+        Path rawResult, Path evidenceBundle, Path output,
+        int maxOutputTokens, int maxInputTokens);
 }
 
 public interface SemanticModelClient {
     SemanticExtractionResult extract(SemanticExtractionPrompt prompt);
 }
-
-public final class SemanticExtractionDocumentNormalizer {
-    ObjectNode normalize(JsonNode rawDocument, JsonNode evidenceBundle);
-}
 ```
+
+CLI只调用facade。`SemanticProcessingSession`、`SemanticShardPlanner`和`SemanticRunArtifactWriter`是core内部
+编排细节：它们分别拥有磁盘工作区、全局owner分片和原子run事务，不构成额外公开命令契约。
 
 `SemanticModelClient` 只负责模型调用。request-only artifact 由调用方提供独立的请求渲染函数，
 不把序列化职责放回模型接口。normalizer 不提供无 evidence bundle 的入口；CLI 的
@@ -260,7 +259,7 @@ reference index 引用，不等同于只引用底层 `evidence[]`。
 数、固定开销和 15% margin 做确定性估算；它没有调用模型 tokenizer。因此该门限是 repository estimate
 gate，不是 provider 精确 token 数的数学硬上限。API 返回的 actual usage 只用于事后审计。
 
-`SemanticExtractionRunPlan` 保存同一个 `maxInputTokens`。多 shard reconciliation prompt 在 merge 后
+`SemanticRunPlan` 保存同一个 `maxInputTokens`。多 shard reconciliation prompt 在 merge 后
 只渲染待选冲突变体、shard/owner元数据和固定约束，不复制无关的merged semantic summary。该最终
 prompt仍由同一个 `SemanticPromptBudgetEstimator` 执行门限；超过上限时在模型调用前原子失败，
 等于上限时允许执行。manifest 同时记录门限和 `estimatedInputTokens`，并明确该值不是模型精确 token 数。
@@ -304,10 +303,10 @@ entity refs；同名但grounding不同的业务entity保留不同ID并生成
 Patch wire只允许`resolutions`和`renames`两个数组；额外section（包括`relations`）直接拒绝。
 协调器不得创建对象、relation、物理fact、新evidence/candidate reference、物理endpoint或治理批准状态。
 应用 patch 后，最终文档必须再次针对原始完整 bundle 归一化并重建semantic graph/reference closure；
-任一 shard、merge、patch 或全局闭包失败都不会返回`SemanticExtractionRunResult`。
+任一 shard、merge、patch 或全局闭包失败都不会发布正式`run-*`目录。
 
-真实API运行由artifact writer创建staging并调用service的package-private执行观察器。完整bundle和
-deterministic artifact在首次模型调用前写入；每个shard完成模型调用和片内normalization后，writer
+真实API运行由`SemanticRunArtifactWriter`创建staging并在首次模型调用前写入deterministic artifact；每个
+shard完成模型调用和片内normalization后，writer
 把request/response/raw/normalized文件写到隐藏临时目录，全部成功后原子改名为正式shard目录。
 reconciliation解析成功后采用相同边界。后续shard、patch或最终闭包失败时，failure staging仍保留
 全部前序`COMPLETE`片及其hash，未完成片标记为`PENDING`；正式`run-*`仍只在全局闭包成功后发布。

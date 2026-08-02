@@ -10,8 +10,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.relationdetector.semantic.extract.ArtifactRetention;
-import com.relationdetector.semantic.reader.SemanticKgArtifactMode;
+import com.relationdetector.semantic.extraction.config.ArtifactRetention;
+import com.relationdetector.semantic.kg.store.SemanticKgArtifactMode;
 
 final class SemanticCommandArgumentsTest {
     @TempDir

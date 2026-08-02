@@ -15,7 +15,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
-import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
+import com.relationdetector.core.parser.tokenevent.TokenEventEventEmitter;
 
 /**
  *

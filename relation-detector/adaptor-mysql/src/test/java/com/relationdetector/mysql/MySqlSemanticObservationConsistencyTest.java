@@ -17,7 +17,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.provenance.SemanticObservationFingerprint;
+import com.relationdetector.core.provenance.ParserObservationFingerprint;
 import com.relationdetector.core.relation.StructuredRelationshipExtractor;
 import com.relationdetector.mysql.fullgrammar.v8_0.FullGrammarDialectModule;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
@@ -225,16 +225,16 @@ class MySqlSemanticObservationConsistencyTest {
                 semanticObservationFingerprints(new FullGrammarDialectModule().sqlParser(), statement));
     }
 
-    private List<SemanticObservationFingerprint> semanticObservationFingerprints(
+    private List<ParserObservationFingerprint> semanticObservationFingerprints(
             StructuredSqlParser parser,
             SqlStatementRecord statement
     ) {
         var structured = parser.parseSql(statement, null);
-        List<SemanticObservationFingerprint> observations = new ArrayList<>();
+        List<ParserObservationFingerprint> observations = new ArrayList<>();
         new StructuredRelationshipExtractor().extract(statement, structured).forEach(candidate ->
-                observations.addAll(SemanticObservationFingerprint.relationships(candidate)));
+                observations.addAll(ParserObservationFingerprint.relationships(candidate)));
         new StructuredDataLineageExtractor().extract(statement, structured).forEach(candidate ->
-                observations.addAll(SemanticObservationFingerprint.lineages(candidate)));
+                observations.addAll(ParserObservationFingerprint.lineages(candidate)));
         return observations.stream().sorted().toList();
     }
 

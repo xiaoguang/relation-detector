@@ -6,9 +6,9 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.core.fullgrammar.AbstractFullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarColumnReference;
-import com.relationdetector.core.fullgrammar.FullGrammarIdentifiers;
+import com.relationdetector.core.parser.fullgrammar.tree.AbstractFullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarColumnReference;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarIdentifiers;
 import com.relationdetector.postgres.fullgrammar.v16.PostgresFullGrammarParser.*;
 
 final class PostgresParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter {

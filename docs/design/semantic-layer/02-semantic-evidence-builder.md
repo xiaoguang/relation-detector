@@ -58,14 +58,14 @@ reader共用typed closure rules，验证constraint source/reference、FK两端�
 | Diagnostic | diagnostic fact 与 source location |
 | Typed write lineage | `SemanticEventCandidate`、input/output endpoint 和 fact refs |
 
-`SemanticEvidenceBuilder` 只负责把输入事实及其 evidence refs 物化为图元素，不在这一层重复实现
-闭包策略。正式 KG 的非 diagnostic fact/event、物理 endpoint node 和 edge 的非空、可解析
-evidence约束由 `SemanticKgBuilder` 和 `ReferenceIndex` 原子校验。完全相同 ID/content 可以幂等
-复用；同一 ID 对应不同内容时整个 KG build 原子失败。
+`SemanticEvidenceBuilder` 只负责把有界输入窗口的事实及其 evidence refs 物化为图元素，不在这一层重复
+实现闭包策略。生产链将窗口记录归并到`SemanticEvidenceStore`，再由`SemanticKgStore`和
+`SemanticReferenceClosureStore`原子校验非 diagnostic fact/event、物理 endpoint node 与 edge 的非空、
+可解析evidence。完全相同ID/content可以幂等复用；同一ID对应不同内容时整个KG build原子失败。
 
 ### 3.2 Extraction Bundle
 
-`SemanticExtractionBundleBuilder` 从同一个 `ScanBundle` 生成完整 extraction bundle，顶层包含：
+`SemanticEvidenceWindowProjector` 从同一个 `ScanBundle` 生成完整 extraction bundle，顶层包含：
 
 - database identity 和 portable input files。
 - `COMPLETE` inventory与全部事实endpoint共同闭合得到的`tables`。
@@ -84,10 +84,10 @@ metric；`ReviewItemCandidateGenerator`一对一保留全部diagnostic review ca
 
 ### 3.3 Deterministic KG
 
-`SemanticKgBuilder` 从 `EvidenceGraph` 构建离线 KG。模型不接收也不修改该 KG。KG closure 与 formal
-semantic normalization 是两个独立边界：
+`SemanticKgStore` 从全局外排 EvidenceGraph records 构建离线 KG，并由`SemanticKgArtifactWriter`流式写出。
+模型不接收也不修改该 KG。KG closure 与 formal semantic normalization 是两个独立边界：
 
-- `SemanticKgBuilder/ReferenceIndex` 校验离线 KG 的 node、edge 和 evidence。
+- `SemanticKgStore/SemanticReferenceClosureStore` 校验离线 KG 的 node、edge 和 evidence。
 - `SemanticExtractionDocumentNormalizer/SemanticReferenceIndex` 校验模型输出与完整 extraction bundle。
 
 `semantic-evidence-graph.json`是完整evidence payload与diagnostics的唯一持有者。KG fact node和结构edge
@@ -147,7 +147,7 @@ Formal model output还必须满足：
 - 只有 typed ref 缺失时才允许使用兼容的展示名称回填；已提供但无效的 typed ref 必须失败。
 - 模型不能输出 `BUSINESS_APPROVED`。
 - 任一校验失败不返回部分 artifact。
-- `SemanticExtractionService`和独立`normalize-extraction`共用owner-aware入口；evidence bundle必须
+- `SemanticRunArtifactWriter`和独立`normalize-extraction`共用owner-aware normalization契约；evidence bundle必须
   携带合法`shardContext`，owned/overlap refs唯一、互斥且存在，每个模型对象必须具有当前shard拥有的grounding。
 - normalizer拒绝`BUSINESS_APPROVED`；正式semantic对象缺失`reviewStatus`补
   `SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。
@@ -163,7 +163,7 @@ Formal model output还必须满足：
 5. 保证每个 root 的 dependency/evidence closure不可拆分。
 6. 为每个 fact/candidate指定唯一 owner，overlap只提供只读上下文。
 
-描述、diagnostic 文本和 arbitrary attributes不能建立 component 边。在`SemanticExtractionService`
+描述、diagnostic 文本和 arbitrary attributes不能建立 component 边。在`SemanticRunArtifactWriter`
 执行链中，每个模型输出对象必须通过`ownedGroundingRefs`直接引用当前shard owned fact/candidate；
 仅引用overlap或evidence不构成所有权。独立normalization命令同样要求 evidence bundle 携带
 planner生成或按同一契约构造的`shardContext`；缺失、伪造或越界context必须失败。

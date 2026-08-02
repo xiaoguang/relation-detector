@@ -2,8 +2,8 @@ package com.relationdetector.sqlserver.fullgrammar.common;
 
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 
 /**
  * CN: 将一个 SQL Server version profile 与其 generated grammar binding 注册为 full-grammar SQL/DDL parsers；不共享版本 parser state。

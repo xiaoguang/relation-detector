@@ -1,0 +1,77 @@
+package com.relationdetector.semantic.extraction.artifact;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
+
+import com.relationdetector.semantic.internal.io.SemanticAtomicFiles;
+
+/**
+ * CN: 在可复用 output root 中原子声明唯一 staging/run 路径，并为 final-only 构建独立发布候选；
+ * 上游是 run artifact writer，下游是文件系统，只负责目录声明与同文件系统 rename，禁止写业务 payload
+ * 或清理失败 staging。
+ *
+ * EN: Atomically claims unique staging and run paths under a reusable output root and creates an independent
+ * final-only publish candidate. It only owns directory claims and same-filesystem renames; it neither writes domain
+ * payloads nor removes failed staging directories.
+ */
+public class RunArtifactPublisher {
+    public RunDirectory begin(Path outputRoot) {
+        if (outputRoot == null) {
+            throw new IllegalArgumentException("semantic extraction output root is required");
+        }
+        Path root = outputRoot.toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(root);
+            while (true) {
+                String runId = UUID.randomUUID().toString();
+                Path staging = root.resolve(".staging-" + runId);
+                try {
+                    Files.createDirectory(staging);
+                    return new RunDirectory(runId, staging, root.resolve("run-" + runId));
+                } catch (java.nio.file.FileAlreadyExistsException ignored) {
+                    // UUID collision is improbable, but retrying keeps the directory claim atomic.
+                }
+            }
+        } catch (IOException error) {
+            throw new IllegalArgumentException("failed to create semantic extraction run staging directory", error);
+        }
+    }
+
+    public Path publish(RunDirectory runDirectory) {
+        return publishDirectory(runDirectory.stagingDirectory(), runDirectory.publishedDirectory());
+    }
+
+    public Path createPublishCandidate(RunDirectory runDirectory) {
+        Path candidate = runDirectory.stagingDirectory().getParent()
+                .resolve(".publish-" + runDirectory.runId() + "-" + UUID.randomUUID());
+        try {
+            return Files.createDirectory(candidate);
+        } catch (IOException error) {
+            throw new IllegalArgumentException(
+                    "failed to create semantic extraction publish candidate", error);
+        }
+    }
+
+    public Path publishCandidate(RunDirectory runDirectory, Path candidate) {
+        return publishDirectory(candidate, runDirectory.publishedDirectory());
+    }
+
+    private Path publishDirectory(Path source, Path target) {
+        try {
+            return SemanticAtomicFiles.publishDirectory(source, target);
+        } catch (IOException error) {
+            throw new IllegalArgumentException("failed to atomically publish semantic extraction run", error);
+        }
+    }
+
+    public record RunDirectory(String runId, Path stagingDirectory, Path publishedDirectory) {
+        public RunDirectory {
+            if (runId == null || runId.isBlank()
+                    || stagingDirectory == null || publishedDirectory == null) {
+                throw new IllegalArgumentException("semantic extraction run directory is incomplete");
+            }
+        }
+    }
+}

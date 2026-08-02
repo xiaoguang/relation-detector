@@ -1,7 +1,7 @@
 package com.relationdetector.mysql.fullgrammar.common;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

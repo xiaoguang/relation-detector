@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
+import com.relationdetector.core.parser.tokenevent.CommonTokenEventStructuredSqlParser;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
 
 class OracleParserArchitectureTest {

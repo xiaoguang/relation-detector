@@ -1,0 +1,83 @@
+package com.relationdetector.core.adaptor;
+
+import com.relationdetector.contracts.Enums.AdaptorCapability;
+import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.core.config.ResolvedScanConfig;
+import com.relationdetector.core.config.SourceConfig;
+
+/**
+ * CN: 在 live JDBC 打开前确认每个请求的 source 都有 adaptor capability 与可调用 collector/parser。
+ * EN: Validates that every requested source has an adaptor capability and callable collector/parser before live JDBC is opened.
+ */
+public final class ScanCapabilityValidator {
+    public void validate(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
+        SourceConfig sources = config.sources();
+
+        if (sources.metadataEnabled()) {
+            require(adaptor, AdaptorCapability.METADATA, adaptor.collectors().metadata().isPresent(), "live metadata");
+        }
+        if (hasDdlFiles(sources)) {
+            require(adaptor, AdaptorCapability.DDL_PARSING,
+                    adaptor.parsers().structuredDdl().isPresent(), "DDL files");
+        }
+        if (sources.ddlEnabled() && sources.ddlFromDatabase()) {
+            require(adaptor, AdaptorCapability.DDL_PARSING,
+                    adaptor.collectors().databaseDdl().isPresent(), "live database DDL");
+            requireParser(adaptor, adaptor.parsers().structuredDdl().isPresent(), "live database DDL", "structured DDL parser");
+        }
+        if (hasObjectFiles(sources) && adaptor.parsers().structuredSql().isEmpty()) {
+            throw unsupported(adaptor, "object files", "structured SQL parser");
+        }
+        if (sources.objectsEnabled() && sources.objectsFromDatabase()) {
+            require(adaptor, AdaptorCapability.DATABASE_OBJECTS,
+                    adaptor.collectors().objects().isPresent(), "live database objects");
+            requireParser(adaptor, adaptor.parsers().structuredSql().isPresent(), "live database objects", "structured SQL parser");
+        }
+        if (hasLogFiles(sources)) {
+            require(adaptor, AdaptorCapability.NATIVE_LOGS,
+                    adaptor.collectors().logs().isPresent(), "native log files");
+        }
+        if (config.evidence().dataProfileEnabled()) {
+            require(adaptor, AdaptorCapability.DATA_PROFILING,
+                    adaptor.profiling().dataProfiler().isPresent(), "live data profiling");
+        }
+    }
+
+    private void require(
+            DatabaseAdaptor adaptor,
+            AdaptorCapability capability,
+            boolean implementationPresent,
+            String requestedSource
+    ) {
+        if (!adaptor.capabilities().contains(capability) || !implementationPresent) {
+            throw unsupported(adaptor, requestedSource, capability.name());
+        }
+    }
+
+    private AdaptorContractException unsupported(DatabaseAdaptor adaptor, String source, String requirement) {
+        return new AdaptorContractException("adaptor=" + adaptor.id()
+                + " requestedSource=" + source
+                + " required=" + requirement);
+    }
+
+    private void requireParser(DatabaseAdaptor adaptor, boolean parserPresent, String requestedSource, String parser) {
+        if (!parserPresent) {
+            throw unsupported(adaptor, requestedSource, parser);
+        }
+    }
+
+    private boolean hasDdlFiles(SourceConfig sources) {
+        return sources.ddlEnabled()
+                && !sources.ddlFiles().isEmpty();
+    }
+
+    private boolean hasObjectFiles(SourceConfig sources) {
+        return sources.objectsEnabled()
+                && !sources.objectFiles().isEmpty();
+    }
+
+    private boolean hasLogFiles(SourceConfig sources) {
+        return sources.logsEnabled()
+                && !sources.logFiles().isEmpty();
+    }
+}

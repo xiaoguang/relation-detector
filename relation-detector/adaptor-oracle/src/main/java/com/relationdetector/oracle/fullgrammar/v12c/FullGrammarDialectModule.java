@@ -3,7 +3,7 @@ package com.relationdetector.oracle.fullgrammar.v12c;
 import java.util.Set;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 import com.relationdetector.oracle.fullgrammar.common.AbstractFullGrammarDialectModule;
 
 /**

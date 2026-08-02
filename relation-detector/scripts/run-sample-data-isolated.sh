@@ -5,7 +5,7 @@ set -m
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 RELATION_ROOT="$ROOT/relation-detector"
 # shellcheck source=heavy-job-lock.sh
-source "$RELATION_ROOT/scripts/heavy-job-lock.sh"
+source "$RELATION_ROOT/scripts/lib/heavy-job-lock.sh"
 GROUP_RUNNER="${SAMPLE_DATA_PARSER_CLI_GROUP_RUNNER:-$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
 VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$RELATION_ROOT/scripts/run-release-verification-tool.sh}"
 OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-cli}"
@@ -188,7 +188,7 @@ mkdir -p "$OUT_DIR" "$GROUP_ROOT"
 if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE:-false}" != true ]]; then
   mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
 fi
-"$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
+"$RELATION_ROOT/scripts/audit/check-no-jls-bad-classes.sh" "$ROOT"
 
 REPORTS=()
 for index in "${!GROUP_IDS[@]}"; do

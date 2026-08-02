@@ -11,8 +11,8 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.core.naming.NamingEvidencePool;
-import com.relationdetector.core.scan.AdaptorContractException;
-import com.relationdetector.core.scan.AdaptorResultDetachmentSupport;
+import com.relationdetector.core.adaptor.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorResultDetachmentSupport;
 
 /**
  * CN: 在 merger 前对 relationship 和 naming observations 各执行一次 adaptor evidence weight hook，不改变事实身份。

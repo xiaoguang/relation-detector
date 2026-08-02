@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 VERIFY_ALL="$ROOT/relation-detector/scripts/verify-all.sh"
-LOCK_LIBRARY="$ROOT/relation-detector/scripts/heavy-job-lock.sh"
+LOCK_LIBRARY="$ROOT/relation-detector/scripts/lib/heavy-job-lock.sh"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/verify-all-heavy-lock.XXXXXX")"
 LOCK_DIR="$TMP_DIR/heavy-job.lock"
 SESSION_ID="lock-test-$$"

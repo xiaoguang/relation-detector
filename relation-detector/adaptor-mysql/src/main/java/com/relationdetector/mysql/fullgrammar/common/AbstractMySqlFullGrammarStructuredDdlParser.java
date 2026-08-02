@@ -6,7 +6,7 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.parser.antlr.SqlDialect;
 import com.relationdetector.mysql.fullgrammar.common.MySqlFullGrammarParseSupport.FullGrammarDdlParse;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

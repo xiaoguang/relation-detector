@@ -133,7 +133,7 @@ ServiceLoader：
 
 ```text
 META-INF/services/com.relationdetector.contracts.spi.DatabaseAdaptor
-META-INF/services/com.relationdetector.core.fullgrammar.FullGrammarDialectModule
+META-INF/services/com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule
 ```
 
 ## Parser 选择

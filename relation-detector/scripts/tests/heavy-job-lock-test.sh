@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-LOCK_LIBRARY="$ROOT/relation-detector/scripts/heavy-job-lock.sh"
+LOCK_LIBRARY="$ROOT/relation-detector/scripts/lib/heavy-job-lock.sh"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/heavy-job-lock.XXXXXX")"
 
 cleanup() {

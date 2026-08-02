@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.tokenevent;
 
-import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.parser.antlr.SqlDialect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

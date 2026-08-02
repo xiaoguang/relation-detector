@@ -5,7 +5,7 @@ import java.sql.Connection;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.mysql.MySqlCatalogScope;
+import com.relationdetector.mysql.namespace.MySqlCatalogScope;
 
 /**
  * CN: 编排 MySQL information_schema 的表、列、约束和索引 reader，并将可独立成功的结果汇总为原始 MetadataSnapshot；输入是当前 catalog 连接和 scope，输出供 scan pipeline 增强事实，禁止在此合并证据、执行命名规则或调整置信度。

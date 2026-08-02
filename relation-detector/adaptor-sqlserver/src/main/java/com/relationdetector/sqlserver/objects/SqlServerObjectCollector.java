@@ -13,7 +13,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.sqlserver.SqlServerCatalogResolver;
+import com.relationdetector.sqlserver.namespace.SqlServerCatalogResolver;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 
 /**

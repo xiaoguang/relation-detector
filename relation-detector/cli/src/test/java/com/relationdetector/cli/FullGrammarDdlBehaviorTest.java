@@ -1,6 +1,6 @@
 package com.relationdetector.cli;
 
-import com.relationdetector.core.fullgrammar.*;
+import com.relationdetector.core.parser.fullgrammar.profile.*;
 
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -21,7 +21,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 class FullGrammarDdlBehaviorTest {
     @Test
     void mysqlFullGrammarDdlProducesFkAndIndexEvents() {
-        StructuredDdlParser parser = FullGrammarDdlParserFactory.create(DatabaseType.MYSQL, "8.0.36");
+        StructuredDdlParser parser = fullGrammarDdlParser(DatabaseType.MYSQL, "8.0.36");
 
         StructuredParseResult result = parser.parseDdl("""
                 CREATE TABLE orders (
@@ -48,7 +48,7 @@ class FullGrammarDdlBehaviorTest {
 
     @Test
     void postgresqlFullGrammarDdlProducesFkAndSkipsPartialExpressionIndexEvidence() {
-        StructuredDdlParser parser = FullGrammarDdlParserFactory.create(DatabaseType.POSTGRESQL, "16.4");
+        StructuredDdlParser parser = fullGrammarDdlParser(DatabaseType.POSTGRESQL, "16.4");
 
         StructuredParseResult result = parser.parseDdl("""
                 CREATE TABLE orders (
@@ -71,7 +71,7 @@ class FullGrammarDdlBehaviorTest {
 
     @Test
     void fullGrammarDdlSyntaxErrorReturnsPartialResultAndWarning() {
-        StructuredDdlParser parser = FullGrammarDdlParserFactory.create(DatabaseType.POSTGRESQL, "16.4");
+        StructuredDdlParser parser = fullGrammarDdlParser(DatabaseType.POSTGRESQL, "16.4");
 
         StructuredParseResult result = parser.parseDdl(
                 "CREATE TABLE orders (id BIGINT PRIMARY KEY, user_id BIGINT REFERENCES users(id),",
@@ -118,6 +118,16 @@ class FullGrammarDdlBehaviorTest {
 
     private AdaptorContext context() {
         return new AdaptorContext(new ScanScope(null, null, java.util.List.of(), java.util.List.of()), Map.of());
+    }
+
+    private StructuredDdlParser fullGrammarDdlParser(DatabaseType databaseType, String version) {
+        return FullGrammarParserBundleFactory.create(
+                FullGrammarProfileRequest.builder()
+                        .databaseType(databaseType)
+                        .configuredVersion(version)
+                        .build(),
+                null,
+                null).ddlParser();
     }
 
     private boolean matches(StructuredSqlEvent event, Map<String, String> expected) {

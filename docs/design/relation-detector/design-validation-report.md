@@ -500,7 +500,7 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
 - `TableResultWriterTest` 固定 relationship 输入顺序、evidence 首次出现去重、长文本完整输出、空关系
   warning 明细和无副作用契约；`TableOutputCliTest` 固定 YAML override、文件输出及 table/direct-output
   冲突。table 仍不探测终端宽度、不折行/截断，只承诺轻量人工阅读视图。
-- formal semantic normalization 与离线 `SemanticKgBuilder` 均拒绝无证据/不可解析 evidence 及冲突
+- formal semantic normalization 与离线 `SemanticKgStore/SemanticReferenceClosureStore` 均拒绝无证据/不可解析 evidence 及冲突
   node/edge ID；完全相同 ID/content 仅做幂等去重。`SemanticEventExtractor` 的结构分类只消费 typed
   `sourceObjectType` / `mappingKind`，缺失时使用中性默认值，不读取 detail/path/source 前缀。当前
   event 聚合是 routine/trigger 对象级、普通 SQL statement/source + target-table 级；routine identity

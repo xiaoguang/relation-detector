@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
 
 class MySqlLiveScopeScanTest {

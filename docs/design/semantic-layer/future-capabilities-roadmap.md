@@ -11,8 +11,8 @@
 relation-detector JSON
   -> ScanResultReader.open / SemanticInputStore
   -> SemanticEvidenceStore
-  -> bounded component/root materialization
-  -> SemanticEvidenceBuilder / SemanticKgBuilder
+  -> global event/owner records and bounded root/shard materialization
+  -> SemanticKgStore / SemanticKgArtifactWriter
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 

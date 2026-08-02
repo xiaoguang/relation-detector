@@ -11,8 +11,8 @@ import java.util.ServiceLoader;
 
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.core.scan.AdaptorContractValidator;
-import com.relationdetector.core.scan.DatabaseConfig;
+import com.relationdetector.core.adaptor.AdaptorContractValidator;
+import com.relationdetector.core.config.DatabaseConfig;
 
 /**
  * Java SPI adaptor 发现与选择器。

@@ -13,7 +13,7 @@ final class SemanticCliArchitectureTest {
     void semanticCliDependsOnSemanticLayerButNotAdaptors() throws Exception {
         String xml = Files.readString(Path.of("pom.xml"));
 
-        assertTrue(xml.contains("relation-detector-semantic-layer"));
+        assertTrue(xml.contains("relation-detector-semantic-core"));
         assertFalse(xml.contains("relation-detector-core"));
         assertFalse(xml.contains("relation-detector-cli"));
         assertFalse(xml.contains("relation-detector-adaptor-"));

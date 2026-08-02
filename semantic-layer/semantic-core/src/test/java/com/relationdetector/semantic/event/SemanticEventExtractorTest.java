@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
-import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.ingest.ScanBundle;
 
 final class SemanticEventExtractorTest {
     private static final ObjectMapper JSON = new ObjectMapper();

@@ -2,23 +2,14 @@ package com.relationdetector.semantic.cli;
 
 import java.nio.file.Path;
 
-import com.relationdetector.semantic.extract.OpenAiResponsesSemanticExtractor;
-import com.relationdetector.semantic.extract.SemanticPathBackedPlanner;
-import com.relationdetector.semantic.extract.SemanticPathRunArtifactWriter;
-import com.relationdetector.semantic.extract.SemanticPathRunPlan;
-import com.relationdetector.semantic.reader.SemanticDiskBackedSession;
+import com.relationdetector.semantic.facade.SemanticExtractionFacade;
 
 /**
- * CN: 通过 {@link SemanticDiskBackedSession} 将输入路径汇入全局磁盘 evidence store，并从该 store
- * 建立 path-backed shard plan，随后生成 Codex 会话请求或调用 Responses API。{@code ScanBundle} 仅是
- * 有界兼容/窗口模型；本 handler 的上游是 CLI 分发，下游是提取 artifact writer，禁止完整物化输入或
- * 构造物理事实。
- *
- * EN: Uses {@link SemanticDiskBackedSession} to ingest input paths into the global disk evidence store and
- * build a path-backed shard plan before writing a Codex-session request or calling the Responses API.
- * {@code ScanBundle} is only a bounded compatibility/window model. The CLI dispatcher is upstream and the
- * extraction artifact writer is downstream; this handler must not materialize the complete input or create
- * physical facts.
+ * CN: 将已验证CLI参数映射为semantic-core extraction facade请求并打印发布目录；上游是命令分发，
+ * 下游仅是facade，禁止直接装配session、planner、writer或物理事实。
+ * EN: Maps validated CLI arguments to a semantic-core extraction-facade request and prints the published directory.
+ * Command dispatch is upstream and only the facade is downstream; this handler must not assemble sessions, planners,
+ * writers, or physical facts directly.
  */
 final class SemanticExtractCommandHandler {
     /**
@@ -32,68 +23,19 @@ final class SemanticExtractCommandHandler {
      * I/O failures publish no partial run and retain no whole-bundle heap state.
      */
     SemanticCliExitCode execute(SemanticCommandArguments arguments) {
-        try (SemanticDiskBackedSession session =
-                     SemanticDiskBackedSession.openForOutput(
-                             arguments.inputs(),
-                             arguments.output(),
-                             "extract",
-                             arguments.sharding().maxInputTokens())) {
-            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
-                    session.evidenceStore(), session.workPath("plan"), arguments.sharding());
-            SemanticPathRunArtifactWriter writer = new SemanticPathRunArtifactWriter();
-            java.util.function.Consumer<Path> deterministicArtifacts = staging ->
-                    session.writeKgArtifacts(
-                            staging.resolve("deterministic-kg"), arguments.kgOutput());
-            Path published;
-            if (arguments.provider() == SemanticExtractProvider.CODEX_SESSION) {
-                published = writer.writeCodexSession(
-                        arguments.output(),
-                        plan,
-                        arguments.model(),
-                        arguments.reasoningEffort(),
-                        arguments.artifactRetention(),
-                        deterministicArtifacts);
-                System.out.println(published);
-                return SemanticCliExitCode.SUCCESS;
-            }
-            String apiKey = arguments.requestOnly() ? "" : arguments.apiKey();
-            int shardOutputTokens = plan.shards().size() == 1
-                    ? arguments.maxOutputTokens()
-                    : arguments.shardMaxOutputTokens();
-            OpenAiResponsesSemanticExtractor shardExtractor = new OpenAiResponsesSemanticExtractor(
-                    arguments.baseUrl(), apiKey, arguments.model(), arguments.reasoningEffort(),
-                    shardOutputTokens, arguments.requestTimeoutSeconds(), arguments.maxTransportRetries());
-            OpenAiResponsesSemanticExtractor reconciliationExtractor = new OpenAiResponsesSemanticExtractor(
-                    arguments.baseUrl(), apiKey, arguments.model(), arguments.reasoningEffort(),
-                    arguments.reconciliationMaxOutputTokens(), arguments.requestTimeoutSeconds(),
-                    arguments.maxTransportRetries());
-            if (arguments.requestOnly()) {
-                published = writer.writeRequestOnly(
-                        arguments.output(),
-                        plan,
-                        shardExtractor::requestJson,
-                        reconciliationExtractor::requestJson,
-                        arguments.model(),
-                        arguments.reasoningEffort(),
-                        arguments.artifactRetention(),
-                        deterministicArtifacts);
-                System.out.println(published);
-                return SemanticCliExitCode.SUCCESS;
-            }
-            published = writer.executeAndWrite(
-                    arguments.output(),
-                    plan,
-                    session.evidenceStore(),
-                    shardExtractor,
-                    reconciliationExtractor,
-                    "openai-api",
-                    arguments.model(),
-                    arguments.reasoningEffort(),
-                    arguments.artifactRetention(),
-                    deterministicArtifacts);
-            System.out.println(published);
-            return SemanticCliExitCode.SUCCESS;
-        }
+        SemanticExtractionFacade.Mode mode = arguments.provider() == SemanticExtractProvider.CODEX_SESSION
+                ? SemanticExtractionFacade.Mode.CODEX_SESSION
+                : arguments.requestOnly()
+                        ? SemanticExtractionFacade.Mode.REQUEST_ONLY
+                        : SemanticExtractionFacade.Mode.OPENAI_API;
+        String apiKey = mode == SemanticExtractionFacade.Mode.OPENAI_API ? arguments.apiKey() : "";
+        Path published = new SemanticExtractionFacade().extract(new SemanticExtractionFacade.Request(
+                arguments.inputs(), arguments.output(), mode, arguments.model(), arguments.reasoningEffort(),
+                arguments.maxOutputTokens(), arguments.baseUrl(), apiKey, arguments.artifactRetention(),
+                arguments.kgOutput(), arguments.sharding(), arguments.shardMaxOutputTokens(),
+                arguments.reconciliationMaxOutputTokens(), arguments.requestTimeoutSeconds(),
+                arguments.maxTransportRetries()));
+        System.out.println(published);
+        return SemanticCliExitCode.SUCCESS;
     }
-
 }

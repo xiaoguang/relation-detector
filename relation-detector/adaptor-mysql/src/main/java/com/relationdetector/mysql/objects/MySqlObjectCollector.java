@@ -14,7 +14,7 @@ import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.mysql.MySqlCatalogScope;
+import com.relationdetector.mysql.namespace.MySqlCatalogScope;
 
 /**
  * CN: 枚举 MySQL routine、view、trigger 和 event，并通过对应 SHOW CREATE 获取完整对象声明；空定义或权限失败产生安全 warning，fragment 不会进入 object parser。

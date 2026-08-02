@@ -1,5 +1,13 @@
 package com.relationdetector.core.scan;
 
+import com.relationdetector.core.scan.ScanEngine;
+
+import com.relationdetector.core.result.ScanResult;
+
+import com.relationdetector.core.config.ResolvedScanConfig;
+
+import com.relationdetector.core.config.ScanConfig;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,7 +27,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
-import com.relationdetector.core.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
 
 class FinalScanContractTest {
     @TempDir

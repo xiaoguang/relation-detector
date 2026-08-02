@@ -19,7 +19,7 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.core.scan.ScanResult;
+import com.relationdetector.core.result.ScanResult;
 
 import org.junit.jupiter.api.Test;
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-SCRIPT="$ROOT/relation-detector/scripts/reconstruct-grammar-migration-baseline.sh"
+SCRIPT="$ROOT/relation-detector/scripts/migration/reconstruct-grammar-migration-baseline.sh"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 

@@ -16,6 +16,7 @@ import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.postgres.ddl.PostgresDatabaseDdlCollector;
 import com.relationdetector.postgres.log.PostgresLogExtractor;
 import com.relationdetector.postgres.metadata.PostgresMetadataCollector;
+import com.relationdetector.postgres.namespace.PostgresNamespaceResolver;
 import com.relationdetector.postgres.objects.PostgresObjectCollector;
 import com.relationdetector.postgres.profile.PostgresDataProfiler;
 import com.relationdetector.postgres.script.PostgresScriptFramer;

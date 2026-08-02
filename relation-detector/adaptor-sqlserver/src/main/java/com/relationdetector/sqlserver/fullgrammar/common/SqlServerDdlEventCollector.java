@@ -9,9 +9,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.ddl.DdlEventBuilder;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.DdlConstraintSemantic;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter.Role;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.DdlConstraintSemantic;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter.Role;
 
 /**
  * CN: 从 version adapter 已 typed 分类的 T-SQL DDL contexts 收集 columns、keys、FK 和 indexes，按组合 ordinal 发射 events；状态仅属于当前 parse。

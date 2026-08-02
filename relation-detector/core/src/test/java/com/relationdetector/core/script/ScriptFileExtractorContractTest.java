@@ -18,7 +18,7 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.ScriptFrameResult;
 import com.relationdetector.core.log.SourceNameNormalizer;
-import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 
 class ScriptFileExtractorContractTest {
     @TempDir

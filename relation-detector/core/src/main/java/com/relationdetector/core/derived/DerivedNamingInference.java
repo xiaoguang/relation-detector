@@ -6,7 +6,7 @@ import java.util.Set;
 import com.relationdetector.contracts.Enums.DerivedEvidenceHopKind;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 
 final class DerivedNamingInference {
     static final String TRANSITIVE_NAMING_RULE = "TRANSITIVE_NAMING_PATH";

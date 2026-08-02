@@ -37,8 +37,8 @@ mvn -pl <affected-module> -am \
 ### Dialect scope
 
 ```bash
-bash relation-detector/scripts/test-scope.sh mysql
-bash relation-detector/scripts/test-scope.sh core,postgres
+bash relation-detector/scripts/audit/test-scope.sh mysql
+bash relation-detector/scripts/audit/test-scope.sh core,postgres
 ```
 
 ### Parser matrix

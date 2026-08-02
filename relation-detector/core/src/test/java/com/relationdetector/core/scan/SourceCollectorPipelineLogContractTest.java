@@ -1,5 +1,11 @@
 package com.relationdetector.core.scan;
 
+import com.relationdetector.core.scan.ScanEngine;
+
+import com.relationdetector.core.adaptor.AdaptorContractException;
+
+import com.relationdetector.core.config.ScanConfig;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

@@ -14,7 +14,7 @@ import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.postgres.PostgresNamespaceResolver;
+import com.relationdetector.postgres.namespace.PostgresNamespaceResolver;
 
 /**
  * CN: 采集 PostgreSQL routine、view、materialized view、rule 与用户 trigger。

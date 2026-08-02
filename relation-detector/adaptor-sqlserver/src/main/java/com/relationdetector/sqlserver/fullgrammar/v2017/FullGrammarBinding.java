@@ -4,7 +4,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.sqlserver.fullgrammar.common.SqlServerFullGrammarSqlBinding;
 
 /** CN: 绑定 SQL Server 2017 generated parser 与共享 collector，不接受其他版本 context。 EN: Binds only the SQL Server 2017 generated parser to the shared collector. */
@@ -40,7 +40,7 @@ public final class FullGrammarBinding implements SqlServerFullGrammarSqlBinding 
     }
 
     @Override
-    public com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter parseTreeAdapter() {
+    public com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter parseTreeAdapter() {
         return new SqlServerParseTreeAdapter();
     }
 }

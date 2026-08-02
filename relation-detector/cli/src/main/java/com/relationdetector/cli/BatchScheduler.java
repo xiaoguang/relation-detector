@@ -2,7 +2,7 @@ package com.relationdetector.cli;
 
 import com.relationdetector.contracts.Enums.ErrorCode;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.core.scan.ResolvedScanConfig;
+import com.relationdetector.core.config.ResolvedScanConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;

@@ -350,7 +350,7 @@ SQL/DDL parser 必须保留这些显式限定名；对于 bare table，scan pipe
   一侧，但缺失的一侧不应由 core simple parser 假装支持；应明确返回空 capability/
   warning。
 - 新增大版本 full-grammar 支持时，应在对应 adaptor 内新增 version package 和 `FullGrammarDialectModule`，由 core registry 通过 `ServiceLoader` 注入；core 不直接 import 方言实现类。
-- `FullGrammarDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammar.FullGrammarDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle/SQL Server adaptor。
+- `FullGrammarDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle/SQL Server adaptor。
 - 版本化 full-grammar module 与 token-event parser 的职责不同：token-event 是 adaptor 暴露的宽松生产 parser / fallback；full-grammar 是 adaptor jar 额外注册的严格版本 grammar profile。parser selection 可以在两者之间选择，但 full-grammar parser 内部不再委托 token-event 生成事件。
 
 `SqlRelationParserRunner` 与 `DdlRelationParserRunner` 使用独立的 warning buffer 和 detached

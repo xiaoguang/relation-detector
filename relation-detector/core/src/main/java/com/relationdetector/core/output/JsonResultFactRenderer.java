@@ -18,7 +18,7 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
-import com.relationdetector.core.scan.MetadataInventory;
+import com.relationdetector.core.result.MetadataInventory;
 
 /**
  * CN: 将已合并的 relationship、lineage、naming、derived、warning 与 inventory 转为 writer wire node，

@@ -118,7 +118,7 @@ into evidence-closed table-owned units. If one table owner still exceeds the har
 therefore the canonical ownership axis, not necessarily one model request. Each fact and deterministic candidate has
 exactly one canonical owner; overlap is read-only context. Component edges come only from typed endpoint and
 fact/candidate reference fields; descriptions, diagnostics, and arbitrary attributes cannot connect components.
-In the `SemanticExtractionService`/`openai-api` shard flow, every model-authored item must carry
+In the `SemanticRunArtifactWriter`/`openai-api` shard flow, every model-authored item must carry
 `ownedGroundingRefs` from the current shard. A raw owner validator rejects overlap-only or cross-owner output before
 backfill and formal normalization; `evidenceRefs` remain audit context and do not establish ownership. The standalone
 `normalize-extraction` command uses the same owner-aware normalizer and therefore requires a validated `shardContext`

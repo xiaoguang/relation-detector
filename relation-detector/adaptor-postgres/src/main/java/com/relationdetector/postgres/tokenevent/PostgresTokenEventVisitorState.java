@@ -13,7 +13,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
-import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
+import com.relationdetector.core.parser.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.postgres.routine.PostgresRoutineAttributes;
 
 /**

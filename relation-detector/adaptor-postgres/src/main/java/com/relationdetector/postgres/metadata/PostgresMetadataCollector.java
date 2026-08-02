@@ -30,9 +30,9 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
-import com.relationdetector.postgres.PostgresConstraintCatalogReader;
-import com.relationdetector.postgres.PostgresConstraintCatalogReader.Constraint;
-import com.relationdetector.postgres.PostgresNamespaceResolver;
+import com.relationdetector.postgres.metadata.PostgresConstraintCatalogReader;
+import com.relationdetector.postgres.metadata.PostgresConstraintCatalogReader.Constraint;
+import com.relationdetector.postgres.namespace.PostgresNamespaceResolver;
 
 /**
  * CN: 读取 PostgreSQL 表、列、约束、索引以及声明 FK，单个 catalog family 失败时保留其余结果。

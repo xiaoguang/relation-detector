@@ -12,7 +12,7 @@ import com.relationdetector.contracts.parse.ScriptFrameRequest;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DialectScriptFramer;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.scan.AdaptorParseResultContractValidator;
+import com.relationdetector.core.adaptor.AdaptorParseResultContractValidator;
 
 /**
  * CN: 读取一份 script file，将 client framing 完整委托给已选 adaptor，并转发 framing warnings。

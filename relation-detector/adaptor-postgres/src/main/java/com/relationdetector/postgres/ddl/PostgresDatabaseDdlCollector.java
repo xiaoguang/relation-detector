@@ -15,8 +15,8 @@ import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
-import com.relationdetector.postgres.PostgresConstraintCatalogReader;
-import com.relationdetector.postgres.PostgresNamespaceResolver;
+import com.relationdetector.postgres.metadata.PostgresConstraintCatalogReader;
+import com.relationdetector.postgres.namespace.PostgresNamespaceResolver;
 
 /**
  * CN: 为关系解析重建 PostgreSQL 表的结构化 DDL 骨架，不承诺完整可重放 DDL。

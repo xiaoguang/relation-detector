@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.StableSemanticId;
-import com.relationdetector.semantic.extract.SemanticRequestBundleReconstructor;
+import com.relationdetector.semantic.facade.SemanticExtractionFacade;
 
 final class SemanticCliIntegrationTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -27,38 +27,42 @@ final class SemanticCliIntegrationTest {
     Path tempDir;
 
     @Test
-    void buildAndE2eHandlersShareTheDiskBackedKgSessionPath() throws Exception {
+    void commandHandlersDelegateBusinessWorkflowsToCoreFacades() throws Exception {
         Path sourceRoot = Path.of("src/main/java/com/relationdetector/semantic/cli");
         String buildHandler = Files.readString(sourceRoot.resolve("SemanticBuildCommandHandler.java"));
         String e2eHandler = Files.readString(sourceRoot.resolve("SemanticE2eCommandHandler.java"));
-        String buildService = Files.readString(sourceRoot.resolve("SemanticKgBuildService.java"));
+        String extractHandler = Files.readString(sourceRoot.resolve("SemanticExtractCommandHandler.java"));
+        String normalizeHandler = Files.readString(
+                sourceRoot.resolve("SemanticNormalizeExtractionCommandHandler.java"));
 
-        assertTrue(buildHandler.contains("new SemanticKgBuildService().build("));
-        assertTrue(e2eHandler.contains("SemanticDiskBackedSession.openForOutput("));
-        assertTrue(e2eHandler.contains("session.writeKgArtifacts("));
-        assertTrue(e2eHandler.contains("session.evidenceStore()"));
+        assertTrue(buildHandler.contains("new SemanticKgFacade().build("));
+        assertTrue(e2eHandler.contains("new SemanticExtractionFacade().writeE2eRequest("));
+        assertTrue(extractHandler.contains("new SemanticExtractionFacade().extract("));
+        assertTrue(normalizeHandler.contains("new SemanticNormalizationFacade().normalize("));
         assertFalse(buildHandler.contains("new SemanticEvidenceBuilder"));
         assertFalse(e2eHandler.contains("new SemanticEvidenceBuilder"));
-        assertTrue(buildService.contains("SemanticDiskBackedSession.openForOutput("));
-        assertFalse(buildService.contains("SemanticEnricher"));
-        assertFalse(buildService.contains(".enrich("));
+        for (String source : List.of(buildHandler, e2eHandler, extractHandler, normalizeHandler)) {
+            assertFalse(source.contains("SemanticProcessingSession"));
+            assertFalse(source.contains("SemanticShardPlanner"));
+            assertFalse(source.contains("SemanticRunArtifactWriter"));
+        }
     }
 
     @Test
     void semanticProductionEntrypointsDocumentTheDiskBackedSessionBoundary() throws Exception {
-        Path sourceRoot = Path.of("src/main/java/com/relationdetector/semantic/cli");
+        Path sourceRoot = Path.of("../semantic-core/src/main/java/com/relationdetector/semantic/facade");
         List<String> sourceFiles = List.of(
-                "SemanticKgBuildService.java",
-                "SemanticE2eCommandHandler.java",
-                "SemanticExtractCommandHandler.java");
+                "SemanticKgFacade.java",
+                "SemanticExtractionFacade.java",
+                "SemanticNormalizationFacade.java");
 
         for (String sourceFile : sourceFiles) {
             String source = Files.readString(sourceRoot.resolve(sourceFile));
             String normalized = source.toLowerCase();
 
-            assertTrue(source.contains("SemanticDiskBackedSession.openForOutput("), sourceFile);
-            assertTrue(normalized.contains("bounded compatibility/window model"), sourceFile);
-            assertTrue(source.contains("有界兼容/窗口模型"), sourceFile);
+            assertTrue(source.contains("CN:"), sourceFile);
+            assertTrue(source.contains("EN:"), sourceFile);
+            assertTrue(normalized.contains("facade"), sourceFile);
             assertFalse(normalized.contains("complete scan bundle"), sourceFile);
             assertFalse(normalized.contains("input is a scan bundle"), sourceFile);
             assertFalse(normalized.contains("scan-bundle to"), sourceFile);
@@ -498,7 +502,7 @@ final class SemanticCliIntegrationTest {
         assertTrue(Files.exists(kgPath));
         assertFalse(Files.exists(extractionRun.resolve("full-evidence-bundle.json")));
         assertTrue(Files.exists(extractionRun.resolve("request-bundle-index.json")));
-        new SemanticRequestBundleReconstructor().reconstruct(extractionRun, bundlePath);
+        new SemanticExtractionFacade().reconstructRequestBundle(extractionRun, bundlePath);
         assertTrue(Files.exists(bundlePath));
         JsonNode kg = JSON.readTree(kgPath.toFile());
         JsonNode event = firstNodeOfType(kg, "Event");

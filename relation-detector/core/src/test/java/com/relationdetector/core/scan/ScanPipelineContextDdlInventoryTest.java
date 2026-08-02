@@ -1,5 +1,13 @@
 package com.relationdetector.core.scan;
 
+import com.relationdetector.core.result.ScanResult;
+
+import com.relationdetector.core.scan.ScanPipelineContext;
+
+import com.relationdetector.core.config.ResolvedScanConfig;
+
+import com.relationdetector.core.config.ScanConfig;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;

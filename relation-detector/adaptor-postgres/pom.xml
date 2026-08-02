@@ -62,6 +62,14 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <version>42.7.4</version>

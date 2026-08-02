@@ -18,7 +18,7 @@ import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.AdaptorContext;
-import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 
 class StructuredSqlRelationshipParserContractTest {
     @Test

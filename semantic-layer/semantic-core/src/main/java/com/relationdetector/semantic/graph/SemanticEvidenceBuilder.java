@@ -15,13 +15,13 @@ import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.event.SemanticEventExtractor;
 import com.relationdetector.semantic.model.PhysicalEndpointRef;
-import com.relationdetector.semantic.reader.PhysicalEndpointJsonReader;
-import com.relationdetector.semantic.reader.ScanBundle;
-import com.relationdetector.semantic.reader.ScanDiagnosticFact;
-import com.relationdetector.semantic.reader.ScanFact;
-import com.relationdetector.semantic.reader.ScanLineageFact;
-import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
-import com.relationdetector.semantic.reader.ScanRelationshipFact;
+import com.relationdetector.semantic.ingest.PhysicalEndpointJsonReader;
+import com.relationdetector.semantic.ingest.ScanBundle;
+import com.relationdetector.semantic.ingest.ScanDiagnosticFact;
+import com.relationdetector.semantic.ingest.ScanFact;
+import com.relationdetector.semantic.ingest.ScanLineageFact;
+import com.relationdetector.semantic.ingest.ScanNamingEvidenceFact;
+import com.relationdetector.semantic.ingest.ScanRelationshipFact;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataConstraintFact;
 import com.relationdetector.contracts.metadata.MetadataIndexFact;
@@ -45,10 +45,10 @@ public final class SemanticEvidenceBuilder {
 
     /**
      * CN: 按固定 section 顺序将 typed facts 和 event candidates materialize 为 endpoint/fact/evidence inventories。
-     * evidence 闭合由下游 SemanticKgBuilder/ReferenceIndex 验证；本方法不补造引用或返回 KG。
+     * evidence 闭合由下游磁盘后备 KG store 和 reference-closure store 验证；本方法不补造引用或返回 KG。
      * EN: Materializes typed facts and event candidates into endpoint, fact, and evidence inventories in stable
-     * section order. Downstream SemanticKgBuilder/ReferenceIndex owns evidence-closure validation; this method never
-     * invents references or returns a KG.
+     * section order. The downstream disk-backed KG and reference-closure stores own evidence validation; this method
+     * never invents references or returns a KG.
      */
     public EvidenceGraph build(ScanBundle scanBundle) {
         return build(scanBundle, true);

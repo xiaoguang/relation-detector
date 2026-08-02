@@ -2,8 +2,8 @@ package com.relationdetector.oracle.fullgrammar.common;
 
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.core.fullgrammar.FullGrammarDialectModule;
-import com.relationdetector.core.fullgrammar.SqlGrammarProfile;
+import com.relationdetector.core.parser.fullgrammar.profile.FullGrammarDialectModule;
+import com.relationdetector.core.parser.fullgrammar.profile.SqlGrammarProfile;
 
 /**
  * Shared Oracle full-grammar module implementation.

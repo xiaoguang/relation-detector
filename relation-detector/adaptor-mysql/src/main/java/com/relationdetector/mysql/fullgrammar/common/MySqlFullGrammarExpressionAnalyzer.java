@@ -8,9 +8,9 @@ import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.LineageTransformType;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis;
-import com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalyzer;
-import com.relationdetector.core.fullgrammar.FullGrammarParseTreeAdapter;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis;
+import com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalyzer;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.mysql.fullgrammar.common.MySqlExpressionContextAdapter.QueryParts;
 

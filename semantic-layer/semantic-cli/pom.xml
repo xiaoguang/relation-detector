@@ -13,7 +13,7 @@
   <dependencies>
     <dependency>
       <groupId>com.relationdetector</groupId>
-      <artifactId>relation-detector-semantic-layer</artifactId>
+      <artifactId>relation-detector-semantic-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

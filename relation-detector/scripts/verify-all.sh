@@ -4,7 +4,7 @@ set -m
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=heavy-job-lock.sh
-source "$ROOT/relation-detector/scripts/heavy-job-lock.sh"
+source "$ROOT/relation-detector/scripts/lib/heavy-job-lock.sh"
 cd "$ROOT"
 
 LOCK_DIR="${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$ROOT/relation-detector/target/.relation-detector-heavy-job.lock}"
@@ -205,5 +205,5 @@ echo "Semantic fingerprints: $VERIFY_DIR/semantic-fingerprints.tsv"
 echo "Verification manifest: $VERIFY_DIR/verification-manifest.json"
 
 if [[ "${VERIFY_SAMPLE_DATA_CONCURRENCY:-false}" == "true" ]]; then
-  bash relation-detector/scripts/verify-sample-data-parser-concurrency.sh
+  bash relation-detector/scripts/benchmark/verify-sample-data-parser-concurrency.sh
 fi

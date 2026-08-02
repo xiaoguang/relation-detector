@@ -16,6 +16,7 @@ import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 import com.relationdetector.oracle.log.OracleLogExtractor;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
+import com.relationdetector.oracle.namespace.OracleOwnerResolver;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
 import com.relationdetector.oracle.profile.OracleDataProfiler;
 import com.relationdetector.oracle.script.OracleScriptFramer;

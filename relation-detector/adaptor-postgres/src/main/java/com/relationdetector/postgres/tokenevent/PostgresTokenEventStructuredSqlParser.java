@@ -9,12 +9,12 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.parse.AntlrSllParseSupport;
-import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parser.antlr.AntlrSllParseSupport;
+import com.relationdetector.core.parser.antlr.SqlDialect;
+import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlLexer;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
-import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlParser;
+import com.relationdetector.core.parser.tokenevent.TypedDialectTokenEventStructuredSqlParser;
 
 /**
  * PostgreSQL token-event SQL parser。

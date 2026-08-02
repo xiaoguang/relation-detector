@@ -8,7 +8,7 @@ cd "$ROOT"
 
 if [[ "${RELATION_DETECTOR_SKIP_PACKAGE:-false}" != "true" ]]; then
   mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
-  "$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
+  "$RELATION_ROOT/scripts/audit/check-no-jls-bad-classes.sh" "$ROOT"
 fi
 
 grammar_modules=(

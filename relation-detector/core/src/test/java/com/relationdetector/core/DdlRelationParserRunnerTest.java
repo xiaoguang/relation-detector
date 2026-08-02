@@ -1,12 +1,12 @@
 package com.relationdetector.core;
 
-import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.scan.AdaptorContractException;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 import com.relationdetector.core.lineage.*;
-import com.relationdetector.core.parser.*;
+import com.relationdetector.core.parser.runtime.*;
 import com.relationdetector.core.relation.*;
 
-import com.relationdetector.core.tokenevent.*;
+import com.relationdetector.core.parser.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

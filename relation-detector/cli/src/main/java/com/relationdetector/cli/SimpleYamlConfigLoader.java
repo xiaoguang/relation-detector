@@ -14,7 +14,7 @@ import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.core.naming.NamingRuleConfigLoader;
-import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.config.ScanConfig;
 
 /**
  * YAML configuration loader backed by Jackson YAML.

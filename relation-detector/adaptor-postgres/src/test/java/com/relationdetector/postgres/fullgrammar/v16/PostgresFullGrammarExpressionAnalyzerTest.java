@@ -60,7 +60,7 @@ class PostgresFullGrammarExpressionAnalyzerTest {
                 "SELECT COUNT(DISTINCT po.id) FROM purchase_orders po"));
         var parser = new PostgresFullGrammarParser(new CommonTokenStream(lexer));
         var root = parser.root();
-        var analyses = new java.util.ArrayList<com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis>();
+        var analyses = new java.util.ArrayList<com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis>();
         var adapter = new PostgresParseTreeAdapter();
         new PostgresFullGrammarParserBaseVisitor<Void>() {
             @Override
@@ -95,7 +95,7 @@ class PostgresFullGrammarExpressionAnalyzerTest {
         var parser = new PostgresFullGrammarParser(new CommonTokenStream(lexer));
         var root = parser.root();
         var adapter = new PostgresParseTreeAdapter();
-        var analyses = new java.util.ArrayList<com.relationdetector.core.fullgrammar.FullGrammarExpressionAnalysis>();
+        var analyses = new java.util.ArrayList<com.relationdetector.core.parser.fullgrammar.expression.FullGrammarExpressionAnalysis>();
         new PostgresFullGrammarParserBaseVisitor<Void>() {
             @Override
             public Void visitSelect_with_parens(PostgresFullGrammarParser.Select_with_parensContext ctx) {

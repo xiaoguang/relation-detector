@@ -6,23 +6,29 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.relationdetector.semantic.extract.SemanticExtractionBundleBuilder;
+import com.relationdetector.semantic.evidence.SemanticEvidenceWindowProjector;
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.SemanticEvidenceBuilder;
-import com.relationdetector.semantic.reader.ScanBundle;
-import com.relationdetector.semantic.reader.ScanFact;
+import com.relationdetector.semantic.ingest.ScanBundle;
+import com.relationdetector.semantic.ingest.ScanFact;
 
 final class SemanticStableIdTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
+    @TempDir
+    Path tempDir;
+
     @Test
-    void factEvidenceAndCandidateIdsDoNotDependOnInputOrder() {
+    void factEvidenceAndCandidateIdsDoNotDependOnInputOrder() throws Exception {
         JsonNode firstRelationship = relationship("orders", "customer_id", "customers", "id", "query-a.sql");
         JsonNode secondRelationship = relationship("payments", "order_id", "orders", "id", "query-b.sql");
         JsonNode lineageForward = lineage(List.of("payments.amount", "refunds.amount"), "sales_fact.net_amount");
@@ -93,8 +99,10 @@ final class SemanticStableIdTest {
         return result;
     }
 
-    private Set<String> candidateIds(ScanBundle bundle) {
-        JsonNode extraction = new SemanticExtractionBundleBuilder().build(bundle);
+    private Set<String> candidateIds(ScanBundle bundle) throws Exception {
+        Path transport = Files.createTempFile(tempDir, "semantic-window-", ".json");
+        new SemanticEvidenceWindowProjector().writeTransportWindow(bundle, transport);
+        JsonNode extraction = JSON.readTree(transport.toFile());
         Set<String> result = new LinkedHashSet<>();
         for (String section : List.of("eventCandidates", "tripletCandidates", "reviewItemCandidates")) {
             extraction.path(section).forEach(item -> result.add(item.path("id").asText()));

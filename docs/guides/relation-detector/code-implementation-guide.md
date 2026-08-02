@@ -415,7 +415,7 @@ relation-detector/test-fixtures/examples/file-only-config.yml
 
 ```bash
 mvn clean -pl relation-detector/cli -am -DskipTests test-compile
-relation-detector/scripts/check-no-jls-bad-classes.sh
+relation-detector/scripts/audit/check-no-jls-bad-classes.sh
 ```
 
 如果检查失败，先执行 Maven clean build，并在 VS Code 中运行
@@ -434,7 +434,7 @@ relation-detector/scripts/run-cli.sh scan \
 
 不建议维护者手工拼接 `*/target/classes` 作为 CLI classpath；如果确实要手工运行，
 必须先完成上述 Maven clean/test-compile 和
-`relation-detector/scripts/check-no-jls-bad-classes.sh`。
+`relation-detector/scripts/audit/check-no-jls-bad-classes.sh`。
 
 预期输出应包含：
 
@@ -640,7 +640,7 @@ sources:
 - correctness fixture：
 - `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json` 和 `expected-naming-evidence.json`，还会比对 Data Lineage 和 naming evidence fingerprints。测试框架本身拆为 `FixtureInputLoader`、`FixtureExecutionEngine`、`GoldenAssertion`、`GoldenWriter`：读取、执行、断言和更新 golden 分离。`FixtureExecutionEngine` 复用 production `StatementExecutionService`、extractor 和 `EvidenceEnhancementService`；方言/profile fixture 进入 production parser runner，common SQL fixture 使用 direct structured-parser overload，但该 overload 与 runner 共用 `StructuredSqlParseExecutor` trust boundary。默认 `mvn test` 只跑 `smoke` profile 的少量代表 fixture；日常开发按受影响方言显式传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle|sqlserver`，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量。root baseline fixture 显式走 token-event；`mysql/v5_7|v8_0`、`postgres/v16|v17|v18`、`oracle/v12c|v19c|v21c|v26ai`、`sqlserver/v2016|v2017|v2019|v2022|v2025` 版本目录显式走 full-grammar。full-grammar 不再通过 token-event 对照兜底；版本化 golden 直接暴露对应 parser 的 missing / extra。
   - correctness runner 在非 golden 更新模式下按 fixture 并行执行，默认并行度为 CPU 数和 8 的较小值，可用 `-DcorrectnessFixtureParallelism=N` 调整。`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 文件写入稳定。
-  - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 与 `relation-detector/scripts/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
+  - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 与 `relation-detector/scripts/audit/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
   - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `relation-detector/target/generated-reports/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，`verify-all.sh` 会把报告复制到当前 verification session 并登记摘要。
@@ -734,7 +734,7 @@ PostgreSQL：
 回归测试策略：
 
 - 日常开发按 `focused -> scope -> matrix-smoke -> acceptance` 四级门禁执行。
-  `relation-detector/scripts/test-scope.sh <core|mysql|postgres|oracle|sqlserver|assets>`
+  `relation-detector/scripts/audit/test-scope.sh <core|mysql|postgres|oracle|sqlserver|assets>`
   会在一次 reactor 中合并运行受影响模块测试和 dialect correctness；
   `mvn -T 2 -Pmatrix-smoke verify` 覆盖当前注册 parser category 的代表 fixture，实际数量从当次 summary 读取。
 - 每个逻辑批次结束使用 `relation-detector/scripts/run-correctness-isolated.sh`。它按 parser family 顺序启动有界 JVM，汇总全部 discovered fixture。结构重构期间不得使用 `updateCorrectnessGold` 掩盖差异。
@@ -745,11 +745,11 @@ PostgreSQL：
   所以单独的manifest PASS不是干净提交的完整发布证明。full correctness 与 sample-data runner 共用
   `target/.relation-detector-heavy-job.lock`，后启动者必须在创建重型 JVM 前失败。
 - 发布前使用 `bash relation-detector/scripts/verify-release.sh`。它先做无缓存 clean smoke reactor，再调用 `verify-all.sh` 完成分组 full correctness 和 sample-data。Maven Build Cache 只复用 generated/compiled artifact，Surefire/Failsafe 仍每次运行，不缓存测试结果。不把单 JVM `-Pacceptance` full profile 当作发布路径。
-- `relation-detector/scripts/benchmark-build.sh` 记录 clean/warm/focused/full/CLI 时间；
+- `relation-detector/scripts/benchmark/benchmark-build.sh` 记录 clean/warm/focused/full/CLI 时间；
   report 只读本次 session 的 Surefire XML，包含 module timing、ANTLR timing、测试 Top 20、
   fixture Top 20、CLI case timing 和忽略生成时间的 canonical JSON hash。
 
-- 构建卫生测试：运行 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 后执行 `relation-detector/scripts/check-no-jls-bad-classes.sh`。该脚本会扫描 `target/classes` 中的 JLS/Eclipse 占位错误字符串，并检查 MySQL/PostgreSQL/Oracle/SQL Server adaptor class 是否真实实现 `DatabaseAdaptor` SPI。
+- 构建卫生测试：运行 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 后执行 `relation-detector/scripts/audit/check-no-jls-bad-classes.sh`。该脚本会扫描 `target/classes` 中的 JLS/Eclipse 占位错误字符串，并检查 MySQL/PostgreSQL/Oracle/SQL Server adaptor class 是否真实实现 `DatabaseAdaptor` SPI。
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
 - correctness 明细报告生成测试：修改 `relation-detector/test-fixtures/correctness` 后运行 `mvn -pl relation-detector/cli -Dtest=CorrectnessSummaryGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`，输出位于 `relation-detector/target/generated-reports/correctness-test-summary.md`；发布验收会将它复制到当前 verification session。

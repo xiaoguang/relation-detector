@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.relationdetector.core.fullgrammar.FullGrammarEventFacade;
+import com.relationdetector.core.parser.fullgrammar.event.FullGrammarEventFacade;
 
 /**
  * CN: 将 version visitor 提供的 typed INSERT target columns 与 VALUES expressions 按 ordinal 发射 write mappings；arity 不足时只处理可证明位置，不访问 generated parser。

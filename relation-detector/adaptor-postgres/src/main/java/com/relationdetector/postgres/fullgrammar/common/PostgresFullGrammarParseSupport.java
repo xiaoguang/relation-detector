@@ -11,7 +11,7 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-import com.relationdetector.core.fullgrammar.FullGrammarSyntaxErrorCounter;
+import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarSyntaxErrorCounter;
 
 /**
  * Shared PostgreSQL full-grammar ANTLR parse support.

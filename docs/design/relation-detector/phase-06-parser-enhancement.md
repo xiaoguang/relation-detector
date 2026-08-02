@@ -31,12 +31,12 @@ Phase 6 描述当前代码中 SQL、DML、DDL、数据库对象解析如何生�
 核心职责分布。下列源码路径均位于仓库根的 `relation-detector/` 目录下：
 
 ```text
-core/src/main/java/com/relationdetector/core/parser
+core/src/main/java/com/relationdetector/core/parser/runtime
   ParserBundle / ParserBundleSelector / ParserSelectionResult
   SqlRelationParserRunner
   DdlRelationParserRunner
 
-core/src/main/java/com/relationdetector/core/tokenevent
+core/src/main/java/com/relationdetector/core/parser/tokenevent
   CommonTokenEventStructuredSqlParser
   TypedDialectTokenEventStructuredSqlParser
   CommonTokenEventParseTreeVisitor
@@ -45,19 +45,26 @@ core/src/main/java/com/relationdetector/core/tokenevent
   TokenEventEventEmitter / TokenEventUnknownStatementDiagnostics
   TokenEventStructuredDdlParser
 
-core/src/main/java/com/relationdetector/core/common
+core/src/main/java/com/relationdetector/core/adaptor/common
   CommonDatabaseAdaptor
 
-core/src/main/java/com/relationdetector/core/fullgrammar
-  FullGrammarDialectModule
+core/src/main/java/com/relationdetector/core/parser/fullgrammar
+  FullGrammarStructuredSqlParser
+
+core/src/main/java/com/relationdetector/core/parser/fullgrammar/profile
+  FullGrammarDialectModule / FullGrammarProfileRequest
   SqlGrammarProfile / SqlGrammarProfileRegistry / SqlGrammarProfileSelection
   FullGrammarParserBundleFactory
-  FullGrammarStructuredSqlParserFactory
-  FullGrammarDdlParserFactory
-  FullGrammarStructuredSqlParser
+
+core/src/main/java/com/relationdetector/core/parser/fullgrammar/event
   FullGrammarEventFacade
-  RowsetScopeSink / ProjectionEventSink / PredicateEventSink / WriteMappingSink / SourceLocationSupport
+  RowsetScopeSink / ProjectionEventSink / PredicateEventSink / WriteMappingSink
+
+core/src/main/java/com/relationdetector/core/parser/fullgrammar/expression
   FullGrammarExpressionAnalyzer / FullGrammarExpressionAnalysis
+
+core/src/main/java/com/relationdetector/core/parser/fullgrammar/tree
+  FullGrammarParseTreeAdapter / AbstractFullGrammarParseTreeAdapter / SourceLocationSupport
 
 core/src/main/java/com/relationdetector/core/relation
   StructuredSqlRelationshipParser
@@ -88,7 +95,15 @@ core/src/main/java/com/relationdetector/core/lineage
 
 core/src/main/java/com/relationdetector/core/scan
   ScanEngine / SourceCollectorPipeline / StatementParsePipeline
-  StatementExecutionService / EvidenceEnhancementService / ResultAssembler
+
+core/src/main/java/com/relationdetector/core/execution
+  StatementExecutionService / StatementDispatchService / ScanTaskExecutor
+
+core/src/main/java/com/relationdetector/core/evidence
+  EvidenceEnhancementService / EvidenceEnhancementPipeline
+
+core/src/main/java/com/relationdetector/core/result
+  ScanResult / MetadataInventory / ResultAssembler
 
 core/src/main/java/com/relationdetector/core/lineage/model
   ProjectionTrace / ExpressionSourceSet / AssignmentMapping
@@ -205,7 +220,7 @@ Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typ
 DTO豁免通过JDK compiler AST检查真实顶层声明；普通类注释或字符串中的伪`record`不能绕过门禁。
 
 全仓门禁失败时输出相对路径、实际有效代码行数与适用上限。`SemanticInputStore`已拆出流式loader和
-metadata inventory索引，`SemanticPathResultStore`已拆出selection/validation/document rendering，
+metadata inventory索引，`SemanticResultStore`已拆出selection/validation/document rendering，
 两套artifact writer已拆出事务文件、manifest与审计artifact职责，`JsonResultWriter`和
 `ExternalCanonicalJsonFingerprinter`分别拆出fact rendering与canonical object-field外排排序。
 保留原public facade，不允许改名、空wrapper或纯转发helper绕过门禁。双语设计注释门禁继续覆盖

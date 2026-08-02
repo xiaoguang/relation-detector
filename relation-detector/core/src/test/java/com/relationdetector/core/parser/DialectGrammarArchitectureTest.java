@@ -1,5 +1,15 @@
 package com.relationdetector.core.parser;
 
+import com.relationdetector.core.scan.ScanEngine;
+
+import com.relationdetector.core.evidence.EvidenceEnhancementService;
+
+import com.relationdetector.core.scan.ScanPipelineContext;
+
+import com.relationdetector.core.config.ResolvedScanConfig;
+
+import com.relationdetector.core.config.ScanConfig;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -166,6 +176,116 @@ class DialectGrammarArchitectureTest {
         }
     }
 
+    @Test
+    void productionPackagesAndPublicTopLevelTypesMatchFilesystemNames() throws Exception {
+        Path root = repoRoot().getParent();
+        List<Path> sources;
+        try (Stream<Path> stream = Files.walk(root)) {
+            sources = stream.filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> !path.toString().contains("/target/"))
+                    .filter(path -> !isGeneratedJava(path))
+                    .toList();
+        }
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertTrue(compiler != null, "JDK compiler is required for source layout checks");
+        List<String> offenders = new ArrayList<>();
+        try (StandardJavaFileManager files = compiler.getStandardFileManager(null, Locale.ROOT, null)) {
+            JavacTask task = (JavacTask) compiler.getTask(null, files, null,
+                    List.of("-proc:none", "-Xlint:none"), null, files.getJavaFileObjectsFromPaths(sources));
+            for (CompilationUnitTree unit : task.parse()) {
+                Path source = Path.of(unit.getSourceFile().toUri()).toAbsolutePath().normalize();
+                String marker = "/src/main/java/";
+                String normalized = source.toString().replace('\\', '/');
+                int markerIndex = normalized.indexOf(marker);
+                String relative = normalized.substring(markerIndex + marker.length());
+                int slash = relative.lastIndexOf('/');
+                String expectedPackage = slash < 0 ? "" : relative.substring(0, slash).replace('/', '.');
+                String actualPackage = unit.getPackageName() == null ? "" : unit.getPackageName().toString();
+                if (!expectedPackage.equals(actualPackage)) {
+                    offenders.add(root.relativize(source) + " package=" + actualPackage);
+                }
+                String filename = source.getFileName().toString();
+                String expectedType = filename.substring(0, filename.length() - ".java".length());
+                for (Tree declaration : unit.getTypeDecls()) {
+                    if (declaration instanceof ClassTree type
+                            && type.getModifiers().getFlags().contains(Modifier.PUBLIC)
+                            && !type.getSimpleName().contentEquals(expectedType)) {
+                        offenders.add(root.relativize(source) + " publicType=" + type.getSimpleName());
+                    }
+                }
+            }
+        }
+        assertTrue(offenders.isEmpty(), "Java package/path or public type/file mismatch: " + offenders);
+    }
+
+    @Test
+    void typedParserIdentifiersUseTheSharedQuoteAwareParser() throws Exception {
+        Path parser = repoRoot().resolve("core/src/main/java/com/relationdetector/core/parser");
+        List<String> offenders = new ArrayList<>();
+        for (Path subtree : List.of(parser.resolve("fullgrammar"), parser.resolve("tokenevent"))) {
+            try (Stream<Path> files = Files.walk(subtree)) {
+                for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+                    String source = Files.readString(file);
+                    if (source.contains("lastIndexOf('.')") || source.contains("split(\"\\\\.\")")) {
+                        offenders.add(repoRoot().relativize(file).toString());
+                    }
+                }
+            }
+        }
+        assertTrue(offenders.isEmpty(),
+                "Typed parser identifiers must use QualifiedIdentifierParser: " + offenders);
+    }
+
+    @Test
+    void configurationAndAdaptorContractsDoNotDependOnScanOrchestration() throws IOException {
+        Path core = repoRoot().resolve("core/src/main/java/com/relationdetector/core");
+        for (String boundary : List.of("config", "adaptor")) {
+            try (Stream<Path> stream = Files.walk(core.resolve(boundary))) {
+                List<Path> offenders = stream.filter(path -> path.toString().endsWith(".java"))
+                        .filter(path -> containsAny(path, List.of("com.relationdetector.core.scan")))
+                        .map(core::relativize)
+                        .toList();
+                assertTrue(offenders.isEmpty(), boundary + " must not depend on scan orchestration: " + offenders);
+            }
+        }
+    }
+
+    @Test
+    void versionedParserSourcesDoNotImportSiblingVersions() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> versionFiles = stream.filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/fullgrammar/v"))
+                    .toList();
+            List<String> offenders = new ArrayList<>();
+            for (Path file : versionFiles) {
+                String packageName = Files.readString(file).lines()
+                        .map(String::strip)
+                        .filter(line -> line.startsWith("package "))
+                        .map(line -> line.substring("package ".length(), line.length() - 1))
+                        .findFirst()
+                        .orElse("");
+                int versionStart = packageName.indexOf(".fullgrammar.v");
+                if (versionStart < 0) {
+                    continue;
+                }
+                String ownVersionPrefix = packageName.substring(0, versionStart)
+                        + packageName.substring(versionStart);
+                for (String line : Files.readAllLines(file)) {
+                    String stripped = line.strip();
+                    if (stripped.startsWith("import ")
+                            && stripped.contains(".fullgrammar.v")
+                            && !stripped.startsWith("import " + ownVersionPrefix + ".")) {
+                        offenders.add(root.relativize(file) + " -> " + stripped);
+                    }
+                }
+            }
+            assertTrue(offenders.isEmpty(), "Versioned parsers must not import sibling versions: " + offenders);
+        }
+    }
+
     private boolean concretePackageContract(String text) {
         return text.contains("CN:")
                 && text.contains("EN:")
@@ -285,7 +405,7 @@ class DialectGrammarArchitectureTest {
     @Test
     void fullGrammarStructuredParserWrapperIsNotNamedTokenEvent() throws IOException {
         Path root = repoRoot();
-        Path fullGrammarRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar");
+        Path fullGrammarRoot = root.resolve("core/src/main/java/com/relationdetector/core/parser/fullgrammar");
         String legacyWrapperName = "FullGrammar" + "TokenEventStructuredSqlParser";
         try (Stream<Path> stream = Files.walk(fullGrammarRoot)) {
             List<Path> offenders = stream
@@ -305,11 +425,11 @@ class DialectGrammarArchitectureTest {
     void removedLegacyAndDeadHelpersStayAbsent() throws IOException {
         Path root = repoRoot();
         assertFalse(Files.exists(root.resolve(
-                "core/src/main/java/com/relationdetector/core/tokenevent/TokenEventStructuredSqlParser.java")));
+                "core/src/main/java/com/relationdetector/core/parser/tokenevent/TokenEventStructuredSqlParser.java")));
         assertFalse(Files.exists(root.resolve(
                 "core/src/main/java/com/relationdetector/core/ddl/DdlColumnListExtractor.java")));
         assertFalse(Files.readString(root.resolve(
-                "core/src/main/java/com/relationdetector/core/common/CommonDatabaseAdaptor.java"))
+                "core/src/main/java/com/relationdetector/core/adaptor/common/CommonDatabaseAdaptor.java"))
                 .contains("emptyObjects("));
     }
 
@@ -422,7 +542,7 @@ class DialectGrammarArchitectureTest {
     void productionRegexUsageIsAllowlistedAndNonStructural() throws IOException {
         Path root = repoRoot();
         Set<Path> allowed = Set.of(
-                Path.of("core/src/main/java/com/relationdetector/core/fullgrammar/SqlGrammarProfileRegistry.java"),
+                Path.of("core/src/main/java/com/relationdetector/core/parser/fullgrammar/profile/SqlGrammarProfileRegistry.java"),
                 Path.of("cli/src/main/java/com/relationdetector/cli/BatchManifestLoader.java"));
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
@@ -469,16 +589,15 @@ class DialectGrammarArchitectureTest {
     @Test
     void coreFullGrammarSemanticsDoNotInspectTerminalText() throws IOException {
         Path root = repoRoot();
-        Path packageRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar");
-        List<String> semanticFiles = List.of(
-                "FullGrammarExpressionAnalyzer.java",
-                "DirectColumnTraceSupport.java",
-                "SubqueryProjectionTraceSupport.java",
-                "PredicateEventSink.java",
-                "SourceLocationSupport.java");
+        Path packageRoot = root.resolve("core/src/main/java/com/relationdetector/core/parser/fullgrammar");
+        List<Path> semanticFiles = List.of(
+                packageRoot.resolve("expression/FullGrammarExpressionAnalyzer.java"),
+                packageRoot.resolve("expression/DirectColumnTraceSupport.java"),
+                packageRoot.resolve("expression/SubqueryProjectionTraceSupport.java"),
+                packageRoot.resolve("event/PredicateEventSink.java"),
+                packageRoot.resolve("tree/SourceLocationSupport.java"));
 
         List<Path> offenders = semanticFiles.stream()
-                .map(packageRoot::resolve)
                 .filter(path -> containsAny(path, List.of(
                         "TerminalNode",
                         ".getText()",
@@ -525,7 +644,7 @@ class DialectGrammarArchitectureTest {
                             ".replaceFirst(\"",
                             ".split(\"\\\\")))
                     .filter(path -> !path.endsWith(Path.of(
-                            "core/fullgrammar/SqlGrammarProfileRegistry.java")))
+                            "core/parser/fullgrammar/profile/SqlGrammarProfileRegistry.java")))
                     .map(root::relativize)
                     .toList();
 
@@ -554,9 +673,9 @@ class DialectGrammarArchitectureTest {
         String pipeline = Files.readString(root.resolve(
                 "core/src/main/java/com/relationdetector/core/scan/SourceCollectorPipeline.java"));
         String ddlRunner = Files.readString(root.resolve(
-                "core/src/main/java/com/relationdetector/core/parser/DdlRelationParserRunner.java"));
+                "core/src/main/java/com/relationdetector/core/parser/runtime/DdlRelationParserRunner.java"));
         String execution = Files.readString(root.resolve(
-                "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java"));
+                "core/src/main/java/com/relationdetector/core/execution/StatementExecutionService.java"));
 
         assertTrue(pipeline.contains("StatementSourceType.DDL_FILE")
                         && pipeline.contains("ctx.adaptor.parsers().scriptFramer()"),
@@ -570,7 +689,8 @@ class DialectGrammarArchitectureTest {
     @Test
     void nativeLogNoiseClassificationRunsAfterStructuredParsing() throws IOException {
         Path root = repoRoot();
-        Path runner = root.resolve("core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java");
+        Path runner = root.resolve(
+                "core/src/main/java/com/relationdetector/core/parser/runtime/SqlRelationParserRunner.java");
         String runnerText = Files.readString(runner);
 
         assertFalse(runnerText.contains("SqlLogNoiseFilter"),
@@ -586,7 +706,7 @@ class DialectGrammarArchitectureTest {
     void directStructuredParserExecutionDoesNotAcceptUnusedScanConfig() throws IOException {
         Path root = repoRoot();
         String service = Files.readString(root.resolve(
-                "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java"));
+                "core/src/main/java/com/relationdetector/core/execution/StatementExecutionService.java"));
         String fixtureEngine = Files.readString(root.resolve(
                 "cli/src/test/java/com/relationdetector/cli/FixtureExecutionEngine.java"));
 
@@ -600,8 +720,8 @@ class DialectGrammarArchitectureTest {
     void everyCoreStructuredSqlConsumerUsesTheSharedValidatedExecutor() throws IOException {
         Path root = repoRoot();
         for (String consumer : List.of(
-                "core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java",
-                "core/src/main/java/com/relationdetector/core/scan/StatementExecutionService.java",
+                "core/src/main/java/com/relationdetector/core/parser/runtime/SqlRelationParserRunner.java",
+                "core/src/main/java/com/relationdetector/core/execution/StatementExecutionService.java",
                 "core/src/main/java/com/relationdetector/core/relation/StructuredSqlRelationshipParser.java")) {
             String text = Files.readString(root.resolve(consumer));
             assertTrue(text.contains("StructuredSqlParseExecutor"),
@@ -747,7 +867,8 @@ class DialectGrammarArchitectureTest {
         assertFalse(text.contains("addToPool"),
                 "Relationship enhancement must not mutate or backfill the naming evidence pool");
 
-        Path sqlRunner = root.resolve("core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java");
+        Path sqlRunner = root.resolve(
+                "core/src/main/java/com/relationdetector/core/parser/runtime/SqlRelationParserRunner.java");
         assertFalse(Files.readString(sqlRunner).contains("NamingMatchEvidenceEnhancer"),
                 "Low-level SQL parser runner must not attach NAMING_MATCH outside the scan evidence pool");
     }
@@ -947,7 +1068,8 @@ class DialectGrammarArchitectureTest {
     @Test
     void fullGrammarTypedSinkDelegatesToFocusedHelpers() throws IOException {
         Path root = repoRoot();
-        Path sink = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar/FullGrammarEventFacade.java");
+        Path sink = root.resolve(
+                "core/src/main/java/com/relationdetector/core/parser/fullgrammar/event/FullGrammarEventFacade.java");
         String text = Files.readString(sink);
 
         for (String helper : List.of("RowsetScopeSink", "ProjectionEventSink",
@@ -1048,7 +1170,7 @@ class DialectGrammarArchitectureTest {
     @Test
     void coreFullGrammarDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
         Path root = repoRoot();
-        Path fullGrammar = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammar");
+        Path fullGrammar = root.resolve("core/src/main/java/com/relationdetector/core/parser/fullgrammar");
 
         try (Stream<Path> stream = Files.walk(fullGrammar)) {
             List<Path> offenders = stream
@@ -1069,7 +1191,7 @@ class DialectGrammarArchitectureTest {
     @Test
     void coreTokenEventDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
         Path root = repoRoot();
-        Path tokenEvent = root.resolve("core/src/main/java/com/relationdetector/core/tokenevent");
+        Path tokenEvent = root.resolve("core/src/main/java/com/relationdetector/core/parser/tokenevent");
 
         try (Stream<Path> stream = Files.walk(tokenEvent)) {
             List<Path> offenders = stream
@@ -1174,7 +1296,7 @@ class DialectGrammarArchitectureTest {
     void tokenEventVisitorsUseSharedEventEmitter() throws IOException {
         Path root = repoRoot();
         List<Path> visitors = List.of(
-                root.resolve("core/src/main/java/com/relationdetector/core/tokenevent/CommonTokenEventParseTreeVisitor.java"),
+                root.resolve("core/src/main/java/com/relationdetector/core/parser/tokenevent/CommonTokenEventParseTreeVisitor.java"),
                 root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/tokenevent/MySqlTokenEventParseTreeVisitor.java"),
                 root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/tokenevent/PostgresTokenEventParseTreeVisitor.java"),
                 root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent/OracleTokenEventParseTreeVisitor.java"),
@@ -1382,7 +1504,8 @@ class DialectGrammarArchitectureTest {
                 "Analyzer.java", "Support.java", "Extractor.java", "Resolver.java",
                 "Merger.java", "Framer.java", "Facade.java", "Store.java", "Planner.java",
                 "Publisher.java", "Fingerprinter.java", "Canonicalizer.java", "Handler.java",
-                "Writer.java")) {
+                "Writer.java", "Validator.java", "Builder.java", "Service.java", "Index.java",
+                "Loader.java", "Executor.java", "Runner.java", "Scheduler.java", "Assembler.java")) {
             if (filename.endsWith(suffix)) {
                 return 450;
             }
@@ -1449,8 +1572,8 @@ class DialectGrammarArchitectureTest {
                 || value.contains("/core/src/main/java/com/relationdetector/core/derived/")
                 || value.contains("/core/src/main/java/com/relationdetector/core/metadata/")
                 || value.contains("/core/src/main/java/com/relationdetector/core/profile/")
-                || value.contains("/core/src/main/java/com/relationdetector/core/fullgrammar/")
-                || value.contains("/core/src/main/java/com/relationdetector/core/tokenevent/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/parser/fullgrammar/")
+                || value.contains("/core/src/main/java/com/relationdetector/core/parser/tokenevent/")
                 || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammar/")
                 || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/tokenevent/")
                 || value.contains("/adaptor-mysql/src/main/java/com/relationdetector/mysql/routine/")
