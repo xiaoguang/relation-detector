@@ -11,6 +11,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 final class ReleaseVerificationMainTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -79,6 +81,40 @@ final class ReleaseVerificationMainTest {
                         "--result-dir", results.toString(),
                         "--expected-categories", "1",
                         "--output", tempDir.resolve("missing-summary-field-report.json").toString()
+                }));
+    }
+
+    @Test
+    void validateResultsAcceptsLinearDerivedEvidenceSets() throws Exception {
+        Path results = tempDir.resolve("derived-evidence-set-results");
+        Files.createDirectories(results);
+        String direct = resultWithExpandedInventory();
+        String derived = resultWithDerivedEvidenceSet(false);
+        Files.writeString(results.resolve("example.json"), direct);
+        Files.writeString(results.resolve("example-derived-fresh.json"), derived);
+
+        ReleaseVerificationMain.run(new String[] {
+                "validate-results",
+                "--result-dir", results.toString(),
+                "--expected-categories", "1",
+                "--output", tempDir.resolve("derived-evidence-set-report.json").toString()
+        });
+    }
+
+    @Test
+    void validateResultsRejectsLegacyDerivedRawEvidence() throws Exception {
+        Path results = tempDir.resolve("legacy-derived-evidence-results");
+        Files.createDirectories(results);
+        Files.writeString(results.resolve("example.json"), resultWithExpandedInventory());
+        Files.writeString(results.resolve("example-derived-fresh.json"),
+                resultWithDerivedEvidenceSet(true));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("legacy-derived-report.json").toString()
                 }));
     }
 
@@ -567,6 +603,103 @@ final class ReleaseVerificationMainTest {
                 relationships, derivedRelationships, relationships + derivedRelationships,
                 lineage, derivedLineage, lineage + derivedLineage,
                 naming, derivedNaming, naming + derivedNaming);
+    }
+
+    private String resultWithDerivedEvidenceSet(boolean includeLegacyRawEvidence) throws Exception {
+        ObjectNode root = (ObjectNode) JSON.readTree(resultWithExpandedInventory());
+        ObjectNode summary = (ObjectNode) root.path("summary");
+        summary.put("derivedRelationshipCount", 1);
+        summary.put("totalRelationshipCount", 1);
+        summary.put("derivedRelationshipEvidenceSetCount", 1);
+        summary.put("derivedRelationshipSupportCombinationCount", 6);
+        summary.put("derivedDataLineageEvidenceSetCount", 0);
+        summary.put("derivedDataLineageSupportCombinationCount", 0);
+        summary.put("derivedNamingEvidenceSetCount", 0);
+        summary.put("derivedNamingSupportCombinationCount", 0);
+
+        ObjectNode orders = endpoint("sample_data.orders");
+        ObjectNode customers = endpoint("sample_data.customers");
+        ObjectNode regions = endpoint("sample_data.regions");
+        ObjectNode fact = ((ArrayNode) root.path("derivedRelationships")).addObject();
+        fact.put("kind", "RELATIONSHIP");
+        fact.set("source", orders.deepCopy());
+        fact.set("target", regions.deepCopy());
+        fact.put("pathLength", 2);
+        fact.put("confidence", 0.60d);
+        fact.putArray("path").add(orders).add(customers).add(regions);
+        fact.putArray("evidence").addObject()
+                .put("type", "TRANSITIVE_PATH")
+                .put("score", 0.60d)
+                .put("sourceType", "INFERENCE")
+                .put("source", "derived:relationship")
+                .put("detail", "two-hop path")
+                .putObject("attributes");
+        ObjectNode set = fact.putArray("evidenceSets").addObject();
+        set.put("combinationCount", 6);
+        set.put("confidence", 0.60d);
+        ArrayNode hops = set.putArray("hops");
+        addEvidenceHop(hops, 1, orders, customers, "one-a", "one-b", "one-c");
+        addEvidenceHop(hops, 2, customers, regions, "two-a", "two-b");
+        fact.putObject("attributes").put("pathLength", 2);
+        if (includeLegacyRawEvidence) {
+            fact.putArray("rawEvidence");
+        }
+        return JSON.writeValueAsString(root);
+    }
+
+    private String resultWithExpandedInventory() throws Exception {
+        ObjectNode root = (ObjectNode) JSON.readTree(emptyResult());
+        ObjectNode inventory = (ObjectNode) root.path("metadataInventory");
+        ArrayNode tables = (ArrayNode) inventory.path("tables");
+        ArrayNode columns = (ArrayNode) inventory.path("columns");
+        addInventoryTable(tables, columns, "customers");
+        addInventoryTable(tables, columns, "regions");
+        ((ObjectNode) inventory.path("counts")).put("tables", 3).put("columns", 3);
+        return JSON.writeValueAsString(root);
+    }
+
+    private void addInventoryTable(ArrayNode tables, ArrayNode columns, String tableName) {
+        tables.addObject()
+                .putNull("catalog")
+                .put("schema", "sample_data")
+                .put("tableName", tableName)
+                .put("tableType", "TABLE")
+                .putNull("engine")
+                .putNull("comment");
+        columns.addObject()
+                .putNull("catalog")
+                .put("schema", "sample_data")
+                .put("tableName", tableName)
+                .put("columnName", "id")
+                .put("dataType", "UNKNOWN")
+                .put("columnType", "UNKNOWN")
+                .put("nullable", false)
+                .putNull("defaultValue")
+                .put("extra", "")
+                .put("generationExpression", "")
+                .put("ordinalPosition", 1);
+    }
+
+    private ObjectNode endpoint(String table) {
+        return JSON.createObjectNode().put("table", table).put("column", "id");
+    }
+
+    private void addEvidenceHop(
+            ArrayNode hops,
+            int ordinal,
+            ObjectNode source,
+            ObjectNode target,
+            String... refs
+    ) {
+        ObjectNode hop = hops.addObject();
+        hop.put("ordinal", ordinal);
+        hop.set("source", source.deepCopy());
+        hop.set("target", target.deepCopy());
+        hop.put("kind", "RELATIONSHIP");
+        ArrayNode evidenceRefs = hop.putArray("evidenceRefs");
+        for (String ref : refs) {
+            evidenceRefs.add(ref);
+        }
     }
 
     private String completeParserSummary() {

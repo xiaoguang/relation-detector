@@ -3,6 +3,7 @@ package com.relationdetector.semantic.extract;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -44,13 +45,21 @@ final class SemanticPathResultStore implements AutoCloseable {
             SemanticEvidenceStore evidenceStore,
             SemanticPathRunPlan runPlan
     ) {
-        if (workspace == null || evidenceStore == null || runPlan == null) {
+        this(workspace, SemanticEvidenceLookup.from(evidenceStore), runPlan);
+    }
+
+    SemanticPathResultStore(
+            Path workspace,
+            SemanticEvidenceLookup evidenceLookup,
+            SemanticPathRunPlan runPlan
+    ) {
+        if (workspace == null || evidenceLookup == null || runPlan == null) {
             throw new IllegalArgumentException(
                     "semantic result workspace, evidence store, and owner plan are required");
         }
         this.workspace = workspace;
         this.runPlan = runPlan;
-        this.ownerManifestValidator = new SemanticOwnerManifestValidator(runPlan, evidenceStore);
+        this.ownerManifestValidator = new SemanticOwnerManifestValidator(runPlan, evidenceLookup);
         try {
             if (Files.exists(workspace)) {
                 throw new SemanticExtractionValidationException(
@@ -69,7 +78,7 @@ final class SemanticPathResultStore implements AutoCloseable {
         }
         this.selection = new SemanticPathResultSelection(sections);
         this.validator = new SemanticPathResultValidator(
-                workspace, evidenceStore, sections, selection);
+                evidenceLookup, sections, selection);
         this.documentWriter = new SemanticPathResultDocumentWriter(
                 workspace, sections, selection);
     }
@@ -192,16 +201,30 @@ final class SemanticPathResultStore implements AutoCloseable {
     }
 
     private ObjectNode mergeCanonicalEntity(JsonNode leftValue, JsonNode rightValue) {
-        ObjectNode left = requireObject(leftValue);
-        ObjectNode right = requireObject(rightValue);
-        requireSameIfPresent(left, right, "physicalName");
-        requireSameIfPresent(left, right, "machineType");
-        requireSameIfPresent(left, right, "type");
-        ObjectNode result = StableSemanticId.canonicalJson(left).compareTo(
-                StableSemanticId.canonicalJson(right)) <= 0 ? left.deepCopy() : right.deepCopy();
-        mergeReferences(result, left, right, "ownedGroundingRefs");
-        mergeReferences(result, left, right, "evidenceRefs");
+        List<ObjectNode> documents = new ArrayList<>();
+        appendEntityDocuments(documents, leftValue);
+        appendEntityDocuments(documents, rightValue);
+        if (SemanticEntityMergePolicy.canMerge(documents)) {
+            return SemanticEntityMergePolicy.merge(documents);
+        }
+        List<ObjectNode> variants = SemanticEntityMergePolicy.reconciliationVariants(documents);
+        ObjectNode result = JSON.createObjectNode();
+        result.put("id", variants.get(0).path("id").asText(""));
+        ArrayNode output = result.putArray("__semanticVariants");
+        variants.forEach(document -> output.addObject()
+                .put("hash", StableSemanticId.of(
+                        "semantic-shard-variant", StableSemanticId.canonicalJson(document)))
+                .set("document", document.deepCopy()));
         return result;
+    }
+
+    private void appendEntityDocuments(List<ObjectNode> target, JsonNode value) {
+        JsonNode variants = value.path("__semanticVariants");
+        if (variants.isArray()) {
+            variants.forEach(variant -> target.add(requireObject(variant.path("document")).deepCopy()));
+        } else {
+            target.add(requireObject(value).deepCopy());
+        }
     }
 
     private JsonNode mergeVariants(JsonNode leftValue, JsonNode rightValue) {
@@ -239,28 +262,6 @@ final class SemanticPathResultStore implements AutoCloseable {
         target.putIfAbsent(hash, value.deepCopy());
     }
 
-    private void requireSameIfPresent(ObjectNode left, ObjectNode right, String field) {
-        String first = left.path(field).asText("");
-        String second = right.path(field).asText("");
-        if (!first.isBlank() && !second.isBlank() && !first.equals(second)) {
-            throw new SemanticExtractionValidationException(
-                    "canonical semantic entity has conflicting " + field);
-        }
-    }
-
-    private void mergeReferences(
-            ObjectNode target,
-            ObjectNode left,
-            ObjectNode right,
-            String field
-    ) {
-        Set<String> values = new LinkedHashSet<>();
-        left.path(field).forEach(value -> addText(values, value));
-        right.path(field).forEach(value -> addText(values, value));
-        ArrayNode output = target.putArray(field);
-        values.stream().sorted().forEach(output::add);
-    }
-
     private void validateFinalState() {
         finish();
         selection.requireResolved();
@@ -280,12 +281,6 @@ final class SemanticPathResultStore implements AutoCloseable {
             throw new SemanticExtractionValidationException("canonical semantic entity must be an object");
         }
         return (ObjectNode) value;
-    }
-
-    private void addText(Set<String> values, JsonNode value) {
-        if (value.isTextual() && !value.asText().isBlank()) {
-            values.add(value.asText());
-        }
     }
 
     private void ensureWritable() {

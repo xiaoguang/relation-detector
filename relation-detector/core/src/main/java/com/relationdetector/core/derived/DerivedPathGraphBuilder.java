@@ -1,6 +1,7 @@
 package com.relationdetector.core.derived;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,9 +12,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.relationdetector.contracts.Enums.DerivedPathKind;
+import com.relationdetector.contracts.Enums.DerivedEvidenceHopKind;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.model.Endpoint;
+import com.relationdetector.contracts.model.DerivedEvidenceHop;
+import com.relationdetector.contracts.model.DerivedEvidenceSet;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.identity.CanonicalEndpointKeyProvider;
@@ -33,7 +37,23 @@ final class DerivedPathGraphBuilder {
     }
 
     DerivedPathGraph build(List<DerivedEdge> sourceEdges) {
-        List<DerivedEdge> edges = sourceEdges.stream().sorted(edgeComparator()).toList();
+        Map<EdgeAggregationKey, LinkedHashSet<String>> support = new LinkedHashMap<>();
+        Map<EdgeAggregationKey, DerivedEdge> representatives = new LinkedHashMap<>();
+        for (DerivedEdge edge : sourceEdges.stream().sorted(edgeComparator()).toList()) {
+            EdgeAggregationKey key = new EdgeAggregationKey(
+                    endpointKeys.factKey(edge.source()), endpointKeys.factKey(edge.target()),
+                    edge.kind(), edge.confidence(), edge.namingRefs());
+            representatives.putIfAbsent(key, edge);
+            support.computeIfAbsent(key, ignored -> new LinkedHashSet<>()).addAll(edge.evidenceRefs());
+        }
+        List<DerivedEdge> edges = representatives.entrySet().stream()
+                .map(entry -> {
+                    DerivedEdge edge = entry.getValue();
+                    return new DerivedEdge(edge.source(), edge.target(), edge.kind(), edge.confidence(),
+                            List.copyOf(support.get(entry.getKey())), edge.namingRefs());
+                })
+                .sorted(edgeComparator())
+                .toList();
         Map<String, List<DerivedEdge>> mutable = new LinkedHashMap<>();
         for (DerivedEdge edge : edges) {
             for (String key : graphKeys(edge.source())) {
@@ -54,7 +74,7 @@ final class DerivedPathGraphBuilder {
         List<DerivedPathObservation> observations = new ArrayList<>();
         Map<String, Integer> pathsPerPair = new LinkedHashMap<>();
         for (DerivedEdge start : graph.edges()) {
-            if (start.kind() == DerivedEdgeKind.TABLE_IDENTITY_BRIDGE) {
+            if (start.kind() == DerivedEvidenceHopKind.TABLE_IDENTITY_BRIDGE) {
                 continue;
             }
             LinkedHashSet<String> visited = new LinkedHashSet<>(graphKeys(start.source()));
@@ -74,7 +94,7 @@ final class DerivedPathGraphBuilder {
         Map<String, List<DerivedEdge>> bridgeCache = new LinkedHashMap<>();
         Set<String> acceptedCanonicalPaths = new LinkedHashSet<>();
         for (DerivedEdge start : graph.edges()) {
-            if (start.kind() == DerivedEdgeKind.TABLE_IDENTITY_BRIDGE) {
+            if (start.kind() == DerivedEvidenceHopKind.TABLE_IDENTITY_BRIDGE) {
                 continue;
             }
             LinkedHashSet<String> visited = new LinkedHashSet<>();
@@ -101,7 +121,7 @@ final class DerivedPathGraphBuilder {
         if (path.size() >= 2) {
             boolean selfLoop = overlaps(graphKeys(origin), graphKeys(current));
             boolean direct = pairKeys(origin, current).stream().anyMatch(directPairs::contains);
-            boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEdgeKind.NAMING);
+            boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEvidenceHopKind.NAMING);
             if (!selfLoop && !direct && (allowNamingOnlyGraph || !namingOnly)) {
                 addPath(origin, current, path, pathsPerPair, observations);
             }
@@ -137,10 +157,10 @@ final class DerivedPathGraphBuilder {
             Set<String> acceptedCanonicalPaths,
             List<DerivedPathObservation> observations
     ) {
-        if (path.size() >= 2 && lastEdge(path).kind() == DerivedEdgeKind.RELATIONSHIP) {
+        if (path.size() >= 2 && lastEdge(path).kind() == DerivedEvidenceHopKind.RELATIONSHIP) {
             boolean selfLoop = overlaps(graphKeys(origin), graphKeys(current));
             boolean direct = pairKeys(current, origin).stream().anyMatch(directPairs::contains);
-            boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEdgeKind.NAMING);
+            boolean namingOnly = path.stream().allMatch(edge -> edge.kind() == DerivedEvidenceHopKind.NAMING);
             if (!selfLoop && !direct && !namingOnly) {
                 addReferencedByPath(origin, current, path, pathsPerPair,
                         acceptedCanonicalPaths, observations);
@@ -245,9 +265,9 @@ final class DerivedPathGraphBuilder {
                     bridges.add(new DerivedEdge(
                             current,
                             keyEndpoint,
-                            DerivedEdgeKind.TABLE_IDENTITY_BRIDGE,
+                            DerivedEvidenceHopKind.TABLE_IDENTITY_BRIDGE,
                             BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
-                            ref,
+                            List.of(ref),
                             List.of()));
                 }
             }
@@ -267,7 +287,8 @@ final class DerivedPathGraphBuilder {
         attributes.put("path", endpointNames(outputPath));
         attributes.put("traversalPath", endpointNames(traversalPath));
         attributes.put("pathLength", observation.edges().size());
-        attributes.put("pathEvidenceRefs", observation.edges().stream().map(DerivedEdge::ref).toList());
+        attributes.put("pathEvidenceRefs", observation.edges().stream()
+                .flatMap(edge -> edge.evidenceRefs().stream()).distinct().sorted().toList());
         attributes.put("confidenceDecay", config.derivedConfidenceDecay);
         if (naming) {
             attributes.put("namingRule", DerivedNamingInference.TRANSITIVE_NAMING_RULE);
@@ -288,6 +309,46 @@ final class DerivedPathGraphBuilder {
 
     BigDecimal confidence(DerivedPathObservation observation) {
         return rawConfidence(observation).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    DerivedEvidenceSet evidenceSet(
+            DerivedPathObservation observation,
+            List<Endpoint> outputPath,
+            boolean reverseOutput
+    ) {
+        if (outputPath.size() != observation.edges().size() + 1) {
+            throw new IllegalArgumentException("output path must contain one endpoint per hop boundary");
+        }
+        List<DerivedEdge> outputEdges;
+        if (reverseOutput) {
+            List<DerivedEdge> reversed = new ArrayList<>();
+            for (int index = observation.edges().size() - 1; index >= 0; index--) {
+                reversed.add(observation.edges().get(index).reverse());
+            }
+            outputEdges = List.copyOf(reversed);
+        } else {
+            outputEdges = observation.edges();
+        }
+        List<DerivedEvidenceHop> hops = new ArrayList<>();
+        BigInteger combinationCount = BigInteger.ONE;
+        for (int index = 0; index < outputEdges.size(); index++) {
+            DerivedEdge edge = outputEdges.get(index);
+            hops.add(new DerivedEvidenceHop(
+                    index + 1, outputPath.get(index), outputPath.get(index + 1),
+                    edge.kind(), edge.evidenceRefs()));
+            combinationCount = combinationCount.multiply(
+                    BigInteger.valueOf(edge.evidenceRefs().size()));
+        }
+        return new DerivedEvidenceSet(hops, combinationCount, confidence(observation));
+    }
+
+    String evidenceSetKey(DerivedEvidenceSet set) {
+        return set.hops().stream()
+                .map(hop -> hop.ordinal() + ":" + endpointKeys.factKey(hop.source()) + "->"
+                        + endpointKeys.factKey(hop.target()) + ":" + hop.kind() + ":"
+                        + String.join("\u0000", hop.evidenceRefs()))
+                .reduce((left, right) -> left + "\u0001" + right)
+                .orElse("") + "\u0002" + set.confidence().toPlainString();
     }
 
     private BigDecimal rawConfidence(DerivedPathObservation observation) {
@@ -339,7 +400,7 @@ final class DerivedPathGraphBuilder {
                 .thenComparing(edge -> edge.source().normalizedKey())
                 .thenComparing(edge -> edge.target().normalizedKey())
                 .thenComparing(edge -> edge.kind().name())
-                .thenComparing(DerivedEdge::ref);
+                .thenComparing(edge -> String.join("\u0000", edge.evidenceRefs()));
     }
 
     String pairKey(Endpoint source, Endpoint target) {
@@ -380,5 +441,17 @@ final class DerivedPathGraphBuilder {
         List<DerivedEdge> result = new ArrayList<>(path);
         result.add(edge);
         return List.copyOf(result);
+    }
+
+    private record EdgeAggregationKey(
+            String source,
+            String target,
+            DerivedEvidenceHopKind kind,
+            BigDecimal confidence,
+            List<String> namingRefs
+    ) {
+        private EdgeAggregationKey {
+            namingRefs = List.copyOf(namingRefs);
+        }
     }
 }

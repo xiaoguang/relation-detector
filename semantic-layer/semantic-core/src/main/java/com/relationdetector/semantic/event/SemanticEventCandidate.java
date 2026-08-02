@@ -4,10 +4,18 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * CN: 保存由 write lineage 和 supporting relationships 确定生成的 event candidate、provenance、input/output endpoints 和 evidence refs；构造器冻结全部集合。
  * EN: Carries a deterministic event candidate grounded in write lineage and supporting relationships, including provenance, endpoints, and evidence references, with all collections frozen.
  */
+@JsonIgnoreProperties(value = {
+        "evidenceRefCount", "evidenceRefsSha256",
+        "lineageRefCount", "lineageRefsSha256",
+        "supportingDerivedLineageRefCount", "supportingDerivedLineageRefsSha256",
+        "relationshipRefCount", "relationshipRefsSha256"
+})
 public record SemanticEventCandidate(
         String id,
         String eventKind,

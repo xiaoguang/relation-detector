@@ -1,6 +1,7 @@
 package com.relationdetector.core.output;
 
 import java.math.RoundingMode;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.DerivedPathCandidate;
+import com.relationdetector.contracts.model.DerivedEvidenceSet;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
@@ -27,6 +29,8 @@ import com.relationdetector.core.scan.MetadataInventory;
  * document, and it never mutates, scores, or merges facts.
  */
 final class JsonResultFactRenderer {
+    private static final String EVIDENCE_SETS_ATTRIBUTE = "evidenceSets";
+
     private final ObjectMapper json;
 
     JsonResultFactRenderer(ObjectMapper json) {
@@ -135,9 +139,8 @@ final class JsonResultFactRenderer {
         node.put("confidence", candidate.confidence().setScale(4, RoundingMode.HALF_UP));
         ArrayNode path = node.putArray("path");
         candidate.path().forEach(endpoint -> path.add(endpointNode(endpoint)));
-        node.set("rawEvidence", includeEvidence
-                ? evidenceNode(candidate.rawEvidence().isEmpty()
-                        ? candidate.evidence() : candidate.rawEvidence())
+        node.set("evidenceSets", includeEvidence
+                ? derivedEvidenceSetsNode(candidate.evidenceSets())
                 : json.createArrayNode());
         node.set("evidence", includeEvidence
                 ? evidenceNode(candidate.evidence())
@@ -187,12 +190,24 @@ final class JsonResultFactRenderer {
                 .sum();
     }
 
-    int derivedPathObservationCount(List<DerivedPathCandidate> candidates) {
-        return candidates.stream()
-                .flatMap(candidate -> (candidate.rawEvidence().isEmpty()
-                        ? candidate.evidence() : candidate.rawEvidence()).stream())
-                .mapToInt(evidence -> EvidenceObservationAggregator.occurrenceCount(evidence.attributes()))
-                .sum();
+    int derivedPathEvidenceSetCount(List<DerivedPathCandidate> candidates) {
+        return candidates.stream().mapToInt(candidate -> candidate.evidenceSets().size()).sum();
+    }
+
+    BigInteger derivedPathSupportCombinationCount(List<DerivedPathCandidate> candidates) {
+        return candidates.stream().flatMap(candidate -> candidate.evidenceSets().stream())
+                .map(DerivedEvidenceSet::combinationCount)
+                .reduce(BigInteger.ZERO, BigInteger::add);
+    }
+
+    int derivedNamingEvidenceSetCount(List<NamingEvidenceCandidate> candidates) {
+        return namingEvidenceSets(candidates).size();
+    }
+
+    BigInteger derivedNamingSupportCombinationCount(List<NamingEvidenceCandidate> candidates) {
+        return namingEvidenceSets(candidates).stream()
+                .map(DerivedEvidenceSet::combinationCount)
+                .reduce(BigInteger.ZERO, BigInteger::add);
     }
 
     private ObjectNode endpointNode(Endpoint endpoint) {
@@ -204,6 +219,42 @@ final class JsonResultFactRenderer {
             node.putNull("column");
         }
         return node;
+    }
+
+    private ArrayNode derivedEvidenceSetsNode(List<DerivedEvidenceSet> evidenceSets) {
+        ArrayNode sets = json.createArrayNode();
+        for (DerivedEvidenceSet evidenceSet : evidenceSets) {
+            ObjectNode set = sets.addObject();
+            ArrayNode hops = set.putArray("hops");
+            evidenceSet.hops().forEach(hop -> {
+                ObjectNode hopNode = hops.addObject();
+                hopNode.put("ordinal", hop.ordinal());
+                hopNode.set("source", endpointNode(hop.source()));
+                hopNode.set("target", endpointNode(hop.target()));
+                hopNode.put("kind", hop.kind().name());
+                ArrayNode refs = hopNode.putArray("evidenceRefs");
+                hop.evidenceRefs().forEach(refs::add);
+            });
+            set.put("combinationCount", evidenceSet.combinationCount());
+            set.put("confidence", evidenceSet.confidence().setScale(4, RoundingMode.HALF_UP));
+        }
+        return sets;
+    }
+
+    private List<DerivedEvidenceSet> namingEvidenceSets(List<NamingEvidenceCandidate> candidates) {
+        java.util.ArrayList<DerivedEvidenceSet> sets = new java.util.ArrayList<>();
+        for (NamingEvidenceCandidate candidate : candidates) {
+            Object value = candidate.evidence().attributes().get(EVIDENCE_SETS_ATTRIBUTE);
+            if (!(value instanceof List<?> values)) {
+                continue;
+            }
+            for (Object item : values) {
+                if (item instanceof DerivedEvidenceSet set) {
+                    sets.add(set);
+                }
+            }
+        }
+        return List.copyOf(sets);
     }
 
     private ArrayNode evidenceNode(List<Evidence> evidence) {
@@ -240,8 +291,21 @@ final class JsonResultFactRenderer {
 
     private ObjectNode attributesNode(Map<String, Object> attributes) {
         ObjectNode node = json.createObjectNode();
-        attributes.forEach((key, value) -> node.set(key, json.valueToTree(value)));
+        attributes.forEach((key, value) -> node.set(key,
+                EVIDENCE_SETS_ATTRIBUTE.equals(key) && value instanceof List<?> values
+                        ? derivedEvidenceSetsNode(derivedEvidenceSets(values))
+                        : json.valueToTree(value)));
         return node;
+    }
+
+    private List<DerivedEvidenceSet> derivedEvidenceSets(List<?> values) {
+        java.util.ArrayList<DerivedEvidenceSet> sets = new java.util.ArrayList<>();
+        for (Object value : values) {
+            if (value instanceof DerivedEvidenceSet set) {
+                sets.add(set);
+            }
+        }
+        return List.copyOf(sets);
     }
 
     static String safe(String value) {

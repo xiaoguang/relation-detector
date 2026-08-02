@@ -7,12 +7,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.math.BigInteger;
 
+import com.relationdetector.contracts.Enums.DerivedEvidenceHopKind;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DerivedPathCandidate;
+import com.relationdetector.contracts.model.DerivedEvidenceSet;
+import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.core.scan.ScanConfig;
@@ -68,49 +72,59 @@ final class DerivedLineageInference {
             candidate.attributes().put("containsNamingEdge", false);
             candidate.attributes().put("containsTableIdentityBridge", false);
             candidate.attributes().put("path", graphs.endpointNames(endpoints));
-            candidate.attributes().put("observationCount", variants.size());
+            List<DerivedEvidenceSet> evidenceSets = variants.stream()
+                    .map(variant -> graphs.evidenceSet(variant, endpoints, false))
+                    .distinct()
+                    .sorted(Comparator.comparing(graphs::evidenceSetKey))
+                    .toList();
+            candidate.evidenceSets().addAll(evidenceSets);
+            BigInteger supportCombinations = evidenceSets.stream()
+                    .map(DerivedEvidenceSet::combinationCount)
+                    .reduce(BigInteger.ZERO, BigInteger::add);
+            candidate.attributes().put("evidenceSetCount", evidenceSets.size());
+            candidate.attributes().put("supportCombinationCount", supportCombinations);
 
-            List<String> refs = variants.stream().flatMap(path -> path.edges().stream())
-                    .map(DerivedEdge::ref).distinct().sorted().toList();
+            List<String> refs = evidenceSets.stream().flatMap(set -> set.hops().stream())
+                    .flatMap(hop -> hop.evidenceRefs().stream()).distinct().sorted().toList();
             Evidence first = graphs.pathEvidence(
                     representative, "derived:data_lineage", false, endpoints, endpoints);
             Map<String, Object> summary = new LinkedHashMap<>(first.attributes());
-            summary.put("count", variants.size());
+            summary.put("evidenceSetCount", evidenceSets.size());
+            summary.put("supportCombinationCount", supportCombinations);
             summary.put("pathEvidenceRefs", refs);
             candidate.evidence().add(new Evidence(
                     first.type(), candidate.confidence(), first.sourceType(),
                     first.source(), first.detail(), summary));
-            Map<Evidence, Integer> rawObservations = new LinkedHashMap<>();
-            for (DerivedPathObservation variant : variants) {
-                List<Endpoint> variantEndpoints = graphs.endpoints(variant);
-                Evidence rawObservation = graphs.pathEvidence(
-                        variant, "derived:data_lineage", false,
-                        variantEndpoints, variantEndpoints);
-                rawObservations.merge(rawObservation, 1, Integer::sum);
-            }
-            for (Map.Entry<Evidence, Integer> entry : rawObservations.entrySet()) {
-                Evidence observation = entry.getKey();
-                if (entry.getValue() == 1) {
-                    candidate.rawEvidence().add(observation);
-                    continue;
-                }
-                Map<String, Object> attributes = new LinkedHashMap<>(observation.attributes());
-                attributes.put("occurrenceCount", entry.getValue());
-                candidate.rawEvidence().add(new Evidence(
-                        observation.type(), observation.score(), observation.sourceType(),
-                        observation.source(), observation.detail(), attributes));
-            }
             result.add(candidate);
         }
         return List.copyOf(result);
     }
 
     private DerivedEdge edge(Endpoint source, DataLineageCandidate lineage) {
-        String ref = "lineage:" + source.normalizedKey() + "->" + lineage.target().normalizedKey()
-                + ":" + lineage.flowKind().name() + ":" + lineage.transformType().name();
+        List<DataLineageEvidence> evidence = lineage.rawEvidence().isEmpty()
+                ? lineage.evidence() : lineage.rawEvidence();
+        List<String> refs = evidence.stream().map(item -> lineageReference(source, lineage, item))
+                .distinct().sorted().toList();
         return new DerivedEdge(
-                source, lineage.target(), DerivedEdgeKind.LINEAGE,
-                lineage.confidence(), ref, List.of());
+                source, lineage.target(), DerivedEvidenceHopKind.LINEAGE,
+                lineage.confidence(), refs, List.of());
+    }
+
+    private String lineageReference(
+            Endpoint source,
+            DataLineageCandidate lineage,
+            DataLineageEvidence evidence
+    ) {
+        return "lineage:" + source.normalizedKey() + "->" + lineage.target().normalizedKey()
+                + ":" + lineage.flowKind().name() + ":" + evidence.transformType().name()
+                + ":" + evidence.sourceType() + ":" + evidence.source()
+                + ":" + evidence.attributes().getOrDefault("sourceStatementId", "")
+                + ":" + evidence.attributes().getOrDefault("sourceLine", "")
+                + ":" + evidence.attributes().entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .map(entry -> entry.getKey() + "=" + String.valueOf(entry.getValue()))
+                        .reduce((left, right) -> left + "," + right).orElse("")
+                + ":" + evidence.detail();
     }
 
     private boolean isPureNoOpSelfLineage(Endpoint source, DataLineageCandidate lineage) {

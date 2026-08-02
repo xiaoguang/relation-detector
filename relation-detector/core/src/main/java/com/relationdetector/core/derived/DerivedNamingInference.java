@@ -3,6 +3,7 @@ package com.relationdetector.core.derived;
 import java.util.List;
 import java.util.Set;
 
+import com.relationdetector.contracts.Enums.DerivedEvidenceHopKind;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.core.scan.ScanConfig;
@@ -36,15 +37,20 @@ final class DerivedNamingInference {
     private NamingEvidenceCandidate candidate(DerivedPathObservation path) {
         List<com.relationdetector.contracts.model.Endpoint> endpoints = graphs.endpoints(path);
         Evidence evidence = graphs.pathEvidence(path, "derived:naming", true, endpoints, endpoints);
+        java.util.Map<String, Object> attributes = new java.util.LinkedHashMap<>(evidence.attributes());
+        attributes.put("evidenceSets", List.of(graphs.evidenceSet(path, endpoints, false)));
+        Evidence summarized = new Evidence(
+                evidence.type(), evidence.score(), evidence.sourceType(),
+                evidence.source(), evidence.detail(), attributes);
         return new NamingEvidenceCandidate(
-                path.source(), path.target(), evidence,
-                TRANSITIVE_NAMING_RULE, true, List.of(evidence));
+                path.source(), path.target(), summarized,
+                TRANSITIVE_NAMING_RULE, true, List.of(summarized));
     }
 
     DerivedEdge edge(NamingEvidenceCandidate naming) {
         return new DerivedEdge(
-                naming.source(), naming.target(), DerivedEdgeKind.NAMING,
-                naming.evidence().score(), naming.id(), List.of(naming.id()));
+                naming.source(), naming.target(), DerivedEvidenceHopKind.NAMING,
+                naming.evidence().score(), List.of(naming.id()), List.of(naming.id()));
     }
 
     boolean isDerived(Evidence evidence) {

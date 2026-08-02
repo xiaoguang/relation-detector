@@ -5,11 +5,14 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashSet;
+import java.math.BigInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
+import com.relationdetector.contracts.Enums.DerivedEvidenceHopKind;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
@@ -207,8 +210,66 @@ final class ScanResultContractValidator {
                     at + ".target must equal the last path endpoint");
             confidence(value, at);
             validateRelationshipEvidence(requireArray(value, "evidence"), at + ".evidence");
-            validateRelationshipEvidence(requireArray(value, "rawEvidence"), at + ".rawEvidence");
+            require(value.get("rawEvidence") == null,
+                    at + ".rawEvidence is not allowed for derived facts");
+            validateDerivedEvidenceSets(value, path, at);
             optionalObject(value, "attributes");
+        }
+    }
+
+    /**
+     * CN: 校验单个 derived fact 的线性 evidence-set wire，包括 hop/path 闭包、typed kind、唯一直接引用、
+     * 组合乘积和置信度；输入为已校验端点路径，无返回值，任何旧 raw shape 或不闭合集合都会中止读取。
+     * EN: Validates one derived fact's linear evidence-set wire, including hop/path closure, typed kinds, unique
+     * direct references, support products, and confidence. It returns nothing and rejects legacy or unclosed shapes.
+     */
+    private void validateDerivedEvidenceSets(JsonNode value, JsonNode path, String at) {
+        JsonNode sets = requireArray(value, "evidenceSets");
+        require(!sets.isEmpty(), at + ".evidenceSets must not be empty");
+        HashSet<String> signatures = new HashSet<>();
+        int setIndex = 0;
+        for (JsonNode set : sets) {
+            String setAt = at + ".evidenceSets[" + setIndex++ + "]";
+            require(set.isObject(), setAt + " must be an object");
+            JsonNode hops = requireArray(set, "hops");
+            require(hops.size() == path.size() - 1,
+                    setAt + ".hops must match the derived path length");
+            BigInteger expectedCombinations = BigInteger.ONE;
+            int hopIndex = 0;
+            for (JsonNode hop : hops) {
+                String hopAt = setAt + ".hops[" + hopIndex + "]";
+                require(hop.isObject(), hopAt + " must be an object");
+                require(hop.path("ordinal").isIntegralNumber()
+                                && hop.path("ordinal").asInt() == hopIndex + 1,
+                        hopAt + ".ordinal must be contiguous from one");
+                endpoint(hop.path("source"), hopAt + ".source");
+                endpoint(hop.path("target"), hopAt + ".target");
+                require(hop.path("source").equals(path.get(hopIndex)),
+                        hopAt + ".source must equal its path endpoint");
+                require(hop.path("target").equals(path.get(hopIndex + 1)),
+                        hopAt + ".target must equal its path endpoint");
+                enumText(hop, "kind", DerivedEvidenceHopKind.class);
+                JsonNode refs = requireArray(hop, "evidenceRefs");
+                require(!refs.isEmpty(), hopAt + ".evidenceRefs must not be empty");
+                HashSet<String> uniqueRefs = new HashSet<>();
+                for (JsonNode ref : refs) {
+                    require(ref.isTextual() && !ref.asText().isBlank(),
+                            hopAt + ".evidenceRefs entries must be non-blank strings");
+                    require(uniqueRefs.add(ref.asText()),
+                            hopAt + ".evidenceRefs must be unique");
+                }
+                expectedCombinations = expectedCombinations.multiply(
+                        BigInteger.valueOf(refs.size()));
+                hopIndex++;
+            }
+            JsonNode combinationCount = set.path("combinationCount");
+            require(combinationCount.isIntegralNumber()
+                            && combinationCount.bigIntegerValue().signum() > 0,
+                    setAt + ".combinationCount must be a positive integer");
+            require(expectedCombinations.equals(combinationCount.bigIntegerValue()),
+                    setAt + ".combinationCount must equal the hop support product");
+            confidence(set, setAt);
+            require(signatures.add(set.toString()), at + ".evidenceSets must be unique");
         }
     }
 

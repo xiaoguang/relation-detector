@@ -59,6 +59,12 @@ final class SemanticRequestBundlePackageWriter {
             Files.createDirectories(workspace);
             Path packageDirectory = staging.resolve("request-bundle");
             Files.createDirectories(packageDirectory);
+            Path ownerManifest = packageDirectory.resolve("owner-manifest.tsv");
+            files.copyFile(
+                    plan.ownerManifestPath(), ownerManifest,
+                    "failed to persist semantic request owner manifest");
+            Artifact ownerArtifact = artifact(staging, ownerManifest);
+            require(ownerArtifact.sha256().equals(plan.ownerManifestHash()));
             try (Source source = readSource(
                     plan.fullBundlePath(),
                     packageDirectory.resolve("evidence-records.json.gz"),
@@ -84,7 +90,8 @@ final class SemanticRequestBundlePackageWriter {
                     overlapCount += shardBundle.path("shardContext").path("overlapRefs").size();
                     shardEntries.add(shardEntry(staging, shard, bundle, sidecar, shardBundle));
                 }
-                ObjectNode index = index(staging, plan, source, shardEntries, overlapCount);
+                ObjectNode index = index(
+                        staging, plan, source, shardEntries, overlapCount, ownerArtifact);
                 files.writeJson(staging.resolve("request-bundle-index.json"), index);
             }
         } catch (IOException failure) {
@@ -229,12 +236,16 @@ final class SemanticRequestBundlePackageWriter {
             SemanticPathRunPlan plan,
             Source source,
             ArrayNode shards,
-            long overlapCount
+            long overlapCount,
+            Artifact ownerManifest
     ) {
         ObjectNode result = JSON.createObjectNode();
         result.put("artifactSchemaVersion", 1);
         result.put("fullBundleCanonicalSha256", source.canonicalSha256());
         result.put("sourceBundleSha256", plan.fullBundleHash());
+        result.put("reconcile", plan.reconcile());
+        result.put("maxInputTokens", plan.maxInputTokens());
+        result.set("ownerManifest", artifactNode(ownerManifest));
         result.set("descriptor", source.descriptor());
         ObjectNode sections = result.putObject("sections");
         source.sections().forEach((name, digest) -> sections.putObject(name)

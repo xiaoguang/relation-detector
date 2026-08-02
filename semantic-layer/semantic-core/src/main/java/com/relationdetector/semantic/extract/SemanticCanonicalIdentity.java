@@ -99,6 +99,11 @@ final class SemanticCanonicalIdentity {
                 "semantic-edge", text(prefix), text(source), text(target), text(type));
     }
 
+    static String ownedEdge(String prefix, String owner, String source, String target, String type) {
+        return StableSemanticId.of(
+                "semantic-edge", text(prefix), text(owner), text(source), text(target), text(type));
+    }
+
     private static List<String> canonicalReferences(List<String> values) {
         return (values == null ? List.<String>of() : values).stream()
                 .map(SemanticCanonicalIdentity::text)

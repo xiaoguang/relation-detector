@@ -87,10 +87,10 @@ metadata inventory，并输出`status=COMPLETE, basis=DDL_DECLARATIONS`。默认
 DDL basis证明的是“配置scope内的声明集合已完整处理”，不是整个数据库实例的live snapshot，也不
 虚构parser没有提供的数据类型。类型payload缺失时列类型保持`UNKNOWN`。发布链新增两层验证：Java
 流式结果校验要求19类parser的38份direct/derived JSON均为evidence-backed COMPLETE且inventory一致；
-随后对38份结果逐一构建deterministic KG，并对19份derived结果生成
-`gpt-5.6-sol/xhigh` request-only artifact，不调用真实API。完整门禁实际得到38/38 KG PASS、
-19/19 request-only PASS；132个shard request均有精确引用sidecar，最大估算输入239,995，低于
-800,000统一门限。该项状态为`MATCHED`。
+随后对38份结果逐一构建完整deterministic KG，并为全部direct/derived结果生成可重建
+`gpt-5.6-sol/xhigh` Codex-session request package。确定性矩阵得到38/38 KG与bundle reconstruction
+PASS；232个owned shard均有精确引用sidecar，最大估算输入240,000，低于800,000统一门限。
+模型响应、reconciliation和最终closure由独立enrichment tier验证，不能以request-only替代。该项状态为`MATCHED`。
 
 ### 2026-07-28 四项反向审计的当前状态
 
@@ -456,8 +456,9 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   当前 sample-data 仍不用于替代跨 catalog/quoted case 的专门测试。
 - relationship 已将完整、顺序无关的 guard 数组纳入 candidate/observation/fingerprint identity，
   并按全部 structural observations 计算 conditional 与 polymorphic summary。grouped evidence 仅保留
-  deep-consensus attributes；relationship、lineage、naming 和 derived observation summary 统一累加
-  `occurrenceCount`，而 repeated-observation confidence 仍按独立 observation 计数。
+  deep-consensus attributes；direct relationship、lineage和naming observation summary累加
+  `occurrenceCount`，而 repeated-observation confidence仍按独立observation计数。Derived path不再
+  构造证据笛卡尔积observation，而以typed evidence set和`BigInteger combinationCount`保留等价审计信息。
 - negative profiling 的目标边界是不从普通 SQL/naming 候选推断 tenant、软删除、时间窗口、
   归档或行过滤上下文，只验证 typed 声明 FK。内置 builder和core SPI consumer均遵守该规则，并从
   pre-merge structural guards判断conditional/polymorphic。若未来要对

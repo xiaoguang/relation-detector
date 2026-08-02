@@ -1023,12 +1023,12 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 - `derivedDataLineages`：只从 `LineageFlowKind.VALUE` 的字段血缘边推导；`CONTROL` 和 `NAMING_MATCH` 不参与数据流推导。
 - derived `namingEvidence`：direct namingEvidence 的有向链可生成 `rule=TRANSITIVE_NAMING_PATH` 的 top-level naming evidence，relationship 仍只能通过 `evidenceRef` 引用这个池。JSON 顶层的 `derivedNamingEvidence` 只是轻量阅读视图，方便按 derived name 统计；完整证据仍只在 top-level `namingEvidence` 中维护。
 
-路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 表示每对路径不限制，`maxFacts=0` 表示三类derived事实总数不限制，但仍做循环检测和自环过滤。非零`maxFacts`在relationship、lineage和naming全部形成并合并后，按`RELATIONSHIP`、`DATA_LINEAGE`、`NAMING`及类内canonical key应用全局总配额；被裁剪derived naming的可选引用同步删除或重写，不会留下悬空`evidenceRef`。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
+路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 表示每对路径不限制，`maxFacts=0` 表示三类derived事实总数不限制，但仍做循环检测和自环过滤。非零`maxFacts`在relationship、lineage和naming全部形成并合并后，按`RELATIONSHIP`、`DATA_LINEAGE`、`NAMING`及类内canonical key应用全局总配额；被裁剪derived naming的可选引用同步删除或重写，不会留下悬空`evidenceRef`。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。DFS只枚举结构路径，每条路径以`evidenceSets`保存有序hop及各hop排序去重后的直接支持引用；不会枚举各跳证据的笛卡尔积。`combinationCount`用`BigInteger`记录可计算的支持组合数，但不提高confidence，也不消耗path/fact配额。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
 
 `derivedPaths.minConfidence` 的契约是输出过滤阈值：计算衰减置信度后，低于该值的 path 不应输出。
 `DerivedPathGraphBuilder` 使用 `BigDecimal` 计算未舍入的
 `minimum edge confidence * decay^(pathLength-1)`；低于阈值的 relationship、lineage 和 naming
-path observation 在 `maxPathsPerPair`、`maxFacts` 及 raw-evidence 聚合前排除，等于阈值时保留。
+结构path在 `maxPathsPerPair`、`maxFacts` 及 evidence-set 聚合前排除，等于阈值时保留。
 最终输出 confidence 仍统一保留四位小数，但过滤判断不使用该舍入值，也不再把低分结果抬升到阈值。
 
 Endpoint identity 在 derived graph 中保持 catalog/schema 保真：显式 namespace 原样保留；bare

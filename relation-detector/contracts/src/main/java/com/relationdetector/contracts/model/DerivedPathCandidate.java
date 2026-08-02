@@ -21,7 +21,7 @@ public final class DerivedPathCandidate {
     private final List<Endpoint> path;
     private BigDecimal confidence = BigDecimal.ZERO;
     private final List<Evidence> evidence = new ArrayList<>();
-    private final List<Evidence> rawEvidence = new ArrayList<>();
+    private final List<DerivedEvidenceSet> evidenceSets = new ArrayList<>();
     private final Map<String, Object> attributes = new LinkedHashMap<>();
 
     public DerivedPathCandidate(
@@ -77,8 +77,8 @@ public final class DerivedPathCandidate {
         return evidence;
     }
 
-    public List<Evidence> rawEvidence() {
-        return rawEvidence;
+    public List<DerivedEvidenceSet> evidenceSets() {
+        return evidenceSets;
     }
 
     public Map<String, Object> attributes() {

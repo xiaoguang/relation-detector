@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.reader.SemanticEvidenceStore;
+import com.relationdetector.semantic.extract.SemanticPathRunManifestFactory.ReconciliationAudit;
+import com.relationdetector.semantic.extract.SemanticPathRunManifestFactory.ShardAudit;
 
 /**
  * CN: 对path-backed semantic plan执行原子artifact事务；逐片加载、调用、归一化并立即落盘，最终通过外排
@@ -34,6 +36,7 @@ public final class SemanticPathRunArtifactWriter {
     private final SemanticRunAuditArtifactWriter audits = new SemanticRunAuditArtifactWriter(files);
     private final SemanticRequestBundlePackageWriter requestPackages =
             new SemanticRequestBundlePackageWriter(files);
+    private final SemanticPathRunManifestFactory manifests = new SemanticPathRunManifestFactory();
 
     public Path writeCodexSession(
             Path outputRoot,
@@ -105,42 +108,128 @@ public final class SemanticPathRunArtifactWriter {
             throw new IllegalArgumentException(
                     "semantic path plan, evidence store and shard client are required");
         }
+        return executeTransaction(
+                outputRoot, plan, SemanticEvidenceLookup.from(evidenceStore),
+                provider, model, reasoningEffort, retention, sharedArtifactWriter,
+                new ExecutionSource() {
+                    @Override
+                    public SemanticExtractionResult shard(
+                            SemanticPathShard ignored,
+                            SemanticExtractionPrompt prompt
+                    ) {
+                        return shardClient.extract(prompt);
+                    }
+
+                    @Override
+                    public SemanticExtractionResult reconciliation(SemanticExtractionPrompt prompt) {
+                        if (reconciliationClient == null) {
+                            throw new IllegalArgumentException("semantic reconciliation client is required");
+                        }
+                        return reconciliationClient.extract(prompt);
+                    }
+                });
+    }
+
+    /**
+     * CN: 消费独立response目录中的Codex分片结果，并复用既有owner、normalization、merge、reconciliation
+     * 和closure边界完成原子发布。输入请求plan保持只读；缺失响应由上游completion service处理，本方法只接受
+     * 完整响应集合，任何越界或冲突都会保留FAILED staging且不发布正式run。
+     * EN: Consumes Codex shard results from a separate response directory and reuses the existing ownership,
+     * normalization, merge, reconciliation, and closure boundaries for atomic publication. The request plan remains
+     * read-only; the completion service handles missing responses, while this method accepts only a complete response
+     * set and leaves an unpublished FAILED staging after any ownership or conflict violation.
+     */
+    Path completeCodexSession(
+            Path outputRoot,
+            SemanticPathRunPlan plan,
+            SemanticEvidenceLookup evidenceLookup,
+            Path responses,
+            String model,
+            String reasoningEffort,
+            ArtifactRetention retention
+    ) {
+        if (plan == null || evidenceLookup == null || responses == null) {
+            throw new IllegalArgumentException(
+                    "semantic Codex completion plan, evidence lookup and responses are required");
+        }
+        SemanticBoundedJsonReader bounded = new SemanticBoundedJsonReader();
+        return executeTransaction(
+                outputRoot, plan, evidenceLookup, "codex-session", model, reasoningEffort,
+                retention, NO_SHARED_ARTIFACTS, new ExecutionSource() {
+                    @Override
+                    public SemanticExtractionResult shard(
+                            SemanticPathShard shard,
+                            SemanticExtractionPrompt ignored
+                    ) {
+                        ObjectNode raw = bounded.readObject(
+                                responses.resolve("shards").resolve(shard.id())
+                                        .resolve("semantic-extraction-result.json"),
+                                plan.maxInputTokens(),
+                                "semantic Codex shard result");
+                        return codexResult(raw);
+                    }
+
+                    @Override
+                    public SemanticExtractionResult reconciliation(SemanticExtractionPrompt ignored) {
+                        ObjectNode patch = bounded.readObject(
+                                responses.resolve("reconciliation")
+                                        .resolve("semantic-reconciliation-result.json"),
+                                plan.maxInputTokens(),
+                                "semantic Codex reconciliation result");
+                        return codexResult(patch);
+                    }
+                });
+    }
+
+    /**
+     * CN: 统一执行API与Codex来源的顺序分片事务；输入是已验证plan、只读evidence lookup和响应source，
+     * 输出仅在全部owner、normalization、merge与closure通过后发布。任何阶段失败都会写安全FAILED manifest，
+     * 且不会提交部分正式结果。
+     * EN: Runs the shared sequential shard transaction for API and Codex response sources. Given a validated plan,
+     * read-only evidence lookup, and response source, it publishes only after ownership, normalization, merge, and
+     * closure all pass. Any failure writes a safe FAILED manifest without committing a partial formal result.
+     */
+    private Path executeTransaction(
+            Path outputRoot,
+            SemanticPathRunPlan plan,
+            SemanticEvidenceLookup evidenceLookup,
+            String provider,
+            String model,
+            String reasoningEffort,
+            ArtifactRetention retention,
+            Consumer<Path> sharedArtifactWriter,
+            ExecutionSource source
+    ) {
         ArtifactRetention resolved = retention == null ? ArtifactRetention.FULL : retention;
         RunArtifactPublisher.RunDirectory run = publisher.begin(outputRoot);
         List<ShardAudit> completed = new ArrayList<>();
         ReconciliationAudit[] reconciliationAudit = new ReconciliationAudit[1];
         try {
-            writeManifest(run, manifest(
+            writeManifest(run, manifests.create(
                     run, plan, "IN_PROGRESS", provider, model, reasoningEffort,
                     resolved, completed, null, null));
             prepareFullBundle(run.stagingDirectory(), plan);
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
             try (SemanticPathResultStore results = new SemanticPathResultStore(
-                    run.stagingDirectory().resolve(".result-work"), evidenceStore, plan)) {
+                    run.stagingDirectory().resolve(".result-work"), evidenceLookup, plan)) {
                 for (SemanticPathShard shard : plan.shards()) {
                     ObjectNode bundle = readObject(shard.bundlePath(), "semantic shard bundle");
                     SemanticExtractionPrompt prompt = promptBuilder.build(bundle);
                     requireBudget(prompt, plan.maxInputTokens());
-                    SemanticExtractionResult response = shardClient.extract(prompt);
+                    SemanticExtractionResult response = source.shard(shard, prompt);
                     ObjectNode normalized = normalize(response.outputText(), bundle);
                     results.append(shard, bundle, normalized);
                     audits.writeShard(
-                            run.stagingDirectory(),
-                            shard.id(),
+                            run.stagingDirectory(), shard.id(),
                             SemanticExternalAuditReferences.sidecar(shard.bundlePath()),
-                            prompt,
-                            response,
-                            normalized);
+                            prompt, response, normalized);
                     completed.add(new ShardAudit(shard, response));
                 }
                 results.finish();
                 if (plan.shards().size() > 1 && plan.reconcile()) {
-                    if (reconciliationClient == null) {
-                        throw new IllegalArgumentException("semantic reconciliation client is required");
-                    }
                     SemanticExtractionPrompt prompt = results.reconciliationPrompt(
                             plan, plan.maxInputTokens());
-                    SemanticExtractionResult response = reconciliationClient.extract(prompt);
+                    SemanticExtractionResult response = source.reconciliation(prompt);
                     JsonNode patch = parseObject(
                             response.outputText(), "semantic reconciliation patch");
                     results.applyReconciliationPatch(patch);
@@ -154,7 +243,7 @@ public final class SemanticPathRunArtifactWriter {
                 results.writeFinalDocument(
                         run.stagingDirectory().resolve("semantic-extraction-result.json"));
             }
-            ObjectNode complete = manifest(
+            ObjectNode complete = manifests.create(
                     run, plan, "COMPLETE", provider, model, reasoningEffort,
                     resolved, completed, reconciliationAudit[0], null);
             return publishComplete(run, complete, resolved);
@@ -164,6 +253,15 @@ public final class SemanticPathRunArtifactWriter {
                     completed, reconciliationAudit[0], failure);
             throw failure;
         }
+    }
+
+    private SemanticExtractionResult codexResult(ObjectNode raw) {
+        String output = raw.toString();
+        ObjectNode audit = JSON.createObjectNode();
+        audit.put("provider", "codex-session");
+        audit.putObject("usage").put("input_tokens", 0).put("output_tokens", 0);
+        return new SemanticExtractionResult(
+                "{\"provider\":\"codex-session\"}", output, output, audit, 1);
     }
 
     /**
@@ -190,7 +288,7 @@ public final class SemanticPathRunArtifactWriter {
         ArtifactRetention resolved = retention == null ? ArtifactRetention.FULL : retention;
         RunArtifactPublisher.RunDirectory run = publisher.begin(outputRoot);
         try {
-            writeManifest(run, manifest(
+            writeManifest(run, manifests.create(
                     run, plan, "IN_PROGRESS", codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, null));
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
@@ -209,14 +307,15 @@ public final class SemanticPathRunArtifactWriter {
                 SemanticExtractionPrompt template = new SemanticReconciliationPromptBuilder().template(plan);
                 Path directory = run.stagingDirectory().resolve("reconciliation").resolve("template");
                 if (codex) {
-                    requestWriter.writeCodexSessionRequest(directory, template);
+                    requestWriter.writeCodexSessionReconciliationRequest(
+                            directory, template, "semantic-reconciliation-result.json");
                 } else if (reconciliationRenderer != null) {
                     requestWriter.writeRequestOnly(
                             directory, template, reconciliationRenderer.apply(template));
                 }
             }
             requestPackages.write(run.stagingDirectory(), plan);
-            ObjectNode ready = manifest(
+            ObjectNode ready = manifests.create(
                     run, plan, status, codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, null);
             finishManifest(ready, run.stagingDirectory(), resolved, Instant.now());
@@ -276,88 +375,6 @@ public final class SemanticPathRunArtifactWriter {
         }
     }
 
-    /**
-     * CN: 根据 path plan、已完成 shard 和 reconciliation 审计构造当前运行 manifest；返回独立 JSON，
-     * 不读取模型业务内容，失败详情只记录安全异常类型。
-     * EN: Builds the current run manifest from the path plan and completed shard/reconciliation audits. It returns
-     * a detached JSON document, never reads model business content, and records only a safe failure type.
-     */
-    private ObjectNode manifest(
-            RunArtifactPublisher.RunDirectory run,
-            SemanticPathRunPlan plan,
-            String status,
-            String provider,
-            String model,
-            String reasoningEffort,
-            ArtifactRetention retention,
-            List<ShardAudit> completed,
-            ReconciliationAudit reconciliation,
-            Throwable failure
-    ) {
-        ObjectNode manifest = JSON.createObjectNode();
-        manifest.put("schemaVersion", 1);
-        manifest.put("runId", run.runId());
-        manifest.put("status", status);
-        manifest.put("provider", text(provider));
-        manifest.put("model", text(model));
-        manifest.put("reasoningEffort", text(reasoningEffort));
-        manifest.put("retention", retention.wireValue());
-        manifest.put("fullBundleHash", plan.fullBundleHash());
-        manifest.put("maxInputTokens", plan.maxInputTokens());
-        manifest.put("shardCount", plan.shards().size());
-        manifest.put("reconcile", plan.reconcile());
-        manifest.put("ownedFactCount", plan.ownedFactCount());
-        manifest.put("ownedCandidateCount", plan.ownedCandidateCount());
-        manifest.put("finalRefClosed", "COMPLETE".equals(status));
-        if (failure != null) {
-            manifest.put("failureType", failure.getClass().getSimpleName());
-        }
-        ArrayNode shards = manifest.putArray("shards");
-        for (SemanticPathShard shard : plan.shards()) {
-            ShardAudit audit = completed.stream()
-                    .filter(value -> value.shard.id().equals(shard.id()))
-                    .findFirst()
-                    .orElse(null);
-            ObjectNode item = shards.addObject();
-            item.put("id", shard.id());
-            item.put("ownerKey", shard.ownerKey());
-            item.put("estimatedInputTokens", shard.estimatedInputTokens());
-            item.put("status", audit == null ? "PENDING" : "COMPLETE");
-            item.put("actualInputTokens", audit == null ? 0 : audit.result.inputTokens());
-            item.put("actualOutputTokens", audit == null ? 0 : audit.result.outputTokens());
-            item.put("transportAttempts", audit == null ? 0 : audit.result.transportAttempts());
-        }
-        int inputTokens = completed.stream().mapToInt(value -> value.result.inputTokens()).sum();
-        int outputTokens = completed.stream().mapToInt(value -> value.result.outputTokens()).sum();
-        int attempts = completed.stream().mapToInt(value -> value.result.transportAttempts()).sum();
-        if (reconciliation != null) {
-            inputTokens += reconciliation.result.inputTokens();
-            outputTokens += reconciliation.result.outputTokens();
-            attempts += reconciliation.result.transportAttempts();
-        }
-        manifest.putObject("usage")
-                .put("inputTokens", inputTokens)
-                .put("outputTokens", outputTokens)
-                .put("transportAttempts", attempts);
-        ObjectNode reconciliationNode = manifest.putObject("reconciliation");
-        boolean required = plan.shards().size() > 1 && plan.reconcile();
-        reconciliationNode.put("required", required);
-        reconciliationNode.put("maxInputTokens", plan.maxInputTokens());
-        reconciliationNode.put("status", !required ? "NOT_REQUIRED"
-                : reconciliation == null ? "PENDING" : "COMPLETE");
-        if (reconciliation != null) {
-            reconciliationNode.put("estimatedInputTokens",
-                    new SemanticPromptBudgetEstimator().estimate(reconciliation.prompt));
-            reconciliationNode.put("tokenEstimateExact", false);
-            reconciliationNode.put("inputTokens", reconciliation.result.inputTokens());
-            reconciliationNode.put("outputTokens", reconciliation.result.outputTokens());
-        }
-        manifest.putNull("publishedAt");
-        manifest.putArray("artifacts");
-        manifest.putArray("prunedArtifacts");
-        return manifest;
-    }
-
     private void writeFailedManifest(
             RunArtifactPublisher.RunDirectory run,
             SemanticPathRunPlan plan,
@@ -370,7 +387,7 @@ public final class SemanticPathRunArtifactWriter {
             Throwable failure
     ) {
         try {
-            ObjectNode manifest = manifest(
+            ObjectNode manifest = manifests.create(
                     run, plan, "FAILED", provider, model, reasoningEffort,
                     retention, completed, reconciliation, failure);
             finishManifest(manifest, run.stagingDirectory(), retention, null);
@@ -442,16 +459,13 @@ public final class SemanticPathRunArtifactWriter {
         return writer == null ? NO_SHARED_ARTIFACTS : writer;
     }
 
-    private String text(String value) {
-        return value == null ? "" : value;
+    private interface ExecutionSource {
+        SemanticExtractionResult shard(
+                SemanticPathShard shard,
+                SemanticExtractionPrompt prompt
+        );
+
+        SemanticExtractionResult reconciliation(SemanticExtractionPrompt prompt);
     }
 
-    private record ShardAudit(SemanticPathShard shard, SemanticExtractionResult result) {
-    }
-
-    private record ReconciliationAudit(
-            SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result
-    ) {
-    }
 }

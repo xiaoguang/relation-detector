@@ -138,6 +138,44 @@ final class SemanticExtractionRunArtifactWriterTest {
     }
 
     @Test
+    void codexSessionPublishesExactOutputSchemaAndReferencesItFromInstructions() throws Exception {
+        SemanticExtractionRunPlan plan = new SemanticExtractionService().plan(
+                singleComponentBundle(), SemanticShardingOptions.defaults());
+
+        Path run = new SemanticExtractionRunArtifactWriter().writeCodexSession(
+                tempDir, plan, "gpt-5.6-sol", "xhigh", ArtifactRetention.FULL);
+        Path shard = run.resolve("shards/shard-0001");
+        JsonNode schema = JSON.readTree(shard.resolve(
+                "semantic-extraction-output-schema.json").toFile());
+        String instructions = Files.readString(shard.resolve(
+                "semantic-extraction-codex-session.md"));
+
+        assertFalse(schema.path("additionalProperties").asBoolean(true));
+        JsonNode entity = schema.path("properties").path("entities")
+                .path("items");
+        assertFalse(entity.path("additionalProperties").asBoolean(true));
+        assertTrue(entity.path("properties").has("physicalName"));
+        assertFalse(entity.path("properties").has("physicalTable"));
+        JsonNode event = schema.path("properties").path("events").path("items");
+        assertTrue(event.path("properties").path("inputs").path("description").asText()
+                .contains("core rebuilds"));
+        assertTrue(event.path("properties").path("inputEntityRefs").path("description").asText()
+                .contains("core rebuilds"));
+        assertEquals(0, event.path("properties").path("inputs").path("maxItems").asInt(-1));
+        assertEquals(0, event.path("properties").path("outputs").path("maxItems").asInt(-1));
+        assertEquals(0, event.path("properties").path("inputEntityRefs").path("maxItems").asInt(-1));
+        assertEquals(0, event.path("properties").path("outputEntityRefs").path("maxItems").asInt(-1));
+        assertEquals("null", schema.path("properties").path("semanticGraph").path("type").asText());
+        assertEquals("null", schema.path("properties").path("validation").path("type").asText());
+        assertTrue(instructions.contains("semantic-extraction-output-schema.json"));
+        assertTrue(instructions.contains("--output-schema"));
+        assertFalse(instructions.contains(".staging-"));
+        assertTrue(instructions.contains(
+                "responses/shards/shard-0001/semantic-extraction-result.json"));
+        assertTrue(instructions.contains("separate response directory"));
+    }
+
+    @Test
     void concurrentRunsUsingOneRootNeverShareAStagingDirectory() throws Exception {
         SemanticExtractionRunPlan plan = new SemanticExtractionService().plan(
                 singleComponentBundle(), SemanticShardingOptions.defaults());

@@ -1,7 +1,6 @@
 package com.relationdetector.semantic.extract;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -60,9 +59,17 @@ final class SemanticShardIdentityCanonicalizer {
         }
 
         Map<String, ObjectNode> canonicalEntities = new LinkedHashMap<>();
+        Map<String, List<ObjectNode>> conflictingEntities = new LinkedHashMap<>();
         for (String key : byIdentity.keySet().stream().sorted().toList()) {
             List<EntityVariant> variants = byIdentity.get(key);
-            canonicalEntities.put(key, mergeEntity(key, variants));
+            List<ObjectNode> entityDocuments = variants.stream().map(EntityVariant::document).toList();
+            if (SemanticEntityMergePolicy.canMerge(entityDocuments)) {
+                canonicalEntities.put(key, mergeEntity(key, variants));
+            } else {
+                conflictingEntities.put(
+                        key,
+                        SemanticEntityMergePolicy.reconciliationVariants(entityDocuments));
+            }
         }
         for (DocumentState state : documents) {
             rewriteEntityReferences(state.document(), state.entityAliases());
@@ -71,7 +78,16 @@ final class SemanticShardIdentityCanonicalizer {
                 ObjectNode entity = (ObjectNode) entities.get(index);
                 String canonicalId = state.entityAliases().get(text(entity, "id"));
                 EntityVariant variant = variantByCanonicalId(byIdentity, canonicalId);
-                entities.set(index, canonicalEntities.get(variant.identity().key()).deepCopy());
+                String identityKey = variant.identity().key();
+                ObjectNode canonical = canonicalEntities.get(identityKey);
+                if (canonical != null) {
+                    entities.set(index, canonical.deepCopy());
+                } else {
+                    ObjectNode selected = matchingVariant(
+                            entity, conflictingEntities.get(identityKey));
+                    selected.put("id", canonicalId);
+                    entities.set(index, selected);
+                }
             }
         }
 
@@ -130,46 +146,21 @@ final class SemanticShardIdentityCanonicalizer {
         if (variants.isEmpty()) {
             throw new IllegalStateException("semantic canonical identity has no variants");
         }
-        validateCompatible(key, variants);
-        List<EntityVariant> ordered = variants.stream()
-                .sorted(Comparator.comparing(variant -> StableSemanticId.canonicalJson(variant.document())))
-                .toList();
-        ObjectNode result = ordered.get(0).document().deepCopy();
-        result.put("id", ordered.get(0).identity().canonicalId());
-        mergeReferences(result, variants, "ownedGroundingRefs");
-        mergeReferences(result, variants, "evidenceRefs");
+        ObjectNode result = SemanticEntityMergePolicy.merge(
+                variants.stream().map(EntityVariant::document).toList());
+        result.put("id", variants.get(0).identity().canonicalId());
         return result;
     }
 
-    private void mergeReferences(
-            ObjectNode result,
-            List<EntityVariant> variants,
-            String field
-    ) {
-        Set<String> references = new LinkedHashSet<>();
-        variants.forEach(variant -> variant.document().path(field).forEach(reference -> {
-            if (reference.isTextual() && !reference.asText().isBlank()) {
-                references.add(reference.asText());
-            }
-        }));
-        ArrayNode refs = result.putArray(field);
-        references.stream().sorted().forEach(refs::add);
-    }
-
-    private void validateCompatible(String key, List<EntityVariant> variants) {
-        Set<String> machineTypes = new LinkedHashSet<>();
-        Set<String> physicalNames = new LinkedHashSet<>();
-        for (EntityVariant variant : variants) {
-            String machineType = SemanticCanonicalIdentity.normalizeText(firstNonBlank(
-                    text(variant.document(), "machineType"), text(variant.document(), "type")));
-            if (!machineType.isBlank()) machineTypes.add(machineType);
-            String physicalName = text(variant.document(), "physicalName");
-            if (!physicalName.isBlank()) physicalNames.add(physicalName);
-        }
-        if (machineTypes.size() > 1 || physicalNames.size() > 1) {
-            throw new SemanticExtractionValidationException(
-                    "canonical semantic entity has incompatible structural content: " + key);
-        }
+    private ObjectNode matchingVariant(ObjectNode source, List<ObjectNode> variants) {
+        String machineType = text(source, "machineType");
+        String type = text(source, "type");
+        return variants.stream()
+                .filter(variant -> machineType.equals(text(variant, "machineType"))
+                        && type.equals(text(variant, "type")))
+                .findFirst()
+                .orElseGet(() -> variants.get(0))
+                .deepCopy();
     }
 
     private EntityVariant variantByCanonicalId(
@@ -255,10 +246,6 @@ final class SemanticShardIdentityCanonicalizer {
 
     private String text(ObjectNode node, String field) {
         return node.path(field).asText("").trim();
-    }
-
-    private String firstNonBlank(String first, String second) {
-        return first == null || first.isBlank() ? second : first;
     }
 
     record CanonicalizedShardResults(

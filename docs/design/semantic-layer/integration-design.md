@@ -461,9 +461,12 @@ Step 7: Answer（最终输出）
 [semantic extract]
     ↓ request-only/codex-session: 写逐片prompt/bundle、可逆sidecar、压缩evidence archive与request-bundle-index
     ↓ 可移植请求包在不依赖原始scan时重建完整bundle并验证canonical hash/owner coverage
+    ↓ codex-session completion: 从独立responses目录消费逐片结果，缺失时只输出pending清单
+    ↓ 全片完成后生成受预算约束的reconciliation request，并复用生产normalizer/merger/patch validator
     ↓ openai-api: 顺序调用 Responses API，执行片内 normalization、exact-ID merge、受限 reconciliation
 [full-bundle normalization]
     ↓ 输出: merged-draft.json / semantic-extraction-result.json / run-manifest.json
+    ↓ sample-data enrichment tier: 38行summary.tsv + semantic-e2e-manifest.json
 [semantic normalize-extraction]
     ↓ 输入: token预算内的raw result + 按选中记录预算闭合的evidence bundle slice
     ↓ 输出: ID/internal-ref-closed normalized semantic document
@@ -598,7 +601,7 @@ Step 7: Answer（最终输出）
 
 **当前验收标准：**
 - `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json` 均生成且为合法 JSON
-- EvidenceGraph fact 保留 relation-detector payload；KG 要求非 diagnostic fact/event、endpoint node 与 edge 的 evidence 非空且可解析。相同 ID/content 幂等复用，冲突 ID 原子失败。
+- EvidenceGraph fact保留relation-detector payload并作为完整证据内容的唯一持有者；KG fact node和结构edge保留可解析`evidenceRefs`，但不再按每个引用复制`SUPPORTED_BY_EVIDENCE`边。跨文件closure验证每个引用存在；相同ID/content幂等复用，冲突ID原子失败。
 - KG 构建链路不调用 semantic extraction provider，也不创造新 fact
 - 只允许同一 `database.type`、`database.catalog` 与 `database.schema` 合并
 - 所有fact/evidence/candidate引用使用确定性ID并通过冲突gate；routine、trigger和SQL-write的

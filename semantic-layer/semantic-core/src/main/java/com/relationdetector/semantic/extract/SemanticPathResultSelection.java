@@ -40,24 +40,11 @@ final class SemanticPathResultSelection {
                 .put("id", shard.id())
                 .put("ownerKey", shard.ownerKey())
                 .put("estimatedInputTokens", shard.estimatedInputTokens()));
-        ObjectNode summary = bundle.putObject("semanticSummary");
         ArrayNode conflicts = bundle.putArray("conflicts");
         long[] approximateBytes = {0};
         for (SemanticPathResultStore.Section section : SemanticPathResultStore.Section.values()) {
-            ArrayNode compact = summary.putArray(section.wireName);
             sections.get(section).forEach(record -> {
                 JsonNode stored = record.value();
-                JsonNode selected = selectedDocument(section, stored);
-                ObjectNode item = compact.addObject();
-                copy(selected, item, "id");
-                copy(selected, item, "name");
-                copy(selected, item, "type");
-                copy(selected, item, "machineType");
-                copy(selected, item, "physicalName");
-                copy(selected, item, "fromEntityRef");
-                copy(selected, item, "toEntityRef");
-                item.set("evidenceRefs", selected.path("evidenceRefs").deepCopy());
-                approximateBytes[0] += item.toString().length();
                 if (stored.path("__semanticVariants").isArray()) {
                     ObjectNode conflict = conflicts.addObject();
                     conflict.put("section", section.wireName);
@@ -76,7 +63,7 @@ final class SemanticPathResultSelection {
                 .put("newEvidenceReferencesForbidden", true);
         SemanticExtractionPrompt prompt = new SemanticExtractionPrompt(
                 developerPrompt(),
-                "Reconcile this semantic shard summary and return the constrained patch:\n" + bundle,
+                "Resolve these semantic shard conflicts and return the constrained patch:\n" + bundle,
                 bundle);
         if (new SemanticPromptBudgetEstimator().estimate(prompt) > maxInputTokens) {
             throw budgetFailure();
@@ -217,12 +204,6 @@ final class SemanticPathResultSelection {
             }
         });
         return found[0];
-    }
-
-    private void copy(JsonNode source, ObjectNode target, String field) {
-        if (source.has(field)) {
-            target.set(field, source.path(field).deepCopy());
-        }
     }
 
     private String requiredText(JsonNode source, String field) {

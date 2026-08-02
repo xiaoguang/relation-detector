@@ -32,10 +32,34 @@ final class SemanticGraphAssembler {
     }
 
     void addEdge(String prefix, String source, String target, String type, List<String> evidenceRefs) {
+        addEdgeWithId(
+                SemanticCanonicalIdentity.edge(prefix, source, target, type),
+                source, target, type, evidenceRefs);
+    }
+
+    void addOwnedEdge(
+            String prefix,
+            String owner,
+            String source,
+            String target,
+            String type,
+            List<String> evidenceRefs
+    ) {
+        addEdgeWithId(
+                SemanticCanonicalIdentity.ownedEdge(prefix, owner, source, target, type),
+                source, target, type, evidenceRefs);
+    }
+
+    private void addEdgeWithId(
+            String id,
+            String source,
+            String target,
+            String type,
+            List<String> evidenceRefs
+    ) {
         if (blank(source) || blank(target)) {
             return;
         }
-        String id = SemanticCanonicalIdentity.edge(prefix, source, target, type);
         SemanticGraphEdge edge = new SemanticGraphEdge(id, source, target, type, copy(evidenceRefs));
         SemanticGraphEdge previous = edges.putIfAbsent(id, edge);
         if (previous != null && !previous.equals(edge)) {

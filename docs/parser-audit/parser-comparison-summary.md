@@ -130,7 +130,8 @@ locations that are present; it does not currently require every fact to carry `s
 Summary fields are compared when present rather than required as a complete object.
 
 - Present summary counts matched the corresponding output arrays in the recorded audit.
-- Direct/derived observation counts equal the sum of raw evidence occurrences.
+- Direct observation counts equal raw evidence occurrences. Derived summaries count typed evidence sets and their
+  support combinations; they do not materialize or count a Cartesian-product observation list.
 - `warning-codes.tsv` is clean: every parser reports `NONE 0`.
 - `rawEvidence.source` no longer contains the local absolute workspace path.
 - The recorded audit found SQL/DB_OBJECT lineage locations complete and in range; the current

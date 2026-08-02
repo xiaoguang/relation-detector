@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.UUID;
+import java.math.BigInteger;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -219,8 +220,8 @@ final class SampleDataResultValidator {
         updateDigest(digest, "scope", canonicalTree(scope));
         for (String section : List.of("tables", "columns", "constraints", "indexes")) {
             JsonNode expected = counts.get(section);
-            long resolved = actual.getOrDefault(section, -1L);
-            if (expected == null || !expected.isIntegralNumber()
+            Long resolved = actual.get(section);
+            if (resolved == null || expected == null || !expected.isIntegralNumber()
                     || expected.longValue() < 0L
                     || expected.longValue() != resolved) {
                 throw failure(path,
@@ -316,7 +317,10 @@ final class SampleDataResultValidator {
             validatePortableSources(state.path, item);
             state.validatedSourceLocations += validateSourceLocations(
                     state.path, item, state.lineCounts);
-            if (FACT_SECTIONS.contains(section)) {
+            if ("derivedRelationships".equals(section) || "derivedDataLineages".equals(section)) {
+                EvidenceSetStats stats = validateDerivedEvidenceSets(state.path, section, item);
+                state.addEvidenceSets(section, stats);
+            } else if (FACT_SECTIONS.contains(section)) {
                 validateRawObservations(state.path, section, item);
             }
             if ("namingEvidence".equals(section)) {
@@ -326,6 +330,8 @@ final class SampleDataResultValidator {
                 }
                 if ("TRANSITIVE_NAMING_PATH".equals(item.path("rule").asText())) {
                     state.derivedNamingCount++;
+                    state.addDerivedNamingEvidenceSets(
+                            validateDerivedNamingEvidenceSets(state.path, item));
                 }
             } else if ("derivedNamingEvidence".equals(section)) {
                 state.derivedNamingViewIds.add(item.path("id").asText(""));
@@ -415,8 +421,11 @@ final class SampleDataResultValidator {
 
     private StatementSpan statementSpan(String statementId) {
         int colon = statementId.lastIndexOf(':');
-        int separator = colon < 0 ? -1 : statementId.indexOf('-', colon + 1);
-        if (colon < 0 || separator <= colon + 1 || separator >= statementId.length() - 1) {
+        if (colon < 0) {
+            return null;
+        }
+        int separator = statementId.indexOf('-', colon + 1);
+        if (separator <= colon + 1 || separator >= statementId.length() - 1) {
             return null;
         }
         String start = statementId.substring(colon + 1, separator);
@@ -456,6 +465,104 @@ final class SampleDataResultValidator {
                 throw failure(path, "duplicate raw observation in " + section);
             }
         }
+    }
+
+    private EvidenceSetStats validateDerivedEvidenceSets(Path path, String section, JsonNode fact) {
+        if (fact.has("rawEvidence")) {
+            throw failure(path, section + " must not contain rawEvidence");
+        }
+        return validateEvidenceSets(path, section, fact.path("path"), fact.path("evidenceSets"));
+    }
+
+    private EvidenceSetStats validateDerivedNamingEvidenceSets(Path path, JsonNode fact) {
+        JsonNode evidence = fact.path("evidence");
+        if (!evidence.isArray() || evidence.isEmpty()) {
+            throw failure(path, "derived naming evidence is missing its summary evidence");
+        }
+        JsonNode sets = evidence.get(0).path("attributes").path("evidenceSets");
+        JsonNode syntheticPath = ReleaseVerificationJson.MAPPER.createArrayNode()
+                .add(fact.path("source"))
+                .add(fact.path("target"));
+        return validateEvidenceSets(path, "derived naming evidence", syntheticPath, sets);
+    }
+
+    /**
+     * CN: 流式结果验证阶段复核 derived evidence-set 的线性大小、typed hop、闭合端点与组合乘积，并返回
+     * 有界计数供 summary 对账；输入仅是当前 fact，失败不产生 PASS 报告，也不展开证据笛卡尔积。
+     * EN: Revalidates linear derived evidence sets, typed hops, endpoint closure, and support products for the current
+     * fact, returning bounded summary counters. Failure cannot emit PASS and no evidence product is materialized.
+     */
+    private EvidenceSetStats validateEvidenceSets(
+            Path path,
+            String section,
+            JsonNode factPath,
+            JsonNode sets
+    ) {
+        if (!factPath.isArray() || factPath.size() < 2 || !sets.isArray() || sets.isEmpty()) {
+            throw failure(path, section + " evidenceSets must be a non-empty array");
+        }
+        BigInteger combinations = BigInteger.ZERO;
+        int setCount = 0;
+        for (JsonNode set : sets) {
+            JsonNode hops = set.path("hops");
+            if (!hops.isArray() || hops.isEmpty()) {
+                throw failure(path, section + " evidence set hops are required");
+            }
+            boolean completePath = factPath.size() > 2;
+            if (completePath && hops.size() != factPath.size() - 1) {
+                throw failure(path, section + " evidence hops do not match the fact path");
+            }
+            BigInteger product = BigInteger.ONE;
+            int ordinal = 1;
+            JsonNode firstSource = null;
+            JsonNode lastTarget = null;
+            JsonNode previousTarget = null;
+            for (JsonNode hop : hops) {
+                JsonNode hopOrdinal = hop.get("ordinal");
+                if (hopOrdinal == null || !hopOrdinal.isIntegralNumber()
+                        || hopOrdinal.intValue() != ordinal++) {
+                    throw failure(path, section + " evidence hop ordinal is invalid");
+                }
+                String kind = hop.path("kind").asText("");
+                if (!Set.of("RELATIONSHIP", "LINEAGE", "NAMING", "TABLE_IDENTITY_BRIDGE").contains(kind)) {
+                    throw failure(path, section + " evidence hop kind is invalid");
+                }
+                JsonNode refs = hop.path("evidenceRefs");
+                if (!refs.isArray() || refs.isEmpty()) {
+                    throw failure(path, section + " evidence hop refs are required");
+                }
+                Set<String> unique = new HashSet<>();
+                for (JsonNode ref : refs) {
+                    if (!ref.isTextual() || ref.asText().isBlank() || !unique.add(ref.asText())) {
+                        throw failure(path, section + " evidence hop refs must be unique non-blank strings");
+                    }
+                }
+                if (firstSource == null) {
+                    firstSource = hop.path("source");
+                }
+                if (completePath && (!hop.path("source").equals(factPath.get(ordinal - 2))
+                        || !hop.path("target").equals(factPath.get(ordinal - 1)))) {
+                    throw failure(path, section + " evidence hop does not match the fact path");
+                }
+                if (previousTarget != null && !previousTarget.equals(hop.path("source"))) {
+                    throw failure(path, section + " evidence hop endpoints are not closed");
+                }
+                previousTarget = hop.path("target");
+                lastTarget = previousTarget;
+                product = product.multiply(BigInteger.valueOf(refs.size()));
+            }
+            if (!firstSource.equals(factPath.get(0))
+                    || !lastTarget.equals(factPath.get(factPath.size() - 1))) {
+                throw failure(path, section + " evidence set endpoints do not match the fact");
+            }
+            if (!set.path("combinationCount").isIntegralNumber()
+                    || !product.equals(set.path("combinationCount").bigIntegerValue())) {
+                throw failure(path, section + " evidence combination count is invalid");
+            }
+            combinations = combinations.add(product);
+            setCount++;
+        }
+        return new EvidenceSetStats(setCount, combinations);
     }
 
     private String canonicalTree(JsonNode node) {
@@ -551,6 +658,12 @@ final class SampleDataResultValidator {
         private InventoryValidation inventory;
         private int derivedNamingCount;
         private long validatedSourceLocations;
+        private int derivedRelationshipEvidenceSets;
+        private int derivedDataLineageEvidenceSets;
+        private int derivedNamingEvidenceSets;
+        private BigInteger derivedRelationshipCombinations = BigInteger.ZERO;
+        private BigInteger derivedDataLineageCombinations = BigInteger.ZERO;
+        private BigInteger derivedNamingCombinations = BigInteger.ZERO;
 
         private FileState(Path path, Path workspace) {
             this.path = path;
@@ -566,6 +679,21 @@ final class SampleDataResultValidator {
 
         private int count(String section) {
             return counts.getOrDefault(section, 0);
+        }
+
+        private void addEvidenceSets(String section, EvidenceSetStats stats) {
+            if ("derivedRelationships".equals(section)) {
+                derivedRelationshipEvidenceSets += stats.setCount();
+                derivedRelationshipCombinations = derivedRelationshipCombinations.add(stats.combinationCount());
+            } else {
+                derivedDataLineageEvidenceSets += stats.setCount();
+                derivedDataLineageCombinations = derivedDataLineageCombinations.add(stats.combinationCount());
+            }
+        }
+
+        private void addDerivedNamingEvidenceSets(EvidenceSetStats stats) {
+            derivedNamingEvidenceSets += stats.setCount();
+            derivedNamingCombinations = derivedNamingCombinations.add(stats.combinationCount());
         }
 
         private void finish() {
@@ -613,9 +741,37 @@ final class SampleDataResultValidator {
                             path + ": summary." + entry.getKey() + " does not match streamed count");
                 }
             }
+            validateEvidenceSetSummary(resolvedSummary);
             if (count("derivedNamingEvidence") != derivedNamingCount) {
                 throw new ReleaseVerificationException(
                         path + ": derived naming view count mismatch");
+            }
+        }
+
+        private void validateEvidenceSetSummary(JsonNode resolvedSummary) {
+            if (!resolvedSummary.has("derivedRelationshipEvidenceSetCount")) {
+                return;
+            }
+            requireSummary(resolvedSummary, "derivedRelationshipEvidenceSetCount",
+                    BigInteger.valueOf(derivedRelationshipEvidenceSets));
+            requireSummary(resolvedSummary, "derivedRelationshipSupportCombinationCount",
+                    derivedRelationshipCombinations);
+            requireSummary(resolvedSummary, "derivedDataLineageEvidenceSetCount",
+                    BigInteger.valueOf(derivedDataLineageEvidenceSets));
+            requireSummary(resolvedSummary, "derivedDataLineageSupportCombinationCount",
+                    derivedDataLineageCombinations);
+            requireSummary(resolvedSummary, "derivedNamingEvidenceSetCount",
+                    BigInteger.valueOf(derivedNamingEvidenceSets));
+            requireSummary(resolvedSummary, "derivedNamingSupportCombinationCount",
+                    derivedNamingCombinations);
+        }
+
+        private void requireSummary(JsonNode summary, String field, BigInteger expected) {
+            JsonNode actual = summary.get(field);
+            if (actual == null || !actual.isIntegralNumber()
+                    || !expected.equals(actual.bigIntegerValue())) {
+                throw new ReleaseVerificationException(
+                        path + ": summary." + field + " does not match streamed evidence sets");
             }
         }
     }
@@ -637,5 +793,8 @@ final class SampleDataResultValidator {
             long constraints,
             long indexes
     ) {
+    }
+
+    private record EvidenceSetStats(int setCount, BigInteger combinationCount) {
     }
 }

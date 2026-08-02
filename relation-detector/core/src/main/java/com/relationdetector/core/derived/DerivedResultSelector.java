@@ -119,7 +119,6 @@ final class DerivedResultSelector {
             Map<String, String> namingAliases
     ) {
         retainNamingReferences(candidate.evidence(), validNamingRefs, namingAliases);
-        retainNamingReferences(candidate.rawEvidence(), validNamingRefs, namingAliases);
     }
 
     private void retainNamingReferences(

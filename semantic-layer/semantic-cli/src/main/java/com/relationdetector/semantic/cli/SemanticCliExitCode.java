@@ -10,7 +10,8 @@ package com.relationdetector.semantic.cli;
 enum SemanticCliExitCode {
     SUCCESS(0),
     RUNTIME_ERROR(1),
-    USAGE_ERROR(2);
+    USAGE_ERROR(2),
+    PENDING(2);
 
     private final int processCode;
 

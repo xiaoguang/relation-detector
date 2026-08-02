@@ -1,7 +1,12 @@
 package com.relationdetector.semantic.extract;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.reader.ScanBundle;
 
@@ -31,7 +36,7 @@ public final class SemanticExtractionPromptBuilder {
             throw new IllegalArgumentException("semantic evidence bundle is required");
         }
         ObjectNode detached = evidenceBundle.deepCopy();
-        return new SemanticExtractionPrompt(developerPrompt(), userPrompt(detached), detached);
+        return new SemanticExtractionPrompt(developerPrompt(), userPrompt(modelProjection(detached)), detached);
     }
 
     /**
@@ -61,11 +66,12 @@ public final class SemanticExtractionPromptBuilder {
                 - Keep lineage as a first-class section. Triplets are summaries and must not replace lineage.
                 - Produce a ref-closed semantic document: every entity, event, relation, lineage, metric, dimension,
                   triplet, and review item must have a stable id.
-                - Events must reference entities through inputEntityRefs/outputEntityRefs when possible.
+                - Leave event inputs, outputs, inputEntityRefs, and outputEntityRefs empty. The core rebuilds those
+                  deterministic endpoint fields from the owned eventCandidate after validating this response.
                 - Events must be grounded in eventCandidates. Include eventCandidateRef on each event and do not
                   create events that have no eventCandidate.
-                - Do not omit eventCandidates. If you cannot improve one, emit a conservative event using its
-                  readableNameHint, input/output tables, and candidate id as evidence.
+                - Enrich only eventCandidates for which you can add useful business meaning. The core deterministically
+                  backfills every omitted owned event candidate after validating this response.
                 - Prefer eventCandidates[].readableNameHint and businessActionHint when naming events, but keep
                   eventCandidateRef unchanged and use that owned candidate id as evidence.
                 - Never create an event only from derivedLineage. Derived lineage may only explain a candidate through
@@ -74,15 +80,13 @@ public final class SemanticExtractionPromptBuilder {
                 - Lineage must include sourceEntityRefs/targetEntityRef when physical endpoints match entities.
                 - Metrics and dimensions must include ownerEntityRef and, when applicable, sourceEntityRefs or
                   dimensionEntityRef.
-                - Triplets must be grounded in tripletCandidates. Include candidateRef on every triplet. Use triplets
-                  as readable summaries across entity relations, event input/output, metrics, dimensions, lineage
-                  transforms, and naming aliases; do not use triplets as a replacement for lineage.
-                - Do not omit tripletCandidates. If a candidate is repetitive, still emit the triplet with its
-                  candidateRef and that owned candidate id as evidence so downstream KG construction remains complete.
+                - Deterministic triplet candidates are intentionally omitted from the model projection. Leave triplets
+                  empty unless an explicit tripletCandidate is present; the core deterministically backfills all omitted
+                  owned triplets and rebuilds semanticGraph and validation after this response.
                 - Review items should come from reviewItemCandidates or from unresolved/uncertain output items.
                   Preserve targetRef and targetSection whenever present.
-                - Include semanticGraph with nodes and edges, using the same ids as the top-level sections.
-                - Include validation with isRefClosed and isolatedEntities. Do not hide isolated entities; report them.
+                - Set semanticGraph and validation to null. The core rebuilds both after deterministic backfill,
+                  normalization, ownership checks, and evidence closure.
 
                 Required JSON output sections:
                 - entities: business objects, master data, business documents, document lines, facts, dimensions.
@@ -94,8 +98,8 @@ public final class SemanticExtractionPromptBuilder {
                 - dimensions: dimension candidates useful for analysis filters/grouping.
                 - triplets: subject-predicate-object summaries with readable Chinese text.
                 - reviewItems: uncertain items that need business or data owner review.
-                - semanticGraph: id-based nodes and edges linking the sections above.
-                - validation: ref-closure and review diagnostics for the generated semantic document.
+                - semanticGraph: null; the core rebuilds the graph from normalized sections.
+                - validation: null; the core runs final reference and evidence closure validation.
 
                 Return JSON only. Do not wrap it in Markdown.
                 """;
@@ -104,18 +108,47 @@ public final class SemanticExtractionPromptBuilder {
     private String userPrompt(ObjectNode evidenceBundle) {
         try {
             return """
-                    Extract semantic candidates from this relation-detector evidence bundle.
+                    Extract semantic enrichments from this relation-detector model projection. The complete evidence
+                    bundle remains outside the prompt and is used by the core for deterministic candidate backfill,
+                    owner validation, reference closure, and final KG construction.
 
                     Use these deterministic candidate sections as anchors:
-                    - eventCandidates: allowed event facts; event output must preserve eventCandidateRef.
+                    - eventCandidates: allowed event facts; selectively enrich useful candidates and preserve eventCandidateRef.
                     - reviewItemCandidates: suggested audit items for diagnostics or uncertain facts.
-                    - tripletCandidates: allowed triplet summaries; triplet output must preserve candidateRef.
+                    - tripletCandidates are omitted from this projection and are materialized by the core.
 
-                    Evidence bundle:
+                    Model projection:
                     %s
                     """.formatted(JSON.writeValueAsString(evidenceBundle));
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("failed to serialize evidence bundle", e);
         }
+    }
+
+    private ObjectNode modelProjection(ObjectNode completeBundle) {
+        ObjectNode projection = completeBundle.deepCopy();
+        Set<String> deterministicTripletRefs = new LinkedHashSet<>();
+        JsonNode tripletCandidates = projection.path("tripletCandidates");
+        if (tripletCandidates.isArray()) {
+            tripletCandidates.forEach(candidate -> {
+                String id = candidate.path("id").asText("");
+                if (!id.isBlank()) {
+                    deterministicTripletRefs.add(id);
+                }
+            });
+        }
+        projection.remove("tripletCandidates");
+        JsonNode shardContext = projection.path("shardContext");
+        if (shardContext instanceof ObjectNode context && context.path("ownedCandidateRefs").isArray()) {
+            ArrayNode modelOwnedCandidates = JSON.createArrayNode();
+            context.path("ownedCandidateRefs").forEach(ref -> {
+                if (ref.isTextual() && !deterministicTripletRefs.contains(ref.asText())) {
+                    modelOwnedCandidates.add(ref.asText());
+                }
+            });
+            context.set("ownedCandidateRefs", modelOwnedCandidates);
+            context.put("deterministicBackfillCandidateCount", deterministicTripletRefs.size());
+        }
+        return projection;
     }
 }

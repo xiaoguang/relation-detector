@@ -301,6 +301,92 @@ final class SemanticPathBackedPipelineTest {
     }
 
     @Test
+    void codexCompletionReportsMissingShardResponsesWithoutPublishing() throws Exception {
+        CodexFixture fixture = codexFixture("codex-pending", false);
+        Path responses = tempDir.resolve("codex-pending-responses");
+
+        SemanticCodexSessionCompletionService.Result result =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, tempDir.resolve("codex-pending-output"));
+
+        assertEquals(SemanticCodexSessionCompletionService.Status.PENDING, result.status());
+        JsonNode pending = read(responses.resolve("pending-responses.json"));
+        assertEquals(fixture.shardIds().size(), pending.path("missing").size());
+        assertFalse(hasDirectory(tempDir.resolve("codex-pending-output"), "run-"));
+    }
+
+    @Test
+    void codexCompletionPublishesOnlyAfterAllShardResponsesCloseOwnership() throws Exception {
+        CodexFixture fixture = codexFixture("codex-complete", false);
+        Path responses = tempDir.resolve("codex-complete-responses");
+        String requestHash = sha256(fixture.requestRun().resolve("request-bundle-index.json"));
+        writeShardResponses(fixture, responses);
+
+        SemanticCodexSessionCompletionService.Result result =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, tempDir.resolve("codex-complete-output"));
+
+        assertEquals(SemanticCodexSessionCompletionService.Status.COMPLETE, result.status());
+        assertTrue(Files.isRegularFile(result.runDirectory().resolve("semantic-extraction-result.json")));
+        assertEquals("COMPLETE", read(result.runDirectory().resolve("run-manifest.json"))
+                .path("status").asText());
+        assertEquals(requestHash, sha256(fixture.requestRun().resolve("request-bundle-index.json")));
+        assertFalse(Files.exists(responses.resolve("pending-responses.json")));
+    }
+
+    @Test
+    void codexCompletionGeneratesBudgetedReconciliationRequestBeforeFinalPublish() throws Exception {
+        CodexFixture fixture = codexFixture("codex-reconcile", true);
+        Path responses = tempDir.resolve("codex-reconcile-responses");
+        Path output = tempDir.resolve("codex-reconcile-output");
+        writeShardResponses(fixture, responses);
+
+        SemanticCodexSessionCompletionService.Result pending =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output);
+
+        assertEquals(SemanticCodexSessionCompletionService.Status.PENDING, pending.status());
+        assertTrue(Files.isRegularFile(responses.resolve(
+                "reconciliation/semantic-extraction-prompt.md")));
+        assertFalse(hasDirectory(output, "run-"));
+
+        Path patch = responses.resolve(
+                "reconciliation/semantic-reconciliation-result.json");
+        Files.writeString(patch, "{\"resolutions\":[],\"renames\":[]}");
+        SemanticCodexSessionCompletionService.Result complete =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output);
+
+        assertEquals(SemanticCodexSessionCompletionService.Status.COMPLETE, complete.status());
+        assertTrue(Files.isRegularFile(complete.runDirectory().resolve(
+                "reconciliation/patch.json")));
+    }
+
+    @Test
+    void codexCompletionRejectsCrossShardOwnedGroundingWithoutPartialRun() throws Exception {
+        CodexFixture fixture = codexFixture("codex-owner", false);
+        Path responses = tempDir.resolve("codex-owner-responses");
+        writeShardResponses(fixture, responses);
+        String firstId = fixture.shardIds().get(0);
+        String secondId = fixture.shardIds().get(1);
+        ObjectNode firstResponse = rawSemanticDocument(read(fixture.requestRun().resolve(
+                "shards/" + firstId + "/evidence-bundle.json")));
+        String foreign = read(fixture.requestRun().resolve(
+                "shards/" + secondId + "/evidence-bundle.json")).path("shardContext")
+                .path("ownedFactRefs").get(0).asText();
+        ((ObjectNode) firstResponse.path("entities").get(0)).withArray("ownedGroundingRefs")
+                .removeAll().add(foreign);
+        JSON.writeValue(responses.resolve("shards").resolve(firstId)
+                .resolve("semantic-extraction-result.json").toFile(), firstResponse);
+        Path output = tempDir.resolve("codex-owner-output");
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output));
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
     void highFanoutEventKeepsAllFactsGloballyOwnedWithoutExpandingThemIntoOneShard()
             throws Exception {
         ObjectNode root = (ObjectNode) writeMetadataOnlyScanDocument();
@@ -425,6 +511,14 @@ final class SemanticPathBackedPipelineTest {
     }
 
     private SemanticExtractionResult modelResult(JsonNode bundle) {
+        ObjectNode raw = rawSemanticDocument(bundle);
+        ObjectNode response = JSON.createObjectNode();
+        response.put("output_text", raw.toString());
+        response.putObject("usage").put("input_tokens", 10).put("output_tokens", 10);
+        return new SemanticExtractionResult("{}", response.toString(), raw.toString(), response, 1);
+    }
+
+    private ObjectNode rawSemanticDocument(JsonNode bundle) {
         JsonNode metadata = bundle.path("metadataTables").get(0);
         String factId = metadata.path("id").asText();
         String table = metadata.path("table").asText();
@@ -441,10 +535,41 @@ final class SemanticPathBackedPipelineTest {
                 .put("type", "SELF_REFERENCE");
         relation.putArray("ownedGroundingRefs").add(factId);
         relation.putArray("evidenceRefs").add(factId);
-        ObjectNode response = JSON.createObjectNode();
-        response.put("output_text", raw.toString());
-        response.putObject("usage").put("input_tokens", 10).put("output_tokens", 10);
-        return new SemanticExtractionResult("{}", response.toString(), raw.toString(), response, 1);
+        return raw;
+    }
+
+    private CodexFixture codexFixture(String name, boolean reconcile) throws Exception {
+        Path input = writeMetadataOnlyScan();
+        SemanticDiskBackedSession session = SemanticDiskBackedSession.open(
+                List.of(input), tempDir.resolve(name + "-session"));
+        try (session) {
+            SemanticPathRunPlan plan = new SemanticPathBackedPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(
+                            SemanticShardMode.FORCE, 10_000, 50_000, 8, reconcile));
+            Path requestRun = new SemanticPathRunArtifactWriter().writeCodexSession(
+                    tempDir.resolve(name + "-requests"),
+                    plan,
+                    "gpt-5.6-sol",
+                    "xhigh",
+                    ArtifactRetention.FULL,
+                    ignored -> {
+                    });
+            return new CodexFixture(
+                    requestRun,
+                    plan.shards().stream().map(SemanticPathShard::id).toList());
+        }
+    }
+
+    private void writeShardResponses(CodexFixture fixture, Path responses) throws Exception {
+        for (String shardId : fixture.shardIds()) {
+            Path target = responses.resolve("shards").resolve(shardId)
+                    .resolve("semantic-extraction-result.json");
+            Files.createDirectories(target.getParent());
+            JSON.writeValue(target.toFile(), rawSemanticDocument(read(fixture.requestRun().resolve(
+                    "shards/" + shardId + "/evidence-bundle.json"))));
+        }
     }
 
     private ObjectNode emptySemanticDocument() {
@@ -516,6 +641,9 @@ final class SemanticPathBackedPipelineTest {
         Set<String> result = new LinkedHashSet<>();
         values.forEach(value -> result.add(value.asText()));
         return result;
+    }
+
+    private record CodexFixture(Path requestRun, List<String> shardIds) {
     }
 
     private String sha256(Path path) throws Exception {

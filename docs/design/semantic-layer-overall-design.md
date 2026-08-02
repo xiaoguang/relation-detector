@@ -75,8 +75,9 @@ Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Pl
 event candidates；derived lineage 只作为 supporting refs，不单独造 event。event 分类只消费 typed
 provenance/mapping kind，缺失时使用中性 write 默认值。当前 KG 节点包括 `PhysicalTable`、
 `PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、
-derived fact 和由 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、
-event input/output、supported-by evidence 和 join path step。这里的 `Event` 是 evidence-backed
+derived fact 和由 relationship fact materialize 的 `JoinPath`；结构边包括 table-column、fact source/target、
+event input/output 和 join path step。逐引用supported-by边不进入标准KG，完整证据payload由Evidence Graph
+唯一持有，fact node与结构边通过`evidenceRefs`跨文件闭包回查。这里的 `Event` 是 evidence-backed
 candidate，不等于已经审核通过的正式业务事件。reader/bundle 保留完整
 `database.type/catalog/schema`，对外 artifact 统一使用不含本机绝对路径的 portable input label。
 正式 semantic normalization 必须携带 evidence bundle 和合法 `shardContext`，并通过 owner、

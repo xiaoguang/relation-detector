@@ -131,7 +131,7 @@ final class SemanticReferenceValidator {
                             "Entity has evidence but is not referenced by event, relation, lineage, metric, dimension, or triplet sections."));
                 }
             }
-            boolean closed = isolated.isEmpty() && unresolvedReferences.isEmpty() && missingEvidenceRefs.isEmpty();
+            boolean closed = unresolvedReferences.isEmpty() && missingEvidenceRefs.isEmpty();
             return new SemanticValidation(
                     List.copyOf(isolated),
                     List.copyOf(unresolvedReferences.values()),

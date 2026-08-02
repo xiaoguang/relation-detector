@@ -74,6 +74,17 @@ Shards run sequentially. HTTP 429, 5xx, and transport failures use bounded retry
 failures do not retry as transport errors. The final document is returned only after normalization against the
 original complete bundle proves reference closure.
 
+Repository verification is split into three explicit tiers. `smoke` runs the fixed MySQL v8 derived case through
+full KG/request-package reconstruction and closure; `matrix` runs the same deterministic checks for all 38
+direct/derived inputs without invoking a model; `enrichment` consumes separate Codex-session responses and reuses the
+production owner validator, normalizer, merger, reconciliation patch validator, and final closure. Missing responses
+produce `pending-responses.json`; they never turn a request-only run into a successful semantic result.
+
+The Codex model sees an owner-preserving projection rather than a truncated fact bundle. Deterministic triplet
+candidates remain in the immutable request package and are backfilled by core. Event endpoint arrays must be empty in
+model output and are rebuilt from typed event candidates. `semanticGraph` and `validation` are also returned as null
+and rebuilt after normalization. The complete evidence bundle remains authoritative for ownership and closure.
+
 The normalized document keeps human-readable fields such as `name`, `type`, `meaning`, `readable`, and `description`,
 but these fields are not the contract by themselves. The stable contract is:
 
@@ -110,8 +121,8 @@ fact/candidate reference fields; descriptions, diagnostics, and arbitrary attrib
 In the `SemanticExtractionService`/`openai-api` shard flow, every model-authored item must carry
 `ownedGroundingRefs` from the current shard. A raw owner validator rejects overlap-only or cross-owner output before
 backfill and formal normalization; `evidenceRefs` remain audit context and do not establish ownership. The standalone
-`normalize-extraction` command receives only a raw document and a complete evidence bundle, not a shard ownership
-plan. It validates reference/evidence closure but currently cannot prove shard ownership.
+`normalize-extraction` command uses the same owner-aware normalizer and therefore requires a validated `shardContext`
+whose owned and overlap refs are unique, disjoint and present in the supplied evidence bundle.
 
 Cross-shard entity identity is deterministic. A complete `physicalName` identifies one physical entity. A pure
 business entity uses normalized name, machine type, and its owned grounding signature. Equal signatures merge and

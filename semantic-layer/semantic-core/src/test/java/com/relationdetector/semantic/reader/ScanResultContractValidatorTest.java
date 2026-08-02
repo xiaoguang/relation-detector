@@ -260,7 +260,7 @@ final class ScanResultContractValidatorTest {
         derived.withArray("path")
                 .addObject().put("table", "customer_summary").put("column", "customer_id");
         derived.putArray("evidence");
-        derived.putArray("rawEvidence");
+        addEvidenceSet(derived);
         derived.putObject("attributes");
         ((ObjectNode) root.path("summary"))
                 .put("derivedDataLineageCount", 1)
@@ -293,6 +293,18 @@ final class ScanResultContractValidatorTest {
         assertThrows(IllegalArgumentException.class, () -> read(wrongTarget));
     }
 
+    @Test
+    void rejectsLegacyRawEvidenceAndInvalidEvidenceSetCombinationCount() throws Exception {
+        ObjectNode legacy = derivedLineageRoot();
+        ((ObjectNode) legacy.path("derivedDataLineages").get(0)).putArray("rawEvidence");
+        assertThrows(IllegalArgumentException.class, () -> read(legacy));
+
+        ObjectNode invalid = derivedLineageRoot();
+        ((ObjectNode) invalid.path("derivedDataLineages").get(0)
+                .path("evidenceSets").get(0)).put("combinationCount", 9);
+        assertThrows(IllegalArgumentException.class, () -> read(invalid));
+    }
+
     private ObjectNode derivedLineageRoot() throws Exception {
         ObjectNode root = validRoot();
         ObjectNode derived = root.withArray("derivedDataLineages").addObject();
@@ -308,12 +320,31 @@ final class ScanResultContractValidatorTest {
         derived.withArray("path")
                 .addObject().put("table", "customer_summary").put("column", "customer_id");
         derived.putArray("evidence");
-        derived.putArray("rawEvidence");
+        addEvidenceSet(derived);
         derived.putObject("attributes");
         ((ObjectNode) root.path("summary"))
                 .put("derivedDataLineageCount", 1)
                 .put("totalDataLineageCount", 1);
         return root;
+    }
+
+    private void addEvidenceSet(ObjectNode derived) {
+        ObjectNode set = derived.putArray("evidenceSets").addObject();
+        var hops = set.putArray("hops");
+        ObjectNode first = hops.addObject();
+        first.put("ordinal", 1);
+        first.set("source", derived.path("path").get(0).deepCopy());
+        first.set("target", derived.path("path").get(1).deepCopy());
+        first.put("kind", "LINEAGE");
+        first.putArray("evidenceRefs").add("lineage:first");
+        ObjectNode second = hops.addObject();
+        second.put("ordinal", 2);
+        second.set("source", derived.path("path").get(1).deepCopy());
+        second.set("target", derived.path("path").get(2).deepCopy());
+        second.put("kind", "LINEAGE");
+        second.putArray("evidenceRefs").add("lineage:second");
+        set.put("combinationCount", 1);
+        set.put("confidence", derived.path("confidence").decimalValue());
     }
 
     private ScanBundle read(ObjectNode root) throws Exception {

@@ -211,14 +211,14 @@ endpoint与scan summary使用同一canonical database。
     "derivedNamingEvidenceCount": 0,
     "totalNamingEvidenceCount": 1,
     "directRelationshipObservationCount": 2,
-    "derivedRelationshipObservationCount": 0,
-    "totalRelationshipObservationCount": 2,
+    "derivedRelationshipEvidenceSetCount": 0,
+    "derivedRelationshipSupportCombinationCount": 0,
     "directDataLineageObservationCount": 2,
-    "derivedDataLineageObservationCount": 0,
-    "totalDataLineageObservationCount": 2,
+    "derivedDataLineageEvidenceSetCount": 0,
+    "derivedDataLineageSupportCombinationCount": 0,
     "directNamingEvidenceObservationCount": 2,
-    "derivedNamingEvidenceObservationCount": 0,
-    "totalNamingEvidenceObservationCount": 2,
+    "derivedNamingEvidenceSetCount": 0,
+    "derivedNamingSupportCombinationCount": 0,
     "warningCount": 0,
     "sources": ["metadata", "ddl", "logs"]
   },
@@ -234,7 +234,7 @@ endpoint与scan summary使用同一canonical database。
 
 summary 只保留三段式字段：`direct*Count`、`derived*Count`、`total*Count`，relationship、dataLineage、namingEvidence 三类事实保持一致。
 
-Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。它统计 merged fact 背后的真实 occurrence：不同位置分别计数，同一位置折叠的 `occurrenceCount` 也累加。relationship、lineage、naming 和 derived path 都通过统一 occurrence helper 计算。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
+Direct observation count统计merged direct fact背后的真实 occurrence：不同位置分别计数，同一位置折叠的`occurrenceCount`也累加。Derived输出没有计算型observation：`derived*EvidenceSetCount`统计不同hop-kind/confidence签名的结构支持集合，`derived*SupportCombinationCount`以大整数汇总各集合可代表的支持组合数量。组合数只用于审计，不参与confidence或事实判断，也不消耗path/fact配额。`output.includeObservationCounts: false`同时隐藏这些审计计数。
 
 `output.includeWarnings` 控制一个完整的公开输出视图。为 `true` 时保留根、relationship 和 lineage warning；为 `false` 时三处 warning 数组均为空，且 `summary.warningCount=0`。该选项不会删除 `ScanResult` 内部 warning，也不会改变 CLI 根据真实 warning 数得出的退出状态。semantic-layer 严格 reader 因而可以同时消费完整 warning 输出和由 writer 生成的完整 suppressed 输出；人工拼接出 warning 数组与 count 不一致的 JSON 仍会被拒绝。
 
@@ -368,7 +368,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。`rawEvidence` 保留归并前可区分的每次观测；完全相同的 observation 才折叠为 `occurrenceCount`。Naming 按有向 canonical endpoint pair 分组并保留全部 file/object/statement/block/line；Data Lineage 在 fact identity 前 canonical dedupe/sort source set。relationship、lineage、naming 和 derived 的事实身份均使用 dialect-aware canonical endpoint key；公开 `normalizedKey()` 只承担输出/evidence 兼容。
+- direct relationship、data lineage 和 naming evidence 使用 `rawEvidence` / grouped `evidence` 双层模型。`rawEvidence` 保留归并前可区分的每次观测；完全相同的 observation 才折叠为 `occurrenceCount`。Derived relationship/data lineage删除计算型`rawEvidence`，改用typed `evidenceSets`：每个set保存有序hop、hop kind、排序去重的直接evidence refs、`BigInteger combinationCount`和路径confidence。Naming 按有向 canonical endpoint pair 分组并保留全部 file/object/statement/block/line；Data Lineage 在 fact identity 前 canonical dedupe/sort source set。relationship、lineage、naming 和 derived 的事实身份均使用 dialect-aware canonical endpoint key；公开 `normalizedKey()` 只承担输出/evidence 兼容。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
 - top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 重复观测不会把同一个基础分无限叠加。不同 SQL/DDL/metadata 位置形成可区分 observation，

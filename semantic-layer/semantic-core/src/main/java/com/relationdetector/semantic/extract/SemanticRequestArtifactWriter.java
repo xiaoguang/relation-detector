@@ -6,6 +6,7 @@ import java.nio.file.Path;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * CN: 按固定文件名写出单次模型请求所需的 evidence bundle、prompt 和 transport request；输入来自已验证
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  */
 public final class SemanticRequestArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private final SemanticModelOutputSchema outputSchema = new SemanticModelOutputSchema();
 
     public void writeRequestOnly(Path outputDirectory, SemanticExtractionPrompt prompt, String requestJson) {
         if (requestJson == null || requestJson.isBlank()) {
@@ -29,11 +31,45 @@ public final class SemanticRequestArtifactWriter {
     }
 
     public void writeCodexSessionRequest(Path outputDirectory, SemanticExtractionPrompt prompt) {
+        writeCodexSessionRequest(
+                outputDirectory,
+                prompt,
+                "semantic-extraction-result.json",
+                SemanticModelOutputSchema.EXTRACTION_FILE,
+                outputSchema.extraction());
+    }
+
+    void writeCodexSessionReconciliationRequest(
+            Path outputDirectory,
+            SemanticExtractionPrompt prompt,
+            String resultFileName
+    ) {
+        writeCodexSessionRequest(
+                outputDirectory,
+                prompt,
+                resultFileName,
+                SemanticModelOutputSchema.RECONCILIATION_FILE,
+                outputSchema.reconciliation());
+    }
+
+    private void writeCodexSessionRequest(
+            Path outputDirectory,
+            SemanticExtractionPrompt prompt,
+            String resultFileName,
+            String schemaFileName,
+            ObjectNode schema
+    ) {
+        if (resultFileName == null || resultFileName.isBlank()
+                || !Path.of(resultFileName).getFileName().toString().equals(resultFileName)) {
+            throw new IllegalArgumentException("Codex session result file name is invalid");
+        }
         createDirectory(outputDirectory);
         writeJson(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
                 prompt.trustedEvidenceBundle());
         write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
-        write(outputDirectory.resolve("semantic-extraction-codex-session.md"), codexSessionMarkdown(outputDirectory));
+        writeJson(outputDirectory.resolve(schemaFileName), schema);
+        write(outputDirectory.resolve("semantic-extraction-codex-session.md"),
+                codexSessionMarkdown(outputDirectory, resultFileName, schemaFileName));
     }
 
     private String promptMarkdown(SemanticExtractionPrompt prompt) {
@@ -54,17 +90,22 @@ public final class SemanticRequestArtifactWriter {
                 """.formatted(prompt.developerPrompt(), prompt.userPrompt());
     }
 
-    private String codexSessionMarkdown(Path outputDirectory) {
+    private String codexSessionMarkdown(Path outputDirectory, String resultFileName, String schemaFileName) {
+        String responsePath = responsePathHint(outputDirectory, resultFileName);
         return """
                 # Codex Session Semantic Extraction
 
                 This artifact is for no-API Codex-session testing.
 
                 It does not call an external LLM provider and does not require `OPENAI_API_KEY`.
-                Paste or provide `semantic-extraction-prompt.md` to the current Codex session, then save the generated
-                JSON result as:
+                Keep this request run immutable. Paste or provide `semantic-extraction-prompt.md` to the current Codex
+                session, then save the generated JSON in a separate response directory as:
 
                 `%s`
+
+                The response must conform exactly to `%s`. When invoking Codex CLI from this request artifact
+                directory, pass the schema with
+                `--output-schema %s`.
 
                 Expected output sections:
 
@@ -78,7 +119,24 @@ public final class SemanticRequestArtifactWriter {
                 - `reviewItems`
                 - `semanticGraph`
                 - `validation`
-                """.formatted(outputDirectory.resolve("semantic-extraction-result.json"));
+                """.formatted(
+                responsePath,
+                schemaFileName,
+                schemaFileName);
+    }
+
+    private String responsePathHint(Path outputDirectory, String resultFileName) {
+        Path name = outputDirectory.getFileName();
+        if (name != null && name.toString().startsWith("shard-")) {
+            return "responses/shards/" + name + "/" + resultFileName;
+        }
+        Path parent = outputDirectory.getParent();
+        if (name != null && "template".equals(name.toString())
+                && parent != null && parent.getFileName() != null
+                && "reconciliation".equals(parent.getFileName().toString())) {
+            return "responses/reconciliation/" + resultFileName;
+        }
+        return "responses/" + resultFileName;
     }
 
     private void writeJson(Path path, Object value) {

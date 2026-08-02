@@ -1,6 +1,7 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.output.JsonResultWriter;
+import com.relationdetector.core.naming.NamingEvidenceMerger;
 import com.relationdetector.core.naming.NamingEvidencePool;
 import com.relationdetector.core.scan.ScanResult;
 import com.relationdetector.core.lineage.*;
@@ -15,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,8 @@ import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.DerivedPathCandidate;
+import com.relationdetector.contracts.model.DerivedEvidenceHop;
+import com.relationdetector.contracts.model.DerivedEvidenceSet;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
@@ -37,6 +41,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.DerivedPathKind;
+import com.relationdetector.contracts.Enums.DerivedEvidenceHopKind;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.RelationSubType;
@@ -275,12 +280,12 @@ class JsonResultWriterEvidenceOutputTest {
 
         DerivedPathCandidate derivedRelationship = new DerivedPathCandidate(
                 DerivedPathKind.RELATIONSHIP, a, c, List.of(a, b, c));
-        derivedRelationship.rawEvidence().add(foldedEvidence(EvidenceType.TRANSITIVE_PATH));
+        derivedRelationship.evidenceSets().add(evidenceSet(a, b, c, 3));
         result.derivedRelationships().add(derivedRelationship);
 
         DerivedPathCandidate derivedLineage = new DerivedPathCandidate(
                 DerivedPathKind.DATA_LINEAGE, a, c, List.of(a, b, c));
-        derivedLineage.rawEvidence().add(foldedEvidence(EvidenceType.TRANSITIVE_PATH));
+        derivedLineage.evidenceSets().add(evidenceSet(a, b, c, 3));
         result.derivedDataLineages().add(derivedLineage);
 
         NamingEvidenceCandidate derivedNaming = new NamingEvidenceCandidate(
@@ -290,14 +295,14 @@ class JsonResultWriterEvidenceOutputTest {
         JsonNode summary = readTree(new JsonResultWriter().write(result, true, true)).path("summary");
 
         assertEquals(3, summary.path("directRelationshipObservationCount").asInt());
-        assertEquals(3, summary.path("derivedRelationshipObservationCount").asInt());
-        assertEquals(6, summary.path("totalRelationshipObservationCount").asInt());
+        assertEquals(1, summary.path("derivedRelationshipEvidenceSetCount").asInt());
+        assertEquals(3, summary.path("derivedRelationshipSupportCombinationCount").asInt());
         assertEquals(3, summary.path("directDataLineageObservationCount").asInt());
-        assertEquals(3, summary.path("derivedDataLineageObservationCount").asInt());
-        assertEquals(6, summary.path("totalDataLineageObservationCount").asInt());
+        assertEquals(1, summary.path("derivedDataLineageEvidenceSetCount").asInt());
+        assertEquals(3, summary.path("derivedDataLineageSupportCombinationCount").asInt());
         assertEquals(3, summary.path("directNamingEvidenceObservationCount").asInt());
-        assertEquals(3, summary.path("derivedNamingEvidenceObservationCount").asInt());
-        assertEquals(6, summary.path("totalNamingEvidenceObservationCount").asInt());
+        assertEquals(0, summary.path("derivedNamingEvidenceSetCount").asInt());
+        assertEquals(0, summary.path("derivedNamingSupportCombinationCount").asInt());
     }
 
     @Test
@@ -392,10 +397,18 @@ class JsonResultWriterEvidenceOutputTest {
         Endpoint directSource = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
         Endpoint directTarget = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
         Endpoint derivedSource = Endpoint.column(ColumnRef.of(TableId.of(null, "order_items"), "order_id"));
+        Endpoint derivedMiddle = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "id"));
+        Endpoint alternateMiddle = Endpoint.column(ColumnRef.of(TableId.of(null, "invoices"), "order_id"));
         Endpoint derivedTarget = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        Endpoint alternateSource = Endpoint.column(new ColumnRef(
+                new TableId(null, null, "order_items", "archive.order_items"),
+                "order_id", "order_id", null, true));
+        Endpoint alternateTarget = Endpoint.column(new ColumnRef(
+                new TableId(null, null, "customers", "crm.customers"),
+                "id", "id", null, true));
         result.namingEvidence().add(namingEvidence(directSource, directTarget,
                 "line 10: orders.customer_id = customers.id"));
-        result.namingEvidence().add(new NamingEvidenceCandidate(
+        NamingEvidenceCandidate firstPath = new NamingEvidenceCandidate(
                 derivedSource,
                 derivedTarget,
                 new Evidence(EvidenceType.NAMING_MATCH,
@@ -408,9 +421,30 @@ class JsonResultWriterEvidenceOutputTest {
                                 "namingRule", "TRANSITIVE_NAMING_PATH",
                                 "suggestedSourceEndpoint", "order_items.order_id",
                                 "suggestedTargetEndpoint", "customers.id",
+                                "evidenceSets", List.of(evidenceSet(
+                                        derivedSource, derivedMiddle, derivedTarget, 1)),
                                 "directionHint", true)),
                 "TRANSITIVE_NAMING_PATH",
-                true));
+                true);
+        NamingEvidenceCandidate secondPath = new NamingEvidenceCandidate(
+                alternateSource,
+                alternateTarget,
+                new Evidence(EvidenceType.NAMING_MATCH,
+                        BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                        EvidenceSourceType.INFERENCE,
+                        "derived:naming",
+                        "order_items.order_id -> invoices.order_id -> customers.id",
+                        Map.of(
+                                "derived", true,
+                                "namingRule", "TRANSITIVE_NAMING_PATH",
+                                "suggestedSourceEndpoint", "order_items.order_id",
+                                "suggestedTargetEndpoint", "customers.id",
+                                "evidenceSets", List.of(evidenceSet(
+                                        alternateSource, alternateMiddle, alternateTarget, 1)),
+                                "directionHint", true)),
+                "TRANSITIVE_NAMING_PATH",
+                true);
+        result.namingEvidence().addAll(new NamingEvidenceMerger().merge(List.of(firstPath, secondPath)));
 
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
@@ -425,10 +459,10 @@ class JsonResultWriterEvidenceOutputTest {
                 "Summary should expose total naming evidence count with the same direct/derived/total shape");
         assertTrue(root.path("summary").path("directNamingEvidenceObservationCount").asInt() == 1,
                 "Direct naming observation count should exclude derived observations");
-        assertTrue(root.path("summary").path("derivedNamingEvidenceObservationCount").asInt() == 1,
-                "Derived naming observation count should count only transitive naming observations");
-        assertTrue(root.path("summary").path("totalNamingEvidenceObservationCount").asInt() == 2,
-                "Total naming observation count should include direct and derived observations");
+        assertTrue(root.path("summary").path("derivedNamingEvidenceSetCount").asInt() == 2,
+                "Derived naming summary should count all merged typed evidence sets");
+        assertTrue(root.path("summary").path("derivedNamingSupportCombinationCount").asInt() == 2,
+                "Derived naming summary should retain support combination cardinality");
         assertTrue(root.path("derivedNamingEvidence").size() == 1,
                 "A lightweight derived naming evidence view should be emitted");
         JsonNode lightweight = root.path("derivedNamingEvidence").get(0);
@@ -442,6 +476,20 @@ class JsonResultWriterEvidenceOutputTest {
                 "Lightweight derived naming item must not duplicate complete evidence payload");
         assertTrue(root.path("namingEvidence").findValuesAsText("id").contains(derivedId),
                 "Derived naming evidence id must resolve inside top-level namingEvidence");
+        JsonNode derivedSet = root.path("namingEvidence").get(1)
+                .path("evidence").get(0).path("attributes").path("evidenceSets").get(0);
+        assertTrue("order_items".equals(derivedSet.path("hops").get(0)
+                        .path("source").path("table").asText()),
+                "Derived naming evidence sets must use the same lightweight endpoint wire as derived paths");
+        assertTrue(derivedSet.path("hops").get(0).path("source").path("table").isTextual(),
+                "Derived naming evidence sets must not leak the internal TableId record shape");
+        for (JsonNode set : root.path("namingEvidence").get(1)
+                .path("evidence").get(0).path("attributes").path("evidenceSets")) {
+            assertEquals(root.path("namingEvidence").get(1).path("source"),
+                    set.path("hops").get(0).path("source"));
+            assertEquals(root.path("namingEvidence").get(1).path("target"),
+                    set.path("hops").get(set.path("hops").size() - 1).path("target"));
+        }
     }
 
     @Test
@@ -502,8 +550,8 @@ class JsonResultWriterEvidenceOutputTest {
                 "Summary should count unique source-target-rule naming evidence");
         assertTrue(root.path("namingEvidence").get(0).path("rawEvidence").size() == 2,
                 "Naming evidence rawEvidence should keep both observations as JSON nodes");
-        assertTrue(root.path("summary").path("totalNamingEvidenceObservationCount").asInt() == 2,
-                "Summary should expose naming raw observation count as a number");
+        assertTrue(root.path("summary").path("directNamingEvidenceObservationCount").asInt() == 2,
+                "Summary should expose direct naming raw observation count as a number");
         assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("namingEvidence").get(0).path("evidence").get(0)
                         .path("attributes").path("count").asInt() == 2,
@@ -534,7 +582,7 @@ class JsonResultWriterEvidenceOutputTest {
         assertTrue(root.path("namingEvidence").get(0).path("rawEvidence").get(0)
                         .path("attributes").path("occurrenceCount").asInt() == 2,
                 "Folded raw evidence should expose occurrenceCount");
-        assertTrue(root.path("summary").path("totalNamingEvidenceObservationCount").asInt() == 2,
+        assertTrue(root.path("summary").path("directNamingEvidenceObservationCount").asInt() == 2,
                 "Observation summary should retain the true number of folded occurrences");
     }
 
@@ -585,12 +633,7 @@ class JsonResultWriterEvidenceOutputTest {
                 "derived-path",
                 "a.r -> b.s -> c.t",
                 Map.of("pathLength", 2)));
-        relationship.rawEvidence().add(new Evidence(EvidenceType.TRANSITIVE_PATH,
-                BigDecimal.valueOf(0.45d),
-                EvidenceSourceType.INFERENCE,
-                "derived-path",
-                "raw path a.r -> b.s -> c.t",
-                Map.of("pathLength", 2)));
+        relationship.evidenceSets().add(evidenceSet(a, b, c, 1));
         result.derivedRelationships().add(relationship);
 
         DerivedPathCandidate lineage = new DerivedPathCandidate(
@@ -605,7 +648,7 @@ class JsonResultWriterEvidenceOutputTest {
                 "derived-path",
                 "lineage a.r -> b.s -> c.t",
                 Map.of("pathLength", 2)));
-        lineage.rawEvidence().addAll(lineage.evidence());
+        lineage.evidenceSets().add(evidenceSet(a, b, c, 1));
         result.derivedDataLineages().add(lineage);
 
         String json = new JsonResultWriter().write(result, true, true);
@@ -626,16 +669,12 @@ class JsonResultWriterEvidenceOutputTest {
                 "Summary should expose total lineage count with the same direct/derived/total shape");
         assertTrue(root.path("summary").path("directRelationshipObservationCount").asInt() == 1,
                 "Summary should expose direct relationship observation count explicitly");
-        assertTrue(root.path("summary").path("derivedRelationshipObservationCount").asInt() == 1,
-                "Debug summary should count derived relationship observations");
-        assertTrue(root.path("summary").path("totalRelationshipObservationCount").asInt() == 2,
-                "Total relationship observations should include direct and derived observations");
+        assertTrue(root.path("summary").path("derivedRelationshipEvidenceSetCount").asInt() == 1,
+                "Debug summary should count derived relationship evidence sets");
         assertTrue(root.path("summary").path("directDataLineageObservationCount").asInt() == 1,
                 "Summary should expose direct lineage observation count explicitly");
-        assertTrue(root.path("summary").path("derivedDataLineageObservationCount").asInt() == 1,
-                "Debug summary should count derived lineage observations");
-        assertTrue(root.path("summary").path("totalDataLineageObservationCount").asInt() == 2,
-                "Total lineage observations should include direct and derived observations");
+        assertTrue(root.path("summary").path("derivedDataLineageEvidenceSetCount").asInt() == 1,
+                "Debug summary should count derived lineage evidence sets");
         JsonNode derivedRelationship = root.path("derivedRelationships").get(0);
         assertTrue("RELATIONSHIP".equals(derivedRelationship.path("kind").asText()),
                 "Derived relationship kind should be serialized");
@@ -643,8 +682,10 @@ class JsonResultWriterEvidenceOutputTest {
                 "Derived path should expose every endpoint in order");
         assertTrue("TRANSITIVE_PATH".equals(derivedRelationship.path("evidence").get(0).path("type").asText()),
                 "Derived evidence should explain transitive inference");
-        assertTrue(root.path("derivedDataLineages").get(0).path("rawEvidence").size() == 1,
-                "Derived lineage should expose raw evidence separately");
+        assertTrue(root.path("derivedDataLineages").get(0).path("rawEvidence").isMissingNode(),
+                "Derived lineage must not expose computed raw observation combinations");
+        assertTrue(root.path("derivedDataLineages").get(0).path("evidenceSets").size() == 1,
+                "Derived lineage should expose one typed evidence set");
     }
 
     private void assertLegacySummaryFieldsMissing(JsonNode summary) {
@@ -681,6 +722,12 @@ class JsonResultWriterEvidenceOutputTest {
                 "Derived naming observation count should be configurable");
         assertTrue(summary.path("totalNamingEvidenceObservationCount").isMissingNode(),
                 "Total naming observation count should be configurable");
+        assertTrue(summary.path("derivedRelationshipEvidenceSetCount").isMissingNode(),
+                "Derived relationship evidence-set count should be configurable");
+        assertTrue(summary.path("derivedDataLineageEvidenceSetCount").isMissingNode(),
+                "Derived lineage evidence-set count should be configurable");
+        assertTrue(summary.path("derivedNamingEvidenceSetCount").isMissingNode(),
+                "Derived naming evidence-set count should be configurable");
     }
 
     private RelationshipCandidate sqlLogJoin(String detail) {
@@ -728,6 +775,23 @@ class JsonResultWriterEvidenceOutputTest {
     private Evidence foldedEvidence(EvidenceType type) {
         return new Evidence(type, BigDecimal.valueOf(0.55d), EvidenceSourceType.PLAIN_SQL,
                 "fixture.sql", "folded observation", Map.of("occurrenceCount", 3));
+    }
+
+    private DerivedEvidenceSet evidenceSet(
+            Endpoint source,
+            Endpoint middle,
+            Endpoint target,
+            int supportCount
+    ) {
+        List<String> firstRefs = java.util.stream.IntStream.range(0, supportCount)
+                .mapToObj(index -> "relationship:first:" + index)
+                .toList();
+        return new DerivedEvidenceSet(List.of(
+                new DerivedEvidenceHop(1, source, middle,
+                        DerivedEvidenceHopKind.RELATIONSHIP, firstRefs),
+                new DerivedEvidenceHop(2, middle, target,
+                        DerivedEvidenceHopKind.RELATIONSHIP, List.of("relationship:second"))),
+                BigInteger.valueOf(supportCount), BigDecimal.valueOf(0.45d));
     }
 
     private JsonNode readTree(String json) {

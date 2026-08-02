@@ -26,7 +26,8 @@ component或兼容调用中物化`ScanBundle`。
 
 Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，再进入 parse、normalize、split 和 semantic extract。本项目的数据源不是任意文档，而是 relation-detector 的标准 JSON 输出；因此 `ScanBundle` 承担的是同类职责：
 
-- 把 relationship、Data Lineage、namingEvidence、derived facts、diagnostics 和 rawEvidence 统一成可处理 records。
+- 把relationship、Data Lineage、namingEvidence、derived facts和diagnostics统一成可处理records；direct
+  facts消费`rawEvidence`，derived relationship/lineage消费typed `evidenceSets`并拒绝旧笛卡尔积wire。
 - 当前代码保留原始 JSON payload snapshot、summary、sources 和输入文件路径，支撑后续 provenance；`sourceHash`、`scanRunId`、`parserMode`、`grammarProfile` 等更细 build metadata 仍是后续 catalog/profile 扩展点。
 - `ScanResultContractValidator` 在 typed fact 创建前校验 database、ISO-8601 `generatedAt`、summary、必需数组、endpoint、confidence、relation/lineage/evidence/warning 枚举、嵌套 evidence/warning 结构和 summary/数组计数一致性。
 - database identity 是 `type + catalog + schema`；catalog 必须同时为空或精确相同，不能跨 catalog 合并同名对象。
@@ -155,13 +156,13 @@ consumer引用不闭合而拒绝。
           "attributes": {"count": 2} // 可选
         }
       ],
-      "rawEvidence": [...],          // 必填，可为空数组
+      "rawEvidence": [...],          // direct fact必填，可为空数组；derived fact禁止此字段
       "warnings": [...]              // 必填，可为空数组
     }
   ],
   "dataLineages": [...],       // 必填，可为空数组
-  "derivedRelationships": [...],
-  "derivedDataLineages": [...],
+  "derivedRelationships": [...], // 使用evidenceSets，不接受计算型rawEvidence
+  "derivedDataLineages": [...],   // 使用evidenceSets，不接受计算型rawEvidence
   "namingEvidence": [...],
   "derivedNamingEvidence": [...], // 轻量视图；semantic reader 当前忽略，canonical 数据来自 namingEvidence
   "warnings": [...]            // 必填，可为空数组

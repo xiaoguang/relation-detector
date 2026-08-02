@@ -166,22 +166,26 @@ public final class JsonResultWriter {
         summary.put("totalNamingEvidenceCount", directNamingEvidenceCount + derivedNamingEvidenceCount);
         if (includeObservationCounts) {
             int directRelationshipObservations = renderer.relationshipObservationCount(result.relationships());
-            int derivedRelationshipObservations = renderer.derivedPathObservationCount(derivedRelationshipFacts);
+            int derivedRelationshipEvidenceSets = renderer.derivedPathEvidenceSetCount(derivedRelationshipFacts);
+            java.math.BigInteger derivedRelationshipCombinations =
+                    renderer.derivedPathSupportCombinationCount(derivedRelationshipFacts);
             int directDataLineageObservations = renderer.dataLineageObservationCount(result.dataLineages());
-            int derivedDataLineageObservations = renderer.derivedPathObservationCount(derivedDataLineageFacts);
+            int derivedDataLineageEvidenceSets = renderer.derivedPathEvidenceSetCount(derivedDataLineageFacts);
+            java.math.BigInteger derivedDataLineageCombinations =
+                    renderer.derivedPathSupportCombinationCount(derivedDataLineageFacts);
             int directNamingObservations = renderer.namingEvidenceObservationCount(directNamingEvidence);
-            int derivedNamingObservations = renderer.namingEvidenceObservationCount(derivedNamingOutput);
+            int derivedNamingEvidenceSets = renderer.derivedNamingEvidenceSetCount(derivedNamingOutput);
+            java.math.BigInteger derivedNamingCombinations =
+                    renderer.derivedNamingSupportCombinationCount(derivedNamingOutput);
             summary.put("directRelationshipObservationCount", directRelationshipObservations);
-            summary.put("derivedRelationshipObservationCount", derivedRelationshipObservations);
-            summary.put("totalRelationshipObservationCount",
-                    directRelationshipObservations + derivedRelationshipObservations);
+            summary.put("derivedRelationshipEvidenceSetCount", derivedRelationshipEvidenceSets);
+            summary.put("derivedRelationshipSupportCombinationCount", derivedRelationshipCombinations);
             summary.put("directDataLineageObservationCount", directDataLineageObservations);
-            summary.put("derivedDataLineageObservationCount", derivedDataLineageObservations);
-            summary.put("totalDataLineageObservationCount",
-                    directDataLineageObservations + derivedDataLineageObservations);
+            summary.put("derivedDataLineageEvidenceSetCount", derivedDataLineageEvidenceSets);
+            summary.put("derivedDataLineageSupportCombinationCount", derivedDataLineageCombinations);
             summary.put("directNamingEvidenceObservationCount", directNamingObservations);
-            summary.put("derivedNamingEvidenceObservationCount", derivedNamingObservations);
-            summary.put("totalNamingEvidenceObservationCount", directNamingObservations + derivedNamingObservations);
+            summary.put("derivedNamingEvidenceSetCount", derivedNamingEvidenceSets);
+            summary.put("derivedNamingSupportCombinationCount", derivedNamingCombinations);
         }
         summary.put("warningCount", includeWarnings ? result.warnings().size() : 0);
         ArrayNode sources = summary.putArray("sources");
@@ -338,23 +342,26 @@ public final class JsonResultWriter {
                 directNamingEvidenceCount + derivedNamingEvidenceCount);
         if (includeObservationCounts) {
             int directRelationshipObservations = renderer.relationshipObservationCount(result.relationships());
-            int derivedRelationshipObservations = renderer.derivedPathObservationCount(derivedRelationshipFacts);
+            int derivedRelationshipEvidenceSets = renderer.derivedPathEvidenceSetCount(derivedRelationshipFacts);
+            java.math.BigInteger derivedRelationshipCombinations =
+                    renderer.derivedPathSupportCombinationCount(derivedRelationshipFacts);
             int directDataLineageObservations = renderer.dataLineageObservationCount(result.dataLineages());
-            int derivedDataLineageObservations = renderer.derivedPathObservationCount(derivedDataLineageFacts);
+            int derivedDataLineageEvidenceSets = renderer.derivedPathEvidenceSetCount(derivedDataLineageFacts);
+            java.math.BigInteger derivedDataLineageCombinations =
+                    renderer.derivedPathSupportCombinationCount(derivedDataLineageFacts);
             int directNamingObservations = renderer.namingEvidenceObservationCount(directNamingEvidence);
-            int derivedNamingObservations = renderer.namingEvidenceObservationCount(derivedNamingOutput);
+            int derivedNamingEvidenceSets = renderer.derivedNamingEvidenceSetCount(derivedNamingOutput);
+            java.math.BigInteger derivedNamingCombinations =
+                    renderer.derivedNamingSupportCombinationCount(derivedNamingOutput);
             generator.writeNumberField("directRelationshipObservationCount", directRelationshipObservations);
-            generator.writeNumberField("derivedRelationshipObservationCount", derivedRelationshipObservations);
-            generator.writeNumberField("totalRelationshipObservationCount",
-                    directRelationshipObservations + derivedRelationshipObservations);
+            generator.writeNumberField("derivedRelationshipEvidenceSetCount", derivedRelationshipEvidenceSets);
+            generator.writeNumberField("derivedRelationshipSupportCombinationCount", derivedRelationshipCombinations);
             generator.writeNumberField("directDataLineageObservationCount", directDataLineageObservations);
-            generator.writeNumberField("derivedDataLineageObservationCount", derivedDataLineageObservations);
-            generator.writeNumberField("totalDataLineageObservationCount",
-                    directDataLineageObservations + derivedDataLineageObservations);
+            generator.writeNumberField("derivedDataLineageEvidenceSetCount", derivedDataLineageEvidenceSets);
+            generator.writeNumberField("derivedDataLineageSupportCombinationCount", derivedDataLineageCombinations);
             generator.writeNumberField("directNamingEvidenceObservationCount", directNamingObservations);
-            generator.writeNumberField("derivedNamingEvidenceObservationCount", derivedNamingObservations);
-            generator.writeNumberField("totalNamingEvidenceObservationCount",
-                    directNamingObservations + derivedNamingObservations);
+            generator.writeNumberField("derivedNamingEvidenceSetCount", derivedNamingEvidenceSets);
+            generator.writeNumberField("derivedNamingSupportCombinationCount", derivedNamingCombinations);
         }
         generator.writeNumberField("warningCount", includeWarnings ? result.warnings().size() : 0);
         generator.writeArrayFieldStart("sources");

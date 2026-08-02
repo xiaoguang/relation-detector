@@ -168,6 +168,16 @@ public final class Enums {
     }
 
     /**
+     * Typed structural hop used by a derived evidence set.
+     */
+    public enum DerivedEvidenceHopKind {
+        RELATIONSHIP,
+        LINEAGE,
+        NAMING,
+        TABLE_IDENTITY_BRIDGE
+    }
+
+    /**
      *
      * Source category for a SQL statement entering the parser.
      */

@@ -63,11 +63,34 @@ final class SemanticExtractionServiceTest {
     @Test
     void rejectsOversizedReconciliationBeforeCallingTheModel() {
         ObjectNode bundle = bundleWithTwoComponents();
-        SemanticExtractionRunPlan plan = new SemanticExtractionService().plan(bundle,
-                new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 20_000, 128, true));
+        SemanticExtractionService service = new SemanticExtractionService();
+        SemanticExtractionRunPlan baseline = service.plan(bundle,
+                new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 800_000, 128, true));
+        ObjectNode fullBundle = baseline.fullBundle();
+        addTextOnce(fullBundle.withArray("tables"), "shop.shared");
+        List<SemanticShard> shards = baseline.shardPlan().shards().stream()
+                .map(shard -> withSharedPhysicalTable(shard, "shop.shared"))
+                .toList();
+        SemanticShardPlan shardPlan = new SemanticShardPlan(
+                baseline.shardPlan().fullBundleHash(),
+                shards,
+                baseline.shardPlan().factOwners(),
+                baseline.shardPlan().candidateOwners());
+        SemanticExtractionPromptBuilder promptBuilder = new SemanticExtractionPromptBuilder();
+        SemanticExtractionRunPlan plan = new SemanticExtractionRunPlan(
+                fullBundle,
+                shardPlan,
+                shards.stream()
+                        .map(shard -> new SemanticShardRequest(
+                                shard, promptBuilder.build(shard.trustedBundle())))
+                        .toList(),
+                true,
+                20_000);
         AtomicInteger reconciliationCalls = new AtomicInteger();
-        SemanticModelClient shardClient = prompt -> result(
-                rawShardDocument(prompt.evidenceBundle(), "x".repeat(100_000)));
+        SemanticModelClient shardClient = prompt -> result(rawShardDocument(
+                prompt.evidenceBundle(),
+                "x".repeat(100_000)
+                        + prompt.evidenceBundle().path("shardContext").path("shardId").asText()));
         SemanticModelClient reconciliationClient = prompt -> {
             reconciliationCalls.incrementAndGet();
             return result("""
@@ -76,7 +99,7 @@ final class SemanticExtractionServiceTest {
         };
 
         assertThrows(SemanticShardingException.class,
-                () -> new SemanticExtractionService().execute(plan, shardClient, reconciliationClient));
+                () -> service.execute(plan, shardClient, reconciliationClient));
         assertEquals(0, reconciliationCalls.get());
     }
 
@@ -155,7 +178,7 @@ final class SemanticExtractionServiceTest {
             String physicalName = table.asText();
             ObjectNode entity = raw.withArray("entities").addObject()
                     .put("name", physicalName + nameSuffix)
-                    .put("type", "业务实体")
+                    .put("type", "业务实体" + nameSuffix)
                     .put("physicalName", physicalName);
             entity.putArray("ownedGroundingRefs").add(evidenceRef);
             entity.putArray("evidenceRefs").add(evidenceRef);
@@ -165,6 +188,19 @@ final class SemanticExtractionServiceTest {
         } catch (Exception error) {
             throw new IllegalStateException(error);
         }
+    }
+
+    private SemanticShard withSharedPhysicalTable(SemanticShard shard, String table) {
+        ObjectNode bundle = shard.bundle();
+        addTextOnce(bundle.withArray("tables"), table);
+        return new SemanticShard(
+                shard.id(),
+                shard.ownerKey(),
+                bundle,
+                shard.ownedFactRefs(),
+                shard.ownedCandidateRefs(),
+                shard.overlapRefs(),
+                shard.estimatedInputTokens());
     }
 
     private String emptyDocument() {

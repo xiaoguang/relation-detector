@@ -16,7 +16,6 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.relationdetector.semantic.reader.SemanticEvidenceStore;
 
 /**
  * CN: 验证全局owner manifest的hash、唯一identity、section类别及单个shard的owned/overlap完整分类；
@@ -33,18 +32,18 @@ final class SemanticOwnerManifestValidator {
     private static final List<String> CANDIDATE_SECTIONS = List.of(
             "eventCandidates", "reviewItemCandidates", "tripletCandidates");
     private final SemanticPathRunPlan runPlan;
-    private final SemanticEvidenceStore evidenceStore;
+    private final SemanticEvidenceLookup evidenceLookup;
 
     SemanticOwnerManifestValidator(
             SemanticPathRunPlan runPlan,
-            SemanticEvidenceStore evidenceStore
+            SemanticEvidenceLookup evidenceLookup
     ) {
-        if (runPlan == null || evidenceStore == null) {
+        if (runPlan == null || evidenceLookup == null) {
             throw new IllegalArgumentException(
                     "semantic owner run plan and evidence store are required");
         }
         this.runPlan = runPlan;
-        this.evidenceStore = evidenceStore;
+        this.evidenceLookup = evidenceLookup;
         requireManifestHash();
     }
 
@@ -143,7 +142,7 @@ final class SemanticOwnerManifestValidator {
         Set<String> externalEvidence = new LinkedHashSet<>(externalAudit);
         externalEvidence.removeAll(matchedExternal);
         for (String reference : externalEvidence) {
-            if (evidenceStore.find(SemanticEvidenceStore.Section.EVIDENCE, reference).isEmpty()) {
+            if (evidenceLookup.findEvidence(reference).isEmpty()) {
                 throw new SemanticExtractionValidationException(
                         "semantic external audit identity is unresolved");
             }

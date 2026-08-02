@@ -18,6 +18,7 @@ import com.relationdetector.semantic.extract.SemanticCandidateBundle.TripletCand
 import com.relationdetector.semantic.extract.model.SemanticEntity;
 import com.relationdetector.semantic.extract.model.SemanticEvent;
 import com.relationdetector.semantic.extract.model.SemanticExtractionDocument;
+import com.relationdetector.semantic.extract.model.SemanticLineage;
 import com.relationdetector.semantic.extract.model.SemanticReviewItem;
 import com.relationdetector.semantic.extract.model.SemanticTriplet;
 
@@ -34,9 +35,14 @@ final class SemanticCandidateBackfill {
         }
         SemanticCandidateBundle candidates = read(evidenceBundle);
         retainOwnedCandidates(candidates, evidenceBundle.path("shardContext"));
+        Map<String, String> entityRefsByPhysical = backfillTripletEntities(
+                document.entities, candidates.tripletCandidates, evidenceBundle.path("tables"));
+        backfillLineageEntities(
+                document.entities, document.lineage, evidenceBundle.path("tables"), entityRefsByPhysical);
         Map<String, String> namesByPhysical = entityNamesByPhysical(document.entities);
-        backfillEvents(document.events, candidates.eventCandidates, namesByPhysical);
-        backfillTriplets(document.triplets, candidates.tripletCandidates, namesByPhysical);
+        backfillEvents(document.events, candidates.eventCandidates, namesByPhysical, entityRefsByPhysical);
+        backfillTriplets(
+                document.triplets, candidates.tripletCandidates, namesByPhysical, entityRefsByPhysical);
         backfillReviewItems(document.reviewItems, candidates.reviewItemCandidates);
     }
 
@@ -75,15 +81,131 @@ final class SemanticCandidateBackfill {
         return result;
     }
 
+    private void backfillLineageEntities(
+            List<SemanticEntity> entities,
+            List<SemanticLineage> lineages,
+            JsonNode tableValues,
+            Map<String, String> entityRefsByPhysical
+    ) {
+        Set<String> physicalTables = physicalTables(tableValues);
+        for (SemanticLineage lineage : lineages) {
+            List<String> endpoints = new ArrayList<>(lineage.fromPhysical == null
+                    ? List.of()
+                    : lineage.fromPhysical);
+            if (present(lineage.toPhysical)) {
+                endpoints.add(lineage.toPhysical);
+            }
+            for (String endpoint : endpoints) {
+                String table = physicalTable(endpoint, physicalTables);
+                if (!present(table) || entityRefsByPhysical.containsKey(table)) {
+                    continue;
+                }
+                List<String> evidenceRefs = lineage.evidenceRefs().stream()
+                        .filter(this::present)
+                        .distinct()
+                        .sorted()
+                        .toList();
+                SemanticEntity entity = new SemanticEntity();
+                entity.id = SemanticCanonicalIdentity.entity(
+                        table, table, "PHYSICAL_ENTITY", "物理实体候选", evidenceRefs)
+                        .canonicalId();
+                entity.name = table;
+                entity.type = "物理实体候选";
+                entity.machineType = "PHYSICAL_ENTITY";
+                entity.physicalName = table;
+                entity.ownedGroundingRefs = evidenceRefs;
+                entity.evidenceRefs = evidenceRefs;
+                entities.add(entity);
+                entityRefsByPhysical.put(table, entity.id);
+            }
+        }
+    }
+
+    private Set<String> physicalTables(JsonNode tableValues) {
+        Set<String> physicalTables = new LinkedHashSet<>();
+        if (tableValues.isArray()) {
+            tableValues.forEach(value -> {
+                if (value.isTextual() && !value.asText().isBlank()) {
+                    physicalTables.add(value.asText());
+                }
+            });
+        }
+        return physicalTables;
+    }
+
+    private Map<String, String> backfillTripletEntities(
+            List<SemanticEntity> entities,
+            List<TripletCandidate> candidates,
+            JsonNode tableValues
+    ) {
+        Set<String> physicalTables = new LinkedHashSet<>();
+        if (tableValues.isArray()) {
+            tableValues.forEach(value -> {
+                if (value.isTextual() && !value.asText().isBlank()) {
+                    physicalTables.add(value.asText());
+                }
+            });
+        }
+        Map<String, SemanticEntity> entitiesByPhysical = new LinkedHashMap<>();
+        for (SemanticEntity entity : entities) {
+            if (present(entity.physicalName)) {
+                entitiesByPhysical.putIfAbsent(entity.physicalName, entity);
+            }
+        }
+        for (TripletCandidate candidate : candidates) {
+            for (String endpoint : new String[] {candidate.subject(), candidate.object()}) {
+                String table = physicalTable(endpoint, physicalTables);
+                if (!present(table) || entitiesByPhysical.containsKey(table)) {
+                    continue;
+                }
+                SemanticEntity entity = new SemanticEntity();
+                entity.id = SemanticCanonicalIdentity.entity(
+                        table, table, "PHYSICAL_ENTITY", "物理实体候选", List.of(candidate.id()))
+                        .canonicalId();
+                entity.name = table;
+                entity.type = "物理实体候选";
+                entity.machineType = "PHYSICAL_ENTITY";
+                entity.physicalName = table;
+                entity.ownedGroundingRefs = List.of(candidate.id());
+                entity.evidenceRefs = List.of(candidate.id());
+                entities.add(entity);
+                entitiesByPhysical.put(table, entity);
+            }
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        entitiesByPhysical.forEach((physical, entity) -> result.put(
+                physical,
+                present(entity.id)
+                        ? entity.id
+                        : SemanticCanonicalIdentity.entity(
+                                entity.physicalName,
+                                entity.name,
+                                entity.machineType,
+                                entity.type,
+                                entity.ownedGroundingRefs()).canonicalId()));
+        return result;
+    }
+
     private void backfillEvents(
             List<SemanticEvent> events,
             List<SemanticEventCandidate> candidates,
-            Map<String, String> namesByPhysical
+            Map<String, String> namesByPhysical,
+            Map<String, String> entityRefsByPhysical
     ) {
+        Map<String, SemanticEventCandidate> candidatesById = new LinkedHashMap<>();
+        for (SemanticEventCandidate candidate : candidates) {
+            if (present(candidate.id())) {
+                candidatesById.put(candidate.id(), candidate);
+            }
+        }
         Set<String> existing = new LinkedHashSet<>();
         for (SemanticEvent event : events) {
             if (present(event.eventCandidateRef)) {
                 existing.add(event.eventCandidateRef);
+                SemanticEventCandidate candidate = candidatesById.get(event.eventCandidateRef);
+                if (candidate != null && hasNoEventEndpoints(event)) {
+                    applyEventEndpoints(event, candidate, namesByPhysical, entityRefsByPhysical);
+                }
             }
         }
         for (SemanticEventCandidate candidate : candidates) {
@@ -96,22 +218,74 @@ final class SemanticCandidateBackfill {
             event.machineType = firstPresent(candidate.eventKind(), "Event");
             event.eventCandidateRef = candidate.id();
             event.description = firstPresent(candidate.businessActionHint(), "");
-            event.inputs = entityNames(candidate.inputEndpoints(), namesByPhysical);
-            event.outputs = entityNames(candidate.outputEndpoints(), namesByPhysical);
+            applyEventEndpoints(event, candidate, namesByPhysical, entityRefsByPhysical);
             event.evidenceRefs = List.of(candidate.id());
             events.add(event);
         }
     }
 
+    private boolean hasNoEventEndpoints(SemanticEvent event) {
+        return empty(event.inputs)
+                && empty(event.outputs)
+                && empty(event.inputEntityRefs)
+                && empty(event.outputEntityRefs);
+    }
+
+    private boolean empty(List<?> values) {
+        return values == null || values.isEmpty();
+    }
+
+    private void applyEventEndpoints(
+            SemanticEvent event,
+            SemanticEventCandidate candidate,
+            Map<String, String> namesByPhysical,
+            Map<String, String> entityRefsByPhysical
+    ) {
+        EventEntities inputs = eventEntities(
+                candidate.inputEndpoints(), namesByPhysical, entityRefsByPhysical);
+        EventEntities outputs = eventEntities(
+                candidate.outputEndpoints(), namesByPhysical, entityRefsByPhysical);
+        event.inputs = inputs.names();
+        event.outputs = outputs.names();
+        event.inputEntityRefs = inputs.refs();
+        event.outputEntityRefs = outputs.refs();
+    }
+
+    private EventEntities eventEntities(
+            List<String> endpoints,
+            Map<String, String> namesByPhysical,
+            Map<String, String> entityRefsByPhysical
+    ) {
+        List<String> names = new ArrayList<>();
+        List<String> refs = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (String endpoint : endpoints == null ? List.<String>of() : endpoints) {
+            String table = physicalTable(endpoint, entityRefsByPhysical.keySet());
+            String ref = entityRefsByPhysical.get(table);
+            if (!present(ref) || !seen.add(ref)) {
+                continue;
+            }
+            names.add(namesByPhysical.getOrDefault(table, table));
+            refs.add(ref);
+        }
+        return new EventEntities(List.copyOf(names), List.copyOf(refs));
+    }
+
     private void backfillTriplets(
             List<SemanticTriplet> triplets,
             List<TripletCandidate> candidates,
-            Map<String, String> namesByPhysical
+            Map<String, String> namesByPhysical,
+            Map<String, String> entityRefsByPhysical
     ) {
+        Map<String, TripletCandidate> candidatesById = new LinkedHashMap<>();
+        for (TripletCandidate candidate : candidates) {
+            if (present(candidate.id())) candidatesById.put(candidate.id(), candidate);
+        }
         Set<String> existing = new LinkedHashSet<>();
         for (SemanticTriplet triplet : triplets) {
             if (present(triplet.candidateRef)) {
                 existing.add(triplet.candidateRef);
+                linkTriplet(triplet, candidatesById.get(triplet.candidateRef), entityRefsByPhysical);
             }
         }
         for (TripletCandidate candidate : candidates) {
@@ -128,8 +302,33 @@ final class SemanticCandidateBackfill {
             triplet.predicate = firstPresent(candidate.predicate(), "关联");
             triplet.object = object;
             triplet.readable = subject + " " + triplet.predicate + " " + object;
+            linkTriplet(triplet, candidate, entityRefsByPhysical);
+            triplet.ownedGroundingRefs = List.of(candidate.id());
             triplet.evidenceRefs = List.of(candidate.id());
             triplets.add(triplet);
+        }
+    }
+
+    private void linkTriplet(
+            SemanticTriplet triplet,
+            TripletCandidate candidate,
+            Map<String, String> entityRefsByPhysical
+    ) {
+        if (candidate == null) return;
+        String subjectTable = physicalTable(candidate.subject(), entityRefsByPhysical.keySet());
+        String objectTable = physicalTable(candidate.object(), entityRefsByPhysical.keySet());
+        if (!present(triplet.subjectRef)) triplet.subjectRef = entityRefsByPhysical.get(subjectTable);
+        if (!present(triplet.objectRef)) triplet.objectRef = entityRefsByPhysical.get(objectTable);
+    }
+
+    private String physicalTable(String endpointOrTable, Set<String> physicalTables) {
+        if (!present(endpointOrTable)) return "";
+        if (physicalTables.contains(endpointOrTable)) return endpointOrTable;
+        try {
+            String table = PhysicalEndpointRef.column(endpointOrTable).table();
+            return physicalTables.contains(table) ? table : "";
+        } catch (IllegalArgumentException ignored) {
+            return "";
         }
     }
 
@@ -160,17 +359,6 @@ final class SemanticCandidateBackfill {
         }
     }
 
-    private List<String> entityNames(List<String> endpoints, Map<String, String> namesByPhysical) {
-        Set<String> result = new LinkedHashSet<>();
-        for (String endpoint : endpoints == null ? List.<String>of() : endpoints) {
-            String name = entityName(endpoint, namesByPhysical);
-            if (present(name)) {
-                result.add(name);
-            }
-        }
-        return new ArrayList<>(result);
-    }
-
     private String entityName(String endpointOrTable, Map<String, String> namesByPhysical) {
         String table = firstPresent(endpointOrTable, "");
         if (!namesByPhysical.containsKey(table) && table.contains(".")) {
@@ -190,5 +378,8 @@ final class SemanticCandidateBackfill {
 
     private boolean present(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private record EventEntities(List<String> names, List<String> refs) {
     }
 }

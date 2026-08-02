@@ -81,11 +81,16 @@ final class SemanticKgBuildTest {
         }
         for (JsonNode edge : json.path("edges")) {
             assertFalse(edge.path("evidenceRefs").isEmpty(), () -> edge.path("id").asText() + " lacks evidence");
+            assertFalse("SUPPORTED_BY_EVIDENCE".equals(edge.path("type").asText()),
+                    () -> "canonical KG must not expand evidenceRefs into graph edges");
             for (JsonNode evidenceRef : edge.path("evidenceRefs")) {
                 assertTrue(evidenceIds.contains(evidenceRef.asText()) || nodeIds.contains(evidenceRef.asText()),
                         () -> evidenceRef + " is unresolved");
             }
         }
+        assertTrue(java.util.stream.StreamSupport.stream(json.path("edges").spliterator(), false)
+                .filter(edge -> "RELATIONSHIP_SOURCE".equals(edge.path("type").asText()))
+                .anyMatch(edge -> !edge.path("evidenceRefs").isEmpty()));
     }
 
     @Test
@@ -255,7 +260,14 @@ final class SemanticKgBuildTest {
                       {"table": "customers", "column": "id"}
                     ],
                     "evidence": [{"type": "TRANSITIVE_PATH", "sourceType": "INFERENCE", "score": 0.61, "source": "derived", "detail": "two hop path", "attributes": {}}],
-                    "rawEvidence": [],
+                    "evidenceSets": [{
+                      "hops": [
+                        {"ordinal": 1, "source": {"table": "order_items", "column": "order_id"}, "target": {"table": "orders", "column": "id"}, "kind": "RELATIONSHIP", "evidenceRefs": ["relationship:first"]},
+                        {"ordinal": 2, "source": {"table": "orders", "column": "id"}, "target": {"table": "customers", "column": "id"}, "kind": "RELATIONSHIP", "evidenceRefs": ["relationship:second"]}
+                      ],
+                      "combinationCount": 1,
+                      "confidence": 0.61
+                    }],
                     "attributes": {"pathLength": 2}
                   }],
                   "derivedDataLineages": [],

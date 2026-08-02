@@ -95,16 +95,6 @@ public final class SemanticKgRecordFactory {
                     fact.evidenceRefs(),
                     Map.of("ordinal", index)));
         }
-        for (String evidenceRef : fact.evidenceRefs()) {
-            edges.add(new SemanticEdge(
-                    "edge:supported-by:" + fact.id() + ":" + evidenceRef,
-                    "SUPPORTED_BY_EVIDENCE",
-                    fact.id(),
-                    evidenceRef,
-                    fact.confidence(),
-                    List.of(evidenceRef),
-                    Map.of()));
-        }
     }
 
     /**

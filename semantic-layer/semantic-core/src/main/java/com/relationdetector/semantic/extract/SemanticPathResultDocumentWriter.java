@@ -111,8 +111,7 @@ final class SemanticPathResultDocumentWriter {
 
     private void writeValidation(JsonGenerator generator) throws IOException {
         generator.writeObjectFieldStart("validation");
-        generator.writeArrayFieldStart("isolatedEntities");
-        generator.writeEndArray();
+        writeIsolatedEntities(generator);
         generator.writeArrayFieldStart("unresolvedReferences");
         generator.writeEndArray();
         generator.writeArrayFieldStart("missingEvidenceRefs");
@@ -120,6 +119,63 @@ final class SemanticPathResultDocumentWriter {
         generator.writeNumberField("generatedReviewItemCount", 0);
         generator.writeBooleanField("isRefClosed", true);
         generator.writeEndObject();
+    }
+
+    private void writeIsolatedEntities(JsonGenerator generator) throws IOException {
+        try (ExternalJsonRecordStore linked = new ExternalJsonRecordStore(
+                workspace.resolve("validation-linked-entities"))) {
+            for (SemanticPathResultStore.Section section : SemanticPathResultStore.Section.values()) {
+                if (section == SemanticPathResultStore.Section.ENTITIES
+                        || section == SemanticPathResultStore.Section.REVIEW_ITEMS) {
+                    continue;
+                }
+                sections.get(section).forEach(record ->
+                        appendEntityReferences(selection.selectedDocument(section, record.value()), linked));
+            }
+            linked.finish();
+            generator.writeArrayFieldStart("isolatedEntities");
+            sections.get(SemanticPathResultStore.Section.ENTITIES).forEach(record -> {
+                if (linked.containsKey(record.key())) return;
+                JsonNode entity = selection.renamed(
+                        SemanticPathResultStore.Section.ENTITIES,
+                        record.key(),
+                        selection.selectedDocument(SemanticPathResultStore.Section.ENTITIES, record.value()));
+                try {
+                    generator.writeStartObject();
+                    generator.writeStringField("id", record.key());
+                    generator.writeStringField("name", entity.path("name").asText(""));
+                    generator.writeStringField("physicalName", entity.path("physicalName").asText(""));
+                    generator.writeStringField(
+                            "reason",
+                            "Entity has evidence but is not referenced by another semantic fact.");
+                    generator.writeEndObject();
+                } catch (IOException failure) {
+                    throw new ScanResultContractException(
+                            "failed to stream isolated semantic entity",
+                            failure);
+                }
+            });
+            generator.writeEndArray();
+        }
+    }
+
+    private void appendEntityReferences(JsonNode item, ExternalJsonRecordStore linked) {
+        for (String field : SemanticPathResultValidator.ENTITY_REF_FIELDS) {
+            JsonNode value = item.path(field);
+            if (value.isTextual() && !value.asText().isBlank()) {
+                appendEntityReference(linked, value.asText());
+            } else if (value.isArray()) {
+                value.forEach(reference -> {
+                    if (reference.isTextual() && !reference.asText().isBlank()) {
+                        appendEntityReference(linked, reference.asText());
+                    }
+                });
+            }
+        }
+    }
+
+    private void appendEntityReference(ExternalJsonRecordStore linked, String reference) {
+        linked.append(reference, JSON.getNodeFactory().textNode(reference));
     }
 
     private void addGraphRecords(
@@ -184,7 +240,7 @@ final class SemanticPathResultDocumentWriter {
                         "RELATION_FROM", item);
                 addEdge(edges, "relation-to", id, item.path("toEntityRef").asText(""),
                         "RELATION_TO", item);
-                addEdge(edges, "relation", item.path("fromEntityRef").asText(""),
+                addOwnedEdge(edges, "relation", id, item.path("fromEntityRef").asText(""),
                         item.path("toEntityRef").asText(""),
                         SemanticNormalizationSupport.nonBlank(
                                 item.path("type").asText(""),
@@ -254,6 +310,28 @@ final class SemanticPathResultDocumentWriter {
         edge.put("target", target);
         edge.put("type", type);
         edge.set("evidenceRefs", owner.path("evidenceRefs").deepCopy());
+        edges.append(id, edge);
+    }
+
+    private void addOwnedEdge(
+            ExternalJsonRecordStore edges,
+            String prefix,
+            String owner,
+            String source,
+            String target,
+            String type,
+            JsonNode item
+    ) {
+        if (source == null || source.isBlank() || target == null || target.isBlank()) {
+            return;
+        }
+        String id = SemanticCanonicalIdentity.ownedEdge(prefix, owner, source, target, type);
+        ObjectNode edge = JSON.createObjectNode();
+        edge.put("id", id);
+        edge.put("source", source);
+        edge.put("target", target);
+        edge.put("type", type);
+        edge.set("evidenceRefs", item.path("evidenceRefs").deepCopy());
         edges.append(id, edge);
     }
 }

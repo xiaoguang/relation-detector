@@ -1,15 +1,17 @@
 package com.relationdetector.semantic.extract;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * CN: 从 merged semantic 摘要、跨片冲突和 owner manifest 构造精简 reconciliation prompt；输出只允许 patch，不发送完整物理 KG 或允许改写事实。
- * EN: Builds a compact reconciliation prompt from merged semantic summaries, cross-shard conflicts, and ownership metadata. It requests a patch only and never sends or rewrites the full physical KG.
+ * CN: 从跨片冲突及 owner manifest 构造有界 reconciliation prompt；输入只包含可选择的完整冲突变体，
+ * 输出只允许 patch，禁止把无关 merged semantic 内容、完整物理 KG 或可改写事实的上下文发送给模型。
+ * EN: Builds a bounded reconciliation prompt from cross-shard conflicts and ownership metadata. The input contains
+ * only complete selectable conflict variants; unrelated merged semantic content and the full physical KG stay out of
+ * the model context, and the output remains a constrained patch.
  */
 final class SemanticReconciliationPromptBuilder {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -26,7 +28,6 @@ final class SemanticReconciliationPromptBuilder {
                 .put("id", shard.id())
                 .put("ownerKey", shard.ownerKey())
                 .put("estimatedInputTokens", shard.estimatedInputTokens()));
-        bundle.set("semanticSummary", compact(merge.trustedMergedDocument()));
         bundle.set("conflicts", JSON.valueToTree(merge.conflicts()));
         bundle.putObject("instructions")
                 .put("patchOnly", true)
@@ -56,7 +57,6 @@ final class SemanticReconciliationPromptBuilder {
                 .put("id", shard.id())
                 .put("ownerKey", shard.ownerKey())
                 .put("estimatedInputTokens", shard.estimatedInputTokens()));
-        bundle.putObject("semanticSummary");
         bundle.putArray("conflicts");
         bundle.put("template", true);
         bundle.putObject("instructions")
@@ -64,32 +64,6 @@ final class SemanticReconciliationPromptBuilder {
                 .put("newPhysicalFactsForbidden", true)
                 .put("newEvidenceReferencesForbidden", true);
         return new SemanticExtractionPrompt(developerPrompt(), userPrompt(bundle), bundle);
-    }
-
-    private ObjectNode compact(ObjectNode merged) {
-        ObjectNode compact = JSON.createObjectNode();
-        for (String section : java.util.List.of(
-                "entities", "events", "relations", "lineage", "metrics", "dimensions", "triplets", "reviewItems")) {
-            ArrayNode output = compact.putArray(section);
-            for (JsonNode item : merged.path(section)) {
-                ObjectNode summary = output.addObject();
-                copy(item, summary, "id");
-                copy(item, summary, "name");
-                copy(item, summary, "type");
-                copy(item, summary, "machineType");
-                copy(item, summary, "physicalName");
-                copy(item, summary, "fromEntityRef");
-                copy(item, summary, "toEntityRef");
-                if (item.path("evidenceRefs").isArray()) {
-                    summary.set("evidenceRefs", item.path("evidenceRefs").deepCopy());
-                }
-            }
-        }
-        return compact;
-    }
-
-    private void copy(JsonNode source, ObjectNode target, String field) {
-        if (source.has(field)) target.set(field, source.path(field).deepCopy());
     }
 
     private String developerPrompt() {

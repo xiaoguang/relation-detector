@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.DerivedEvidenceHop;
+import com.relationdetector.contracts.model.DerivedEvidenceSet;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator;
 import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
@@ -79,6 +81,10 @@ public final class NamingEvidenceMerger {
             Evidence namingEvidence = first.evidence();
             Map<String, Object> attributes = namingConsensusAttributes();
             group.consensusAttributes().forEach(attributes::putIfAbsent);
+            List<DerivedEvidenceSet> evidenceSets = derivedEvidenceSets();
+            if (!evidenceSets.isEmpty()) {
+                attributes.put("evidenceSets", evidenceSets);
+            }
             summarizeConditional(attributes);
             attributes.put("count", group.count());
             if (group.count() > 1) {
@@ -90,6 +96,53 @@ public final class NamingEvidenceMerger {
             return new Evidence(
                     namingEvidence.type(), namingEvidence.score(), namingEvidence.sourceType(),
                     namingEvidence.source(), namingEvidence.detail(), attributes);
+        }
+
+        private List<DerivedEvidenceSet> derivedEvidenceSets() {
+            return raw.stream()
+                    .flatMap(evidence -> evidenceSets(evidence).stream())
+                    .map(this::closeOnPublishedEndpoints)
+                    .distinct()
+                    .sorted(Comparator.comparing(this::evidenceSetKey))
+                    .toList();
+        }
+
+        private DerivedEvidenceSet closeOnPublishedEndpoints(DerivedEvidenceSet set) {
+            List<DerivedEvidenceHop> hops = new ArrayList<>(set.hops().size());
+            for (int index = 0; index < set.hops().size(); index++) {
+                DerivedEvidenceHop hop = set.hops().get(index);
+                hops.add(new DerivedEvidenceHop(
+                        hop.ordinal(),
+                        index == 0 ? first.source() : hop.source(),
+                        index == set.hops().size() - 1 ? first.target() : hop.target(),
+                        hop.kind(),
+                        hop.evidenceRefs()));
+            }
+            return new DerivedEvidenceSet(hops, set.combinationCount(), set.confidence());
+        }
+
+        private List<DerivedEvidenceSet> evidenceSets(Evidence evidence) {
+            Object value = evidence.attributes().get("evidenceSets");
+            if (!(value instanceof List<?> values)) {
+                return List.of();
+            }
+            List<DerivedEvidenceSet> result = new ArrayList<>();
+            for (Object item : values) {
+                if (item instanceof DerivedEvidenceSet set) {
+                    result.add(set);
+                }
+            }
+            return List.copyOf(result);
+        }
+
+        private String evidenceSetKey(DerivedEvidenceSet set) {
+            StringBuilder key = new StringBuilder();
+            set.hops().forEach(hop -> key.append(hop.ordinal()).append(':')
+                    .append(hop.source().displayName()).append("->")
+                    .append(hop.target().displayName()).append(':')
+                    .append(hop.kind()).append(':')
+                    .append(String.join("\u0000", hop.evidenceRefs())).append('\u0001'));
+            return key.append(set.confidence().toPlainString()).toString();
         }
 
         private Map<String, Object> namingConsensusAttributes() {

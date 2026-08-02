@@ -261,7 +261,8 @@ reference index 引用，不等同于只引用底层 `evidence[]`。
 gate，不是 provider 精确 token 数的数学硬上限。API 返回的 actual usage 只用于事后审计。
 
 `SemanticExtractionRunPlan` 保存同一个 `maxInputTokens`。多 shard reconciliation prompt 在 merge 后
-完整构造，再由同一个 `SemanticPromptBudgetEstimator` 执行门限；超过上限时在模型调用前原子失败，
+只渲染待选冲突变体、shard/owner元数据和固定约束，不复制无关的merged semantic summary。该最终
+prompt仍由同一个 `SemanticPromptBudgetEstimator` 执行门限；超过上限时在模型调用前原子失败，
 等于上限时允许执行。manifest 同时记录门限和 `estimatedInputTokens`，并明确该值不是模型精确 token 数。
 
 每个 fact 与 deterministic candidate 恰好有一个 canonical owner。其他 shard 可以携带只读 overlap
@@ -294,8 +295,8 @@ canonical identity确定性合并。物理entity使用完整`physicalName`；无
 entity refs；同名但grounding不同的业务entity保留不同ID并生成
 `POTENTIAL_SEMANTIC_DUPLICATE/REVIEW_NEEDED`。无owned grounding或同一identity结构冲突显式失败，
 禁止last-write-wins。
-多 shard 且启用 reconciliation 时，模型只接收有界 semantic summary、conflict variants 和 owner
-信息，并只可返回：
+多 shard 且启用 reconciliation 时，模型只接收conflict variants、shard/owner元数据和固定约束；
+无冲突的semantic对象不进入协调上下文。模型只可返回：
 
 - 已知 conflict 的 variant 选择；
 - 已有对象的展示名称调整。
@@ -331,6 +332,19 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 单 shard与多 shard使用同一目录契约：prompt/request/response/raw/片内normalized结果只存在于
 `shards/shard-NNNN/`，根目录不再保留兼容副本。
 
+无API的Codex-session完成链路把request run保持为不可变输入，并把响应写到独立目录
+`responses/shards/shard-NNNN/semantic-extraction-result.json`。内部
+`SemanticCodexSessionCompletionMain`只消费这些响应：缺片时原子写`pending-responses.json`；片齐后
+复用owner validator和normalizer形成受预算约束的reconciliation request；协调响应固定写入
+`responses/reconciliation/semantic-reconciliation-result.json`。只有merge、patch和完整bundle closure
+全部通过才发布`COMPLETE` run，任何失败都不修改原request run，也不发布部分正式结果。
+
+Codex-session的模型上下文是完整owned shard的受控投影视图，不是另一份事实裁剪：完整bundle继续保存在
+request package中并用于owner、backfill和closure。确定性`tripletCandidates`不复制进模型prompt；模型
+可选择性解释event candidate，但event的`inputs/outputs/inputEntityRefs/outputEntityRefs`必须按schema留空，
+由core从typed candidate重建。模型输出中的`semanticGraph`与`validation`固定为`null`，core在补齐候选、
+规范化和引用校验后统一重建。该边界减少重复输出，不减少正式事实、证据或最终图闭包。
+
 ### 4.2 当前实现差异矩阵
 
 | ID | 状态 | 已实现边界与剩余缺口 |
@@ -338,7 +352,7 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整磁盘evidence store先全局归并event并建立item/table/dependency/evidence索引，再计算typed component、唯一owner与stable-root closure。raw-byte只控制I/O window；不同window大小得到相同event、owner manifest、shard和KG，overlap不能获得owner资格。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard item的owned grounding已校验；reconciliation只接受`resolutions`和`renames`，不能新增对象或relation。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
-| `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后完整reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
+| `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后仅含冲突闭包的reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
@@ -352,7 +366,7 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
 | `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base和association组合分别在对应列表物化前受同一预算；standalone raw、envelope和已选evidence共享硬门限；递归清理内存只随目录深度增长。低堆测试覆盖跨窗口宽event、64 MiB envelope和20,000路径。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
-| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才可输出COMPLETE/DDL_DECLARATIONS。完整sample-data semantic门禁已对38份结果构建KG，并以gpt-5.6-sol/xhigh对19份derived结果生成request-only artifact；132个request与132份精确引用sidecar一一对应，所有估算输入均低于统一门限。 |
+| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才可输出COMPLETE/DDL_DECLARATIONS。完整sample-data semantic门禁已对38份direct/derived结果构建完整KG、request package并完成重建/closure；232个owned shard与232份精确引用sidecar一一对应，全部请求为`gpt-5.6-sol/xhigh`且最大估算输入240,000，低于统一门限。 |
 
 上述完整输入、模型请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
 identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及

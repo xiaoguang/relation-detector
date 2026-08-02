@@ -46,7 +46,6 @@ public final class NamingMatchEvidenceEnhancer {
         });
         derivedRelationships.forEach(candidate -> {
             normalizeReferences(candidate.evidence(), namingEvidence);
-            normalizeReferences(candidate.rawEvidence(), namingEvidence);
         });
     }
 

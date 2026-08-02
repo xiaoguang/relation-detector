@@ -337,9 +337,34 @@ public final class SemanticEvidenceBuilder {
         }
         String id = fact.id();
         facts.add(new EvidenceGraphFact(id, type, source.displayName() + " -> " + target.displayName(),
-                factEndpoints, evidenceRefs(id, derived, evidenceRefs), BigDecimal.valueOf(confidence), derived,
+                factEndpoints, derivedEvidenceRefs(id, derived, evidenceRefs), BigDecimal.valueOf(confidence), derived,
                 Map.of("pathLength", derived.path("pathLength").asInt(0),
                         "kind", derived.path("kind").asText(""))));
+    }
+
+    private List<String> derivedEvidenceRefs(
+            String ownerId,
+            JsonNode record,
+            Map<String, EvidenceReference> evidenceRefs
+    ) {
+        List<String> result = new ArrayList<>();
+        for (JsonNode evidenceSet : record.path("evidenceSets")) {
+            String id = StableSemanticId.of(
+                    "derived-evidence-set", ownerId, StableSemanticId.canonicalJson(evidenceSet));
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            attributes.put("evidenceSet", JSON.convertValue(evidenceSet, MAP_TYPE));
+            EvidenceReference reference = new EvidenceReference(
+                    id,
+                    "DERIVED_EVIDENCE_SET",
+                    "INFERENCE",
+                    evidenceSet.path("confidence").decimalValue(),
+                    "derived:evidence-set",
+                    ownerId,
+                    attributes);
+            evidenceRefs.putIfAbsent(id, reference);
+            result.add(id);
+        }
+        return List.copyOf(result);
     }
 
     private List<String> evidenceRefs(

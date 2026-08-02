@@ -90,6 +90,10 @@ semantic normalization 是两个独立边界：
 - `SemanticKgBuilder/ReferenceIndex` 校验离线 KG 的 node、edge 和 evidence。
 - `SemanticExtractionDocumentNormalizer/SemanticReferenceIndex` 校验模型输出与完整 extraction bundle。
 
+`semantic-evidence-graph.json`是完整evidence payload与diagnostics的唯一持有者。KG fact node和结构edge
+保留完整`evidenceRefs`，但标准wire不再为每个引用生成`SUPPORTED_BY_EVIDENCE`边；跨文件closure
+直接验证引用存在。需要反向“证据支持哪些事实”查询的图数据库可在导入时建立派生索引。
+
 一条链路通过不能替另一条链路背书。
 
 ## 4. Typed Event Candidate

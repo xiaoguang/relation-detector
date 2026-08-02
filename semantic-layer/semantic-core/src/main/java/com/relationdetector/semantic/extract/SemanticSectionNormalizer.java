@@ -208,7 +208,7 @@ final class SemanticSectionNormalizer {
             graph.addNode(relation.id, "Relation", relation.type, relation.machineType, relation.evidenceRefs());
             graph.addEdge("relation-from", relation.id, fromRef, "RELATION_FROM", relation.evidenceRefs());
             graph.addEdge("relation-to", relation.id, toRef, "RELATION_TO", relation.evidenceRefs());
-            graph.addEdge("relation", fromRef, toRef,
+            graph.addOwnedEdge("relation", relation.id, fromRef, toRef,
                     SemanticNormalizationSupport.nonBlank(relation.type, "RELATES_TO"), relation.evidenceRefs());
             addLinked(linkedEntities, fromRef, toRef);
         }

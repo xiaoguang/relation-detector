@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -204,7 +205,8 @@ class DerivedPathInferenceServiceTest {
                         && candidate.target().equals(customersId))
                 .toList();
         assertEquals(1, paths.size());
-        assertEquals(2, paths.get(0).rawEvidence().size());
+        assertEquals(1, paths.get(0).evidenceSets().size());
+        assertEquals(2, paths.get(0).evidenceSets().get(0).hops().get(0).evidenceRefs().size());
     }
 
     @Test
@@ -238,8 +240,8 @@ class DerivedPathInferenceServiceTest {
                         && candidate.target().equals(customersId))
                 .toList();
         assertEquals(1, paths.size(), "The second canonical path must be rejected by the pair quota");
-        assertEquals(2, paths.get(0).rawEvidence().size(),
-                "All variants of the accepted canonical path must survive the pair quota");
+        assertEquals(2, paths.get(0).evidenceSets().get(0).hops().get(0).evidenceRefs().size(),
+                "All direct supports of the accepted structural path must survive the pair quota");
     }
 
     @Test
@@ -287,8 +289,8 @@ class DerivedPathInferenceServiceTest {
         assertTrue(accepted.source().equals(orderItemOrderId)
                 || accepted.source().equals(invoiceItemInvoiceId));
         assertEquals(customersId, accepted.target());
-        assertEquals(2, accepted.rawEvidence().size(),
-                "All variants of the accepted canonical fact must survive the global quota");
+        assertEquals(2, accepted.evidenceSets().get(0).hops().get(0).evidenceRefs().size(),
+                "All direct supports of the accepted canonical fact must survive the global quota");
     }
 
     @Test
@@ -632,8 +634,9 @@ class DerivedPathInferenceServiceTest {
                 .filter(candidate -> candidate.source().equals(a) && candidate.target().equals(c))
                 .toList();
         assertEquals(1, aToC.size(), "One canonical endpoint path should produce one derived fact");
-        assertEquals(2, aToC.get(0).rawEvidence().size(),
-                "Distinct edge variants should remain available as raw path observations");
+        assertEquals(1, aToC.get(0).evidenceSets().size());
+        assertEquals(2, aToC.get(0).evidenceSets().get(0).hops().get(0).evidenceRefs().size(),
+                "Distinct direct support must remain available without path combination expansion");
     }
 
     @Test
@@ -655,10 +658,10 @@ class DerivedPathInferenceServiceTest {
                 .filter(candidate -> candidate.source().equals(a) && candidate.target().equals(c))
                 .findFirst()
                 .orElseThrow();
-        assertEquals(1, aToC.rawEvidence().size(),
-                "Semantically identical path observations must be folded");
-        assertEquals(2, aToC.rawEvidence().get(0).attributes().get("occurrenceCount"),
-                "The folded observation must retain the number of contributing edge variants");
+        assertEquals(1, aToC.evidenceSets().size(),
+                "Semantically identical structural paths must be folded");
+        assertEquals(2, aToC.evidenceSets().get(0).hops().get(0).evidenceRefs().size(),
+                "The evidence set must retain both direct support references");
     }
 
     @Test
@@ -871,6 +874,122 @@ class DerivedPathInferenceServiceTest {
         assertEquals(highTarget, result.get(0).target());
     }
 
+    @Test
+    void representsCartesianEvidenceSupportAsOneTypedSet() {
+        ScanConfig config = enabledConfig();
+        Endpoint source = col("orders", "customer_id");
+        Endpoint middle = col("customers", "id");
+        Endpoint target = col("regions", "id");
+        RelationshipCandidate first = fk(source, middle);
+        first.evidence().clear();
+        first.rawEvidence().addAll(List.of(
+                evidence(source, middle, "first-a.sql"),
+                evidence(source, middle, "first-b.sql"),
+                evidence(source, middle, "first-c.sql")));
+        RelationshipCandidate second = fk(middle, target);
+        second.evidence().clear();
+        second.rawEvidence().addAll(List.of(
+                evidence(middle, target, "second-a.sql"),
+                evidence(middle, target, "second-b.sql")));
+
+        DerivedPathCandidate derived = service.infer(
+                        List.of(first, second), List.of(), List.of(), config)
+                .derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(source)
+                        && candidate.target().equals(target))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(1, derived.evidenceSets().size());
+        assertEquals(BigInteger.valueOf(6), derived.evidenceSets().get(0).combinationCount());
+        assertEquals(5, derived.evidenceSets().get(0).hops().stream()
+                .mapToInt(hop -> hop.evidenceRefs().size()).sum());
+    }
+
+    @Test
+    void highFanoutEvidenceSetGrowsWithSupportSumInsteadOfProduct() {
+        ScanConfig config = enabledConfig();
+        Endpoint source = col("large_orders", "customer_id");
+        Endpoint middle = col("large_customers", "id");
+        Endpoint target = col("large_regions", "id");
+        RelationshipCandidate first = fk(source, middle);
+        first.evidence().clear();
+        RelationshipCandidate second = fk(middle, target);
+        second.evidence().clear();
+        for (int index = 0; index < 100; index++) {
+            first.rawEvidence().add(evidence(source, middle, "first-" + index + ".sql"));
+            second.rawEvidence().add(evidence(middle, target, "second-" + index + ".sql"));
+        }
+
+        DerivedPathCandidate derived = service.infer(
+                        List.of(first, second), List.of(), List.of(), config)
+                .derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(source)
+                        && candidate.target().equals(target))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(1, derived.evidenceSets().size());
+        assertEquals(BigInteger.valueOf(10_000), derived.evidenceSets().get(0).combinationCount());
+        assertEquals(200, derived.evidenceSets().get(0).hops().stream()
+                .mapToInt(hop -> hop.evidenceRefs().size()).sum());
+    }
+
+    @Test
+    void preservesDistinctConfidenceSignaturesForTheSameEndpointPath() {
+        ScanConfig config = enabledConfig();
+        Endpoint source = col("signature_orders", "customer_id");
+        Endpoint middle = col("signature_customers", "id");
+        Endpoint target = col("signature_regions", "id");
+        RelationshipCandidate higher = fk(source, middle);
+        higher.confidence(new BigDecimal("0.80"));
+        higher.evidence().clear();
+        higher.rawEvidence().add(evidence(source, middle, "higher.sql"));
+        RelationshipCandidate lower = fk(source, middle);
+        lower.confidence(new BigDecimal("0.70"));
+        lower.evidence().clear();
+        lower.rawEvidence().add(evidence(source, middle, "lower.sql"));
+        RelationshipCandidate tail = fk(middle, target);
+        tail.evidence().clear();
+        tail.rawEvidence().add(evidence(middle, target, "tail.sql"));
+
+        DerivedPathCandidate derived = service.infer(
+                        List.of(higher, lower, tail), List.of(), List.of(), config)
+                .derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(source)
+                        && candidate.target().equals(target))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(2, derived.evidenceSets().size());
+        assertEquals(List.of(new BigDecimal("0.5250"), new BigDecimal("0.6000")),
+                derived.evidenceSets().stream().map(set -> set.confidence()).sorted().toList());
+    }
+
+    @Test
+    void closesEvidenceSetWithThePublishedPathWhenEndpointDescriptionsDiffer() {
+        ScanConfig config = enabledConfig();
+        Endpoint source = col("typed_orders", "customer_id");
+        TableId customerTable = TableId.of(null, "typed_customers");
+        Endpoint middleAsTarget = Endpoint.column(new ColumnRef(
+                customerTable, "id", "id", "BIGINT", false));
+        Endpoint middleAsSource = Endpoint.column(new ColumnRef(
+                customerTable, "id", "id", null, true));
+        Endpoint target = col("typed_regions", "id");
+
+        DerivedPathCandidate derived = service.infer(
+                        List.of(fk(source, middleAsTarget), fk(middleAsSource, target)),
+                        List.of(), List.of(), config)
+                .derivedRelationships().stream()
+                .filter(candidate -> candidate.source().normalizedKey().equals(source.normalizedKey())
+                        && candidate.target().normalizedKey().equals(target.normalizedKey()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(derived.path().get(1), derived.evidenceSets().get(0).hops().get(0).target());
+        assertEquals(derived.path().get(1), derived.evidenceSets().get(0).hops().get(1).source());
+    }
+
     private ScanConfig enabledConfig() {
         ScanConfig config = new ScanConfig();
         config.derivedPathsEnabled = true;
@@ -933,6 +1052,15 @@ class DerivedPathInferenceServiceTest {
                 source.displayName() + " = " + target.displayName(),
                 Map.of()));
         return candidate;
+    }
+
+    private Evidence evidence(Endpoint source, Endpoint target, String sourceName) {
+        return new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                sourceName,
+                source.displayName() + " = " + target.displayName(),
+                Map.of());
     }
 
     private RelationshipCandidate conditionalFk(Endpoint source, Endpoint target) {

@@ -149,6 +149,47 @@ final class SemanticExtractionDocumentNormalizerTest {
     }
 
     @Test
+    void preservesParallelSemanticRelationsBetweenTheSameEntityPair() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"id":"entity:boms","name":"BOM","physicalName":"sample_data.boms","evidenceRefs":["e1"]},
+                    {"id":"entity:products","name":"物料","physicalName":"sample_data.products","evidenceRefs":["e1"]}
+                  ],
+                  "events": [],
+                  "relations": [
+                    {
+                      "id":"relation:parent","fromEntityRef":"entity:boms","toEntityRef":"entity:products",
+                      "type":"组成关联","machineType":"FK_LIKE","evidenceRefs":["relationship:parent"]
+                    },
+                    {
+                      "id":"relation:child","fromEntityRef":"entity:boms","toEntityRef":"entity:products",
+                      "type":"组成关联","machineType":"FK_LIKE","evidenceRefs":["relationship:child"]
+                    }
+                  ],
+                  "lineage": [], "metrics": [], "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("e1");
+        bundle.putArray("tables").add("sample_data.boms").add("sample_data.products");
+        bundle.withArray("relationships").addObject().put("id", "relationship:parent");
+        bundle.withArray("relationships").addObject().put("id", "relationship:child");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        List<JsonNode> directRelationEdges = new java.util.ArrayList<>();
+        normalized.path("semanticGraph").path("edges").forEach(edge -> {
+            if ("组成关联".equals(edge.path("type").asText())) {
+                directRelationEdges.add(edge);
+            }
+        });
+        assertEquals(2, directRelationEdges.size());
+        assertNotEquals(
+                directRelationEdges.get(0).path("id").asText(),
+                directRelationEdges.get(1).path("id").asText());
+    }
+
+    @Test
     void derivesPhysicalEntityIdFromTheCompletePhysicalName() throws Exception {
         JsonNode raw = JSON.readTree("""
                 {
@@ -396,6 +437,40 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertFalse(normalized.path("semanticGraph").path("nodes").isEmpty());
         assertFalse(normalized.path("semanticGraph").path("edges").isEmpty());
         assertTrue(normalized.path("validation").path("isolatedEntities").isEmpty());
+    }
+
+    @Test
+    void backfillsPhysicalEntitiesRequiredBySemanticLineage() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [],
+                  "events": [],
+                  "relations": [],
+                  "lineage": [
+                    {
+                      "fromPhysical": ["sales_orders.id"],
+                      "toPhysical": "sales_fact.order_id",
+                      "transform": "DIRECT",
+                      "evidenceRefs": ["e1"]
+                    }
+                  ],
+                  "metrics": [],
+                  "dimensions": [],
+                  "triplets": [],
+                  "reviewItems": []
+                }
+                """);
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, evidenceBundle("e1"));
+
+        assertEquals(2, normalized.path("entities").size());
+        assertEquals(
+                StableSemanticId.of("entity-physical", "sales_orders"),
+                normalized.path("lineage").get(0).path("sourceEntityRefs").get(0).asText());
+        assertEquals(
+                StableSemanticId.of("entity-physical", "sales_fact"),
+                normalized.path("lineage").get(0).path("targetEntityRef").asText());
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
     @Test
@@ -660,6 +735,133 @@ final class SemanticExtractionDocumentNormalizerTest {
         for (String section : List.of("relations", "lineage", "triplets", "reviewItems")) {
             assertEquals(sectionIds(firstNormalized, section), sectionIds(reorderedNormalized, section), section);
         }
+    }
+
+    @Test
+    void ownedTripletCandidateBackfillsMissingPhysicalEndpointEntities() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [], "events": [], "relations": [], "lineage": [],
+                  "metrics": [], "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle();
+        bundle.withArray("tables").add("serial_number_logs").add("serial_numbers");
+        bundle.withArray("tripletCandidates").addObject()
+                .put("id", "triplet-candidate:serial-number")
+                .put("type", "NAMING_ALIAS")
+                .put("subject", "serial_number_logs.serial_number_id")
+                .put("predicate", "命名指向")
+                .put("object", "serial_numbers.id")
+                .put("readable", "serial_number_logs.serial_number_id 命名指向 serial_numbers.id");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertEquals(2, normalized.path("entities").size());
+        assertEquals(1, normalized.path("triplets").size());
+        assertEquals(
+                StableSemanticId.of("entity-physical", "serial_number_logs"),
+                normalized.path("triplets").get(0).path("subjectRef").asText());
+        assertEquals(
+                StableSemanticId.of("entity-physical", "serial_numbers"),
+                normalized.path("triplets").get(0).path("objectRef").asText());
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
+    }
+
+    @Test
+    void projectedEventCandidateAuditRefsRemainAvailableToDeterministicBackfill() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [], "events": [], "relations": [], "lineage": [],
+                  "metrics": [], "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle();
+        bundle.withArray("eventCandidates").addObject()
+                .put("id", "event-candidate:projected")
+                .put("readableNameHint", "处理订单")
+                .put("evidenceRefCount", 3)
+                .put("evidenceRefsSha256", "abc123")
+                .put("lineageRefCount", 2)
+                .put("lineageRefsSha256", "def456");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertEquals(1, normalized.path("events").size());
+        assertEquals("event-candidate:projected",
+                normalized.path("events").get(0).path("eventCandidateRef").asText());
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
+    }
+
+    @Test
+    void deterministicEventCandidateOwnsEndpointLabelsAndEntityRefs() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {
+                      "id":"entity:orders", "name":"销售订单", "physicalName":"orders",
+                      "machineType":"BUSINESS_DOCUMENT", "evidenceRefs":["event-candidate:orders"]
+                    },
+                    {
+                      "id":"entity:ledger", "name":"销售台账", "physicalName":"sales_ledger",
+                      "machineType":"BUSINESS_FACT", "evidenceRefs":["event-candidate:orders"]
+                    }
+                  ],
+                  "events": [
+                    {
+                      "id":"event:orders", "name":"过账订单", "machineType":"SQL_WRITE_OPERATION",
+                      "eventCandidateRef":"event-candidate:orders",
+                      "inputs":[], "outputs":[],
+                      "inputEntityRefs":[], "outputEntityRefs":[],
+                      "evidenceRefs":["event-candidate:orders"]
+                    }
+                  ],
+                  "relations": [], "lineage": [], "metrics": [], "dimensions": [],
+                  "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle();
+        bundle.withArray("tables").add("orders").add("sales_ledger");
+        ObjectNode candidate = bundle.withArray("eventCandidates").addObject()
+                .put("id", "event-candidate:orders");
+        candidate.withArray("inputEndpoints").add("orders.id");
+        candidate.withArray("outputEndpoints").add("sales_ledger.order_id");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+        JsonNode event = normalized.path("events").get(0);
+
+        assertEquals(JSON.readTree("[\"销售订单\"]"), event.path("inputs"));
+        assertEquals(JSON.readTree("[\"销售台账\"]"), event.path("outputs"));
+        assertEquals(JSON.readTree("[\"entity:orders\"]"), event.path("inputEntityRefs"));
+        assertEquals(JSON.readTree("[\"entity:ledger\"]"), event.path("outputEntityRefs"));
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
+    }
+
+    @Test
+    void evidenceBackedIsolatedEntityIsReportedWithoutBreakingReferenceClosure() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {
+                      "name": "账户余额视图",
+                      "physicalName": "v_account_balance",
+                      "type": "分析视图候选",
+                      "evidenceRefs": ["metadata:account-balance"]
+                    }
+                  ],
+                  "events": [], "relations": [], "lineage": [], "metrics": [],
+                  "dimensions": [], "triplets": [], "reviewItems": []
+                }
+                """);
+        ObjectNode bundle = evidenceBundle("metadata:account-balance");
+        bundle.withArray("tables").add("v_account_balance");
+
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertEquals(1, normalized.path("validation").path("isolatedEntities").size());
+        assertTrue(normalized.path("validation").path("unresolvedReferences").isEmpty());
+        assertTrue(normalized.path("validation").path("missingEvidenceRefs").isEmpty());
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
     @Test

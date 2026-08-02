@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.StableSemanticId;
 
 final class SemanticShardResultMergerTest {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -133,16 +134,46 @@ final class SemanticShardResultMergerTest {
     }
 
     @Test
-    void rejectsIncompatibleTypesForTheSamePhysicalEntity() {
+    void surfacesIncompatibleTypesForTheSamePhysicalEntityAsAReconciliationConflict() {
         ObjectNode left = documentWithEntity("model:orders:left", "订单", "shop.orders", "rel-left");
         ObjectNode right = documentWithEntity("model:orders:right", "订单", "shop.orders", "rel-right");
         ((ObjectNode) right.withArray("entities").get(0)).put("machineType", "INCOMPATIBLE");
 
-        assertThrows(SemanticExtractionValidationException.class,
-                () -> new SemanticShardResultMerger().merge(List.of(
-                        new SemanticShardNormalizedResult("shard-0001", left),
-                        new SemanticShardNormalizedResult("shard-0002", right)),
-                        plan(Map.of("shard-0001", Set.of("rel-left"), "shard-0002", Set.of("rel-right")))));
+        SemanticShardMergeResult result = new SemanticShardResultMerger().merge(List.of(
+                new SemanticShardNormalizedResult("shard-0001", left),
+                new SemanticShardNormalizedResult("shard-0002", right)),
+                plan(Map.of("shard-0001", Set.of("rel-left"), "shard-0002", Set.of("rel-right"))));
+
+        assertEquals(1, result.mergedDocument().path("entities").size());
+        assertEquals(1, result.conflicts().size());
+        assertEquals("entities", result.conflicts().get(0).section());
+        assertEquals(
+                StableSemanticId.of("entity-physical", "shop.orders"),
+                result.conflicts().get(0).id());
+        assertEquals(2, result.conflicts().get(0).variants().size());
+    }
+
+    @Test
+    void replacesGeneratedPhysicalPlaceholderWithEvidenceGroundedSemanticType() {
+        ObjectNode enriched = documentWithEntity(
+                "model:orders", "订单", "shop.orders", "rel-orders");
+        ObjectNode placeholder = documentWithEntity(
+                "generated:orders", "shop.orders", "shop.orders", "triplet-orders");
+        ObjectNode generated = (ObjectNode) placeholder.withArray("entities").get(0);
+        generated.put("type", "物理实体候选");
+        generated.put("machineType", "PHYSICAL_ENTITY");
+
+        SemanticShardMergeResult result = new SemanticShardResultMerger().merge(List.of(
+                new SemanticShardNormalizedResult("shard-0001", enriched),
+                new SemanticShardNormalizedResult("shard-0002", placeholder)),
+                plan(Map.of(
+                        "shard-0001", Set.of("rel-orders"),
+                        "shard-0002", Set.of("triplet-orders"))));
+
+        assertEquals(1, result.mergedDocument().path("entities").size());
+        ObjectNode entity = (ObjectNode) result.mergedDocument().path("entities").get(0);
+        assertEquals("BUSINESS_ENTITY", entity.path("machineType").asText());
+        assertEquals(Set.of("rel-orders", "triplet-orders"), textSet(entity.path("evidenceRefs")));
     }
 
     private ObjectNode documentWithEntity(String id, String name) {
@@ -210,5 +241,11 @@ final class SemanticShardResultMergerTest {
             root.putArray(section);
         }
         return root;
+    }
+
+    private Set<String> textSet(com.fasterxml.jackson.databind.JsonNode values) {
+        Set<String> result = new LinkedHashSet<>();
+        values.forEach(value -> result.add(value.asText()));
+        return result;
     }
 }
