@@ -53,6 +53,7 @@ class SemanticReconciliationPromptBuilderTest {
                     "shard-0001", "orders", workspace.resolve("shard.json"), 100, 0, 0);
             SemanticRunPlan plan = new SemanticRunPlan(
                     workspace.resolve("bundle.json"), "bundle-hash", List.of(shard), true, 100_000,
+                    24_000, 16_000,
                     workspace.resolve("owners.json"), "owner-hash");
 
             SemanticExtractionPrompt prompt = new SemanticResultSelection(stores)

@@ -55,6 +55,8 @@ import com.relationdetector.semantic.ingest.SemanticInputStore;
 
 final class SemanticPathBackedPipelineTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final int SHARD_OUTPUT_TOKENS = 24_000;
+    private static final int RECONCILIATION_OUTPUT_TOKENS = 16_000;
 
     @TempDir
     Path tempDir;
@@ -67,7 +69,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false));
+                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
 
             assertEquals(2, plan.shards().size());
             for (SemanticShardDescriptor shard : plan.shards()) {
@@ -88,7 +91,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 8, false));
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
 
             assertEquals(1, plan.shards().size());
             SemanticShardDescriptor shard = plan.shards().get(0);
@@ -116,7 +120,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false));
+                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
 
             assertThrows(IllegalStateException.class, () ->
                     new SemanticRunArtifactWriter().executeAndWrite(
@@ -172,7 +177,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false));
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
 
             assertFalse(read(plan.fullBundlePath()).path("evidence").isEmpty());
             for (SemanticShardDescriptor shard : plan.shards()) {
@@ -223,7 +229,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false));
+                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
             run = new SemanticRunArtifactWriter().writeRequestOnly(
                     output,
                     plan,
@@ -257,6 +264,25 @@ final class SemanticPathBackedPipelineTest {
     }
 
     @Test
+    void legacyV1RequestPackageRemainsReconstructable() throws Exception {
+        CodexFixture fixture = codexFixture("legacy-v1-reconstruction", false);
+        Path indexPath = fixture.requestRun().resolve("request-bundle-index.json");
+        ObjectNode index = (ObjectNode) read(indexPath);
+        index.put("artifactSchemaVersion", 1);
+        index.remove("shardMaxOutputTokens");
+        index.remove("reconciliationMaxOutputTokens");
+        JSON.writeValue(indexPath.toFile(), index);
+        Path reconstructed = tempDir.resolve("legacy-v1-reconstructed-bundle.json");
+
+        SemanticRequestBundleReconstructor.Result result =
+                new SemanticRequestBundleReconstructor().reconstruct(
+                        fixture.requestRun(), reconstructed);
+
+        assertEquals(index.path("fullBundleCanonicalSha256").asText(), result.canonicalSha256());
+        assertTrue(Files.isRegularFile(reconstructed));
+    }
+
+    @Test
     void requestOnlyPackageAcceptsBareRelativeInputFileForAuditDigest() throws Exception {
         Path input = Path.of("request-package-relative-input-" + System.nanoTime() + ".json");
         try {
@@ -268,7 +294,8 @@ final class SemanticPathBackedPipelineTest {
                         session.evidenceStore(),
                         session.workPath("plan"),
                         new SemanticShardingOptions(
-                                SemanticShardMode.AUTO, 10_000, 50_000, 8, false));
+                                SemanticShardMode.AUTO, 10_000, 50_000, 8, false),
+                        SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
                 run = new SemanticRunArtifactWriter().writeRequestOnly(
                         tempDir.resolve("relative-input-package"),
                         plan,
@@ -302,7 +329,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 8, false));
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
             run = new SemanticRunArtifactWriter().writeRequestOnly(
                     output,
                     plan,
@@ -339,6 +367,81 @@ final class SemanticPathBackedPipelineTest {
         JsonNode pending = read(responses.resolve("pending-responses.json"));
         assertEquals(fixture.shardIds().size(), pending.path("missing").size());
         assertFalse(hasDirectory(tempDir.resolve("codex-pending-output"), "run-"));
+    }
+
+    @Test
+    void codexRequestPackagePersistsBothConfiguredOutputBudgets() throws Exception {
+        CodexFixture fixture = codexFixture("codex-budget-index", false, 321, 123);
+
+        JsonNode index = read(fixture.requestRun().resolve("request-bundle-index.json"));
+        JsonNode manifest = read(fixture.requestRun().resolve("run-manifest.json"));
+
+        assertEquals(2, index.path("artifactSchemaVersion").asInt());
+        assertEquals(321, index.path("shardMaxOutputTokens").asInt());
+        assertEquals(123, index.path("reconciliationMaxOutputTokens").asInt());
+        assertEquals(321, manifest.path("shardMaxOutputTokens").asInt());
+        assertEquals(123, manifest.path("reconciliationMaxOutputTokens").asInt());
+    }
+
+    @Test
+    void codexCompletionRejectsShardResponseAbovePersistedOutputBudget() throws Exception {
+        CodexFixture fixture = codexFixture("codex-shard-budget", false, 500, 16_000);
+        Path responses = tempDir.resolve("codex-shard-budget-responses");
+        writeShardResponses(fixture, responses);
+        String first = fixture.shardIds().get(0);
+        Path oversized = responses.resolve("shards").resolve(first)
+                .resolve("semantic-extraction-result.json");
+        ObjectNode response = (ObjectNode) read(oversized);
+        response.put("untrustedPadding", "x".repeat(20_000));
+        JSON.writeValue(oversized.toFile(), response);
+        Path output = tempDir.resolve("codex-shard-budget-output");
+
+        SemanticExtractionValidationException failure = assertThrows(
+                SemanticExtractionValidationException.class,
+                () -> new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output));
+
+        assertTrue(failure.getMessage().contains("semantic Codex shard result exceeds"));
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
+    void codexCompletionRejectsReconciliationResponseAboveItsIndependentOutputBudget() throws Exception {
+        CodexFixture fixture = codexFixture("codex-reconciliation-budget", true, 24_000, 100);
+        Path responses = tempDir.resolve("codex-reconciliation-budget-responses");
+        Path output = tempDir.resolve("codex-reconciliation-budget-output");
+        writeShardResponses(fixture, responses);
+        SemanticCodexSessionCompletionService.Result pending =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output);
+        assertEquals(SemanticCodexSessionCompletionService.Status.PENDING, pending.status());
+        Path patch = responses.resolve("reconciliation/semantic-reconciliation-result.json");
+        Files.writeString(patch, "{\"resolutions\":[],\"renames\":[],\"padding\":\""
+                + "x".repeat(20_000) + "\"}");
+
+        SemanticExtractionValidationException failure = assertThrows(
+                SemanticExtractionValidationException.class,
+                () -> new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output));
+
+        assertTrue(failure.getMessage().contains("semantic Codex reconciliation result exceeds"));
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
+    void codexCompletionRejectsLegacyRequestPackageWithoutOutputBudgets() throws Exception {
+        CodexFixture fixture = codexFixture("codex-legacy-budget", false);
+        Path indexPath = fixture.requestRun().resolve("request-bundle-index.json");
+        ObjectNode index = (ObjectNode) read(indexPath);
+        index.put("artifactSchemaVersion", 1);
+        index.remove("shardMaxOutputTokens");
+        index.remove("reconciliationMaxOutputTokens");
+        JSON.writeValue(indexPath.toFile(), index);
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), tempDir.resolve("codex-legacy-responses"),
+                        tempDir.resolve("codex-legacy-output")));
     }
 
     @Test
@@ -428,7 +531,8 @@ final class SemanticPathBackedPipelineTest {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
-                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false));
+                    new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
 
             assertOwnerCoverage(plan);
             SemanticShardDescriptor eventShard = plan.shards().stream()
@@ -510,6 +614,8 @@ final class SemanticPathBackedPipelineTest {
                 plan.shards(),
                 plan.reconcile(),
                 plan.maxInputTokens(),
+                plan.shardMaxOutputTokens(),
+                plan.reconciliationMaxOutputTokens(),
                 plan.ownerManifestPath(),
                 sha256(plan.ownerManifestPath()));
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
@@ -565,6 +671,16 @@ final class SemanticPathBackedPipelineTest {
     }
 
     private CodexFixture codexFixture(String name, boolean reconcile) throws Exception {
+        return codexFixture(
+                name, reconcile, SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
+    }
+
+    private CodexFixture codexFixture(
+            String name,
+            boolean reconcile,
+            int shardMaxOutputTokens,
+            int reconciliationMaxOutputTokens
+    ) throws Exception {
         Path input = writeMetadataOnlyScan();
         SemanticProcessingSession session = SemanticProcessingSession.open(
                 List.of(input), tempDir.resolve(name + "-session"));
@@ -573,7 +689,8 @@ final class SemanticPathBackedPipelineTest {
                     session.evidenceStore(),
                     session.workPath("plan"),
                     new SemanticShardingOptions(
-                            SemanticShardMode.FORCE, 10_000, 50_000, 8, reconcile));
+                            SemanticShardMode.FORCE, 10_000, 50_000, 8, reconcile),
+                    shardMaxOutputTokens, reconciliationMaxOutputTokens);
             Path requestRun = new SemanticRunArtifactWriter().writeCodexSession(
                     tempDir.resolve(name + "-requests"),
                     plan,
@@ -616,7 +733,8 @@ final class SemanticPathBackedPipelineTest {
             return new SemanticShardPlanner().plan(
                     evidence,
                     tempDir.resolve(prefix + "-plan"),
-                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false));
+                    new SemanticShardingOptions(SemanticShardMode.FORCE, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
         }
     }
 

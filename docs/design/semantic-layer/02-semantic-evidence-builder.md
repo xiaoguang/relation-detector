@@ -2,8 +2,10 @@
 
 ## 1. 职责
 
-`SemanticEvidenceBuilder` 将一个已验证且有界的 `ScanBundle` 确定性物化为 `EvidenceGraph`。生产
-磁盘链路先由`SemanticEvidenceStore`全局归并并外排记录，再逐个root/shard调用该内存builder；它负责：
+`SemanticEvidenceBuilder` 将一个已验证且有界的 `ScanBundle` 确定性物化为 `EvidenceGraph`，用于
+有界兼容调用。生产磁盘链路由`SemanticInputWindowStore`逐个构造运输窗口，
+`SemanticEvidenceWindowProjector`把窗口记录写入`SemanticEvidenceStore`；完整输入随后在磁盘store中
+全局归并。root/shard由path-backed planner从全局store物化，不再逐片调用该内存builder。它负责：
 
 - 保留 database、source、fact、observation 和 evidence reference。
 - 将 relationship、lineage、naming、derived fact 和 diagnostic 转成可审计图元素。
@@ -22,8 +24,9 @@
 
 ## 2. 输入契约
 
-输入是已经通过 `ScanResultReader` wire validation 的relation-detector结果。兼容入口可合并为完整
-`ScanBundle`，生产入口则从`SemanticInputStore`逐个物化有界component/root；二者必须满足：
+输入是已经通过 `ScanResultReader` wire validation 的relation-detector结果。兼容入口只接受明确有界的
+`ScanBundle`；生产入口先写入`SemanticInputStore`，再逐个物化原始字节受限的运输窗口。运输窗口不是
+component、root或shard语义边界；二者必须满足：
 
 - database identity 的 `type/catalog/schema` 完全一致。
 - relationship、lineage、naming、derived 和 warning 数组与 summary 一致。
@@ -65,7 +68,8 @@ reader共用typed closure rules，验证constraint source/reference、FK两端�
 
 ### 3.2 Extraction Bundle
 
-`SemanticEvidenceWindowProjector` 从同一个 `ScanBundle` 生成完整 extraction bundle，顶层包含：
+`SemanticEvidenceWindowProjector`只把单个有界`ScanBundle`运输窗口投影为可全局归并的typed records。
+`SemanticEvidenceStore`在所有窗口完成后按稳定section/ID流式生成完整 extraction bundle，顶层包含：
 
 - database identity 和 portable input files。
 - `COMPLETE` inventory与全部事实endpoint共同闭合得到的`tables`。
@@ -154,7 +158,8 @@ Formal model output还必须满足：
 
 ## 6. 完整输入与 Typed Sharding
 
-模型上下文由 `SemanticShardPlanner` 控制，但完整 bundle 本身不裁剪。内存内planner的目标契约是：
+模型上下文由磁盘后备的 `SemanticShardPlanner` 和 `SemanticGlobalOwnerPlanner` 控制，但完整 bundle 本身
+不裁剪。planner的契约是：
 
 1. 仅使用 typed endpoint 和 fact/candidate reference 建立 table-touch graph。
 2. 先按 connected component 划分。
@@ -212,12 +217,17 @@ reconciliation/
 ```
 
 逐片 prompt/request/response/raw/normalized payload 只位于 `shards/`；多片协调 payload 位于
-`reconciliation/`。run 根层文件只包括完整 bundle、merged/final result、deterministic KG 和
-manifest。单 shard不再复制一套 root-level prompt/request/response/raw artifacts。
+`reconciliation/`。真实API执行会在run根层保留完整bundle、merged/final result、deterministic KG和
+manifest。request-only与Codex-session请求run不复制完整bundle，而是保存
+`request-bundle-index.json`、owned shard bundles、精确引用sidecar和压缩evidence archive；该包必须能在
+删除原始scan后重建完整bundle并复核canonical hash。单 shard不再复制一套root-level
+prompt/request/response/raw artifacts。
 
 ## 8. 失败与安全边界
 
 - Reader、builder、shard planner、normalizer 和 KG builder均采用全批校验后提交。
+- 独立`semantic build`的多文件KG产物也应先写入同级staging目录，全部文件、digest和跨文件closure
+  成功后再原子发布目标目录；逻辑KG校验成功不能替代artifact目录事务。
 - 外部模型响应不能修改 physical facts。
 - 不可解析 evidence、跨 owner输出、identity冲突和超预算 closure均显式失败。
 - 失败 run不发布 `run-<runId>`。staging创建后、任何payload前先原子写`IN_PROGRESS` manifest；

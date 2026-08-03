@@ -38,7 +38,9 @@ reference closure、graph validation和模型 review candidate 已纳入本文�
 `status=COMPLETE`仍不能替代consumer引用闭包；scope缺少FK引用对象时必须明确失败。
 inventory还必须验证`basis`：`NONE`拒绝，`LIVE_METADATA/DDL_DECLARATIONS/MERGED`保留并参与
 多输入fingerprint。file DDL只有显式`COMPLETE_SCOPE`才可产生`DDL_DECLARATIONS`；普通DDL片段
-保持`EVIDENCE_ONLY`，不能为了让semantic通过而伪造完整状态。
+保持`EVIDENCE_ONLY`，不能为了让semantic通过而伪造完整状态。COMPLETE_SCOPE中任一声明解析失败都
+必须登记coverage gap并使最终状态非COMPLETE；测试必须包含“先成功、后失败”的混合输入，不能只覆盖
+全成功和typed gap。
 
 ## 3. 完整 Extraction Bundle
 
@@ -66,6 +68,7 @@ Bundle测试必须证明：
 | overlap | 可重复提供只读上下文，不能触发candidate backfill或建立输出所有权 |
 | oversized owner | 按稳定root拆分，单root及其dependency/evidence closure不可截断 |
 | token gate | shard和reconciliation prompt低于/等于门限通过，超过门限时模型调用为0 |
+| Codex response gate | request package保存shard/reconciliation输出门限；外部响应在物化前按对应门限拒绝，不能复用输入门限 |
 | model ownership | 每个model-authored item直接引用当前片owned grounding；越界整片失败 |
 
 磁盘后备测试覆盖同一connected root跨越多个I/O window的场景，并比较不同window大小下的event、
@@ -111,7 +114,10 @@ evidence-backed COMPLETE且同类direct/derived inventory一致；随后38份全
   `IN_PROGRESS`与原异常，且不得误发布final run。
 - 单分片payload只存在于`shards/shard-0001/`。
 - 多分片reconciliation payload只存在于`reconciliation/`；run根层文件只保存full bundle、
-  merged/final result、deterministic KG和manifest。
+  merged/final result、deterministic KG和manifest。request-only/Codex请求run改用可重建package，不复制
+  full bundle。
+- 独立KG build先在同级staging完成Evidence Graph、KG、build-run、digest和跨文件closure，再原子发布
+  目标目录；最后一个文件失败时目标目录不得留下较早正式文件。
 - 无界JSON使用Jackson直接写文件；prompt/request仅因token门限有界而允许字符串。
 - `full`与`final-only` retention、pruned清单、文件大小和SHA-256可复核。
 - 两个并发run不会共享目录或状态。

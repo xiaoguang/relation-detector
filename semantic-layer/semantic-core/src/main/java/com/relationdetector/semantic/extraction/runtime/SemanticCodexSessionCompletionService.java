@@ -144,7 +144,7 @@ public final class SemanticCodexSessionCompletionService {
                 .contains(manifest.path("status").asText("")));
         ObjectNode index = readObject(
                 run.resolve("request-bundle-index.json"), "semantic request bundle index");
-        require(requiredNonNegativeInt(index, "artifactSchemaVersion") == 1);
+        require(requiredNonNegativeInt(index, "artifactSchemaVersion") == 2);
         Path bundle = workspace.resolve("full-evidence-bundle.json");
         SemanticRequestBundleReconstructor.Result reconstructed = reconstructor.reconstruct(run, bundle);
         require(reconstructed.canonicalSha256().equals(
@@ -153,6 +153,9 @@ public final class SemanticCodexSessionCompletionService {
         String ownerHash = index.path("ownerManifest").path("sha256").asText("");
         String fullBundleHash = requireHash(index.path("sourceBundleSha256").asText(""));
         int maxInputTokens = requiredPositiveInt(index, "maxInputTokens");
+        int shardMaxOutputTokens = requiredPositiveInt(index, "shardMaxOutputTokens");
+        int reconciliationMaxOutputTokens = requiredPositiveInt(
+                index, "reconciliationMaxOutputTokens");
         require(index.path("reconcile").isBoolean());
         ArrayNode shards = requireArray(index, "shards");
         List<SemanticShardDescriptor> descriptors = new ArrayList<>();
@@ -176,6 +179,8 @@ public final class SemanticCodexSessionCompletionService {
                 descriptors,
                 index.path("reconcile").booleanValue(),
                 maxInputTokens,
+                shardMaxOutputTokens,
+                reconciliationMaxOutputTokens,
                 ownerManifest,
                 ownerHash);
         return new LoadedRequest(
@@ -207,7 +212,7 @@ public final class SemanticCodexSessionCompletionService {
                 ObjectNode bundle = readObject(shard.bundlePath(), "semantic request shard bundle");
                 ObjectNode raw = bounded.readObject(
                         shardResponse(responses, shard.id()),
-                        plan.maxInputTokens(),
+                        plan.shardMaxOutputTokens(),
                         "semantic Codex shard result");
                 results.append(shard, bundle, normalizer.normalizeOwnedShard(raw, bundle));
             }

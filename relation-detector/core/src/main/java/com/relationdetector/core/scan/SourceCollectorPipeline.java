@@ -143,7 +143,8 @@ public final class SourceCollectorPipeline {
                     ddlTasks.add(new ParseTask(
                             context -> statementParser.executeDdlStatements(
                                     parserBundle, ctx.adaptor, ctx.parserConfig, dispatch.ddlStatements(), context),
-                            error -> DiagnosticWarnings.ddlParseFailed(file, error)));
+                            error -> DiagnosticWarnings.ddlParseFailed(file, error),
+                            ddlCoverageImpact(ctx)));
                 }
                 queryStatements.addAll(dispatch.queryStatements());
             }
@@ -217,7 +218,8 @@ public final class SourceCollectorPipeline {
                         context -> statementParser.executeDdlStatements(
                                 parserBundle, ctx.adaptor, ctx.parserConfig, List.of(statement), context),
                         error -> DiagnosticWarnings.ddlTextParseFailed(
-                                statement.sourceName(), statement.sql(), error)))
+                                statement.sourceName(), statement.sql(), error),
+                        DdlCoverageImpact.DDL_DECLARATION))
                 .toList());
         refreshDdlInventory(ctx);
     }
@@ -232,6 +234,12 @@ public final class SourceCollectorPipeline {
         // DDL declarations establish physical identity for parser filtering, but they are
         // not live metadata evidence and must not run through metadata enhancement again.
         ctx.physicalInventorySnapshot = ddlMetadataInventoryAssembler.snapshot(inventory);
+    }
+
+    private DdlCoverageImpact ddlCoverageImpact(ScanPipelineContext ctx) {
+        return ctx.config.sources().ddlInventoryCoverage() == DdlInventoryCoverage.COMPLETE_SCOPE
+                ? DdlCoverageImpact.DDL_DECLARATION
+                : DdlCoverageImpact.NONE;
     }
 
     private ParserBundle parserBundle(ScanPipelineContext ctx) {
@@ -264,7 +272,11 @@ public final class SourceCollectorPipeline {
             throw ex;
         } catch (Exception ex) {
             warnings.add(task.failureWarning().apply(ex));
-            return new TaskResult(StatementExecutionOutcome.empty(), warnings);
+            StatementExecutionOutcome outcome = StatementExecutionOutcome.empty();
+            if (task.coverageImpact() == DdlCoverageImpact.DDL_DECLARATION) {
+                outcome.ddlCatalogInventory().recordDeclarationParseFailure();
+            }
+            return new TaskResult(outcome, warnings);
         }
     }
 
@@ -404,7 +416,19 @@ public final class SourceCollectorPipeline {
         StatementExecutionOutcome execute(AdaptorContext context);
     }
 
-    private record ParseTask(ParseAction action, Function<Exception, WarningMessage> failureWarning) {
+    private record ParseTask(
+            ParseAction action,
+            Function<Exception, WarningMessage> failureWarning,
+            DdlCoverageImpact coverageImpact
+    ) {
+        private ParseTask(ParseAction action, Function<Exception, WarningMessage> failureWarning) {
+            this(action, failureWarning, DdlCoverageImpact.NONE);
+        }
+    }
+
+    private enum DdlCoverageImpact {
+        NONE,
+        DDL_DECLARATION
     }
 
     private record TaskResult(StatementExecutionOutcome outcome, List<WarningMessage> warnings) {

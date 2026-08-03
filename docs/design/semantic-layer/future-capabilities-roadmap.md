@@ -10,9 +10,9 @@
 ```text
 relation-detector JSON
   -> ScanResultReader.open / SemanticInputStore
-  -> SemanticEvidenceStore
-  -> global event/owner records and bounded root/shard materialization
-  -> SemanticKgStore / SemanticKgArtifactWriter
+  -> bounded transport-window projection -> SemanticEvidenceStore
+       -> global event records -> SemanticKgStore / SemanticKgArtifactWriter
+       -> global owner plan -> path-backed root/shard materialization
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 

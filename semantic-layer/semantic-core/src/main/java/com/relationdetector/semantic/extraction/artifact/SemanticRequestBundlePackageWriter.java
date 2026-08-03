@@ -245,11 +245,13 @@ public final class SemanticRequestBundlePackageWriter {
             Artifact ownerManifest
     ) {
         ObjectNode result = JSON.createObjectNode();
-        result.put("artifactSchemaVersion", 1);
+        result.put("artifactSchemaVersion", 2);
         result.put("fullBundleCanonicalSha256", source.canonicalSha256());
         result.put("sourceBundleSha256", plan.fullBundleHash());
         result.put("reconcile", plan.reconcile());
         result.put("maxInputTokens", plan.maxInputTokens());
+        result.put("shardMaxOutputTokens", plan.shardMaxOutputTokens());
+        result.put("reconciliationMaxOutputTokens", plan.reconciliationMaxOutputTokens());
         result.set("ownerManifest", artifactNode(ownerManifest));
         result.set("descriptor", source.descriptor());
         ObjectNode sections = result.putObject("sections");

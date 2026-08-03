@@ -83,6 +83,8 @@ file-only scan不再因为未连接JDBC而必然输出`NOT_REQUESTED`。只有�
 scope时，core才把各parser独立产生并经契约校验的typed table、column、foreign-key和index事件组装为
 metadata inventory，并输出`status=COMPLETE, basis=DDL_DECLARATIONS`。默认
 `EVIDENCE_ONLY`仍不声明完整性；typed gap、冲突、空catalog或consumer引用不闭合继续失败。
+普通DDL声明解析异常会在detached task outcome中登记稳定coverage gap：同一scope部分成功为
+`PARTIAL`，全部失败且无事实为`UNAVAILABLE`，非DDL查询解析失败不改变inventory状态。
 
 DDL basis证明的是“配置scope内的声明集合已完整处理”，不是整个数据库实例的live snapshot，也不
 虚构parser没有提供的数据类型。类型payload缺失时列类型保持`UNKNOWN`。发布链新增两层验证：Java
@@ -91,7 +93,17 @@ DDL basis证明的是“配置scope内的声明集合已完整处理”，不是
 `gpt-5.6-sol/xhigh` Codex-session request package。确定性矩阵得到38/38 KG与bundle reconstruction
 PASS；每个owned shard均有一份精确引用sidecar。shard数量和最大估算输入属于运行产物，由ignored
 verification summary/manifest记录；设计契约只要求估算值不超过统一hard门限。
-模型响应、reconciliation和最终closure由独立enrichment tier验证，不能以request-only替代。该项状态为`MATCHED`。
+模型响应、reconciliation和最终closure由独立enrichment tier验证，不能以request-only替代。现有样例矩阵
+证明已执行输入的确定性结果；DDL声明混合成功/失败的串行和并行边界由独立负向测试证明。
+
+### 2026-08-03 Semantic 产物与 Codex 响应预算反向审计
+
+本轮代码反查还确认两项窄缺口，状态仍由traceability唯一维护：
+
+1. 离线KG的record identity、跨文件evidence closure和多文件目录事务已验证；FULL/DIGEST_ONLY都先在
+   同级staging完成，晚期失败不会产生部分正式目标。
+2. shard/reconciliation prompt受`maxInputTokens`约束，API调用和Codex completion都使用各自输出门限。
+   request index v2持久化两个输出门限，v1仅允许证据包重建，不允许无门限推测的正式completion。
 
 ### 2026-07-28 四项反向审计的当前状态
 

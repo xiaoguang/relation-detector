@@ -27,6 +27,7 @@ import com.relationdetector.core.identity.NamespaceContext;
  * mergeable typed snapshot plus coverage gaps without creating relationships or repairing parser omissions.
  */
 public final class DdlCatalogInventory {
+    private static final String DECLARATION_PARSE_FAILED = "DECLARATION_PARSE_FAILED";
     private final Map<String, MetadataTableFact> tables = new LinkedHashMap<>();
     private final Map<String, MetadataColumnFact> columns = new LinkedHashMap<>();
     private final Map<String, MetadataConstraintFact> constraints = new LinkedHashMap<>();
@@ -59,6 +60,16 @@ public final class DdlCatalogInventory {
         other.constraints.values().forEach(this::putConstraint);
         other.indexes.values().forEach(this::putIndex);
         gaps.addAll(other.gaps);
+    }
+
+    /**
+     * CN: 记录一个属于完整DDL声明范围但未能解析的声明；下游只用该稳定缺口降低inventory完整性，
+     * 不在此处暴露异常文本或构造目录事实。
+     * EN: Records a declaration inside the complete DDL scope that could not be parsed. Downstream assembly uses
+     * this stable gap only to lower inventory completeness without exposing exception text or inventing catalog facts.
+     */
+    public void recordDeclarationParseFailure() {
+        gaps.add(DECLARATION_PARSE_FAILED);
     }
 
     public MetadataSnapshot snapshot() {

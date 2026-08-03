@@ -52,7 +52,9 @@ public final class SemanticGlobalOwnerPlanner {
             Path workspace,
             SemanticShardingOptions options,
             Path fullBundle,
-            String fullHash
+            String fullHash,
+            int shardMaxOutputTokens,
+            int reconciliationMaxOutputTokens
     ) {
         SemanticShardingOptions resolved = options == null ? SemanticShardingOptions.defaults() : options;
         try (SemanticDiskBundleIndex index =
@@ -64,7 +66,8 @@ public final class SemanticGlobalOwnerPlanner {
             inventoryRoots(index, resolved.maxInputTokens(), roots, tables, edges);
             Path assignments = assignComponents(workspace, roots, tables, edges);
             return publishShards(
-                    index, workspace, assignments, resolved, fullBundle, fullHash);
+                    index, workspace, assignments, resolved, fullBundle, fullHash,
+                    shardMaxOutputTokens, reconciliationMaxOutputTokens);
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to plan global semantic owners", failure);
         }
@@ -143,7 +146,9 @@ public final class SemanticGlobalOwnerPlanner {
             Path assignments,
             SemanticShardingOptions options,
             Path fullBundle,
-            String fullHash
+            String fullHash,
+            int shardMaxOutputTokens,
+            int reconciliationMaxOutputTokens
     ) throws IOException {
         List<Draft> drafts = new ArrayList<>();
         ExternalJsonRecordStore owners = new ExternalJsonRecordStore(workspace.resolve("owners"));
@@ -169,6 +174,8 @@ public final class SemanticGlobalOwnerPlanner {
                     shards,
                     options.reconcile(),
                     options.maxInputTokens(),
+                    shardMaxOutputTokens,
+                    reconciliationMaxOutputTokens,
                     manifest,
                     sha256(manifest));
         } finally {

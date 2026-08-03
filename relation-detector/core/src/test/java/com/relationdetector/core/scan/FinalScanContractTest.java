@@ -16,17 +16,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DdlInventoryCoverage;
 import com.relationdetector.contracts.Enums.MetadataInventoryBasis;
 import com.relationdetector.contracts.Enums.MetadataInventoryStatus;
+import com.relationdetector.contracts.spi.AdaptorCollectors;
+import com.relationdetector.contracts.spi.AdaptorParsers;
+import com.relationdetector.contracts.spi.AdaptorProfiling;
+import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.IdentifierRules;
 import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
 
 class FinalScanContractTest {
@@ -111,6 +121,53 @@ class FinalScanContractTest {
                         .toList());
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {1, 4})
+    void completeScopeDdlParseFailureDowngradesMixedInventoryToPartial(int parallelism) throws Exception {
+        Path valid = Files.writeString(tempDir.resolve("01-valid.sql"), """
+                CREATE TABLE users (
+                  id BIGINT PRIMARY KEY
+                );
+                """);
+        Path invalid = Files.writeString(tempDir.resolve("02-invalid.sql"), """
+                CREATE TABLE broken_table (
+                  id BIGINT PRIMARY KEY
+                );
+                """);
+        ScanConfig config = ddlOnlyConfig(valid);
+        config.ddlFiles.add(invalid);
+        config.ddlInventoryCoverage = DdlInventoryCoverage.COMPLETE_SCOPE;
+        config.executionParallelism = parallelism;
+
+        ScanResult result = new ScanEngine().scan(
+                config,
+                faultingDdlAdaptor(ddl -> ddl.contains("broken_table")));
+
+        assertEquals(MetadataInventoryStatus.PARTIAL, result.metadataInventory().status());
+        assertEquals(MetadataInventoryBasis.DDL_DECLARATIONS, result.metadataInventory().basis());
+        assertEquals(List.of("users"), result.metadataInventory().tables().stream()
+                .map(com.relationdetector.contracts.metadata.MetadataTableFact::tableName)
+                .toList());
+    }
+
+    @Test
+    void completeScopeDdlParseFailureWithoutFactsProducesUnavailableInventory() throws Exception {
+        Path invalid = Files.writeString(tempDir.resolve("invalid-only.sql"), """
+                CREATE TABLE broken_table (
+                  id BIGINT PRIMARY KEY
+                );
+                """);
+        ScanConfig config = ddlOnlyConfig(invalid);
+        config.ddlInventoryCoverage = DdlInventoryCoverage.COMPLETE_SCOPE;
+
+        ScanResult result = new ScanEngine().scan(
+                config,
+                faultingDdlAdaptor(ddl -> ddl.contains("broken_table")));
+
+        assertEquals(MetadataInventoryStatus.UNAVAILABLE, result.metadataInventory().status());
+        assertEquals(MetadataInventoryBasis.DDL_DECLARATIONS, result.metadataInventory().basis());
+    }
+
     @Test
     void completeScopeIncludesTypedDdlDeclarationsFromMixedLogFilesBeforeSqlParsing() throws Exception {
         Path mixed = Files.writeString(tempDir.resolve("mixed.sql"), """
@@ -189,5 +246,34 @@ class FinalScanContractTest {
                   FOREIGN KEY (party_id) REFERENCES users(id)
                 );
                 """);
+    }
+
+    private DatabaseAdaptor faultingDdlAdaptor(Predicate<String> failure) {
+        DatabaseAdaptor delegate = new CommonDatabaseAdaptor();
+        AdaptorParsers parsers = delegate.parsers();
+        var structuredDdl = parsers.structuredDdl().orElseThrow();
+        AdaptorParsers faultingParsers = new AdaptorParsers(
+                parsers.sqlRelations(),
+                parsers.structuredSql(),
+                Optional.of((ddl, source, context) -> {
+                    if (failure.test(ddl)) {
+                        throw new IllegalStateException("synthetic DDL parse failure");
+                    }
+                    return structuredDdl.parseDdl(ddl, source, context);
+                }),
+                parsers.scriptFramer());
+        return new DatabaseAdaptor() {
+            @Override public int spiVersion() { return delegate.spiVersion(); }
+            @Override public String id() { return "faulting-common-ddl"; }
+            @Override public String displayName() { return "Faulting Common DDL"; }
+            @Override public Set<DatabaseType> supportedDatabaseTypes() {
+                return delegate.supportedDatabaseTypes();
+            }
+            @Override public Set<AdaptorCapability> capabilities() { return delegate.capabilities(); }
+            @Override public IdentifierRules identifierRules() { return delegate.identifierRules(); }
+            @Override public AdaptorCollectors collectors() { return delegate.collectors(); }
+            @Override public AdaptorParsers parsers() { return faultingParsers; }
+            @Override public AdaptorProfiling profiling() { return delegate.profiling(); }
+        };
     }
 }

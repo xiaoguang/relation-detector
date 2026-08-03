@@ -122,13 +122,14 @@ SemanticInputStore {
 }
 
 生产reader逐条验证和落盘，只接受COMPLETE inventory；multi-input还要求scope和inventory
-fingerprint一致。`ScanBundle`只在下游逐个有界root/shard中物化。`COMPLETE`只表示上游完成配置
+fingerprint一致。`ScanBundle`只为原始字节受限的运输窗口物化；root/shard由全局store按owner closure
+直接生成，二者不是同一边界。`COMPLETE`只表示上游完成配置
 scope的采集；共享typed closure rules另行验证constraint/index identity与成员、FK引用端、
 cardinality、ordinal和`subParts`。scope缺少引用对象时正式semantic处理失败。
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
         ↓ [当前: 全局磁盘store归并event contribution、typed table component和唯一owner]
-        ↓ [当前: 逐个有界root/shard materialize；外排合并EvidenceGraph与KG stable IDs]
+        ↓ [当前: 逐个运输窗口投影后全局外排归并，再按owner closure物化bounded root/shard]
         ↓ [当前: 从 rawEvidence / grouped evidence 生成 EvidenceReference]
         ↓ [未来: businessRole 推断、冲突初筛、catalog/search 索引]
 
@@ -438,7 +439,7 @@ Step 7: Answer（最终输出）
 [ScanResultReader]
     ↓ 输出: SemanticInputStore（section spool + 外排索引）
 [SemanticEvidenceStore / SemanticGlobalOwnerPlanner / SemanticKgStore]
-    ↓ 全局归并event/owner，逐个bounded root/shard构建并外排合并
+    ↓ 运输窗口全局归并event/owner，逐个bounded root/shard流式构建
 [SemanticKgArtifactWriter]
     ↓ 输出: semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```

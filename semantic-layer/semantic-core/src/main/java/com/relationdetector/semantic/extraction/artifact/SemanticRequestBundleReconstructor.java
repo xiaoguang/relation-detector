@@ -53,7 +53,7 @@ public final class SemanticRequestBundleReconstructor {
                     normalizedRun.resolve("request-bundle-index.json"),
                     "semantic request bundle index");
             require(index.path("artifactSchemaVersion").isInt()
-                    && index.path("artifactSchemaVersion").intValue() == 1);
+                    && Set.of(1, 2).contains(index.path("artifactSchemaVersion").intValue()));
             Map<SemanticEvidenceStore.Section, ExternalJsonRecordStore> stores = stores(workspace);
             boolean storesClosed = false;
             try {

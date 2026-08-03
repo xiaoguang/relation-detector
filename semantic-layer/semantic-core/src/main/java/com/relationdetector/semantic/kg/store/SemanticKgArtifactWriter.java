@@ -27,14 +27,16 @@ import com.relationdetector.semantic.kg.SemanticKgEvidenceGraphReference;
 
 /**
  * CN: 将 SemanticEvidenceStore 中已完成全局聚合的 KG 与 EvidenceGraph 记录通过外排 stable-ID 校验并流式
- * 写成三个正式 artifact；下游是 semantic CLI build/e2e，本类不重新解释物理事实或完整物化 graph。
+ * 写入隐藏staging，全部artifact和digest完成后由目录事务一次发布；下游是semantic CLI build/e2e，
+ * 本类不重新解释物理事实或完整物化graph。
  * EN: Validates the globally aggregated KG and EvidenceGraph records in SemanticEvidenceStore through external
- * stable-ID stores and streams the three formal artifacts. It serves build/e2e without reinterpreting physical facts
- * or materializing the complete graph.
+ * stable-ID stores and streams them into hidden staging before one directory-level publication. It serves build/e2e
+ * without reinterpreting physical facts or materializing the complete graph.
  */
 public final class SemanticKgArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final Clock clock;
+    private final SemanticKgArtifactPublisher publisher = new SemanticKgArtifactPublisher();
 
     public SemanticKgArtifactWriter() {
         this(Clock.systemUTC());
@@ -55,8 +57,8 @@ public final class SemanticKgArtifactWriter {
      * CN: 将完整磁盘evidence store按同一renderer写为FULL文件或DIGEST_ONLY空sink，并返回三份逻辑artifact
      * 的字节、SHA和closure摘要；输入或I/O失败时清理merge workspace，不保留部分逻辑报告。
      * EN: Renders a complete disk evidence store through the same serializer to FULL files or a DIGEST_ONLY null sink
-     * and returns byte, SHA, and closure summaries for all three logical artifacts. Input or I/O failure cleans the
-     * merge workspace and never returns a partial logical report.
+     * and returns byte, SHA, and closure summaries for all three logical artifacts. Input or I/O failure removes the
+     * complete staging directory and never exposes a partial target.
      */
     public SemanticKgArtifactReport writeArtifacts(
             SemanticEvidenceStore evidenceStore,
@@ -67,16 +69,32 @@ public final class SemanticKgArtifactWriter {
             throw new IllegalArgumentException("semantic evidence store and output directory are required");
         }
         SemanticKgArtifactMode resolved = mode == null ? SemanticKgArtifactMode.FULL : mode;
+        return publisher.publish(
+                outputDirectory,
+                staging -> writeStagedArtifacts(evidenceStore, staging, resolved));
+    }
+
+    /**
+     * CN: 在publisher已创建的独占staging目录中流式渲染Evidence Graph、KG、build-run和digest，
+     * 返回已通过跨文件闭包校验的摘要；本方法不发布目录，渲染或I/O失败由上层事务清理整个staging。
+     * EN: Streams the Evidence Graph, KG, build-run, and digest into an exclusive staging directory created by the
+     * publisher and returns a cross-file-validated report. This method never publishes the directory; rendering or
+     * I/O failure is propagated so the outer transaction can remove the complete staging tree.
+     */
+    private SemanticKgArtifactReport writeStagedArtifacts(
+            SemanticEvidenceStore evidenceStore,
+            Path outputDirectory,
+            SemanticKgArtifactMode mode
+    ) {
         Path workspace = outputDirectory.resolve(".artifact-merge-work");
         if (Files.exists(workspace)) {
             throw new ScanResultContractException("semantic artifact merge workspace already exists");
         }
         try (SemanticKgStore kg =
                      new SemanticKgStore(evidenceStore.graphRecords(), workspace.resolve("kg"))) {
-            Files.createDirectories(outputDirectory);
             Map<String, Object> buildRun = buildRun(evidenceStore.descriptor());
             SemanticKgArtifactReport.ArtifactDigest evidenceGraph = render(
-                    "semantic-evidence-graph.json", outputDirectory, resolved,
+                    "semantic-evidence-graph.json", outputDirectory, mode,
                     generator -> writeEvidenceGraph(generator, evidenceStore));
             SemanticKgEvidenceGraphReference evidenceGraphReference = new SemanticKgEvidenceGraphReference(
                     evidenceGraph.path(),
@@ -84,10 +102,10 @@ public final class SemanticKgArtifactWriter {
                     evidenceStore.graphRecords().count(SemanticGraphRecordStore.Section.EVIDENCE),
                     evidenceStore.graphRecords().count(SemanticGraphRecordStore.Section.DIAGNOSTICS));
             SemanticKgArtifactReport.ArtifactDigest kgArtifact = render(
-                    "semantic-kg.json", outputDirectory, resolved,
+                    "semantic-kg.json", outputDirectory, mode,
                     generator -> writeKg(generator, kg, buildRun, evidenceStore, evidenceGraphReference));
             SemanticKgArtifactReport.ArtifactDigest buildArtifact = render(
-                    "semantic-build-run.json", outputDirectory, resolved,
+                    "semantic-build-run.json", outputDirectory, mode,
                     generator -> writeBuildRun(generator, buildRun));
             List<SemanticKgArtifactReport.ArtifactDigest> artifacts =
                     List.of(kgArtifact, buildArtifact, evidenceGraph);
@@ -101,7 +119,7 @@ public final class SemanticKgArtifactWriter {
                             evidenceStore.graphRecords().count(
                                     SemanticGraphRecordStore.Section.DIAGNOSTICS),
                             "PASS"));
-            writeReport(outputDirectory.resolve("semantic-kg-digests.json"), resolved, report);
+            writeReport(outputDirectory.resolve("semantic-kg-digests.json"), mode, report);
             return report;
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to write disk-backed semantic artifacts", failure);

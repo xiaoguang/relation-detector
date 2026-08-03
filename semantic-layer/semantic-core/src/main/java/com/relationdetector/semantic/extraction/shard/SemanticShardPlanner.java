@@ -19,10 +19,14 @@ public final class SemanticShardPlanner {
     public SemanticRunPlan plan(
             SemanticEvidenceStore evidenceStore,
             Path workspace,
-            SemanticShardingOptions options
+            SemanticShardingOptions options,
+            int shardMaxOutputTokens,
+            int reconciliationMaxOutputTokens
     ) {
-        if (evidenceStore == null || workspace == null) {
-            throw new IllegalArgumentException("semantic evidence store and path-plan workspace are required");
+        if (evidenceStore == null || workspace == null
+                || shardMaxOutputTokens <= 0 || reconciliationMaxOutputTokens <= 0) {
+            throw new IllegalArgumentException(
+                    "semantic evidence store, path-plan workspace and output budgets are required");
         }
         SemanticShardingOptions resolved = options == null ? SemanticShardingOptions.defaults() : options;
         try {
@@ -33,7 +37,8 @@ public final class SemanticShardPlanner {
             Path fullBundle = workspace.resolve("full-evidence-bundle.json");
             String fullHash = evidenceStore.writeBundleAndHash(fullBundle);
             return new SemanticGlobalOwnerPlanner().plan(
-                    evidenceStore, workspace, resolved, fullBundle, fullHash);
+                    evidenceStore, workspace, resolved, fullBundle, fullHash,
+                    shardMaxOutputTokens, reconciliationMaxOutputTokens);
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to create semantic path-backed plan", failure);
         }

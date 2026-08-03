@@ -109,7 +109,14 @@ scanRunId、sourceHash、reviewDecisionId等跨运行治理元数据仍是后续
 
 语义层消费 relation-detector 输出前的标准化事实包。
 
-ScanBundle 对应 Semantica 架构中 Raw Documents / Records 的角色，但它的内容是数据库事实记录而不是任意文档。当前代码已把 relationship、lineage、naming evidence 和 diagnostic 转为 typed fact，在 reader 边界固化内容稳定 id、endpoint、confidence 和 flow kind；数组重排不会改变 id 集合。每个 fact仍保留原始 JSON payload 用于 evidence/provenance 展示。reader 验证必需结构、ISO-8601 `generatedAt`、endpoint、confidence、summary 计数、完整 type/catalog/schema identity、当前 relation/lineage/evidence/warning enum，以及 nested evidence/warning 和 derived path shape。它不负责业务语义确认；source-hash、scan-run catalog index 和持久化治理仍属后续范围。reader要求 warning 数组与 `summary.warningCount` 一致；relation-detector 的完整 warning 输出和 `includeWarnings=false` 生成的全空 suppressed 视图都满足该契约。
+生产Raw Records载体是磁盘后备`SemanticInputStore`；`ScanBundle`只是其中一个原始字节受限运输窗口的
+typed视图，不代表完整输入、component、root或shard。reader在落盘前固化relationship、lineage、naming
+evidence和diagnostic的内容稳定ID、endpoint、confidence与flow kind；数组重排不会改变ID集合。每个fact
+仍保留原始JSON payload用于evidence/provenance展示。reader验证必需结构、ISO-8601 `generatedAt`、
+endpoint、confidence、summary计数、完整type/catalog/schema identity、当前枚举、nested evidence/warning
+和derived path shape。它不负责业务语义确认；source-hash、scan-run catalog index和持久化治理仍属后续
+范围。reader要求warning数组与`summary.warningCount`一致；完整warning输出和
+`includeWarnings=false`生成的全空suppressed视图都满足该契约。
 
 ### Provenance
 

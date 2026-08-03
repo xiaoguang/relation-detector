@@ -361,7 +361,7 @@ sources
 | --- | --- | --- | --- |
 | Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result是外部标准输入；生产链使用`SemanticInputStore/SemanticEvidenceStore`，`ScanBundle`仅是有界typed视图。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
 | Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader 读取 relation-detector JSON arrays，校验当前 writer 的 timestamp、fact shape、枚举、nested evidence/warning 和 summary contract，并在多 input 时要求 database type / catalog / schema 完全一致。reader 不做业务去重；持久化 catalog index 仍是后续增强。 | 不调用 LLM，不发明事实。 |
-| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector输出COMPLETE inventory与relationship、lineage、namingEvidence、diagnostics；生产链路流式写入section spool，在完整磁盘evidence store上全局归并event、计算typed table component与唯一owner，再逐个token受限root/shard生成deterministic KG和模型请求。 | 模型不接收可改写的正式KG；raw-byte阈值只控制外排I/O window，不能定义semantic boundary。owner/overlap、canonical merge、受限协调和完整bundle复验均使用全局计划，估算门限不称为provider精确上限。 |
+| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector输出COMPLETE inventory与relationship、lineage、namingEvidence、diagnostics；生产链路流式写入section spool，在完整磁盘evidence store上全局归并event、计算typed table component与唯一owner。deterministic KG直接从全局records流式生成，模型请求才按token受限root/shard生成。 | 模型不接收可改写的正式KG；raw-byte阈值只控制外排I/O window，不能定义semantic boundary。owner/overlap、canonical merge、受限协调和完整bundle复验均使用全局计划，估算门限不称为provider精确上限。 |
 | Conflict / Dedup | 检测冲突、保留来源、去重合并。 | 当前 builder 只校验稳定 ID 并物化事实；片内/跨片 canonical identity merge 只处理本次抽取中的确定性重复。持久冲突检测、Review Queue 和治理仍是后续能力。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |
 | KG / Context Graph | 构建可查询图，记录事实、决策和推理路径。 | 当前已落地 JSON `SemanticKnowledgeGraph` artifact；Semantic Catalog / Context Graph 是后续承载方式。 | Phase 1 不要求完整 graph store。 |
 | Ontology / Governance | OWL、SHACL、policy enforcement、合规规则。 | reviewStatus、SQL Validator、Review Queue 和治理决策。 | 不承诺完整 OWL/SHACL 本体平台。 |
@@ -370,9 +370,9 @@ sources
 
 因此本项目后续设计应更强调三点：
 
-- **先标准化事实，再构建语义。** relation-detector JSON进入`SemanticInputStore`和全局磁盘
-  `SemanticEvidenceStore`后，Evidence Builder、Catalog与Planner才按一个有界root/shard消费；
-  I/O window不能改变event、owner或component身份。
+- **先标准化事实，再构建语义。** relation-detector JSON进入`SemanticInputStore`后，Evidence Builder只
+  投影有界运输窗口；全局磁盘`SemanticEvidenceStore`完成event与事实归并后，Catalog与Planner再按
+  有界root/shard消费。I/O window不能改变event、owner或component身份。
 - **所有语义结论都要可追溯。** 每个字段、指标、join path、AnswerPlan 和 SQL draft element 都要能回到 evidenceRef 或 reviewDecision。
 - **LLM 是解释器和候选生成器，不是事实裁决者。** LLM 不确认业务口径、不生成物理关系、不做最终治理决策。
 
@@ -397,7 +397,8 @@ sources
 
 输出：
 
-- normalized scan bundle。
+- 按section落盘并带外排索引的`SemanticInputStore`；需要兼容typed算法时只物化有界运输窗口
+  `ScanBundle`。
 
 不负责：
 
@@ -408,8 +409,9 @@ sources
 ### 3.2 Semantic Evidence Builder
 
 当前实现把metadata table/column/constraint/index、typed relationship、lineage、naming、derived和
-diagnostic流式写入全局磁盘store，按完整event identity外排归并deterministic event candidate，再按
-全局owner计划逐个有界root/shard物化evidence graph与KG，并保留上游fact payload与evidence refs。
+diagnostic从有界运输窗口流式写入全局磁盘store，按完整event identity外排归并deterministic event
+candidate，再按全局owner计划生成有界root/shard；Evidence Graph与KG直接从全局records流式写出，并
+保留上游fact payload与evidence refs。
 
 当前可见 evidence：
 

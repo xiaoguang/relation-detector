@@ -213,7 +213,7 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016
 版本由 package 表达，例如 `postgres.fullgrammar.v16`、`mysql.fullgrammar.v8_0`、`oracle.fullgrammar.v19c`、`sqlserver.fullgrammar.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammarDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammar 实现。version package 不再持有 `.g4` 或 generated Java；它们依赖 `grammar/*` 中对应的独立 artifact，只保留 binding、profile/version policy 和少量 typed context adapter。
 
 Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试扫描relation-detector与semantic-layer全部手写生产Java：visitor/collector设置400行上限，
-`Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade/Store/Planner/Publisher/Fingerprinter/Canonicalizer/Handler/Writer`
+`Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade/Store/Planner/Publisher/Fingerprinter/Canonicalizer/Handler/Writer/Validator/Builder/Service/Index/Loader/Executor/Runner/Scheduler/Assembler`
 设置450行上限；generated Java、top-level record DTO 与`package-info`排除，不设永久allowlist。
 `StructuredScriptFramer`仅保留编排，
 五种 dialect slice算法已分别进入独立planner，并由额外的200/250行职责门禁保护。top-level record

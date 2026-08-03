@@ -251,7 +251,7 @@ Natural Language
 
 | 模块 | 亿问启发 | 建议调整 | 边界 |
 | --- | --- | --- | --- |
-| Scan Result Reader | 事实必须先被规范化，不能直接喂给模型。 | 保持读取 relation-detector 输出并归一化为 ScanBundle。 | 不调用 LLM，不生成业务语义。 |
+| Scan Result Reader | 事实必须先被规范化，不能直接喂给模型。 | 流式读取 relation-detector 输出并归一化到`SemanticInputStore`；只为运输窗口提供有界`ScanBundle`视图。 | 不调用 LLM，不生成业务语义。 |
 | Semantic Evidence Builder | SemanticDB 需要事实和证据，而不是自由文本。 | 强化 evidence graph 和 compact evidence bundle。 | 只构建 evidence，不确认业务口径。 |
 | LLM Semantic Enricher | 模型负责解释、归纳、扩展。 | 继续输出 SYSTEM_PROPOSED semantic objects、同义词、描述和冲突说明。 | 不能创造 physical relationship、lineage 或 BUSINESS_APPROVED metric。 |
 | Semantic Catalog Store | SemanticDB 是语义资产中心。 | 继续以 semantic object、edge、evidenceRef、review decision 为核心。 | 不做黑盒大对象。 |

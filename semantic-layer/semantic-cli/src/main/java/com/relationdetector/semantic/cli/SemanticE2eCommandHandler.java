@@ -27,7 +27,8 @@ final class SemanticE2eCommandHandler {
         new SemanticExtractionFacade().writeE2eRequest(new SemanticExtractionFacade.E2eRequest(
                 arguments.inputs(), arguments.output(), kgOutput, extractionOutput, arguments.model(),
                 arguments.reasoningEffort(), arguments.artifactRetention(), arguments.kgOutput(),
-                arguments.sharding()));
+                arguments.sharding(), arguments.shardMaxOutputTokens(),
+                arguments.reconciliationMaxOutputTokens()));
         return SemanticCliExitCode.SUCCESS;
     }
 

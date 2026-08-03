@@ -196,7 +196,7 @@ public final class SemanticRunArtifactWriter {
                         ObjectNode raw = bounded.readObject(
                                 responses.resolve("shards").resolve(shard.id())
                                         .resolve("semantic-extraction-result.json"),
-                                plan.maxInputTokens(),
+                                plan.shardMaxOutputTokens(),
                                 "semantic Codex shard result");
                         return codexResult(raw);
                     }
@@ -206,7 +206,7 @@ public final class SemanticRunArtifactWriter {
                         ObjectNode patch = bounded.readObject(
                                 responses.resolve("reconciliation")
                                         .resolve("semantic-reconciliation-result.json"),
-                                plan.maxInputTokens(),
+                                plan.reconciliationMaxOutputTokens(),
                                 "semantic Codex reconciliation result");
                         return codexResult(patch);
                     }

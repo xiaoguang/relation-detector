@@ -9,8 +9,9 @@
 - `semantic build` / `semantic e2e` 的 KG 构建链路直接执行
   `SemanticEvidenceStore -> SemanticKgStore -> SemanticKgArtifactWriter`，不创建 semantic fact，也不调用 LLM。
 - `semantic extract` 的语义抽取链路已经实现：`SemanticProcessingSession`从完整scan输入建立磁盘evidence
-  store并写`deterministic-kg/`，再由`SemanticEvidenceWindowProjector`投影单个有界root/shard bundle。
-  `SemanticShardPlanner` 按当前 table-touch 连通分量形成 evidence-closed shard；`codex-session`
+  store并写`deterministic-kg/`。`SemanticEvidenceWindowProjector`只负责把有界运输窗口写入全局store；
+  `SemanticShardPlanner`从全局store按table-touch连通分量和owner closure物化evidence-closed shard。
+  `codex-session`
   只写逐片 prompt / bundle / 协调模板，`openai-api` 默认使用
   `gpt-5.6-sol`、`xhigh` 调用 Responses API。逐片结果先在片内归一化，再确定性合并、
   受限协调，最后针对原始完整 bundle 做一次全局闭包校验。
@@ -36,12 +37,13 @@
 - LLM 不创建正式 Data Lineage。
 - LLM 不把任何 metric / entity / join path 直接提升为 `BUSINESS_APPROVED`。
 - LLM 输出必须引用 evidence bundle 中已有的 fact/evidence/candidate id；无法闭合的内容会使正式 normalization 失败。写入持久化 warning / review queue 属于后续 catalog/governance 阶段。
-- LLM 不接收可改写的正式 KG。确定性 KG 与模型 evidence bundle 是同一 `ScanBundle`
-  的并列 artifact；模型只能返回语义候选或受限 reconciliation patch。
+- LLM 不接收可改写的正式 KG。确定性 KG 与模型 evidence bundle 来自同一个全局
+  `SemanticEvidenceStore`，而不是同一个完整内存`ScanBundle`；模型只能返回语义候选或受限
+  reconciliation patch。
 
 LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。当前数据库事实来自 relation-detector
-输出的 relationship、lineage、naming、diagnostic 及其 metadata/DDL/SQL provenance；独立 metadata
-inventory 和 comment evidence 需要未来 wire/catalog 扩展。
+输出的完整metadata inventory、relationship、lineage、naming、diagnostic及其metadata/DDL/SQL
+provenance；独立comment evidence及其catalog持久化仍需要未来wire/catalog扩展。
 
 ## 1.1 Semantica 启发：LLM 不是 accountability layer
 
@@ -75,10 +77,11 @@ Semantic Evidence Store
 KG 构建链路不调用 LLM，也不会修改 evidence graph。
 
 ```text
-ScanBundle
+SemanticInputStore
+  -> bounded transport windows -> SemanticEvidenceWindowProjector
+  -> SemanticEvidenceStore (全局归并，流式完整 bundle)
   -> deterministic-kg/ (规则构建，不交给模型改写)
-  -> SemanticEvidenceWindowProjector (完整 bundle)
-  -> SemanticShardPlanner (连通分量 / evidence closure / 唯一 owner)
+  -> SemanticShardPlanner (全局连通分量 / evidence closure / 唯一 owner)
   -> SemanticExtractionPromptBuilder (逐片)
   -> semantic extract
        -> codex-session: 写 shards/* prompt / bundle / session 与 reconciliation template
@@ -89,7 +92,10 @@ ScanBundle
        -> 对已有 JSON 输出生成 normalized semantic document
 ```
 
-真实 LLM 只存在于 `openai-api` provider。`codex-session` 是开发/人工测试入口，不会自动调用模型；用户或 Codex 会话可以读取 prompt 后生成 JSON，再通过 `normalize-extraction` 标准化。
+真实 LLM 只存在于 `openai-api` provider。`codex-session` 是开发/人工测试入口，不会自动调用模型；用户
+或Codex会话生成逐片JSON后，应由`SemanticCodexSessionCompletionService`消费不可变request run和独立
+response目录，统一执行owner校验、片内normalization、merge、reconciliation和最终closure。
+`normalize-extraction`保留给携带合法`shardContext`的单份手工结果，不替代多片完成事务。
 
 目标治理状态：
 
@@ -235,6 +241,8 @@ triplet 和 review item 候选，并对每个引用做类型化闭包校验。
 model: gpt-5.6-sol
 reasoningEffort: xhigh
 artifactRetention: full
+shardMaxOutputTokens: 24000
+reconciliationMaxOutputTokens: 16000
 sharding:
   mode: auto
   targetInputTokens: 240000
@@ -263,6 +271,10 @@ gate，不是 provider 精确 token 数的数学硬上限。API 返回的 actual
 只渲染待选冲突变体、shard/owner元数据和固定约束，不复制无关的merged semantic summary。该最终
 prompt仍由同一个 `SemanticPromptBudgetEstimator` 执行门限；超过上限时在模型调用前原子失败，
 等于上限时允许执行。manifest 同时记录门限和 `estimatedInputTokens`，并明确该值不是模型精确 token 数。
+
+请求包还必须保存本次运行的`shardMaxOutputTokens`和`reconciliationMaxOutputTokens`。Codex-session完成
+入口在把外部响应物化为`JsonNode`前，分别使用对应输出门限执行与standalone raw result相同的有界读取；
+`maxInputTokens`只约束prompt/evidence context，不能替代模型输出门限。
 
 每个 fact 与 deterministic candidate 恰好有一个 canonical owner。其他 shard 可以携带只读 overlap
 上下文，planner 不会重复授予 owner，deterministic candidate backfill 也只补 owned candidates。prompt
@@ -338,8 +350,10 @@ deterministic KG、build-run 和 evidence graph 都直接通过 Jackson 写入�
 `responses/reconciliation/semantic-reconciliation-result.json`。只有merge、patch和完整bundle closure
 全部通过才发布`COMPLETE` run，任何失败都不修改原request run，也不发布部分正式结果。
 
-Codex-session的模型上下文是完整owned shard的受控投影视图，不是另一份事实裁剪：完整bundle继续保存在
-request package中并用于owner、backfill和closure。确定性`tripletCandidates`不复制进模型prompt；模型
+Codex-session的模型上下文是完整owned shard的受控投影视图，不是另一份事实裁剪：request package不
+复制完整bundle，而是以owned shard bundles、精确引用sidecar、压缩evidence archive和
+`request-bundle-index.json`提供可重建表示；完成入口先重建并验证canonical hash，再用于owner、backfill和
+closure。确定性`tripletCandidates`不复制进模型prompt；模型
 可选择性解释event candidate，但event的`inputs/outputs/inputEntityRefs/outputEntityRefs`必须按schema留空，
 由core从typed candidate重建。模型输出中的`semanticGraph`与`validation`固定为`null`，core在补齐候选、
 规范化和引用校验后统一重建。该边界减少重复输出，不减少正式事实、证据或最终图闭包。
@@ -352,6 +366,7 @@ request package中并用于owner、backfill和closure。确定性`tripletCandida
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard item的owned grounding已校验；reconciliation只接受`resolutions`和`renames`，不能新增对象或relation。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后仅含冲突闭包的reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
+| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | API调用使用配置的shard/reconciliation输出门限；Codex request index v2及manifest保存同一门限，completion在物化外部shard和reconciliation响应前分别执行对应有界读取。v1只能重建，不能继续正式completion。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
@@ -365,12 +380,12 @@ request package中并用于owner、backfill和closure。确定性`tripletCandida
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
 | `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base和association组合分别在对应列表物化前受同一预算；standalone raw、envelope和已选evidence共享硬门限；递归清理内存只随目录深度增长。低堆测试覆盖跨窗口宽event、64 MiB envelope和20,000路径。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
-| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才可输出COMPLETE/DDL_DECLARATIONS。完整sample-data semantic门禁已对38份direct/derived结果构建完整KG、request package并完成重建/closure；每个owned shard与一份精确引用sidecar一一对应，全部请求为`gpt-5.6-sol/xhigh`且必须通过统一hard estimate gate。运行时数量和最大估算值由ignored verification summary/manifest记录。 |
+| `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才允许输出COMPLETE/DDL_DECLARATIONS；普通DDL声明解析失败会通过detached task result登记coverage gap，混合输入为PARTIAL，全失败且无事实为UNAVAILABLE，串行/并行测试保持一致。 |
 
-上述完整输入、模型请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
+上述完整输入、模型输入请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
 identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及
-上述结构边界已按矩阵闭合。现有内存门禁只证明指定输入形状在指定堆下有界完成或确定性预算拒绝，
-不作为吞吐承诺。
+上述结构边界已按矩阵闭合；Codex外部响应输出预算和DDL混合解析失败完整性也已通过负向契约测试闭合。现有内存
+门禁只证明指定输入形状在指定堆下有界完成或确定性预算拒绝，不作为吞吐承诺。
 
 独立归一化命令为：
 

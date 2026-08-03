@@ -50,6 +50,8 @@ public final class SemanticRunManifestFactory {
         manifest.put("retention", retention.wireValue());
         manifest.put("fullBundleHash", plan.fullBundleHash());
         manifest.put("maxInputTokens", plan.maxInputTokens());
+        manifest.put("shardMaxOutputTokens", plan.shardMaxOutputTokens());
+        manifest.put("reconciliationMaxOutputTokens", plan.reconciliationMaxOutputTokens());
         manifest.put("shardCount", plan.shards().size());
         manifest.put("reconcile", plan.reconcile());
         manifest.put("ownedFactCount", plan.ownedFactCount());

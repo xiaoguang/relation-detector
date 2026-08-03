@@ -30,7 +30,8 @@ public final class SemanticExtractionFacade {
         try (SemanticProcessingSession session = SemanticProcessingSession.openForOutput(
                 request.inputs(), request.output(), "extract", request.sharding().maxInputTokens())) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
-                    session.evidenceStore(), session.workPath("plan"), request.sharding());
+                    session.evidenceStore(), session.workPath("plan"), request.sharding(),
+                    request.shardMaxOutputTokens(), request.reconciliationMaxOutputTokens());
             SemanticRunArtifactWriter writer = new SemanticRunArtifactWriter();
             java.util.function.Consumer<Path> deterministicArtifacts = staging -> session.writeKgArtifacts(
                     staging.resolve("deterministic-kg"), request.kgOutput());
@@ -63,7 +64,8 @@ public final class SemanticExtractionFacade {
                 request.inputs(), request.outputRoot(), "e2e", request.sharding().maxInputTokens())) {
             session.writeKgArtifacts(request.kgOutput(), request.kgArtifactMode());
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
-                    session.evidenceStore(), session.workPath("plan"), request.sharding());
+                    session.evidenceStore(), session.workPath("plan"), request.sharding(),
+                    request.shardMaxOutputTokens(), request.reconciliationMaxOutputTokens());
             new SemanticRunArtifactWriter().writeCodexSession(
                     request.extractionOutput(), plan, request.model(), request.reasoningEffort(), request.retention(),
                     ignored -> {
@@ -139,10 +141,20 @@ public final class SemanticExtractionFacade {
             String reasoningEffort,
             ArtifactRetention retention,
             SemanticKgArtifactMode kgArtifactMode,
-            SemanticShardingOptions sharding
+            SemanticShardingOptions sharding,
+            int shardMaxOutputTokens,
+            int reconciliationMaxOutputTokens
     ) {
         public E2eRequest {
             inputs = List.copyOf(inputs);
+            requirePositive(shardMaxOutputTokens, "shardMaxOutputTokens");
+            requirePositive(reconciliationMaxOutputTokens, "reconciliationMaxOutputTokens");
+        }
+
+        private static void requirePositive(int value, String name) {
+            if (value <= 0) {
+                throw new IllegalArgumentException(name + " must be positive");
+            }
         }
     }
 
