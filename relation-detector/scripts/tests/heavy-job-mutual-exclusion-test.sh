@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 CORRECTNESS_RUNNER="$ROOT/relation-detector/scripts/run-correctness-isolated.sh"
 SAMPLE_DATA_RUNNER="$ROOT/relation-detector/scripts/run-sample-data-isolated.sh"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/heavy-job-mutual-exclusion.XXXXXX")"
+TMP_BASE="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+TMP_DIR="$(mktemp -d "$TMP_BASE/heavy-job-mutual-exclusion.XXXXXX")"
 SHARED_LOCK="$TMP_DIR/heavy-job.lock"
 CORRECTNESS_PID=""
 SAMPLE_DATA_PID=""
@@ -98,6 +99,7 @@ CORRECTNESS_MVN="$TMP_DIR/mvn-blocking" \
 CORRECTNESS_LOCK_DIR="$SHARED_LOCK" \
 CORRECTNESS_OUTPUT_DIR="$TMP_DIR/correctness-output" \
 CORRECTNESS_RUN_SUMMARY="$TMP_DIR/correctness-summary.json" \
+CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
 CORRECTNESS_SKIP_PROCESS_GUARD=true \
 HEAVY_TEST_CORRECTNESS_STARTED="$TMP_DIR/correctness-started" \
   "$CORRECTNESS_RUNNER" >"$TMP_DIR/correctness.out" 2>"$TMP_DIR/correctness.err" &
@@ -144,6 +146,7 @@ RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR="$SHARED_LOCK" \
 CORRECTNESS_MVN="$TMP_DIR/mvn-invoked" \
 CORRECTNESS_OUTPUT_DIR="$TMP_DIR/rejected-correctness-output" \
 CORRECTNESS_RUN_SUMMARY="$TMP_DIR/rejected-correctness-summary.json" \
+CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
 CORRECTNESS_SKIP_PROCESS_GUARD=true \
 HEAVY_TEST_CORRECTNESS_INVOKED="$TMP_DIR/correctness-invoked-marker" \
   "$CORRECTNESS_RUNNER" >"$TMP_DIR/rejected-correctness.out" \

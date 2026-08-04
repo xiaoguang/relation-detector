@@ -28,17 +28,22 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
         List<OracleRelationSqlParser.SelectItemContext> items =
                 ctx.selectStatement().querySpecification().selectList().selectItem();
         OracleExpressionAnalysis grouping = groupingControl(ctx.selectStatement());
-        for (int index = 0; index < Math.min(targetColumns.size(), items.size()); index++) {
-            OracleRelationSqlParser.SelectItemContext item = items.get(index);
-            if (item.expression() == null) continue;
-            for (OracleExpressionAnalysis source : writeAnalyses(item.expression())) {
-                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
-                        targetColumns.get(index), resolveCurrentScope(source), "INSERT_SELECT");
+        queryScopes.push(scopeFor(ctx.selectStatement().querySpecification()));
+        try {
+            for (int index = 0; index < Math.min(targetColumns.size(), items.size()); index++) {
+                OracleRelationSqlParser.SelectItemContext item = items.get(index);
+                if (item.expression() == null) continue;
+                for (OracleExpressionAnalysis source : writeAnalyses(item.expression())) {
+                    addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
+                            targetColumns.get(index), resolveCurrentScope(source), "INSERT_SELECT");
+                }
+                if (containsAggregateFunction(item.expression())) {
+                    addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
+                            targetColumns.get(index), grouping, "INSERT_GROUP_BY");
+                }
             }
-            if (containsAggregateFunction(item.expression())) {
-                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
-                        targetColumns.get(index), grouping, "INSERT_GROUP_BY");
-            }
+        } finally {
+            queryScopes.pop();
         }
         return null;
     }
@@ -47,16 +52,23 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
     public Void visitUpdateStatement(OracleRelationSqlParser.UpdateStatementContext ctx) {
         visit(ctx.tablePrimary());
         String targetAlias = targetAlias(ctx.tablePrimary());
+        String targetScopeAlias = rowsetAlias(ctx.tablePrimary());
         String targetTable = targetTable(ctx.tablePrimary());
         emitWriteTarget(ctx.tablePrimary(), targetAlias, targetTable);
-        for (OracleRelationSqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
-            emitAssignmentMapping(assignment, targetAlias, targetTable,
-                    StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
+        queryScopes.push(new QueryScope());
+        try {
+            registerCurrentRowset(targetScopeAlias, targetTable);
+            for (OracleRelationSqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
+                emitAssignmentMapping(assignment, targetAlias, targetTable,
+                        StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
+            }
+        } finally {
+            queryScopes.pop();
         }
         if (ctx.whereClause() != null) {
             queryScopes.push(new QueryScope());
             try {
-                registerCurrentRowset(targetAlias, targetTable);
+                registerCurrentRowset(targetScopeAlias, targetTable);
                 OracleExpressionAnalysis locator = resolveCurrentScope(analyze(ctx.whereClause().predicate()));
                 OracleExpressionAnalysis control = new OracleExpressionAnalysis(
                         locator.sources(), LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
@@ -79,32 +91,40 @@ abstract class OracleTokenEventWriteDdlSupport extends OracleTokenEventControlSu
         visit(target);
         visit(source);
         String targetAlias = targetAlias(target);
+        String targetScopeAlias = rowsetAlias(target);
         String targetTable = targetTable(target);
         emitWriteTarget(target, targetAlias, targetTable);
-        visit(ctx.predicate());
-        String sourceAlias = targetAlias(source);
+        String sourceScopeAlias = rowsetAlias(source);
         String sourceTable = targetTable(source);
         queryScopes.push(new QueryScope());
         OracleExpressionAnalysis mergeControl;
         try {
-            registerCurrentRowset(targetAlias, targetTable);
-            registerCurrentRowset(sourceAlias, sourceTable);
+            registerCurrentRowset(targetScopeAlias, targetTable);
+            registerCurrentRowset(sourceScopeAlias, sourceTable);
+            visit(ctx.predicate());
             OracleExpressionAnalysis locator = resolveCurrentScope(analyze(ctx.predicate()));
             mergeControl = new OracleExpressionAnalysis(
                     locator.sources(), LineageTransformType.DIRECT, LineageFlowKind.CONTROL);
         } finally {
             queryScopes.pop();
         }
-        for (OracleRelationSqlParser.MergeWhenClauseContext clause : ctx.mergeWhenClause()) {
-            if (clause.mergeAction() instanceof OracleRelationSqlParser.MergeUpdateActionContext updateAction) {
-                for (OracleRelationSqlParser.AssignmentContext assignment
-                        : updateAction.assignmentList().assignment()) {
-                    emitAssignmentMapping(assignment, targetAlias, targetTable,
-                            StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
-                    emitAssignmentControl(assignment, targetAlias, targetTable, mergeControl,
-                            StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_ON");
+        queryScopes.push(new QueryScope());
+        try {
+            registerCurrentRowset(targetScopeAlias, targetTable);
+            registerCurrentRowset(sourceScopeAlias, sourceTable);
+            for (OracleRelationSqlParser.MergeWhenClauseContext clause : ctx.mergeWhenClause()) {
+                if (clause.mergeAction() instanceof OracleRelationSqlParser.MergeUpdateActionContext updateAction) {
+                    for (OracleRelationSqlParser.AssignmentContext assignment
+                            : updateAction.assignmentList().assignment()) {
+                        emitAssignmentMapping(assignment, targetAlias, targetTable,
+                                StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
+                        emitAssignmentControl(assignment, targetAlias, targetTable, mergeControl,
+                                StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_ON");
+                    }
                 }
             }
+        } finally {
+            queryScopes.pop();
         }
         return null;
     }

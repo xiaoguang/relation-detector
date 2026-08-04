@@ -844,7 +844,7 @@ verification session 的 `reports/correctness-test-summary.md`。自然 sample-d
 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。Phase 文档不复制这些
 易变数字；relationship 仍只能引用 top-level `namingEvidence`，不能自己重新计算 `NAMING_MATCH`。
 
-root token-event 与对应 full-grammar 数量不作为普遍等价条件：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 统计和 follow-up backlog 分别记录在 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)。当前 natural corpus 与 semantic-equivalent benchmark 没有暴露未分类的 token/full parser gap；未覆盖的官方 statement family 仍是 coverage backlog，日后如出现差异必须按以下类别记录：
+root token-event 与对应 full-grammar 数量不作为普遍等价条件：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammar 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 统计与解释记录在 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)。当前 natural corpus 与 semantic-equivalent benchmark 没有暴露未分类的 token/full parser gap；未覆盖的官方 statement family 仍是 coverage backlog，日后如出现差异必须在对应的当前 parser 审计中按以下类别记录：
 
 - `EXPECTED_VERSION_DELTA`：PostgreSQL 17/18 版本专属语法导致的合理差异。
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：新增同语义 fixture 证明 root token-event 缺少 full-grammar 已能确认的 typed 结构时使用。

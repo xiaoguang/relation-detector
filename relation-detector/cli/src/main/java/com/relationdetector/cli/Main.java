@@ -51,7 +51,7 @@ public final class Main {
                         cli.config,
                         cli.format,
                         cli.output,
-                        cli.directOutput,
+                        cli.outputBundle,
                         cli.minConfidence,
                         cli.parserMode,
                         cli.grammarProfile,
@@ -76,7 +76,8 @@ public final class Main {
 
         private String help() {
             return """
-                    relation-detector scan --config config.yml [--format json|table] [--output result.json] [--plugin-dir plugins]
+                    relation-detector scan --config config.yml [--format json|table]
+                      [--output result.json | --output-bundle bundle] [--plugin-dir plugins]
 
                     Commands:
                       scan                 Run relationship detection.
@@ -86,7 +87,7 @@ public final class Main {
                       --config <file>       YAML configuration file. Required.
                       --format <format>     json or table. Overrides output.format.
                       --output <file>       Write output to file. Defaults to stdout.
-                      --direct-output <file> Write a direct-only JSON view beside --output.
+                      --output-bundle <dir> Write result.json and direct.json as one atomic JSON bundle.
                       --plugin-dir <dir>    Directory containing external adaptor jars.
                       --min-confidence <n>  Override output.minConfidence.
                       --parser-mode <mode>   auto, full-grammar, or token-event.
@@ -97,7 +98,7 @@ public final class Main {
 
                     Batch:
                       relation-detector batch --manifest batch.yml [--plugin-dir plugins]
-                        [--case-parallelism n] [--max-worker-threads n] [--fail-fast]
+                        [--case-parallelism n] [--max-worker-threads n] [--fail-fast] [--report report.json]
                     """;
         }
     }
@@ -135,7 +136,7 @@ public final class Main {
         Path config;
         OutputFormat format;
         Path output;
-        Path directOutput;
+        Path outputBundle;
         Path pluginDir;
         Double minConfidence;
         String parserMode;
@@ -156,7 +157,7 @@ public final class Main {
                     case "--config" -> parsed.config = Path.of(requireValue(args, index++, arg));
                     case "--format" -> parsed.format = OutputFormat.valueOf(requireValue(args, index++, arg).toUpperCase());
                     case "--output" -> parsed.output = Path.of(requireValue(args, index++, arg));
-                    case "--direct-output" -> parsed.directOutput = Path.of(requireValue(args, index++, arg));
+                    case "--output-bundle" -> parsed.outputBundle = Path.of(requireValue(args, index++, arg));
                     case "--plugin-dir" -> parsed.pluginDir = Path.of(requireValue(args, index++, arg));
                     case "--min-confidence" -> parsed.minConfidence = unitDouble(requireValue(args, index++, arg), arg);
                     case "--parser-mode" -> parsed.parserMode = normalizeParserMode(requireValue(args, index++, arg));

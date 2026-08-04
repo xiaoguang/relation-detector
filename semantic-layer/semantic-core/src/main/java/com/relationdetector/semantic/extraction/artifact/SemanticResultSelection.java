@@ -46,7 +46,7 @@ public final class SemanticResultSelection {
     public SemanticExtractionPrompt reconciliationPrompt(SemanticRunPlan plan, int maxInputTokens) {
         ObjectNode bundle = JSON.createObjectNode();
         bundle.put("kind", "SEMANTIC_RECONCILIATION");
-        bundle.put("fullBundleHash", plan.fullBundleHash());
+        bundle.put("fullBundleHash", plan.fullBundle().sha256());
         ArrayNode shards = bundle.putArray("shards");
         plan.shards().forEach(shard -> shards.addObject()
                 .put("id", shard.id())

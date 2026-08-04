@@ -15,10 +15,11 @@ import com.relationdetector.semantic.extraction.shard.SemanticRunPlan;
 import com.relationdetector.semantic.extraction.shard.SemanticShardPlanner;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticExternalAuditReferences;
+import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
+import com.relationdetector.semantic.internal.io.SemanticFileDigest;
+import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticExtractionValidationException;
-
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionResult;
 
 import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
 
@@ -65,7 +66,8 @@ final class SemanticPathBackedPipelineTest {
     void metadataOnlyTablesRemainOwnedFactsInSeparateTypedShards() throws Exception {
         Path input = writeMetadataOnlyScan();
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("session-work"))) {
+                List.of(input), tempDir.resolve("session-work"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
@@ -74,7 +76,7 @@ final class SemanticPathBackedPipelineTest {
 
             assertEquals(2, plan.shards().size());
             for (SemanticShardDescriptor shard : plan.shards()) {
-                JsonNode bundle = JSON.readTree(shard.bundlePath().toFile());
+                JsonNode bundle = JSON.readTree(shard.bundle().path().toFile());
                 assertEquals(1, bundle.path("metadataTables").size());
                 assertEquals(1, bundle.path("metadataColumns").size());
                 assertFalse(bundle.path("shardContext").path("ownedFactRefs").isEmpty());
@@ -87,7 +89,8 @@ final class SemanticPathBackedPipelineTest {
     void completeEmptyBundleProducesOneGlobalShard() throws Exception {
         Path input = writeEmptyScan();
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("empty-session-work"))) {
+                List.of(input), tempDir.resolve("empty-session-work"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
@@ -100,9 +103,9 @@ final class SemanticPathBackedPipelineTest {
             assertEquals("global", shard.ownerKey());
             assertEquals(0, shard.ownedFactCount());
             assertEquals(0, shard.ownedCandidateCount());
-            assertEquals(0, Files.size(plan.ownerManifestPath()));
+            assertEquals(0, Files.size(plan.ownerManifest().path()));
 
-            JsonNode context = JSON.readTree(shard.bundlePath().toFile()).path("shardContext");
+            JsonNode context = JSON.readTree(shard.bundle().path().toFile()).path("shardContext");
             assertTrue(context.path("ownedFactRefs").isEmpty());
             assertTrue(context.path("ownedCandidateRefs").isEmpty());
             assertTrue(context.path("overlapRefs").isEmpty());
@@ -116,7 +119,8 @@ final class SemanticPathBackedPipelineTest {
         AtomicInteger calls = new AtomicInteger();
 
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("failure-session-work"))) {
+                List.of(input), tempDir.resolve("failure-session-work"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
@@ -128,11 +132,11 @@ final class SemanticPathBackedPipelineTest {
                             output,
                             plan,
                             session.evidenceStore(),
-                            prompt -> {
+                            (prompt, context) -> {
                                 if (calls.incrementAndGet() == 2) {
                                     throw new IllegalStateException("synthetic second-shard failure");
                                 }
-                                return modelResult(prompt.evidenceBundle());
+                                return modelResult(prompt.evidenceBundle(), context);
                             },
                             null,
                             "test-provider",
@@ -156,13 +160,129 @@ final class SemanticPathBackedPipelineTest {
     }
 
     @Test
+    void mutatedPlanArtifactFailsBeforeTheFirstModelCallAndPublishesNothing() throws Exception {
+        Path input = writeMetadataOnlyScan();
+        Path output = tempDir.resolve("mutated-plan-runs");
+        AtomicInteger calls = new AtomicInteger();
+
+        try (SemanticProcessingSession session = SemanticProcessingSession.open(
+                List.of(input), tempDir.resolve("mutated-plan-session"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
+            SemanticRunPlan plan = new SemanticShardPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(
+                            SemanticShardMode.FORCE, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS,
+                    RECONCILIATION_OUTPUT_TOKENS);
+            Files.writeString(plan.shards().get(0).bundle().path(), "{}");
+
+            assertThrows(SemanticExtractionValidationException.class,
+                    () -> new SemanticRunArtifactWriter().executeAndWrite(
+                            output,
+                            plan,
+                            session.evidenceStore(),
+                            (prompt, context) -> {
+                                calls.incrementAndGet();
+                                return modelResult(prompt.evidenceBundle(), context);
+                            },
+                            null,
+                            "test-provider",
+                            "test-model",
+                            "test-effort",
+                            ArtifactRetention.FULL,
+                            ignored -> {
+                            }));
+        }
+
+        assertEquals(0, calls.get());
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
+    void maliciousClientArtifactOutsideFixedScratchPublishesNothing() throws Exception {
+        Path input = writeMetadataOnlyScan();
+        Path output = tempDir.resolve("outside-client-runs");
+
+        try (SemanticProcessingSession session = SemanticProcessingSession.open(
+                List.of(input), tempDir.resolve("outside-client-session"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
+            SemanticRunPlan plan = new SemanticShardPlanner().plan(
+                    session.evidenceStore(),
+                    session.workPath("plan"),
+                    new SemanticShardingOptions(
+                            SemanticShardMode.FORCE, 10_000, 50_000, 8, false),
+                    SHARD_OUTPUT_TOKENS,
+                    RECONCILIATION_OUTPUT_TOKENS);
+
+            assertThrows(SemanticExtractionValidationException.class,
+                    () -> new SemanticRunArtifactWriter().executeAndWrite(
+                            output,
+                            plan,
+                            session.evidenceStore(),
+                            (prompt, context) -> {
+                                SemanticModelCallResult valid =
+                                        modelResult(prompt.evidenceBundle(), context);
+                                Path outside = tempDir.resolve("outside-client-output.json");
+                                try {
+                                    Files.writeString(outside, "{}");
+                                    return new SemanticModelCallResult(
+                                            valid.request(), valid.response(), artifact(outside),
+                                            valid.inputTokens(), valid.outputTokens(),
+                                            valid.transportAttempts());
+                                } catch (Exception failure) {
+                                    throw new IllegalStateException(failure);
+                                }
+                            },
+                            null,
+                            "malicious-provider",
+                            "test-model",
+                            "test-effort",
+                            ArtifactRetention.FULL,
+                            ignored -> {
+                            }));
+        }
+
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
+    void mutatedPlanArtifactFailsBeforeTheFirstRequestRender() throws Exception {
+        Path input = writeMetadataOnlyScan();
+        SemanticRunPlan plan = plan(input, "mutated-render-plan", 1024);
+        Files.writeString(plan.ownerManifest().path(), "mutated");
+        Path output = tempDir.resolve("mutated-render-runs");
+        AtomicInteger renders = new AtomicInteger();
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticRunArtifactWriter().writeRequestOnly(
+                        output,
+                        plan,
+                        (prompt, target) -> {
+                            renders.incrementAndGet();
+                            return renderRequest(prompt, target);
+                        },
+                        null,
+                        "test-model",
+                        "xhigh",
+                        ArtifactRetention.FULL,
+                        ignored -> {
+                        }));
+
+        assertEquals(0, renders.get());
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
     void rawBufferSizeDoesNotChangeGlobalOwnerManifestOrShardBundles() throws Exception {
         Path input = writeMetadataOnlyScan();
 
         SemanticRunPlan large = plan(input, "large", 1024 * 1024);
         SemanticRunPlan tiny = plan(input, "tiny", 1);
 
-        assertEquals(Files.readString(large.ownerManifestPath()), Files.readString(tiny.ownerManifestPath()));
+        assertEquals(
+                Files.readString(large.ownerManifest().path()),
+                Files.readString(tiny.ownerManifest().path()));
         assertEquals(shardFingerprints(large), shardFingerprints(tiny));
         assertOwnerCoverage(large);
         assertOwnerCoverage(tiny);
@@ -173,16 +293,17 @@ final class SemanticPathBackedPipelineTest {
         Path input = writeMetadataOnlyScan();
 
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("external-evidence-session"))) {
+                List.of(input), tempDir.resolve("external-evidence-session"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
                     new SemanticShardingOptions(SemanticShardMode.AUTO, 10_000, 50_000, 128, false),
                     SHARD_OUTPUT_TOKENS, RECONCILIATION_OUTPUT_TOKENS);
 
-            assertFalse(read(plan.fullBundlePath()).path("evidence").isEmpty());
+            assertFalse(read(plan.fullBundle().path()).path("evidence").isEmpty());
             for (SemanticShardDescriptor shard : plan.shards()) {
-                ObjectNode bundle = (ObjectNode) read(shard.bundlePath());
+                ObjectNode bundle = (ObjectNode) read(shard.bundle().path());
                 assertTrue(bundle.path("evidence").isEmpty());
                 int externalAuditRefCount =
                         bundle.path("shardContext").path("externalAuditRefCount").asInt();
@@ -190,14 +311,14 @@ final class SemanticPathBackedPipelineTest {
                 assertEquals(
                         externalAuditRefCount,
                         SemanticExternalAuditReferences.read(
-                                SemanticExternalAuditReferences.sidecar(shard.bundlePath())).size());
+                                shard.externalAuditSidecar().path()).size());
                 assertPromptAuditReferencesAreSummarized(bundle);
             }
 
             Path run = new SemanticRunArtifactWriter().writeRequestOnly(
                     tempDir.resolve("external-evidence-requests"),
                     plan,
-                    ignored -> "{}",
+                    this::renderRequest,
                     null,
                     "test-model",
                     "xhigh",
@@ -205,7 +326,7 @@ final class SemanticPathBackedPipelineTest {
                     ignored -> {
                     });
             for (SemanticShardDescriptor shard : plan.shards()) {
-                Path planned = SemanticExternalAuditReferences.sidecar(shard.bundlePath());
+                Path planned = shard.externalAuditSidecar().path();
                 Path published = run.resolve("shards").resolve(shard.id())
                         .resolve("external-audit-refs.tsv");
                 assertEquals(
@@ -225,7 +346,8 @@ final class SemanticPathBackedPipelineTest {
         Path run;
 
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("portable-request-session"))) {
+                List.of(input), tempDir.resolve("portable-request-session"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
@@ -234,7 +356,7 @@ final class SemanticPathBackedPipelineTest {
             run = new SemanticRunArtifactWriter().writeRequestOnly(
                     output,
                     plan,
-                    ignored -> "{}",
+                    this::renderRequest,
                     null,
                     "test-model",
                     "xhigh",
@@ -289,7 +411,8 @@ final class SemanticPathBackedPipelineTest {
             JSON.writeValue(input.toFile(), writeMetadataOnlyScanDocument());
             Path run;
             try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                    List.of(input), tempDir.resolve("relative-input-session"))) {
+                    List.of(input), tempDir.resolve("relative-input-session"),
+                    SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
                 SemanticRunPlan plan = new SemanticShardPlanner().plan(
                         session.evidenceStore(),
                         session.workPath("plan"),
@@ -299,7 +422,7 @@ final class SemanticPathBackedPipelineTest {
                 run = new SemanticRunArtifactWriter().writeRequestOnly(
                         tempDir.resolve("relative-input-package"),
                         plan,
-                        ignored -> "{}",
+                        this::renderRequest,
                         null,
                         "test-model",
                         "xhigh",
@@ -325,7 +448,8 @@ final class SemanticPathBackedPipelineTest {
         Path run;
 
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("tampered-request-session"))) {
+                List.of(input), tempDir.resolve("tampered-request-session"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
@@ -334,7 +458,7 @@ final class SemanticPathBackedPipelineTest {
             run = new SemanticRunArtifactWriter().writeRequestOnly(
                     output,
                     plan,
-                    ignored -> "{}",
+                    this::renderRequest,
                     null,
                     "test-model",
                     "xhigh",
@@ -527,7 +651,8 @@ final class SemanticPathBackedPipelineTest {
         JSON.writeValue(input.toFile(), root);
 
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve("high-fanout-session-work"))) {
+                List.of(input), tempDir.resolve("high-fanout-session-work"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS)) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
                     session.workPath("plan"),
@@ -536,10 +661,10 @@ final class SemanticPathBackedPipelineTest {
 
             assertOwnerCoverage(plan);
             SemanticShardDescriptor eventShard = plan.shards().stream()
-                    .filter(shard -> !read(shard.bundlePath()).path("eventCandidates").isEmpty())
+                    .filter(shard -> !read(shard.bundle().path()).path("eventCandidates").isEmpty())
                     .findFirst()
                     .orElseThrow();
-            ObjectNode eventBundle = (ObjectNode) read(eventShard.bundlePath());
+            ObjectNode eventBundle = (ObjectNode) read(eventShard.bundle().path());
             JsonNode eventContext = eventBundle.path("shardContext");
             assertFalse(eventContext.has("externalAuditRefs"));
             assertTrue(eventContext.path("externalAuditRefCount").asInt() >= 40);
@@ -549,7 +674,7 @@ final class SemanticPathBackedPipelineTest {
             assertTrue(eventCandidate.path("relationshipRefCount").asInt() >= 40);
             assertEquals(64, eventCandidate.path("relationshipRefsSha256").asText().length());
             JsonNode fullEventCandidate =
-                    read(plan.fullBundlePath()).path("eventCandidates").get(0);
+                    read(plan.fullBundle().path()).path("eventCandidates").get(0);
             assertTrue(fullEventCandidate.path("relationshipRefs").size() >= 40);
             SemanticExternalAuditReferences.Snapshot relationshipSnapshot =
                     SemanticExternalAuditReferences.snapshot(
@@ -563,7 +688,7 @@ final class SemanticPathBackedPipelineTest {
             assertEquals(
                     eventContext.path("externalAuditRefCount").asInt(),
                     SemanticExternalAuditReferences.read(
-                            SemanticExternalAuditReferences.sidecar(eventShard.bundlePath())).size());
+                            eventShard.externalAuditSidecar().path()).size());
 
             ObjectNode tampered = eventBundle.deepCopy();
             tampered.withObject("/shardContext").put(
@@ -577,7 +702,7 @@ final class SemanticPathBackedPipelineTest {
                         () -> results.append(eventShard, tampered, emptySemanticDocument()));
             }
 
-            Path sidecar = SemanticExternalAuditReferences.sidecar(eventShard.bundlePath());
+            Path sidecar = eventShard.externalAuditSidecar().path();
             Files.delete(sidecar);
             Set<String> unresolved = Set.of("unresolved:audit-reference");
             SemanticExternalAuditReferences.write(sidecar, unresolved);
@@ -602,24 +727,23 @@ final class SemanticPathBackedPipelineTest {
         Path input = writeMetadataOnlyScan();
         SemanticRunPlan plan = plan(input, "owner-validation", 1);
         SemanticShardDescriptor first = plan.shards().get(0);
-        ObjectNode bundle = (ObjectNode) JSON.readTree(first.bundlePath().toFile());
+        ObjectNode bundle = (ObjectNode) JSON.readTree(first.bundle().path().toFile());
 
-        String firstLine = Files.readAllLines(plan.ownerManifestPath()).get(0);
+        String firstLine = Files.readAllLines(plan.ownerManifest().path()).get(0);
         Files.writeString(
-                plan.ownerManifestPath(),
-                Files.readString(plan.ownerManifestPath()) + firstLine + System.lineSeparator());
+                plan.ownerManifest().path(),
+                Files.readString(plan.ownerManifest().path()) + firstLine + System.lineSeparator());
         SemanticRunPlan duplicateManifestPlan = new SemanticRunPlan(
-                plan.fullBundlePath(),
-                plan.fullBundleHash(),
+                plan.fullBundle(),
                 plan.shards(),
                 plan.reconcile(),
                 plan.maxInputTokens(),
                 plan.shardMaxOutputTokens(),
                 plan.reconciliationMaxOutputTokens(),
-                plan.ownerManifestPath(),
-                sha256(plan.ownerManifestPath()));
+                artifact(plan.ownerManifest().path()));
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                     List.of(input), tempDir.resolve("duplicate-owner-session"));
+                     List.of(input), tempDir.resolve("duplicate-owner-session"),
+                     SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
              SemanticResultStore results = new SemanticResultStore(
                      tempDir.resolve("duplicate-owner-results"),
                      session.evidenceStore(),
@@ -630,11 +754,12 @@ final class SemanticPathBackedPipelineTest {
 
         SemanticRunPlan clean = plan(input, "owner-intersection", 1);
         SemanticShardDescriptor cleanFirst = clean.shards().get(0);
-        ObjectNode intersecting = (ObjectNode) JSON.readTree(cleanFirst.bundlePath().toFile());
+        ObjectNode intersecting = (ObjectNode) JSON.readTree(cleanFirst.bundle().path().toFile());
         String owned = intersecting.path("shardContext").path("ownedFactRefs").get(0).asText();
         intersecting.withObject("/shardContext").withArray("overlapRefs").add(owned);
         try (SemanticProcessingSession session = SemanticProcessingSession.open(
-                     List.of(input), tempDir.resolve("intersecting-owner-session"));
+                     List.of(input), tempDir.resolve("intersecting-owner-session"),
+                     SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
              SemanticResultStore results = new SemanticResultStore(
                      tempDir.resolve("intersecting-owner-results"), session.evidenceStore(), clean)) {
             assertThrows(SemanticExtractionValidationException.class,
@@ -642,12 +767,28 @@ final class SemanticPathBackedPipelineTest {
         }
     }
 
-    private SemanticExtractionResult modelResult(JsonNode bundle) {
+    private SemanticModelCallResult modelResult(
+            JsonNode bundle,
+            SemanticModelCallContext context
+    ) {
         ObjectNode raw = rawSemanticDocument(bundle);
+        ObjectNode request = JSON.createObjectNode();
+        request.put("max_output_tokens", context.maxOutputTokens());
         ObjectNode response = JSON.createObjectNode();
         response.put("output_text", raw.toString());
         response.putObject("usage").put("input_tokens", 10).put("output_tokens", 10);
-        return new SemanticExtractionResult("{}", response.toString(), raw.toString(), response, 1);
+        try {
+            JSON.writeValue(context.requestPath().toFile(), request);
+            JSON.writeValue(context.responsePath().toFile(), response);
+            JSON.writeValue(context.outputPath().toFile(), raw);
+            return new SemanticModelCallResult(
+                    artifact(context.requestPath()),
+                    artifact(context.responsePath()),
+                    artifact(context.outputPath()),
+                    10, 10, 1);
+        } catch (Exception failure) {
+            throw new IllegalStateException(failure);
+        }
     }
 
     private ObjectNode rawSemanticDocument(JsonNode bundle) {
@@ -683,7 +824,8 @@ final class SemanticPathBackedPipelineTest {
     ) throws Exception {
         Path input = writeMetadataOnlyScan();
         SemanticProcessingSession session = SemanticProcessingSession.open(
-                List.of(input), tempDir.resolve(name + "-session"));
+                List.of(input), tempDir.resolve(name + "-session"),
+                SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
         try (session) {
             SemanticRunPlan plan = new SemanticShardPlanner().plan(
                     session.evidenceStore(),
@@ -742,7 +884,7 @@ final class SemanticPathBackedPipelineTest {
         List<String> result = new ArrayList<>();
         for (SemanticShardDescriptor shard : plan.shards()) {
             result.add(com.relationdetector.semantic.StableSemanticId.canonicalJson(
-                    JSON.readTree(shard.bundlePath().toFile())));
+                    JSON.readTree(shard.bundle().path().toFile())));
         }
         return result;
     }
@@ -750,7 +892,7 @@ final class SemanticPathBackedPipelineTest {
     private void assertOwnerCoverage(SemanticRunPlan plan) throws Exception {
         Set<String> owned = new LinkedHashSet<>();
         for (SemanticShardDescriptor shard : plan.shards()) {
-            JsonNode context = JSON.readTree(shard.bundlePath().toFile()).path("shardContext");
+            JsonNode context = JSON.readTree(shard.bundle().path().toFile()).path("shardContext");
             Set<String> shardOwned = new LinkedHashSet<>();
             for (String field : List.of("ownedFactRefs", "ownedCandidateRefs")) {
                 for (JsonNode value : context.path(field)) {
@@ -762,7 +904,7 @@ final class SemanticPathBackedPipelineTest {
             context.path("overlapRefs").forEach(value -> overlap.add(value.asText()));
             assertTrue(java.util.Collections.disjoint(shardOwned, overlap));
         }
-        assertEquals(Files.readAllLines(plan.ownerManifestPath()).size(), owned.size());
+        assertEquals(Files.readAllLines(plan.ownerManifest().path()).size(), owned.size());
     }
 
     private void assertPromptAuditReferencesAreSummarized(ObjectNode bundle) {
@@ -800,6 +942,23 @@ final class SemanticPathBackedPipelineTest {
             }
         }
         return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private SemanticArtifactRef artifact(Path path) throws Exception {
+        SemanticFileDigest.Digest digest = SemanticFileDigest.computeNoFollow(path);
+        return new SemanticArtifactRef(path, digest.bytes(), digest.sha256());
+    }
+
+    private SemanticArtifactRef renderRequest(
+            SemanticExtractionPrompt ignored,
+            Path target
+    ) {
+        try {
+            Files.writeString(target, "{}");
+            return artifact(target);
+        } catch (Exception failure) {
+            throw new IllegalStateException(failure);
+        }
     }
 
     private Path writeMetadataOnlyScan() throws Exception {

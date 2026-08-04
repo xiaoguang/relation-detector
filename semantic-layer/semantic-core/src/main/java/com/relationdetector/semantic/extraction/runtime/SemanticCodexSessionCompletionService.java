@@ -46,6 +46,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.internal.io.SemanticAtomicFiles;
 import com.relationdetector.semantic.extraction.artifact.SemanticArtifactVerifier;
+import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
+import com.relationdetector.semantic.extraction.artifact.SemanticRunPlanSnapshot;
+import com.relationdetector.semantic.internal.io.SemanticFileDigest;
 
 /**
  * CN: 消费不可变Codex request run和独立response目录，重建完整证据、校验owner、顺序归一化分片并在
@@ -89,14 +92,18 @@ public final class SemanticCodexSessionCompletionService {
             Files.createDirectories(responses);
             Files.createDirectories(output);
             Files.createDirectory(workspace);
-            LoadedRequest loaded = load(run, workspace);
+            LoadedRequest loadedSource = load(run, workspace);
+            LoadedRequest loaded = new LoadedRequest(
+                    SemanticRunPlanSnapshot.capture(
+                            loadedSource.plan(), workspace.resolve("plan-snapshot")),
+                    loadedSource.model(), loadedSource.reasoningEffort(), loadedSource.retention());
             List<String> missing = missingShardResponses(loaded.plan(), responses);
             if (!missing.isEmpty()) {
                 return pending(responses, "SHARDS", missing);
             }
             try (SemanticReconstructedEvidenceLookup lookup =
                          new SemanticReconstructedEvidenceLookup(
-                                 loaded.plan().fullBundlePath(), workspace.resolve("evidence-lookup"))) {
+                                 loaded.plan().fullBundle().path(), workspace.resolve("evidence-lookup"))) {
                 if (reconciliationRequired(loaded.plan())
                         && !Files.isRegularFile(reconciliationResponse(responses))) {
                     SemanticExtractionPrompt prompt = reconciliationPrompt(
@@ -149,9 +156,9 @@ public final class SemanticCodexSessionCompletionService {
         SemanticRequestBundleReconstructor.Result reconstructed = reconstructor.reconstruct(run, bundle);
         require(reconstructed.canonicalSha256().equals(
                 index.path("fullBundleCanonicalSha256").asText("")));
-        Path ownerManifest = verifiedArtifact(run, index.path("ownerManifest"));
-        String ownerHash = index.path("ownerManifest").path("sha256").asText("");
-        String fullBundleHash = requireHash(index.path("sourceBundleSha256").asText(""));
+        SemanticArtifactRef ownerManifest = verifiedArtifact(run, index.path("ownerManifest"));
+        requireHash(index.path("sourceBundleSha256").asText(""));
+        SemanticArtifactRef fullBundle = localArtifact(bundle);
         int maxInputTokens = requiredPositiveInt(index, "maxInputTokens");
         int shardMaxOutputTokens = requiredPositiveInt(index, "shardMaxOutputTokens");
         int reconciliationMaxOutputTokens = requiredPositiveInt(
@@ -167,6 +174,7 @@ public final class SemanticCodexSessionCompletionService {
                     id,
                     requiredText(shard, "ownerKey"),
                     verifiedArtifact(run, shard.path("bundle")),
+                    verifiedArtifact(run, shard.path("sidecar")),
                     requiredPositiveInt(shard, "estimatedInputTokens"),
                     requiredNonNegativeInt(shard, "ownedFactCount"),
                     requiredNonNegativeInt(shard, "ownedCandidateCount")));
@@ -174,15 +182,13 @@ public final class SemanticCodexSessionCompletionService {
         require(!descriptors.isEmpty());
         require(requiredNonNegativeInt(manifest, "shardCount") == descriptors.size());
         SemanticRunPlan plan = new SemanticRunPlan(
-                bundle,
-                fullBundleHash,
+                fullBundle,
                 descriptors,
                 index.path("reconcile").booleanValue(),
                 maxInputTokens,
                 shardMaxOutputTokens,
                 reconciliationMaxOutputTokens,
-                ownerManifest,
-                ownerHash);
+                ownerManifest);
         return new LoadedRequest(
                 plan,
                 requiredText(manifest, "model"),
@@ -209,7 +215,9 @@ public final class SemanticCodexSessionCompletionService {
     ) {
         try (SemanticResultStore results = new SemanticResultStore(workspace, lookup, plan)) {
             for (SemanticShardDescriptor shard : plan.shards()) {
-                ObjectNode bundle = readObject(shard.bundlePath(), "semantic request shard bundle");
+                ObjectNode bundle = bounded.readObject(
+                        shard.bundle().path(), plan.maxInputTokens(),
+                        "semantic request shard bundle");
                 ObjectNode raw = bounded.readObject(
                         shardResponse(responses, shard.id()),
                         plan.shardMaxOutputTokens(),
@@ -242,12 +250,24 @@ public final class SemanticCodexSessionCompletionService {
         }
     }
 
-    private Path verifiedArtifact(Path run, JsonNode artifact) {
-        return SemanticArtifactVerifier.verify(
+    private SemanticArtifactRef verifiedArtifact(Path run, JsonNode artifact) {
+        long bytes = requiredNonNegativeLong(artifact, "bytes");
+        String sha256 = requireHash(artifact.path("sha256").asText(""));
+        Path path = SemanticArtifactVerifier.verify(
                 run,
                 artifact.path("path").asText(""),
-                requiredNonNegativeLong(artifact, "bytes"),
-                requireHash(artifact.path("sha256").asText("")));
+                bytes,
+                sha256);
+        return new SemanticArtifactRef(path, bytes, sha256);
+    }
+
+    private SemanticArtifactRef localArtifact(Path path) {
+        try {
+            SemanticFileDigest.Digest digest = SemanticFileDigest.computeNoFollow(path);
+            return new SemanticArtifactRef(path, digest.bytes(), digest.sha256());
+        } catch (IOException failure) {
+            throw invalidRun();
+        }
     }
 
     private ObjectNode readObject(Path path, String label) {

@@ -33,50 +33,10 @@ import com.relationdetector.core.identity.NamespaceContext;
  */
 public final class SqlRelationParserRunner {
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
-    private final StructuredRelationshipExtractor relationExtractor = new StructuredRelationshipExtractor();
     private final StructuredSqlParseExecutor structuredParseExecutor = new StructuredSqlParseExecutor();
     private final AdaptorResultContractValidator resultContractValidator =
             new AdaptorResultContractValidator();
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
-
-    /**
-     *
-     * 解析一条 SQL statement 并返回 relationship 候选。
-     *
-     * <p>EN: Parses one SQL statement and returns relationship candidates.
-     */
-    public List<RelationshipCandidate> parse(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context
-    ) {
-        return parseStructuredAndRelations(adaptor, config, statement, context).relationships();
-    }
-
-    /**
-     *
-     * 只返回结构化 parse result，供 Data Lineage 复用。
-     *
-     * <p>EN: Returns only the structured parse result, mainly for Data Lineage extraction.
-     */
-    public java.util.Optional<StructuredParseResult> parseStructured(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context
-    ) {
-        return parseStructuredAndRelations(adaptor, config, statement, context).structured();
-    }
-
-    public ParsedSqlRelations parseStructuredAndRelations(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context
-    ) {
-        return parseStructuredAndRelations(adaptor, config, statement, context, namespace(context));
-    }
 
     public ParsedSqlRelations parseStructuredAndRelations(
             DatabaseAdaptor adaptor,
@@ -107,30 +67,6 @@ public final class SqlRelationParserRunner {
             ScanConfig config,
             SqlStatementRecord statement,
             AdaptorContext context,
-            ParserBundle bundle
-    ) {
-        StructuredParseResult structured = parseStructuredResult(statement, context, bundle.sqlParser());
-        if (TypedLogNoiseClassifier.shouldSkip(config, statement, structured)) {
-            return ParsedSqlRelations.empty();
-        }
-        return parsed(statement, structured);
-    }
-
-    public ParsedSqlRelations parseStructuredAndRelations(
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context,
-            ParserBundle bundle,
-            IdentifierRules identifierRules
-    ) {
-        return parseStructuredAndRelations(
-                config, statement, context, bundle, identifierRules, namespace(context));
-    }
-
-    public ParsedSqlRelations parseStructuredAndRelations(
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context,
             ParserBundle bundle,
             IdentifierRules identifierRules,
             NamespaceContext namespace
@@ -140,20 +76,6 @@ public final class SqlRelationParserRunner {
             return ParsedSqlRelations.empty();
         }
         return parsed(statement, structured, new StructuredRelationshipExtractor(identifierRules, namespace));
-    }
-
-    public ParsedSqlRelations parseStructuredAndRelations(
-            SqlStatementRecord effectiveStatement,
-            AdaptorContext context,
-            ParserBundle bundle
-    ) {
-        StructuredParseResult structured = parseStructuredResult(
-                effectiveStatement, context, bundle.sqlParser());
-        return parsed(effectiveStatement, structured);
-    }
-
-    private ParsedSqlRelations parsed(SqlStatementRecord statement, StructuredParseResult structured) {
-        return parsed(statement, structured, relationExtractor);
     }
 
     private StructuredParseResult parseStructuredResult(
@@ -173,13 +95,6 @@ public final class SqlRelationParserRunner {
         return new ParsedSqlRelations(
                 java.util.Optional.of(structured),
                 relationships);
-    }
-
-    private static NamespaceContext namespace(AdaptorContext context) {
-        if (context == null || context.scope() == null) {
-            return NamespaceContext.empty();
-        }
-        return new NamespaceContext(context.scope().catalog(), context.scope().schema(), List.of());
     }
 
     private static void warn(AdaptorContext context, SqlStatementRecord statement, String code, String message) {

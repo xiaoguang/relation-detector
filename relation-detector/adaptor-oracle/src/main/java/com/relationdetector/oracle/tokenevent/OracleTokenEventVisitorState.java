@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
+import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.LineageTransformClassifier;
@@ -34,10 +35,12 @@ abstract class OracleTokenEventVisitorState extends OracleRelationSqlBaseVisitor
     protected final ArrayDeque<String> joinKinds = new ArrayDeque<>();
     protected final ArrayDeque<String> ddlTables = new ArrayDeque<>();
     protected final OracleRoutineScope routineScope = new OracleRoutineScope();
+    private final boolean routineFragment;
     protected int existsDepth;
 
     OracleTokenEventVisitorState(SqlStatementRecord statement) {
         emitter = new TokenEventEventEmitter(statement);
+        routineFragment = isRoutineSource(statement.sourceType());
     }
 
     protected String targetAlias(OracleRelationSqlParser.TablePrimaryContext primary) {
@@ -130,6 +133,30 @@ abstract class OracleTokenEventVisitorState extends OracleRelationSqlBaseVisitor
         if (queryScopes.isEmpty()) return "";
         Set<String> aliases = queryScopes.peek().rowsetAliases();
         return aliases.size() == 1 ? aliases.iterator().next() : "";
+    }
+
+    protected boolean canResolveUnqualifiedColumn() {
+        return !routineFragment || routineScope.insideRoutine();
+    }
+
+    private boolean isRoutineSource(StatementSourceType sourceType) {
+        return sourceType == StatementSourceType.PROCEDURE
+                || sourceType == StatementSourceType.FUNCTION
+                || sourceType == StatementSourceType.TRIGGER
+                || sourceType == StatementSourceType.EVENT
+                || sourceType == StatementSourceType.PACKAGE
+                || sourceType == StatementSourceType.PACKAGE_BODY;
+    }
+
+    protected boolean isVisibleRowsetQualifier(String qualifier) {
+        if (qualifier == null || qualifier.isBlank()) return false;
+        String normalized = normalize(qualifier);
+        for (QueryScope scope : queryScopes) {
+            if (scope.rowsetAliases().stream().map(this::normalize).anyMatch(normalized::equals)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected String joinKind(OracleRelationSqlParser.JoinClauseContext join) {

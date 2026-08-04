@@ -2,6 +2,7 @@ package com.relationdetector.cli;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,7 +16,7 @@ final class BatchReportWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final AtomicOutputWriter outputWriter = new AtomicOutputWriter();
 
-    void write(Path output, List<BatchCaseOutcome> outcomes) throws Exception {
+    void write(Path output, List<BatchCaseOutcome> outcomes) throws IOException {
         List<Map<String, Object>> cases = outcomes.stream().map(this::caseResult).toList();
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("caseCount", outcomes.size());
@@ -23,6 +24,7 @@ final class BatchReportWriter {
         summary.put("failedCount", count(outcomes, BatchCaseStatus.FAILED));
         summary.put("skippedCount", count(outcomes, BatchCaseStatus.SKIPPED_FAIL_FAST));
         Map<String, Object> report = new LinkedHashMap<>();
+        report.put("artifactSchemaVersion", 2);
         report.put("summary", summary);
         report.put("cases", cases);
         outputWriter.writeString(output, JSON.writeValueAsString(report) + "\n");
@@ -33,9 +35,10 @@ final class BatchReportWriter {
         value.put("id", outcome.batchCase().id());
         value.put("status", outcome.status().name());
         value.put("elapsedMillis", outcome.elapsedMillis());
-        value.put("output", outcome.batchCase().output().toString());
-        if (outcome.batchCase().directOutput() != null) {
-            value.put("directOutput", outcome.batchCase().directOutput().toString());
+        if (outcome.batchCase().output() != null) {
+            value.put("output", outcome.batchCase().output().toString());
+        } else {
+            value.put("outputBundle", outcome.batchCase().outputBundle().toString());
         }
         if (!outcome.error().isBlank()) {
             value.put("errorCode", outcome.errorCode().name());

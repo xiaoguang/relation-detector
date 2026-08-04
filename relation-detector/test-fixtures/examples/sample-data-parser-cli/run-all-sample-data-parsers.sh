@@ -276,18 +276,10 @@ prepare_case() {
   fi
 
   local config="$CONFIG_DIR/$name.yml"
-  local output="$RESULT_DIR/$name.json"
-  if [[ "$INCLUDE_DERIVED" == "true" ]]; then
-    local derived_name="$name-derived-fresh"
-    local derived_config="$CONFIG_DIR/$derived_name.yml"
-    local derived_output="$RESULT_DIR/$derived_name.json"
-    write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
-    write_config "$derived_config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" true
-    BATCH_CASES+=("$name|$derived_config|$derived_output|$output")
-  else
-    write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
-    BATCH_CASES+=("$name|$config|$output|")
-  fi
+  local output_bundle="$RESULT_DIR/$name"
+  write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" \
+    "$database_version" "$sample_dir" "$INCLUDE_DERIVED"
+  BATCH_CASES+=("$name|$config|$output_bundle")
 }
 
 queue_case() {
@@ -301,22 +293,19 @@ queue_case() {
 
 write_batch_manifest() {
   {
-    printf 'version: 1\n'
+    printf 'version: 2\n'
     printf 'execution:\n'
     printf '  caseParallelism: %s\n' "$CASE_PARALLELISM"
     printf '  maxWorkerThreads: %s\n' "$MAX_WORKER_THREADS"
     printf '  failurePolicy: continue\n'
     printf 'report: %s\n' "$BATCH_REPORT"
     printf 'cases:\n'
-    local item name config output direct_output
+    local item name config output_bundle
     for item in "${BATCH_CASES[@]}"; do
-      IFS='|' read -r name config output direct_output <<<"$item"
+      IFS='|' read -r name config output_bundle <<<"$item"
       printf '  - id: %s\n' "$name"
       printf '    config: %s\n' "$config"
-      printf '    output: %s\n' "$output"
-      if [[ -n "$direct_output" ]]; then
-        printf '    directOutput: %s\n' "$direct_output"
-      fi
+      printf '    outputBundle: %s\n' "$output_bundle"
     done
   } >"$BATCH_MANIFEST"
 }

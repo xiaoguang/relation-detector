@@ -30,6 +30,36 @@ import com.relationdetector.core.relation.StructuredSqlRelationshipParser;
 
 class OracleAdaptorParserTest {
     @Test
+    void oracleRoutineFragmentsDoNotGuessUnqualifiedSymbolsAsColumns() {
+        String sql = """
+                INSERT INTO reconciliation_items (reconciliation_id, journal_id)
+                SELECT v_recon_id, cj.id
+                FROM cashier_journals cj
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(
+                sql, StatementSourceType.PROCEDURE, "ROUTINE:oracle.sp_create_reconciliation",
+                1, sql.lines().count(), java.util.Map.of());
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().parsers().structuredSql().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v26ai.FullGrammarDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertLineageSource(lineages, "cashier_journals", "id",
+                    "reconciliation_items", "journal_id",
+                    LineageFlowKind.VALUE, LineageTransformType.DIRECT, result);
+            assertTrue(lineages.stream().flatMap(lineage -> lineage.sources().stream())
+                            .noneMatch(source -> "v_recon_id".equals(source.column().columnName())),
+                    () -> parser.getClass().getSimpleName()
+                            + " guessed an unqualified routine-fragment symbol as a column: " + lineages);
+        }
+    }
+
+    @Test
     void oracleTokenAndFullGrammarResolveTypedTriggerPseudoRows() {
         SqlStatementRecord statement = statement("""
                 CREATE OR REPLACE TRIGGER tr_inventory_update_batch

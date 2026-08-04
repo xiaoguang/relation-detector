@@ -60,6 +60,31 @@ public final class SemanticCanonicalIdentity {
         return StableSemanticId.of("event", text(eventCandidateRef));
     }
 
+    public static String relation(
+            String fromEntityRef,
+            String toEntityRef,
+            String machineType,
+            String type
+    ) {
+        return StableSemanticId.of(
+                "relation",
+                text(fromEntityRef),
+                text(toEntityRef),
+                normalizeText(firstNonBlank(machineType, type)));
+    }
+
+    public static String lineage(
+            List<String> sourcePhysicalColumns,
+            String targetPhysicalColumn,
+            String transform
+    ) {
+        return StableSemanticId.of(
+                "semantic-lineage",
+                String.join("\u001f", canonicalReferences(sourcePhysicalColumns)),
+                text(targetPhysicalColumn),
+                normalizeText(transform));
+    }
+
     public static String metric(
             String name,
             String machineType,
@@ -90,8 +115,13 @@ public final class SemanticCanonicalIdentity {
                 text(dimensionTable));
     }
 
+    public static String triplet(String candidateRef) {
+        return StableSemanticId.of("triplet", text(candidateRef));
+    }
+
     public static String review(String targetRef, String targetSection, String type) {
-        return StableSemanticId.of("review", text(targetRef), text(targetSection), text(type));
+        return StableSemanticId.of(
+                "review", text(targetSection), text(targetRef), normalizeText(type));
     }
 
     public static String edge(String prefix, String source, String target, String type) {

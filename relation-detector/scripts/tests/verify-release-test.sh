@@ -208,7 +208,7 @@ if kill -0 "$release_child_pid" 2>/dev/null; then
 fi
 require_absent "$TMP_DIR/release-interrupt.lock"
 
-mkdir -p "$TMP_DIR/results" "$TMP_DIR/verification"
+mkdir -p "$TMP_DIR/results/example" "$TMP_DIR/verification"
 cat >"$TMP_DIR/result.json" <<'JSON'
 {
   "summary": {
@@ -242,8 +242,8 @@ cat >"$TMP_DIR/result.json" <<'JSON'
   "warnings": []
 }
 JSON
-cp "$TMP_DIR/result.json" "$TMP_DIR/results/example.json"
-cp "$TMP_DIR/result.json" "$TMP_DIR/results/example-derived-fresh.json"
+cp "$TMP_DIR/result.json" "$TMP_DIR/results/example/direct.json"
+cp "$TMP_DIR/result.json" "$TMP_DIR/results/example/result.json"
 
 cat >"$TMP_DIR/correctness.json" <<'JSON'
 {"profile":"full","discovered":1,"selected":1,"executed":1,"passed":1,"failed":0}
@@ -260,8 +260,8 @@ parser	warningCode	count
 example	NONE	0
 TSV
 cat >"$TMP_DIR/fingerprints.tsv" <<'TSV'
-aaa	example.json
-bbb	example-derived-fresh.json
+aaa	example/direct.json
+bbb	example/result.json
 TSV
 cp "$TMP_DIR/fingerprints.tsv" "$TMP_DIR/semantic-fingerprints.tsv"
 printf '{"java":"test"}\n' >"$TMP_DIR/verification/environment.json"

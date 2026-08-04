@@ -25,9 +25,11 @@ final class ReleaseVerificationMemoryBoundTest {
     void validatesAndFingerprintsOneHundredTwentyEightMibUnderSixtyFourMibHeap() throws Exception {
         Path results = tempDir.resolve("results");
         Files.createDirectories(results);
-        Path direct = results.resolve("large.json");
+        Path bundle = results.resolve("large");
+        Files.createDirectories(bundle);
+        Path direct = bundle.resolve("direct.json");
         writeLargeResult(direct);
-        Files.writeString(results.resolve("large-derived-fresh.json"), emptyResult());
+        Files.writeString(bundle.resolve("result.json"), emptyResult());
         assertTrue(Files.size(direct) >= 128L * 1024 * 1024);
 
         Path validation = tempDir.resolve("validation.json");

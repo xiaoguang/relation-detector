@@ -229,6 +229,22 @@ class MetadataEvidenceEnhancerTest {
     }
 
     @Test
+    void ordinaryIndexEvidenceNeverChangesRelationshipDirection() {
+        MetadataSnapshot metadata = metadataFacts();
+        metadata.indexFacts().clear();
+        metadata.indexFacts().add(new MetadataIndexFact(null, "shop", "users", "idx_users_id_tenant",
+                false, false, "BTREE", true, List.of("id", "tenant_id"), List.of(), List.of(), List.of(1, 2)));
+        RelationshipCandidate candidate = joinCandidate("orders", "user_id", "users", "id");
+
+        new MetadataEvidenceEnhancer().enhance(List.of(candidate), metadata);
+
+        assertEquals("shop.orders.user_id", candidate.source().displayName());
+        assertEquals("shop.users.id", candidate.target().displayName());
+        assertTrue(candidate.evidence().stream().noneMatch(e -> e.type() == EvidenceType.SOURCE_INDEX));
+        assertTrue(candidate.evidence().stream().noneMatch(e -> e.type() == EvidenceType.TARGET_UNIQUE));
+    }
+
+    @Test
     void invisibleAndExpressionIndexesDoNotProvideColumnEvidence() {
         MetadataSnapshot metadata = metadataFacts();
         metadata.indexFacts().clear();

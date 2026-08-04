@@ -24,12 +24,19 @@ final class SampleDataBatchAggregator {
             throw new ReleaseVerificationException(
                     "sample-data reports and unique expected cases are required");
         }
+        Path outputParent = output.toAbsolutePath().normalize().getParent();
+        if (outputParent == null) {
+            throw new ReleaseVerificationException("sample-data aggregate output has no parent directory");
+        }
+        Path resultRoot = outputParent.resolve("results");
         Map<String, JsonNode> cases = new LinkedHashMap<>();
         for (Path path : reports) {
             JsonNode report = read(path);
             JsonNode values = report.path("cases");
-            if (!values.isArray()
+            if (!integerEquals(report, "artifactSchemaVersion", 2)
+                    || !values.isArray()
                     || !integerEquals(report.path("summary"), "caseCount", values.size())
+                    || !integerEquals(report.path("summary"), "successCount", values.size())
                     || !integerEquals(report.path("summary"), "failedCount", 0)
                     || !integerEquals(report.path("summary"), "skippedCount", 0)) {
                 throw new ReleaseVerificationException(
@@ -37,24 +44,36 @@ final class SampleDataBatchAggregator {
             }
             for (JsonNode item : values) {
                 String id = item.path("id").asText("");
-                if (id.isBlank() || cases.putIfAbsent(id, item.deepCopy()) != null
+                if (!isCaseId(id)
+                        || cases.putIfAbsent(id, item.deepCopy()) != null
                         || !"SUCCESS".equals(item.path("status").asText())) {
                     throw new ReleaseVerificationException(
                             "duplicate, missing or unsuccessful sample-data case");
                 }
-                for (String field : List.of("output", "directOutput")) {
-                    String value = item.path(field).asText("");
-                    if (!value.isBlank() && !Files.isRegularFile(Path.of(value))) {
-                        throw new ReleaseVerificationException(
-                                "sample-data case artifact is missing");
-                    }
+                String value = item.path("outputBundle").asText("");
+                if (value.isBlank()) {
+                    throw new ReleaseVerificationException(
+                            "sample-data case output bundle is missing");
+                }
+                Path bundle = Path.of(value);
+                Path expectedBundle = resultRoot.resolve(id).normalize();
+                if (!bundle.toAbsolutePath().normalize().equals(expectedBundle)
+                        || !Files.isDirectory(bundle, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                        || !Files.isRegularFile(bundle.resolve("result.json"),
+                                java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                        || !Files.isRegularFile(bundle.resolve("direct.json"),
+                                java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                    throw new ReleaseVerificationException(
+                            "sample-data case output bundle is incomplete");
                 }
             }
         }
-        if (!cases.keySet().equals(new java.util.HashSet<>(expectedCases))) {
+        if (cases.size() != expectedCases.size()
+                || !cases.keySet().equals(new java.util.HashSet<>(expectedCases))) {
             throw new ReleaseVerificationException("sample-data case coverage mismatch");
         }
         ObjectNode result = ReleaseVerificationJson.MAPPER.createObjectNode();
+        result.put("artifactSchemaVersion", 2);
         result.putObject("summary")
                 .put("caseCount", expectedCases.size())
                 .put("successCount", expectedCases.size())
@@ -69,6 +88,25 @@ final class SampleDataBatchAggregator {
         JsonNode value = parent.get(field);
         return value != null && value.isIntegralNumber() && value.canConvertToInt()
                 && value.intValue() == expected;
+    }
+
+    private boolean isCaseId(String value) {
+        if (value == null || value.isEmpty() || !isLowercaseLetterOrDigit(value.charAt(0))) {
+            return false;
+        }
+        for (int index = 1; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (!isLowercaseLetterOrDigit(character)
+                    && character != '.' && character != '_' && character != '-') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isLowercaseLetterOrDigit(char character) {
+        return character >= 'a' && character <= 'z'
+                || character >= '0' && character <= '9';
     }
 
     private JsonNode read(Path path) {

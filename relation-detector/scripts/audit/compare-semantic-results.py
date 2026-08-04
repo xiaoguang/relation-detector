@@ -185,8 +185,8 @@ def observation_fact_identity(section, fact):
     })
 
 
-def parser_name(path):
-    name = path.stem
+def parser_name(root, path):
+    name = path.relative_to(root).as_posix()
     return name.replace("gram" + "mer", "grammar")
 
 
@@ -222,7 +222,7 @@ def load_tree(root):
     )
     for path in sorted(root.rglob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
-        parser = parser_name(path)
+        parser = parser_name(root, path)
         for section in sections:
             for fact in data.get(section) or []:
                 identity = fact_identity(section, fact)

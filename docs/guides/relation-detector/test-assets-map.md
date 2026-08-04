@@ -9,7 +9,7 @@ Data Lineage 全量审核由 `DataLineageAuditGeneratorTest` 从 fixture manifes
 `relation-detector/target/verification/<session>/reports/data-lineage-full-audit.md`；它当前只能索引已有
 golden覆盖，并用维护工具内的启发式规则分类`NOT_APPLICABLE`，不能发现新的 extractor candidate。
 
-full-grammar expression transform 的历史差异已经按人工审核结论固化到 lineage golden。后续不再用跨 parser 对照机制遮蔽差异，每个 parser 必须直接通过自己的 golden；当前未关闭项只记录在 [Sample-data Output Audit Backlog](../../parser-audit/sample-data-output-audit-backlog.md)。
+full-grammar expression transform 的历史差异已经按人工审核结论固化到 lineage golden。后续不再用跨 parser 对照机制遮蔽差异，每个 parser 必须直接通过自己的 golden；已关闭的 sample-data 审计记录保留在 Git 历史中，新问题必须在对应的当前 parser 审计中建立可验收条目。
 
 MySQL 5.7 full-grammar 的迁移分类、5.7-compatible sample-data 改写和版本边界负向 fixture 见 [MySQL 5.7 Full-Grammar Migration Review](../../parser-audit/mysql57-migration-review.md)。
 

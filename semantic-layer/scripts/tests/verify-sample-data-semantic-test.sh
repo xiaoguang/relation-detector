@@ -15,15 +15,12 @@ touch "$FAKE_JAR"
 
 index=1
 while [[ "$index" -le 19 ]]; do
-  printf '{}\n' >"$RESULT_DIR/case-$index.json"
-  printf '{}\n' >"$RESULT_DIR/case-$index-derived-fresh.json"
+  mkdir -p "$RESULT_DIR/case-$index"
+  printf '{}\n' >"$RESULT_DIR/case-$index/direct.json"
+  printf '{}\n' >"$RESULT_DIR/case-$index/result.json"
   index=$((index + 1))
 done
-cp "$RESULT_DIR/case-1-derived-fresh.json" \
-  "$RESULT_DIR/mysql-v8_0-full-derived-fresh.json"
-rm "$RESULT_DIR/case-1-derived-fresh.json"
-cp "$RESULT_DIR/case-1.json" "$RESULT_DIR/mysql-v8_0-full.json"
-rm "$RESULT_DIR/case-1.json"
+mv "$RESULT_DIR/case-1" "$RESULT_DIR/mysql-v8_0-full"
 
 cat >"$FAKE_JAVA" <<'EOF'
 #!/usr/bin/env bash
@@ -92,9 +89,11 @@ COMMON_ENV=(
 env "${COMMON_ENV[@]}" \
   SAMPLE_DATA_SEMANTIC_TIER=smoke \
   SAMPLE_DATA_SEMANTIC_OUTPUT_ROOT="$TMP_ROOT/smoke" \
-  bash "$SCRIPT" >/dev/null
+bash "$SCRIPT" >/dev/null
 [[ "$(wc -l <"$TMP_ROOT/smoke/summary.tsv" | tr -d '[:space:]')" -eq 2 ]]
 [[ "$(wc -l <"$CALLS" | tr -d '[:space:]')" -eq 3 ]]
+[[ "$(awk -F '\t' 'NR == 2 { print $1 }' "$TMP_ROOT/smoke/summary.tsv")" == \
+   "mysql-v8_0-full/result.json" ]]
 
 env "${COMMON_ENV[@]}" \
   SAMPLE_DATA_SEMANTIC_TIER=matrix \
@@ -115,22 +114,18 @@ env "${COMMON_ENV[@]}" \
 [[ "$(wc -l <"$TMP_ROOT/matrix-parallel/summary.tsv" | tr -d '[:space:]')" -eq 39 ]]
 [[ "$(tail -n +2 "$TMP_ROOT/matrix-parallel/summary.tsv" | cut -f1)" == \
    "$(tail -n +2 "$TMP_ROOT/matrix/summary.tsv" | cut -f1)" ]]
-[[ "$(grep -c -- '-derived-fresh.json$' "$TMP_ROOT/matrix-parallel/cases-1.txt")" -eq 10 ]]
-[[ "$(grep -c -- '-derived-fresh.json$' "$TMP_ROOT/matrix-parallel/cases-2.txt")" -eq 9 ]]
-[[ "$(( $(wc -l <"$TMP_ROOT/matrix-parallel/cases-1.txt") -
-          $(grep -c -- '-derived-fresh.json$' "$TMP_ROOT/matrix-parallel/cases-1.txt") ))" -eq 10 ]]
-[[ "$(( $(wc -l <"$TMP_ROOT/matrix-parallel/cases-2.txt") -
-          $(grep -c -- '-derived-fresh.json$' "$TMP_ROOT/matrix-parallel/cases-2.txt") ))" -eq 9 ]]
+[[ "$(grep -c -- '/result.json$' "$TMP_ROOT/matrix-parallel/cases-1.txt")" -eq 10 ]]
+[[ "$(grep -c -- '/result.json$' "$TMP_ROOT/matrix-parallel/cases-2.txt")" -eq 9 ]]
+[[ "$(grep -c -- '/direct.json$' "$TMP_ROOT/matrix-parallel/cases-1.txt")" -eq 10 ]]
+[[ "$(grep -c -- '/direct.json$' "$TMP_ROOT/matrix-parallel/cases-2.txt")" -eq 9 ]]
 
 mkdir -p "$TMP_ROOT/responses"
-case_index=1
-while [[ "$case_index" -le 38 ]]; do
-  mkdir -p "$TMP_ROOT/responses/case-$case_index"
-  case_index=$((case_index + 1))
-done
-while IFS= read -r case_root; do
-  mkdir -p "$TMP_ROOT/responses/$(basename "$case_root")"
-done < <(find "$TMP_ROOT/matrix/requests" -mindepth 1 -maxdepth 1 -type d)
+while IFS= read -r run_root; do
+  case_root="$(dirname "$run_root")"
+  logical_identity="${case_root#"$TMP_ROOT/matrix/requests"/}"
+  [[ "$logical_identity" != "$case_root" ]]
+  mkdir -p "$TMP_ROOT/responses/$logical_identity"
+done < <(find "$TMP_ROOT/matrix/requests" -type d -name 'run-*' -print | sort)
 
 env "${COMMON_ENV[@]}" \
   SAMPLE_DATA_SEMANTIC_TIER=enrichment \
@@ -138,6 +133,22 @@ env "${COMMON_ENV[@]}" \
   SAMPLE_DATA_SEMANTIC_REQUEST_ROOT="$TMP_ROOT/matrix/requests" \
   SAMPLE_DATA_SEMANTIC_RESPONSE_ROOT="$TMP_ROOT/responses" \
   bash "$SCRIPT" >/dev/null
+
+cp -R "$TMP_ROOT/matrix/requests" "$TMP_ROOT/invalid-requests"
+cp -R "$TMP_ROOT/responses" "$TMP_ROOT/invalid-responses"
+mv "$TMP_ROOT/invalid-requests/mysql-v8_0-full/direct.json" \
+  "$TMP_ROOT/invalid-requests/mysql-v8_0-full/not-a-view.json"
+mv "$TMP_ROOT/invalid-responses/mysql-v8_0-full/direct.json" \
+  "$TMP_ROOT/invalid-responses/mysql-v8_0-full/not-a-view.json"
+if env "${COMMON_ENV[@]}" \
+    SAMPLE_DATA_SEMANTIC_TIER=enrichment \
+    SAMPLE_DATA_SEMANTIC_OUTPUT_ROOT="$TMP_ROOT/invalid-enrichment" \
+    SAMPLE_DATA_SEMANTIC_REQUEST_ROOT="$TMP_ROOT/invalid-requests" \
+    SAMPLE_DATA_SEMANTIC_RESPONSE_ROOT="$TMP_ROOT/invalid-responses" \
+    bash "$SCRIPT" >/dev/null 2>&1; then
+  echo "semantic enrichment accepted a non-canonical request view inventory" >&2
+  exit 1
+fi
 [[ "$(wc -l <"$TMP_ROOT/enrichment/summary.tsv" | tr -d '[:space:]')" -eq 39 ]]
 [[ "$(awk -F '\t' 'NR > 1 && $4 == "COMPLETE" {count++} END {print count + 0}' \
   "$TMP_ROOT/enrichment/summary.tsv")" -eq 38 ]]

@@ -66,12 +66,13 @@ public final class SemanticRequestBundlePackageWriter {
             Files.createDirectories(packageDirectory);
             Path ownerManifest = packageDirectory.resolve("owner-manifest.tsv");
             files.copyFile(
-                    plan.ownerManifestPath(), ownerManifest,
+                    plan.ownerManifest().path(), ownerManifest,
                     "failed to persist semantic request owner manifest");
             Artifact ownerArtifact = artifact(staging, ownerManifest);
-            require(ownerArtifact.sha256().equals(plan.ownerManifestHash()));
+            require(ownerArtifact.bytes() == plan.ownerManifest().bytes());
+            require(ownerArtifact.sha256().equals(plan.ownerManifest().sha256()));
             try (Source source = readSource(
-                    plan.fullBundlePath(),
+                    plan.fullBundle().path(),
                     packageDirectory.resolve("evidence-records.json.gz"),
                     workspace)) {
                 ArrayNode shardEntries = JSON.createArrayNode();
@@ -81,7 +82,7 @@ public final class SemanticRequestBundlePackageWriter {
                     Files.createDirectories(shardDirectory);
                     Path bundle = shardDirectory.resolve("evidence-bundle.json");
                     files.copyFile(
-                            shard.bundlePath(), bundle,
+                            shard.bundle().path(), bundle,
                             "failed to persist semantic shard evidence bundle");
                     Path sidecar = shardDirectory.resolve("external-audit-refs.tsv");
                     ObjectNode shardBundle = readObject(bundle, "semantic shard bundle");
@@ -90,7 +91,7 @@ public final class SemanticRequestBundlePackageWriter {
                             shardBundle,
                             source.records(),
                             SemanticExternalAuditReferences.read(
-                                    SemanticExternalAuditReferences.sidecar(shard.bundlePath())));
+                                    shard.externalAuditSidecar().path()));
                     validateExternalReferenceSummary(shardBundle, sidecar);
                     overlapCount += shardBundle.path("shardContext").path("overlapRefs").size();
                     shardEntries.add(shardEntry(staging, shard, bundle, sidecar, shardBundle));
@@ -247,7 +248,7 @@ public final class SemanticRequestBundlePackageWriter {
         ObjectNode result = JSON.createObjectNode();
         result.put("artifactSchemaVersion", 2);
         result.put("fullBundleCanonicalSha256", source.canonicalSha256());
-        result.put("sourceBundleSha256", plan.fullBundleHash());
+        result.put("sourceBundleSha256", plan.fullBundle().sha256());
         result.put("reconcile", plan.reconcile());
         result.put("maxInputTokens", plan.maxInputTokens());
         result.put("shardMaxOutputTokens", plan.shardMaxOutputTokens());

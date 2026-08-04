@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticRequestBundleReconstructor;
+import com.relationdetector.semantic.extraction.artifact.SemanticRequestPackageLimits;
 import com.relationdetector.semantic.extraction.artifact.SemanticRunArtifactWriter;
 import com.relationdetector.semantic.extraction.config.ArtifactRetention;
 import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
@@ -40,15 +41,18 @@ public final class SemanticExtractionFacade {
                         request.output(), plan, request.model(), request.reasoningEffort(), request.retention(),
                         deterministicArtifacts);
             }
-            OpenAiResponsesSemanticExtractor shardExtractor = extractor(
-                    request, plan.shards().size() == 1
-                            ? request.maxOutputTokens()
-                            : request.shardMaxOutputTokens());
-            OpenAiResponsesSemanticExtractor reconciliationExtractor = extractor(
-                    request, request.reconciliationMaxOutputTokens());
+            OpenAiResponsesSemanticExtractor shardExtractor = extractor(request);
+            OpenAiResponsesSemanticExtractor reconciliationExtractor = extractor(request);
             if (request.mode() == Mode.REQUEST_ONLY) {
+                int shardRenderMax = plan.shards().size() == 1
+                        ? request.maxOutputTokens()
+                        : request.shardMaxOutputTokens();
                 return writer.writeRequestOnly(
-                        request.output(), plan, shardExtractor::requestJson, reconciliationExtractor::requestJson,
+                        request.output(), plan,
+                        (prompt, target) -> shardExtractor.renderRequest(
+                                prompt, target, shardRenderMax),
+                        (prompt, target) -> reconciliationExtractor.renderRequest(
+                                prompt, target, request.reconciliationMaxOutputTokens()),
                         request.model(), request.reasoningEffort(), request.retention(), deterministicArtifacts);
             }
             return writer.executeAndWrite(
@@ -87,14 +91,24 @@ public final class SemanticExtractionFacade {
     }
 
     public ReconstructionResult reconstructRequestBundle(Path runDirectory, Path target) {
+        return reconstructRequestBundle(
+                runDirectory, target, SemanticRequestPackageLimits.defaults());
+    }
+
+    public ReconstructionResult reconstructRequestBundle(
+            Path runDirectory,
+            Path target,
+            SemanticRequestPackageLimits limits
+    ) {
         SemanticRequestBundleReconstructor.Result result =
-                new SemanticRequestBundleReconstructor().reconstruct(runDirectory, target);
+                new SemanticRequestBundleReconstructor().reconstruct(
+                        runDirectory, target, limits);
         return new ReconstructionResult(result.canonicalSha256(), result.sectionCounts());
     }
 
-    private OpenAiResponsesSemanticExtractor extractor(Request request, int maxOutputTokens) {
+    private OpenAiResponsesSemanticExtractor extractor(Request request) {
         return new OpenAiResponsesSemanticExtractor(
-                request.baseUrl(), request.apiKey(), request.model(), request.reasoningEffort(), maxOutputTokens,
+                request.baseUrl(), request.apiKey(), request.model(), request.reasoningEffort(),
                 request.requestTimeoutSeconds(), request.maxTransportRetries());
     }
 

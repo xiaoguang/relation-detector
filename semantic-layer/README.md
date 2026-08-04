@@ -3,9 +3,10 @@
 Semantic Layer consumes relation-detector JSON and builds evidence-backed semantic artifacts.
 
 `semantic build` and `semantic extract` both derive deterministic event candidates from relation-detector lineage
-before any model call. `semantic extract` also writes a sibling `deterministic-kg/` artifact from the same
-`ScanBundle`; the model does not receive or rewrite that KG. It receives evidence-closed bundle shards whose stable
-fact, candidate, and evidence references can be validated against the original complete bundle.
+before any model call. Both commands use the same streaming, disk-backed `SemanticInputStore` and
+`SemanticEvidenceStore`; `semantic extract` also writes a sibling `deterministic-kg/` artifact. The model does not
+receive or rewrite that KG. It receives evidence-closed bundle shards whose stable fact, candidate, and evidence
+references are validated against the original complete store.
 
 `semantic extract` also emits deterministic `reviewItemCandidates` and `tripletCandidates`:
 
@@ -55,12 +56,15 @@ directory per planned shard:
 - `run-manifest.json`
 
 It does not call an external model provider and does not require `OPENAI_API_KEY`. The request package can reconstruct
-the complete evidence bundle after the original scan input has been removed; reconstruction verifies owner coverage,
-sidecar integrity, and the canonical bundle hash. Only a real model execution retains
+the complete evidence bundle after the original scan input has been removed; direct reconstruction verifies
+shard-declared ownership counts, sidecar integrity, and the canonical bundle hash. Codex completion additionally
+verifies the v2 owner-manifest artifact before consuming responses. Only a real model execution retains
 `full-evidence-bundle.json` directly.
 Single-shard and multi-shard runs use the same layout: request payloads exist only under `shards/shard-NNNN/`.
 Multiple shards also receive a constrained reconciliation template. A Codex session or human supplies each result,
-which must be normalized against that shard's bundle before deterministic merge and final full-bundle normalization.
+which is normalized against that shard's bundle before deterministic merge. Final output rechecks complete evidence,
+owned grounding, candidate-section membership, full catalog/schema physical table and column identities, and final
+semantic-entity/review-target closure before any artifact is published.
 
 `openai-api` uses the approved fixed profile `gpt-5.6-sol` with `xhigh` reasoning and writes:
 
@@ -95,7 +99,8 @@ but these fields are not the contract by themselves. The stable contract is:
 - review items use `targetRef` and `targetSection`; the normalizer auto-generates review items for `REVIEW_NEEDED`
   semantic items that do not already have one;
 - `semanticGraph.nodes` and `semanticGraph.edges` are built from the same ids;
-- `validation.isRefClosed` is false when there are isolated entities, unresolved references, or missing `evidenceRefs`;
+- `validation.isRefClosed` is false when there are unresolved references or missing `evidenceRefs`; evidence-backed
+  isolated entities are reported separately and do not break reference closure;
 - `validation.generatedReviewItemCount` reports review items created by the deterministic normalizer;
 - `validation.isolatedEntities`, `validation.unresolvedReferences`, and `validation.missingEvidenceRefs` explain what
   still needs prompt tuning, parser evidence, or human review.
@@ -137,10 +142,10 @@ configured estimate gate, planning fails explicitly rather than truncating facts
 a run-safety cap; callers processing very large derived bundles must raise it explicitly and audit the resulting
 manifest rather than treating the default as a capability limit.
 
-Sharding bounds model-request context; it does not stream the source JSON. The current `ScanResultReader` materializes
-one complete relation-detector result before building the deterministic KG and shard plan. Inputs that cannot fit that
-typed in-memory representation require a separate streaming or on-disk ingestion design and must not be treated as
-supported merely because the resulting model prompts could be split.
+Sharding bounds model-request context; source ingestion is a separate disk-backed concern. `ScanResultReader.open()`
+streams relation-detector JSON into `SemanticInputStore`, and `SemanticProcessingSession` builds the global evidence
+store and owner plan on disk without materializing one whole scan result. Raw-byte transport windows do not truncate
+facts or alter ownership; every owned/overlap prompt still passes the configured hard estimate gate before use.
 
 `--output` is a reusable run root. Each invocation writes `.staging-<runId>` and atomically publishes a
 mode-specific deliverable as `run-<runId>`: codex-session publishes `AWAITING_MODEL_RESULTS`, request-only publishes
@@ -187,7 +192,7 @@ java -jar semantic-layer/semantic-cli/target/relation-detector-semantic-cli-0.1.
   --config semantic-layer/examples/semantic-extraction-openai-api.yml
 ```
 
-The governance target is for generated semantic candidates to carry `SYSTEM_PROPOSED` until a later review step.
-The current normalizer rejects model-authored `BUSINESS_APPROVED`, but it does not fill a missing `reviewStatus`;
-backfilled event/triplet candidates can therefore remain unset. Consumers must not interpret an absent status as
+Generated semantic candidates carry `SYSTEM_PROPOSED` until a later review step. The normalizer rejects
+model-authored `BUSINESS_APPROVED`, fills missing formal-object `reviewStatus` with `SYSTEM_PROPOSED`, and fills
+missing review-item status with `REVIEW_NEEDED`. Consumers must not interpret any non-approved state as business
 approval.

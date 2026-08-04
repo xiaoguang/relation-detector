@@ -43,11 +43,11 @@ relationship / lineage fingerprints must match one canonical expectation.
 ## Validation Commands
 
 ```bash
-mvn -pl cli -am \
+mvn -pl relation-detector/cli -am \
   -Dtest=SemanticEquivalentCorrectnessTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 
-mvn -pl cli -am \
+mvn -pl relation-detector/cli -am \
   -Dtest=CorrectnessFixtureRunnerTest \
   -DcorrectnessFixtureFilter=semantic-equivalent \
   -Dsurefire.failIfNoSpecifiedTests=false test

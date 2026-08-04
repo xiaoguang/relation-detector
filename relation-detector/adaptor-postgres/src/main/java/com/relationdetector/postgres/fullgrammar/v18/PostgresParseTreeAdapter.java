@@ -14,27 +14,30 @@ import com.relationdetector.postgres.fullgrammar.v18.PostgresFullGrammarParser.*
 final class PostgresParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter {
     PostgresParseTreeAdapter() {
         super(
-                role(Role.COLUMN_REFERENCE, ColumnrefContext.class),
-                role(Role.CASE_EXPRESSION, Case_exprContext.class),
-                role(Role.CASE_WHEN_LIST, When_clause_listContext.class),
-                role(Role.CASE_WHEN, When_clauseContext.class),
-                role(Role.CASE_DEFAULT, Case_defaultContext.class),
-                role(Role.FUNCTION_CALL, Func_applicationContext.class),
-                role(Role.WINDOW_FUNCTION, Window_clauseContext.class, Over_clauseContext.class),
-                role(Role.QUERY_BOUNDARY, SelectstmtContext.class, Select_with_parensContext.class,
-                        PreparablestmtContext.class),
-                role(Role.SCALAR_SUBQUERY, Select_with_parensContext.class),
-                role(Role.SELECT_TARGET_LIST, Target_listContext.class, Target_list_Context.class),
-                role(Role.SELECT_TARGET_ITEM, Target_labelContext.class),
-                role(Role.FROM_CLAUSE, From_clauseContext.class),
-                role(Role.TABLE_SOURCE_ITEM, Table_primaryContext.class),
-                role(Role.EXPRESSION, A_exprContext.class, B_exprContext.class, C_exprContext.class,
-                        Func_exprContext.class, ColumnrefContext.class, Subquery_OpContext.class),
-                role(Role.ROOT_EXPRESSION, A_exprContext.class),
-                role(Role.CONTROL_SCOPE, Join_qualContext.class, Where_clauseContext.class,
-                        Having_clauseContext.class),
-                role(Role.GROUPING_SCOPE, Group_clauseContext.class),
-                role(Role.WINDOW_CONTROL_SCOPE, Over_clauseContext.class));
+                role(Role.COLUMN_REFERENCE, ctx -> ctx instanceof ColumnrefContext),
+                role(Role.CASE_EXPRESSION, ctx -> ctx instanceof Case_exprContext),
+                role(Role.CASE_WHEN_LIST, ctx -> ctx instanceof When_clause_listContext),
+                role(Role.CASE_WHEN, ctx -> ctx instanceof When_clauseContext),
+                role(Role.CASE_DEFAULT, ctx -> ctx instanceof Case_defaultContext),
+                role(Role.FUNCTION_CALL, ctx -> ctx instanceof Func_applicationContext),
+                role(Role.WINDOW_FUNCTION,
+                        ctx -> ctx instanceof Window_clauseContext || ctx instanceof Over_clauseContext),
+                role(Role.QUERY_BOUNDARY, ctx -> ctx instanceof SelectstmtContext
+                        || ctx instanceof Select_with_parensContext || ctx instanceof PreparablestmtContext),
+                role(Role.SCALAR_SUBQUERY, ctx -> ctx instanceof Select_with_parensContext),
+                role(Role.SELECT_TARGET_LIST,
+                        ctx -> ctx instanceof Target_listContext || ctx instanceof Target_list_Context),
+                role(Role.SELECT_TARGET_ITEM, ctx -> ctx instanceof Target_labelContext),
+                role(Role.FROM_CLAUSE, ctx -> ctx instanceof From_clauseContext),
+                role(Role.TABLE_SOURCE_ITEM, ctx -> ctx instanceof Table_primaryContext),
+                role(Role.EXPRESSION, ctx -> ctx instanceof A_exprContext || ctx instanceof B_exprContext
+                        || ctx instanceof C_exprContext || ctx instanceof Func_exprContext
+                        || ctx instanceof ColumnrefContext || ctx instanceof Subquery_OpContext),
+                role(Role.ROOT_EXPRESSION, ctx -> ctx instanceof A_exprContext),
+                role(Role.CONTROL_SCOPE, ctx -> ctx instanceof Join_qualContext
+                        || ctx instanceof Where_clauseContext || ctx instanceof Having_clauseContext),
+                role(Role.GROUPING_SCOPE, ctx -> ctx instanceof Group_clauseContext),
+                role(Role.WINDOW_CONTROL_SCOPE, ctx -> ctx instanceof Over_clauseContext));
     }
 
     @Override

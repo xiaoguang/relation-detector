@@ -2,23 +2,60 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+CHECKPOINT_HELPER="$ROOT/relation-detector/scripts/migration/phase0-checkpoint.py"
 OUTPUT_ROOT="${PHASE0_OUTPUT_ROOT:-$ROOT/relation-detector/target/phase0-reconstruction}"
 WORKTREE_ROOT="${PHASE0_WORKTREE_ROOT:-/private/tmp}"
 PLAN_ONLY=false
+MANIFEST_ONLY=false
 ACTIVE_WORKTREES=()
 
-if [[ "${1:-}" == "--plan-only" ]]; then
+if [[ "${1:-}" == "--import-results-only" ]]; then
+  if [[ "$#" -ne 4 ]]; then
+    echo "usage: $0 --import-results-only <source-results> <batch-report> <destination-results>" >&2
+    exit 2
+  fi
+  python3 "$CHECKPOINT_HELPER" import-results "$2" "$3" "$4"
+  exit 0
+elif [[ "${1:-}" == "--convert-results-only" ]]; then
+  if [[ "$#" -ne 4 ]]; then
+    echo "usage: $0 --convert-results-only <source-results> <batch-report> <destination-results>" >&2
+    exit 2
+  fi
+  python3 "$CHECKPOINT_HELPER" convert-results "$2" "$3" "$4"
+  exit 0
+elif [[ "${1:-}" == "--reuse-valid-only" ]]; then
+  if [[ "$#" -ne 3 ]]; then
+    echo "usage: $0 --reuse-valid-only <checkpoint> <commit>" >&2
+    exit 2
+  fi
+  python3 "$CHECKPOINT_HELPER" verify-reuse "$2" "$3"
+  exit 0
+elif [[ "${1:-}" == "--manifest-only" ]]; then
+  MANIFEST_ONLY=true
+  shift
+  if [[ "$#" -ne 6 ]]; then
+    echo "usage: $0 --manifest-only <destination> <label> <commit> <parser-status> <acceptance-status> <generated-report-gate>" >&2
+    exit 2
+  fi
+  MANIFEST_DESTINATION="$1"
+  MANIFEST_LABEL="$2"
+  MANIFEST_COMMIT="$3"
+  MANIFEST_PARSER_STATUS="$4"
+  MANIFEST_ACCEPTANCE_STATUS="$5"
+  MANIFEST_GENERATED_REPORT_GATE="$6"
+elif [[ "${1:-}" == "--plan-only" ]]; then
   PLAN_ONLY=true
   shift
 fi
-if [[ "$#" -ne 3 ]]; then
-  echo "usage: $0 [--plan-only] <pre-migration-commit> <migration-commit> <current-commit>" >&2
-  exit 2
+if [[ "$MANIFEST_ONLY" == "false" ]]; then
+  if [[ "$#" -ne 3 ]]; then
+    echo "usage: $0 [--plan-only] <pre-migration-commit> <migration-commit> <current-commit>" >&2
+    exit 2
+  fi
+  COMMIT_A="$1"
+  COMMIT_B="$2"
+  COMMIT_C="$3"
 fi
-
-COMMIT_A="$1"
-COMMIT_B="$2"
-COMMIT_C="$3"
 
 worktree_path() {
   local label="$1"
@@ -29,6 +66,7 @@ worktree_path() {
 }
 
 cleanup() {
+  [[ "$MANIFEST_ONLY" == "false" ]] || return 0
   local worktree
   for worktree in "${ACTIVE_WORKTREES[@]:-}"; do
     if [[ -n "$worktree" && -e "$worktree" ]]; then
@@ -39,7 +77,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ "$PLAN_ONLY" == "true" ]]; then
+if [[ "$MANIFEST_ONLY" == "false" && "$PLAN_ONLY" == "true" ]]; then
   python3 - "$OUTPUT_ROOT" \
     "$COMMIT_A" "$(worktree_path A "$COMMIT_A")" \
     "$COMMIT_B" "$(worktree_path B "$COMMIT_B")" \
@@ -59,8 +97,6 @@ print(json.dumps({
 PY
   exit 0
 fi
-
-mkdir -p "$OUTPUT_ROOT"
 
 write_inventories() {
   local commit="$1"
@@ -82,66 +118,19 @@ write_checkpoint_manifest() {
   local acceptance_status="$4"
   local destination="$5"
   local generated_report_gate="$6"
-  python3 - "$label" "$commit" "$parser_baseline_status" "$acceptance_status" \
-    "$destination" "$generated_report_gate" <<'PY'
-import csv
-import hashlib
-import json
-import sys
-from pathlib import Path
-
-label, commit, parser_status, acceptance_status, raw_destination, generated_report_gate = sys.argv[1:]
-destination = Path(raw_destination)
-results = sorted((destination / "results").glob("*.json"))
-direct = [path for path in results if not path.stem.endswith("-derived-fresh")]
-correctness_path = destination / "correctness-run-summary.json"
-correctness = json.loads(correctness_path.read_text(encoding="utf-8")) if correctness_path.exists() else {}
-
-warning_total = 0
-warning_path = destination / "warning-codes.tsv"
-if warning_path.exists():
-    with warning_path.open(encoding="utf-8", newline="") as handle:
-        warning_total = sum(int(row.get("count") or 0) for row in csv.DictReader(handle, delimiter="\t"))
-
-parity_differences = 0
-parity_path = destination / "observation-parity.tsv"
-if parity_path.exists():
-    with parity_path.open(encoding="utf-8", newline="") as handle:
-        parity_differences = sum(
-            int(row.get("TokenOnly") or 0) + int(row.get("FullOnly") or 0)
-            for row in csv.DictReader(handle, delimiter="\t")
-        )
-
-artifacts = []
-for path in sorted(destination.iterdir()):
-    if not path.is_file() or path.name == "checkpoint-manifest.json":
-        continue
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    artifacts.append({"path": path.name, "sha256": digest, "bytes": path.stat().st_size})
-
-manifest = {
-    "label": label,
-    "commit": commit,
-    "status": (
-        "PASS" if int(parser_status) == 0 and int(acceptance_status) == 0
-        else "PARTIAL_HISTORICAL" if int(parser_status) == 0
-        else "FAIL"
-    ),
-    "acceptanceStatus": int(acceptance_status),
-    "parserBaselineStatus": int(parser_status),
-    "generatedReportFreshness": generated_report_gate,
-    "correctness": correctness,
-    "parserCategories": len(direct),
-    "jsonFiles": len(results),
-    "diagnostics": warning_total,
-    "observationParityDifferences": parity_differences,
-    "artifacts": artifacts,
+  python3 "$CHECKPOINT_HELPER" write-manifest \
+    "$destination" "$label" "$commit" "$parser_baseline_status" \
+    "$acceptance_status" "$generated_report_gate"
 }
-(destination / "checkpoint-manifest.json").write_text(
-    json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-)
-PY
-}
+
+if [[ "$MANIFEST_ONLY" == "true" ]]; then
+  write_checkpoint_manifest "$MANIFEST_LABEL" "$MANIFEST_COMMIT" \
+    "$MANIFEST_PARSER_STATUS" "$MANIFEST_ACCEPTANCE_STATUS" \
+    "$MANIFEST_DESTINATION" "$MANIFEST_GENERATED_REPORT_GATE"
+  exit 0
+fi
+
+mkdir -p "$OUTPUT_ROOT"
 
 collect_checkpoint() {
   local label="$1"
@@ -151,79 +140,97 @@ collect_checkpoint() {
   local acceptance_status="$5"
   local generated_report_gate="$6"
   local destination="$OUTPUT_ROOT/$label-$commit"
+  local staging="$OUTPUT_ROOT/.$label-$commit.staging.$$"
   local source_target="$source_root/relation-detector/target"
+  local source_sample="$source_target/sample-data-parser-cli"
+  local validation_log="$OUTPUT_ROOT/$label-$commit-validation.log"
+  local validation_status=0
 
-  mkdir -p "$destination"
-  if [[ -d "$source_target/sample-data-parser-cli/results" ]]; then
-    cp -R "$source_target/sample-data-parser-cli/results" "$destination/results"
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    echo "Refusing to merge checkpoint into an existing destination: $destination" >&2
+    return 1
+  fi
+  if [[ -e "$staging" || -L "$staging" ]]; then
+    echo "Refusing to reuse an existing checkpoint staging path: $staging" >&2
+    return 1
+  fi
+  mkdir "$staging"
+  python3 "$CHECKPOINT_HELPER" import-results \
+    "$source_sample/results" "$source_sample/batch-report.json" "$staging/results"
+  set +e
+  RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$source_root" \
+    "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" validate-results \
+    --result-dir "$staging/results" \
+    --expected-categories 19 \
+    --output "$staging/result-validation.json" >>"$validation_log" 2>&1
+  validation_status=$?
+  set -e
+  if [[ "$validation_status" -ne 0 ]]; then
+    parser_baseline_status=1
   fi
   for name in summary.tsv summary-with-derived.tsv warning-codes.tsv observation-parity.tsv batch-report.json; do
-    if [[ -f "$source_target/sample-data-parser-cli/$name" ]]; then
-      cp "$source_target/sample-data-parser-cli/$name" "$destination/$name"
+    if [[ -f "$source_sample/$name" && ! -L "$source_sample/$name" ]]; then
+      cp "$source_sample/$name" "$staging/$name"
     fi
   done
-  if [[ -f "$source_target/correctness-run-summary.json" ]]; then
-    cp "$source_target/correctness-run-summary.json" "$destination/correctness-run-summary.json"
+  if [[ -f "$source_target/correctness-run-summary.json" \
+      && ! -L "$source_target/correctness-run-summary.json" ]]; then
+    cp "$source_target/correctness-run-summary.json" "$staging/correctness-run-summary.json"
   fi
   if [[ -f "$OUTPUT_ROOT/$label-$commit-run.log" ]]; then
-    cp "$OUTPUT_ROOT/$label-$commit-run.log" "$destination/acceptance.log"
+    cp "$OUTPUT_ROOT/$label-$commit-run.log" "$staging/acceptance.log"
   else
     local latest_acceptance
     latest_acceptance="$(find "$source_target/verification" -name acceptance.log -type f -print 2>/dev/null \
       | sort | tail -n 1)"
     if [[ -n "$latest_acceptance" ]]; then
-      cp "$latest_acceptance" "$destination/acceptance.log"
+      cp "$latest_acceptance" "$staging/acceptance.log"
     fi
   fi
-  write_inventories "$commit" "$destination"
-  if [[ -d "$destination/results" ]]; then
+  write_inventories "$commit" "$staging"
+  if [[ -d "$staging/results" ]]; then
     "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" fingerprint \
-      --workspace "$destination/fingerprint-work/canonical" \
-      --output "$destination/fingerprints.tsv" \
-      "$destination/results"
+      --workspace "$staging/fingerprint-work/canonical" \
+      --output "$staging/fingerprints.tsv" \
+      "$staging/results"
     "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" fingerprint --semantic \
-      --workspace "$destination/fingerprint-work/semantic" \
-      --output "$destination/semantic-fingerprints.tsv" \
-      "$destination/results"
+      --workspace "$staging/fingerprint-work/semantic" \
+      --output "$staging/semantic-fingerprints.tsv" \
+      "$staging/results"
     python3 "$ROOT/relation-detector/scripts/audit/compare-semantic-results.py" \
-      --inventory-root "$destination/results" \
-      --output "$destination/semantic-inventory.json"
+      --inventory-root "$staging/results" \
+      --output "$staging/semantic-inventory.json"
   fi
   write_checkpoint_manifest "$label" "$commit" "$parser_baseline_status" \
-    "$acceptance_status" "$destination" "$generated_report_gate"
+    "$acceptance_status" "$staging" "$generated_report_gate"
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    echo "Checkpoint destination appeared before atomic publication: $destination" >&2
+    return 1
+  fi
+  mv "$staging" "$destination"
+  [[ "$parser_baseline_status" -eq 0 ]]
 }
 
 run_checkpoint() {
   local label="$1"
   local commit="$2"
   local reuse_root="${3:-}"
-  local completed_manifest="$OUTPUT_ROOT/$label-$commit/checkpoint-manifest.json"
+  local destination="$OUTPUT_ROOT/$label-$commit"
   local worktree
   local acceptance_status=0
   local parser_baseline_status=0
   local correctness_status=0
   local package_status=0
   local cli_status=0
-  local validation_status=0
 
-  if [[ "${PHASE0_REUSE_COMPLETED:-true}" == "true" && -f "$completed_manifest" ]]; then
-    if python3 - "$completed_manifest" "$commit" <<'PY'
-import json
-import sys
-
-manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-valid = (
-    manifest.get("commit") == sys.argv[2]
-    and manifest.get("parserBaselineStatus") == 0
-    and manifest.get("parserCategories") == 19
-    and manifest.get("jsonFiles") == 38
-)
-raise SystemExit(0 if valid else 1)
-PY
-    then
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    if [[ "${PHASE0_REUSE_COMPLETED:-true}" == "true" ]] \
+        && python3 "$CHECKPOINT_HELPER" verify-reuse "$destination" "$commit"; then
       echo "Reusing completed checkpoint $label ($commit)"
       return
     fi
+    echo "Refusing to overwrite an existing checkpoint that failed audited reuse: $destination" >&2
+    return 1
   fi
 
   git -C "$ROOT" cat-file -e "$commit^{commit}"
@@ -299,25 +306,15 @@ PY
   else
     cli_status=1
   fi
-  if [[ "$cli_status" -eq 0 ]]; then
-    set +e
-    RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$worktree" \
-      "$ROOT/relation-detector/scripts/run-release-verification-tool.sh" validate-results \
-      --result-dir "$worktree/relation-detector/target/sample-data-parser-cli/results" \
-      --expected-categories 19 \
-      --output "$destination/result-validation.json" >>"$log" 2>&1
-    validation_status=$?
-    set -e
-  else
-    validation_status=1
-  fi
   if [[ "$correctness_status" -ne 0 || "$package_status" -ne 0 || \
-        "$cli_status" -ne 0 || "$validation_status" -ne 0 ]]; then
+        "$cli_status" -ne 0 ]]; then
     parser_baseline_status=1
   fi
 
-  collect_checkpoint "$label" "$commit" "$worktree" "$parser_baseline_status" \
-    "$acceptance_status" "SKIPPED_HISTORICAL_STALE"
+  if ! collect_checkpoint "$label" "$commit" "$worktree" "$parser_baseline_status" \
+      "$acceptance_status" "SKIPPED_HISTORICAL_STALE"; then
+    parser_baseline_status=1
+  fi
   if [[ "$parser_baseline_status" -ne 0 ]]; then
     echo "Checkpoint $label ($commit) failed; see $OUTPUT_ROOT/$label-$commit-run.log" >&2
     return "$parser_baseline_status"

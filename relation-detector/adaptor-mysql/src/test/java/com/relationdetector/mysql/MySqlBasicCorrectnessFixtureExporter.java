@@ -27,6 +27,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.parser.runtime.SqlRelationParserRunner;
 
 /**
@@ -331,6 +332,7 @@ public final class MySqlBasicCorrectnessFixtureExporter {
         AdaptorContext context = new AdaptorContext(scope, Map.of(), warnings::add);
         ScanConfig config = config(scope.schema());
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
+        NamespaceContext namespace = new NamespaceContext(scope.catalog(), scope.schema(), List.of());
         List<String> fingerprints = new ArrayList<>();
         for (RoutineSample routine : routines) {
             SqlStatementRecord statement = new SqlStatementRecord(
@@ -345,7 +347,8 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                             "routineSchema", routine.schema(),
                             "routineName", routine.name(),
                             "routineType", routine.type().name()));
-            for (RelationshipCandidate relation : runner.parse(adaptor, config, statement, context)) {
+            for (RelationshipCandidate relation : runner.parseStructuredAndRelations(
+                    adaptor, config, statement, context, namespace).relationships()) {
                 fingerprints.add(fingerprint(relation));
             }
         }
@@ -394,6 +397,7 @@ public final class MySqlBasicCorrectnessFixtureExporter {
         int relationCount = 0;
         int line = 1;
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
+        NamespaceContext namespace = new NamespaceContext(scope.catalog(), scope.schema(), List.of());
         for (SqlSample sample : samples) {
             SqlStatementRecord statement = new SqlStatementRecord(
                     sample.sql(),
@@ -402,7 +406,8 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                     line,
                     line,
                     Map.of());
-            relationCount += runner.parse(adaptor, config, statement, context).size();
+            relationCount += runner.parseStructuredAndRelations(
+                    adaptor, config, statement, context, namespace).relationships().size();
             line++;
         }
 

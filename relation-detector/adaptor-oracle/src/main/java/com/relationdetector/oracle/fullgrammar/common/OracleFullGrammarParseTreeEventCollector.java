@@ -1,10 +1,7 @@
 package com.relationdetector.oracle.fullgrammar.common;
 
 import java.util.ArrayDeque;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
@@ -28,19 +25,23 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     private final OracleConditionalPredicateSupport conditionalPredicates;
     private final OracleRoutineSymbolCollector routineSymbols;
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
-    private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
+    private final OracleQueryScopeStack queryScopes;
     private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
     private int existsDepth;
+    private int triggerDepth;
 
     public OracleFullGrammarParseTreeEventCollector(
             SqlStatementRecord statement,
             OracleFullGrammarParseTreeAdapter adapter
     ) {
         super(new OracleSqlEventVisitorCore(statement), adapter);
+        this.queryScopes = new OracleQueryScopeStack(core);
         this.expressionSupport = new OracleFullGrammarExpressionSupport(
-                core, adapter, this::defaultColumnAlias, routineScope);
+                core, adapter, queryScopes::defaultAlias,
+                qualifier -> queryScopes.isVisible(qualifier, triggerDepth > 0), routineScope);
         this.ddlCollector = new OracleFullGrammarDdlCollector(core, adapter, this::visit);
-        this.emitter = new OracleFullGrammarEventEmitter(core, adapter, expressionSupport, this::registerCurrentRowset);
+        this.emitter = new OracleFullGrammarEventEmitter(
+                core, adapter, expressionSupport, queryScopes::register);
         this.joinSemantics = new OracleJoinSemanticSupport(adapter);
         this.conditionalPredicates = new OracleConditionalPredicateSupport(core, adapter, expressionSupport);
         this.routineSymbols = new OracleRoutineSymbolCollector(core, adapter);
@@ -132,8 +133,13 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         String targetTable = name(first(eventClause, Role.TABLEVIEW_NAME));
         emitter.emitTriggerTarget(ctx, targetTable);
         routineScope.enterRoutine();
-        visitChildren(ctx);
-        routineScope.leaveRoutineEnd(false);
+        triggerDepth++;
+        try {
+            visitChildren(ctx);
+        } finally {
+            triggerDepth--;
+            routineScope.leaveRoutineEnd(false);
+        }
     }
 
     private void visitSubqueryFactoringClause(ParserRuleContext ctx) {
@@ -149,7 +155,7 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     }
 
     private void visitQueryBlock(ParserRuleContext ctx) {
-        queryScopes.push(new QueryScope());
+        queryScopes.push();
         try {
             ParserRuleContext selectedList = child(ctx, Role.SELECTED_LIST);
             visit(child(ctx, Role.FROM_CLAUSE));
@@ -295,15 +301,20 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         String alias = child(general, Role.TABLE_ALIAS) == null ? core.baseName(table) : name(child(general, Role.TABLE_ALIAS));
         emitter.beginWriteTarget(general, alias, table);
         ParserRuleContext where = child(ctx, Role.WHERE_CLAUSE);
-        for (ParseTree child : typedChildren(ctx)) {
-            if (child != where) {
-                visit(child);
+        queryScopes.push(List.of(alias));
+        try {
+            for (ParseTree child : typedChildren(ctx)) {
+                if (child != where) {
+                    visit(child);
+                }
             }
+        } finally {
+            queryScopes.pop();
         }
         if (where != null) {
-            queryScopes.push(new QueryScope());
+            queryScopes.push();
             try {
-                registerCurrentRowset(alias);
+                queryScopes.register(alias);
                 OracleExpressionAnalysis control = expressionSupport.directControlAnalysis(where);
                 emitter.emitUpdateLocatorMappings(ctx, control);
                 visit(where);
@@ -337,13 +348,18 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         List<ParserRuleContext> selectItems = expressionSupport.selectItems(select);
         OracleExpressionAnalysis grouping = expressionSupport.groupingControlAnalysis(select);
         int count = Math.min(targetColumns.size(), selectItems.size());
-        for (int index = 0; index < count; index++) {
-            ParserRuleContext expression = child(selectItems.get(index), Role.EXPRESSION);
-            if (expression == null) {
-                continue;
+        queryScopes.push(expressionSupport.physicalRowsetAliases(select));
+        try {
+            for (int index = 0; index < count; index++) {
+                ParserRuleContext expression = child(selectItems.get(index), Role.EXPRESSION);
+                if (expression == null) {
+                    continue;
+                }
+                emitter.emitInsertSelectMappings(selectItems.get(index), targetTable,
+                        targetColumns.get(index), expression, grouping);
             }
-            emitter.emitInsertSelectMappings(selectItems.get(index), targetTable,
-                    targetColumns.get(index), expression, grouping);
+        } finally {
+            queryScopes.pop();
         }
     }
 
@@ -355,35 +371,33 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
         }
         String targetTable = tableFrom(tableviews.get(0));
         String targetAlias = aliasFrom(tableviews.get(0), targetTable);
+        String sourceTable = tableFrom(tableviews.get(1));
+        String sourceAlias = aliasFrom(tableviews.get(1), sourceTable);
         emitter.beginWriteTarget(tableviews.get(0), targetAlias, targetTable);
         visit(tableviews.get(0));
         visit(tableviews.get(1));
         ParserRuleContext condition = child(ctx, Role.CONDITION);
-        visit(condition);
-        OracleExpressionAnalysis mergeControl = expressionSupport.directControlAnalysis(condition);
+        OracleExpressionAnalysis mergeControl;
+        queryScopes.push(List.of(targetAlias, sourceAlias));
+        try {
+            visit(condition);
+            mergeControl = expressionSupport.directControlAnalysis(condition);
+        } finally {
+            queryScopes.pop();
+        }
         ParserRuleContext update = child(ctx, Role.MERGE_UPDATE_CLAUSE);
-        if (update != null) {
-            for (ParserRuleContext element : children(update, Role.MERGE_ELEMENT)) {
-                emitter.emitMergeAssignment(element, name(child(element, Role.COLUMN_NAME)),
-                        child(element, Role.EXPRESSION), mergeControl);
+        queryScopes.push(List.of(targetAlias, sourceAlias));
+        try {
+            if (update != null) {
+                for (ParserRuleContext element : children(update, Role.MERGE_ELEMENT)) {
+                    emitter.emitMergeAssignment(element, name(child(element, Role.COLUMN_NAME)),
+                            child(element, Role.EXPRESSION), mergeControl);
+                }
             }
+        } finally {
+            queryScopes.pop();
         }
         emitter.endWriteTarget();
-    }
-
-    private void registerCurrentRowset(String alias) {
-        if (alias == null || alias.isBlank() || queryScopes.isEmpty()) {
-            return;
-        }
-        queryScopes.peek().rowsetAliases().add(alias);
-    }
-
-    private String defaultColumnAlias() {
-        if (queryScopes.isEmpty()) {
-            return "";
-        }
-        Set<String> aliases = queryScopes.peek().rowsetAliases();
-        return aliases.size() == 1 ? aliases.iterator().next() : "";
     }
 
     private void visitChildren(ParseTree tree) {
@@ -402,9 +416,4 @@ public final class OracleFullGrammarParseTreeEventCollector extends OracleFullGr
     private record ProjectionOwner(String alias, List<String> columns) {
     }
 
-    private record QueryScope(Set<String> rowsetAliases) {
-        QueryScope() {
-            this(new LinkedHashSet<>());
-        }
-    }
 }

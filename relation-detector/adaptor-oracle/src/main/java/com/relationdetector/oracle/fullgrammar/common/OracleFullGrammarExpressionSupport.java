@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -13,6 +14,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
+import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.GeneralElementKind;
 import com.relationdetector.oracle.fullgrammar.common.OracleFullGrammarParseTreeAdapter.Role;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
@@ -28,11 +30,13 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             OracleSqlEventVisitorCore core,
             OracleFullGrammarParseTreeAdapter adapter,
             Supplier<String> defaultAlias,
+            Predicate<String> visibleQualifier,
             OracleRoutineScope routineScope
     ) {
         super(core, adapter);
         this.transforms = new OracleExpressionTransformSupport(core, adapter);
-        this.columns = new OracleColumnReadCollector(core, adapter, defaultAlias, routineScope);
+        this.columns = new OracleColumnReadCollector(
+                core, adapter, defaultAlias, visibleQualifier, routineScope);
     }
 
     OracleColumnRead singleSelectColumn(ParserRuleContext subquery) {
@@ -42,12 +46,37 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
         }
         ParserRuleContext expression = child(items.get(0), Role.EXPRESSION);
         ParserRuleContext general = first(expression, Role.GENERAL_ELEMENT);
-        if (general != null && name(general).equals(name(expression)) && !name(general).contains(".")) {
-            Set<String> aliases = new LinkedHashSet<>();
-            collectPhysicalRowsetAliases(subquery, subquery, aliases);
-            return aliases.size() == 1 ? new OracleColumnRead(aliases.iterator().next(), name(general)) : null;
+        if (general != null && wrapsOnly(expression, general)
+                && adapter().generalElementView(general)
+                        .filter(view -> view.kind() == GeneralElementKind.COLUMN_CANDIDATE)
+                        .isPresent()) {
+            Set<String> aliases = physicalRowsetAliases(subquery);
+            return columns.directGeneralElement(general, aliases);
         }
         return singleColumn(expression);
+    }
+
+    Set<String> physicalRowsetAliases(ParseTree tree) {
+        ParserRuleContext subquery = hasRole(tree, Role.SUBQUERY)
+                ? (ParserRuleContext) tree : first(tree, Role.SUBQUERY);
+        if (subquery == null) {
+            return Set.of();
+        }
+        Set<String> aliases = new LinkedHashSet<>();
+        collectPhysicalRowsetAliases(subquery, subquery, aliases);
+        return Set.copyOf(aliases);
+    }
+
+    private boolean wrapsOnly(ParseTree tree, ParseTree target) {
+        ParseTree current = tree;
+        while (current != target) {
+            List<ParseTree> children = typedChildren(current);
+            if (children.size() != 1) {
+                return false;
+            }
+            current = children.get(0);
+        }
+        return true;
     }
 
     List<ParserRuleContext> selectItems(ParseTree ctx) {
@@ -142,11 +171,9 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             return true;
         }
         if (hasRole(tree, Role.GENERAL_ELEMENT)) {
-            for (ParserRuleContext part : children(tree, Role.GENERAL_ELEMENT_PART)) {
-                if (!children(part, Role.FUNCTION_ARGUMENT).isEmpty()) {
-                    return true;
-                }
-            }
+            return adapter().generalElementView(tree)
+                    .map(view -> view.kind() == GeneralElementKind.FUNCTION)
+                    .orElse(false);
         }
         for (ParseTree child : typedChildren(tree)) {
             if (containsFunctionCall(child)) {
@@ -350,15 +377,12 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             return;
         }
         if (hasRole(tree, Role.COLUMN_REFERENCE)) {
-            columns.add(name(tree), reads);
+            columns.add(tree, name(tree), reads);
             return;
         }
         if (hasRole(tree, Role.GENERAL_ELEMENT)) {
-            String text = name(tree);
-            if (!text.contains("(") && text.contains(".")) {
-                columns.add(text, reads);
-                return;
-            }
+            columns.addGeneralElement(tree, reads);
+            return;
         }
         for (ParseTree child : typedChildren(tree)) {
             collectProjectionColumnReads(child, reads);

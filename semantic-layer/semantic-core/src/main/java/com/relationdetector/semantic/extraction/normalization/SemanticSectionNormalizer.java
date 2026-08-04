@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.relationdetector.semantic.StableSemanticId;
 import com.relationdetector.semantic.extraction.normalization.SemanticReferenceValidator.Session;
 import com.relationdetector.semantic.extraction.model.SemanticDimension;
 import com.relationdetector.semantic.extraction.model.SemanticEntity;
@@ -66,9 +65,8 @@ public final class SemanticSectionNormalizer {
         for (SemanticReviewItem item : reviewItems) {
             String targetRef = SemanticNormalizationSupport.nonBlank(item.targetRef, item.target);
             item.targetSection = SemanticNormalizationSupport.nonBlank(item.targetSection, item.section);
-            item.id = SemanticNormalizationSupport.nonBlank(
-                    item.id,
-                    SemanticCanonicalIdentity.review(targetRef, item.targetSection, item.type));
+            item.id = SemanticCanonicalIdentity.review(
+                    targetRef, item.targetSection, item.type);
             validator.registerOwner("reviewItem", item.id);
             if (!blank(targetRef)) {
                 item.targetRef = targetRef;
@@ -89,14 +87,12 @@ public final class SemanticSectionNormalizer {
             Session validator
     ) {
         for (SemanticEntity entity : entities) {
-            if (blank(entity.id)) {
-                entity.id = SemanticCanonicalIdentity.entity(
-                        entity.physicalName,
-                        entity.name,
-                        entity.machineType,
-                        entity.type,
-                        entity.ownedGroundingRefs()).canonicalId();
-            }
+            entity.id = SemanticCanonicalIdentity.entity(
+                    entity.physicalName,
+                    entity.name,
+                    entity.machineType,
+                    entity.type,
+                    entity.ownedGroundingRefs()).canonicalId();
             validator.registerOwner("entity", entity.id);
             validator.requirePhysicalTable("entity", entity.id, "physicalName", entity.physicalName);
             validator.requireEvidence("entity", entity.id, entity);
@@ -134,9 +130,7 @@ public final class SemanticSectionNormalizer {
             Session validator
     ) {
         for (SemanticEvent event : events) {
-            if (blank(event.id)) {
-                event.id = SemanticCanonicalIdentity.event(event.eventCandidateRef);
-            }
+            event.id = SemanticCanonicalIdentity.event(event.eventCandidateRef);
             validator.registerOwner("event", event.id);
             validator.requireEvidence("event", event.id, event);
             validator.requireEventCandidateRef(event.id, event.eventCandidateRef);
@@ -195,8 +189,8 @@ public final class SemanticSectionNormalizer {
             String toRef = explicitTo
                     ? knownEntityIds.contains(relation.toEntityRef) ? relation.toEntityRef : null
                     : entityByName.get(text(relation.to));
-            relation.id = SemanticNormalizationSupport.nonBlank(relation.id,
-                    StableSemanticId.of("relation", relation.from, relation.to, relation.type, relation.machineType));
+            relation.id = SemanticCanonicalIdentity.relation(
+                    fromRef, toRef, relation.machineType, relation.type);
             validator.registerOwner("relation", relation.id);
             validator.requireEvidence("relation", relation.id, relation);
             relation.fromEntityRef = present(fromRef) ? fromRef : relation.fromEntityRef;
@@ -222,15 +216,8 @@ public final class SemanticSectionNormalizer {
             Session validator
     ) {
         for (SemanticLineage lineage : lineages) {
-            String targetKey = SemanticNormalizationSupport.nonBlank(lineage.toPhysical, lineage.to);
-            List<String> sourceKeys = new ArrayList<>(values(lineage.fromPhysical));
-            if (sourceKeys.isEmpty()) {
-                sourceKeys.addAll(values(lineage.from));
-            }
-            sourceKeys.sort(String::compareTo);
-            lineage.id = SemanticNormalizationSupport.nonBlank(lineage.id,
-                    StableSemanticId.of("semantic-lineage", String.join("\u001f", sourceKeys), targetKey,
-                            lineage.transform));
+            lineage.id = SemanticCanonicalIdentity.lineage(
+                    lineage.fromPhysical, lineage.toPhysical, lineage.transform);
             validator.registerOwner("lineage", lineage.id);
             validator.requireEvidence("lineage", lineage.id, lineage);
             graph.addNode(lineage.id, "Lineage", lineage.to, lineage.transform, lineage.evidenceRefs());
@@ -261,14 +248,12 @@ public final class SemanticSectionNormalizer {
             Session validator
     ) {
         for (SemanticMetric metric : metrics) {
-            if (blank(metric.id)) {
-                metric.id = SemanticCanonicalIdentity.metric(
-                        metric.name,
-                        metric.machineType,
-                        metric.type,
-                        metric.physicalField,
-                        metric.sourceFields);
-            }
+            metric.id = SemanticCanonicalIdentity.metric(
+                    metric.name,
+                    metric.machineType,
+                    metric.type,
+                    metric.physicalField,
+                    metric.sourceFields);
             validator.registerOwner("metric", metric.id);
             validator.requirePhysicalColumn("metric", metric.id, "physicalField", metric.physicalField);
             validator.requireEvidence("metric", metric.id, metric);
@@ -300,14 +285,12 @@ public final class SemanticSectionNormalizer {
             Session validator
     ) {
         for (SemanticDimension dimension : dimensions) {
-            if (blank(dimension.id)) {
-                dimension.id = SemanticCanonicalIdentity.dimension(
-                        dimension.name,
-                        dimension.machineType,
-                        dimension.type,
-                        dimension.physicalField,
-                        dimension.dimensionTable);
-            }
+            dimension.id = SemanticCanonicalIdentity.dimension(
+                    dimension.name,
+                    dimension.machineType,
+                    dimension.type,
+                    dimension.physicalField,
+                    dimension.dimensionTable);
             validator.registerOwner("dimension", dimension.id);
             validator.requirePhysicalColumn("dimension", dimension.id, "physicalField", dimension.physicalField);
             validator.requirePhysicalTable("dimension", dimension.id, "dimensionTable", dimension.dimensionTable);
@@ -347,9 +330,7 @@ public final class SemanticSectionNormalizer {
             Session validator
     ) {
         for (SemanticTriplet triplet : triplets) {
-            triplet.id = SemanticNormalizationSupport.nonBlank(triplet.id,
-                    StableSemanticId.of("triplet", triplet.candidateRef, triplet.subject, triplet.predicate,
-                            triplet.object, triplet.machineType));
+            triplet.id = SemanticCanonicalIdentity.triplet(triplet.candidateRef);
             validator.registerOwner("triplet", triplet.id);
             validator.requireEvidence("triplet", triplet.id, triplet);
             validator.requireTripletCandidateRef(triplet.id, triplet.candidateRef);

@@ -2,19 +2,13 @@ package com.relationdetector.semantic.extraction.artifact;
 
 import com.relationdetector.semantic.extraction.runtime.SemanticModelClient;
 
-import com.relationdetector.semantic.extraction.shard.SemanticShardingException;
+import com.relationdetector.semantic.extraction.runtime.SemanticModelCallContext;
 
-import com.relationdetector.semantic.extraction.artifact.SemanticRequestBundlePackageWriter;
+import com.relationdetector.semantic.extraction.runtime.SemanticModelCallResult;
 
 import com.relationdetector.semantic.extraction.shard.SemanticShardDescriptor;
 
 import com.relationdetector.semantic.extraction.shard.SemanticRunPlan;
-
-import com.relationdetector.semantic.extraction.artifact.SemanticExternalAuditReferences;
-
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionValidationException;
-
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionResult;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticExtractionDocumentNormalizer;
 
@@ -24,21 +18,17 @@ import com.relationdetector.semantic.extraction.normalization.SemanticBoundedJso
 
 import com.relationdetector.semantic.extraction.prompt.SemanticReconciliationPromptBuilder;
 
-import com.relationdetector.semantic.extraction.prompt.SemanticPromptBudgetEstimator;
-
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPromptBuilder;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
 import com.relationdetector.semantic.extraction.config.ArtifactRetention;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,9 +56,9 @@ public final class SemanticRunArtifactWriter {
     private final SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
     private final RunArtifactFileStore files = new RunArtifactFileStore(JSON);
     private final SemanticRunAuditArtifactWriter audits = new SemanticRunAuditArtifactWriter(files);
-    private final SemanticRequestBundlePackageWriter requestPackages =
-            new SemanticRequestBundlePackageWriter(files);
+    private final SemanticRequestBundlePackageWriter requestPackages = new SemanticRequestBundlePackageWriter(files);
     private final SemanticRunManifestFactory manifests = new SemanticRunManifestFactory();
+    private final SemanticBoundedJsonReader bounded = new SemanticBoundedJsonReader();
 
     public Path writeCodexSession(
             Path outputRoot,
@@ -94,8 +84,8 @@ public final class SemanticRunArtifactWriter {
     public Path writeRequestOnly(
             Path outputRoot,
             SemanticRunPlan plan,
-            Function<SemanticExtractionPrompt, String> shardRenderer,
-            Function<SemanticExtractionPrompt, String> reconciliationRenderer,
+            SemanticRequestRenderer shardRenderer,
+            SemanticRequestRenderer reconciliationRenderer,
             String model,
             String reasoningEffort,
             ArtifactRetention retention,
@@ -145,19 +135,23 @@ public final class SemanticRunArtifactWriter {
                 provider, model, reasoningEffort, retention, sharedArtifactWriter,
                 new ExecutionSource() {
                     @Override
-                    public SemanticExtractionResult shard(
+                    public SemanticModelCallResult shard(
                             SemanticShardDescriptor ignored,
-                            SemanticExtractionPrompt prompt
+                            SemanticExtractionPrompt prompt,
+                            SemanticModelCallContext context
                     ) {
-                        return shardClient.extract(prompt);
+                        return shardClient.extract(prompt, context);
                     }
 
                     @Override
-                    public SemanticExtractionResult reconciliation(SemanticExtractionPrompt prompt) {
+                    public SemanticModelCallResult reconciliation(
+                            SemanticExtractionPrompt prompt,
+                            SemanticModelCallContext context
+                    ) {
                         if (reconciliationClient == null) {
                             throw new IllegalArgumentException("semantic reconciliation client is required");
                         }
-                        return reconciliationClient.extract(prompt);
+                        return reconciliationClient.extract(prompt, context);
                     }
                 });
     }
@@ -184,31 +178,34 @@ public final class SemanticRunArtifactWriter {
             throw new IllegalArgumentException(
                     "semantic Codex completion plan, evidence lookup and responses are required");
         }
-        SemanticBoundedJsonReader bounded = new SemanticBoundedJsonReader();
         return executeTransaction(
                 outputRoot, plan, evidenceLookup, "codex-session", model, reasoningEffort,
                 retention, NO_SHARED_ARTIFACTS, new ExecutionSource() {
                     @Override
-                    public SemanticExtractionResult shard(
+                    public SemanticModelCallResult shard(
                             SemanticShardDescriptor shard,
-                            SemanticExtractionPrompt ignored
+                            SemanticExtractionPrompt ignored,
+                            SemanticModelCallContext context
                     ) {
                         ObjectNode raw = bounded.readObject(
                                 responses.resolve("shards").resolve(shard.id())
                                         .resolve("semantic-extraction-result.json"),
                                 plan.shardMaxOutputTokens(),
                                 "semantic Codex shard result");
-                        return codexResult(raw);
+                        return SemanticRunPrivateScratch.codexResult(raw, context);
                     }
 
                     @Override
-                    public SemanticExtractionResult reconciliation(SemanticExtractionPrompt ignored) {
+                    public SemanticModelCallResult reconciliation(
+                            SemanticExtractionPrompt ignored,
+                            SemanticModelCallContext context
+                    ) {
                         ObjectNode patch = bounded.readObject(
                                 responses.resolve("reconciliation")
                                         .resolve("semantic-reconciliation-result.json"),
                                 plan.reconciliationMaxOutputTokens(),
                                 "semantic Codex reconciliation result");
-                        return codexResult(patch);
+                        return SemanticRunPrivateScratch.codexResult(patch, context);
                     }
                 });
     }
@@ -234,40 +231,54 @@ public final class SemanticRunArtifactWriter {
     ) {
         ArtifactRetention resolved = retention == null ? ArtifactRetention.FULL : retention;
         RunArtifactPublisher.RunDirectory run = publisher.begin(outputRoot);
+        SemanticRunPrivateScratch scratch = SemanticRunPrivateScratch.open(run);
+        SemanticRunPlan activePlan = plan;
         List<ShardAudit> completed = new ArrayList<>();
         ReconciliationAudit[] reconciliationAudit = new ReconciliationAudit[1];
         try {
+            activePlan = scratch.snapshot(plan);
             writeManifest(run, manifests.create(
-                    run, plan, "IN_PROGRESS", provider, model, reasoningEffort,
+                    run, activePlan, "IN_PROGRESS", provider, model, reasoningEffort,
                     resolved, completed, null, null));
-            prepareFullBundle(run.stagingDirectory(), plan);
+            prepareFullBundle(run.stagingDirectory(), activePlan);
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
             try (SemanticResultStore results = new SemanticResultStore(
-                    run.stagingDirectory().resolve(".result-work"), evidenceLookup, plan)) {
-                for (SemanticShardDescriptor shard : plan.shards()) {
-                    ObjectNode bundle = readObject(shard.bundlePath(), "semantic shard bundle");
+                    run.stagingDirectory().resolve(".result-work"), evidenceLookup, activePlan)) {
+                for (SemanticShardDescriptor shard : activePlan.shards()) {
+                    ObjectNode bundle = scratch.readObject(
+                            shard.bundle().path(), activePlan.maxInputTokens(),
+                            "semantic shard bundle");
                     SemanticExtractionPrompt prompt = promptBuilder.build(bundle);
-                    requireBudget(prompt, plan.maxInputTokens());
-                    SemanticExtractionResult response = source.shard(shard, prompt);
-                    ObjectNode normalized = normalize(response.outputText(), bundle);
+                    scratch.requireBudget(prompt, activePlan.maxInputTokens());
+                    SemanticModelCallContext context = scratch.call(
+                            "shards/" + shard.id(), activePlan.shardMaxOutputTokens());
+                    SemanticModelCallResult response = source.shard(shard, prompt, context);
+                    SemanticModelArtifactValidator.ValidatedCall validated = scratch.validate(
+                            response, context, activePlan.maxInputTokens());
+                    ObjectNode normalized = normalizer.normalizeOwnedShard(
+                            validated.output(), bundle);
                     results.append(shard, bundle, normalized);
                     audits.writeShard(
                             run.stagingDirectory(), shard.id(),
-                            SemanticExternalAuditReferences.sidecar(shard.bundlePath()),
-                            prompt, response, normalized);
-                    completed.add(new ShardAudit(shard, response));
+                            shard.externalAuditSidecar().path(),
+                            prompt, validated.artifacts(), normalized);
+                    completed.add(new ShardAudit(shard, validated.artifacts()));
                 }
                 results.finish();
-                if (plan.shards().size() > 1 && plan.reconcile()) {
+                if (activePlan.shards().size() > 1 && activePlan.reconcile()) {
                     SemanticExtractionPrompt prompt = results.reconciliationPrompt(
-                            plan, plan.maxInputTokens());
-                    SemanticExtractionResult response = source.reconciliation(prompt);
-                    JsonNode patch = parseObject(
-                            response.outputText(), "semantic reconciliation patch");
+                            activePlan, activePlan.maxInputTokens());
+                    SemanticModelCallContext context = scratch.call(
+                            "reconciliation", activePlan.reconciliationMaxOutputTokens());
+                    SemanticModelCallResult response = source.reconciliation(prompt, context);
+                    SemanticModelArtifactValidator.ValidatedCall validated = scratch.validate(
+                            response, context, activePlan.maxInputTokens());
+                    JsonNode patch = validated.output();
                     results.applyReconciliationPatch(patch);
                     audits.writeReconciliationPatch(
-                            run.stagingDirectory(), prompt, response, patch);
-                    reconciliationAudit[0] = new ReconciliationAudit(prompt, response);
+                            run.stagingDirectory(), prompt, validated.artifacts(), patch);
+                    reconciliationAudit[0] = new ReconciliationAudit(
+                            prompt, validated.artifacts());
                 } else {
                     results.requireConflictFree();
                 }
@@ -276,24 +287,17 @@ public final class SemanticRunArtifactWriter {
                         run.stagingDirectory().resolve("semantic-extraction-result.json"));
             }
             ObjectNode complete = manifests.create(
-                    run, plan, "COMPLETE", provider, model, reasoningEffort,
+                    run, activePlan, "COMPLETE", provider, model, reasoningEffort,
                     resolved, completed, reconciliationAudit[0], null);
             return publishComplete(run, complete, resolved);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
-                    run, plan, provider, model, reasoningEffort, resolved,
+                    run, activePlan, provider, model, reasoningEffort, resolved,
                     completed, reconciliationAudit[0], failure);
             throw failure;
+        } finally {
+            scratch.close();
         }
-    }
-
-    private SemanticExtractionResult codexResult(ObjectNode raw) {
-        String output = raw.toString();
-        ObjectNode audit = JSON.createObjectNode();
-        audit.put("provider", "codex-session");
-        audit.putObject("usage").put("input_tokens", 0).put("output_tokens", 0);
-        return new SemanticExtractionResult(
-                "{\"provider\":\"codex-session\"}", output, output, audit, 1);
     }
 
     /**
@@ -306,8 +310,8 @@ public final class SemanticRunArtifactWriter {
             Path outputRoot,
             SemanticRunPlan plan,
             String status,
-            Function<SemanticExtractionPrompt, String> shardRenderer,
-            Function<SemanticExtractionPrompt, String> reconciliationRenderer,
+            SemanticRequestRenderer shardRenderer,
+            SemanticRequestRenderer reconciliationRenderer,
             boolean codex,
             String model,
             String reasoningEffort,
@@ -319,92 +323,65 @@ public final class SemanticRunArtifactWriter {
         }
         ArtifactRetention resolved = retention == null ? ArtifactRetention.FULL : retention;
         RunArtifactPublisher.RunDirectory run = publisher.begin(outputRoot);
+        SemanticRunPrivateScratch scratch = SemanticRunPrivateScratch.open(run);
+        SemanticRunPlan activePlan = plan;
         try {
+            activePlan = scratch.snapshot(plan);
             writeManifest(run, manifests.create(
-                    run, plan, "IN_PROGRESS", codex ? "codex-session" : "openai-api",
+                    run, activePlan, "IN_PROGRESS", codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, null));
             resolvedWriter(sharedArtifactWriter).accept(run.stagingDirectory());
-            for (SemanticShardDescriptor shard : plan.shards()) {
-                ObjectNode bundle = readObject(shard.bundlePath(), "semantic shard bundle");
+            for (SemanticShardDescriptor shard : activePlan.shards()) {
+                ObjectNode bundle = scratch.readObject(
+                        shard.bundle().path(), activePlan.maxInputTokens(),
+                        "semantic shard bundle");
                 SemanticExtractionPrompt prompt = promptBuilder.build(bundle);
-                requireBudget(prompt, plan.maxInputTokens());
+                scratch.requireBudget(prompt, activePlan.maxInputTokens());
                 Path directory = run.stagingDirectory().resolve("shards").resolve(shard.id());
                 if (codex) {
                     requestWriter.writeCodexSessionRequest(directory, prompt);
                 } else {
-                    requestWriter.writeRequestOnly(directory, prompt, shardRenderer.apply(prompt));
+                    SemanticArtifactRef request = scratch.render(
+                            shardRenderer, prompt, "shards/" + shard.id());
+                    requestWriter.writeRequestOnly(directory, prompt, request);
                 }
             }
-            if (plan.shards().size() > 1 && plan.reconcile()) {
-                SemanticExtractionPrompt template = new SemanticReconciliationPromptBuilder().template(plan);
+            if (activePlan.shards().size() > 1 && activePlan.reconcile()) {
+                SemanticExtractionPrompt template =
+                        new SemanticReconciliationPromptBuilder().template(activePlan);
                 Path directory = run.stagingDirectory().resolve("reconciliation").resolve("template");
                 if (codex) {
                     requestWriter.writeCodexSessionReconciliationRequest(
                             directory, template, "semantic-reconciliation-result.json");
                 } else if (reconciliationRenderer != null) {
+                    SemanticArtifactRef request = scratch.render(
+                            reconciliationRenderer, template, "reconciliation");
                     requestWriter.writeRequestOnly(
-                            directory, template, reconciliationRenderer.apply(template));
+                            directory, template, request);
                 }
             }
-            requestPackages.write(run.stagingDirectory(), plan);
+            requestPackages.write(run.stagingDirectory(), activePlan);
             ObjectNode ready = manifests.create(
-                    run, plan, status, codex ? "codex-session" : "openai-api",
+                    run, activePlan, status, codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, null);
             finishManifest(ready, run.stagingDirectory(), resolved, Instant.now());
             writeManifest(run, ready);
             return publisher.publish(run);
         } catch (RuntimeException | Error failure) {
             writeFailedManifest(
-                    run, plan, codex ? "codex-session" : "openai-api",
+                    run, activePlan, codex ? "codex-session" : "openai-api",
                     model, reasoningEffort, resolved, List.of(), null, failure);
             throw failure;
+        } finally {
+            scratch.close();
         }
     }
 
     private void prepareFullBundle(Path staging, SemanticRunPlan plan) {
         files.copyFile(
-                plan.fullBundlePath(),
+                plan.fullBundle().path(),
                 staging.resolve("full-evidence-bundle.json"),
                 "failed to persist semantic evidence bundle");
-    }
-
-    private ObjectNode normalize(String output, ObjectNode bundle) {
-        return normalizer.normalizeOwnedShard(
-                parseObject(output, "semantic shard result"),
-                bundle);
-    }
-
-    private JsonNode parseObject(String value, String label) {
-        try {
-            JsonNode result = JSON.readTree(value);
-            if (result == null || !result.isObject()) {
-                throw new SemanticExtractionValidationException(label + " must be a JSON object");
-            }
-            return result;
-        } catch (SemanticExtractionValidationException failure) {
-            throw failure;
-        } catch (Exception failure) {
-            throw new SemanticExtractionValidationException(label + " must be valid JSON");
-        }
-    }
-
-    private ObjectNode readObject(Path path, String label) {
-        try {
-            JsonNode result = JSON.readTree(path.toFile());
-            if (result == null || !result.isObject()) {
-                throw new SemanticExtractionValidationException(label + " must be a JSON object");
-            }
-            return (ObjectNode) result;
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to read bounded semantic artifact", failure);
-        }
-    }
-
-    private void requireBudget(SemanticExtractionPrompt prompt, int maxInputTokens) {
-        if (new SemanticPromptBudgetEstimator().estimate(prompt) > maxInputTokens) {
-            throw new SemanticShardingException(
-                    "semantic prompt exceeds the configured estimated input-token limit");
-        }
     }
 
     private void writeFailedManifest(
@@ -492,12 +469,16 @@ public final class SemanticRunArtifactWriter {
     }
 
     private interface ExecutionSource {
-        SemanticExtractionResult shard(
+        SemanticModelCallResult shard(
                 SemanticShardDescriptor shard,
-                SemanticExtractionPrompt prompt
+                SemanticExtractionPrompt prompt,
+                SemanticModelCallContext context
         );
 
-        SemanticExtractionResult reconciliation(SemanticExtractionPrompt prompt);
+        SemanticModelCallResult reconciliation(
+                SemanticExtractionPrompt prompt,
+                SemanticModelCallContext context
+        );
     }
 
 }

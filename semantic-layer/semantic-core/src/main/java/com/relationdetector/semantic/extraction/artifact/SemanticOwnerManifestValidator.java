@@ -8,18 +8,17 @@ import com.relationdetector.semantic.extraction.normalization.SemanticExtraction
 
 import com.relationdetector.semantic.extraction.normalization.SemanticEvidenceLookup;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Base64;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import com.relationdetector.semantic.internal.io.SemanticFileDigest;
+import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -31,7 +30,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * classification for one shard. It consumes a run plan, shard descriptor, and persisted bundle, returning only
  * success or a fixed safe exception; it never assigns ownership.
  */
-public final class SemanticOwnerManifestValidator {
+public final class SemanticOwnerManifestValidator implements AutoCloseable {
     private static final List<String> FACT_SECTIONS = List.of(
             "metadataTables", "metadataColumns", "metadataConstraints", "metadataIndexes",
             "relationships", "lineage", "derivedRelationships", "derivedLineage",
@@ -40,6 +39,9 @@ public final class SemanticOwnerManifestValidator {
             "eventCandidates", "reviewItemCandidates", "tripletCandidates");
     private final SemanticRunPlan runPlan;
     private final SemanticEvidenceLookup evidenceLookup;
+    private final Path indexWorkspace;
+    private SemanticOwnerManifestIndex ownerIndex;
+    private boolean closed;
 
     public SemanticOwnerManifestValidator(
             SemanticRunPlan runPlan,
@@ -52,6 +54,7 @@ public final class SemanticOwnerManifestValidator {
         this.runPlan = runPlan;
         this.evidenceLookup = evidenceLookup;
         requireManifestHash();
+        this.indexWorkspace = manifestIndexWorkspace();
     }
 
     /**
@@ -85,9 +88,9 @@ public final class SemanticOwnerManifestValidator {
                     "semantic shard descriptor does not match owner context");
         }
 
-        Map<String, Boolean> bundleIds = bundleIds(bundle);
+        Map<String, BundleItem> bundleIds = bundleIds(bundle);
         Set<String> externalAudit = SemanticExternalAuditReferences.read(
-                SemanticExternalAuditReferences.sidecar(descriptor.bundlePath()));
+                descriptor.externalAuditSidecar().path());
         requireExternalAuditSummary(context, externalAudit);
         Set<String> classified = new LinkedHashSet<>(ownedFacts);
         classified.addAll(ownedCandidates);
@@ -105,40 +108,37 @@ public final class SemanticOwnerManifestValidator {
 
         Set<String> matched = new LinkedHashSet<>();
         Set<String> matchedExternal = new LinkedHashSet<>();
-        try (BufferedReader reader = Files.newBufferedReader(
-                runPlan.ownerManifestPath(), StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] fields = line.split("\\t", 3);
-                if (fields.length != 3 || fields[2].isBlank()) {
-                    throw new SemanticExtractionValidationException(
-                            "semantic owner manifest contains a malformed record");
-                }
-                String id = decode(fields[0]);
-                if (externalAudit.contains(id)) {
+        try {
+            SemanticOwnerManifestIndex owners = owners();
+            for (String id : externalAudit) {
+                if (owners.find(id).isPresent()) {
                     matchedExternal.add(id);
                 }
-                if (!bundleIds.containsKey(id)) {
-                    continue;
-                }
-                if (!matched.add(id)) {
-                    throw new SemanticExtractionValidationException(
-                            "semantic owner manifest contains a duplicate identity");
-                }
-                boolean manifestFact = isFactSection(fields[1]);
-                if (manifestFact != bundleIds.get(id)) {
+            }
+            for (Map.Entry<String, BundleItem> item : bundleIds.entrySet()) {
+                SemanticOwnerManifestIndex.Entry owner = owners.find(item.getKey()).orElseThrow(
+                        () -> new SemanticExtractionValidationException(
+                                "semantic owner manifest does not cover every shard item"));
+                matched.add(item.getKey());
+                if (owner.fact() != item.getValue().fact()
+                        || !owner.section().equals(item.getValue().manifestSection())) {
                     throw new SemanticExtractionValidationException(
                             "semantic owner manifest section disagrees with the bundle");
                 }
-                boolean currentOwner = descriptor.id().equals(fields[2]);
-                Set<String> expected = manifestFact ? ownedFacts : ownedCandidates;
-                if (currentOwner && !expected.contains(id)
-                        || !currentOwner && !overlap.contains(id)) {
+                boolean currentOwner = descriptor.id().equals(owner.ownerShardId());
+                Set<String> expected = owner.fact() ? ownedFacts : ownedCandidates;
+                if (currentOwner && !expected.contains(item.getKey())
+                        || !currentOwner && !overlap.contains(item.getKey())) {
                     throw new SemanticExtractionValidationException(
                             "semantic shard context disagrees with the global owner manifest");
                 }
             }
-        } catch (IOException failure) {
+        } catch (RuntimeException failure) {
+            if (failure instanceof SemanticExtractionValidationException validation
+                    && !"semantic request bundle package is invalid".equals(
+                            validation.getMessage())) {
+                throw validation;
+            }
             throw new SemanticExtractionValidationException(
                     "semantic owner manifest cannot be read");
         }
@@ -171,8 +171,8 @@ public final class SemanticOwnerManifestValidator {
         }
     }
 
-    private Map<String, Boolean> bundleIds(ObjectNode bundle) {
-        Map<String, Boolean> result = new LinkedHashMap<>();
+    private Map<String, BundleItem> bundleIds(ObjectNode bundle) {
+        Map<String, BundleItem> result = new LinkedHashMap<>();
         for (String section : FACT_SECTIONS) {
             appendBundleIds(bundle, section, true, result);
         }
@@ -186,16 +186,18 @@ public final class SemanticOwnerManifestValidator {
             ObjectNode bundle,
             String section,
             boolean fact,
-            Map<String, Boolean> target
+            Map<String, BundleItem> target
     ) {
         JsonNode values = bundle.path(section);
         if (!values.isArray()) {
             throw new SemanticExtractionValidationException(
                     "semantic shard section must be an array: " + section);
         }
-        for (JsonNode item : values) {
-            String id = item.path("id").asText("");
-            if (id.isBlank() || target.putIfAbsent(id, fact) != null) {
+        for (JsonNode value : values) {
+            String id = value.path("id").asText("");
+            BundleItem bundleItem = new BundleItem(
+                    SemanticOwnerManifestIndex.manifestSection(section), fact);
+            if (id.isBlank() || target.putIfAbsent(id, bundleItem) != null) {
                 throw new SemanticExtractionValidationException(
                         "semantic shard contains a missing or duplicate item identity");
             }
@@ -227,28 +229,33 @@ public final class SemanticOwnerManifestValidator {
         }
     }
 
-    private void requireKind(Map<String, Boolean> bundleIds, String id, boolean expectedFact) {
-        if (!bundleIds.containsKey(id) || bundleIds.get(id) != expectedFact) {
+    private void requireKind(
+            Map<String, BundleItem> bundleIds,
+            String id,
+            boolean expectedFact
+    ) {
+        if (!bundleIds.containsKey(id) || bundleIds.get(id).fact() != expectedFact) {
             throw new SemanticExtractionValidationException(
                     "semantic shard owner identity is assigned to the wrong section kind");
         }
     }
 
-    private boolean isFactSection(String section) {
-        return switch (section) {
-            case "METADATA_TABLES", "METADATA_COLUMNS", "METADATA_CONSTRAINTS", "METADATA_INDEXES",
-                    "RELATIONSHIPS", "LINEAGE", "DERIVED_RELATIONSHIPS", "DERIVED_LINEAGE",
-                    "NAMING_EVIDENCE", "DIAGNOSTICS" -> true;
-            case "EVENT_CANDIDATES", "REVIEW_ITEM_CANDIDATES", "TRIPLET_CANDIDATES" -> false;
-            default -> throw new SemanticExtractionValidationException(
-                    "semantic owner manifest contains an invalid section");
-        };
+    private Path manifestIndexWorkspace() {
+        Path manifest = runPlan.ownerManifest().path().toAbsolutePath().normalize();
+        Path parent = manifest.getParent();
+        if (parent == null) {
+            throw new SemanticExtractionValidationException(
+                    "semantic owner manifest cannot be read");
+        }
+        return parent.resolve(".owner-manifest-index-" + UUID.randomUUID());
     }
 
     private void requireManifestHash() {
         try {
-            String actual = SemanticFileDigest.compute(runPlan.ownerManifestPath()).sha256();
-            if (!actual.equals(runPlan.ownerManifestHash())) {
+            SemanticFileDigest.Digest actual = SemanticFileDigest.computeNoFollow(
+                    runPlan.ownerManifest().path());
+            if (actual.bytes() != runPlan.ownerManifest().bytes()
+                    || !actual.sha256().equals(runPlan.ownerManifest().sha256())) {
                 throw new SemanticExtractionValidationException(
                         "semantic owner manifest hash does not match the run plan");
             }
@@ -258,12 +265,46 @@ public final class SemanticOwnerManifestValidator {
         }
     }
 
-    private String decode(String value) {
-        try {
-            return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException failure) {
-            throw new SemanticExtractionValidationException(
-                    "semantic owner manifest contains an invalid identity");
+    @Override
+    public void close() {
+        if (closed) {
+            return;
         }
+        closed = true;
+        RuntimeException failure = null;
+        if (ownerIndex != null) {
+            try {
+                ownerIndex.close();
+            } catch (RuntimeException error) {
+                failure = error;
+            }
+        }
+        SemanticFileTreeOperations.deleteRecursivelyBestEffort(indexWorkspace);
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private SemanticOwnerManifestIndex owners() {
+        if (closed) {
+            throw new IllegalStateException("semantic owner manifest validator is closed");
+        }
+        if (ownerIndex != null) {
+            return ownerIndex;
+        }
+        try {
+            ownerIndex = SemanticOwnerManifestIndex.open(
+                    runPlan.ownerManifest().path(),
+                    indexWorkspace,
+                    SemanticRequestPackageLimits.defaults());
+            return ownerIndex;
+        } catch (RuntimeException failure) {
+            SemanticFileTreeOperations.deleteRecursivelyBestEffort(indexWorkspace);
+            throw new SemanticExtractionValidationException(
+                    "semantic owner manifest cannot be read");
+        }
+    }
+
+    private record BundleItem(String manifestSection, boolean fact) {
     }
 }

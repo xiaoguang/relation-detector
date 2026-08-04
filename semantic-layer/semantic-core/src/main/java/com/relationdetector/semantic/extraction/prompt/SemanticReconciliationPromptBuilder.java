@@ -21,7 +21,7 @@ public final class SemanticReconciliationPromptBuilder {
     public SemanticExtractionPrompt template(SemanticRunPlan plan) {
         ObjectNode bundle = JSON.createObjectNode();
         bundle.put("kind", "SEMANTIC_RECONCILIATION");
-        bundle.put("fullBundleHash", plan.fullBundleHash());
+        bundle.put("fullBundleHash", plan.fullBundle().sha256());
         ArrayNode shards = bundle.putArray("shards");
         plan.shards().forEach(shard -> shards.addObject()
                 .put("id", shard.id())

@@ -41,6 +41,8 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertTrue(Arrays.stream(normalizer.getDeclaredFields())
                 .anyMatch(field -> field.getType() == SemanticCandidateBackfill.class));
         assertTrue(Arrays.stream(normalizer.getDeclaredFields())
+                .anyMatch(field -> field.getType() == SemanticFormalIdentityCanonicalizer.class));
+        assertTrue(Arrays.stream(normalizer.getDeclaredFields())
                 .anyMatch(field -> field.getType() == SemanticSectionNormalizer.class));
         assertTrue(Arrays.stream(normalizer.getDeclaredFields())
                 .anyMatch(field -> field.getType() == SemanticReviewGenerator.class));
@@ -144,7 +146,7 @@ final class SemanticExtractionDocumentNormalizerTest {
     }
 
     @Test
-    void rejectsDuplicateSemanticOwnerIdsAcrossSections() throws Exception {
+    void treatsTheSameModelAliasAsSectionScoped() throws Exception {
         JsonNode raw = JSON.readTree("""
                 {
                   "entities": [{"id":"semantic:duplicate","name":"订单","physicalName":"orders","evidenceRefs":["e1"]}],
@@ -156,12 +158,15 @@ final class SemanticExtractionDocumentNormalizerTest {
         ObjectNode bundle = evidenceBundle("e1");
         bundle.putArray("tables").add("orders");
 
-        assertThrows(SemanticExtractionValidationException.class,
-                () -> new SemanticExtractionDocumentNormalizer().normalize(raw, bundle));
+        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
+
+        assertNotEquals(normalized.path("entities").get(0).path("id").asText(),
+                normalized.path("relations").get(0).path("id").asText());
+        assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
     @Test
-    void preservesParallelSemanticRelationsBetweenTheSameEntityPair() throws Exception {
+    void rejectsConflictingParallelRelationsWithTheSameCanonicalIdentity() throws Exception {
         JsonNode raw = JSON.readTree("""
                 {
                   "entities": [
@@ -187,18 +192,8 @@ final class SemanticExtractionDocumentNormalizerTest {
         bundle.withArray("relationships").addObject().put("id", "relationship:parent");
         bundle.withArray("relationships").addObject().put("id", "relationship:child");
 
-        JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(raw, bundle);
-
-        List<JsonNode> directRelationEdges = new java.util.ArrayList<>();
-        normalized.path("semanticGraph").path("edges").forEach(edge -> {
-            if ("组成关联".equals(edge.path("type").asText())) {
-                directRelationEdges.add(edge);
-            }
-        });
-        assertEquals(2, directRelationEdges.size());
-        assertNotEquals(
-                directRelationEdges.get(0).path("id").asText(),
-                directRelationEdges.get(1).path("id").asText());
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticExtractionDocumentNormalizer().normalize(raw, bundle));
     }
 
     @Test
@@ -514,7 +509,7 @@ final class SemanticExtractionDocumentNormalizerTest {
     }
 
     @Test
-    void preservesExplicitEventEntityRefsAndCandidateRef() throws Exception {
+    void rewritesExplicitEventEntityAliasesBeforeGraphAndValidation() throws Exception {
         JsonNode raw = JSON.readTree("""
                 {
                   "entities": [
@@ -547,8 +542,12 @@ final class SemanticExtractionDocumentNormalizerTest {
 
         assertEquals("event-candidate:routine:erp.sp_rebuild_sales_fact",
                 normalized.path("events").get(0).path("eventCandidateRef").asText());
-        assertEquals("entity:sales_orders", normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
-        assertEquals("entity:sales_fact", normalized.path("events").get(0).path("outputEntityRefs").get(0).asText());
+        assertEquals(StableSemanticId.of("entity-physical", "sales_orders"),
+                normalized.path("events").get(0).path("inputEntityRefs").get(0).asText());
+        assertEquals(StableSemanticId.of("entity-physical", "sales_fact"),
+                normalized.path("events").get(0).path("outputEntityRefs").get(0).asText());
+        assertFalse(normalized.path("semanticGraph").toString().contains("entity:sales_orders"));
+        assertFalse(normalized.path("semanticGraph").toString().contains("entity:sales_fact"));
         assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
@@ -844,8 +843,10 @@ final class SemanticExtractionDocumentNormalizerTest {
 
         assertEquals(JSON.readTree("[\"销售订单\"]"), event.path("inputs"));
         assertEquals(JSON.readTree("[\"销售台账\"]"), event.path("outputs"));
-        assertEquals(JSON.readTree("[\"entity:orders\"]"), event.path("inputEntityRefs"));
-        assertEquals(JSON.readTree("[\"entity:ledger\"]"), event.path("outputEntityRefs"));
+        assertEquals(JSON.readTree("[\"%s\"]".formatted(
+                StableSemanticId.of("entity-physical", "orders"))), event.path("inputEntityRefs"));
+        assertEquals(JSON.readTree("[\"%s\"]".formatted(
+                StableSemanticId.of("entity-physical", "sales_ledger"))), event.path("outputEntityRefs"));
         assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 
@@ -881,8 +882,10 @@ final class SemanticExtractionDocumentNormalizerTest {
         JsonNode raw = JSON.readTree("""
                 {
                   "entities": [
-                    {"id":"entity:sales-order","name":"订单","machineType":"BUSINESS_ENTITY","evidenceRefs":["e1"]},
-                    {"id":"entity:service-order","name":"订单","machineType":"BUSINESS_ENTITY","evidenceRefs":["e2"]}
+                    {"id":"entity:sales-order","name":"订单","machineType":"BUSINESS_ENTITY",
+                     "ownedGroundingRefs":["e1"],"evidenceRefs":["e1"]},
+                    {"id":"entity:service-order","name":"订单","machineType":"BUSINESS_ENTITY",
+                     "ownedGroundingRefs":["e2"],"evidenceRefs":["e2"]}
                   ],
                   "events": [],
                   "relations": [
@@ -907,9 +910,11 @@ final class SemanticExtractionDocumentNormalizerTest {
         JsonNode normalized = new SemanticExtractionDocumentNormalizer().normalize(
                 raw, evidenceBundle("e1", "e2"));
 
-        assertEquals("entity:sales-order",
+        assertEquals(SemanticCanonicalIdentity.entity(
+                        null, "订单", "BUSINESS_ENTITY", null, List.of("e1")).canonicalId(),
                 normalized.path("relations").get(0).path("fromEntityRef").asText());
-        assertEquals("entity:service-order",
+        assertEquals(SemanticCanonicalIdentity.entity(
+                        null, "订单", "BUSINESS_ENTITY", null, List.of("e2")).canonicalId(),
                 normalized.path("relations").get(0).path("toEntityRef").asText());
         assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }

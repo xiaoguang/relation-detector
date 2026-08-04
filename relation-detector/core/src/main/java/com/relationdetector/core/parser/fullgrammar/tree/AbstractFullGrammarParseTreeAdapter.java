@@ -1,30 +1,28 @@
 package com.relationdetector.core.parser.fullgrammar.tree;
 
-import com.relationdetector.core.parser.fullgrammar.tree.FullGrammarParseTreeAdapter;
-
 import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- * CN: 为 version-local generated context adapter 保存不可变的 context-class 到 semantic-role 绑定，不使用反射名称。
- * EN: Stores immutable generated-context-class to semantic-role bindings for version-local adapters without reflective names.
+ * CN: 为 version-local generated context adapter 保存 typed predicate 到 semantic-role 绑定，不使用 class reflection。
+ * EN: Stores typed-predicate-to-semantic-role bindings for version-local adapters without class reflection.
  */
 public abstract class AbstractFullGrammarParseTreeAdapter implements FullGrammarParseTreeAdapter {
-    private final Map<Role, List<Class<?>>> roleTypes;
+    private final EnumMap<Role, Predicate<ParseTree>> rolePredicates;
 
     protected AbstractFullGrammarParseTreeAdapter(RoleBinding... bindings) {
-        EnumMap<Role, List<Class<?>>> copy = new EnumMap<>(Role.class);
+        EnumMap<Role, Predicate<ParseTree>> copy = new EnumMap<>(Role.class);
         for (RoleBinding binding : bindings) {
-            copy.put(binding.role(), binding.types());
+            copy.put(binding.semanticRole(), binding.predicate());
         }
-        this.roleTypes = Map.copyOf(copy);
+        this.rolePredicates = copy;
     }
 
-    protected static RoleBinding role(Role role, Class<?>... types) {
-        return new RoleBinding(role, List.of(types));
+    protected static RoleBinding role(Role role, Predicate<ParseTree> predicate) {
+        return new RoleBinding(role, predicate);
     }
 
     @Override
@@ -32,12 +30,14 @@ public abstract class AbstractFullGrammarParseTreeAdapter implements FullGrammar
         if (tree == null) {
             return false;
         }
-        return roleTypes.getOrDefault(role, List.of()).stream().anyMatch(type -> type.isInstance(tree));
+        Predicate<ParseTree> predicate = rolePredicates.get(role);
+        return predicate != null && predicate.test(tree);
     }
 
-    protected record RoleBinding(Role role, List<Class<?>> types) {
+    protected record RoleBinding(Role semanticRole, Predicate<ParseTree> predicate) {
         protected RoleBinding {
-            types = List.copyOf(types);
+            Objects.requireNonNull(semanticRole, "semanticRole");
+            Objects.requireNonNull(predicate, "predicate");
         }
     }
 }

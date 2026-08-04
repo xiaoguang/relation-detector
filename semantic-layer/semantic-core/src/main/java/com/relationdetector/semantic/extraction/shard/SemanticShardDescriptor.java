@@ -1,27 +1,25 @@
 package com.relationdetector.semantic.extraction.shard;
 
-import java.nio.file.Path;
+import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
 
 /**
- * CN: 描述一个已落盘且通过token门限的semantic shard；输入bundle由planner拥有，执行器一次只加载该路径，
- * 本descriptor不保存prompt、模型response或JSON树。
- * EN: Describes one persisted semantic shard that passed the token gate. Executors load only this path at a time;
- * the descriptor never retains a prompt, model response, or JSON tree.
+ * CN: 描述一个有强摘要 bundle 与 external-audit sidecar 引用的 bounded semantic shard。
+ * EN: Describes one bounded semantic shard using strong references for both its bundle and external-audit sidecar.
  */
 public record SemanticShardDescriptor(
         String id,
         String ownerKey,
-        Path bundlePath,
+        SemanticArtifactRef bundle,
+        SemanticArtifactRef externalAuditSidecar,
         int estimatedInputTokens,
         int ownedFactCount,
         int ownedCandidateCount
 ) {
     public SemanticShardDescriptor {
         if (id == null || id.isBlank() || ownerKey == null || ownerKey.isBlank()
-                || bundlePath == null || estimatedInputTokens <= 0
+                || bundle == null || externalAuditSidecar == null || estimatedInputTokens <= 0
                 || ownedFactCount < 0 || ownedCandidateCount < 0) {
             throw new IllegalArgumentException("semantic path shard descriptor is incomplete");
         }
-        bundlePath = bundlePath.toAbsolutePath().normalize();
     }
 }

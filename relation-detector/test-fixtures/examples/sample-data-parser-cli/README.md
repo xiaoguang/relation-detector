@@ -44,14 +44,12 @@ relation-detector/target/sample-data-parser-cli/observation-parity.tsv
 relation-detector/target/sample-data-parser-cli/observation-diffs/
 ```
 
-By default the script also runs `*-derived-fresh` variants with `derivedPaths.enabled=true`.
-Set `SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED=false` to run only the direct parser outputs.
-`summary.tsv` contains direct outputs only; `summary-with-derived.tsv` adds `DerRel`,
-`DerLin`, and `DerName` for the derived-enabled outputs.
-
-When derived output is enabled, each parser case is scanned once. The CLI writes the
-direct-only view with `--direct-output` and the derived view with `--output`, so the
-second JSON does not repeat parsing or source collection.
+Each parser case is scanned once and publishes one bundle containing `result.json`
+and `direct.json`. By default `result.json` includes configured derived facts while
+`direct.json` is the direct-only view of the same scan. Setting
+`SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED=false` keeps the same two-file bundle layout,
+but both views omit derived facts. `summary.tsv` contains the direct view;
+`summary-with-derived.tsv` adds `DerRel`, `DerLin`, and `DerName` from the result view.
 
 The public runner packages the CLI once, then starts nine isolated JVM groups in order:
 `common`, `mysql`, `postgres`, Oracle root/v12c/v19c/v21c/v26ai, and `sqlserver`.
@@ -91,8 +89,9 @@ bash relation-detector/scripts/benchmark/verify-sample-data-parser-concurrency.s
 It canonicalizes each JSON document after removing `generatedAt`; any relationship,
 lineage, naming evidence, observation, or diagnostic difference fails the check.
 
-The common benchmark output is:
+The common benchmark outputs are:
 
 ```text
-relation-detector/target/sample-data-parser-cli/results/common-token-event-sample-data.json
+relation-detector/target/sample-data-parser-cli/results/common-token-event-sample-data/result.json
+relation-detector/target/sample-data-parser-cli/results/common-token-event-sample-data/direct.json
 ```

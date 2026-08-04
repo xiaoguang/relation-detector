@@ -477,7 +477,7 @@ warning 字段：
 - `POSTGRES_FUNCTION_COLLECT_FAILED`、`POSTGRES_VIEW_COLLECT_FAILED`：PostgreSQL 对象定义部分收集失败。
 - `FULL_GRAMMAR_SQL_PARSE_WARNING`：full-grammar SQL parser 产生语法诊断或只返回 partial result。
 - `FULL_GRAMMAR_DDL_PARSE_WARNING`：full-grammar DDL parser 产生语法诊断或只返回 partial result。
-- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`：严格版本 full-grammar 遇到高版本专属语法，例如 PG16 profile 解析 PG17-only SQL/DDL。profile 一旦选中，syntax diagnostic / partial result 仍属于该 full-grammar 结果，不触发 token-event fallback；只有 profile 选择失败或 parser hard failure 才 fallback。versioned correctness fixture 中这类情况应失败。
+- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`：core 的 parser-result contract 接受并保留该预留 code，供能够明确区分版本越界的 parser SPI 使用；当前内置 full-grammar parser 对 syntax diagnostic / partial result 统一输出 `FULL_GRAMMAR_SQL_PARSE_WARNING` 或 `FULL_GRAMMAR_DDL_PARSE_WARNING`。profile 一旦选中，这些 diagnostic 仍属于该 full-grammar 结果，不触发 token-event fallback；只有 profile 选择失败或 parser hard failure 才 fallback。
 
 边界：
 
@@ -576,8 +576,9 @@ README 至少包含：
   endpoint/evidence 完整输出、空关系 warning 明细和无副作用。
 - 如果未来引入折行/截断，再增加终端宽度契约。
 - `minConfidence` 过滤测试。
-- `TableOutputCliTest` 验证 `--format table` 覆盖 YAML、`--output` 写文件和
-  `--direct-output` 仅支持 JSON。
+- `TableOutputCliTest` 验证 `--format table` 覆盖 YAML 与 `--output` 写文件；
+  `OutputBundleCliTest` 验证 `--output-bundle` 仅支持 JSON，并以一次 scan 发布
+  `result.json` 和 `direct.json`。
 - warning 摘要测试。
 - 错误码测试。
 - README 示例命令 smoke test。

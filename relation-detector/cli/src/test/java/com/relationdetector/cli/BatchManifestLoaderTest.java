@@ -19,13 +19,12 @@ class BatchManifestLoaderTest {
         Files.writeString(tempDir.resolve("configs/mysql.yml"), "database:\n  type: MYSQL\n");
         Path manifest = tempDir.resolve("batch.yml");
         Files.writeString(manifest, """
-                version: 1
+                version: 2
                 report: out/report.json
                 cases:
                   - id: mysql-80
                     config: configs/mysql.yml
-                    output: out/mysql.json
-                    directOutput: out/mysql-direct.json
+                    outputBundle: out/mysql
                 """);
 
         BatchManifest loaded = new BatchManifestLoader().load(manifest);
@@ -36,6 +35,8 @@ class BatchManifestLoaderTest {
         assertEquals(tempDir.resolve("out/report.json").toAbsolutePath().normalize(), loaded.report());
         assertEquals(tempDir.resolve("configs/mysql.yml").toAbsolutePath().normalize(),
                 loaded.cases().get(0).config());
+        assertEquals(tempDir.resolve("out/mysql").toAbsolutePath().normalize(),
+                loaded.cases().get(0).outputBundle());
     }
 
     @Test
@@ -44,7 +45,7 @@ class BatchManifestLoaderTest {
         Files.writeString(tempDir.resolve("two.yml"), "database:\n  type: MYSQL\n");
         Path manifest = tempDir.resolve("batch.yml");
         Files.writeString(manifest, """
-                version: 1
+                version: 2
                 cases:
                   - id: one
                     config: one.yml
@@ -58,14 +59,63 @@ class BatchManifestLoaderTest {
                 IllegalArgumentException.class,
                 () -> new BatchManifestLoader().load(manifest));
 
-        assertTrue(error.getMessage().contains("output path is used more than once"));
+        assertTrue(error.getMessage().contains("artifact paths overlap"));
+    }
+
+    @Test
+    void rejectsVersionOneAndLegacyDirectOutput() throws Exception {
+        Path manifest = tempDir.resolve("batch.yml");
+        Files.writeString(manifest, """
+                version: 1
+                cases:
+                  - id: one
+                    config: one.yml
+                    output: one.json
+                    directOutput: one-direct.json
+                """);
+
+        assertThrows(IllegalArgumentException.class, () -> new BatchManifestLoader().load(manifest));
+    }
+
+    @Test
+    void rejectsMissingMixedAndNestedArtifactPaths() throws Exception {
+        Path missing = tempDir.resolve("missing.yml");
+        Files.writeString(missing, """
+                version: 2
+                cases:
+                  - id: one
+                    config: one.yml
+                """);
+        assertThrows(IllegalArgumentException.class, () -> new BatchManifestLoader().load(missing));
+
+        Path mixed = tempDir.resolve("mixed.yml");
+        Files.writeString(mixed, """
+                version: 2
+                cases:
+                  - id: one
+                    config: one.yml
+                    output: one.json
+                    outputBundle: one
+                """);
+        assertThrows(IllegalArgumentException.class, () -> new BatchManifestLoader().load(mixed));
+
+        Path nested = tempDir.resolve("nested.yml");
+        Files.writeString(nested, """
+                version: 2
+                report: artifacts/report.json
+                cases:
+                  - id: one
+                    config: one.yml
+                    outputBundle: artifacts
+                """);
+        assertThrows(IllegalArgumentException.class, () -> new BatchManifestLoader().load(nested));
     }
 
     @Test
     void rejectsUnknownManifestKeys() throws Exception {
         Path manifest = tempDir.resolve("batch.yml");
         Files.writeString(manifest, """
-                version: 1
+                version: 2
                 surprise: true
                 cases: []
                 """);

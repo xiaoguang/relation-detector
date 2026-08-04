@@ -11,7 +11,12 @@ final class BatchCommand {
 
     int run(String[] args) {
         try {
-            BatchArguments command = BatchArguments.parse(args);
+            BatchArguments command;
+            try {
+                command = BatchArguments.parse(args);
+            } catch (IllegalArgumentException error) {
+                throw new Main.CliFailure(ErrorCode.ARGUMENT_ERROR);
+            }
             BatchManifest loaded = new BatchManifestLoader().load(command.manifest);
             BatchManifest manifest = command.override(loaded);
             AdaptorRegistry registry = AdaptorRegistry.load(command.pluginDir);
@@ -23,7 +28,11 @@ final class BatchCommand {
                     manifest.failurePolicy(),
                     item -> scanRunner.execute(new PreparedScan(
                             ScanRequest.batch(item.batchCase()), item.config(), item.adaptor())));
-            new BatchReportWriter().write(manifest.report(), outcomes);
+            try {
+                new BatchReportWriter().write(manifest.report(), outcomes);
+            } catch (IOException error) {
+                throw new Main.CliFailure(ErrorCode.OUTPUT_WRITE_ERROR);
+            }
             outcomes.forEach(outcome -> System.out.printf("case=%s elapsedSeconds=%d status=%d%n",
                     outcome.batchCase().id(),
                     (outcome.elapsedMillis() + 999L) / 1000L,
@@ -62,6 +71,9 @@ final class BatchCommand {
     }
 
     static int exitCode(List<BatchCaseOutcome> outcomes) {
+        if (outcomes.stream().anyMatch(outcome -> outcome.errorCode() == ErrorCode.OUTPUT_WRITE_ERROR)) {
+            return ErrorCode.OUTPUT_WRITE_ERROR.code();
+        }
         return outcomes.stream().anyMatch(outcome -> outcome.status() == BatchCaseStatus.FAILED)
                 ? ErrorCode.BATCH_PARTIAL_FAILURE.code()
                 : ErrorCode.OK.code();
@@ -87,11 +99,11 @@ final class BatchCommand {
                     case "--max-worker-threads" -> parsed.maxWorkerThreads = positiveInt(requireValue(args, index++, arg), arg);
                     case "--fail-fast" -> parsed.failFast = true;
                     case "--report" -> parsed.report = Path.of(requireValue(args, index++, arg));
-                    default -> throw new IllegalArgumentException("Unknown batch argument: " + arg);
+                    default -> throw new BatchArgumentException();
                 }
             }
             if (parsed.manifest == null) {
-                throw new IllegalArgumentException("batch requires --manifest");
+                throw new BatchArgumentException();
             }
             return parsed;
         }
@@ -109,18 +121,26 @@ final class BatchCommand {
         }
 
         private static String requireValue(String[] args, int index, String option) {
-            if (index >= args.length) {
-                throw new IllegalArgumentException(option + " requires a value");
+            if (index >= args.length || args[index].startsWith("--")) {
+                throw new BatchArgumentException();
             }
             return args[index];
         }
 
         private static int positiveInt(String value, String option) {
-            int parsed = Integer.parseInt(value);
+            final int parsed;
+            try {
+                parsed = Integer.parseInt(value);
+            } catch (NumberFormatException error) {
+                throw new BatchArgumentException();
+            }
             if (parsed <= 0) {
-                throw new IllegalArgumentException(option + " must be positive");
+                throw new BatchArgumentException();
             }
             return parsed;
         }
+    }
+
+    private static final class BatchArgumentException extends IllegalArgumentException {
     }
 }

@@ -80,12 +80,12 @@ cat >"$TMP_DIR/correctness-summary.json" <<'JSON'
 {"profile":"full","discovered":1198,"selected":1198,"executed":1198,"passed":1198,"failed":0}
 JSON
 cat >"$TMP_DIR/fingerprints.tsv" <<'TSV'
-abc123	/repo/results/mysql-v8_0-full.json
-def456	/repo/results/mysql-v8_0-full-derived-fresh.json
+abc123	mysql-v8_0-full/direct.json
+def456	mysql-v8_0-full/result.json
 TSV
 cat >"$TMP_DIR/semantic-fingerprints.tsv" <<'TSV'
-semantic123	/repo/results/mysql-v8_0-full.json
-semantic456	/repo/results/mysql-v8_0-full-derived-fresh.json
+semantic123	mysql-v8_0-full/direct.json
+semantic456	mysql-v8_0-full/result.json
 TSV
 
 "$VERIFICATION_RUNNER" performance \
@@ -108,26 +108,26 @@ jq -e '.cliBatch.summary.caseCount == 2 and .cliBatch.cases[0].name == "oracle-v
 jq -e '.fixtures.slowest[0].elapsedMillis == 4321' "$TMP_DIR/report.json" >/dev/null
 jq -e '.maven.modules[0].name == "relation-detector-core"' "$TMP_DIR/report.json" >/dev/null
 jq -e '.correctness.executed == 1198 and .correctness.failed == 0' "$TMP_DIR/report.json" >/dev/null
-jq -e '.canonicalFingerprints.count == 2 and .canonicalFingerprints.items[0].name == "mysql-v8_0-full-derived-fresh.json"' \
+jq -e '.canonicalFingerprints.count == 2 and .canonicalFingerprints.items[0].name == "mysql-v8_0-full/direct.json"' \
   "$TMP_DIR/report.json" >/dev/null
-jq -e '.semanticFingerprints.count == 2 and .semanticFingerprints.items[0].sha256 == "semantic456"' \
+jq -e '.semanticFingerprints.count == 2 and .semanticFingerprints.items[0].sha256 == "semantic123"' \
   "$TMP_DIR/report.json" >/dev/null
 
-mkdir -p "$TMP_DIR/results"
-cat >"$TMP_DIR/results/example.json" <<'JSON'
+mkdir -p "$TMP_DIR/results/example"
+cat >"$TMP_DIR/results/example/direct.json" <<'JSON'
 {"summary":{"directRelationshipCount":0,"derivedRelationshipCount":0,"totalRelationshipCount":0,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"metadataInventory":{"status":"COMPLETE","basis":"DDL_DECLARATIONS","scope":{"catalog":"test","schema":"","includeTables":[],"excludeTables":[]},"counts":{"tables":1,"columns":1,"constraints":0,"indexes":0},"tables":[{"tableName":"orders"}],"columns":[{"tableName":"orders","columnName":"id","ordinalPosition":1}],"constraints":[],"indexes":[]},"relationships":[],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
 JSON
-cp "$TMP_DIR/results/example.json" "$TMP_DIR/results/example-derived-fresh.json"
+cp "$TMP_DIR/results/example/direct.json" "$TMP_DIR/results/example/result.json"
 "$VERIFICATION_RUNNER" validate-results \
   --result-dir "$TMP_DIR/results" \
   --expected-categories 1 \
   --output "$TMP_DIR/result-validation.json" >/dev/null
 
-mkdir -p "$TMP_DIR/results-duplicate"
-cat >"$TMP_DIR/results-duplicate/example.json" <<'JSON'
+mkdir -p "$TMP_DIR/results-duplicate/example"
+cat >"$TMP_DIR/results-duplicate/example/direct.json" <<'JSON'
 {"summary":{"directRelationshipCount":1,"derivedRelationshipCount":0,"totalRelationshipCount":1,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"metadataInventory":{"status":"COMPLETE","basis":"DDL_DECLARATIONS","scope":{"catalog":"test","schema":"","includeTables":[],"excludeTables":[]},"counts":{"tables":1,"columns":1,"constraints":0,"indexes":0},"tables":[{"tableName":"orders"}],"columns":[{"tableName":"orders","columnName":"id","ordinalPosition":1}],"constraints":[],"indexes":[]},"relationships":[{"rawEvidence":[{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":1}},{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":1}}]}],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
 JSON
-cp "$TMP_DIR/results-duplicate/example.json" "$TMP_DIR/results-duplicate/example-derived-fresh.json"
+cp "$TMP_DIR/results-duplicate/example/direct.json" "$TMP_DIR/results-duplicate/example/result.json"
 printf 'SELECT 1;\n' >"$TMP_DIR/query.sql"
 if RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$TMP_DIR" \
   "$VERIFICATION_RUNNER" validate-results \
@@ -138,11 +138,11 @@ if RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$TMP_DIR" \
   exit 1
 fi
 
-mkdir -p "$TMP_DIR/results-line"
-cat >"$TMP_DIR/results-line/example.json" <<'JSON'
+mkdir -p "$TMP_DIR/results-line/example"
+cat >"$TMP_DIR/results-line/example/direct.json" <<'JSON'
 {"summary":{"directRelationshipCount":1,"derivedRelationshipCount":0,"totalRelationshipCount":1,"directDataLineageCount":0,"derivedDataLineageCount":0,"totalDataLineageCount":0,"directNamingEvidenceCount":0,"derivedNamingEvidenceCount":0,"totalNamingEvidenceCount":0,"warningCount":0},"metadataInventory":{"status":"COMPLETE","basis":"DDL_DECLARATIONS","scope":{"catalog":"test","schema":"","includeTables":[],"excludeTables":[]},"counts":{"tables":1,"columns":1,"constraints":0,"indexes":0},"tables":[{"tableName":"orders"}],"columns":[{"tableName":"orders","columnName":"id","ordinalPosition":1}],"constraints":[],"indexes":[]},"relationships":[{"rawEvidence":[{"type":"SQL_LOG_JOIN","source":"query.sql","attributes":{"sourceFile":"query.sql","sourceStatementId":"query.sql:1-1","sourceLine":2}}]}],"derivedRelationships":[],"dataLineages":[],"derivedDataLineages":[],"namingEvidence":[],"derivedNamingEvidence":[],"warnings":[]}
 JSON
-cp "$TMP_DIR/results-line/example.json" "$TMP_DIR/results-line/example-derived-fresh.json"
+cp "$TMP_DIR/results-line/example/direct.json" "$TMP_DIR/results-line/example/result.json"
 if RELATION_DETECTOR_VERIFICATION_WORKING_DIRECTORY="$TMP_DIR" \
   "$VERIFICATION_RUNNER" validate-results \
   --result-dir "$TMP_DIR/results-line" \

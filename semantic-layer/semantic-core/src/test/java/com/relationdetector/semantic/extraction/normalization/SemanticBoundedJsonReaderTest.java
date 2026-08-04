@@ -6,6 +6,7 @@ import com.relationdetector.semantic.extraction.normalization.SemanticBoundedJso
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,5 +60,55 @@ final class SemanticBoundedJsonReaderTest {
         assertThrows(SemanticExtractionValidationException.class,
                 () -> new SemanticBoundedJsonReader()
                         .readObject(input, 100, "semantic model result"));
+    }
+
+    @Test
+    void rejectsByteLimitBeforeParsingAndUsesExactLimitArithmetic() throws Exception {
+        Path input = tempDir.resolve("byte-limit.json");
+        Files.writeString(input, "{\"value\":1}");
+        SemanticBoundedJsonReader reader = new SemanticBoundedJsonReader();
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> reader.readObject(
+                        input,
+                        new SemanticBoundedJsonReader.Limits(4, 1000),
+                        "semantic model result"));
+        assertEquals(1_048_576L + 32L * 123L,
+                SemanticBoundedJsonReader.responseEnvelopeByteLimit(123));
+        assertEquals(4L * ((100L * 100L / 115L) - 64L),
+                SemanticBoundedJsonReader.tokenDerivedByteLimit(100));
+    }
+
+    @Test
+    void rejectsNestingPast128AndStringsPastOneMiCodePoints() throws Exception {
+        Path nested = tempDir.resolve("nested.json");
+        Files.writeString(nested, "{\"v\":" + "[".repeat(128) + "0" + "]".repeat(128) + "}");
+        Path longString = tempDir.resolve("long-string.json");
+        Files.writeString(longString, "{\"v\":\"" + "x".repeat(1_048_577) + "\"}");
+        SemanticBoundedJsonReader reader = new SemanticBoundedJsonReader();
+        SemanticBoundedJsonReader.Limits generous =
+                new SemanticBoundedJsonReader.Limits(2_000_000, 2_000_000);
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> reader.readObject(nested, generous, "semantic model result"));
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> reader.readObject(longString, generous, "semantic model result"));
+    }
+
+    @Test
+    void rejectsSymlinkEvenWhenItsTargetIsAValidObject() throws Exception {
+        Path target = tempDir.resolve("target.json");
+        Files.writeString(target, "{}");
+        Path link = tempDir.resolve("link.json");
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (UnsupportedOperationException failure) {
+            assertTrue(true);
+            return;
+        }
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticBoundedJsonReader()
+                        .readObject(link, 100, "semantic model result"));
     }
 }

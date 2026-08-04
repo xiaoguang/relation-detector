@@ -128,9 +128,10 @@ Formal normalization 的默认event ID从已验证的完整`eventCandidateRef`�
 ## 5. Identity 与 Evidence Closure
 
 ID不使用数组ordinal，并在各registry中检查冲突。fact/evidence、deterministic candidate和formal
-normalized owner都使用长度分隔的完整canonical identity生成内容稳定ID。显式输入ID保持不变；
-缺省entity ID按物理身份或业务名称/类型/owned grounding生成，event/metric/dimension分别使用其完整
-typed owner字段。以下标识分别注册并校验：
+normalized owner都使用长度分隔的完整canonical identity生成内容稳定ID。模型显式输入ID只作为
+片内临时alias，core必须为所有formal section重算canonical ID并重写typed refs；同一alias指向不同
+canonical内容时原子失败。entity ID按物理身份或业务名称/类型/owned grounding生成，
+event/metric/dimension分别使用其完整typed owner字段。以下标识分别注册并校验：
 
 - evidence ID
 - relationship、lineage、naming、derived fact ID

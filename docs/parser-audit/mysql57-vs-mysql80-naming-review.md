@@ -2,8 +2,8 @@
 
 本文记录 `mysql-v5_7-full` 与 `mysql-v8_0-full` 在自然 sample-data CLI 上的差异。输入来自：
 
-- `relation-detector/target/sample-data-parser-cli/results/mysql-v5_7-full-derived-fresh.json`
-- `relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full-derived-fresh.json`
+- `relation-detector/target/sample-data-parser-cli/results/mysql-v5_7-full/result.json`
+- `relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full/result.json`
 
 统计由 `relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh` 生成。
 

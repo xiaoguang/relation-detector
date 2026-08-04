@@ -127,7 +127,9 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 The following is a historical/manual output-audit record, not a set of invariants automatically
 proved by every verification manifest. The streaming validator checks portable paths and validates
 locations that are present; it does not currently require every fact to carry `sourceFile/sourceLine`.
-Summary fields are compared when present rather than required as a complete object.
+The ten writer summary count fields are required and compared with the streamed arrays. The six
+derived evidence-set/support-combination fields remain an optional extension group, but when the
+group is present every member is required and validated.
 
 - Present summary counts matched the corresponding output arrays in the recorded audit.
 - Direct observation counts equal raw evidence occurrences. Derived summaries count typed evidence sets and their
@@ -139,10 +141,10 @@ Summary fields are compared when present rather than required as a complete obje
 - Merged lineage top-level provenance contains only attributes shared by every raw observation.
 - Every relationship `NAMING_MATCH.evidenceRef` resolves to top-level `namingEvidence`.
 
-The detailed repair record from the latest JSON + SQL audit is recorded in
-[`sample-data-output-audit-backlog.md`](sample-data-output-audit-backlog.md). The key
-point is that clean JSON structure and zero diagnostics do not prove the SQL assets
-are schema-valid. `SampleDataSchemaConsistencyTest` is now the explicit schema gate; count parity alone remains insufficient evidence of parser quality.
+The resolved JSON + SQL repair record remains in Git history rather than the current
+audit tree. Clean JSON structure and zero diagnostics do not prove the SQL assets are
+schema-valid. `SampleDataSchemaConsistencyTest` is the explicit schema gate; count
+parity alone remains insufficient evidence of parser quality.
 
 ## Validation
 

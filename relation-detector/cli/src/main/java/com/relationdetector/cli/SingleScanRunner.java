@@ -30,6 +30,7 @@ final class SingleScanRunner {
     private final ScanExecutor scanExecutor;
     private final OutputWriter outputWriter;
     private final AtomicOutputWriter atomicOutputWriter = new AtomicOutputWriter();
+    private final OutputBundlePublisher outputBundlePublisher = new OutputBundlePublisher();
 
     SingleScanRunner() {
         this(new SimpleYamlConfigLoader()::load, (config, adaptor) -> new ScanEngine().scan(config, adaptor), output -> { });
@@ -53,11 +54,11 @@ final class SingleScanRunner {
             throw new Main.CliFailure(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR);
         }
         applyOverrides(config, request);
-        if (request.directOutput() != null && request.output() == null) {
-            throw new IllegalArgumentException("--direct-output requires --output for the derived result");
+        if (request.output() != null && request.outputBundle() != null) {
+            throw new IllegalArgumentException("--output and --output-bundle are mutually exclusive");
         }
-        if (request.directOutput() != null && config.outputFormat != OutputFormat.JSON) {
-            throw new IllegalArgumentException("--direct-output is only available with JSON output");
+        if (request.outputBundle() != null && config.outputFormat != OutputFormat.JSON) {
+            throw new IllegalArgumentException("--output-bundle is only available with JSON output");
         }
         Path configDirectory = request.config().toAbsolutePath().normalize().getParent();
         ResolvedScanConfig resolved;
@@ -97,7 +98,14 @@ final class SingleScanRunner {
         var output = config.output();
         JsonResultWriter jsonWriter = new JsonResultWriter();
         try {
-        if (output.format() == OutputFormat.TABLE) {
+        if (prepared.request().outputBundle() != null) {
+            outputWriter.validate(prepared.request().outputBundle());
+            outputBundlePublisher.write(prepared.request().outputBundle(),
+                    stream -> jsonWriter.write(result, stream, output.includeEvidence(), output.includeWarnings(),
+                            output.includeObservationCounts()),
+                    stream -> jsonWriter.writeDirect(result, stream, output.includeEvidence(), output.includeWarnings(),
+                            output.includeObservationCounts()));
+        } else if (output.format() == OutputFormat.TABLE) {
             String rendered = new TableResultWriter().write(result);
             if (prepared.request().output() == null) {
                 System.out.print(rendered);
@@ -112,12 +120,6 @@ final class SingleScanRunner {
             outputWriter.validate(prepared.request().output());
             atomicOutputWriter.write(prepared.request().output(), stream ->
                     jsonWriter.write(result, stream, output.includeEvidence(), output.includeWarnings(),
-                            output.includeObservationCounts()));
-        }
-        if (prepared.request().directOutput() != null) {
-            outputWriter.validate(prepared.request().directOutput());
-            atomicOutputWriter.write(prepared.request().directOutput(), stream ->
-                    jsonWriter.writeDirect(result, stream, output.includeEvidence(), output.includeWarnings(),
                             output.includeObservationCounts()));
         }
         } catch (IOException ex) {
@@ -168,7 +170,7 @@ record ScanRequest(
         Path config,
         OutputFormat format,
         Path output,
-        Path directOutput,
+        Path outputBundle,
         Double minConfidence,
         String parserMode,
         String grammarProfile,
@@ -176,7 +178,7 @@ record ScanRequest(
         Integer parallelism
 ) {
     static ScanRequest batch(BatchCase batchCase) {
-        return new ScanRequest(batchCase.config(), null, batchCase.output(), batchCase.directOutput(),
+        return new ScanRequest(batchCase.config(), null, batchCase.output(), batchCase.outputBundle(),
                 null, null, null, null, null);
     }
 }

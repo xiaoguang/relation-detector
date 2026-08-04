@@ -486,6 +486,7 @@ public enum StructuredParseEventType {
   DDL_FOREIGN_KEY,
   DDL_INDEX,
   DDL_COLUMN,
+  DDL_CATALOG,
   DYNAMIC_SQL
 }
 ```
@@ -514,6 +515,7 @@ public enum StructuredParseEventType {
 | `DDL_FOREIGN_KEY` | DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
 | `DDL_INDEX` | DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
 | `DDL_COLUMN` | DDL 中的物理列 inventory；用于约束 endpoint 合法性和 naming evidence，不直接创建 relationship。 |
+| `DDL_CATALOG` | DDL 中声明的 catalog/database/schema identity，用于保持完整 namespace，不直接创建 relationship。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
 
 维护说明：
@@ -741,6 +743,26 @@ public enum ScanSourceKind {
 
 - `DATA_PROFILE` 依赖已有候选关系，不能作为第一批独立扫描来源。
 - 至少应启用 `METADATA`、`DDL`、`OBJECTS`、`LOGS` 中的一种；只开启 `DATA_PROFILE` 没有意义，应配置失败。
+
+## 17.1 其余公共结构和状态枚举
+
+下列枚举同样属于 public contracts；它们此前未列入本索引，但其 JSON/SPI 拼写也必须稳定。
+
+| Enum | 稳定值 | 语义边界 |
+| --- | --- | --- |
+| `MetadataInventoryStatus` | `NOT_REQUESTED`, `COMPLETE`, `PARTIAL`, `UNAVAILABLE` | 当前 scope 的 metadata inventory 完整性；不得用空数组代替不可用或部分完成状态。 |
+| `MetadataInventoryBasis` | `NONE`, `LIVE_METADATA`, `DDL_DECLARATIONS`, `MERGED` | inventory 的证据来源族；不改变 catalog/schema/table identity。 |
+| `DdlInventoryCoverage` | `EVIDENCE_ONLY`, `COMPLETE_SCOPE` | DDL 文件是局部证据还是声明覆盖完整 scope；只有后者可支持完整性判断。 |
+| `DerivedEvidenceHopKind` | `RELATIONSHIP`, `LINEAGE`, `NAMING`, `TABLE_IDENTITY_BRIDGE` | derived evidence set 中每一跳的 typed family；不能从路径文本或名称推断。 |
+| `PredicateJoinKind` | `WHERE_OR_UNKNOWN`, `JOIN`, `JOIN_ON`, `LEFT_JOIN`, `RIGHT_JOIN`, `FULL_JOIN`, `CROSS_JOIN`, `STRAIGHT_JOIN`, `USING_JOIN`, `EXISTS`, `IN_SUBQUERY`, `TUPLE_IN_SUBQUERY`, `MERGE_ON`, `MERGE_OR_USING` | predicate event 携带的 typed join/predicate discriminator。 |
+| `WriteMappingKind` | `INSERT_SELECT`, `INSERT_VALUES`, `INSERT_CONTROL`, `INSERT_GROUP_BY`, `UPDATE_SET`, `UPDATE_LOCATOR`, `UPDATE_WHERE`, `MERGE_UPDATE`, `MERGE_UPDATE_SET`, `MERGE_ON`, `MERGE_INSERT` | lineage write mapping 的 typed discriminator；不能由 SQL 片段字符串回推。 |
+| `DdlIndexRole` | `SOURCE_INDEX`, `TARGET_UNIQUE` | DDL index evidence 在关系方向判断中的角色。 |
+| `DdlIndexKind` | `PRIMARY_KEY`, `UNIQUE_CONSTRAINT`, `CREATE_TABLE_INDEX`, `INLINE_PRIMARY_KEY`, `INLINE_UNIQUE`, `CREATE_INDEX`, `CREATE_UNIQUE_INDEX`, `INLINE_CONSTRAINT`, `TABLE_CONSTRAINT` | typed DDL declaration kind；复合声明仍按成员顺序和整体约束解释。 |
+| `MetadataIndexMemberKind` | `FULL_COLUMN`, `PREFIX_COLUMN`, `EXPRESSION` | metadata index 有序成员的物理形态；前缀列和表达式不能伪装成完整物理列。 |
+| `ProfileStatus` | `SUCCESS`, `NO_EVIDENCE`, `SKIPPED_INVALID_ENDPOINT`, `PERMISSION_DENIED`, `TIMEOUT`, `QUERY_FAILED` | 一次有界 live profile query 的可审计结果；core 按验证后的状态重建脱敏诊断。 |
+
+`MetadataIndexMemberKind` 和 `ProfileStatus` 是独立 public enum，不位于 `Enums` 容器中；维护和
+JSON round-trip 要求与容器内枚举相同。
 
 ## 18. 枚举之间的关系
 

@@ -2,6 +2,7 @@ package com.relationdetector.core.diagnostics;
 
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -94,6 +95,49 @@ public final class LiveDiagnosticSanitizer {
         return WarningMessage.warn(type, code, message, safeSource(source), 0, attributes);
     }
 
+    /**
+     * Rebuilds one already-validated live parser diagnostic from core-owned object identity only.
+     */
+    public static WarningMessage liveParserDiagnostic(
+            WarningType type,
+            String code,
+            Operation operation,
+            String source,
+            Map<String, ?> identity
+    ) {
+        return WarningMessage.warn(
+                type,
+                code,
+                operation.parserDiagnosticMessage(),
+                safeSource(source),
+                0,
+                parserIdentity(identity));
+    }
+
+    /**
+     * Rebuilds a live parser failure and adds only the exception class to the core-owned identity.
+     */
+    public static WarningMessage liveParserFailure(
+            WarningType type,
+            String code,
+            Operation operation,
+            String source,
+            Map<String, ?> identity,
+            Throwable failure
+    ) {
+        Map<String, Object> attributes = new LinkedHashMap<>(parserIdentity(identity));
+        if (failure != null) {
+            attributes.put("exceptionClass", failure.getClass().getName());
+        }
+        return WarningMessage.warn(
+                type,
+                code,
+                operation.parserDiagnosticMessage(),
+                safeSource(source),
+                0,
+                attributes);
+    }
+
     public static WarningMessage warning(
             WarningType type,
             String code,
@@ -147,6 +191,20 @@ public final class LiveDiagnosticSanitizer {
                 target.put(key, value);
             }
         });
+    }
+
+    private static Map<String, Object> parserIdentity(Map<String, ?> context) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        if (context == null) {
+            return attributes;
+        }
+        for (String key : List.of("objectCatalog", "objectSchema", "objectName", "objectType")) {
+            Object value = context.get(key);
+            if (value != null) {
+                attributes.put(key, value);
+            }
+        }
+        return attributes;
     }
 
     private static String stringValue(Map<String, ?> context, String key) {
@@ -224,6 +282,15 @@ public final class LiveDiagnosticSanitizer {
                 case OBJECT -> "Live database object definition unavailable";
                 case DATABASE_DDL -> "Live database DDL definition unavailable";
                 default -> "Live database definition unavailable";
+            };
+        }
+
+        private String parserDiagnosticMessage() {
+            return switch (this) {
+                case OBJECT -> "Live database object parser reported a diagnostic";
+                case DATABASE_DDL -> "Live database DDL parser reported a diagnostic";
+                default -> throw new IllegalArgumentException(
+                        "operation does not represent a live database parser: " + this);
             };
         }
     }

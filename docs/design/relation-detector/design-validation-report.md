@@ -98,12 +98,18 @@ verification summary/manifest记录；设计契约只要求估算值不超过统
 
 ### 2026-08-03 Semantic 产物与 Codex 响应预算反向审计
 
-本轮代码反查还确认两项窄缺口，状态仍由traceability唯一维护：
+本轮代码反查确认以下边界，状态仍由traceability唯一维护：
 
 1. 离线KG的record identity、跨文件evidence closure和多文件目录事务已验证；FULL/DIGEST_ONLY都先在
    同级staging完成，晚期失败不会产生部分正式目标。
-2. shard/reconciliation prompt受`maxInputTokens`约束，API调用和Codex completion都使用各自输出门限。
-   request index v2持久化两个输出门限，v1仅允许证据包重建，不允许无门限推测的正式completion。
+2. shard/reconciliation prompt受`maxInputTokens`约束；Codex和direct model-client通过固定path的有界
+   artifact交换request/response/output。OpenAI 2xx envelope以流式输入落盘，错误body不物化，writer独立
+   校验大小、hash、JSON、usage和phase输出门限。
+3. request-package v1/v2重建均在物化前应用可信index/shard/count/token/path/size/hash/JSON/line/gzip
+   上限，owner/sidecar通过磁盘索引逐记录处理，并强制验证owner manifest。v1仍仅允许证据包重建。
+4. plan的full bundle、owner manifest、shard bundle和sidecar均以path/bytes/sha256绑定，首次render/model前
+   构造私有不变快照。final validator在写入前对complete store重做evidence、grounding、candidate section、
+   完整catalog/schema物理身份及semantic/review refs闭包。
 
 ### 2026-07-28 四项反向审计的当前状态
 
@@ -185,8 +191,8 @@ PostgreSQL full/live 路径使用只包含输入参数类型的 identity signatu
 参数类型 grammar。`SemanticEventExtractor` 仍把 coarse semantic source type 分类为 `ROUTINE`，
 但 group key/stable ID 使用精确 provenance。formal normalization从已验证的
 `eventCandidateRef`派生默认event ID，不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
-缺省ID统一通过`SemanticCanonicalIdentity`和`StableSemanticId`生成；物理/业务entity规则与shard
-canonicalizer复用。显式输入ID不变。graph edge已脱离display slug；自动review先规范化section，
+正式ID统一通过`SemanticCanonicalIdentity`和`StableSemanticId`从canonical content生成；模型显式ID只作
+section-scoped临时alias，entity ref与其他formal section按固定顺序重写。graph edge已脱离display slug；自动review先规范化section，
 再以`targetSection + targetRef + type`生成稳定ID，可变reason不参与identity。
 未审计 SQL statement family 和真实数据库 runtime smoke 继续按各自 backlog/环境边界管理。
 
@@ -335,7 +341,7 @@ full-grammar 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - 最终 parser CLI 矩阵、generated report 与 canonical output 验收：`bash relation-detector/scripts/verify-all.sh`。
 - 无缓存 clean 复验：`bash relation-detector/scripts/verify-release.sh`；它先运行 no-cache smoke reactor，再进入隔离 full correctness 和 sample-data。
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
-- 跨 parser 差异需联合阅读 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md)、各版本边界审计与 [`sample-data-output-audit-backlog.md`](../../parser-audit/sample-data-output-audit-backlog.md)；它们分别维护当前统计、确认的版本差异和未关闭问题。
+- 跨 parser 差异需联合阅读 [`parser-comparison-summary.md`](../../parser-audit/parser-comparison-summary.md) 与各版本边界审计；它们分别维护当前统计、语义解释与确认的版本差异。已关闭的 sample-data 修复记录只保留在 Git 历史中。
 
 当前`verify-all.sh`只有在最终`verification-manifest.json`实际生成且状态为PASS时才形成完整的
 **当前工作区verification session证据**；它会记录dirty worktree但不会据此失败。无缓存且干净工作树的
@@ -514,8 +520,8 @@ top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通
   envelope，core 仅验证 failure type/code 并重建固定 warning；parser/file warning 可为本地审计保留
   raw SQL/DDL/异常文本，live JDBC warning 必须经过 `LiveDiagnosticSanitizer`。
 - `TableResultWriterTest` 固定 relationship 输入顺序、evidence 首次出现去重、长文本完整输出、空关系
-  warning 明细和无副作用契约；`TableOutputCliTest` 固定 YAML override、文件输出及 table/direct-output
-  冲突。table 仍不探测终端宽度、不折行/截断，只承诺轻量人工阅读视图。
+  warning 明细和无副作用契约；`TableOutputCliTest` 固定 YAML override、文件输出及旧
+  `--direct-output`按未知参数拒绝。table 仍不探测终端宽度、不折行/截断，只承诺轻量人工阅读视图。
 - formal semantic normalization 与离线 `SemanticKgStore/SemanticReferenceClosureStore` 均拒绝无证据/不可解析 evidence 及冲突
   node/edge ID；完全相同 ID/content 仅做幂等去重。`SemanticEventExtractor` 的结构分类只消费 typed
   `sourceObjectType` / `mappingKind`，缺失时使用中性默认值，不读取 detail/path/source 前缀。当前

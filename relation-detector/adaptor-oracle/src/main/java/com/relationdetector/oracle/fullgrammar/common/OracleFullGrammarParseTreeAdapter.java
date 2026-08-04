@@ -114,6 +114,24 @@ public interface OracleFullGrammarParseTreeAdapter {
 
     enum OperatorSemantic { NONE, ARITHMETIC, CONCAT_FORMAT }
 
+    enum GeneralElementKind { COLUMN_CANDIDATE, FUNCTION, SUPPRESSED }
+
+    record GeneralElementView(
+            GeneralElementKind kind,
+            List<String> nameParts,
+            List<ParseTree> argumentExpressions
+    ) {
+        public GeneralElementView {
+            kind = kind == null ? GeneralElementKind.SUPPRESSED : kind;
+            nameParts = nameParts == null ? List.of() : List.copyOf(nameParts);
+            argumentExpressions = argumentExpressions == null ? List.of() : List.copyOf(argumentExpressions);
+        }
+
+        public static GeneralElementView suppressed() {
+            return new GeneralElementView(GeneralElementKind.SUPPRESSED, List.of(), List.of());
+        }
+    }
+
     boolean hasRole(ParseTree tree, Role role);
 
     boolean hasSymbol(ParseTree tree, Symbol symbol);
@@ -125,6 +143,9 @@ public interface OracleFullGrammarParseTreeAdapter {
     boolean isConjunction(ParseTree tree);
 
     Optional<String> functionName(ParseTree tree);
+
+    /** Typed shape exposed by a version-local generated general_element context. */
+    Optional<GeneralElementView> generalElementView(ParseTree tree);
 
     OperatorSemantic operatorSemantic(ParseTree tree);
 

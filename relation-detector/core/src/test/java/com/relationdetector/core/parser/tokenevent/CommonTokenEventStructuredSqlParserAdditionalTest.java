@@ -169,7 +169,7 @@ class CommonTokenEventStructuredSqlParserAdditionalTest {
     }
 
     @Test
-    void dynamicSqlIsReportedAsUnresolvedWarning() {
+    void genericParserDoesNotInferDynamicSqlFromRawText() {
         String sql = """
                 CREATE PROCEDURE rebuild_dynamic()
                 BEGIN
@@ -182,12 +182,26 @@ class CommonTokenEventStructuredSqlParserAdditionalTest {
         StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(record(sql, StatementSourceType.PROCEDURE), null);
 
-        WarningMessage warning = result.warnings().stream()
-                .filter(w -> w.code().equals("DYNAMIC_SQL_UNRESOLVED"))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("expected dynamic SQL warning"));
-        assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("PREPARE stmt"));
-        assertEquals("PROCEDURE", warning.attributes().get("statementSourceType"));
+        assertTrue(result.warnings().stream().noneMatch(warning ->
+                        warning.code().equals("DYNAMIC_SQL_UNRESOLVED")),
+                () -> "generic parser must not infer dynamic SQL from raw text: " + result.warnings());
+    }
+
+    @Test
+    void genericParserDoesNotTreatCommentStringOrQuotedIdentifierAsDynamicSql() {
+        String sql = """
+                SELECT 'PREPARE hidden FROM secret', "execute", account_id
+                FROM orders
+                /* EXECUTE hidden */
+                WHERE note = 'execute prepared statement';
+                """;
+
+        StructuredParseResult result = new CommonTokenEventStructuredSqlParser(SqlDialect.POSTGRES)
+                .parseSql(record(sql, StatementSourceType.PLAIN_SQL), null);
+
+        assertTrue(result.warnings().stream().noneMatch(warning ->
+                        warning.code().equals("DYNAMIC_SQL_UNRESOLVED")),
+                () -> "comments, strings, and quoted identifiers are not typed dynamic SQL: " + result.warnings());
     }
 
     @Test

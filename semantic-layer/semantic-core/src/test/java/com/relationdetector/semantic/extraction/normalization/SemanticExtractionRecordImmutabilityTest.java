@@ -2,7 +2,6 @@ package com.relationdetector.semantic.extraction.normalization;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticShardNormalizedResult;
 
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionResult;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
@@ -44,13 +43,6 @@ final class SemanticExtractionRecordImmutabilityTest {
         assertJsonStateIsDetached(
                 source -> new SemanticShardNormalizedResult("shard-0001", source),
                 SemanticShardNormalizedResult::document);
-    }
-
-    @Test
-    void semanticExtractionResultDetachesResponse() {
-        assertJsonStateIsDetached(
-                source -> new SemanticExtractionResult("{}", "{}", "output", source),
-                SemanticExtractionResult::response);
     }
 
     @Test

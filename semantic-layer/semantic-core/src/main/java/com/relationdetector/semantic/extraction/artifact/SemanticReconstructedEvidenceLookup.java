@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.internal.store.ExternalJsonRecordStore;
 import com.relationdetector.semantic.evidence.SemanticEvidenceStore;
+import com.relationdetector.semantic.model.PhysicalEndpointRef;
 
 /**
  * CN: 从已校验重建的完整 evidence bundle 建立磁盘后备只读引用索引；输入逐记录流式读取，输出供
@@ -26,7 +27,10 @@ public final class SemanticReconstructedEvidenceLookup implements SemanticEviden
     private static final ObjectMapper JSON = new ObjectMapper();
     private final Path workspace;
     private final ExternalJsonRecordStore references;
+    private final ExternalJsonRecordStore sectionReferences;
     private final ExternalJsonRecordStore evidence;
+    private final ExternalJsonRecordStore physicalTables;
+    private final ExternalJsonRecordStore physicalEndpoints;
     private boolean closed;
 
     public SemanticReconstructedEvidenceLookup(Path bundle, Path workspace) {
@@ -35,11 +39,20 @@ public final class SemanticReconstructedEvidenceLookup implements SemanticEviden
         }
         this.workspace = workspace;
         this.references = new ExternalJsonRecordStore(workspace.resolve("references"));
+        this.sectionReferences = new ExternalJsonRecordStore(
+                workspace.resolve("section-references"));
         this.evidence = new ExternalJsonRecordStore(workspace.resolve("evidence"));
+        this.physicalTables = new ExternalJsonRecordStore(
+                workspace.resolve("physical-tables"));
+        this.physicalEndpoints = new ExternalJsonRecordStore(
+                workspace.resolve("physical-endpoints"));
         try {
             index(bundle);
             references.finish();
+            sectionReferences.finish();
             evidence.finish();
+            physicalTables.finish();
+            physicalEndpoints.finish();
         } catch (RuntimeException failure) {
             closeAfterFailure(failure);
             throw failure;
@@ -53,12 +66,47 @@ public final class SemanticReconstructedEvidenceLookup implements SemanticEviden
     }
 
     @Override
+    public boolean containsReference(
+            SemanticEvidenceStore.Section section,
+            String reference
+    ) {
+        ensureOpen();
+        return section != null
+                && reference != null
+                && !reference.isBlank()
+                && sectionReferences.containsKey(membershipKey(section, reference));
+    }
+
+    @Override
     public Optional<JsonNode> findEvidence(String reference) {
         ensureOpen();
         if (reference == null || reference.isBlank()) {
             return Optional.empty();
         }
         return evidence.get(reference).map(ExternalJsonRecordStore.Record::value);
+    }
+
+    @Override
+    public boolean containsPhysicalTable(String table) {
+        ensureOpen();
+        String identity = normalized(table);
+        return !identity.isBlank() && physicalTables.containsKey(identity);
+    }
+
+    @Override
+    public boolean containsPhysicalColumn(String column) {
+        ensureOpen();
+        String identity = normalized(column);
+        if (identity.isBlank()
+                || containsPhysicalTable(identity)
+                || !physicalEndpoints.containsKey(identity)) {
+            return false;
+        }
+        try {
+            return containsPhysicalTable(PhysicalEndpointRef.column(identity).table());
+        } catch (IllegalArgumentException failure) {
+            return false;
+        }
     }
 
     private void index(Path bundle) {
@@ -68,25 +116,84 @@ public final class SemanticReconstructedEvidenceLookup implements SemanticEviden
                 String field = parser.currentName();
                 parser.nextToken();
                 SemanticEvidenceStore.Section section = section(field);
-                if (section == null || section == SemanticEvidenceStore.Section.TABLES) {
+                if (section == null) {
                     parser.skipChildren();
                     continue;
                 }
                 require(parser.currentToken() == JsonToken.START_ARRAY);
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
                     JsonNode item = JSON.readTree(parser);
+                    if (section == SemanticEvidenceStore.Section.TABLES) {
+                        String table = item.isTextual() ? normalized(item.asText()) : "";
+                        require(!table.isBlank());
+                        physicalTables.append(table, item);
+                        sectionReferences.append(membershipKey(section, table), item);
+                        continue;
+                    }
                     String id = item.path("id").asText("");
                     require(!id.isBlank());
                     references.append(id, JSON.getNodeFactory().textNode(id));
+                    sectionReferences.append(
+                            membershipKey(section, id), JSON.getNodeFactory().textNode(id));
                     if (section == SemanticEvidenceStore.Section.EVIDENCE) {
                         evidence.append(id, item);
                     }
+                    indexPhysical(section, item);
                 }
             }
             require(parser.nextToken() == null);
         } catch (IOException failure) {
             throw invalidBundle();
         }
+    }
+
+    private void indexPhysical(SemanticEvidenceStore.Section section, JsonNode item) {
+        switch (section) {
+            case METADATA_TABLES -> appendPhysicalTable(item.path("table"));
+            case METADATA_COLUMNS -> appendPhysicalEndpoint(item.path("column"));
+            case RELATIONSHIPS, DERIVED_RELATIONSHIPS, NAMING_EVIDENCE -> {
+                appendPhysicalEndpoint(item.path("source"));
+                appendPhysicalEndpoint(item.path("target"));
+            }
+            case LINEAGE, DERIVED_LINEAGE -> {
+                appendPhysicalEndpoint(item.path("sources"));
+                appendPhysicalEndpoint(item.path("source"));
+                appendPhysicalEndpoint(item.path("target"));
+            }
+            case EVENT_CANDIDATES -> {
+                appendPhysicalEndpoint(item.path("inputEndpoints"));
+                appendPhysicalEndpoint(item.path("outputEndpoints"));
+            }
+            default -> {
+                // This section carries references but no typed physical endpoints.
+            }
+        }
+    }
+
+    private void appendPhysicalTable(JsonNode value) {
+        if (value.isTextual() && !value.asText().isBlank()) {
+            String identity = normalized(value.asText());
+            physicalTables.append(identity, JSON.getNodeFactory().textNode(identity));
+        }
+    }
+
+    private void appendPhysicalEndpoint(JsonNode value) {
+        if (value.isArray()) {
+            value.forEach(this::appendPhysicalEndpoint);
+            return;
+        }
+        if (value.isTextual() && !value.asText().isBlank()) {
+            String identity = normalized(value.asText());
+            physicalEndpoints.append(identity, JSON.getNodeFactory().textNode(identity));
+        }
+    }
+
+    private String membershipKey(SemanticEvidenceStore.Section section, String reference) {
+        return section.wireName() + "\u0000" + reference;
+    }
+
+    private String normalized(String value) {
+        return value == null ? "" : value.strip();
     }
 
     private SemanticEvidenceStore.Section section(String wireName) {
@@ -130,7 +237,8 @@ public final class SemanticReconstructedEvidenceLookup implements SemanticEviden
         }
         closed = true;
         RuntimeException failure = null;
-        for (AutoCloseable store : new AutoCloseable[] {references, evidence}) {
+        for (AutoCloseable store : new AutoCloseable[] {
+                references, sectionReferences, evidence, physicalTables, physicalEndpoints}) {
             try {
                 store.close();
             } catch (Exception error) {

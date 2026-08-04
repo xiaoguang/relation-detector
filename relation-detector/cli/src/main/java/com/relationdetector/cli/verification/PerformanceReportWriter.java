@@ -139,7 +139,7 @@ final class PerformanceReportWriter {
                     continue;
                 }
                 ObjectNode item = ReleaseVerificationJson.MAPPER.createObjectNode();
-                item.put("name", Path.of(line.substring(separator + 1)).getFileName().toString());
+                item.put("name", line.substring(separator + 1));
                 item.put("sha256", line.substring(0, separator));
                 items.add(item);
             }

@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 
 /**
@@ -49,8 +49,8 @@ final class BatchManifestLoader {
         } catch (JsonProcessingException error) {
             throw new IllegalArgumentException("invalid batch manifest " + manifest + ": " + error.getMessage(), error);
         }
-        if (document == null || document.version != 1) {
-            throw new IllegalArgumentException("batch manifest version must be 1: " + manifest);
+        if (document == null || document.version != 2) {
+            throw new IllegalArgumentException("batch manifest version must be 2: " + manifest);
         }
         Execution execution = document.execution == null ? new Execution() : document.execution;
         int caseParallelism = positive(execution.caseParallelism, 4, "execution.caseParallelism");
@@ -66,8 +66,6 @@ final class BatchManifestLoader {
 
         List<BatchCase> cases = new ArrayList<>();
         Set<String> ids = new HashSet<>();
-        Set<Path> outputs = new HashSet<>();
-        outputs.add(report);
         for (CaseDocument raw : document.cases) {
             if (raw == null || raw.id == null || !CASE_ID.matcher(raw.id).matches()) {
                 throw new IllegalArgumentException("batch case id must match " + CASE_ID.pattern());
@@ -78,27 +76,18 @@ final class BatchManifestLoader {
             if (raw.config == null || raw.config.isBlank()) {
                 throw new IllegalArgumentException("batch case " + raw.id + " is missing config");
             }
-            if (raw.output == null || raw.output.isBlank()) {
-                throw new IllegalArgumentException("batch case " + raw.id + " is missing output");
+            boolean hasOutput = raw.output != null && !raw.output.isBlank();
+            boolean hasOutputBundle = raw.outputBundle != null && !raw.outputBundle.isBlank();
+            if (hasOutput == hasOutputBundle) {
+                throw new IllegalArgumentException(
+                        "batch case " + raw.id + " must define exactly one output or outputBundle");
             }
             Path config = resolve(base, raw.config);
-            Path output = resolve(base, raw.output);
-            Path directOutput = raw.directOutput == null || raw.directOutput.isBlank()
-                    ? null
-                    : resolve(base, raw.directOutput);
-            claimOutput(outputs, output);
-            if (directOutput != null) {
-                claimOutput(outputs, directOutput);
-            }
-            cases.add(new BatchCase(raw.id, config, output, directOutput));
+            Path output = hasOutput ? resolve(base, raw.output) : null;
+            Path outputBundle = hasOutputBundle ? resolve(base, raw.outputBundle) : null;
+            cases.add(new BatchCase(raw.id, config, output, outputBundle));
         }
         return new BatchManifest(caseParallelism, maxWorkerThreads, failurePolicy, report, cases);
-    }
-
-    private static void claimOutput(Set<Path> outputs, Path output) {
-        if (!outputs.add(output)) {
-            throw new IllegalArgumentException("output path is used more than once: " + output);
-        }
     }
 
     private static Path resolve(Path base, String value) {
@@ -142,6 +131,6 @@ final class BatchManifestLoader {
         public String id;
         public String config;
         public String output;
-        public String directOutput;
+        public String outputBundle;
     }
 }

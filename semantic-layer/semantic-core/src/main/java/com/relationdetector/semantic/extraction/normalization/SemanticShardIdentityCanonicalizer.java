@@ -234,7 +234,8 @@ public final class SemanticShardIdentityCanonicalizer {
                 ObjectNode entity = canonicalEntities.get(identityKey);
                 ObjectNode review = entity.objectNode();
                 String entityId = text(entity, "id");
-                review.put("id", StableSemanticId.of("review-potential-semantic-duplicate", entityId));
+                review.put("id", SemanticCanonicalIdentity.review(
+                        entityId, "entities", "POTENTIAL_SEMANTIC_DUPLICATE"));
                 review.put("targetRef", entityId);
                 review.put("targetSection", "entities");
                 review.put("type", "POTENTIAL_SEMANTIC_DUPLICATE");

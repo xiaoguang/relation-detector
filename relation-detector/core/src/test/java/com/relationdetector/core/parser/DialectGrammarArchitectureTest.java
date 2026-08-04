@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.Modifier;
@@ -31,6 +32,9 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.DocTrees;
@@ -284,6 +288,75 @@ class DialectGrammarArchitectureTest {
             }
             assertTrue(offenders.isEmpty(), "Versioned parsers must not import sibling versions: " + offenders);
         }
+    }
+
+    @Test
+    void versionedRoleAdaptersUseTypedPredicatesWithoutClassReflection() throws Exception {
+        Path root = repoRoot();
+        List<Path> sources;
+        try (Stream<Path> stream = Files.walk(root)) {
+            sources = stream.filter(path -> path.toString().endsWith("ParseTreeAdapter.java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/fullgrammar/"))
+                    .filter(path -> path.toString().contains("/v")
+                            || path.getFileName().toString().startsWith("Abstract"))
+                    .toList();
+        }
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertTrue(compiler != null, "JDK compiler is required for role-adapter architecture checks");
+        List<String> offenders = new ArrayList<>();
+        AtomicInteger bindings = new AtomicInteger();
+        try (StandardJavaFileManager files = compiler.getStandardFileManager(null, Locale.ROOT, null)) {
+            JavacTask task = (JavacTask) compiler.getTask(null, files, null,
+                    List.of("-proc:none", "-Xlint:none"), null, files.getJavaFileObjectsFromPaths(sources));
+            for (CompilationUnitTree unit : task.parse()) {
+                Path source = Path.of(unit.getSourceFile().toUri());
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                        String method = invocation.getMethodSelect().toString();
+                        if ((method.equals("role") || method.endsWith(".role"))) {
+                            bindings.incrementAndGet();
+                            if (invocation.getArguments().size() != 2
+                                    || !(invocation.getArguments().get(1) instanceof LambdaExpressionTree lambda)
+                                    || !containsInstanceOf(lambda.getBody())) {
+                                offenders.add(root.relativize(source) + " role binding=" + invocation);
+                            }
+                        }
+                        if (method.endsWith(".isInstance") || method.equals("isInstance")) {
+                            offenders.add(root.relativize(source) + " reflective role match=" + invocation);
+                        }
+                        return super.visitMethodInvocation(invocation, unused);
+                    }
+
+                    @Override
+                    public Void visitIdentifier(IdentifierTree identifier, Void unused) {
+                        if (identifier.getName().contentEquals("Class")) {
+                            offenders.add(root.relativize(source) + " Class entry=" + identifier);
+                        }
+                        return super.visitIdentifier(identifier, unused);
+                    }
+                }.scan(unit, null);
+            }
+        }
+        assertTrue(bindings.get() > 0, "Version adapters must expose typed role bindings");
+        assertTrue(offenders.isEmpty(),
+                "Role adapters must use version-local instanceof predicates without Class reflection: " + offenders);
+    }
+
+    private static boolean containsInstanceOf(Tree tree) {
+        if (tree == null) return false;
+        final boolean[] found = {false};
+        new com.sun.source.util.TreeScanner<Void, Void>() {
+            @Override
+            public Void scan(Tree candidate, Void unused) {
+                if (candidate != null && candidate.getKind() == Tree.Kind.INSTANCE_OF) {
+                    found[0] = true;
+                }
+                return found[0] ? null : super.scan(candidate, unused);
+            }
+        }.scan(tree, null);
+        return found[0];
     }
 
     private boolean concretePackageContract(String text) {
@@ -700,6 +773,22 @@ class DialectGrammarArchitectureTest {
         assertTrue(Files.exists(root.resolve(
                         "core/src/main/java/com/relationdetector/core/log/TypedLogNoiseClassifier.java")),
                 "Native log noise must be classified from typed ROWSET_REFERENCE events");
+    }
+
+    @Test
+    void sqlRelationParserRunnerExposesOnlyTheTwoProductionExecutionShapes() throws IOException {
+        Path root = repoRoot();
+        String runner = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/parser/runtime/SqlRelationParserRunner.java"));
+
+        assertEquals(2, occurrences(runner, "public ParsedSqlRelations parseStructuredAndRelations("),
+                "SQL runner must expose only the two shapes used by StatementExecutionService");
+        assertFalse(runner.contains("public List<RelationshipCandidate> parse("),
+                "relationship-only forwarding API must be removed");
+        assertFalse(runner.contains("public java.util.Optional<StructuredParseResult> parseStructured("),
+                "structured-only forwarding API must be removed");
+        assertFalse(runner.contains("new StructuredRelationshipExtractor();"),
+                "runner must not retain a default extractor used only by compatibility overloads");
     }
 
     @Test

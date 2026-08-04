@@ -1,9 +1,6 @@
 package com.relationdetector.core.parser.antlr;
 
-import java.util.LinkedHashMap;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -17,28 +14,20 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 
-import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
 /**
  * CN: 负责 token-event parser 的 ANTLR lexer/parser 初始化、visible tokens 与 syntax diagnostics，不生成 relationship/lineage。
  * EN: Owns ANTLR lexer/parser setup, visible tokens, and syntax diagnostics for token-event parsers without producing relationship or lineage facts.
- *
- * <p>It also owns dynamic SQL warning creation. It deliberately does not build
- * relationship or lineage events; token-event builders consume the returned
- * tokens and own all business extraction semantics.
+ * It deliberately does not build relationship or lineage events; token-event
+ * builders consume the returned tokens and own all business extraction semantics.
  */
 public final class AntlrSqlParseSupport {
-    private final SqlDialect dialect;
-
-    public AntlrSqlParseSupport(SqlDialect dialect) {
-        this.dialect = dialect;
+    private AntlrSqlParseSupport() {
     }
 
-    public ParsedSql parseAntlr(String sql, SyntaxErrorCounter errors) {
+    public static ParsedSql parseAntlr(String sql, SyntaxErrorCounter errors) {
         return parseAntlr(
                 sql,
                 errors,
@@ -81,62 +70,6 @@ public final class AntlrSqlParseSupport {
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)
                 .toList();
         return new ParsedSql(grammarName, lexerName, parserName, visibleTokens);
-    }
-
-    public java.util.Optional<WarningMessage> detectDynamicSql(SqlStatementRecord statement) {
-        if (!containsDynamicSql(statement.sql())) {
-            return java.util.Optional.empty();
-        }
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("rawStatement", statement.sql());
-        attributes.put("statementSourceType", statement.sourceType().name());
-        attributes.put("dialect", dialect.name());
-        attributes.putAll(statement.attributes());
-        return java.util.Optional.of(WarningMessage.warn(WarningType.PARSE_WARNING,
-                "DYNAMIC_SQL_UNRESOLVED",
-                "dynamic SQL is present but cannot be statically resolved",
-                statement.sourceName(),
-                statement.startLine(),
-                attributes));
-    }
-
-    private boolean containsDynamicSql(String sql) {
-        List<String> words = sqlWords(sql);
-        for (int i = 0; i < words.size(); i++) {
-            String word = words.get(i);
-            if ("prepare".equals(word)) {
-                return true;
-            }
-            if (!"execute".equals(word)) {
-                continue;
-            }
-            String next = i + 1 < words.size() ? words.get(i + 1) : "";
-            if ("function".equals(next) || "procedure".equals(next)) {
-                continue;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private List<String> sqlWords(String sql) {
-        List<String> words = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        for (int i = 0; i < sql.length(); i++) {
-            char ch = sql.charAt(i);
-            if (Character.isLetterOrDigit(ch) || ch == '_') {
-                current.append(Character.toLowerCase(ch));
-                continue;
-            }
-            if (!current.isEmpty()) {
-                words.add(current.toString());
-                current.setLength(0);
-            }
-        }
-        if (!current.isEmpty()) {
-            words.add(current.toString());
-        }
-        return words;
     }
 
     public record ParsedSql(

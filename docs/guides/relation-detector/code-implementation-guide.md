@@ -290,7 +290,7 @@ artifact，因此修改普通 visitor 不会再触发大型 ANTLR 重生成。
 - PostgreSQL live metadata/object/database-DDL 共用 connection catalog + explicit/default schema resolver。
 - database-DDL 是 relationship parser 使用的 structural skeleton，不是完整可回放 declaration。
 - PostgreSQL 的 quoted identifier 规则已经在 `IdentifierRules` 中预留。
-- PostgreSQL JDBC driver 没有内置到项目中，连接真实 PostgreSQL 时需要运行环境提供驱动。
+- PostgreSQL adaptor 已声明 `org.postgresql:postgresql` runtime 依赖；使用 Maven 构建出的运行 classpath 连接真实 PostgreSQL 时会自动包含 PostgreSQL JDBC driver。
 
 ## 3. 关键执行流程
 
@@ -588,7 +588,7 @@ sources:
 
 注意：
 
-- MySQL adaptor 已内置 Connector/J runtime 依赖。PostgreSQL 真实数据库运行时仍需要把 PostgreSQL JDBC driver 放到 classpath，或在 `adaptor-postgres` 中补 runtime dependency。
+- MySQL adaptor 与 PostgreSQL adaptor 都已声明各自 JDBC driver 的 runtime 依赖；使用 Maven 构建出的运行 classpath 会自动包含对应 driver。Oracle 与 SQL Server 的运行时驱动边界仍以各自 adaptor POM 和部署环境为准。
 - MySQL `sources.ddl.fromDatabase: true` 会对 scope 内表执行 `SHOW CREATE TABLE`，解析出的外键/索引 evidence 使用 `DATABASE_DDL`，不同于用户提供的 DDL 文件 `DDL_FILE`。MySQL `SHOW CREATE TABLE` 和 Oracle `DBMS_METADATA.GET_DDL` 在表已枚举但 definition 查询返回零行时输出带表身份的 `DEFINITION_UNAVAILABLE`，不会构造空 definition。
 - 生产环境建议默认关闭 `dataProfile`。
 - 如果 `${DB_PASSWORD}` 环境变量不存在，CLI 会失败并提示缺少环境变量。

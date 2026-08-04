@@ -1,6 +1,9 @@
 package com.relationdetector.oracle.fullgrammar.v21c;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -15,62 +18,156 @@ final class OracleParseTreeAdapter extends AbstractOracleFullGrammarParseTreeAda
                         Symbol.EXISTS, OracleFullGrammarParser.EXISTS, Symbol.LEFT, OracleFullGrammarParser.LEFT,
                         Symbol.RIGHT, OracleFullGrammarParser.RIGHT, Symbol.FULL, OracleFullGrammarParser.FULL,
                         Symbol.CROSS, OracleFullGrammarParser.CROSS, Symbol.EQUAL, OracleFullGrammarParser.EQUALS_OP),
-                role(Role.ROUTINE_BODY, Create_procedure_bodyContext.class, Create_function_bodyContext.class,
-                        Create_triggerContext.class),
-                role(Role.ROUTINE_PARAMETER, ParameterContext.class),
-                role(Role.ROUTINE_PARAMETER_NAME, Parameter_nameContext.class),
-                role(Role.VARIABLE_DECLARATION, Variable_declarationContext.class),
-                role(Role.CREATE_TRIGGER, Create_triggerContext.class),
-                role(Role.DML_EVENT_CLAUSE, Dml_event_clauseContext.class),
-                role(Role.BIND_VARIABLE, Bind_variableContext.class),
-                role(Role.CTE, Subquery_factoring_clauseContext.class),
-                role(Role.CREATE_TABLE, Create_tableContext.class), role(Role.ALTER_TABLE, Alter_tableContext.class),
-                role(Role.COLUMN_DEFINITION, Column_definitionContext.class, Virtual_column_definitionContext.class),
-                role(Role.OUT_OF_LINE_CONSTRAINT, Out_of_line_constraintContext.class),
-                role(Role.FOREIGN_KEY, Foreign_key_clauseContext.class), role(Role.CREATE_INDEX, Create_indexContext.class),
-                role(Role.SELECT_STATEMENT, Select_statementContext.class),
-                role(Role.QUERY_BLOCK, Query_blockContext.class), role(Role.TABLE_REF_AUX, Table_ref_auxContext.class),
-                role(Role.TABLE_REF_INTERNAL, Table_ref_aux_internal_oneContext.class, Table_ref_aux_internal_threContext.class),
-                role(Role.GENERAL_TABLE_REF, General_table_refContext.class),
-                role(Role.SELECTED_TABLEVIEW, Selected_tableviewContext.class), role(Role.JOIN_CLAUSE, Join_clauseContext.class),
-                role(Role.JOIN_ON, Join_on_partContext.class), role(Role.JOIN_USING, Join_using_partContext.class),
-                role(Role.WHERE_CLAUSE, Where_clauseContext.class), role(Role.GROUP_BY_ELEMENT, Group_by_elementsContext.class),
-                role(Role.HAVING_CLAUSE, Having_clauseContext.class),
-                role(Role.LOGICAL_EXPRESSION, Logical_expressionContext.class),
-                role(Role.RELATIONAL_EXPRESSION, Relational_expressionContext.class),
-                role(Role.COMPOUND_EXPRESSION, Compound_expressionContext.class),
-                role(Role.QUANTIFIED_EXPRESSION, Quantified_expressionContext.class),
-                role(Role.UPDATE_STATEMENT, Update_statementContext.class),
-                role(Role.UPDATE_SET_CLAUSE, Column_based_update_set_clauseContext.class),
-                role(Role.SINGLE_TABLE_INSERT, Single_table_insertContext.class),
-                role(Role.MERGE_STATEMENT, Merge_statementContext.class), role(Role.SUBQUERY, SubqueryContext.class),
-                role(Role.COLUMN_REFERENCE, Column_nameContext.class, Table_elementContext.class),
-                role(Role.GENERAL_ELEMENT, General_elementContext.class), role(Role.CASE_EXPRESSION, Case_expressionContext.class),
-                role(Role.FUNCTION_EXPRESSION, String_functionContext.class, Standard_functionContext.class,
-                        Json_functionContext.class, Numeric_function_wrapperContext.class,
-                        Numeric_functionContext.class, Other_functionContext.class),
-                role(Role.CONCATENATION, ConcatenationContext.class),
-                role(Role.DML_TABLE_EXPRESSION, Dml_table_expression_clauseContext.class), role(Role.TABLEVIEW_NAME, Tableview_nameContext.class),
-                role(Role.TABLE_ALIAS, Table_aliasContext.class), role(Role.COLUMN_ALIAS, Column_aliasContext.class),
-                role(Role.PAREN_COLUMN_LIST, Paren_column_listContext.class),
-                role(Role.COLUMN_LIST, Column_listContext.class), role(Role.COLUMN_NAME, Column_nameContext.class),
-                role(Role.REFERENCES_CLAUSE, References_clauseContext.class), role(Role.TABLE_INDEX_CLAUSE, Table_index_clauseContext.class),
-                role(Role.INDEX_EXPRESSION, Index_exprContext.class), role(Role.INLINE_CONSTRAINT, Inline_constraintContext.class),
-                role(Role.SCHEMA_NAME, Schema_nameContext.class), role(Role.IDENTIFIER, IdentifierContext.class),
-                role(Role.QUOTED_STRING, Quoted_stringContext.class), role(Role.SELECT_LIST_ELEMENT, Select_list_elementsContext.class),
-                role(Role.SELECTED_LIST, Selected_listContext.class), role(Role.EXPRESSION, ExpressionContext.class),
-                role(Role.SIMPLE_CASE_EXPRESSION, Simple_case_expressionContext.class), role(Role.SEARCHED_CASE_EXPRESSION, Searched_case_expressionContext.class),
-                role(Role.CASE_WHEN_PART, Case_when_part_expressionContext.class), role(Role.CASE_ELSE_PART, Case_else_part_expressionContext.class),
-                role(Role.TABLE_REF_INTERNAL_WRAPPER, Table_ref_aux_internalContext.class), role(Role.GENERAL_ELEMENT_PART, General_element_partContext.class),
-                role(Role.FUNCTION_ARGUMENT, Function_argumentContext.class), role(Role.WINDOW_CLAUSE, Over_clauseContext.class),
-                role(Role.QUERY_NAME, Query_nameContext.class),
-                role(Role.FROM_CLAUSE, From_clauseContext.class), role(Role.HIERARCHICAL_QUERY_CLAUSE, Hierarchical_query_clauseContext.class),
-                role(Role.GROUP_BY_CLAUSE, Group_by_clauseContext.class), role(Role.MODEL_CLAUSE, Model_clauseContext.class),
-                role(Role.RELATIONAL_OPERATOR, Relational_operatorContext.class), role(Role.IN_ELEMENTS, In_elementsContext.class),
-                role(Role.SELECT_ONLY_STATEMENT, Select_only_statementContext.class), role(Role.INSERT_INTO_CLAUSE, Insert_into_clauseContext.class),
-                role(Role.MERGE_UPDATE_CLAUSE, Merge_update_clauseContext.class), role(Role.MERGE_ELEMENT, Merge_elementContext.class),
-                role(Role.CONDITION, ConditionContext.class), role(Role.TABLE_NAME, Table_nameContext.class),
-                role(Role.FOREIGN_KEY_CLAUSE, Foreign_key_clauseContext.class));
+                role(Role.ROUTINE_BODY, ctx -> ctx instanceof Create_procedure_bodyContext
+                        || ctx instanceof Create_function_bodyContext
+                        || ctx instanceof Create_triggerContext),
+                role(Role.ROUTINE_PARAMETER, ctx -> ctx instanceof ParameterContext),
+                role(Role.ROUTINE_PARAMETER_NAME, ctx -> ctx instanceof Parameter_nameContext),
+                role(Role.VARIABLE_DECLARATION, ctx -> ctx instanceof Variable_declarationContext),
+                role(Role.CREATE_TRIGGER, ctx -> ctx instanceof Create_triggerContext),
+                role(Role.DML_EVENT_CLAUSE, ctx -> ctx instanceof Dml_event_clauseContext),
+                role(Role.BIND_VARIABLE, ctx -> ctx instanceof Bind_variableContext),
+                role(Role.CTE, ctx -> ctx instanceof Subquery_factoring_clauseContext),
+                role(Role.CREATE_TABLE, ctx -> ctx instanceof Create_tableContext), role(Role.ALTER_TABLE, ctx -> ctx instanceof Alter_tableContext),
+                role(Role.COLUMN_DEFINITION, ctx -> ctx instanceof Column_definitionContext
+                        || ctx instanceof Virtual_column_definitionContext),
+                role(Role.OUT_OF_LINE_CONSTRAINT, ctx -> ctx instanceof Out_of_line_constraintContext),
+                role(Role.FOREIGN_KEY, ctx -> ctx instanceof Foreign_key_clauseContext), role(Role.CREATE_INDEX, ctx -> ctx instanceof Create_indexContext),
+                role(Role.SELECT_STATEMENT, ctx -> ctx instanceof Select_statementContext),
+                role(Role.QUERY_BLOCK, ctx -> ctx instanceof Query_blockContext), role(Role.TABLE_REF_AUX, ctx -> ctx instanceof Table_ref_auxContext),
+                role(Role.TABLE_REF_INTERNAL, ctx -> ctx instanceof Table_ref_aux_internal_oneContext
+                        || ctx instanceof Table_ref_aux_internal_threContext),
+                role(Role.GENERAL_TABLE_REF, ctx -> ctx instanceof General_table_refContext),
+                role(Role.SELECTED_TABLEVIEW, ctx -> ctx instanceof Selected_tableviewContext), role(Role.JOIN_CLAUSE, ctx -> ctx instanceof Join_clauseContext),
+                role(Role.JOIN_ON, ctx -> ctx instanceof Join_on_partContext), role(Role.JOIN_USING, ctx -> ctx instanceof Join_using_partContext),
+                role(Role.WHERE_CLAUSE, ctx -> ctx instanceof Where_clauseContext), role(Role.GROUP_BY_ELEMENT, ctx -> ctx instanceof Group_by_elementsContext),
+                role(Role.HAVING_CLAUSE, ctx -> ctx instanceof Having_clauseContext),
+                role(Role.LOGICAL_EXPRESSION, ctx -> ctx instanceof Logical_expressionContext),
+                role(Role.RELATIONAL_EXPRESSION, ctx -> ctx instanceof Relational_expressionContext),
+                role(Role.COMPOUND_EXPRESSION, ctx -> ctx instanceof Compound_expressionContext),
+                role(Role.QUANTIFIED_EXPRESSION, ctx -> ctx instanceof Quantified_expressionContext),
+                role(Role.UPDATE_STATEMENT, ctx -> ctx instanceof Update_statementContext),
+                role(Role.UPDATE_SET_CLAUSE, ctx -> ctx instanceof Column_based_update_set_clauseContext),
+                role(Role.SINGLE_TABLE_INSERT, ctx -> ctx instanceof Single_table_insertContext),
+                role(Role.MERGE_STATEMENT, ctx -> ctx instanceof Merge_statementContext), role(Role.SUBQUERY, ctx -> ctx instanceof SubqueryContext),
+                role(Role.COLUMN_REFERENCE, ctx -> ctx instanceof Column_nameContext
+                        || ctx instanceof Table_elementContext),
+                role(Role.GENERAL_ELEMENT, ctx -> ctx instanceof General_elementContext), role(Role.CASE_EXPRESSION, ctx -> ctx instanceof Case_expressionContext),
+                role(Role.FUNCTION_EXPRESSION, ctx -> ctx instanceof String_functionContext
+                        || ctx instanceof Standard_functionContext
+                        || ctx instanceof Json_functionContext
+                        || ctx instanceof Numeric_function_wrapperContext
+                        || ctx instanceof Numeric_functionContext
+                        || ctx instanceof Other_functionContext),
+                role(Role.CONCATENATION, ctx -> ctx instanceof ConcatenationContext),
+                role(Role.DML_TABLE_EXPRESSION, ctx -> ctx instanceof Dml_table_expression_clauseContext), role(Role.TABLEVIEW_NAME, ctx -> ctx instanceof Tableview_nameContext),
+                role(Role.TABLE_ALIAS, ctx -> ctx instanceof Table_aliasContext), role(Role.COLUMN_ALIAS, ctx -> ctx instanceof Column_aliasContext),
+                role(Role.PAREN_COLUMN_LIST, ctx -> ctx instanceof Paren_column_listContext),
+                role(Role.COLUMN_LIST, ctx -> ctx instanceof Column_listContext), role(Role.COLUMN_NAME, ctx -> ctx instanceof Column_nameContext),
+                role(Role.REFERENCES_CLAUSE, ctx -> ctx instanceof References_clauseContext), role(Role.TABLE_INDEX_CLAUSE, ctx -> ctx instanceof Table_index_clauseContext),
+                role(Role.INDEX_EXPRESSION, ctx -> ctx instanceof Index_exprContext), role(Role.INLINE_CONSTRAINT, ctx -> ctx instanceof Inline_constraintContext),
+                role(Role.SCHEMA_NAME, ctx -> ctx instanceof Schema_nameContext), role(Role.IDENTIFIER, ctx -> ctx instanceof IdentifierContext),
+                role(Role.QUOTED_STRING, ctx -> ctx instanceof Quoted_stringContext), role(Role.SELECT_LIST_ELEMENT, ctx -> ctx instanceof Select_list_elementsContext),
+                role(Role.SELECTED_LIST, ctx -> ctx instanceof Selected_listContext), role(Role.EXPRESSION, ctx -> ctx instanceof ExpressionContext),
+                role(Role.SIMPLE_CASE_EXPRESSION, ctx -> ctx instanceof Simple_case_expressionContext), role(Role.SEARCHED_CASE_EXPRESSION, ctx -> ctx instanceof Searched_case_expressionContext),
+                role(Role.CASE_WHEN_PART, ctx -> ctx instanceof Case_when_part_expressionContext), role(Role.CASE_ELSE_PART, ctx -> ctx instanceof Case_else_part_expressionContext),
+                role(Role.TABLE_REF_INTERNAL_WRAPPER, ctx -> ctx instanceof Table_ref_aux_internalContext), role(Role.GENERAL_ELEMENT_PART, ctx -> ctx instanceof General_element_partContext),
+                role(Role.FUNCTION_ARGUMENT, ctx -> ctx instanceof Function_argumentContext), role(Role.WINDOW_CLAUSE, ctx -> ctx instanceof Over_clauseContext),
+                role(Role.QUERY_NAME, ctx -> ctx instanceof Query_nameContext),
+                role(Role.FROM_CLAUSE, ctx -> ctx instanceof From_clauseContext), role(Role.HIERARCHICAL_QUERY_CLAUSE, ctx -> ctx instanceof Hierarchical_query_clauseContext),
+                role(Role.GROUP_BY_CLAUSE, ctx -> ctx instanceof Group_by_clauseContext), role(Role.MODEL_CLAUSE, ctx -> ctx instanceof Model_clauseContext),
+                role(Role.RELATIONAL_OPERATOR, ctx -> ctx instanceof Relational_operatorContext), role(Role.IN_ELEMENTS, ctx -> ctx instanceof In_elementsContext),
+                role(Role.SELECT_ONLY_STATEMENT, ctx -> ctx instanceof Select_only_statementContext), role(Role.INSERT_INTO_CLAUSE, ctx -> ctx instanceof Insert_into_clauseContext),
+                role(Role.MERGE_UPDATE_CLAUSE, ctx -> ctx instanceof Merge_update_clauseContext), role(Role.MERGE_ELEMENT, ctx -> ctx instanceof Merge_elementContext),
+                role(Role.CONDITION, ctx -> ctx instanceof ConditionContext), role(Role.TABLE_NAME, ctx -> ctx instanceof Table_nameContext),
+                role(Role.FOREIGN_KEY_CLAUSE, ctx -> ctx instanceof Foreign_key_clauseContext));
+    }
+
+    @Override
+    public Optional<GeneralElementView> generalElementView(ParseTree tree) {
+        if (!(tree instanceof General_elementContext element)) {
+            return Optional.empty();
+        }
+        if (hasRecoveredPeriodAlias(element)) {
+            return Optional.of(GeneralElementView.suppressed());
+        }
+        List<General_element_partContext> parts = new ArrayList<>();
+        if (!collectGeneralElementParts(element, parts) || parts.isEmpty()) {
+            return Optional.of(GeneralElementView.suppressed());
+        }
+        List<String> nameParts = new ArrayList<>();
+        List<ParseTree> argumentExpressions = new ArrayList<>();
+        boolean function = false;
+        for (int partIndex = 0; partIndex < parts.size(); partIndex++) {
+            General_element_partContext part = parts.get(partIndex);
+            if (part.id_expression() == null
+                    || part.link_name() != null
+                    || isRecoveredPeriodIdentifier(part.id_expression())) {
+                return Optional.of(GeneralElementView.suppressed());
+            }
+            String name = part.id_expression().getText();
+            if (name == null || name.isBlank()) {
+                return Optional.of(GeneralElementView.suppressed());
+            }
+            nameParts.add(name);
+            List<Function_argumentContext> functionArguments = part.function_argument();
+            if (functionArguments.size() > 1
+                    || (!functionArguments.isEmpty() && partIndex != parts.size() - 1)) {
+                return Optional.of(GeneralElementView.suppressed());
+            }
+            for (Function_argumentContext arguments : functionArguments) {
+                function = true;
+                for (ArgumentContext argument : arguments.argument()) {
+                    if (argument.expression() == null) {
+                        return Optional.of(GeneralElementView.suppressed());
+                    }
+                    argumentExpressions.add(argument.expression());
+                }
+            }
+        }
+        return Optional.of(new GeneralElementView(
+                function ? GeneralElementKind.FUNCTION : GeneralElementKind.COLUMN_CANDIDATE,
+                nameParts,
+                argumentExpressions));
+    }
+
+    private boolean isRecoveredPeriodIdentifier(Id_expressionContext identifier) {
+        Regular_idContext regular = identifier.regular_id();
+        Non_reserved_keywords_in_12cContext keyword = regular == null
+                ? null : regular.non_reserved_keywords_in_12c();
+        return keyword != null && keyword.PERIOD() != null;
+    }
+
+    private boolean hasRecoveredPeriodAlias(General_elementContext element) {
+        for (ParseTree ancestor = element.getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+            if (ancestor instanceof Select_list_elementsContext item) {
+                Column_aliasContext alias = item.column_alias();
+                IdentifierContext identifier = alias == null ? null : alias.identifier();
+                return identifier != null
+                        && identifier.id_expression() != null
+                        && isRecoveredPeriodIdentifier(identifier.id_expression());
+            }
+        }
+        return false;
+    }
+
+    private boolean collectGeneralElementParts(
+            General_elementContext element,
+            List<General_element_partContext> result
+    ) {
+        General_elementContext nested = element.general_element();
+        if (nested != null && !collectGeneralElementParts(nested, result)) {
+            return false;
+        }
+        List<General_element_partContext> direct = element.general_element_part();
+        if (!element.PERIOD().isEmpty() && direct.isEmpty()) {
+            return false;
+        }
+        if (nested == null && direct.isEmpty()) {
+            return false;
+        }
+        result.addAll(direct);
+        return true;
     }
 
     @Override

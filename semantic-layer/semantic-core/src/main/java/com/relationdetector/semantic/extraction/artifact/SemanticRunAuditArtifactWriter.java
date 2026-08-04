@@ -1,6 +1,6 @@
 package com.relationdetector.semantic.extraction.artifact;
 
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionResult;
+import com.relationdetector.semantic.extraction.runtime.SemanticModelCallResult;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
@@ -28,19 +28,9 @@ public final class SemanticRunAuditArtifactWriter {
     public void writeShard(
             Path output,
             String shardId,
-            SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result,
-            JsonNode normalized
-    ) {
-        writeShard(output, shardId, null, prompt, result, normalized);
-    }
-
-    public void writeShard(
-            Path output,
-            String shardId,
             Path externalAuditSidecar,
             SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result,
+            SemanticModelCallResult result,
             JsonNode normalized
     ) {
         Path parent = output.resolve("shards");
@@ -61,51 +51,39 @@ public final class SemanticRunAuditArtifactWriter {
                 });
     }
 
-    public void writeReconciliationWithResult(
-            Path output,
-            SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result,
-            JsonNode patch
-    ) {
-        writeReconciliation(output, prompt, result, patch, true);
-    }
-
     public void writeReconciliationPatch(
             Path output,
             SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result,
+            SemanticModelCallResult result,
             JsonNode patch
-    ) {
-        writeReconciliation(output, prompt, result, patch, false);
-    }
-
-    private void writeReconciliation(
-            Path output,
-            SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result,
-            JsonNode patch,
-            boolean includeNormalizedResult
     ) {
         Path target = output.resolve("reconciliation");
         Path temporary = output.resolve(".reconciliation.tmp-" + UUID.randomUUID());
         files.writeDirectoryAtomically(temporary, target, directory -> {
             writePromptArtifacts(directory, prompt, result, patch, "patch.json");
-            if (includeNormalizedResult) {
-                files.writeJson(directory.resolve("semantic-extraction-result.json"), patch);
-            }
         });
     }
 
     private void writePromptArtifacts(
             Path directory,
             SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result,
+            SemanticModelCallResult result,
             JsonNode normalized,
             String normalizedFileName
     ) {
-        requests.writeRequestOnly(directory, prompt, result.requestJson());
-        files.writeText(directory.resolve("semantic-extraction-response.json"), result.responseJson());
-        files.writeText(directory.resolve("semantic-extraction-result-raw.json"), result.outputText());
+        requests.writePromptArtifacts(directory, prompt);
+        files.copyFile(
+                result.request().path(),
+                directory.resolve("semantic-extraction-request.json"),
+                "failed to persist semantic model request");
+        files.copyFile(
+                result.response().path(),
+                directory.resolve("semantic-extraction-response.json"),
+                "failed to persist semantic model response");
+        files.copyFile(
+                result.output().path(),
+                directory.resolve("semantic-extraction-result-raw.json"),
+                "failed to persist semantic model output");
         files.writeJson(directory.resolve(normalizedFileName), normalized);
     }
 }

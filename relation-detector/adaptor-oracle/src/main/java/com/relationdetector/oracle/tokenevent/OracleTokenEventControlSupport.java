@@ -124,17 +124,23 @@ abstract class OracleTokenEventControlSupport extends OracleTokenEventExpression
 
     protected OracleExpressionAnalysis controlOnlyAnalysis(OracleRelationSqlParser.ExpressionContext expression) {
         if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+            OracleRelationSqlParser.QuerySpecificationContext query =
+                    scalarSubquery.selectStatement().querySpecification();
             OracleExpressionAnalysis control = scalarSubqueryContext(scalarSubquery.selectStatement());
-            List<OracleRelationSqlParser.SelectItemContext> items =
-                    scalarSubquery.selectStatement().querySpecification().selectList().selectItem();
-            if (items.size() == 1 && items.get(0).expression() != null) {
-                OracleExpressionAnalysis projectionControl = controlOnlyAnalysis(items.get(0).expression());
-                if (!projectionControl.sources().isEmpty()) {
-                    control = OracleExpressionAnalysis.combine(
-                            LineageTransformClassifier.dominant(
-                                    control.transform(), projectionControl.transform()),
-                            LineageFlowKind.CONTROL, control, projectionControl);
+            queryScopes.push(scopeFor(query));
+            try {
+                List<OracleRelationSqlParser.SelectItemContext> items = query.selectList().selectItem();
+                if (items.size() == 1 && items.get(0).expression() != null) {
+                    OracleExpressionAnalysis projectionControl = controlOnlyAnalysis(items.get(0).expression());
+                    if (!projectionControl.sources().isEmpty()) {
+                        control = OracleExpressionAnalysis.combine(
+                                LineageTransformClassifier.dominant(
+                                        control.transform(), projectionControl.transform()),
+                                LineageFlowKind.CONTROL, control, projectionControl);
+                    }
                 }
+            } finally {
+                queryScopes.pop();
             }
             return new OracleExpressionAnalysis(control.sources(), control.transform(),
                     LineageFlowKind.CONTROL);

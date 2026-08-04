@@ -2,6 +2,8 @@ package com.relationdetector.semantic.extraction.shard;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticExternalAuditReferences;
 
+import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
+
 import com.relationdetector.semantic.extraction.prompt.SemanticPromptBudgetEstimator;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPromptBuilder;
@@ -51,8 +53,7 @@ public final class SemanticGlobalOwnerPlanner {
             SemanticEvidenceStore evidence,
             Path workspace,
             SemanticShardingOptions options,
-            Path fullBundle,
-            String fullHash,
+            SemanticArtifactRef fullBundle,
             int shardMaxOutputTokens,
             int reconciliationMaxOutputTokens
     ) {
@@ -66,7 +67,7 @@ public final class SemanticGlobalOwnerPlanner {
             inventoryRoots(index, resolved.maxInputTokens(), roots, tables, edges);
             Path assignments = assignComponents(workspace, roots, tables, edges);
             return publishShards(
-                    index, workspace, assignments, resolved, fullBundle, fullHash,
+                    index, workspace, assignments, resolved, fullBundle,
                     shardMaxOutputTokens, reconciliationMaxOutputTokens);
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to plan global semantic owners", failure);
@@ -145,8 +146,7 @@ public final class SemanticGlobalOwnerPlanner {
             Path workspace,
             Path assignments,
             SemanticShardingOptions options,
-            Path fullBundle,
-            String fullHash,
+            SemanticArtifactRef fullBundle,
             int shardMaxOutputTokens,
             int reconciliationMaxOutputTokens
     ) throws IOException {
@@ -170,14 +170,12 @@ public final class SemanticGlobalOwnerPlanner {
             Path manifest = writeOwnerManifest(index, workspace, owners);
             return new SemanticRunPlan(
                     fullBundle,
-                    fullHash,
                     shards,
                     options.reconcile(),
                     options.maxInputTokens(),
                     shardMaxOutputTokens,
                     reconciliationMaxOutputTokens,
-                    manifest,
-                    sha256(manifest));
+                    artifact(manifest));
         } finally {
             owners.close();
         }
@@ -319,11 +317,15 @@ public final class SemanticGlobalOwnerPlanner {
             SemanticExternalAuditReferences.write(
                     SemanticExternalAuditReferences.sidecar(finalPath),
                     draft.externalAuditRefs());
+            SemanticArtifactRef bundleRef = artifact(finalPath);
+            SemanticArtifactRef sidecarRef = artifact(
+                    SemanticExternalAuditReferences.sidecar(finalPath));
             Files.deleteIfExists(draft.path());
             result.add(new SemanticShardDescriptor(
                     draft.id(),
                     draft.ownerKey(),
-                    finalPath,
+                    bundleRef,
+                    sidecarRef,
                     estimate,
                     ownedFacts.size(),
                     ownedCandidates.size()));
@@ -370,11 +372,12 @@ public final class SemanticGlobalOwnerPlanner {
                 path, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
     }
 
-    private String sha256(Path path) {
+    private SemanticArtifactRef artifact(Path path) {
         try {
-            return SemanticFileDigest.compute(path).sha256();
+            SemanticFileDigest.Digest digest = SemanticFileDigest.computeNoFollow(path);
+            return new SemanticArtifactRef(path, digest.bytes(), digest.sha256());
         } catch (IOException failure) {
-            throw new ScanResultContractException("failed to hash semantic owner manifest", failure);
+            throw new ScanResultContractException("failed to hash semantic plan artifact", failure);
         }
     }
 

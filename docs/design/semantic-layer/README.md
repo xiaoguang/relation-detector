@@ -115,13 +115,15 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | `SEM-KG-ARTIFACT-01` | `MATCHED` | KG记录、stable ID和跨文件evidence closure在隐藏staging中完整校验；FULL和DIGEST_ONLY都只在全部文件及digest成功后以目录级atomic move一次发布。晚期失败不产生正式目标，已有目标不会被覆盖。 |
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
-| `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review都使用长度分隔canonical identity；review先规范化section，ID使用`targetSection + targetRef + type`且不包含可变reason。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | 全部formal semantic ID由canonical content派生；模型`id`只作section-scoped临时alias。entity refs先重写，其他section与review随后canonicalize，数组、alias和shard顺序不影响正式ID，冲突内容明确失败。 |
 | `SEM-CANDIDATE-01` | `MATCHED` | 完整bundle保留全部typed deterministic candidates；名称驱动的`METRIC_SOURCE`与未使用review limit分支已删除，正式metric仍必须由证据闭合的semantic normalization产生。 |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整磁盘store全局归并event并建立typed component、stable-root closure、唯一owner与overlap；raw-byte仅控制I/O window，不影响event、owner、shard或KG。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard model output要求owned grounding；reconciliation只接受冲突variant选择和既有对象rename，不能新增对象、relation、fact或evidence。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`与自动分片共用owner-aware入口；bundle必须携带合法`shardContext`，owned/overlap refs唯一、互斥且存在，输出对象必须由当前片owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | shard的完整owned/overlap prompt与reconciliation的冲突闭包prompt都使用带margin的确定性估算，并在模型调用前应用同一`maxInputTokens`；无关merged summary不进入协调请求。等于门限保留，manifest记录estimated tokens且不宣称exact。 |
-| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | API路径按shard/reconciliation输出预算调用模型；Codex request index v2和manifest也保存两类输出门限，completion在物化外部结果前分别执行对应门限。v1请求包可重建但不能完成正式run。 |
+| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | Codex和direct model-client均以固定path的有界artifact交换request/response/output，writer独立校验大小、hash、JSON、usage和phase门限。OpenAI 2xx envelope在`1 MiB + 32 × maxOutputTokens`上限内流式落盘，错误body不物化或进入错误文本。 |
+| `SEM-REQUEST-PACKAGE-01` | `MATCHED` | v1/v2重建均在物化前应用可信index/shard/count/token/path/size/hash/JSON/line/gzip门限，owner与sidecar通过磁盘索引逐记录处理；section/canonical digest及owner coverage全部通过后才原子发布。 |
+| `SEM-FINAL-CLOSURE-01` | `MATCHED` | plan的full bundle、owner manifest、shard bundle和sidecar均以path/bytes/sha256绑定，首次render/model前构造不变快照。final write前重新校验evidence、owned grounding、candidate section、完整catalog/schema table/column身份及semantic/review refs闭包。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | staging在任何payload前原子写`IN_PROGRESS`；模式成功后原子替换为`AWAITING_MODEL_RESULTS/REQUESTS_READY/COMPLETE`并发布，普通失败写`FAILED`。若终态写入自身失败则保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |

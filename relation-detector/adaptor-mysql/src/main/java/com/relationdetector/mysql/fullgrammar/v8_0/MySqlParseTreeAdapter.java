@@ -20,25 +20,32 @@ final class MySqlParseTreeAdapter extends AbstractFullGrammarParseTreeAdapter
         implements MySqlExpressionContextAdapter {
     MySqlParseTreeAdapter() {
         super(
-                role(Role.COLUMN_REFERENCE, ColumnRefContext.class, SimpleExprColumnRefContext.class),
-                role(Role.CASE_EXPRESSION, SimpleExprCaseContext.class, CaseValueExpressionContext.class,
-                        CaseStatementContext.class),
-                role(Role.CASE_WHEN, WhenExpressionContext.class),
-                role(Role.AGGREGATE_FUNCTION, SumExprContext.class),
-                role(Role.WINDOW_FUNCTION, WindowFunctionCallContext.class, WindowingClauseContext.class),
-                role(Role.CONCAT_EXPRESSION, SimpleExprConcatContext.class),
-                role(Role.FUNCTION_CALL, FunctionCallContext.class, RuntimeFunctionCallContext.class),
-                role(Role.QUERY_BOUNDARY, SelectStatementContext.class, QueryExpressionContext.class,
-                        QueryExpressionParensContext.class, QueryExpressionWithOptLockingClausesContext.class,
-                        QuerySpecificationContext.class, SubqueryContext.class, SimpleExprSubQueryContext.class),
-                role(Role.SCALAR_SUBQUERY, SimpleExprSubQueryContext.class, SubqueryContext.class,
-                        QueryExpressionParensContext.class),
-                role(Role.SELECT_TARGET_LIST, SelectItemListContext.class),
-                role(Role.SELECT_TARGET_ITEM, SelectItemContext.class),
-                role(Role.FROM_CLAUSE, FromClauseContext.class),
-                role(Role.TABLE_SOURCE_ITEM, SingleTableContext.class, JoinedTableContext.class),
-                role(Role.EXPRESSION, ExprContext.class, BoolPriContext.class, PredicateContext.class,
-                        PredicateOperationsContext.class, BitExprContext.class, SimpleExprContext.class));
+                role(Role.COLUMN_REFERENCE,
+                        ctx -> ctx instanceof ColumnRefContext || ctx instanceof SimpleExprColumnRefContext),
+                role(Role.CASE_EXPRESSION, ctx -> ctx instanceof SimpleExprCaseContext
+                        || ctx instanceof CaseValueExpressionContext || ctx instanceof CaseStatementContext),
+                role(Role.CASE_WHEN, ctx -> ctx instanceof WhenExpressionContext),
+                role(Role.AGGREGATE_FUNCTION, ctx -> ctx instanceof SumExprContext),
+                role(Role.WINDOW_FUNCTION,
+                        ctx -> ctx instanceof WindowFunctionCallContext || ctx instanceof WindowingClauseContext),
+                role(Role.CONCAT_EXPRESSION, ctx -> ctx instanceof SimpleExprConcatContext),
+                role(Role.FUNCTION_CALL,
+                        ctx -> ctx instanceof FunctionCallContext || ctx instanceof RuntimeFunctionCallContext),
+                role(Role.QUERY_BOUNDARY, ctx -> ctx instanceof SelectStatementContext
+                        || ctx instanceof QueryExpressionContext || ctx instanceof QueryExpressionParensContext
+                        || ctx instanceof QueryExpressionWithOptLockingClausesContext
+                        || ctx instanceof QuerySpecificationContext || ctx instanceof SubqueryContext
+                        || ctx instanceof SimpleExprSubQueryContext),
+                role(Role.SCALAR_SUBQUERY, ctx -> ctx instanceof SimpleExprSubQueryContext
+                        || ctx instanceof SubqueryContext || ctx instanceof QueryExpressionParensContext),
+                role(Role.SELECT_TARGET_LIST, ctx -> ctx instanceof SelectItemListContext),
+                role(Role.SELECT_TARGET_ITEM, ctx -> ctx instanceof SelectItemContext),
+                role(Role.FROM_CLAUSE, ctx -> ctx instanceof FromClauseContext),
+                role(Role.TABLE_SOURCE_ITEM,
+                        ctx -> ctx instanceof SingleTableContext || ctx instanceof JoinedTableContext),
+                role(Role.EXPRESSION, ctx -> ctx instanceof ExprContext || ctx instanceof BoolPriContext
+                        || ctx instanceof PredicateContext || ctx instanceof PredicateOperationsContext
+                        || ctx instanceof BitExprContext || ctx instanceof SimpleExprContext));
     }
 
     @Override

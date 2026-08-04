@@ -17,7 +17,6 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
-import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport;
 import com.relationdetector.core.parser.antlr.AntlrSllParseSupport;
 import com.relationdetector.core.parser.antlr.SqlDialect;
 import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
@@ -37,7 +36,6 @@ import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCo
  */
 public class CommonTokenEventStructuredSqlParser implements StructuredSqlParser {
     private final SqlDialect dialect;
-    private final AntlrSqlParseSupport antlrSupport;
 
     public CommonTokenEventStructuredSqlParser() {
         this(SqlDialect.GENERIC);
@@ -45,7 +43,6 @@ public class CommonTokenEventStructuredSqlParser implements StructuredSqlParser 
 
     public CommonTokenEventStructuredSqlParser(SqlDialect dialect) {
         this.dialect = dialect;
-        this.antlrSupport = new AntlrSqlParseSupport(dialect);
     }
 
     @Override
@@ -65,7 +62,6 @@ public class CommonTokenEventStructuredSqlParser implements StructuredSqlParser 
                 .toList();
         List<StructuredSqlEvent> events = new CommonTokenEventParseTreeVisitor(statement).collect(root);
 
-        antlrSupport.detectDynamicSql(statement).ifPresent(warnings::add);
         warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(
                 statement,
                 root,

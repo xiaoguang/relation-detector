@@ -1,7 +1,5 @@
 package com.relationdetector.semantic.extraction.runtime;
 
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionResult;
-
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
 /**
@@ -10,5 +8,8 @@ import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
  */
 @FunctionalInterface
 public interface SemanticModelClient {
-    public SemanticExtractionResult extract(SemanticExtractionPrompt prompt);
+    SemanticModelCallResult extract(
+            SemanticExtractionPrompt prompt,
+            SemanticModelCallContext context
+    );
 }

@@ -4,7 +4,7 @@ import com.relationdetector.semantic.extraction.shard.SemanticShardDescriptor;
 
 import com.relationdetector.semantic.extraction.shard.SemanticRunPlan;
 
-import com.relationdetector.semantic.extraction.normalization.SemanticExtractionResult;
+import com.relationdetector.semantic.extraction.runtime.SemanticModelCallResult;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticPromptBudgetEstimator;
 
@@ -48,7 +48,7 @@ public final class SemanticRunManifestFactory {
         manifest.put("model", text(model));
         manifest.put("reasoningEffort", text(reasoningEffort));
         manifest.put("retention", retention.wireValue());
-        manifest.put("fullBundleHash", plan.fullBundleHash());
+        manifest.put("fullBundleHash", plan.fullBundle().sha256());
         manifest.put("maxInputTokens", plan.maxInputTokens());
         manifest.put("shardMaxOutputTokens", plan.shardMaxOutputTokens());
         manifest.put("reconciliationMaxOutputTokens", plan.reconciliationMaxOutputTokens());
@@ -133,12 +133,12 @@ public final class SemanticRunManifestFactory {
         return value == null ? "" : value;
     }
 
-    public record ShardAudit(SemanticShardDescriptor shard, SemanticExtractionResult result) {
+    public record ShardAudit(SemanticShardDescriptor shard, SemanticModelCallResult result) {
     }
 
     public record ReconciliationAudit(
             SemanticExtractionPrompt prompt,
-            SemanticExtractionResult result
+            SemanticModelCallResult result
     ) {
     }
 }

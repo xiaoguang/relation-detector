@@ -21,8 +21,10 @@ final class ReleaseVerificationMainTest {
     Path tempDir;
 
     @Test
-    void fingerprintCommandWritesHistoricalTsvShape() throws Exception {
-        Path input = tempDir.resolve("input.json");
+    void fingerprintCommandUsesTheCompleteBundleRelativePathAsLogicalIdentity() throws Exception {
+        Path results = tempDir.resolve("results");
+        Path input = results.resolve("example/result.json");
+        Files.createDirectories(input.getParent());
         Path output = tempDir.resolve("fingerprints.tsv");
         Files.writeString(input, "{\"generatedAt\":\"now\",\"facts\":[{\"id\":\"a\"}]}");
 
@@ -30,11 +32,28 @@ final class ReleaseVerificationMainTest {
                 "fingerprint",
                 "--workspace", tempDir.resolve("work").toString(),
                 "--output", output.toString(),
-                input.toString()
+                results.toString()
         });
 
         String[] fields = Files.readString(output).strip().split("\\t", 2);
         assertEquals("24e6bbe5b9f1e37cdf54f1a4b0d8b56e7f39c13f8044f6f975af3d35c76cf380", fields[0]);
+        assertEquals("example/result.json", fields[1]);
+    }
+
+    @Test
+    void fingerprintCommandPreservesExplicitFileRealPathIdentity() throws Exception {
+        Path input = tempDir.resolve("input.json");
+        Path output = tempDir.resolve("explicit-fingerprints.tsv");
+        Files.writeString(input, "{\"facts\":[]}");
+
+        ReleaseVerificationMain.run(new String[] {
+                "fingerprint",
+                "--workspace", tempDir.resolve("explicit-work").toString(),
+                "--output", output.toString(),
+                input.toString()
+        });
+
+        String[] fields = Files.readString(output).strip().split("\\t", 2);
         assertEquals(input.toRealPath().toString(), fields[1]);
     }
 
@@ -43,8 +62,7 @@ final class ReleaseVerificationMainTest {
         Path results = tempDir.resolve("results");
         Files.createDirectories(results);
         String result = emptyResult();
-        Files.writeString(results.resolve("example.json"), result);
-        Files.writeString(results.resolve("example-derived-fresh.json"), result);
+        writeBundle(results, "example", result, result);
         Path output = tempDir.resolve("result-validation.json");
 
         ReleaseVerificationMain.run(new String[] {
@@ -72,8 +90,7 @@ final class ReleaseVerificationMainTest {
         Path results = tempDir.resolve("missing-summary-field-results");
         Files.createDirectories(results);
         String missing = emptyResult().replace("\"warningCount\": 0", "\"omittedWarningCount\": 0");
-        Files.writeString(results.resolve("example.json"), missing);
-        Files.writeString(results.resolve("example-derived-fresh.json"), missing);
+        writeBundle(results, "example", missing, missing);
 
         assertThrows(ReleaseVerificationException.class,
                 () -> ReleaseVerificationMain.run(new String[] {
@@ -85,13 +102,64 @@ final class ReleaseVerificationMainTest {
     }
 
     @Test
+    void validateResultsRejectsLegacyFlatJsonOutsideBundles() throws Exception {
+        Path results = tempDir.resolve("legacy-flat-results");
+        Files.createDirectories(results);
+        writeBundle(results, "example", emptyResult(), emptyResult());
+        Files.writeString(results.resolve("example-derived-fresh.json"), emptyResult());
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("legacy-flat-validation.json").toString()
+                }));
+    }
+
+    @Test
+    void validateResultsRejectsAliasDirectorySymlinksBeforeSelectingJsonLeaves() throws Exception {
+        Path results = tempDir.resolve("alias-directory-results");
+        Files.createDirectories(results);
+        writeBundle(results, "example", emptyResult(), emptyResult());
+        Path external = tempDir.resolve("external-alias-bundle");
+        writeBundleFiles(external, emptyResult(), emptyResult());
+        Files.createSymbolicLink(results.resolve("alias"), external);
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("alias-directory-validation.json").toString()
+                }));
+    }
+
+    @Test
+    void validateResultsRejectsUnexpectedSymlinksInsideBundles() throws Exception {
+        Path results = tempDir.resolve("bundle-symlink-results");
+        Files.createDirectories(results);
+        writeBundle(results, "example", emptyResult(), emptyResult());
+        Path external = tempDir.resolve("external-link.txt");
+        Files.writeString(external, "outside");
+        Files.createSymbolicLink(results.resolve("example/link.txt"), external);
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "validate-results",
+                        "--result-dir", results.toString(),
+                        "--expected-categories", "1",
+                        "--output", tempDir.resolve("bundle-symlink-validation.json").toString()
+                }));
+    }
+
+    @Test
     void validateResultsAcceptsLinearDerivedEvidenceSets() throws Exception {
         Path results = tempDir.resolve("derived-evidence-set-results");
         Files.createDirectories(results);
         String direct = resultWithExpandedInventory();
         String derived = resultWithDerivedEvidenceSet(false);
-        Files.writeString(results.resolve("example.json"), direct);
-        Files.writeString(results.resolve("example-derived-fresh.json"), derived);
+        writeBundle(results, "example", direct, derived);
 
         ReleaseVerificationMain.run(new String[] {
                 "validate-results",
@@ -105,8 +173,7 @@ final class ReleaseVerificationMainTest {
     void validateResultsRejectsLegacyDerivedRawEvidence() throws Exception {
         Path results = tempDir.resolve("legacy-derived-evidence-results");
         Files.createDirectories(results);
-        Files.writeString(results.resolve("example.json"), resultWithExpandedInventory());
-        Files.writeString(results.resolve("example-derived-fresh.json"),
+        writeBundle(results, "example", resultWithExpandedInventory(),
                 resultWithDerivedEvidenceSet(true));
 
         assertThrows(ReleaseVerificationException.class,
@@ -125,8 +192,7 @@ final class ReleaseVerificationMainTest {
         String missing = emptyResult()
                 .replace("\"status\": \"COMPLETE\"", "\"status\": \"NOT_REQUESTED\"")
                 .replace("\"basis\": \"DDL_DECLARATIONS\"", "\"basis\": \"NONE\"");
-        Files.writeString(results.resolve("example.json"), missing);
-        Files.writeString(results.resolve("example-derived-fresh.json"), missing);
+        writeBundle(results, "example", missing, missing);
 
         assertThrows(ReleaseVerificationException.class,
                 () -> ReleaseVerificationMain.run(new String[] {
@@ -141,8 +207,7 @@ final class ReleaseVerificationMainTest {
     void validateResultsRejectsDifferentDirectAndDerivedInventories() throws Exception {
         Path results = tempDir.resolve("inventory-mismatch-results");
         Files.createDirectories(results);
-        Files.writeString(results.resolve("example.json"), emptyResult());
-        Files.writeString(results.resolve("example-derived-fresh.json"),
+        writeBundle(results, "example", emptyResult(),
                 emptyResult().replace("\"schema\": \"sample_data\"", "\"schema\": \"other\""));
 
         assertThrows(ReleaseVerificationException.class,
@@ -158,8 +223,7 @@ final class ReleaseVerificationMainTest {
     void invalidLastResultNeverWritesPassReport() throws Exception {
         Path results = tempDir.resolve("results");
         Files.createDirectories(results);
-        Files.writeString(results.resolve("example.json"), emptyResult());
-        Files.writeString(results.resolve("example-derived-fresh.json"),
+        writeBundle(results, "example", emptyResult(),
                 emptyResult().replace("\"warningCount\": 0", "\"warningCount\": 1"));
         Path output = tempDir.resolve("result-validation.json");
 
@@ -200,10 +264,10 @@ final class ReleaseVerificationMainTest {
 
     @Test
     void aggregateSampleReportsPreservesExpectedCaseOrder() throws Exception {
-        Path firstOutput = tempDir.resolve("first.json");
-        Path secondOutput = tempDir.resolve("second.json");
-        Files.writeString(firstOutput, "{}");
-        Files.writeString(secondOutput, "{}");
+        Path firstOutput = tempDir.resolve("results/first");
+        Path secondOutput = tempDir.resolve("results/second");
+        writeBundleFiles(firstOutput, "{}", "{}");
+        writeBundleFiles(secondOutput, "{}", "{}");
         Path first = tempDir.resolve("first-report.json");
         Path second = tempDir.resolve("second-report.json");
         Files.writeString(first, batchReport("second", secondOutput));
@@ -220,9 +284,131 @@ final class ReleaseVerificationMainTest {
         });
 
         JsonNode aggregate = JSON.readTree(output.toFile());
+        assertEquals(2, aggregate.path("artifactSchemaVersion").asInt());
         assertEquals("first", aggregate.path("cases").get(0).path("id").asText());
         assertEquals("second", aggregate.path("cases").get(1).path("id").asText());
         assertEquals(2, aggregate.path("summary").path("successCount").asInt());
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsAnIncompleteOutputBundle() throws Exception {
+        Path bundle = tempDir.resolve("results/incomplete");
+        Files.createDirectories(bundle);
+        Files.writeString(bundle.resolve("result.json"), "{}");
+        Path report = tempDir.resolve("incomplete-report.json");
+        Files.writeString(report, batchReport("incomplete", bundle));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("aggregate-incomplete.json").toString(),
+                        "--expected-case", "incomplete",
+                        report.toString()
+                }));
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsSuccessCountThatDoesNotMatchSuccessfulCases() throws Exception {
+        Path bundle = tempDir.resolve("results/example");
+        writeBundleFiles(bundle, "{}", "{}");
+        Path report = tempDir.resolve("wrong-success-count-report.json");
+        Files.writeString(report,
+                batchReport("example", bundle).replace("\"successCount\":1", "\"successCount\":0"));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("wrong-success-count-aggregate.json").toString(),
+                        "--expected-case", "example",
+                        report.toString()
+                }));
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsOutputBundleBoundToAnotherId() throws Exception {
+        Path bundle = tempDir.resolve("results/other");
+        writeBundleFiles(bundle, "{}", "{}");
+        Path report = tempDir.resolve("wrong-bound-bundle-report.json");
+        Files.writeString(report, batchReport("expected", bundle));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("wrong-bound-bundle-aggregate.json").toString(),
+                        "--expected-case", "expected",
+                        report.toString()
+                }));
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsOutputBundleOutsideResultsDirectory() throws Exception {
+        Path bundle = tempDir.resolve("external/example");
+        writeBundleFiles(bundle, "{}", "{}");
+        Path report = tempDir.resolve("external-bundle-report.json");
+        Files.writeString(report, batchReport("example", bundle));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("external-bundle-aggregate.json").toString(),
+                        "--expected-case", "example",
+                        report.toString()
+                }));
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsPathLikeCaseIdThatEscapesResultsDirectory() throws Exception {
+        Path bundle = tempDir.resolve("external-case");
+        writeBundleFiles(bundle, "{}", "{}");
+        Path report = tempDir.resolve("escaping-id-report.json");
+        Files.writeString(report, batchReport("../external-case", bundle));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("escaping-id-aggregate.json").toString(),
+                        "--expected-case", "../external-case",
+                        report.toString()
+                }));
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsSymlinkOutputBundle() throws Exception {
+        Path external = tempDir.resolve("external-symlink-bundle");
+        writeBundleFiles(external, "{}", "{}");
+        Path bundle = tempDir.resolve("results/example");
+        Files.createDirectories(bundle.getParent());
+        Files.createSymbolicLink(bundle, external);
+        Path report = tempDir.resolve("symlink-bundle-report.json");
+        Files.writeString(report, batchReport("example", bundle));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("symlink-bundle-aggregate.json").toString(),
+                        "--expected-case", "example",
+                        report.toString()
+                }));
+    }
+
+    @Test
+    void aggregateSampleReportsRejectsSymlinkBundleLeaf() throws Exception {
+        Path bundle = tempDir.resolve("results/example");
+        Files.createDirectories(bundle);
+        Files.writeString(bundle.resolve("result.json"), "{}");
+        Path external = tempDir.resolve("external-direct.json");
+        Files.writeString(external, "{}");
+        Files.createSymbolicLink(bundle.resolve("direct.json"), external);
+        Path report = tempDir.resolve("symlink-leaf-report.json");
+        Files.writeString(report, batchReport("example", bundle));
+
+        assertThrows(ReleaseVerificationException.class,
+                () -> ReleaseVerificationMain.run(new String[] {
+                        "aggregate-sample",
+                        "--output", tempDir.resolve("symlink-leaf-aggregate.json").toString(),
+                        "--expected-case", "example",
+                        report.toString()
+                }));
     }
 
     @Test
@@ -259,7 +445,7 @@ final class ReleaseVerificationMainTest {
         Path warnings = verification.resolve("warnings.tsv");
         Files.writeString(warnings, "parser\twarningCode\tcount\nexample\tNONE\t0\n");
         Path fingerprints = verification.resolve("fingerprints.tsv");
-        Files.writeString(fingerprints, "aaa\texample.json\nbbb\texample-derived-fresh.json\n");
+        Files.writeString(fingerprints, "aaa\texample/direct.json\nbbb\texample/result.json\n");
         Path semantic = verification.resolve("semantic-fingerprints.tsv");
         Files.copy(fingerprints, semantic);
         Path output = verification.resolve("verification-manifest.json");
@@ -335,8 +521,8 @@ final class ReleaseVerificationMainTest {
                     files:
                       - query.sql
                 """);
-        Files.writeString(results.resolve("example.json"), resultWithCounts(2, 3, 4, 0, 0, 0));
-        Files.writeString(results.resolve("example-derived-fresh.json"),
+        writeBundle(results, "example",
+                resultWithCounts(2, 3, 4, 0, 0, 0),
                 resultWithCounts(2, 3, 4, 5, 6, 7));
         Path summary = tempDir.resolve("summary.tsv");
         Path derived = tempDir.resolve("summary-with-derived.tsv");
@@ -355,7 +541,7 @@ final class ReleaseVerificationMainTest {
         assertEquals(
                 "parser\tfixtures\tSQL / DDL\trelations\tlineage\tnamingEvidence\twarnings\tsources\tjson\n"
                         + "example\t3\t2 / 1\t2\t3\t4\t0\t\t"
-                        + results.resolve("example.json") + "\n",
+                        + results.resolve("example/direct.json") + "\n",
                 Files.readString(summary));
         assertEquals(
                 "Parser\tFix\tSQL/DDL\tRel\tLin\tName\tDiag\tDerRel\tDerLin\tDerName\n"
@@ -427,7 +613,7 @@ final class ReleaseVerificationMainTest {
         Path correctness = tempDir.resolve("correctness.json");
         Files.writeString(correctness, "{\"executed\":1,\"passed\":1}");
         Path fingerprints = tempDir.resolve("fingerprints.tsv");
-        Files.writeString(fingerprints, "abc\t/path/example.json\n");
+        Files.writeString(fingerprints, "abc\tcase/direct.json\n");
         Path maven = tempDir.resolve("maven.log");
         Files.writeString(maven, """
                 [INFO] Processing grammar: Example.g4
@@ -454,6 +640,8 @@ final class ReleaseVerificationMainTest {
         assertEquals(7, report.path("cliCases").get(0).path("elapsedSeconds").asInt());
         assertEquals(1, report.path("maven").path("antlrGrammarProcessCount").asInt());
         assertEquals(1, report.path("canonicalFingerprints").path("count").asInt());
+        assertEquals("case/direct.json",
+                report.path("canonicalFingerprints").path("items").get(0).path("name").asText());
     }
 
     private String emptyResult() {
@@ -523,6 +711,16 @@ final class ReleaseVerificationMainTest {
                   "warnings": []
                 }
                 """;
+    }
+
+    private void writeBundle(Path results, String id, String direct, String result) throws Exception {
+        writeBundleFiles(results.resolve(id), direct, result);
+    }
+
+    private void writeBundleFiles(Path bundle, String direct, String result) throws Exception {
+        Files.createDirectories(bundle);
+        Files.writeString(bundle.resolve("direct.json"), direct);
+        Files.writeString(bundle.resolve("result.json"), result);
     }
 
     private String resultWithCounts(
@@ -765,17 +963,17 @@ final class ReleaseVerificationMainTest {
     private String batchReport(String id, Path output) {
         return """
                 {
+                  "artifactSchemaVersion":2,
                   "summary":{"caseCount":1,"successCount":1,"failedCount":0,"skippedCount":0},
                   "cases":[
                     {
                       "id":"%s",
                       "status":"SUCCESS",
                       "elapsedMillis":10,
-                      "output":"%s",
-                      "directOutput":"%s"
+                      "outputBundle":"%s"
                     }
                   ]
                 }
-                """.formatted(id, output, output);
+                """.formatted(id, output);
     }
 }

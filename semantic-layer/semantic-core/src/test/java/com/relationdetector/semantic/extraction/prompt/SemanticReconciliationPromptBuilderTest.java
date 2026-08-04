@@ -7,6 +7,7 @@ import com.relationdetector.semantic.extraction.shard.SemanticShardDescriptor;
 import com.relationdetector.semantic.extraction.shard.SemanticRunPlan;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticResultSelection;
+import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
@@ -49,12 +50,19 @@ class SemanticReconciliationPromptBuilderTest {
                             .put("machineType", "BUSINESS_ENTITY"));
             stores.get(SemanticResultStore.Section.ENTITIES).append("entity:orders", conflict);
             stores.values().forEach(ExternalJsonRecordStore::finish);
+            SemanticArtifactRef shardBundle = new SemanticArtifactRef(
+                    workspace.resolve("shard.json"), 0, "0".repeat(64));
             SemanticShardDescriptor shard = new SemanticShardDescriptor(
-                    "shard-0001", "orders", workspace.resolve("shard.json"), 100, 0, 0);
+                    "shard-0001", "orders", shardBundle,
+                    new SemanticArtifactRef(
+                            workspace.resolve("audit.tsv"), 0, "1".repeat(64)),
+                    100, 0, 0);
             SemanticRunPlan plan = new SemanticRunPlan(
-                    workspace.resolve("bundle.json"), "bundle-hash", List.of(shard), true, 100_000,
-                    24_000, 16_000,
-                    workspace.resolve("owners.json"), "owner-hash");
+                    new SemanticArtifactRef(
+                            workspace.resolve("bundle.json"), 0, "2".repeat(64)),
+                    List.of(shard), true, 100_000, 24_000, 16_000,
+                    new SemanticArtifactRef(
+                            workspace.resolve("owners.json"), 0, "3".repeat(64)));
 
             SemanticExtractionPrompt prompt = new SemanticResultSelection(stores)
                     .reconciliationPrompt(plan, plan.maxInputTokens());

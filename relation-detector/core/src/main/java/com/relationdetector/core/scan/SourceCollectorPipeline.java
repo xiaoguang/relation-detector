@@ -54,6 +54,12 @@ public final class SourceCollectorPipeline {
         this.statementParser = statementParser;
     }
 
+    /**
+     * CN: 从已打开的受信数据库连接中按配置收集 metadata、live DDL、object definition 与 log，
+     * 并在任何 parser outcome 合并前完成原子契约校验与 live diagnostic 脱敏。
+     * EN: Collects configured metadata, live DDL, object definitions, and logs from an already-open trusted
+     * connection, atomically validating outcomes and sanitizing live diagnostics before any merge.
+     */
     void collectJdbcSources(Connection connection, ScanPipelineContext ctx) {
         SourceConfig sources = ctx.config.sources();
         if (sources.metadataEnabled() && connection != null) {
@@ -67,7 +73,11 @@ public final class SourceCollectorPipeline {
                     .map(definition -> new ParseTask(
                             context -> statementParser.executeDatabaseDdl(
                                     parserBundle, ctx.adaptor, ctx.parserConfig, definition, context),
-                            error -> DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), error)))
+                            error -> DiagnosticWarnings.ddlTextParseFailed(
+                                    definition.source(), definition.ddl(), error),
+                            LiveParserDiagnosticPolicy.databaseDdl(
+                                    liveSourceName(definition.catalog(), definition.schema(), definition.name()),
+                                    databaseDdlDiagnosticAttributes(definition))))
                     .toList());
         }
 
@@ -82,7 +92,10 @@ public final class SourceCollectorPipeline {
                         return new ParseTask(
                                 context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
                                         statement, context, databaseKnownPhysicalTables),
-                                error -> DiagnosticWarnings.sqlParseFailed(statement, error));
+                                error -> DiagnosticWarnings.sqlParseFailed(statement, error),
+                                LiveParserDiagnosticPolicy.object(
+                                        objectSourceName(definition),
+                                        objectDiagnosticAttributes(definition)));
                     })
                     .toList());
         }
@@ -267,11 +280,25 @@ public final class SourceCollectorPipeline {
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = new AdaptorContext(ctx.scope, ctx.adaptorContext.options(), warnings::add);
         try {
-            return new TaskResult(task.action().execute(context), warnings);
+            StatementExecutionOutcome outcome = task.action().execute(context);
+            if (task.diagnosticPolicy() == null) {
+                return new TaskResult(outcome, warnings);
+            }
+            return new TaskResult(
+                    task.diagnosticPolicy().sanitizeOutcome(outcome),
+                    task.diagnosticPolicy().sanitizeWarnings(warnings));
         } catch (AdaptorContractException ex) {
             throw ex;
         } catch (Exception ex) {
-            warnings.add(task.failureWarning().apply(ex));
+            WarningMessage failure = task.failureWarning().apply(ex);
+            if (task.diagnosticPolicy() == null) {
+                warnings.add(failure);
+            } else {
+                List<WarningMessage> sanitized = new ArrayList<>(
+                        task.diagnosticPolicy().sanitizeWarnings(warnings));
+                sanitized.add(task.diagnosticPolicy().sanitizeFailure(failure, ex));
+                warnings = sanitized;
+            }
             StatementExecutionOutcome outcome = StatementExecutionOutcome.empty();
             if (task.coverageImpact() == DdlCoverageImpact.DDL_DECLARATION) {
                 outcome.ddlCatalogInventory().recordDeclarationParseFailure();
@@ -404,11 +431,37 @@ public final class SourceCollectorPipeline {
         return attributes;
     }
 
+    private java.util.Map<String, Object> objectDiagnosticAttributes(DatabaseObjectDefinition definition) {
+        java.util.Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+        putIfPresent(attributes, "objectCatalog", definition.catalog());
+        putIfPresent(attributes, "objectSchema", definition.schema());
+        putIfPresent(attributes, "objectName", definition.name());
+        attributes.put("objectType", definition.type().name());
+        return attributes;
+    }
+
+    private java.util.Map<String, Object> databaseDdlDiagnosticAttributes(DatabaseDdlDefinition definition) {
+        java.util.Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+        putIfPresent(attributes, "objectCatalog", definition.catalog());
+        putIfPresent(attributes, "objectSchema", definition.schema());
+        putIfPresent(attributes, "objectName", definition.name());
+        attributes.put("objectType", "TABLE");
+        return attributes;
+    }
+
+    private void putIfPresent(java.util.Map<String, Object> attributes, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            attributes.put(key, value);
+        }
+    }
+
     private String objectSourceName(DatabaseObjectDefinition definition) {
-        String schemaName = definition.schema() == null || definition.schema().isBlank()
-                ? definition.name() : definition.schema() + "." + definition.name();
-        return definition.catalog() == null || definition.catalog().isBlank()
-                ? schemaName : definition.catalog() + "." + schemaName;
+        return liveSourceName(definition.catalog(), definition.schema(), definition.name());
+    }
+
+    private String liveSourceName(String catalog, String schema, String name) {
+        String schemaName = schema == null || schema.isBlank() ? name : schema + "." + name;
+        return catalog == null || catalog.isBlank() ? schemaName : catalog + "." + schemaName;
     }
 
     @FunctionalInterface
@@ -419,10 +472,27 @@ public final class SourceCollectorPipeline {
     private record ParseTask(
             ParseAction action,
             Function<Exception, WarningMessage> failureWarning,
-            DdlCoverageImpact coverageImpact
+            DdlCoverageImpact coverageImpact,
+            LiveParserDiagnosticPolicy diagnosticPolicy
     ) {
         private ParseTask(ParseAction action, Function<Exception, WarningMessage> failureWarning) {
-            this(action, failureWarning, DdlCoverageImpact.NONE);
+            this(action, failureWarning, DdlCoverageImpact.NONE, null);
+        }
+
+        private ParseTask(
+                ParseAction action,
+                Function<Exception, WarningMessage> failureWarning,
+                LiveParserDiagnosticPolicy diagnosticPolicy
+        ) {
+            this(action, failureWarning, DdlCoverageImpact.NONE, diagnosticPolicy);
+        }
+
+        private ParseTask(
+                ParseAction action,
+                Function<Exception, WarningMessage> failureWarning,
+                DdlCoverageImpact coverageImpact
+        ) {
+            this(action, failureWarning, coverageImpact, null);
         }
     }
 

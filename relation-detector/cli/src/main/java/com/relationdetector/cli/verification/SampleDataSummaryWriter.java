@@ -23,7 +23,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
  * TSV reports. It consumes the complete direct/derived matrix without retaining unbounded fact arrays.
  */
 final class SampleDataSummaryWriter {
-    private static final String DERIVED_SUFFIX = "-derived-fresh";
     private static final YAMLMapper YAML = new YAMLMapper();
 
     /**
@@ -45,7 +44,7 @@ final class SampleDataSummaryWriter {
         derived.add("Parser\tFix\tSQL/DDL\tRel\tLin\tName\tDiag\tDerRel\tDerLin\tDerName");
         warnings.add("parser\twarningCode\tcount");
         for (Path directPath : directResults(request.resultDirectory())) {
-            String id = stem(directPath);
+            String id = logicalId(request.resultDirectory(), directPath);
             if (!requested.isEmpty() && !requested.contains(id)) {
                 continue;
             }
@@ -73,9 +72,9 @@ final class SampleDataSummaryWriter {
                         .forEach(entry -> warnings.add(
                                 id + "\t" + entry.getKey() + "\t" + entry.getValue()));
             }
-            Path derivedPath = request.resultDirectory().resolve(id + DERIVED_SUFFIX + ".json");
-            if (Files.isRegularFile(derivedPath)) {
-                ResultSummary derivedResult = readResult(derivedPath);
+            Path resultPath = directPath.resolveSibling("result.json");
+            if (Files.isRegularFile(resultPath)) {
+                ResultSummary derivedResult = readResult(resultPath);
                 derived.add(String.join("\t",
                         id,
                         Integer.toString(input.fixtures()),
@@ -95,10 +94,9 @@ final class SampleDataSummaryWriter {
     }
 
     private List<Path> directResults(Path directory) {
-        try (Stream<Path> paths = Files.list(directory)) {
+        try (Stream<Path> paths = Files.walk(directory)) {
             return paths.filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .filter(path -> !stem(path).endsWith(DERIVED_SUFFIX))
+                    .filter(path -> path.getFileName().toString().equals("direct.json"))
                     .sorted()
                     .toList();
         } catch (IOException error) {
@@ -224,9 +222,19 @@ final class SampleDataSummaryWriter {
         }
     }
 
-    private String stem(Path path) {
-        String name = path.getFileName().toString();
-        return name.substring(0, name.length() - ".json".length());
+    private String logicalId(Path root, Path view) {
+        Path parent = view.getParent();
+        if (parent == null) {
+            throw new ReleaseVerificationException("sample-data bundle view has no case directory");
+        }
+        String id = root.toAbsolutePath().normalize()
+                .relativize(parent.toAbsolutePath().normalize())
+                .toString()
+                .replace('\\', '/');
+        if (id.isBlank()) {
+            throw new ReleaseVerificationException("sample-data bundle case identity is empty");
+        }
+        return id;
     }
 
     record Request(

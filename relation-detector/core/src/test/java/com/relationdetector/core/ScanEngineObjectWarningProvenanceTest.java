@@ -72,7 +72,7 @@ class ScanEngineObjectWarningProvenanceTest {
     }
 
     @Test
-    void dynamicSqlWarningCarriesObjectAndRoutineIdentity() {
+    void liveObjectRawTextDoesNotCreateGenericDynamicSqlWarning() {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
         config.jdbcUrl = JDBC_URL;
@@ -83,18 +83,9 @@ class ScanEngineObjectWarningProvenanceTest {
 
         ScanResult result = new ScanEngine().scan(config, new ObjectWarningAdaptor());
 
-        WarningMessage warning = result.warnings().stream()
-                .filter(candidate -> candidate.code().equals("DYNAMIC_SQL_UNRESOLVED"))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("expected unresolved dynamic SQL warning"));
-        assertEquals("shop.rebuild_orders", warning.source());
-        assertEquals("shop", warning.attributes().get("objectSchema"));
-        assertEquals("rebuild_orders", warning.attributes().get("objectName"));
-        assertEquals("PROCEDURE", warning.attributes().get("objectType"));
-        assertEquals("shop", warning.attributes().get("routineSchema"));
-        assertEquals("rebuild_orders", warning.attributes().get("routineName"));
-        assertEquals("PROCEDURE", warning.attributes().get("routineType"));
-        assertTrue(String.valueOf(warning.attributes().get("rawStatement")).contains("PREPARE stmt FROM @sql"));
+        assertTrue(result.warnings().stream().noneMatch(candidate ->
+                        candidate.code().equals("DYNAMIC_SQL_UNRESOLVED")),
+                () -> "generic raw-SQL dynamic warning must not be emitted: " + result.warnings());
         assertTrue(result.warnings().stream().noneMatch(candidate ->
                         candidate.code().equals("SOURCE_LINE_OUTSIDE_STATEMENT")),
                 "database-object statements must cover every line in their collected SQL text");

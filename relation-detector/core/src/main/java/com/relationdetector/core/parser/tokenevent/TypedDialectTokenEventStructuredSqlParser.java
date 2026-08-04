@@ -14,7 +14,6 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
-import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport;
 import com.relationdetector.core.parser.antlr.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parser.antlr.SqlDialect;
 
@@ -37,7 +36,6 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
     private final String lexerName;
     private final String parserName;
     private final String typedVisitorName;
-    private final AntlrSqlParseSupport antlrSupport;
 
     protected TypedDialectTokenEventStructuredSqlParser(
             SqlDialect dialect,
@@ -52,7 +50,6 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
         this.lexerName = lexerName;
         this.parserName = parserName;
         this.typedVisitorName = typedVisitorName;
-        this.antlrSupport = new AntlrSqlParseSupport(dialect);
     }
 
     @Override
@@ -67,7 +64,6 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
         List<StructuredSqlEvent> typedEvents = collection.events();
         warnings.addAll(collection.warnings());
 
-        antlrSupport.detectDynamicSql(statement).ifPresent(warnings::add);
         if (errors.count() == 0) {
             warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(
                     statement, parsed.root(), typedEvents, this::isUnknownStatement));

@@ -15,7 +15,7 @@ EXPECTED_CATEGORIES="${SAMPLE_DATA_SEMANTIC_EXPECTED_CATEGORIES:-19}"
 KG_OUTPUT="${SAMPLE_DATA_SEMANTIC_KG_OUTPUT:-digest-only}"
 MODEL="gpt-5.6-sol"
 REASONING_EFFORT="xhigh"
-SMOKE_CASE="mysql-v8_0-full-derived-fresh"
+SMOKE_CASE="mysql-v8_0-full/result.json"
 REQUEST_ROOT="${SAMPLE_DATA_SEMANTIC_REQUEST_ROOT:-$OUTPUT_ROOT/requests}"
 RESPONSE_ROOT="${SAMPLE_DATA_SEMANTIC_RESPONSE_ROOT:-$OUTPUT_ROOT/responses}"
 SUMMARY="$OUTPUT_ROOT/summary.tsv"
@@ -76,12 +76,47 @@ run_directory() {
   find "$root" -mindepth 1 -maxdepth 1 -type d -name 'run-*' -print
 }
 
+validate_enrichment_request_matrix() {
+  local output="$1"
+  local category_root category_count=0 view case_root request_run
+  [[ ! -L "$REQUEST_ROOT" && -d "$REQUEST_ROOT" ]] || \
+    fail "semantic request matrix root must be a regular directory"
+  : >"$output"
+  while IFS= read -r category_root; do
+    [[ ! -L "$category_root" && -d "$category_root" ]] || \
+      fail "semantic request category must be a regular directory"
+    category_count=$((category_count + 1))
+    for view in direct.json result.json; do
+      case_root="$category_root/$view"
+      [[ ! -L "$case_root" && -d "$case_root" ]] || \
+        fail "semantic request category bundle is incomplete"
+      request_run="$(run_directory "$case_root")"
+      printf '%s\n' "$request_run" >>"$output"
+    done
+    if [[ "$(find "$category_root" -mindepth 1 -maxdepth 1 -print | wc -l | tr -d '[:space:]')" -ne 2 ]]; then
+      fail "semantic request category contains an unexpected view"
+    fi
+  done < <(find "$REQUEST_ROOT" -mindepth 1 -maxdepth 1 -print | LC_ALL=C sort)
+  [[ "$category_count" -eq "$EXPECTED_CATEGORIES" ]] || \
+    fail "semantic request category matrix is incomplete"
+  [[ "$(wc -l <"$output" | tr -d '[:space:]')" -eq $((EXPECTED_CATEGORIES * 2)) ]] || \
+    fail "semantic request matrix is incomplete"
+}
+
+logical_identity() {
+  local input="$1"
+  local identity="${input#"$RESULT_DIR"/}"
+  [[ "$identity" != "$input" && "$identity" == */*.json ]] || \
+    fail "semantic input is outside the sample-data result bundle"
+  printf '%s\n' "$identity"
+}
+
 verify_request_case() {
   local case_name="$1"
   local input="$2"
   local row_file="$3"
   local case_root="$REQUEST_ROOT/$case_name"
-  local reconstructed="$OUTPUT_ROOT/reconstructed/$case_name.json"
+  local reconstructed="$OUTPUT_ROOT/reconstructed/$case_name"
   local request_run
   local digest_report
   local digest_values
@@ -124,9 +159,13 @@ run_case_list() {
   local row_file="$2"
   while IFS= read -r input; do
     [[ -n "$input" ]] || continue
-    local case_name="$(basename "$input" .json)"
+    local case_name
+    local log_file
+    case_name="$(logical_identity "$input")"
+    log_file="$OUTPUT_ROOT/logs/$case_name.log"
+    mkdir -p "$(dirname "$log_file")"
     verify_request_case "$case_name" "$input" "$row_file" \
-      >"$OUTPUT_ROOT/logs/$case_name.log" 2>&1
+      >"$log_file" 2>&1
   done <"$list_file"
 }
 
@@ -181,8 +220,8 @@ run_case_matrix() {
   local previous_category=""
   while IFS= read -r input; do
     local case_name category
-    case_name="$(basename "$input" .json)"
-    category="${case_name%-derived-fresh}"
+    case_name="$(logical_identity "$input")"
+    category="${case_name%/*}"
     if [[ "$category" != "$previous_category" ]]; then
       category_ordinal=$((category_ordinal + 1))
       previous_category="$category"
@@ -211,17 +250,27 @@ run_deterministic_tier() {
   printf 'case\tinput\tkg\treconstruction\tkgBytes\tkgSha256\tevidenceGraphBytes\tevidenceGraphSha256\tbuildRunBytes\tbuildRunSha256\trequestRun\n' >"$SUMMARY"
   mkdir -p "$OUTPUT_ROOT/logs"
   if [[ "$TIER" == "smoke" ]]; then
-    local input="$RESULT_DIR/$SMOKE_CASE.json"
+    local input="$RESULT_DIR/$SMOKE_CASE"
+    local smoke_log="$OUTPUT_ROOT/logs/$SMOKE_CASE.log"
     [[ -f "$input" ]] || fail "semantic smoke input is unavailable"
+    mkdir -p "$(dirname "$smoke_log")"
     verify_request_case "$SMOKE_CASE" "$input" "$SUMMARY" \
-      >"$OUTPUT_ROOT/logs/$SMOKE_CASE.log" 2>&1
+      >"$smoke_log" 2>&1
   else
     local expected=$((EXPECTED_CATEGORIES * 2))
-    local count
-    count="$(find "$RESULT_DIR" -maxdepth 1 -type f -name '*.json' | wc -l | tr -d '[:space:]')"
-    [[ "$count" -eq "$expected" ]] || fail "sample-data semantic matrix is incomplete"
+    local count category_count
     local cases="$OUTPUT_ROOT/cases.txt"
-    find "$RESULT_DIR" -maxdepth 1 -type f -name '*.json' | LC_ALL=C sort >"$cases"
+    find "$RESULT_DIR" -mindepth 2 -maxdepth 2 -type f \
+      \( -name direct.json -o -name result.json \) | LC_ALL=C sort >"$cases"
+    count="$(wc -l <"$cases" | tr -d '[:space:]')"
+    [[ "$count" -eq "$expected" ]] || fail "sample-data semantic matrix is incomplete"
+    category_count="$(sed 's#/[^/]*$##' "$cases" | LC_ALL=C sort -u | wc -l | tr -d '[:space:]')"
+    [[ "$category_count" -eq "$EXPECTED_CATEGORIES" ]] || \
+      fail "sample-data semantic category matrix is incomplete"
+    while IFS= read -r category_root; do
+      [[ -f "$category_root/direct.json" && -f "$category_root/result.json" ]] || \
+        fail "sample-data semantic category bundle is incomplete"
+    done < <(sed 's#/[^/]*$##' "$cases" | LC_ALL=C sort -u)
     run_case_matrix "$cases"
   fi
   local expected_rows=1
@@ -237,9 +286,16 @@ run_enrichment_tier() {
   printf 'case\trequestRun\tresponseRoot\tstatus\tresult\n' >"$SUMMARY"
   local pending=0
   local count=0
-  while IFS= read -r case_root; do
-    local case_name request_run response_root result code status
-    case_name="$(basename "$case_root")"
+  local request_run
+  local request_runs="$OUTPUT_ROOT/request-runs.txt"
+  validate_enrichment_request_matrix "$request_runs"
+  while IFS= read -r request_run; do
+    local case_name response_root result code status
+    local case_root
+    case_root="$(dirname "$request_run")"
+    case_name="${case_root#"$REQUEST_ROOT"/}"
+    [[ "$case_name" != "$case_root" && "$case_name" == */*.json ]] || \
+      fail "semantic request identity is invalid"
     request_run="$(run_directory "$case_root")"
     response_root="$RESPONSE_ROOT/$case_name"
     set +e
@@ -261,8 +317,9 @@ run_enrichment_tier() {
     printf '%s\t%s\t%s\t%s\t%s\n' \
       "$case_name" "$request_run" "$response_root" "$status" "$result" >>"$SUMMARY"
     count=$((count + 1))
-  done < <(find "$REQUEST_ROOT" -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort)
-  [[ "$count" -gt 0 ]] || fail "semantic request matrix contains no cases"
+  done <"$request_runs"
+  [[ "$count" -eq $((EXPECTED_CATEGORIES * 2)) ]] || \
+    fail "semantic request matrix is incomplete"
   write_enrichment_manifest "$count" "$pending"
   [[ "$pending" -eq 0 ]] || fail "semantic enrichment responses are incomplete" 3
 }

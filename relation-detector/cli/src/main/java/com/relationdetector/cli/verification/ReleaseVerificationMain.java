@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -56,7 +58,7 @@ public final class ReleaseVerificationMain {
         CanonicalFingerprintMode mode = parsed.flag("--semantic")
                 ? CanonicalFingerprintMode.SEMANTIC
                 : CanonicalFingerprintMode.CANONICAL;
-        List<Path> inputs = resolveJsonInputs(parsed.positional());
+        List<FingerprintInput> inputs = resolveJsonInputs(parsed.positional());
         if (inputs.isEmpty()) {
             throw new ReleaseVerificationException("at least one fingerprint input is required");
         }
@@ -64,14 +66,10 @@ public final class ReleaseVerificationMain {
         try {
             List<String> lines = new ArrayList<>();
             for (int index = 0; index < inputs.size(); index++) {
-                Path input = inputs.get(index);
+                FingerprintInput input = inputs.get(index);
                 String digest = new ExternalCanonicalJsonFingerprinter(
-                        workspace.resolve("file-" + index), 2_048).fingerprint(input, mode);
-                try {
-                    lines.add(digest + "\t" + input.toRealPath());
-                } catch (IOException error) {
-                    throw new ReleaseVerificationException("failed to resolve fingerprint input", error);
-                }
+                        workspace.resolve("file-" + index), 2_048).fingerprint(input.path(), mode);
+                lines.add(digest + "\t" + input.logicalPath());
             }
             writeLines(output, lines);
         } finally {
@@ -185,26 +183,58 @@ public final class ReleaseVerificationMain {
                 Path.of(parsed.required("--artifact")));
     }
 
-    private static List<Path> resolveJsonInputs(List<String> values) {
-        Set<Path> paths = new LinkedHashSet<>();
+    private static List<FingerprintInput> resolveJsonInputs(List<String> values) {
+        Map<String, Path> paths = new LinkedHashMap<>();
         for (String value : values) {
-            Path path = Path.of(value);
+            Path path = Path.of(value).toAbsolutePath().normalize();
             if (Files.isDirectory(path)) {
                 try (Stream<Path> entries = Files.walk(path)) {
                     entries.filter(Files::isRegularFile)
-                            .filter(item -> item.getFileName().toString().endsWith(".json"))
+                            .filter(item -> isBundleView(path, item))
                             .map(Path::toAbsolutePath)
                             .map(Path::normalize)
                             .sorted()
-                            .forEach(paths::add);
+                            .forEach(item -> addFingerprintInput(
+                                    paths, logicalPath(path, item), item));
                 } catch (IOException error) {
                     throw new ReleaseVerificationException("failed to list fingerprint inputs", error);
                 }
             } else {
-                paths.add(path.toAbsolutePath().normalize());
+                try {
+                    Path real = path.toRealPath();
+                    addFingerprintInput(paths, real.toString(), real);
+                } catch (IOException error) {
+                    throw new ReleaseVerificationException(
+                            "failed to resolve fingerprint input", error);
+                }
             }
         }
-        return paths.stream().sorted().toList();
+        return paths.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new FingerprintInput(entry.getValue(), entry.getKey()))
+                .toList();
+    }
+
+    private static boolean isBundleView(Path root, Path path) {
+        String name = path.getFileName().toString();
+        Path relative = root.relativize(path);
+        return relative.getNameCount() >= 2
+                && (name.equals("direct.json") || name.equals("result.json"));
+    }
+
+    private static String logicalPath(Path root, Path path) {
+        return root.relativize(path).toString().replace('\\', '/');
+    }
+
+    private static void addFingerprintInput(Map<String, Path> paths, String logicalPath, Path path) {
+        Path existing = paths.putIfAbsent(logicalPath, path);
+        if (existing != null && !existing.equals(path)) {
+            throw new ReleaseVerificationException(
+                    "duplicate fingerprint logical path: " + logicalPath);
+        }
+    }
+
+    private record FingerprintInput(Path path, String logicalPath) {
     }
 
     private static int positiveInt(String raw, String name) {

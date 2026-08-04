@@ -44,10 +44,6 @@ public final class SemanticProcessingSession implements AutoCloseable {
         this.evidenceStore = evidenceStore;
     }
 
-    public static SemanticProcessingSession open(List<Path> inputs, Path workspace) {
-        return open(inputs, workspace, SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
-    }
-
     public static SemanticProcessingSession open(
             List<Path> inputs,
             Path workspace,
@@ -96,15 +92,6 @@ public final class SemanticProcessingSession implements AutoCloseable {
     public static SemanticProcessingSession openForOutput(
             List<Path> inputs,
             Path output,
-            String purpose
-    ) {
-        return openForOutput(
-                inputs, output, purpose, SemanticEvidenceStore.DEFAULT_MAX_INPUT_TOKENS);
-    }
-
-    public static SemanticProcessingSession openForOutput(
-            List<Path> inputs,
-            Path output,
             String purpose,
             int maxInputTokens
     ) {
@@ -133,21 +120,12 @@ public final class SemanticProcessingSession implements AutoCloseable {
         return evidenceStore;
     }
 
-    public void writeKgArtifacts(Path outputDirectory) {
-        writeKgArtifacts(outputDirectory, SemanticKgArtifactMode.FULL);
-    }
-
     public SemanticKgArtifactReport writeKgArtifacts(
             Path outputDirectory,
             SemanticKgArtifactMode mode
     ) {
         ensureOpen();
         return new SemanticKgArtifactWriter().writeArtifacts(evidenceStore, outputDirectory, mode);
-    }
-
-    public void writeEvidenceBundle(Path target) {
-        ensureOpen();
-        evidenceStore.writeBundle(target);
     }
 
     public Path workPath(String name) {

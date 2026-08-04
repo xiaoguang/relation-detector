@@ -10,6 +10,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.PredicateJoinKind;
 import com.relationdetector.contracts.parse.ExpressionSource;
 import com.relationdetector.contracts.parse.ExpressionTrace;
@@ -38,6 +39,15 @@ public final class OracleSqlEventVisitorCore {
 
     public List<StructuredSqlEvent> events() {
         return List.copyOf(events);
+    }
+
+    public boolean isRoutineSource() {
+        return statement.sourceType() == StatementSourceType.PROCEDURE
+                || statement.sourceType() == StatementSourceType.FUNCTION
+                || statement.sourceType() == StatementSourceType.TRIGGER
+                || statement.sourceType() == StatementSourceType.EVENT
+                || statement.sourceType() == StatementSourceType.PACKAGE
+                || statement.sourceType() == StatementSourceType.PACKAGE_BODY;
     }
 
     public void rowset(ParserRuleContext ctx, StructuredParseEventType type, String keyword,

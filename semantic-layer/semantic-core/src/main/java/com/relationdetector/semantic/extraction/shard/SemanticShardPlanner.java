@@ -5,8 +5,10 @@ import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
 import com.relationdetector.semantic.ingest.ScanResultContractException;
 import com.relationdetector.semantic.evidence.SemanticEvidenceStore;
+import com.relationdetector.semantic.internal.io.SemanticFileDigest;
 
 /**
  * CN: 将完整磁盘evidence store交给全局owner planner并生成path-backed shard plan；字节运输窗口不参与
@@ -36,8 +38,14 @@ public final class SemanticShardPlanner {
             Files.createDirectories(workspace);
             Path fullBundle = workspace.resolve("full-evidence-bundle.json");
             String fullHash = evidenceStore.writeBundleAndHash(fullBundle);
+            SemanticFileDigest.Digest digest = SemanticFileDigest.computeNoFollow(fullBundle);
+            if (!digest.sha256().equals(fullHash)) {
+                throw new SemanticShardingException(
+                        "semantic evidence bundle hash does not match persisted bytes");
+            }
             return new SemanticGlobalOwnerPlanner().plan(
-                    evidenceStore, workspace, resolved, fullBundle, fullHash,
+                    evidenceStore, workspace, resolved,
+                    new SemanticArtifactRef(fullBundle, digest.bytes(), digest.sha256()),
                     shardMaxOutputTokens, reconciliationMaxOutputTokens);
         } catch (IOException failure) {
             throw new ScanResultContractException("failed to create semantic path-backed plan", failure);

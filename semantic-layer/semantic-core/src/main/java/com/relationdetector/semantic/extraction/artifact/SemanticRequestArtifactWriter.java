@@ -6,11 +6,14 @@ import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.internal.io.SemanticFileDigest;
 
 /**
  * CN: 按固定文件名写出单次模型请求所需的 evidence bundle、prompt 和 transport request；输入来自已验证
@@ -23,15 +26,23 @@ public final class SemanticRequestArtifactWriter {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     private final SemanticModelOutputSchema outputSchema = new SemanticModelOutputSchema();
 
-    public void writeRequestOnly(Path outputDirectory, SemanticExtractionPrompt prompt, String requestJson) {
-        if (requestJson == null || requestJson.isBlank()) {
-            throw new IllegalArgumentException("requestJson is required");
+    public void writeRequestOnly(
+            Path outputDirectory,
+            SemanticExtractionPrompt prompt,
+            SemanticArtifactRef request
+    ) {
+        writePromptArtifacts(outputDirectory, prompt);
+        copyArtifact(request, outputDirectory.resolve("semantic-extraction-request.json"));
+    }
+
+    public void writePromptArtifacts(Path outputDirectory, SemanticExtractionPrompt prompt) {
+        if (prompt == null) {
+            throw new IllegalArgumentException("semantic extraction prompt is required");
         }
         createDirectory(outputDirectory);
         writeJson(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
                 prompt.trustedEvidenceBundle());
         write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
-        write(outputDirectory.resolve("semantic-extraction-request.json"), requestJson);
     }
 
     public void writeCodexSessionRequest(Path outputDirectory, SemanticExtractionPrompt prompt) {
@@ -67,10 +78,7 @@ public final class SemanticRequestArtifactWriter {
                 || !Path.of(resultFileName).getFileName().toString().equals(resultFileName)) {
             throw new IllegalArgumentException("Codex session result file name is invalid");
         }
-        createDirectory(outputDirectory);
-        writeJson(outputDirectory.resolve("semantic-extraction-evidence-bundle.json"),
-                prompt.trustedEvidenceBundle());
-        write(outputDirectory.resolve("semantic-extraction-prompt.md"), promptMarkdown(prompt));
+        writePromptArtifacts(outputDirectory, prompt);
         writeJson(outputDirectory.resolve(schemaFileName), schema);
         write(outputDirectory.resolve("semantic-extraction-codex-session.md"),
                 codexSessionMarkdown(outputDirectory, resultFileName, schemaFileName));
@@ -167,6 +175,27 @@ public final class SemanticRequestArtifactWriter {
             Files.writeString(path, content == null ? "" : content);
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to write semantic extraction artifact: " + path, e);
+        }
+    }
+
+    private void copyArtifact(SemanticArtifactRef request, Path target) {
+        if (request == null) {
+            throw new IllegalArgumentException("semantic request artifact is required");
+        }
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(
+                    request.path(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (!attributes.isRegularFile() || attributes.size() != request.bytes()) {
+                throw new IllegalArgumentException("semantic request artifact is invalid");
+            }
+            SemanticFileDigest.Digest digest = SemanticFileDigest.copyNoFollow(
+                    request.path(), target, request.bytes());
+            if (digest.bytes() != request.bytes()
+                    || !digest.sha256().equals(request.sha256())) {
+                throw new IllegalArgumentException("semantic request artifact is invalid");
+            }
+        } catch (IOException failure) {
+            throw new IllegalArgumentException("semantic request artifact cannot be verified", failure);
         }
     }
 }

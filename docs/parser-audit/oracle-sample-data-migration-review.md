@@ -105,12 +105,12 @@ carry known PostgreSQL/MySQL executable syntax residue.
 ## Verification Commands
 
 ```bash
-mvn -pl cli -am \
+mvn -pl relation-detector/cli -am \
   -Dtest=CorrectnessFixtureRunnerTest#allCorrectnessFixturesPassGoldenExpectations \
   -DcorrectnessFixtureFilter=oracle \
   -Dsurefire.failIfNoSpecifiedTests=false test
 
-mvn -pl adaptor-oracle,cli -am \
+mvn -pl relation-detector/adaptor-oracle,relation-detector/cli -am \
   -Dtest='OracleAdaptorParserTest,SqlGrammarProfileTest,ParserBundleSelectorTest' \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```

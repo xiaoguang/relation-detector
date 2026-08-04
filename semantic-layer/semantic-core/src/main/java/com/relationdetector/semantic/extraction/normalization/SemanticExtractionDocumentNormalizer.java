@@ -18,6 +18,7 @@ import com.relationdetector.semantic.extraction.model.SemanticItem;
 public final class SemanticExtractionDocumentNormalizer {
     private final SemanticExtractionDocumentCodec codec;
     private final SemanticCandidateBackfill candidateBackfill;
+    private final SemanticFormalIdentityCanonicalizer formalIdentityCanonicalizer;
     private final SemanticSectionNormalizer sectionNormalizer;
     private final SemanticReviewGenerator reviewGenerator;
     private final SemanticReferenceValidator referenceValidator;
@@ -25,13 +26,15 @@ public final class SemanticExtractionDocumentNormalizer {
 
     public SemanticExtractionDocumentNormalizer() {
         this(new SemanticExtractionDocumentCodec(), new SemanticCandidateBackfill(),
-                new SemanticSectionNormalizer(), new SemanticReviewGenerator(), new SemanticReferenceValidator(),
+                new SemanticFormalIdentityCanonicalizer(), new SemanticSectionNormalizer(),
+                new SemanticReviewGenerator(), new SemanticReferenceValidator(),
                 new SemanticShardOutputOwnershipValidator());
     }
 
     public SemanticExtractionDocumentNormalizer(
             SemanticExtractionDocumentCodec codec,
             SemanticCandidateBackfill candidateBackfill,
+            SemanticFormalIdentityCanonicalizer formalIdentityCanonicalizer,
             SemanticSectionNormalizer sectionNormalizer,
             SemanticReviewGenerator reviewGenerator,
             SemanticReferenceValidator referenceValidator,
@@ -39,6 +42,7 @@ public final class SemanticExtractionDocumentNormalizer {
     ) {
         this.codec = codec;
         this.candidateBackfill = candidateBackfill;
+        this.formalIdentityCanonicalizer = formalIdentityCanonicalizer;
         this.sectionNormalizer = sectionNormalizer;
         this.reviewGenerator = reviewGenerator;
         this.referenceValidator = referenceValidator;
@@ -56,16 +60,20 @@ public final class SemanticExtractionDocumentNormalizer {
         return normalize(rawDocument, evidenceBundle);
     }
 
-    public ObjectNode normalize(JsonNode rawDocument, JsonNode evidenceBundle) {
+    ObjectNode normalize(JsonNode rawDocument, JsonNode evidenceBundle) {
         SemanticReferenceIndex referenceIndex = SemanticReferenceIndex.from(evidenceBundle);
         SemanticPhysicalReferenceIndex physicalIndex = SemanticPhysicalReferenceIndex.from(evidenceBundle);
         SemanticExtractionDocument document = codec.read(rawDocument);
         candidateBackfill.apply(document, evidenceBundle);
         applyReviewDefaults(document);
+        SemanticFormalIdentityCanonicalizer.CanonicalizationState canonicalization =
+                formalIdentityCanonicalizer.canonicalizeFacts(document);
+        formalIdentityCanonicalizer.canonicalizeReviewItems(document.reviewItems, canonicalization);
         SemanticGraphAssembler graph = new SemanticGraphAssembler();
         Session validation = referenceValidator.newSession(referenceIndex, physicalIndex);
         NormalizationResult normalized = sectionNormalizer.normalizeFacts(document, graph, validation);
         validation.addGeneratedReviewItems(reviewGenerator.generate(document));
+        formalIdentityCanonicalizer.canonicalizeReviewItems(document.reviewItems, canonicalization);
         sectionNormalizer.normalizeReviewItems(document.reviewItems, graph, validation);
         document.semanticGraph = graph.build();
         document.validation = validation.build(document.entities, normalized.linkedEntities());

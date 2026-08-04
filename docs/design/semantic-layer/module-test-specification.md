@@ -101,7 +101,7 @@ evidence-backed COMPLETE且同类direct/derived inventory一致；随后38份全
 | graph node/edge冲突 | 完全相同可幂等去重，内容冲突失败 |
 | standalone normalization ownership | bundle必须携带有效`shardContext`，并复用自动分片的owner校验 |
 | missing review status | 正式对象补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`；`BUSINESS_APPROVED`拒绝 |
-| event/owner ID collision | deterministic event candidate与formal缺省entity/event/metric/dimension ID都使用长度分隔完整canonical identity；标点碰撞、grounding顺序、显式ID保真、review/edge碰撞及shard parity均由负向/等价测试覆盖 |
+| event/owner ID collision | deterministic event candidate与所有formal owner ID都使用长度分隔完整canonical identity；标点碰撞、grounding顺序、显式ID alias重写/冲突、review/edge碰撞及shard parity均由负向/等价测试覆盖 |
 
 ## 6. Artifact
 

@@ -1,37 +1,36 @@
 package com.relationdetector.oracle.fullgrammar.common;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
- * CN: 保存四个 Oracle version adapter 显式注册的 generated class literals 与 typed roles；查找只基于 class identity，实例不可变且不持有 parse state。
- * EN: Stores generated class literals and typed roles explicitly registered by Oracle version adapters. Lookup uses class identity only; instances are immutable and retain no parse state.
+ * CN: 保存四个 Oracle version adapter 显式注册的 generated-context predicates 与 typed roles；实例不可变且不持有 parse state。
+ * EN: Stores generated-context predicates and typed roles explicitly registered by Oracle version adapters. Instances are immutable and retain no parse state.
  */
 public abstract class AbstractOracleFullGrammarParseTreeAdapter
         implements OracleFullGrammarParseTreeAdapter {
-    private final Map<Role, List<Class<?>>> roles;
+    private final EnumMap<Role, Predicate<ParseTree>> roles;
     private final Map<Symbol, Integer> symbols;
 
-    @SafeVarargs
-    protected AbstractOracleFullGrammarParseTreeAdapter(Map.Entry<Role, List<Class<?>>>... entries) {
+    protected AbstractOracleFullGrammarParseTreeAdapter(RoleBinding... entries) {
         this(Map.of(), entries);
     }
 
-    @SafeVarargs
     protected AbstractOracleFullGrammarParseTreeAdapter(
             Map<Symbol, Integer> symbols,
-            Map.Entry<Role, List<Class<?>>>... entries
+            RoleBinding... entries
     ) {
-        EnumMap<Role, List<Class<?>>> configured = new EnumMap<>(Role.class);
-        for (Map.Entry<Role, List<Class<?>>> entry : entries) {
-            configured.put(entry.getKey(), List.copyOf(entry.getValue()));
+        EnumMap<Role, Predicate<ParseTree>> configured = new EnumMap<>(Role.class);
+        for (RoleBinding entry : entries) {
+            configured.put(entry.semanticRole(), entry.predicate());
         }
-        roles = Map.copyOf(configured);
+        roles = configured;
         this.symbols = symbols == null ? Map.of() : Map.copyOf(symbols);
     }
 
@@ -40,7 +39,8 @@ public abstract class AbstractOracleFullGrammarParseTreeAdapter
         if (tree == null) {
             return false;
         }
-        return roles.getOrDefault(role, List.of()).stream().anyMatch(type -> type.isInstance(tree));
+        Predicate<ParseTree> predicate = roles.get(role);
+        return predicate != null && predicate.test(tree);
     }
 
     @Override
@@ -53,11 +53,16 @@ public abstract class AbstractOracleFullGrammarParseTreeAdapter
 
     @Override
     public final Optional<String> functionName(ParseTree tree) {
-        if (!hasRole(tree, Role.FUNCTION_EXPRESSION) && !hasRole(tree, Role.GENERAL_ELEMENT)) {
+        if (hasRole(tree, Role.GENERAL_ELEMENT)) {
+            return generalElementView(tree)
+                    .filter(view -> view.kind() == GeneralElementKind.FUNCTION)
+                    .flatMap(view -> view.nameParts().stream().reduce((left, right) -> right));
+        }
+        if (!hasRole(tree, Role.FUNCTION_EXPRESSION)) {
             return Optional.empty();
         }
-        ParserRuleContext function = functionContext(tree);
-        if (function == null || function.getStart() == null) {
+        ParserRuleContext function = (ParserRuleContext) tree;
+        if (function.getStart() == null) {
             return Optional.empty();
         }
         String name = function.getStart().getText();
@@ -75,28 +80,14 @@ public abstract class AbstractOracleFullGrammarParseTreeAdapter
         return OperatorSemantic.NONE;
     }
 
-    private ParserRuleContext functionContext(ParseTree tree) {
-        if (!(tree instanceof ParserRuleContext context)) return null;
-        if (hasRole(context, Role.FUNCTION_EXPRESSION)) return context;
-        for (ParseTree child : typedChildren(context)) {
-            if (hasRole(child, Role.GENERAL_ELEMENT_PART)
-                    && containsRole(child, Role.FUNCTION_ARGUMENT)) {
-                return (ParserRuleContext) child;
-            }
-        }
-        return null;
+    protected static RoleBinding role(Role role, Predicate<ParseTree> predicate) {
+        return new RoleBinding(role, predicate);
     }
 
-    private boolean containsRole(ParseTree tree, Role role) {
-        if (hasRole(tree, role)) return true;
-        for (ParseTree child : typedChildren(tree)) {
-            if (containsRole(child, role)) return true;
+    protected record RoleBinding(Role semanticRole, Predicate<ParseTree> predicate) {
+        protected RoleBinding {
+            Objects.requireNonNull(semanticRole, "semanticRole");
+            Objects.requireNonNull(predicate, "predicate");
         }
-        return false;
-    }
-
-    @SafeVarargs
-    protected static Map.Entry<Role, List<Class<?>>> role(Role role, Class<?>... types) {
-        return Map.entry(role, List.of(types));
     }
 }

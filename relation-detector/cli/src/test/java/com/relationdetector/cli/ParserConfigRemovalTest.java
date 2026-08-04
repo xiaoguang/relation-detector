@@ -604,12 +604,12 @@ class ParserConfigRemovalTest {
     }
 
     @Test
-    void cliCanWriteDirectViewBesideDerivedOutput() {
+    void cliCanSelectAtomicOutputBundle() {
         Main.CliArguments args = Main.CliArguments.parse(new String[] {
-                "scan", "--config", "config.yml", "--output", "derived.json", "--direct-output", "direct.json"
+                "scan", "--config", "config.yml", "--output-bundle", "bundle"
         });
 
-        assertEquals(Path.of("direct.json"), args.directOutput);
+        assertEquals(Path.of("bundle"), args.outputBundle);
     }
 
     @Test

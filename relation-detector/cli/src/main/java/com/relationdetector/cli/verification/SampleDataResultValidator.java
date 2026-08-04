@@ -2,6 +2,7 @@ package com.relationdetector.cli.verification;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -24,7 +25,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * current fact and compact counters/reference indexes. Its small report is the sole integrity input to the manifest.
  */
 final class SampleDataResultValidator {
-    private static final String DERIVED_SUFFIX = "-derived-fresh";
     private static final List<String> FACT_SECTIONS = List.of(
             "relationships",
             "dataLineages",
@@ -50,22 +50,22 @@ final class SampleDataResultValidator {
             if (expectedCategories < 1 || paths.size() != expectedCategories * 2) {
                 throw new ReleaseVerificationException("sample-data result JSON coverage mismatch");
             }
-            Set<String> stems = new HashSet<>();
+            Set<String> directCategories = new HashSet<>();
+            Set<String> resultCategories = new HashSet<>();
             for (Path path : paths) {
-                stems.add(stem(path));
+                String category = logicalId(resultDirectory, path);
+                if (path.getFileName().toString().equals("direct.json")) {
+                    directCategories.add(category);
+                } else {
+                    resultCategories.add(category);
+                }
             }
-            List<String> direct = stems.stream()
-                    .filter(stem -> !stem.endsWith(DERIVED_SUFFIX))
-                    .sorted()
-                    .toList();
-            if (direct.size() != expectedCategories) {
+            if (directCategories.size() != expectedCategories) {
                 throw new ReleaseVerificationException("sample-data direct category coverage mismatch");
             }
-            for (String stem : direct) {
-                if (!stems.contains(stem + DERIVED_SUFFIX)) {
-                    throw new ReleaseVerificationException(
-                            "sample-data derived result is missing for " + stem);
-                }
+            if (!directCategories.equals(resultCategories)) {
+                throw new ReleaseVerificationException(
+                        "sample-data bundle view coverage mismatch");
             }
             int diagnostics = 0;
             long validatedSourceLocations = 0;
@@ -76,10 +76,7 @@ final class SampleDataResultValidator {
                         paths.get(index), workspace.resolve("file-" + index));
                 diagnostics += validation.diagnostics();
                 validatedSourceLocations += validation.validatedSourceLocations();
-                String stem = stem(paths.get(index));
-                String category = stem.endsWith(DERIVED_SUFFIX)
-                        ? stem.substring(0, stem.length() - DERIVED_SUFFIX.length())
-                        : stem;
+                String category = logicalId(resultDirectory, paths.get(index));
                 SampleDataMetadataInventoryValidator.InventoryValidation existing = inventories.putIfAbsent(
                         category, validation.inventory());
                 if (existing != null && !existing.equals(validation.inventory())) {
@@ -92,7 +89,7 @@ final class SampleDataResultValidator {
             }
             ObjectNode report = ReleaseVerificationJson.MAPPER.createObjectNode();
             report.put("status", "PASS");
-            report.put("categories", direct.size());
+            report.put("categories", directCategories.size());
             report.put("jsonFiles", paths.size());
             report.put("diagnostics", diagnostics);
             report.put("validatedSourceLocationCount", validatedSourceLocations);
@@ -215,19 +212,53 @@ final class SampleDataResultValidator {
     }
 
     private List<Path> jsonFiles(Path directory) {
-        try (Stream<Path> entries = Files.list(directory)) {
-            return entries.filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .sorted()
-                    .toList();
+        try (Stream<Path> entries = Files.walk(directory)) {
+            Path root = directory.toAbsolutePath().normalize();
+            List<Path> paths = new java.util.ArrayList<>();
+            for (Path path : entries.toList()) {
+                Path current = path.toAbsolutePath().normalize();
+                if (Files.isSymbolicLink(path)) {
+                    throw failure(path, "sample-data result entries must not be symlinks");
+                }
+                if (current.equals(root)) {
+                    if (!Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+                        throw failure(path, "sample-data result root must be a directory");
+                    }
+                    continue;
+                }
+                Path relative = root.relativize(current);
+                if (relative.getNameCount() == 1
+                        && Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+                    continue;
+                }
+                String name = path.getFileName().toString();
+                if (relative.getNameCount() == 2
+                        && Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
+                        && (name.equals("direct.json") || name.equals("result.json"))) {
+                    paths.add(path);
+                    continue;
+                }
+                throw failure(path, "unexpected entry outside a fixed sample-data output bundle");
+            }
+            return paths.stream().sorted().toList();
         } catch (IOException error) {
             throw new ReleaseVerificationException("failed to list sample-data results", error);
         }
     }
 
-    private String stem(Path path) {
-        String name = path.getFileName().toString();
-        return name.substring(0, name.length() - ".json".length());
+    private String logicalId(Path root, Path view) {
+        Path parent = view.getParent();
+        if (parent == null) {
+            throw new ReleaseVerificationException("sample-data bundle view has no case directory");
+        }
+        String id = root.toAbsolutePath().normalize()
+                .relativize(parent.toAbsolutePath().normalize())
+                .toString()
+                .replace('\\', '/');
+        if (id.isBlank()) {
+            throw new ReleaseVerificationException("sample-data bundle case identity is empty");
+        }
+        return id;
     }
 
     private ReleaseVerificationException failure(Path path, String message) {

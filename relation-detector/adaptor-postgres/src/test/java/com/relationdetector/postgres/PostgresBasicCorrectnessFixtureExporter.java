@@ -29,6 +29,7 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.core.parser.runtime.DdlRelationParserRunner;
 import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.parser.runtime.SqlRelationParserRunner;
 
 /**
@@ -421,6 +422,7 @@ public final class PostgresBasicCorrectnessFixtureExporter {
         ScanConfig config = config(scope.schema());
         int relationCount = 0;
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
+        NamespaceContext namespace = new NamespaceContext(scope.catalog(), scope.schema(), List.of());
         for (SqlSample sample : samples) {
             SqlStatementRecord statement = new SqlStatementRecord(
                     sample.sql(),
@@ -429,7 +431,8 @@ public final class PostgresBasicCorrectnessFixtureExporter {
                     1,
                     sample.sql().lines().count(),
                     Map.of());
-            relationCount += runner.parse(adaptor, config, statement, context).size();
+            relationCount += runner.parseStructuredAndRelations(
+                    adaptor, config, statement, context, namespace).relationships().size();
         }
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("caseId", caseId);
@@ -473,12 +476,12 @@ public final class PostgresBasicCorrectnessFixtureExporter {
                 1,
                 sqlText.lines().count(),
                 Map.of());
-        List<RelationshipCandidate> relationships = new SqlRelationParserRunner().parse(
-                adaptor,
-                config,
-                statement,
-                new AdaptorContext(scope, Map.of(), warning -> {
-                }));
+        AdaptorContext context = new AdaptorContext(scope, Map.of(), warning -> {
+        });
+        NamespaceContext namespace = new NamespaceContext(scope.catalog(), scope.schema(), List.of());
+        List<RelationshipCandidate> relationships = new SqlRelationParserRunner()
+                .parseStructuredAndRelations(adaptor, config, statement, context, namespace)
+                .relationships();
         return fingerprints(relationships);
     }
 

@@ -56,6 +56,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.adaptor.AdaptorContractException;
+import com.relationdetector.core.identity.NamespaceContext;
 
 /**
  * Tests SQL parser dispatch without running a full scan.
@@ -71,8 +72,8 @@ class SqlRelationParserRunnerTest {
         AtomicInteger parserCalls = new AtomicInteger();
         ScanConfig config = new ScanConfig();
 
-        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor((statement, context) -> {
+        List<RelationshipCandidate> relations = parseRelationships(
+                new TestAdaptor((statement, context) -> {
                     parserCalls.incrementAndGet();
                     return List.of();
                 }), config, statement(), context(new ArrayList<>()));
@@ -90,7 +91,7 @@ class SqlRelationParserRunnerTest {
                 EvidenceType.DDL_FOREIGN_KEY, 0.9d, EvidenceSourceType.DDL_FILE,
                 "plugin.sql", "not SQL relationship evidence"));
 
-        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+        assertThrows(AdaptorContractException.class, () -> parseRelationships(
                 new TestAdaptor((statement, context) -> {
                     context.warn(WarningMessage.warn(WarningType.PARSE_WARNING,
                             "PLUGIN_WARNING", "must remain detached", statement.sourceName(), statement.startLine()));
@@ -104,7 +105,7 @@ class SqlRelationParserRunnerTest {
     void fallbackParserRejectsNullCollectionsAndElementsAtomically() {
         ScanConfig config = new ScanConfig();
         List<WarningMessage> nullListWarnings = new ArrayList<>();
-        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+        assertThrows(AdaptorContractException.class, () -> parseRelationships(
                 new TestAdaptor((statement, context) -> {
                     context.warn(WarningMessage.warn(WarningType.PARSE_WARNING,
                             "PLUGIN_WARNING", "must remain detached", statement.sourceName(), statement.startLine()));
@@ -113,7 +114,7 @@ class SqlRelationParserRunnerTest {
         assertTrue(nullListWarnings.isEmpty());
 
         List<WarningMessage> nullElementWarnings = new ArrayList<>();
-        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+        assertThrows(AdaptorContractException.class, () -> parseRelationships(
                 new TestAdaptor((statement, context) -> java.util.Arrays.asList((RelationshipCandidate) null)),
                 config, statement(), context(nullElementWarnings)));
         assertTrue(nullElementWarnings.isEmpty());
@@ -127,7 +128,7 @@ class SqlRelationParserRunnerTest {
                 EvidenceType.SQL_LOG_JOIN, 0.6d, EvidenceSourceType.PLAIN_SQL,
                 "other.sql", "join"));
 
-        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner().parse(
+        assertThrows(AdaptorContractException.class, () -> parseRelationships(
                 new TestAdaptor((statement, context) -> List.of(candidate)),
                 config, statement(), context(new ArrayList<>())));
     }
@@ -140,7 +141,7 @@ class SqlRelationParserRunnerTest {
                 EvidenceType.SQL_LOG_JOIN, 0.6d, EvidenceSourceType.PLAIN_SQL,
                 System.getProperty("user.dir") + "/runner.sql", "join"));
 
-        List<RelationshipCandidate> result = new SqlRelationParserRunner().parse(
+        List<RelationshipCandidate> result = parseRelationships(
                 new TestAdaptor((statement, context) -> List.of(candidate)),
                 config, statement(), context(new ArrayList<>()));
 
@@ -154,8 +155,8 @@ class SqlRelationParserRunnerTest {
         config.databaseType = DatabaseType.MYSQL;
         List<WarningMessage> warnings = new ArrayList<>();
 
-        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor((statement, context) -> {
+        List<RelationshipCandidate> relations = parseRelationships(
+                new TestAdaptor((statement, context) -> {
                     throw new AssertionError("legacy SQL parser should not be used");
                 }, (statement, context) -> {
                     structuredCalls.incrementAndGet();
@@ -174,8 +175,7 @@ class SqlRelationParserRunnerTest {
         config.databaseType = DatabaseType.MYSQL;
         List<WarningMessage> warnings = new ArrayList<>();
 
-        new SqlRelationParserRunner()
-                .parse(new TestAdaptor((statement, context) -> List.of(), (statement, context) ->
+        parseRelationships(new TestAdaptor((statement, context) -> List.of(), (statement, context) ->
                         new StructuredParseResult("token-event", "mysql", statement.sourceName(),
                                 List.of(),
                                 List.of(WarningMessage.warn(WarningType.PARSE_WARNING,
@@ -198,8 +198,8 @@ class SqlRelationParserRunnerTest {
         config.databaseType = DatabaseType.MYSQL;
         List<WarningMessage> warnings = new ArrayList<>();
 
-        assertThrows(AdaptorContractException.class, () -> new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((statement, context) -> List.of(),
+        assertThrows(AdaptorContractException.class, () -> parseOutcome(
+                new TestAdaptor((statement, context) -> List.of(),
                                 (statement, context) -> {
                                     context.warn(WarningMessage.warn(
                                             WarningType.PARSE_WARNING, "PLUGIN_WARNING", "partial",
@@ -224,8 +224,7 @@ class SqlRelationParserRunnerTest {
         List<WarningMessage> warnings = new ArrayList<>();
 
         try {
-            new SqlRelationParserRunner()
-                    .parse(new TestAdaptor((statement, context) -> {
+            parseRelationships(new TestAdaptor((statement, context) -> {
                         throw new AssertionError("legacy SQL parser should not be used");
                     }, (statement, context) -> {
                         throw new IllegalStateException("token-event parser exploded");
@@ -249,8 +248,8 @@ class SqlRelationParserRunnerTest {
                 JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS t USING (CONSTRAINT_NAME, TABLE_NAME)
                 """, StatementSourceType.NATIVE_LOG, "mysql-native.log", 1, 4, Map.of());
 
-        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+        SqlRelationParserRunner.ParsedSqlRelations outcome = parseOutcome(
+                new TestAdaptor((record, context) -> List.of(),
                         (record, context) -> {
                             structuredCalls.incrementAndGet();
                             return parsedWithRowsets(record, "INFORMATION_SCHEMA.KEY_COLUMN_USAGE",
@@ -274,8 +273,8 @@ class SqlRelationParserRunnerTest {
                 JOIN users u ON sc.user_id = u.id
                 """, StatementSourceType.NATIVE_LOG, "mysql-native.log", 1, 4, Map.of());
 
-        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+        SqlRelationParserRunner.ParsedSqlRelations outcome = parseOutcome(
+                new TestAdaptor((record, context) -> List.of(),
                         (record, context) -> {
                             structuredCalls.incrementAndGet();
                             return parsedWithRowsets(record, "system_config", "users");
@@ -298,8 +297,8 @@ class SqlRelationParserRunnerTest {
                 JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
                 """, StatementSourceType.NATIVE_LOG, "postgres-native.log", 1, 4, Map.of());
 
-        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+        SqlRelationParserRunner.ParsedSqlRelations outcome = parseOutcome(
+                new TestAdaptor((record, context) -> List.of(),
                         (record, context) -> {
                             structuredCalls.incrementAndGet();
                             return parsedWithRowsets(record, "pg_catalog.pg_class", "pg_catalog.pg_namespace");
@@ -322,8 +321,8 @@ class SqlRelationParserRunnerTest {
                 7,
                 Map.of("sourceObjectType", "SQL_WRITE"));
 
-        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+        SqlRelationParserRunner.ParsedSqlRelations outcome = parseOutcome(
+                new TestAdaptor((record, context) -> List.of(),
                         (record, context) -> parsedWithRowsets(record, "orders")),
                         config,
                         statement,
@@ -344,8 +343,8 @@ class SqlRelationParserRunnerTest {
                 3,
                 Map.of());
 
-        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+        SqlRelationParserRunner.ParsedSqlRelations outcome = parseOutcome(
+                new TestAdaptor((record, context) -> List.of(),
                         (record, context) -> new StructuredParseResult(
                                 "token-event", "test", record.sourceName(),
                                 List.of(new WriteEvent(
@@ -373,8 +372,8 @@ class SqlRelationParserRunnerTest {
                 1,
                 Map.of("sourceObjectType", "QUERY", "sourceObjectName", "order_view"));
 
-        SqlRelationParserRunner.ParsedSqlRelations outcome = new SqlRelationParserRunner()
-                .parseStructuredAndRelations(new TestAdaptor((record, context) -> List.of(),
+        SqlRelationParserRunner.ParsedSqlRelations outcome = parseOutcome(
+                new TestAdaptor((record, context) -> List.of(),
                         (record, context) -> parsedWithRowsets(record, "orders")),
                         config,
                         statement,
@@ -382,6 +381,28 @@ class SqlRelationParserRunnerTest {
 
         assertEquals("QUERY", outcome.structured().orElseThrow().events().get(0)
                 .provenance().sourceObjectType());
+    }
+
+    private List<RelationshipCandidate> parseRelationships(
+            DatabaseAdaptor adaptor,
+            ScanConfig config,
+            SqlStatementRecord statement,
+            AdaptorContext context
+    ) {
+        return parseOutcome(adaptor, config, statement, context).relationships();
+    }
+
+    private SqlRelationParserRunner.ParsedSqlRelations parseOutcome(
+            DatabaseAdaptor adaptor,
+            ScanConfig config,
+            SqlStatementRecord statement,
+            AdaptorContext context
+    ) {
+        NamespaceContext namespace = context == null || context.scope() == null
+                ? NamespaceContext.empty()
+                : new NamespaceContext(context.scope().catalog(), context.scope().schema(), List.of());
+        return new SqlRelationParserRunner()
+                .parseStructuredAndRelations(adaptor, config, statement, context, namespace);
     }
 
     private StructuredParseResult parsedWithRowsets(SqlStatementRecord statement, String... rowsets) {

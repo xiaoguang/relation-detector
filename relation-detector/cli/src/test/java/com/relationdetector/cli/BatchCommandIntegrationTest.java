@@ -24,7 +24,7 @@ class BatchCommandIntegrationTest {
         Path secondConfig = writeConfig("second.yml", sql);
         Path manifest = tempDir.resolve("batch.yml");
         Files.writeString(manifest, """
-                version: 1
+                version: 2
                 execution:
                   caseParallelism: 2
                   maxWorkerThreads: 2
@@ -32,8 +32,7 @@ class BatchCommandIntegrationTest {
                 cases:
                   - id: first
                     config: %s
-                    output: first.json
-                    directOutput: first-direct.json
+                    outputBundle: first
                   - id: second
                     config: %s
                     output: second.json
@@ -42,12 +41,73 @@ class BatchCommandIntegrationTest {
         int code = new Main.MainCommand().run(new String[]{"batch", "--manifest", manifest.toString()});
 
         assertEquals(0, code);
-        assertTrue(Files.isRegularFile(tempDir.resolve("first.json")));
-        assertTrue(Files.isRegularFile(tempDir.resolve("first-direct.json")));
+        assertTrue(Files.isRegularFile(tempDir.resolve("first/result.json")));
+        assertTrue(Files.isRegularFile(tempDir.resolve("first/direct.json")));
         JsonNode report = JSON.readTree(tempDir.resolve("report.json").toFile());
         assertEquals("first", report.path("cases").get(0).path("id").asText());
         assertEquals("second", report.path("cases").get(1).path("id").asText());
         assertEquals("SUCCESS", report.path("cases").get(0).path("status").asText());
+        assertEquals(2, report.path("artifactSchemaVersion").asInt());
+        assertTrue(report.path("cases").get(0).has("outputBundle"));
+        assertTrue(report.path("cases").get(1).has("output"));
+        assertTrue(report.path("cases").get(0).path("directOutput").isMissingNode());
+    }
+
+    @Test
+    void batchArgumentErrorsAreDistinctFromManifestAndReportWriteErrors() throws Exception {
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", "--fail-fast"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", "x", "--case-parallelism", "0"}));
+
+        Path config = writeConfig("valid.yml", tempDir.resolve("input.sql"));
+        Files.writeString(tempDir.resolve("input.sql"), "SELECT 1;\n");
+        Path v1 = tempDir.resolve("v1.yml");
+        Files.writeString(v1, """
+                version: 1
+                cases:
+                  - id: one
+                    config: %s
+                    output: one.json
+                """.formatted(config.getFileName()));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.CONFIG_FORMAT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", v1.toString()}));
+
+        Path manifest = writeSingleCaseManifest("report-failure.yml", config.getFileName());
+        Files.createDirectories(tempDir.resolve("report.json"));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.OUTPUT_WRITE_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", manifest.toString()}));
+    }
+
+    @Test
+    void batchCaseOutputFailureReturnsOutputWriteErrorAndReportsTheTypedFailure() throws Exception {
+        Path sql = tempDir.resolve("input.sql");
+        Files.writeString(sql, "SELECT 1;\n");
+        Path config = writeConfig("valid.yml", sql);
+        Path bundle = tempDir.resolve("existing-bundle");
+        Files.createDirectories(bundle);
+        Files.writeString(bundle.resolve("keep.txt"), "keep");
+        Path manifest = tempDir.resolve("batch.yml");
+        Files.writeString(manifest, """
+                version: 2
+                report: report.json
+                cases:
+                  - id: case
+                    config: %s
+                    outputBundle: %s
+                """.formatted(config.getFileName(), bundle.getFileName()));
+
+        int code = new Main.MainCommand().run(new String[] {"batch", "--manifest", manifest.toString()});
+
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.OUTPUT_WRITE_ERROR.code(), code);
+        assertEquals("keep", Files.readString(bundle.resolve("keep.txt")));
+        JsonNode report = JSON.readTree(tempDir.resolve("report.json").toFile());
+        assertEquals("FAILED", report.path("cases").get(0).path("status").asText());
+        assertEquals("OUTPUT_WRITE_ERROR", report.path("cases").get(0).path("errorCode").asText());
     }
 
     @Test
@@ -90,7 +150,7 @@ class BatchCommandIntegrationTest {
     private Path writeSingleCaseManifest(String name, Path config) throws Exception {
         Path manifest = tempDir.resolve(name);
         Files.writeString(manifest, """
-                version: 1
+                version: 2
                 report: report.json
                 cases:
                   - id: case

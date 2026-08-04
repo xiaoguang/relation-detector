@@ -1,6 +1,7 @@
 package com.relationdetector.semantic;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -133,6 +134,34 @@ final class SemanticLayerArchitectureTest {
     }
 
     @Test
+    void obsoleteSemanticConvenienceApisStayRemoved() throws Exception {
+        Path extraction = Path.of("src/main/java/com/relationdetector/semantic/extraction");
+        String normalizer = Files.readString(
+                extraction.resolve("normalization/SemanticExtractionDocumentNormalizer.java"));
+        String session = Files.readString(
+                extraction.resolve("runtime/SemanticProcessingSession.java"));
+        String openAi = Files.readString(
+                extraction.resolve("runtime/OpenAiResponsesSemanticExtractor.java"));
+        String auditWriter = Files.readString(
+                extraction.resolve("artifact/SemanticRunAuditArtifactWriter.java"));
+
+        assertFalse(normalizer.contains("public ObjectNode normalize(JsonNode rawDocument"),
+                "raw formal-document normalization must remain package-private");
+        assertEquals(1, occurrences(session, "public static SemanticProcessingSession open("),
+                "session callers must provide an explicit input-token budget");
+        assertEquals(1, occurrences(session, "public static SemanticProcessingSession openForOutput("),
+                "output session callers must provide an explicit input-token budget");
+        assertFalse(session.contains("public void writeKgArtifacts(Path outputDirectory)"));
+        assertFalse(session.contains("writeEvidenceBundle("));
+        assertEquals(2, occurrences(openAi, "OpenAiResponsesSemanticExtractor("),
+                "OpenAI extractor must retain only production and package-private test constructors");
+        assertFalse(openAi.contains("public String requestJson("),
+                "model requests must cross the bounded file-backed boundary");
+        assertFalse(auditWriter.contains("private void writeReconciliation("),
+                "audit writer must not retain a pure forwarding reconciliation wrapper");
+    }
+
+    @Test
     void qualifiedIdentifierSplittingHasOneTypedOwner() throws Exception {
         Path root = Path.of("src/main/java/com/relationdetector/semantic");
         List<Path> offenders = new ArrayList<>();
@@ -164,5 +193,15 @@ final class SemanticLayerArchitectureTest {
                     .filter(path -> !path.getFileName().toString().equals("package-info.java"))
                     .toList();
         }
+    }
+
+    private int occurrences(String text, String token) {
+        int count = 0;
+        int offset = 0;
+        while ((offset = text.indexOf(token, offset)) >= 0) {
+            count++;
+            offset += token.length();
+        }
+        return count;
     }
 }

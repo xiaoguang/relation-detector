@@ -70,6 +70,7 @@ chmod +x "$TMP_DIR/mvn-success"
 CORRECTNESS_MVN="$TMP_DIR/mvn-success" \
 CORRECTNESS_OUTPUT_DIR="$TMP_DIR/output" \
 CORRECTNESS_RUN_SUMMARY="$TMP_DIR/current-summary.json" \
+CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
 CORRECTNESS_LOCK_DIR="$TMP_DIR/lock" \
 CORRECTNESS_TEST_INVOCATIONS="$TMP_DIR/invocations.txt" \
 CORRECTNESS_SKIP_PROCESS_GUARD=true \
@@ -93,9 +94,89 @@ jq -e '.profile == "full-isolated" and .discovered == 19 and
        (.dialectVersions | length) == 19' \
   "$TMP_DIR/output/correctness-run-summary.json" >/dev/null
 
+cat >"$TMP_DIR/mvn-no-summary" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ -e "$CORRECTNESS_RUN_SUMMARY" ]]; then
+  printf 'present\n' >>"$CORRECTNESS_STALE_PROBE"
+else
+  printf 'missing\n' >>"$CORRECTNESS_STALE_PROBE"
+fi
+exit 0
+SH
+chmod +x "$TMP_DIR/mvn-no-summary"
+printf '{"profile":"stale"}\n' >"$TMP_DIR/stale-summary.json"
+if CORRECTNESS_MVN="$TMP_DIR/mvn-no-summary" \
+    CORRECTNESS_OUTPUT_DIR="$TMP_DIR/stale-output" \
+    CORRECTNESS_RUN_SUMMARY="$TMP_DIR/stale-summary.json" \
+    CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
+    CORRECTNESS_LOCK_DIR="$TMP_DIR/stale-lock" \
+    CORRECTNESS_STALE_PROBE="$TMP_DIR/stale-probe.txt" \
+    CORRECTNESS_SKIP_PROCESS_GUARD=true \
+      "$RUNNER" >/dev/null 2>&1; then
+  echo "runner reused a stale correctness summary" >&2
+  exit 1
+fi
+if [[ "$(head -1 "$TMP_DIR/stale-probe.txt")" != "missing" ]]; then
+  echo "runner launched Maven before removing the stale summary" >&2
+  exit 1
+fi
+
+mkdir -p "$TMP_DIR/validated-root"
+printf '{"profile":"outside"}\n' >"$TMP_DIR/outside-summary.json"
+if CORRECTNESS_MVN="$TMP_DIR/mvn-no-summary" \
+    CORRECTNESS_OUTPUT_DIR="$TMP_DIR/outside-output" \
+    CORRECTNESS_RUN_SUMMARY="$TMP_DIR/outside-summary.json" \
+    CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR/validated-root" \
+    CORRECTNESS_LOCK_DIR="$TMP_DIR/outside-lock" \
+    CORRECTNESS_STALE_PROBE="$TMP_DIR/outside-probe.txt" \
+    CORRECTNESS_SKIP_PROCESS_GUARD=true \
+      "$RUNNER" >/dev/null 2>&1; then
+  echo "runner deleted a summary outside its validated root" >&2
+  exit 1
+fi
+grep -q 'outside' "$TMP_DIR/outside-summary.json"
+[[ ! -e "$TMP_DIR/outside-probe.txt" ]]
+
+if CORRECTNESS_MVN="$TMP_DIR/mvn-no-summary" \
+    CORRECTNESS_OUTPUT_DIR="$TMP_DIR/outside-missing-output" \
+    CORRECTNESS_RUN_SUMMARY="$TMP_DIR/outside-missing-summary.json" \
+    CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR/validated-root" \
+    CORRECTNESS_LOCK_DIR="$TMP_DIR/outside-missing-lock" \
+    CORRECTNESS_STALE_PROBE="$TMP_DIR/outside-missing-probe.txt" \
+    CORRECTNESS_SKIP_PROCESS_GUARD=true \
+      "$RUNNER" >/dev/null 2>&1; then
+  echo "runner allowed a missing summary path outside its validated root" >&2
+  exit 1
+fi
+[[ ! -e "$TMP_DIR/outside-missing-summary.json" ]]
+[[ ! -e "$TMP_DIR/outside-missing-probe.txt" ]]
+
+cat >"$TMP_DIR/mvn-symlink-summary" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+ln -s "$CORRECTNESS_SYMLINK_TARGET" "$CORRECTNESS_RUN_SUMMARY"
+SH
+chmod +x "$TMP_DIR/mvn-symlink-summary"
+printf '{"profile":"link-target"}\n' >"$TMP_DIR/symlink-target.json"
+if CORRECTNESS_MVN="$TMP_DIR/mvn-symlink-summary" \
+    CORRECTNESS_OUTPUT_DIR="$TMP_DIR/symlink-output" \
+    CORRECTNESS_RUN_SUMMARY="$TMP_DIR/symlink-summary.json" \
+    CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
+    CORRECTNESS_LOCK_DIR="$TMP_DIR/symlink-lock" \
+    CORRECTNESS_SYMLINK_TARGET="$TMP_DIR/symlink-target.json" \
+    CORRECTNESS_SKIP_PROCESS_GUARD=true \
+      "$RUNNER" >/dev/null 2>&1; then
+  echo "runner accepted a symlink written as the new correctness summary" >&2
+  exit 1
+fi
+[[ -L "$TMP_DIR/symlink-summary.json" ]]
+grep -q 'link-target' "$TMP_DIR/symlink-target.json"
+
 if CORRECTNESS_MVN="$TMP_DIR/mvn-success" \
     CORRECTNESS_OUTPUT_DIR="$TMP_DIR/rejected-output" \
     CORRECTNESS_RUN_SUMMARY="$TMP_DIR/rejected-summary.json" \
+    CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
     CORRECTNESS_LOCK_DIR="$TMP_DIR/rejected-lock" \
     CORRECTNESS_TEST_INVOCATIONS="$TMP_DIR/rejected-invocations.txt" \
     CORRECTNESS_SKIP_PROCESS_GUARD=true \
@@ -118,6 +199,7 @@ chmod +x "$TMP_DIR/mvn-blocking"
 CORRECTNESS_MVN="$TMP_DIR/mvn-blocking" \
 CORRECTNESS_OUTPUT_DIR="$TMP_DIR/blocking-output" \
 CORRECTNESS_RUN_SUMMARY="$TMP_DIR/blocking-summary.json" \
+CORRECTNESS_RUN_SUMMARY_ROOT="$TMP_DIR" \
 CORRECTNESS_LOCK_DIR="$TMP_DIR/blocking-lock" \
 CORRECTNESS_BLOCKING_CHILD_PID="$TMP_DIR/blocking-child.pid" \
 CORRECTNESS_SKIP_PROCESS_GUARD=true \

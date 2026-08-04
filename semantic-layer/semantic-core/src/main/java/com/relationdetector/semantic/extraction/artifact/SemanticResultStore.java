@@ -79,12 +79,12 @@ public final class SemanticResultStore implements AutoCloseable {
         }
         this.workspace = workspace;
         this.runPlan = runPlan;
+        if (Files.exists(workspace)) {
+            throw new SemanticExtractionValidationException(
+                    "semantic normalized result workspace already exists");
+        }
         this.ownerManifestValidator = new SemanticOwnerManifestValidator(runPlan, evidenceLookup);
         try {
-            if (Files.exists(workspace)) {
-                throw new SemanticExtractionValidationException(
-                        "semantic normalized result workspace already exists");
-            }
             Files.createDirectories(workspace);
             for (Section section : Section.values()) {
                 sections.put(section, section == Section.ENTITIES
@@ -94,13 +94,33 @@ public final class SemanticResultStore implements AutoCloseable {
                                 workspace.resolve(section.wireName), this::mergeVariants));
             }
         } catch (IOException failure) {
+            closeAfterConstructionFailure(failure);
             throw new ScanResultContractException("failed to create semantic normalized result store", failure);
+        } catch (RuntimeException failure) {
+            closeAfterConstructionFailure(failure);
+            throw failure;
         }
         this.selection = new SemanticResultSelection(sections);
         this.validator = new SemanticResultValidator(
                 evidenceLookup, sections, selection);
         this.documentWriter = new SemanticResultDocumentWriter(
                 workspace, sections, selection);
+    }
+
+    private void closeAfterConstructionFailure(Exception primary) {
+        try {
+            ownerManifestValidator.close();
+        } catch (RuntimeException cleanup) {
+            primary.addSuppressed(cleanup);
+        }
+        for (ExternalJsonRecordStore store : sections.values()) {
+            try {
+                store.close();
+            } catch (RuntimeException cleanup) {
+                primary.addSuppressed(cleanup);
+            }
+        }
+        SemanticFileTreeOperations.deleteRecursivelyBestEffort(workspace);
     }
 
     public void append(
@@ -305,6 +325,11 @@ public final class SemanticResultStore implements AutoCloseable {
         }
         closed = true;
         RuntimeException failure = null;
+        try {
+            ownerManifestValidator.close();
+        } catch (RuntimeException error) {
+            failure = error;
+        }
         for (ExternalJsonRecordStore store : sections.values()) {
             try {
                 store.close();

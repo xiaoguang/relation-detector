@@ -7,10 +7,11 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 [[ -x "$COMPARE" ]]
-mkdir -p "$TMP_DIR/a" "$TMP_DIR/b" "$TMP_DIR/c" "$TMP_DIR/strict-a" "$TMP_DIR/strict-b" \
-  "$TMP_DIR/evidence-a" "$TMP_DIR/evidence-b"
+mkdir -p "$TMP_DIR/a/mysql" "$TMP_DIR/b/mysql" "$TMP_DIR/c/mysql" \
+  "$TMP_DIR/strict-a/postgres" "$TMP_DIR/strict-b/postgres" \
+  "$TMP_DIR/evidence-a/postgres" "$TMP_DIR/evidence-b/postgres"
 
-cat >"$TMP_DIR/a/mysql.json" <<'JSON'
+cat >"$TMP_DIR/a/mysql/direct.json" <<'JSON'
 {
   "relationships": [{
     "source": {"table":"orders","column":"customer_id"},
@@ -34,7 +35,7 @@ cat >"$TMP_DIR/a/mysql.json" <<'JSON'
 }
 JSON
 
-cat >"$TMP_DIR/b/mysql.json" <<'JSON'
+cat >"$TMP_DIR/b/mysql/direct.json" <<'JSON'
 {
   "relationships": [{
     "source": {"table":"orders","column":"customer_id"},
@@ -58,7 +59,7 @@ cat >"$TMP_DIR/b/mysql.json" <<'JSON'
 }
 JSON
 
-python3 - "$TMP_DIR/a/mysql.json" "$TMP_DIR/b/mysql.json" <<'PY'
+python3 - "$TMP_DIR/a/mysql/direct.json" "$TMP_DIR/b/mysql/direct.json" <<'PY'
 import json, sys
 legacy = "GRAM" + "MER"
 for path, marker in ((sys.argv[1], "FULL_" + legacy), (sys.argv[2], "FULL_GRAMMAR")):
@@ -68,6 +69,8 @@ for path, marker in ((sys.argv[1], "FULL_" + legacy), (sys.argv[2], "FULL_GRAMMA
     data["relationships"][0]["rawEvidence"][0]["attributes"][context_key] = "typed-context"
     json.dump(data, open(path, "w", encoding="utf-8"))
 PY
+cp "$TMP_DIR/a/mysql/direct.json" "$TMP_DIR/a/mysql/result.json"
+cp "$TMP_DIR/b/mysql/direct.json" "$TMP_DIR/b/mysql/result.json"
 
 python3 "$COMPARE" --before "$TMP_DIR/a" --after "$TMP_DIR/b" \
   --transition A_TO_B --output "$TMP_DIR/equal.json"
@@ -76,23 +79,24 @@ jq -e '.summary.factChanges == 0 and .summary.observationChanges == 0 and .summa
 
 python3 "$COMPARE" --inventory-root "$TMP_DIR/a" --output "$TMP_DIR/inventory.json"
 jq -e '
-  .summary.factCount == 2 and
-  .summary.observationCount == 2 and
+  .summary.factCount == 4 and
+  .summary.observationCount == 4 and
   (.factFingerprint | length) == 64 and
   (.observationFingerprint | length) == 64
 ' "$TMP_DIR/inventory.json" >/dev/null
 
-python3 - "$TMP_DIR/b/mysql.json" "$TMP_DIR/c/mysql.json" <<'PY'
+python3 - "$TMP_DIR/b/mysql/direct.json" "$TMP_DIR/c/mysql/direct.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1], encoding="utf-8"))
 data["dataLineages"][0]["flowKind"] = "CONTROL"
 data["relationships"][0]["rawEvidence"][0]["attributes"]["sourceLine"] = 4
 json.dump(data, open(sys.argv[2], "w", encoding="utf-8"))
 PY
+cp "$TMP_DIR/c/mysql/direct.json" "$TMP_DIR/c/mysql/result.json"
 
 python3 "$COMPARE" --before "$TMP_DIR/b" --after "$TMP_DIR/c" \
   --transition B_TO_C --output "$TMP_DIR/changed.json"
-jq -e '.summary.factChanges == 2 and .summary.observationChanges == 4 and .summary.reviewNeeded == 6' \
+jq -e '.summary.factChanges == 4 and .summary.observationChanges == 8 and .summary.reviewNeeded == 12' \
   "$TMP_DIR/changed.json" >/dev/null
 jq -e 'all(.changes[]; .classification == "REVIEW_NEEDED" and (.id | length) == 64)' \
   "$TMP_DIR/changed.json" >/dev/null
@@ -105,10 +109,10 @@ jq '{changes: (.changes | map({key: .id, value: {classification: (if .scope == "
 python3 "$COMPARE" --before "$TMP_DIR/b" --after "$TMP_DIR/c" \
   --transition B_TO_C --classifications "$TMP_DIR/classifications.json" \
   --require-no-review --output "$TMP_DIR/classified.json"
-jq -e '.summary.reviewNeeded == 0 and .summary.classifiedChanges == 6' \
+jq -e '.summary.reviewNeeded == 0 and .summary.classifiedChanges == 12' \
   "$TMP_DIR/classified.json" >/dev/null
 
-python3 - "$TMP_DIR/strict-a/postgres.json" "$TMP_DIR/strict-b/postgres.json" <<'PY'
+python3 - "$TMP_DIR/strict-a/postgres/direct.json" "$TMP_DIR/strict-b/postgres/direct.json" <<'PY'
 import json
 import sys
 
@@ -165,6 +169,8 @@ for path, data in zip(sys.argv[1:], (before, after)):
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(data, handle)
 PY
+cp "$TMP_DIR/strict-a/postgres/direct.json" "$TMP_DIR/strict-a/postgres/result.json"
+cp "$TMP_DIR/strict-b/postgres/direct.json" "$TMP_DIR/strict-b/postgres/result.json"
 
 python3 "$COMPARE" --before "$TMP_DIR/strict-a" --after "$TMP_DIR/strict-b" \
   --transition A_TO_B --output "$TMP_DIR/strict-unclassified.json"
@@ -182,13 +188,13 @@ fi
 rg -q 'requires a strict 1:1 observation pair' "$TMP_DIR/wide-provenance.stderr"
 
 jq -e '
-  .summary.provenanceNormalizationPairs == 1 and
-  .summary.provenanceNormalizationObservationChanges == 2 and
-  ([.changes[] | select(.classification == "PROVENANCE_NORMALIZATION_ONLY")] | length) == 2 and
-  ([.changes[] | select(.classification == "REVIEW_NEEDED")] | length) == 8
+  .summary.provenanceNormalizationPairs == 2 and
+  .summary.provenanceNormalizationObservationChanges == 4 and
+  ([.changes[] | select(.classification == "PROVENANCE_NORMALIZATION_ONLY")] | length) == 4 and
+  ([.changes[] | select(.classification == "REVIEW_NEEDED")] | length) == 16
 ' "$TMP_DIR/strict-unclassified.json" >/dev/null
 
-python3 - "$TMP_DIR/evidence-a/postgres.json" "$TMP_DIR/evidence-b/postgres.json" <<'PY'
+python3 - "$TMP_DIR/evidence-a/postgres/direct.json" "$TMP_DIR/evidence-b/postgres/direct.json" <<'PY'
 import json
 import sys
 
@@ -227,8 +233,8 @@ for path, data in zip(sys.argv[1:], (
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(data, handle)
 PY
-cp "$TMP_DIR/evidence-a/postgres.json" "$TMP_DIR/evidence-a/postgres-derived-fresh.json"
-cp "$TMP_DIR/evidence-b/postgres.json" "$TMP_DIR/evidence-b/postgres-derived-fresh.json"
+cp "$TMP_DIR/evidence-a/postgres/direct.json" "$TMP_DIR/evidence-a/postgres/result.json"
+cp "$TMP_DIR/evidence-b/postgres/direct.json" "$TMP_DIR/evidence-b/postgres/result.json"
 
 python3 "$COMPARE" --before "$TMP_DIR/evidence-a" --after "$TMP_DIR/evidence-b" \
   --transition A_TO_B --output "$TMP_DIR/evidence-change.json"
@@ -236,6 +242,7 @@ jq -e '
   .summary.factChanges == 4 and
   .summary.observationChanges == 0 and
   .summary.reviewNeeded == 4 and
+  ([.changes[].parser] | unique | sort) == ["postgres/direct.json", "postgres/result.json"] and
   ([.changes[].id] | unique | length) == (.changes | length)
 ' "$TMP_DIR/evidence-change.json" >/dev/null
 

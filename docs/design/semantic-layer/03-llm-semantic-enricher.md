@@ -129,15 +129,18 @@ public final class SemanticNormalizationFacade {
 }
 
 public interface SemanticModelClient {
-    SemanticExtractionResult extract(SemanticExtractionPrompt prompt);
+    SemanticModelCallResult extract(
+        SemanticExtractionPrompt prompt,
+        SemanticModelCallContext context);
 }
 ```
 
 CLI只调用facade。`SemanticProcessingSession`、`SemanticShardPlanner`和`SemanticRunArtifactWriter`是core内部
 编排细节：它们分别拥有磁盘工作区、全局owner分片和原子run事务，不构成额外公开命令契约。
 
-`SemanticModelClient` 只负责模型调用。request-only artifact 由调用方提供独立的请求渲染函数，
-不把序列化职责放回模型接口。normalizer 不提供无 evidence bundle 的入口；CLI 的
+`SemanticModelClient` 只负责模型调用，通过`SemanticModelCallContext`中的固定path写入有界
+request/response/output文件，并返回带bytes/sha256的`SemanticModelCallResult`。request-only artifact
+由调用方提供独立的请求渲染器，不把无界字符串序列化职责放回模型接口。normalizer 不提供无 evidence bundle 的入口；CLI 的
 `normalize-extraction` 同样强制要求 `--evidence-bundle`。
 该独立命令在物化raw model result前使用`max-output-tokens`做文件大小快速拒绝和严格UTF-8流式
 逐码点计数；选中的evidence closure按`max-input-tokens`逐记录累计。只有通过预算的单份raw与closure
@@ -366,7 +369,9 @@ closure。确定性`tripletCandidates`不复制进模型prompt；模型
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard item的owned grounding已校验；reconciliation只接受`resolutions`和`renames`，不能新增对象或relation。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后仅含冲突闭包的reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
-| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | API调用使用配置的shard/reconciliation输出门限；Codex request index v2及manifest保存同一门限，completion在物化外部shard和reconciliation响应前分别执行对应有界读取。v1只能重建，不能继续正式completion。 |
+| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | Codex和direct model-client均以固定path有界artifact交换request/response/output，writer独立校验大小、hash、JSON、usage和phase门限。OpenAI 2xx envelope在`1 MiB + 32 × maxOutputTokens`内流式落盘，错误body不物化且retry关闭stream。 |
+| `SEM-REQUEST-PACKAGE-01` | `MATCHED` | v1/v2均在物化前应用可信index/shard/count/token/path/size/hash/JSON/line/gzip门限，owner与sidecar用磁盘索引逐记录处理，完整digest与owner coverage通过后才原子发布。 |
+| `SEM-FINAL-CLOSURE-01` | `MATCHED` | plan的四类输入artifact以path/bytes/sha256快照绑定；selection后final write前重新校验evidence、owned grounding、candidate section、完整catalog/schema table/column身份以及semantic/review refs闭包。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
@@ -377,14 +382,14 @@ closure。确定性`tripletCandidates`不复制进模型prompt；模型
 | `SEM-CANDIDATE-01` | `MATCHED` | deterministic candidates只来自typed facts/events；名称驱动`METRIC_SOURCE`和未使用review limit分支已删除。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
-| `SEM-NORMALIZED-ID-01` | `MATCHED` | entity/event/metric/dimension、graph edge和自动review均使用长度分隔canonical identity；review ID在section规范化后生成且不包含reason。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | 全部formal semantic ID由canonical content派生，模型`id`只作section-scoped临时alias；entity refs先重写，其他section与review随后canonicalize，数组、alias和shard顺序不影响正式ID。 |
 | `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base和association组合分别在对应列表物化前受同一预算；standalone raw、envelope和已选evidence共享硬门限；递归清理内存只随目录深度增长。低堆测试覆盖跨窗口宽event、64 MiB envelope和20,000路径。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
 | `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才允许输出COMPLETE/DDL_DECLARATIONS；普通DDL声明解析失败会通过detached task result登记coverage gap，混合输入为PARTIAL，全失败且无事实为UNAVAILABLE，串行/并行测试保持一致。 |
 
 上述完整输入、模型输入请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
 identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及
-上述结构边界已按矩阵闭合；Codex外部响应输出预算和DDL混合解析失败完整性也已通过负向契约测试闭合。现有内存
+上述结构边界已按矩阵闭合；Codex/OpenAI外部响应输出预算、request-package可信上限、final typed closure和DDL混合解析失败完整性已通过负向契约测试闭合。现有内存
 门禁只证明指定输入形状在指定堆下有界完成或确定性预算拒绝，不作为吞吐承诺。
 
 独立归一化命令为：

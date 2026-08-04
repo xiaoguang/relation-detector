@@ -11,6 +11,7 @@ HEAP="${CORRECTNESS_HEAP:-6g}"
 SESSION_ID="${CORRECTNESS_SESSION_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 OUTPUT_DIR="${CORRECTNESS_OUTPUT_DIR:-$ROOT/relation-detector/target/correctness-isolated/$SESSION_ID}"
 RUN_SUMMARY="${CORRECTNESS_RUN_SUMMARY:-$ROOT/relation-detector/target/correctness-run-summary.json}"
+RUN_SUMMARY_ROOT="${CORRECTNESS_RUN_SUMMARY_ROOT:-$ROOT/relation-detector/target}"
 LOCK_DIR="${CORRECTNESS_LOCK_DIR:-${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$ROOT/relation-detector/target/.relation-detector-heavy-job.lock}}"
 LOCK_JOB="correctness"
 VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$ROOT/relation-detector/scripts/run-release-verification-tool.sh}"
@@ -74,6 +75,41 @@ guard_against_existing_surefire() {
   fi
 }
 
+remove_previous_run_summary() {
+  if [[ -z "$RUN_SUMMARY" || "$RUN_SUMMARY" == "/" || "$RUN_SUMMARY" == "$ROOT" ]]; then
+    echo "refusing unsafe correctness summary path: $RUN_SUMMARY" >&2
+    exit 1
+  fi
+  if [[ -L "$RUN_SUMMARY" ]]; then
+    echo "refusing symlink correctness summary path: $RUN_SUMMARY" >&2
+    exit 1
+  fi
+  local resolved_summary_parent
+  local resolved_summary
+  local resolved_root
+  if [[ ! -d "$(dirname "$RUN_SUMMARY")" || ! -d "$RUN_SUMMARY_ROOT" ]]; then
+    echo "correctness summary parent and validated root must be directories" >&2
+    exit 1
+  fi
+  resolved_summary_parent="$(cd -P "$(dirname "$RUN_SUMMARY")" && pwd)"
+  resolved_summary="$resolved_summary_parent/$(basename "$RUN_SUMMARY")"
+  resolved_root="$(cd -P "$RUN_SUMMARY_ROOT" && pwd)"
+  case "$resolved_summary" in
+    "$resolved_root"/*) ;;
+    *)
+      echo "refusing correctness summary outside validated root: $RUN_SUMMARY" >&2
+      exit 1
+      ;;
+  esac
+  if [[ -e "$RUN_SUMMARY" ]]; then
+    if [[ ! -f "$RUN_SUMMARY" ]]; then
+      echo "correctness summary target is not a regular file: $RUN_SUMMARY" >&2
+      exit 1
+    fi
+    rm -f -- "$RUN_SUMMARY"
+  fi
+}
+
 run_group() {
   local group_id="$1"
   local profile="$2"
@@ -82,6 +118,7 @@ run_group() {
 
   printf 'correctness group=%s profile=%s heap=%s parallelism=%s\n' \
     "$group_id" "$profile" "$HEAP" "$PARALLELISM"
+  remove_previous_run_summary
   "$MVN_BIN" -pl relation-detector/cli -am \
     -Dmaven.build.cache.enabled=false \
     '-Dtest=CorrectnessFixtureRunnerTest#allCorrectnessFixturesPassGoldenExpectations' \
@@ -101,7 +138,7 @@ run_group() {
     tail -n 120 "$log_file" >&2 || true
     exit "$status"
   fi
-  if [[ ! -f "$RUN_SUMMARY" ]]; then
+  if [[ -L "$RUN_SUMMARY" || ! -f "$RUN_SUMMARY" ]]; then
     echo "correctness group did not write summary: $group_id" >&2
     exit 1
   fi

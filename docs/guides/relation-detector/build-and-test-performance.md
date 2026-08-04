@@ -94,9 +94,10 @@ verification manifest。它是验收会话组装入口，允许记录脏工作�
 发布后处理由`run-release-verification-tool.sh`启动内部Java入口，默认
 `RELATION_DETECTOR_VERIFICATION_HEAP=512m`。结果校验按顶层数组逐项读取并使用外存引用索引；
 canonical/semantic fingerprint按对象字段分块外排、多路归并，规范字节直接进入SHA-256。
-`verification-manifest.json`只读取小型validation/summary/TSV，不再次物化38份大JSON。当前38份
-约9.8 GiB结果已与旧Python fingerprint完成canonical/semantic各38/38 SHA对照。外排会增加磁盘I/O，
-因此仍必须以最终manifest为PASS作为会话完成条件，不能把CLI文件已写出当作验收结束。当前manifest
+`verification-manifest.json`只读取小型validation/summary/TSV，不再次物化大体积结果JSON。外存
+fingerprint实现曾在受控迁移审计中与旧Python实现逐文件核对；当前文件数、总大小和hash结果必须从
+本次verification session读取。外排会增加磁盘I/O，因此仍必须以最终manifest为PASS作为会话完成
+条件，不能把CLI文件已写出当作验收结束。当前manifest
 登记fingerprint和hash完整性，但不读取预期SHA基线；回归比较由golden与observation parity负责。
 结果校验强制要求writer定义的10个summary计数字段存在且与流式计数一致；
 `providedSourceLocationsValid=PASS`只表示实际提供的位置均合法，报告同时记录

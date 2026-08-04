@@ -9,6 +9,7 @@ source "$RELATION_ROOT/scripts/lib/heavy-job-lock.sh"
 GROUP_RUNNER="${SAMPLE_DATA_PARSER_CLI_GROUP_RUNNER:-$RELATION_ROOT/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh}"
 VERIFICATION_RUNNER="${RELATION_DETECTOR_VERIFICATION_RUNNER:-$RELATION_ROOT/scripts/run-release-verification-tool.sh}"
 OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-cli}"
+RESULT_DIR="$OUT_DIR/results"
 LOCK_DIR="${SAMPLE_DATA_PARSER_CLI_LOCK_DIR:-${RELATION_DETECTOR_HEAVY_JOB_LOCK_DIR:-$RELATION_ROOT/target/.relation-detector-heavy-job.lock}}"
 LOCK_JOB="sample-data"
 HEAP="${SAMPLE_DATA_PARSER_CLI_HEAP:-6g}"
@@ -118,6 +119,84 @@ was_requested() {
   return 1
 }
 
+validate_selected_output() {
+  local case_id="$1"
+  local bundle="$RESULT_DIR/$case_id"
+  local entry name
+  case "$bundle" in
+    "$RESULT_DIR"/*) ;;
+    *)
+      echo "sample-data output bundle escapes the result directory: $bundle" >&2
+      return 1
+      ;;
+  esac
+  if [[ -L "$bundle" ]]; then
+    echo "sample-data output bundle must not be a symlink: $bundle" >&2
+    return 1
+  fi
+  if [[ -e "$bundle" ]]; then
+    if [[ ! -d "$bundle" ]]; then
+      echo "sample-data output bundle must be a directory: $bundle" >&2
+      return 1
+    fi
+    while IFS= read -r entry; do
+      name="${entry##*/}"
+      if [[ -L "$entry" || ! -f "$entry" \
+          || ( "$name" != "result.json" && "$name" != "direct.json" ) ]]; then
+        echo "sample-data output bundle contains unexpected content: $entry" >&2
+        return 1
+      fi
+    done < <(find "$bundle" -mindepth 1 -maxdepth 1 -print)
+  fi
+}
+
+validate_result_inventory() {
+  local entry
+  [[ -d "$RESULT_DIR" ]] || return 0
+  while IFS= read -r entry; do
+    if [[ -L "$entry" || ! -d "$entry" ]]; then
+      echo "sample-data result directory contains an unexpected entry: $entry" >&2
+      return 1
+    fi
+  done < <(find "$RESULT_DIR" -mindepth 1 -maxdepth 1 -print)
+}
+
+validate_result_ancestors() {
+  local current="$RESULT_DIR"
+  if [[ "$current" != /* ]]; then
+    current="$PWD/$current"
+  fi
+  while [[ "$current" != "/" ]]; do
+    if [[ -L "$current" ]]; then
+      echo "sample-data result path must not contain a symlink: $current" >&2
+      return 1
+    fi
+    current="$(dirname "$current")"
+  done
+}
+
+remove_selected_output() {
+  local case_id="$1"
+  local bundle="$RESULT_DIR/$case_id"
+  local leaf
+  validate_selected_output "$case_id"
+  if [[ -d "$bundle" ]]; then
+    for leaf in "$bundle/result.json" "$bundle/direct.json"; do
+      if [[ -e "$leaf" || -L "$leaf" ]]; then
+        if [[ -L "$leaf" || ! -f "$leaf" ]]; then
+          echo "sample-data bundle leaf changed during cleanup: $leaf" >&2
+          return 1
+        fi
+        rm -f -- "$leaf"
+      fi
+    done
+    if ! rmdir "$bundle"; then
+      echo "sample-data output bundle changed during cleanup: $bundle" >&2
+      return 1
+    fi
+  fi
+}
+
 run_group() {
   local group_id="$1"
   shift
@@ -184,7 +263,19 @@ for known in "${KNOWN_CASES[@]}"; do
 done
 
 cd "$ROOT"
-mkdir -p "$OUT_DIR" "$GROUP_ROOT"
+validate_result_ancestors
+if [[ -L "$RESULT_DIR" ]]; then
+  echo "sample-data result directory must not be a symlink: $RESULT_DIR" >&2
+  exit 1
+fi
+mkdir -p "$OUT_DIR" "$GROUP_ROOT" "$RESULT_DIR"
+validate_result_inventory
+for selected_case in "${SELECTED_CASES[@]}"; do
+  validate_selected_output "$selected_case"
+done
+for selected_case in "${SELECTED_CASES[@]}"; do
+  remove_selected_output "$selected_case"
+done
 if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE:-false}" != true ]]; then
   mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
 fi

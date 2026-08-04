@@ -30,7 +30,7 @@ correctness runs. Clean and rebuild with Maven, then restart/clean the Java
 Language Server workspace if the files come back.
 
 Suggested cleanup:
-  mvn clean -pl cli -am -DskipTests test-compile
+  mvn clean -pl relation-detector/cli -am -DskipTests test-compile
   VS Code: Java: Clean Java Language Server Workspace
 
 Files:
@@ -39,14 +39,25 @@ MSG
   status=1
 fi
 
-classpath="relation-detector/contracts/target/classes:relation-detector/core/target/classes:relation-detector/adaptor-mysql/target/classes:relation-detector/adaptor-postgres/target/classes"
+classpath="relation-detector/contracts/target/classes:relation-detector/core/target/classes:relation-detector/adaptor-mysql/target/classes:relation-detector/adaptor-postgres/target/classes:relation-detector/adaptor-oracle/target/classes:relation-detector/adaptor-sqlserver/target/classes"
 for adaptor in \
   com.relationdetector.mysql.MySqlDatabaseAdaptor \
-  com.relationdetector.postgres.PostgresDatabaseAdaptor
+  com.relationdetector.postgres.PostgresDatabaseAdaptor \
+  com.relationdetector.oracle.OracleDatabaseAdaptor \
+  com.relationdetector.sqlserver.SqlServerDatabaseAdaptor
 do
   class_output="$(javap -classpath "$classpath" "$adaptor" 2>/dev/null || true)"
-  if [[ -n "$class_output" ]] \
-    && ! grep -q 'implements com.relationdetector.contracts.spi.DatabaseAdaptor' <<< "$class_output" \
+  if [[ -z "$class_output" ]]; then
+    cat >&2 <<MSG
+
+Adaptor class is missing or javap produced no output in target/classes:
+  $adaptor
+
+Rebuild the complete adaptor reactor before running CLI scans:
+  mvn clean -pl relation-detector/cli -am -DskipTests test-compile
+MSG
+    status=1
+  elif ! grep -q 'implements com.relationdetector.contracts.spi.DatabaseAdaptor' <<< "$class_output" \
     && ! grep -q 'extends com.relationdetector.contracts.spi.AbstractDatabaseAdaptor' <<< "$class_output"; then
     cat >&2 <<MSG
 
