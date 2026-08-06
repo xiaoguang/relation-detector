@@ -186,16 +186,6 @@ final class SemanticEventAssociationStore implements AutoCloseable {
         return descriptor(eventId).path("estimatedReferenceBytes").asLong(0);
     }
 
-    void requireWithinEstimatedBudget(String eventId, long baseSerializedBytes, int maxInputTokens) {
-        if (eventId == null || eventId.isBlank() || baseSerializedBytes < 0 || maxInputTokens <= 0) {
-            throw new IllegalArgumentException("semantic event id, size and input budget are required");
-        }
-        SemanticEventInputBudget.requireWithin(
-                baseSerializedBytes,
-                estimatedReferenceBytes(eventId),
-                maxInputTokens);
-    }
-
     private void join(Path sortedEvents, Path sortedFacts, Path output) throws IOException {
         try (KeyCursor events = new KeyCursor(sortedEvents, 2);
              KeyCursor facts = new KeyCursor(sortedFacts, 3);

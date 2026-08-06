@@ -18,7 +18,7 @@ relation-detector scan --config config.yml
 relation-detector scan \
   --config config.yml \
   --format json \
-  --output result.json \
+  --output-bundle result-bundle/ \
   --parser-mode auto \
   --grammar-profile postgresql/18 \
   --database-version 18.1 \
@@ -29,12 +29,29 @@ relation-detector scan \
 
 - `--config`：必填，YAML 配置路径。
 - `--format`：可选，`json` 或 `table`，默认读取配置。
-- `--output`：可选，输出文件；未指定时输出到 stdout。
+- `--output`：可选，原子替换单个输出文件；未指定时输出到 stdout。
+- `--output-bundle`：可选且只支持 JSON，与 `--output` 互斥。目标必须不存在；命令从同一次 scan
+  生成 `result.json` 和 direct-only `direct.json`，在同级隐藏 staging 完整写入后以一次严格原子 move
+  发布。已有文件、目录、符号链接或不支持原子 move 都返回输出写入错误，不覆盖原内容且不 fallback。
 - `--plugin-dir`：可选，外部 adaptor jar 目录。
 - `--min-confidence`：可选，覆盖配置中的最小置信度。
 - `--parser-mode`：可选，`auto`、`full-grammar` 或 `token-event`，覆盖 YAML 中的 `parser.mode`。
 - `--grammar-profile`：可选，显式指定 full-grammar profile，例如 `postgresql/16`、`postgresql/17`、`postgresql/18`、`mysql/5.7`、`mysql/8.0`、`oracle/19c`。
 - `--database-version`：可选，显式指定数据库版本，例如 `16.5`、`18.1`；优先级高于 JDBC metadata。
+
+batch 命令只接受 manifest v2：
+
+```bash
+relation-detector batch --manifest batch.yml \
+  --case-parallelism 2 \
+  --max-worker-threads 4 \
+  --report batch-report.json
+```
+
+每个 case 必须且只能配置 `output` 或 `outputBundle`；`directOutput` 与 manifest v1 均是格式错误。
+case artifact 和 report 的相等、嵌套及祖先路径冲突在执行前统一拒绝。未知、缺失、缺值、非数字或
+非正数 batch 参数返回 `ARGUMENT_ERROR(3)`；report 或 case output 发布失败返回
+`OUTPUT_WRITE_ERROR(12)`。
 
 ## YAML 配置
 
@@ -577,8 +594,9 @@ README 至少包含：
 - 如果未来引入折行/截断，再增加终端宽度契约。
 - `minConfidence` 过滤测试。
 - `TableOutputCliTest` 验证 `--format table` 覆盖 YAML 与 `--output` 写文件；
-  `OutputBundleCliTest` 验证 `--output-bundle` 仅支持 JSON，并以一次 scan 发布
-  `result.json` 和 `direct.json`。
+  `OutputBundleCliTest` 验证 `--output-bundle` 仅支持 JSON，并发布 `result.json` 和 `direct.json`；
+  注入调用计数的回归测试锁定 bundle 只执行一次 scan，`AtomicPublicationTest` 锁定既有单文件目标
+  可被严格原子替换，并覆盖 atomic move 不可用时保留旧内容。
 - warning 摘要测试。
 - 错误码测试。
 - README 示例命令 smoke test。

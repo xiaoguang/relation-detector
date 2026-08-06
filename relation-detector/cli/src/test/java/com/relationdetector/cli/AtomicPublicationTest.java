@@ -20,6 +20,17 @@ class AtomicPublicationTest {
     Path tempDir;
 
     @Test
+    void singleFileAtomicallyReplacesExistingTarget() throws Exception {
+        Path output = tempDir.resolve("result.json");
+        Files.writeString(output, "old");
+
+        new AtomicOutputWriter().writeString(output, "new");
+
+        assertEquals("new", Files.readString(output));
+        assertFalse(hasStagingEntry());
+    }
+
+    @Test
     void singleFileDoesNotFallBackWhenAtomicMoveIsUnavailable() throws Exception {
         Path output = tempDir.resolve("result.json");
         Files.writeString(output, "old");

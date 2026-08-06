@@ -63,6 +63,14 @@ class BatchCommandIntegrationTest {
                 new Main.MainCommand().run(new String[] {"batch", "--manifest", "--fail-fast"}));
         assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
                 new Main.MainCommand().run(new String[] {"batch", "--manifest", "x", "--case-parallelism", "0"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", "x", "--unknown"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", "x", "--case-parallelism", "NaN"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", "x", "--max-worker-threads", "0"}));
+        assertEquals(com.relationdetector.contracts.Enums.ErrorCode.ARGUMENT_ERROR.code(),
+                new Main.MainCommand().run(new String[] {"batch", "--manifest", "x", "--max-worker-threads", "-1"}));
 
         Path config = writeConfig("valid.yml", tempDir.resolve("input.sql"));
         Files.writeString(tempDir.resolve("input.sql"), "SELECT 1;\n");

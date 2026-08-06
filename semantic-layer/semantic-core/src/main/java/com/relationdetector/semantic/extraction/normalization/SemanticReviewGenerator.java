@@ -59,6 +59,7 @@ public final class SemanticReviewGenerator {
             review.reviewStatus = "REVIEW_NEEDED";
             review.severity = SemanticNormalizationSupport.nonBlank(item.severity, "MEDIUM");
             review.reason = "Semantic item is marked REVIEW_NEEDED and requires business or data owner review.";
+            review.ownedGroundingRefs = List.copyOf(item.ownedGroundingRefs());
             review.evidenceRefs = item.evidenceRefs().isEmpty() ? List.of(item.id()) : List.copyOf(item.evidenceRefs());
             reviewItems.add(review);
             generated++;

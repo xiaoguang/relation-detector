@@ -29,7 +29,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.extraction.normalization.SemanticExtractionValidationException;
 import com.relationdetector.semantic.extraction.prompt.SemanticTokenEstimateBudget;
+import com.relationdetector.semantic.extraction.shard.SemanticRunPlan;
+import com.relationdetector.semantic.extraction.shard.SemanticShardDescriptor;
 import com.relationdetector.semantic.internal.io.SemanticAtomicFiles;
+import com.relationdetector.semantic.internal.io.SemanticFileDigest;
 import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.internal.store.ExternalJsonRecordStore;
 import com.relationdetector.semantic.evidence.SemanticEvidenceStore;
@@ -52,6 +55,37 @@ public final class SemanticRequestBundleReconstructor {
             Path target,
             SemanticRequestPackageLimits limits
     ) {
+        return reconstruct(runDirectory, target, limits, null).result();
+    }
+
+    /**
+     * Reconstructs a v2 request package and returns a plan whose artifacts and metadata are detached into the
+     * caller-owned snapshot root. Package token declarations are accepted only when they tighten trusted limits.
+     */
+    CompletionSnapshot reconstructCompletionSnapshot(
+            Path runDirectory,
+            Path target,
+            Path snapshotRoot,
+            SemanticRequestPackageLimits limits
+    ) {
+        if (snapshotRoot == null) {
+            throw new IllegalArgumentException("semantic completion snapshot root is required");
+        }
+        Reconstruction reconstruction = reconstruct(
+                runDirectory, target, limits, snapshotRoot.toAbsolutePath().normalize());
+        if (reconstruction.completionPlan() == null) {
+            throw invalidPackage();
+        }
+        return new CompletionSnapshot(
+                reconstruction.completionPlan(), reconstruction.result().canonicalSha256());
+    }
+
+    private Reconstruction reconstruct(
+            Path runDirectory,
+            Path target,
+            SemanticRequestPackageLimits limits,
+            Path completionSnapshotRoot
+    ) {
         if (runDirectory == null || target == null || limits == null) {
             throw new IllegalArgumentException(
                     "semantic request run, reconstruction target, and limits are required");
@@ -61,6 +95,10 @@ public final class SemanticRequestBundleReconstructor {
         Path parent = normalizedTarget.getParent();
         if (parent == null) {
             throw new IllegalArgumentException("semantic reconstruction target parent is required");
+        }
+        boolean completionTargetOwned = completionSnapshotRoot != null;
+        if (completionTargetOwned && Files.exists(normalizedTarget, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            throw invalidPackage();
         }
         Path workspace = parent.resolve(".request-reconstruct-" + UUID.randomUUID());
         try {
@@ -131,7 +169,16 @@ public final class SemanticRequestBundleReconstructor {
                     closed = true;
                     Map<String, Long> counts = new LinkedHashMap<>();
                     sections.forEach((name, digest) -> counts.put(name, digest.count()));
-                    return new Result(canonical, counts);
+                    SemanticRunPlan completionPlan = completionSnapshotRoot == null
+                            ? null
+                            : captureCompletionPlan(
+                                    index,
+                                    normalizedTarget,
+                                    ownerSnapshot,
+                                    shardArtifacts,
+                                    completionSnapshotRoot);
+                    return new Reconstruction(
+                            new Result(canonical, counts), completionPlan);
                 } finally {
                     if (!closed) {
                         close(stores);
@@ -139,6 +186,13 @@ public final class SemanticRequestBundleReconstructor {
                 }
             }
         } catch (IOException | RuntimeException failure) {
+            if (completionTargetOwned) {
+                try {
+                    Files.deleteIfExists(normalizedTarget);
+                } catch (IOException ignored) {
+                    // The target is inside an application-owned completion snapshot root.
+                }
+            }
             throw invalidPackage();
         } finally {
             SemanticFileTreeOperations.deleteRecursivelyBestEffort(workspace);
@@ -151,6 +205,14 @@ public final class SemanticRequestBundleReconstructor {
     ) {
         JsonNode version = index.path("artifactSchemaVersion");
         require(version.isInt() && (version.intValue() == 1 || version.intValue() == 2));
+        validateTokenDeclaration(index, "maxInputTokens", limits, version.intValue() == 2);
+        validateTokenDeclaration(index, "shardMaxOutputTokens", limits, version.intValue() == 2);
+        validateTokenDeclaration(
+                index, "reconciliationMaxOutputTokens", limits, version.intValue() == 2);
+        if (version.intValue() == 2) {
+            require(index.path("reconcile").isBoolean());
+            require(index.path("sourceBundleSha256").asText("").matches("[0-9a-f]{64}"));
+        }
         require(index.path("descriptor").isObject());
         require(index.path("sections").isObject());
         require(index.path("ownerManifest").isObject());
@@ -186,6 +248,12 @@ public final class SemanticRequestBundleReconstructor {
             require(declaredOwnedCandidates <= limits.maxReconstructedBytes());
             require(declaredOverlap <= limits.maxReconstructedBytes());
             require(shard.path("bundle").isObject() && shard.path("sidecar").isObject());
+            if (version.intValue() == 2) {
+                require(shard.path("ownerKey").isTextual()
+                        && !shard.path("ownerKey").textValue().isBlank());
+                require(shard.path("ownedFactCount").canConvertToInt()
+                        && shard.path("ownedCandidateCount").canConvertToInt());
+            }
         }
         for (SemanticEvidenceStore.Section section : SemanticEvidenceStore.Section.values()) {
             JsonNode expected = index.path("sections").path(section.wireName());
@@ -200,6 +268,63 @@ public final class SemanticRequestBundleReconstructor {
                 index.path("coverage"), "ownedCandidateCount", limits));
         require(declaredOverlap == boundedCount(
                 index.path("coverage"), "overlapCount", limits));
+    }
+
+    private void validateTokenDeclaration(
+            ObjectNode index,
+            String field,
+            SemanticRequestPackageLimits limits,
+            boolean required
+    ) {
+        JsonNode value = index.path(field);
+        if (!required && value.isMissingNode()) {
+            return;
+        }
+        require(value.isIntegralNumber()
+                && value.canConvertToInt()
+                && value.intValue() > 0
+                && value.intValue() <= limits.maxEstimatedTokensPerShardOrRecord());
+    }
+
+    private SemanticRunPlan captureCompletionPlan(
+            ObjectNode index,
+            Path fullBundle,
+            Path ownerManifest,
+            List<ShardArtifacts> shardArtifacts,
+            Path snapshotRoot
+    ) {
+        require(index.path("artifactSchemaVersion").intValue() == 2);
+        List<SemanticShardDescriptor> shards = new ArrayList<>();
+        for (int ordinal = 0; ordinal < shardArtifacts.size(); ordinal++) {
+            JsonNode shard = index.path("shards").get(ordinal);
+            ShardArtifacts artifacts = shardArtifacts.get(ordinal);
+            shards.add(new SemanticShardDescriptor(
+                    shard.path("id").textValue(),
+                    shard.path("ownerKey").textValue(),
+                    artifact(artifacts.bundle()),
+                    artifact(artifacts.sidecar()),
+                    requiredPositiveInt(shard, "estimatedInputTokens"),
+                    requiredNonNegativeInt(shard, "ownedFactCount"),
+                    requiredNonNegativeInt(shard, "ownedCandidateCount")));
+        }
+        SemanticRunPlan plan = new SemanticRunPlan(
+                artifact(fullBundle),
+                shards,
+                index.path("reconcile").booleanValue(),
+                requiredPositiveInt(index, "maxInputTokens"),
+                requiredPositiveInt(index, "shardMaxOutputTokens"),
+                requiredPositiveInt(index, "reconciliationMaxOutputTokens"),
+                artifact(ownerManifest));
+        return SemanticRunPlanSnapshot.capture(plan, snapshotRoot);
+    }
+
+    private SemanticArtifactRef artifact(Path path) {
+        try {
+            SemanticFileDigest.Digest digest = SemanticFileDigest.computeNoFollow(path);
+            return new SemanticArtifactRef(path, digest.bytes(), digest.sha256());
+        } catch (IOException failure) {
+            throw invalidPackage();
+        }
     }
 
     private Map<SemanticEvidenceStore.Section, ExternalJsonRecordStore> stores(Path workspace) {
@@ -530,6 +655,12 @@ public final class SemanticRequestBundleReconstructor {
         return value.longValue();
     }
 
+    private int requiredNonNegativeInt(JsonNode object, String field) {
+        JsonNode value = object.path(field);
+        require(value.isIntegralNumber() && value.canConvertToInt() && value.intValue() >= 0);
+        return value.intValue();
+    }
+
     private long boundedCount(
             JsonNode object,
             String field,
@@ -654,6 +785,19 @@ public final class SemanticRequestBundleReconstructor {
     }
 
     private record ShardArtifacts(Path bundle, Path sidecar) {
+    }
+
+    private record Reconstruction(Result result, SemanticRunPlan completionPlan) {
+    }
+
+    record CompletionSnapshot(SemanticRunPlan plan, String canonicalSha256) {
+        public CompletionSnapshot {
+            if (plan == null || canonicalSha256 == null
+                    || !canonicalSha256.matches("[0-9a-f]{64}")) {
+                throw new IllegalArgumentException(
+                        "semantic completion request snapshot is invalid");
+            }
+        }
     }
 
     public record Result(String canonicalSha256, Map<String, Long> sectionCounts) {

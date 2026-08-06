@@ -7,6 +7,8 @@ import com.relationdetector.semantic.extraction.artifact.SemanticRunArtifactWrit
 import com.relationdetector.semantic.extraction.artifact.SemanticResultStore;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticRequestBundleReconstructor;
+import com.relationdetector.semantic.extraction.artifact.SemanticRequestPackageLimits;
+import com.relationdetector.semantic.extraction.artifact.SemanticCodexRequestSnapshot;
 
 import com.relationdetector.semantic.extraction.shard.SemanticShardDescriptor;
 
@@ -20,6 +22,7 @@ import com.relationdetector.semantic.internal.io.SemanticFileDigest;
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticExtractionValidationException;
+import com.relationdetector.semantic.extraction.normalization.SemanticCanonicalIdentity;
 
 import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
 
@@ -32,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -494,6 +498,67 @@ final class SemanticPathBackedPipelineTest {
     }
 
     @Test
+    void codexCompletionRejectsOversizedManifestBeforePublishing() throws Exception {
+        CodexFixture fixture = codexFixture("codex-oversized-manifest", false);
+        SemanticRequestPackageLimits limits = tinyControlDocumentLimits();
+        Path manifest = fixture.requestRun().resolve("run-manifest.json");
+        assertTrue(Files.size(manifest) <= limits.maxIndexBytes());
+        writeOversizedControlObject(manifest);
+        assertTrue(Files.size(manifest) > limits.maxIndexBytes());
+
+        assertCompletionRejectedWithoutPublication(
+                fixture,
+                "oversized-manifest",
+                new SemanticCodexSessionCompletionService(limits));
+    }
+
+    @Test
+    void codexCompletionRejectsOversizedIndexBeforePublishing() throws Exception {
+        CodexFixture fixture = codexFixture("codex-oversized-index", false);
+        SemanticRequestPackageLimits limits = tinyControlDocumentLimits();
+        Path index = fixture.requestRun().resolve("request-bundle-index.json");
+        assertTrue(Files.size(index) <= limits.maxIndexBytes());
+        writeOversizedControlObject(index);
+        assertTrue(Files.size(index) > limits.maxIndexBytes());
+
+        assertCompletionRejectedWithoutPublication(
+                fixture,
+                "oversized-index",
+                new SemanticCodexSessionCompletionService(limits));
+    }
+
+    @Test
+    void codexCompletionRejectsSymlinkManifestAndIndexBeforePublishing() throws Exception {
+        for (String control : List.of("run-manifest.json", "request-bundle-index.json")) {
+            String name = control.substring(0, control.indexOf('.'));
+            CodexFixture fixture = codexFixture("codex-symlink-" + name, false);
+            Path path = fixture.requestRun().resolve(control);
+            Path real = tempDir.resolve("codex-symlink-" + name + "-source.json");
+            Files.move(path, real);
+            Files.createSymbolicLink(path, real);
+
+            assertCompletionRejectedWithoutPublication(fixture, "symlink-" + name);
+        }
+    }
+
+    @Test
+    void codexCompletionRejectsPackageBudgetsAboveTrustedLimitsBeforePublishing()
+            throws Exception {
+        for (String field : List.of(
+                "maxInputTokens",
+                "shardMaxOutputTokens",
+                "reconciliationMaxOutputTokens")) {
+            CodexFixture fixture = codexFixture("codex-escalated-" + field, false);
+            Path indexPath = fixture.requestRun().resolve("request-bundle-index.json");
+            ObjectNode index = (ObjectNode) read(indexPath);
+            index.put(field, 8_000_001);
+            JSON.writeValue(indexPath.toFile(), index);
+
+            assertCompletionRejectedWithoutPublication(fixture, "escalated-" + field);
+        }
+    }
+
+    @Test
     void codexRequestPackagePersistsBothConfiguredOutputBudgets() throws Exception {
         CodexFixture fixture = codexFixture("codex-budget-index", false, 321, 123);
 
@@ -613,6 +678,120 @@ final class SemanticPathBackedPipelineTest {
         assertEquals(SemanticCodexSessionCompletionService.Status.COMPLETE, complete.status());
         assertTrue(Files.isRegularFile(complete.runDirectory().resolve(
                 "reconciliation/patch.json")));
+    }
+
+    @Test
+    void codexCompletionRejectsIdentityChangingRenameWithoutPublishing() throws Exception {
+        CodexFixture fixture = codexFixture("codex-reject-identity-rename", true);
+        Path responses = tempDir.resolve("codex-reject-identity-rename-responses");
+        Path output = tempDir.resolve("codex-reject-identity-rename-output");
+        writeShardResponses(fixture, responses);
+        SemanticIdentityFixture identity = addBusinessEntityResponse(fixture, responses);
+
+        SemanticCodexSessionCompletionService.Result pending =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output);
+        assertEquals(SemanticCodexSessionCompletionService.Status.PENDING, pending.status());
+
+        ObjectNode patch = emptyPatch();
+        patch.withArray("renames").addObject()
+                .put("section", "entities")
+                .put("id", identity.businessEntityId())
+                .put("name", "Materially different")
+                .put("description", "Description changes remain allowed");
+        JSON.writeValue(responses.resolve(
+                "reconciliation/semantic-reconciliation-result.json").toFile(), patch);
+
+        assertThrows(
+                SemanticExtractionValidationException.class,
+                () -> new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output));
+        assertFalse(hasDirectory(output, "run-"));
+    }
+
+    @Test
+    void codexCompletionKeepsFormalReviewAndGraphIdsAcrossSafeRenames() throws Exception {
+        CodexFixture fixture = codexFixture("codex-safe-renames", true);
+        Path responses = tempDir.resolve("codex-safe-renames-responses");
+        Path output = tempDir.resolve("codex-safe-renames-output");
+        writeShardResponses(fixture, responses);
+        SemanticIdentityFixture identity = addBusinessEntityResponse(fixture, responses);
+
+        SemanticCodexSessionCompletionService.Result pending =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output);
+        assertEquals(SemanticCodexSessionCompletionService.Status.PENDING, pending.status());
+
+        ObjectNode patch = emptyPatch();
+        patch.withArray("renames").addObject()
+                .put("section", "entities")
+                .put("id", identity.businessEntityId())
+                .putNull("name")
+                .put("description", "Curated business description");
+        patch.withArray("renames").addObject()
+                .put("section", "entities")
+                .put("id", identity.physicalEntityId())
+                .put("name", "Customer orders")
+                .putNull("description");
+        JSON.writeValue(responses.resolve(
+                "reconciliation/semantic-reconciliation-result.json").toFile(), patch);
+
+        SemanticCodexSessionCompletionService.Result complete =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses, output);
+        JsonNode document = read(complete.runDirectory().resolve(
+                "semantic-extraction-result.json"));
+        JsonNode business = itemWithId(document.path("entities"), identity.businessEntityId());
+        JsonNode physical = itemWithId(document.path("entities"), identity.physicalEntityId());
+        String reviewId = SemanticCanonicalIdentity.review(
+                identity.businessEntityId(), "entities", "REVIEW_NEEDED");
+
+        assertEquals("Order domain", business.path("name").asText());
+        assertEquals("Curated business description", business.path("description").asText());
+        assertEquals("Customer orders", physical.path("name").asText());
+        assertEquals(identity.physicalName(), physical.path("physicalName").asText());
+        assertEquals(identity.businessEntityId(), business.path("id").asText());
+        assertEquals(identity.physicalEntityId(), physical.path("id").asText());
+        assertEquals(identity.businessEntityId(),
+                itemWithId(document.path("reviewItems"), reviewId).path("targetRef").asText());
+        assertEquals(identity.businessEntityId(), itemWithId(
+                document.path("semanticGraph").path("nodes"),
+                identity.businessEntityId()).path("id").asText());
+        assertEquals(reviewId, itemWithId(
+                document.path("semanticGraph").path("nodes"), reviewId).path("id").asText());
+    }
+
+    @Test
+    void codexRequestSnapshotCleansExpectedNewRootAfterLateManifestFailure() throws Exception {
+        CodexFixture fixture = codexFixture("codex-snapshot-cleanup", false);
+        Path manifestPath = fixture.requestRun().resolve("run-manifest.json");
+        ObjectNode manifest = (ObjectNode) read(manifestPath);
+        manifest.put("shardCount", fixture.shardIds().size() + 1);
+        JSON.writeValue(manifestPath.toFile(), manifest);
+        Path snapshotRoot = tempDir.resolve("codex-snapshot-cleanup-root");
+
+        assertThrows(
+                SemanticExtractionValidationException.class,
+                () -> SemanticCodexRequestSnapshot.capture(
+                        fixture.requestRun(), snapshotRoot,
+                        SemanticRequestPackageLimits.defaults()));
+        assertFalse(Files.exists(snapshotRoot));
+    }
+
+    @Test
+    void codexRequestSnapshotRejectsAndPreservesExistingRoot() throws Exception {
+        CodexFixture fixture = codexFixture("codex-snapshot-existing", false);
+        Path snapshotRoot = tempDir.resolve("codex-snapshot-existing-root");
+        Files.createDirectory(snapshotRoot);
+        Path marker = snapshotRoot.resolve("marker.txt");
+        Files.writeString(marker, "caller-owned", java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThrows(
+                SemanticExtractionValidationException.class,
+                () -> SemanticCodexRequestSnapshot.capture(
+                        fixture.requestRun(), snapshotRoot,
+                        SemanticRequestPackageLimits.defaults()));
+        assertEquals("caller-owned", Files.readString(marker));
     }
 
     @Test
@@ -857,6 +1036,113 @@ final class SemanticPathBackedPipelineTest {
         }
     }
 
+    private SemanticIdentityFixture addBusinessEntityResponse(
+            CodexFixture fixture,
+            Path responses
+    ) throws Exception {
+        String shardId = fixture.shardIds().get(0);
+        JsonNode bundle = read(fixture.requestRun().resolve(
+                "shards/" + shardId + "/evidence-bundle.json"));
+        String ownedRef = bundle.path("shardContext").path("ownedFactRefs").get(0).asText();
+        String physicalName = bundle.path("metadataTables").get(0).path("table").asText();
+        String businessId = SemanticCanonicalIdentity.entity(
+                null,
+                "Order domain",
+                "BUSINESS_ENTITY",
+                null,
+                List.of(ownedRef)).canonicalId();
+        String physicalId = SemanticCanonicalIdentity.entity(
+                physicalName,
+                physicalName,
+                null,
+                "PHYSICAL_ENTITY",
+                List.of(ownedRef)).canonicalId();
+        Path response = responses.resolve("shards").resolve(shardId)
+                .resolve("semantic-extraction-result.json");
+        ObjectNode document = (ObjectNode) read(response);
+        ObjectNode business = document.withArray("entities").addObject()
+                .put("name", "Order domain")
+                .put("machineType", "BUSINESS_ENTITY")
+                .put("reviewStatus", "REVIEW_NEEDED");
+        business.putArray("ownedGroundingRefs").add(ownedRef);
+        business.putArray("evidenceRefs").add(ownedRef);
+        JSON.writeValue(response.toFile(), document);
+        return new SemanticIdentityFixture(businessId, physicalId, physicalName);
+    }
+
+    private JsonNode itemWithId(JsonNode values, String id) {
+        for (JsonNode value : values) {
+            if (id.equals(value.path("id").asText(""))) {
+                return value;
+            }
+        }
+        throw new AssertionError("missing semantic item " + id);
+    }
+
+    private ObjectNode emptyPatch() {
+        ObjectNode patch = JSON.createObjectNode();
+        patch.putArray("resolutions");
+        patch.putArray("renames");
+        return patch;
+    }
+
+    private void assertCompletionRejectedWithoutPublication(
+            CodexFixture fixture,
+            String name
+    ) throws Exception {
+        assertCompletionRejectedWithoutPublication(
+                fixture, name, new SemanticCodexSessionCompletionService());
+    }
+
+    private void assertCompletionRejectedWithoutPublication(
+            CodexFixture fixture,
+            String name,
+            SemanticCodexSessionCompletionService service
+    ) throws Exception {
+        Path responses = tempDir.resolve(name + "-responses");
+        Path output = tempDir.resolve(name + "-output");
+
+        assertThrows(
+                SemanticExtractionValidationException.class,
+                () -> service.complete(
+                        fixture.requestRun(), responses, output));
+
+        assertFalse(Files.exists(responses.resolve("pending-responses.json")));
+        assertFalse(Files.exists(output) && hasDirectory(output, "run-"));
+    }
+
+    private void writeOversizedControlObject(Path path) throws Exception {
+        byte[] document = Files.readAllBytes(path);
+        int end = document.length - 1;
+        while (end >= 0 && Character.isWhitespace(document[end])) {
+            end--;
+        }
+        assertEquals('}', document[end]);
+        byte[] chunk = "x".repeat(64 * 1024).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try (OutputStream output = Files.newOutputStream(path)) {
+            output.write(document, 0, end);
+            output.write(",\"oversizedPadding\":\"".getBytes(
+                    java.nio.charset.StandardCharsets.UTF_8));
+            output.write(chunk);
+            output.write("\"}\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    private SemanticRequestPackageLimits tinyControlDocumentLimits() {
+        SemanticRequestPackageLimits defaults = SemanticRequestPackageLimits.defaults();
+        return new SemanticRequestPackageLimits(
+                32 * 1024,
+                defaults.maxShards(),
+                defaults.maxEstimatedTokensPerShardOrRecord(),
+                defaults.maxOwnerManifestBytes(),
+                defaults.maxSidecarBytes(),
+                defaults.maxCompressedEvidenceBytes(),
+                defaults.maxReconstructedBytes(),
+                defaults.maxLineBytes(),
+                defaults.maxJsonDepth(),
+                defaults.maxStringCodePoints());
+    }
+
     private ObjectNode emptySemanticDocument() {
         ObjectNode result = JSON.createObjectNode();
         for (String section : List.of(
@@ -930,6 +1216,13 @@ final class SemanticPathBackedPipelineTest {
     }
 
     private record CodexFixture(Path requestRun, List<String> shardIds) {
+    }
+
+    private record SemanticIdentityFixture(
+            String businessEntityId,
+            String physicalEntityId,
+            String physicalName
+    ) {
     }
 
     private String sha256(Path path) throws Exception {

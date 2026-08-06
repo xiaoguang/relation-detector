@@ -1,7 +1,5 @@
 package com.relationdetector.core.identity;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import com.relationdetector.contracts.model.Endpoint;
@@ -44,16 +42,6 @@ public final class CanonicalEndpointKeyProvider {
     public String factKey(Endpoint endpoint) {
         CanonicalEndpointKey key = key(endpoint);
         return encode(key.catalog()) + encode(key.schema()) + encode(key.table()) + encode(key.column());
-    }
-
-    public String referenceKey(Endpoint endpoint) {
-        CanonicalEndpointKey key = key(endpoint);
-        List<String> components = new ArrayList<>(4);
-        if (!key.catalog().isBlank()) components.add(key.catalog());
-        if (!key.schema().isBlank()) components.add(key.schema());
-        components.add(key.table());
-        components.add(key.column());
-        return String.join(".", components);
     }
 
     private String encode(String component) {

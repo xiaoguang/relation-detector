@@ -99,27 +99,6 @@ public final class DdlRelationParserRunner {
                 adaptor.identifierRules(), namespace(context));
     }
 
-    public DdlParseOutcome parseTextWithEvidence(
-            ParserBundle bundle,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return parseTextWithEvidence(bundle.ddlParser(), ddl, sourceName, sourceType, context);
-    }
-
-    public DdlParseOutcome parseTextWithEvidence(
-            ParserBundle bundle,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context,
-            ScanConfig config
-    ) {
-        return parseTextWithEvidence(bundle.ddlParser(), ddl, sourceName, sourceType, context, config);
-    }
-
     /**
      *
      * 使用调用方已经选定的 DDL parser 解析 DDL 文本。
@@ -128,38 +107,6 @@ public final class DdlRelationParserRunner {
      * tests use this for common portable fixtures, where the fixture should run
      * the common token-event parser instead of the dialect adaptor parser.
      */
-    public List<RelationshipCandidate> parseText(
-            StructuredDdlParser parser,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context).relationships();
-    }
-
-    public DdlParseOutcome parseTextWithEvidence(
-            StructuredDdlParser parser,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, null);
-    }
-
-    public DdlParseOutcome parseTextWithEvidence(
-            StructuredDdlParser parser,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context,
-            ScanConfig config
-    ) {
-        return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, config,
-                defaultIdentifierRules(), namespace(context));
-    }
-
     public DdlParseOutcome parseTextWithEvidence(
             StructuredDdlParser parser,
             String ddl,
@@ -196,17 +143,6 @@ public final class DdlRelationParserRunner {
                         .extractFromDdlEvents(structured.events(), config),
                 inventory,
                 catalogInventory);
-    }
-
-    public DdlParseOutcome parseStatementWithEvidence(
-            StructuredDdlParser parser,
-            SqlStatementRecord statement,
-            EvidenceSourceType sourceType,
-            AdaptorContext context,
-            ScanConfig config
-    ) {
-        return parseStatementsWithEvidence(parser, List.of(statement), sourceType, context, config,
-                defaultIdentifierRules(), namespace(context));
     }
 
     public DdlParseOutcome parseStatementsWithEvidence(

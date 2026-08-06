@@ -6,10 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.ErrorCode;
+import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.result.ScanResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -22,7 +28,7 @@ class OutputBundleCliTest {
     Path tempDir;
 
     @Test
-    void jsonBundlePublishesExactlyResultAndDirectFromOneScan() throws Exception {
+    void jsonBundlePublishesExactlyResultAndDirect() throws Exception {
         Path input = tempDir.resolve("input.sql");
         Path config = tempDir.resolve("config.yml");
         Path bundle = tempDir.resolve("bundle");
@@ -45,6 +51,38 @@ class OutputBundleCliTest {
         assertTrue(result.isObject());
         assertTrue(direct.isObject());
         assertFalse(direct.has("derivedRelationships") && direct.path("derivedRelationships").size() > 0);
+    }
+
+    @Test
+    void injectedBundleExecutionInvokesScanExactlyOnce() throws Exception {
+        Path bundle = tempDir.resolve("bundle");
+        AtomicInteger invocations = new AtomicInteger();
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.COMMON;
+        config.jdbcUrl = "jdbc:test:single-scan-contract";
+        config.metadataEnabled = true;
+        config.ddlEnabled = false;
+        config.objectsEnabled = false;
+        config.logsEnabled = false;
+        SingleScanRunner runner = new SingleScanRunner(
+                ignored -> config,
+                (resolved, adaptor) -> {
+                    invocations.incrementAndGet();
+                    return new ScanResult("common", null, null);
+                },
+                ignored -> { });
+
+        int code = new Main.MainCommand(
+                runner,
+                ignored -> new AdaptorRegistry(List.of(new CommonDatabaseAdaptor())))
+                .run(new String[] {
+                        "scan", "--config", "config.yml", "--output-bundle", bundle.toString()
+                });
+
+        assertEquals(ErrorCode.OK.code(), code);
+        assertEquals(1, invocations.get());
+        assertTrue(Files.isRegularFile(bundle.resolve("result.json")));
+        assertTrue(Files.isRegularFile(bundle.resolve("direct.json")));
     }
 
     @Test

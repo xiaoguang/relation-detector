@@ -102,14 +102,18 @@ verification summary/manifest记录；设计契约只要求估算值不超过统
 
 1. 离线KG的record identity、跨文件evidence closure和多文件目录事务已验证；FULL/DIGEST_ONLY都先在
    同级staging完成，晚期失败不会产生部分正式目标。
-2. shard/reconciliation prompt受`maxInputTokens`约束；Codex和direct model-client通过固定path的有界
-   artifact交换request/response/output。OpenAI 2xx envelope以流式输入落盘，错误body不物化，writer独立
-   校验大小、hash、JSON、usage和phase输出门限。
-3. request-package v1/v2重建均在物化前应用可信index/shard/count/token/path/size/hash/JSON/line/gzip
-   上限，owner/sidecar通过磁盘索引逐记录处理，并强制验证owner manifest。v1仍仅允许证据包重建。
+2. shard/reconciliation prompt受`maxInputTokens`约束；direct model-client通过固定path的有界artifact交换
+   request/response/output。OpenAI 2xx envelope以流式输入落盘，错误body不物化，writer独立校验
+   大小、hash、JSON、usage和phase输出门限。Codex completion只消费在调用方可信limits内捕获的统一
+   detached snapshot，package声明不能抬高response/output门限。
+3. 独立request-package v1/v2 reconstructor在物化前应用可信index/shard/count/token/path/size/hash/JSON/
+   line/gzip上限，owner/sidecar通过磁盘索引逐记录处理，并强制验证owner manifest；v1仍仅允许证据包
+   重建。completion snapshot独占预期不存在的scratch root，有界验证manifest/index、v2 source hash和
+   reconstructed plan；失败只清理自己创建的固定子项，completion不再分别读取manifest/index。
 4. plan的full bundle、owner manifest、shard bundle和sidecar均以path/bytes/sha256绑定，首次render/model前
-   构造私有不变快照。final validator在写入前对complete store重做evidence、grounding、candidate section、
-   完整catalog/schema物理身份及semantic/review refs闭包。
+   构造私有不变快照。final validator在写入前对selected document重做complete-store闭包；reconciliation
+   patch先在局部proposed selection/rename上完整验证，identity-bearing名称必须保持重算正式ID不变，
+   任一失败均不提交selection/rename且不写final或发布run。
 
 ### 2026-07-28 四项反向审计的当前状态
 
@@ -191,8 +195,10 @@ PostgreSQL full/live 路径使用只包含输入参数类型的 identity signatu
 参数类型 grammar。`SemanticEventExtractor` 仍把 coarse semantic source type 分类为 `ROUTINE`，
 但 group key/stable ID 使用精确 provenance。formal normalization从已验证的
 `eventCandidateRef`派生默认event ID，不再处理`ROUTINE:`前缀。formal entity/event/metric/dimension
-正式ID统一通过`SemanticCanonicalIdentity`和`StableSemanticId`从canonical content生成；模型显式ID只作
-section-scoped临时alias，entity ref与其他formal section按固定顺序重写。graph edge已脱离display slug；自动review先规范化section，
+常规normalizer中的正式ID统一通过`SemanticCanonicalIdentity`和`StableSemanticId`从canonical content生成；
+模型显式ID只作section-scoped临时alias，entity ref与其他formal section按固定顺序重写。reconciliation
+对identity-bearing名称先用`SemanticCanonicalIdentity`重算并要求正式ID不变；description、physical display
+rename可在不改变正式identity时应用，整个patch原子提交。graph edge已脱离display slug；自动review先规范化section，
 再以`targetSection + targetRef + type`生成稳定ID，可变reason不参与identity。
 未审计 SQL statement family 和真实数据库 runtime smoke 继续按各自 backlog/环境边界管理。
 

@@ -167,16 +167,6 @@ public final class SemanticInputStore implements AutoCloseable {
                 item -> consumer.accept(ScanFactFactory.diagnostics(List.of(item)).get(0)));
     }
 
-    Path sectionPath(Section section) {
-        ensureOpen();
-        return sectionPaths.get(section);
-    }
-
-    Path workspace() {
-        ensureOpen();
-        return workspace;
-    }
-
     @Override
     public void close() {
         if (closed) {

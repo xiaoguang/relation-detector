@@ -12,6 +12,7 @@ import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.LinkedHashMap;
@@ -66,11 +67,16 @@ class SemanticReconciliationPromptBuilderTest {
 
             SemanticExtractionPrompt prompt = new SemanticResultSelection(stores)
                     .reconciliationPrompt(plan, plan.maxInputTokens());
+            SemanticExtractionPrompt template = new SemanticReconciliationPromptBuilder()
+                    .template(plan);
 
             assertFalse(prompt.evidenceBundle().has("semanticSummary"));
             assertTrue(prompt.evidenceBundle().path("conflicts").isArray());
             assertTrue(prompt.userPrompt().contains("variant:orders"));
             assertFalse(prompt.userPrompt().contains("Unrelated payload"));
+            assertEquals(template.developerPrompt(), prompt.developerPrompt());
+            assertTrue(prompt.developerPrompt().contains(
+                    "Name changes must preserve the existing canonical identity"));
         } finally {
             stores.values().forEach(ExternalJsonRecordStore::close);
         }

@@ -63,10 +63,24 @@ class BatchManifestLoaderTest {
     }
 
     @Test
-    void rejectsVersionOneAndLegacyDirectOutput() throws Exception {
+    void rejectsVersionOne() throws Exception {
         Path manifest = tempDir.resolve("batch.yml");
         Files.writeString(manifest, """
                 version: 1
+                cases:
+                  - id: one
+                    config: one.yml
+                    output: one.json
+                """);
+
+        assertThrows(IllegalArgumentException.class, () -> new BatchManifestLoader().load(manifest));
+    }
+
+    @Test
+    void rejectsLegacyDirectOutputInVersionTwo() throws Exception {
+        Path manifest = tempDir.resolve("batch.yml");
+        Files.writeString(manifest, """
+                version: 2
                 cases:
                   - id: one
                     config: one.yml

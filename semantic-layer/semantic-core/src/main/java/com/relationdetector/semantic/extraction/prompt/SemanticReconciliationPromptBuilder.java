@@ -43,6 +43,7 @@ public final class SemanticReconciliationPromptBuilder {
                 - resolutions: {section,id,selectedVariantHash} for every listed conflict.
                 - renames: optional {section,id,name,description} display-only changes.
 
+                Name changes must preserve the existing canonical identity; descriptions may change display metadata only.
                 Never create semantic objects or relations, physical facts, entity ids, candidate refs, or evidence refs.
                 Never modify physical names, lineage, triplet candidate coverage, or governance status.
                 Return JSON only.

@@ -64,6 +64,33 @@ final class SemanticRequestBundleReconstructorLimitsTest {
     }
 
     @Test
+    void rejectsMissingOrMalformedV2SourceBundleHashWithoutPublishing() throws Exception {
+        Fixture missing = fixture("missing-source-hash", 2);
+        missing.index().remove("sourceBundleSha256");
+        missing.writeIndex();
+        assertRejectedWithoutTargetChange(missing, SemanticRequestPackageLimits.defaults());
+
+        Fixture malformed = fixture("malformed-source-hash", 2);
+        malformed.index().put("sourceBundleSha256", "ABC123");
+        malformed.writeIndex();
+        assertRejectedWithoutTargetChange(malformed, SemanticRequestPackageLimits.defaults());
+    }
+
+    @Test
+    void completionReconstructionDoesNotPublishTargetWhenPlanSnapshotFails() throws Exception {
+        Fixture fixture = fixture("late-snapshot-failure", 2);
+        Path blockedSnapshotRoot = tempDir.resolve("blocked-plan-snapshot");
+        Files.writeString(blockedSnapshotRoot, "not-a-directory", StandardCharsets.UTF_8);
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticRequestBundleReconstructor().reconstructCompletionSnapshot(
+                        fixture.run(), fixture.target(), blockedSnapshotRoot,
+                        SemanticRequestPackageLimits.defaults()));
+
+        assertFalse(Files.exists(fixture.target()));
+    }
+
+    @Test
     void rejectsShardAndTokenDeclarationsAboveTrustedLimitsBeforeArtifacts() throws Exception {
         Fixture fixture = fixture("count-and-token", 2);
         fixture.index().withArray("shards").add(fixture.index().path("shards").get(0).deepCopy());
@@ -367,6 +394,13 @@ final class SemanticRequestBundleReconstructorLimitsTest {
 
         ObjectNode index = JSON.createObjectNode();
         index.put("artifactSchemaVersion", version);
+        if (version == 2) {
+            index.put("sourceBundleSha256", "a".repeat(64));
+            index.put("reconcile", false);
+            index.put("maxInputTokens", 10_000);
+            index.put("shardMaxOutputTokens", 100);
+            index.put("reconciliationMaxOutputTokens", 100);
+        }
         index.put("fullBundleCanonicalSha256",
                 SemanticRequestBundleCanonicalDigest.bundleSha256(descriptor, digests));
         index.set("descriptor", descriptor);

@@ -28,23 +28,6 @@ public record FullGrammarExpressionAnalysis(
         return !sourceColumns.isEmpty();
     }
 
-    /**
-     *
-     * Keeps the first source for expression forms whose v1 semantics are intentionally conservative.
-     *
-     * <p>CN: 某些 COALESCE/derived 场景 v1 只接受第一个可解析物理来源，避免未经审核的额外血缘。</p>
-     */
-    public FullGrammarExpressionAnalysis firstSourceOnly() {
-        if (!hasSources()) {
-            return this;
-        }
-        return new FullGrammarExpressionAnalysis(
-                List.of(sourceAliases.get(0)),
-                List.of(sourceColumns.get(0)),
-                transformType,
-                flowKind);
-    }
-
     public FullGrammarExpressionAnalysis withTransform(String transformType, String flowKind) {
         return new FullGrammarExpressionAnalysis(sourceAliases, sourceColumns, transformType, flowKind);
     }

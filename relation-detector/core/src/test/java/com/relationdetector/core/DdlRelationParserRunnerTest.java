@@ -2,6 +2,8 @@ package com.relationdetector.core;
 
 import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.adaptor.AdaptorContractException;
+import com.relationdetector.core.execution.StatementExecutionService;
+import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.runtime.*;
 import com.relationdetector.core.relation.*;
@@ -123,9 +125,11 @@ class DdlRelationParserRunnerTest {
         };
 
         assertThrows(AdaptorContractException.class,
-                () -> new DdlRelationParserRunner().parseTextWithEvidence(
-                        parser, "CREATE TABLE orders(id BIGINT)", "schema.sql",
-                        EvidenceSourceType.DDL_FILE, context(warnings), new ScanConfig()));
+                () -> new StatementExecutionService().executeDdlText(
+                        new ParserBundle(null, parser, null),
+                        "CREATE TABLE orders(id BIGINT)", "schema.sql",
+                        EvidenceSourceType.DDL_FILE, context(warnings), new ScanConfig(),
+                        defaultIdentifierRules(), NamespaceContext.empty()));
 
         assertTrue(warnings.isEmpty(), "callback warnings must commit only after the DDL result is valid");
     }
@@ -191,14 +195,15 @@ class DdlRelationParserRunnerTest {
                         "sourceFile", "sample-data/mysql/8.0/01-schema/02.sql",
                         "sourceStatementId", "sample-data/mysql/8.0/01-schema/02.sql:10-14"));
 
-        DdlParseOutcome outcome = new DdlRelationParserRunner().parseStatementWithEvidence(
-                parser, statement, EvidenceSourceType.DDL_FILE, context(new ArrayList<>()), new ScanConfig());
+        var outcome = new StatementExecutionService().executeDdlStatements(
+                parser, List.of(statement), EvidenceSourceType.DDL_FILE,
+                context(new ArrayList<>()), new ScanConfig());
 
-        assertEquals(11L, outcome.relationships().get(0).evidence().get(0).attributes().get("sourceLine"));
+        assertEquals(11L, outcome.relationshipCandidates().get(0).evidence().get(0).attributes().get("sourceLine"));
         assertEquals("sample-data/mysql/8.0/01-schema/02.sql",
-                outcome.relationships().get(0).evidence().get(0).source());
+                outcome.relationshipCandidates().get(0).evidence().get(0).source());
         assertEquals("sample-data/mysql/8.0/01-schema/02.sql:10-14",
-                outcome.relationships().get(0).evidence().get(0).attributes().get("sourceStatementId"));
+                outcome.relationshipCandidates().get(0).evidence().get(0).attributes().get("sourceStatementId"));
     }
 
     @Test
@@ -275,8 +280,9 @@ class DdlRelationParserRunnerTest {
                 "schema.sql", 10, 14, Map.of("sourceFile", "schema.sql"));
         List<WarningMessage> warnings = new ArrayList<>();
 
-        new DdlRelationParserRunner().parseStatementWithEvidence(
-                parser, statement, EvidenceSourceType.DDL_FILE, context(warnings), new ScanConfig());
+        new StatementExecutionService().executeDdlStatements(
+                parser, List.of(statement), EvidenceSourceType.DDL_FILE,
+                context(warnings), new ScanConfig());
 
         List<WarningMessage> provenanceWarnings = warnings.stream()
                 .filter(candidate -> candidate.code().equals("SOURCE_LINE_OUTSIDE_STATEMENT"))
@@ -308,12 +314,13 @@ class DdlRelationParserRunnerTest {
     ) throws Exception {
         var script = adaptor.parsers().scriptFramer().frame(new ScriptFrameRequest(
                 Files.readString(file), file.toString(), StatementSourceType.DDL_FILE));
-        return new DdlRelationParserRunner().parseStatementsWithEvidence(
+        return new StatementExecutionService().executeDdlStatements(
                 adaptor.parsers().structuredDdl().orElseThrow(),
-                script.statements(),
-                EvidenceSourceType.DDL_FILE,
-                context,
-                config).relationships();
+                script.statements(), EvidenceSourceType.DDL_FILE, context, config).relationshipCandidates();
+    }
+
+    private IdentifierRules defaultIdentifierRules() {
+        return value -> value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT);
     }
 
     private AdaptorContext context(List<WarningMessage> warnings) {

@@ -25,13 +25,6 @@ public final class DerivedPathInferenceService {
         this.endpointKeys = endpointKeys;
     }
 
-    public List<NamingEvidenceCandidate> deriveNamingEvidence(
-            List<NamingEvidenceCandidate> namingEvidence,
-            ScanConfig config
-    ) {
-        return infer(List.of(), List.of(), namingEvidence, config).derivedNamingEvidence();
-    }
-
     public DerivedPathInferenceResult infer(
             List<RelationshipCandidate> relationships,
             List<DataLineageCandidate> dataLineages,

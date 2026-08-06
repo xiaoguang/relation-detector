@@ -69,8 +69,8 @@ final class SemanticEventAssociationStoreTest {
             store.finish();
 
             assertThrows(SemanticShardingException.class,
-                    () -> store.requireWithinEstimatedBudget(
-                            "event:write-audit", 64, 20));
+                    () -> SemanticEventInputBudget.requireWithin(
+                            64, store.estimatedReferenceBytes("event:write-audit"), 20));
         }
     }
 

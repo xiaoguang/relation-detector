@@ -7,13 +7,17 @@ import com.relationdetector.semantic.extraction.shard.SemanticRunPlan;
 import com.relationdetector.semantic.extraction.artifact.SemanticResultStore;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticExtractionValidationException;
+import com.relationdetector.semantic.extraction.normalization.SemanticCanonicalIdentity;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticPromptBudgetEstimator;
 
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
+import com.relationdetector.semantic.extraction.prompt.SemanticReconciliationPromptBuilder;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,7 +78,7 @@ public final class SemanticResultSelection {
                 .put("newPhysicalFactsForbidden", true)
                 .put("newEvidenceReferencesForbidden", true);
         SemanticExtractionPrompt prompt = new SemanticExtractionPrompt(
-                developerPrompt(),
+                new SemanticReconciliationPromptBuilder().template(plan).developerPrompt(),
                 "Resolve these semantic shard conflicts and return the constrained patch:\n" + bundle,
                 bundle);
         if (new SemanticPromptBudgetEstimator().estimate(prompt) > maxInputTokens) {
@@ -97,42 +101,56 @@ public final class SemanticResultSelection {
             }
         });
         Set<String> expected = conflictKeys();
+        Map<String, String> proposedSelections = new LinkedHashMap<>();
         for (JsonNode resolution : patch.path("resolutions")) {
             String section = resolution.path("section").asText("");
             String id = resolution.path("id").asText("");
             String hash = resolution.path("selectedVariantHash").asText("");
             String key = section + "\u0000" + id;
             if (!expected.contains(key) || hash.isBlank()
-                    || conflictSelections.putIfAbsent(key, hash) != null
+                    || proposedSelections.putIfAbsent(key, hash) != null
                     || !containsVariant(section, id, hash)) {
                 throw new SemanticExtractionValidationException(
                         "semantic reconciliation resolution does not match one conflict");
             }
         }
-        if (conflictSelections.size() != expected.size()) {
+        if (proposedSelections.size() != expected.size()) {
             throw new SemanticExtractionValidationException(
                     "semantic reconciliation did not resolve every shard conflict");
         }
+        Map<String, Rename> proposedRenames = new LinkedHashMap<>();
         for (JsonNode rename : patch.path("renames")) {
             SemanticResultStore.Section section =
                     SemanticResultStore.Section.fromWire(rename.path("section").asText(""));
             String id = rename.path("id").asText("");
-            if (section == null || id.isBlank() || !sections.get(section).containsKey(id)) {
+            ExternalJsonRecordStore.Record stored = section == null || id.isBlank()
+                    ? null
+                    : sections.get(section).get(id).orElse(null);
+            if (stored == null) {
                 throw new SemanticExtractionValidationException(
                         "semantic reconciliation rename target is invalid");
             }
-            String name = rename.has("name") ? requiredText(rename, "name") : null;
-            String description = rename.has("description") ? requiredText(rename, "description") : null;
+            String name = optionalText(rename, "name");
+            String description = optionalText(rename, "description");
             if (name == null && description == null) {
                 throw new SemanticExtractionValidationException(
                         "semantic reconciliation rename requires display content");
             }
             String key = section.wireName + "\u0000" + id;
-            if (renames.putIfAbsent(key, new Rename(name, description)) != null) {
+            if (proposedRenames.putIfAbsent(key, new Rename(name, description)) != null) {
                 throw new SemanticExtractionValidationException(
                         "semantic reconciliation contains a duplicate rename");
             }
+            if (name != null) {
+                JsonNode selected = selectedDocument(
+                        section, stored.value(), proposedSelections);
+                requireFormalIdentityPreserved(section, id, selected, name);
+            }
         }
+        conflictSelections.clear();
+        conflictSelections.putAll(proposedSelections);
+        renames.clear();
+        renames.putAll(proposedRenames);
     }
 
     public void requireConflictFree() {
@@ -151,11 +169,19 @@ public final class SemanticResultSelection {
     }
 
     public JsonNode selectedDocument(SemanticResultStore.Section section, JsonNode stored) {
+        return selectedDocument(section, stored, conflictSelections);
+    }
+
+    private JsonNode selectedDocument(
+            SemanticResultStore.Section section,
+            JsonNode stored,
+            Map<String, String> selections
+    ) {
         JsonNode variants = stored.path("__semanticVariants");
         if (!variants.isArray()) {
             return stored;
         }
-        String selectedHash = conflictSelections.get(section.wireName + "\u0000"
+        String selectedHash = selections.get(section.wireName + "\u0000"
                 + stored.path("id").asText(""));
         JsonNode fallback = null;
         for (JsonNode variant : variants) {
@@ -218,13 +244,73 @@ public final class SemanticResultSelection {
         return found[0];
     }
 
-    private String requiredText(JsonNode source, String field) {
-        String value = source.path(field).asText("");
-        if (value.isBlank()) {
+    private String optionalText(JsonNode source, String field) {
+        JsonNode value = source.path(field);
+        if (value.isMissingNode() || value.isNull()) {
+            return null;
+        }
+        if (!value.isTextual() || value.textValue().isBlank()) {
             throw new SemanticExtractionValidationException(
                     "semantic reconciliation text value is required");
         }
-        return value;
+        return value.textValue();
+    }
+
+    private void requireFormalIdentityPreserved(
+            SemanticResultStore.Section section,
+            String id,
+            JsonNode source,
+            String proposedName
+    ) {
+        String canonicalId = switch (section) {
+            case ENTITIES -> SemanticCanonicalIdentity.entity(
+                    text(source, "physicalName"),
+                    proposedName,
+                    text(source, "machineType"),
+                    text(source, "type"),
+                    textValues(source.path("ownedGroundingRefs"))).canonicalId();
+            case METRICS -> SemanticCanonicalIdentity.metric(
+                    proposedName,
+                    text(source, "machineType"),
+                    text(source, "type"),
+                    text(source, "physicalField"),
+                    textValues(source.path("sourceFields")));
+            case DIMENSIONS -> SemanticCanonicalIdentity.dimension(
+                    proposedName,
+                    text(source, "machineType"),
+                    text(source, "type"),
+                    text(source, "physicalField"),
+                    text(source, "dimensionTable"));
+            default -> id;
+        };
+        if (!id.equals(canonicalId)) {
+            throw new SemanticExtractionValidationException(
+                    "semantic reconciliation name change would alter formal identity");
+        }
+    }
+
+    private List<String> textValues(JsonNode values) {
+        if (values.isMissingNode() || values.isNull()) {
+            return List.of();
+        }
+        if (!values.isArray()) {
+            throw new SemanticExtractionValidationException(
+                    "canonical semantic identity references must be an array");
+        }
+        List<String> result = new ArrayList<>();
+        values.forEach(value -> {
+            if (!value.isTextual() || value.textValue().isBlank()) {
+                throw new SemanticExtractionValidationException(
+                        "canonical semantic identity reference is invalid");
+            }
+            result.add(value.textValue());
+        });
+        return List.copyOf(result);
+    }
+
+    private String text(JsonNode source, String field) {
+        JsonNode value = source.path(field);
+        return value.isTextual() ? value.textValue() : "";
     }
 
     private ObjectNode requireObject(JsonNode value) {
@@ -237,19 +323,6 @@ public final class SemanticResultSelection {
     private SemanticShardingException budgetFailure() {
         return new SemanticShardingException(
                 "semantic reconciliation prompt exceeds the configured estimated input-token limit");
-    }
-
-    private String developerPrompt() {
-        return """
-                You reconcile already normalized evidence-grounded semantic shards.
-                Return one JSON patch only with exactly these arrays:
-                - resolutions: {section,id,selectedVariantHash} for every listed conflict.
-                - renames: optional {section,id,name,description} display-only changes.
-
-                Never create semantic objects or relations, physical facts, entity ids, candidate refs, or evidence refs.
-                Never modify physical names, lineage, triplet candidate coverage, or governance status.
-                Return JSON only.
-                """;
     }
 
     private record Rename(String name, String description) {

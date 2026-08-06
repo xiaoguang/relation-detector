@@ -13,7 +13,10 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.parser.antlr.SqlDialect;
-import com.relationdetector.core.parser.runtime.DdlRelationParserRunner;
+import com.relationdetector.core.config.ScanConfig;
+import com.relationdetector.core.execution.StatementExecutionService;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.parser.runtime.ParserBundle;
 import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.core.parser.tokenevent.TokenEventStructuredDdlParser;
 import java.nio.file.Files;
@@ -263,13 +266,17 @@ class CorrectnessFixtureRunnerTest {
                 );
                 """;
 
-        List<RelationshipCandidate> relationships = new DdlRelationParserRunner().parseText(
-                new TokenEventStructuredDdlParser(SqlDialect.GENERIC),
+        List<RelationshipCandidate> relationships = new StatementExecutionService().executeDdlText(
+                new ParserBundle(
+                        null, new TokenEventStructuredDdlParser(SqlDialect.GENERIC), null),
                 input,
                 "in-memory-common-ddl-fixture.ddl.sql",
                 EvidenceSourceType.DDL_FILE,
                 new AdaptorContext(new ScanScope(null, "portable", List.of(), List.of()), Map.of(), warning -> {
-                }));
+                }),
+                new ScanConfig(),
+                value -> value == null ? "" : value.strip().toLowerCase(java.util.Locale.ROOT),
+                new NamespaceContext(null, "portable", List.of())).relationshipCandidates();
         Set<String> fingerprints = new RelationshipMerger().merge(relationships, 0.0).stream()
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));

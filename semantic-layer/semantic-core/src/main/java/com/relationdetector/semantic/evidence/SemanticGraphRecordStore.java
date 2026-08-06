@@ -72,10 +72,6 @@ public final class SemanticGraphRecordStore implements AutoCloseable {
         return records.get(section).count();
     }
 
-    public boolean containsEvidence(String id) {
-        return records.get(Section.EVIDENCE).containsKey(id);
-    }
-
     public void provideReferences(SemanticReferenceClosureStore closure) {
         if (closure == null) {
             throw new IllegalArgumentException("semantic reference closure store is required");

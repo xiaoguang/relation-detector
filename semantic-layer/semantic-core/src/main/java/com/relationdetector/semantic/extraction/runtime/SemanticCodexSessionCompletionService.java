@@ -2,11 +2,13 @@ package com.relationdetector.semantic.extraction.runtime;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticRequestArtifactWriter;
 
+import com.relationdetector.semantic.extraction.artifact.SemanticCodexRequestSnapshot;
+
 import com.relationdetector.semantic.extraction.artifact.SemanticRunArtifactWriter;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticResultStore;
 
-import com.relationdetector.semantic.extraction.artifact.SemanticRequestBundleReconstructor;
+import com.relationdetector.semantic.extraction.artifact.SemanticRequestPackageLimits;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticReconstructedEvidenceLookup;
 
@@ -22,20 +24,14 @@ import com.relationdetector.semantic.extraction.normalization.SemanticEvidenceLo
 
 import com.relationdetector.semantic.extraction.normalization.SemanticBoundedJsonReader;
 
-import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPromptBuilder;
-
 import com.relationdetector.semantic.extraction.prompt.SemanticExtractionPrompt;
-
-import com.relationdetector.semantic.extraction.config.ArtifactRetention;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,10 +41,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.internal.io.SemanticFileTreeOperations;
 import com.relationdetector.semantic.internal.io.SemanticAtomicFiles;
-import com.relationdetector.semantic.extraction.artifact.SemanticArtifactVerifier;
-import com.relationdetector.semantic.extraction.artifact.SemanticArtifactRef;
-import com.relationdetector.semantic.extraction.artifact.SemanticRunPlanSnapshot;
-import com.relationdetector.semantic.internal.io.SemanticFileDigest;
 
 /**
  * CN: 消费不可变Codex request run和独立response目录，重建完整证据、校验owner、顺序归一化分片并在
@@ -61,14 +53,22 @@ import com.relationdetector.semantic.internal.io.SemanticFileDigest;
  */
 public final class SemanticCodexSessionCompletionService {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-    private final SemanticRequestBundleReconstructor reconstructor =
-            new SemanticRequestBundleReconstructor();
     private final SemanticExtractionDocumentNormalizer normalizer =
             new SemanticExtractionDocumentNormalizer();
-    private final SemanticExtractionPromptBuilder promptBuilder =
-            new SemanticExtractionPromptBuilder();
     private final SemanticRequestArtifactWriter requests = new SemanticRequestArtifactWriter();
     private final SemanticBoundedJsonReader bounded = new SemanticBoundedJsonReader();
+    private final SemanticRequestPackageLimits trustedLimits;
+
+    public SemanticCodexSessionCompletionService() {
+        this(SemanticRequestPackageLimits.defaults());
+    }
+
+    SemanticCodexSessionCompletionService(SemanticRequestPackageLimits trustedLimits) {
+        if (trustedLimits == null) {
+            throw new IllegalArgumentException("semantic request package limits are required");
+        }
+        this.trustedLimits = trustedLimits;
+    }
 
     /**
      * CN: 校验request package和现有response集合；缺失分片或reconciliation时返回PENDING并写固定清单，
@@ -92,11 +92,7 @@ public final class SemanticCodexSessionCompletionService {
             Files.createDirectories(responses);
             Files.createDirectories(output);
             Files.createDirectory(workspace);
-            LoadedRequest loadedSource = load(run, workspace);
-            LoadedRequest loaded = new LoadedRequest(
-                    SemanticRunPlanSnapshot.capture(
-                            loadedSource.plan(), workspace.resolve("plan-snapshot")),
-                    loadedSource.model(), loadedSource.reasoningEffort(), loadedSource.retention());
+            SemanticCodexRequestSnapshot.Snapshot loaded = load(run, workspace);
             List<String> missing = missingShardResponses(loaded.plan(), responses);
             if (!missing.isEmpty()) {
                 return pending(responses, "SHARDS", missing);
@@ -144,56 +140,9 @@ public final class SemanticCodexSessionCompletionService {
      * reconstructing the complete bundle in an isolated workspace. The returned plan references only verified files;
      * missing, tampered, or escaping paths fail before any response is processed.
      */
-    private LoadedRequest load(Path run, Path workspace) {
-        ObjectNode manifest = readObject(run.resolve("run-manifest.json"), "semantic request run manifest");
-        require("codex-session".equals(manifest.path("provider").asText("")));
-        require(Set.of("AWAITING_MODEL_RESULTS", "REQUESTS_READY")
-                .contains(manifest.path("status").asText("")));
-        ObjectNode index = readObject(
-                run.resolve("request-bundle-index.json"), "semantic request bundle index");
-        require(requiredNonNegativeInt(index, "artifactSchemaVersion") == 2);
-        Path bundle = workspace.resolve("full-evidence-bundle.json");
-        SemanticRequestBundleReconstructor.Result reconstructed = reconstructor.reconstruct(run, bundle);
-        require(reconstructed.canonicalSha256().equals(
-                index.path("fullBundleCanonicalSha256").asText("")));
-        SemanticArtifactRef ownerManifest = verifiedArtifact(run, index.path("ownerManifest"));
-        requireHash(index.path("sourceBundleSha256").asText(""));
-        SemanticArtifactRef fullBundle = localArtifact(bundle);
-        int maxInputTokens = requiredPositiveInt(index, "maxInputTokens");
-        int shardMaxOutputTokens = requiredPositiveInt(index, "shardMaxOutputTokens");
-        int reconciliationMaxOutputTokens = requiredPositiveInt(
-                index, "reconciliationMaxOutputTokens");
-        require(index.path("reconcile").isBoolean());
-        ArrayNode shards = requireArray(index, "shards");
-        List<SemanticShardDescriptor> descriptors = new ArrayList<>();
-        Set<String> ids = new HashSet<>();
-        for (JsonNode shard : shards) {
-            String id = shard.path("id").asText("");
-            require(simpleName(id) && ids.add(id));
-            descriptors.add(new SemanticShardDescriptor(
-                    id,
-                    requiredText(shard, "ownerKey"),
-                    verifiedArtifact(run, shard.path("bundle")),
-                    verifiedArtifact(run, shard.path("sidecar")),
-                    requiredPositiveInt(shard, "estimatedInputTokens"),
-                    requiredNonNegativeInt(shard, "ownedFactCount"),
-                    requiredNonNegativeInt(shard, "ownedCandidateCount")));
-        }
-        require(!descriptors.isEmpty());
-        require(requiredNonNegativeInt(manifest, "shardCount") == descriptors.size());
-        SemanticRunPlan plan = new SemanticRunPlan(
-                fullBundle,
-                descriptors,
-                index.path("reconcile").booleanValue(),
-                maxInputTokens,
-                shardMaxOutputTokens,
-                reconciliationMaxOutputTokens,
-                ownerManifest);
-        return new LoadedRequest(
-                plan,
-                requiredText(manifest, "model"),
-                requiredText(manifest, "reasoningEffort"),
-                ArtifactRetention.parse(manifest.path("retention").asText("full")));
+    private SemanticCodexRequestSnapshot.Snapshot load(Path run, Path workspace) {
+        return SemanticCodexRequestSnapshot.capture(
+                run, workspace.resolve("request-snapshot"), trustedLimits);
     }
 
     private List<String> missingShardResponses(SemanticRunPlan plan, Path responses) {
@@ -250,79 +199,6 @@ public final class SemanticCodexSessionCompletionService {
         }
     }
 
-    private SemanticArtifactRef verifiedArtifact(Path run, JsonNode artifact) {
-        long bytes = requiredNonNegativeLong(artifact, "bytes");
-        String sha256 = requireHash(artifact.path("sha256").asText(""));
-        Path path = SemanticArtifactVerifier.verify(
-                run,
-                artifact.path("path").asText(""),
-                bytes,
-                sha256);
-        return new SemanticArtifactRef(path, bytes, sha256);
-    }
-
-    private SemanticArtifactRef localArtifact(Path path) {
-        try {
-            SemanticFileDigest.Digest digest = SemanticFileDigest.computeNoFollow(path);
-            return new SemanticArtifactRef(path, digest.bytes(), digest.sha256());
-        } catch (IOException failure) {
-            throw invalidRun();
-        }
-    }
-
-    private ObjectNode readObject(Path path, String label) {
-        try {
-            JsonNode value = JSON.readTree(path.toFile());
-            if (value == null || !value.isObject()) {
-                throw new SemanticExtractionValidationException(label + " must be a JSON object");
-            }
-            return (ObjectNode) value;
-        } catch (IOException failure) {
-            throw invalidRun();
-        }
-    }
-
-    private ArrayNode requireArray(JsonNode object, String field) {
-        JsonNode value = object.path(field);
-        require(value.isArray());
-        return (ArrayNode) value;
-    }
-
-    private int requiredPositiveInt(JsonNode object, String field) {
-        JsonNode value = object.path(field);
-        require(value.isIntegralNumber() && value.canConvertToInt() && value.intValue() > 0);
-        return value.intValue();
-    }
-
-    private int requiredNonNegativeInt(JsonNode object, String field) {
-        JsonNode value = object.path(field);
-        require(value.isIntegralNumber() && value.canConvertToInt() && value.intValue() >= 0);
-        return value.intValue();
-    }
-
-    private long requiredNonNegativeLong(JsonNode object, String field) {
-        JsonNode value = object.path(field);
-        require(value.isIntegralNumber() && value.canConvertToLong() && value.longValue() >= 0);
-        return value.longValue();
-    }
-
-    private String requiredText(JsonNode object, String field) {
-        String value = object.path(field).asText("");
-        require(!value.isBlank());
-        return value;
-    }
-
-    private String requireHash(String value) {
-        require(value != null && value.matches("[0-9a-f]{64}"));
-        return value;
-    }
-
-    private boolean simpleName(String value) {
-        return value != null && !value.isBlank()
-                && Path.of(value).getNameCount() == 1
-                && value.equals(Path.of(value).getFileName().toString());
-    }
-
     private boolean reconciliationRequired(SemanticRunPlan plan) {
         return plan.reconcile() && plan.shards().size() > 1;
     }
@@ -365,11 +241,4 @@ public final class SemanticCodexSessionCompletionService {
         }
     }
 
-    private record LoadedRequest(
-            SemanticRunPlan plan,
-            String model,
-            String reasoningEffort,
-            ArtifactRetention retention
-    ) {
-    }
 }

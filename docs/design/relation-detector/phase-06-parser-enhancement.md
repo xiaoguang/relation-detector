@@ -1204,7 +1204,10 @@ PREPARE stmt FROM @s;
 EXECUTE stmt;
 ```
 
-当前不猜测拼接结果中的关系，也不做 Parameter Binding。系统输出 `DYNAMIC_SQL_UNRESOLVED` warning，并在 warning attributes 中保留 raw statement、object schema/name/type、routine schema/name/type 等定位信息。
+当前不猜测拼接结果中的关系，也不做 Parameter Binding。通用 SQL parser 不再扫描 raw SQL 或输出
+`DYNAMIC_SQL_UNRESOLVED`。只有 PostgreSQL PL/pgSQL body parser 从 typed dynamic `EXECUTE` context
+确认无法解析时，才输出 `POSTGRES_DYNAMIC_SQL_UNRESOLVED`；warning 只保留结构化 object/source
+provenance，不携带 raw statement。
 
 ## 正则、scanner 与 typed parse-tree 边界
 

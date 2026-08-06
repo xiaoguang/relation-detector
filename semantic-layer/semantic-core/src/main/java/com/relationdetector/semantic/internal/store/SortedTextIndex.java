@@ -46,13 +46,6 @@ public final class SortedTextIndex implements AutoCloseable {
         return new SortedTextIndex(index);
     }
 
-    public static SortedTextIndex openExisting(Path index) throws IOException {
-        if (index == null || !Files.isRegularFile(index)) {
-            throw new IllegalArgumentException("sorted text index file is required");
-        }
-        return new SortedTextIndex(index);
-    }
-
     public boolean contains(String key) throws IOException {
         if (key == null || key.isBlank()) {
             return false;

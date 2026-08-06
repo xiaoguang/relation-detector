@@ -36,10 +36,6 @@ public final class IdentifierQuoter {
         return new IdentifierQuoter("\"", "\"", false, true);
     }
 
-    public static IdentifierQuoter doubleQuote() {
-        return new IdentifierQuoter("\"", "\"", true, true);
-    }
-
     public static IdentifierQuoter sqlServer() {
         return new IdentifierQuoter("[", "]", true, true);
     }

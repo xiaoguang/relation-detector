@@ -44,15 +44,6 @@ public final class RunArtifactFileStore {
         }
     }
 
-    public void writeText(Path path, String value) {
-        try {
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, value == null ? "" : value);
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("failed to write semantic text artifact", failure);
-        }
-    }
-
     public void writeManifest(Path directory, ObjectNode manifest) {
         Path target = directory.resolve("run-manifest.json");
         try {

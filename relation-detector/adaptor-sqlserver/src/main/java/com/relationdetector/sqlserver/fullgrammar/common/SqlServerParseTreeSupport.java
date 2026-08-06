@@ -40,10 +40,6 @@ abstract class SqlServerParseTreeSupport {
         return Optional.empty();
     }
 
-    final boolean isEqualityComparison(ParserRuleContext predicate) {
-        return !adapter.directEqualities(predicate).isEmpty();
-    }
-
     final Optional<ColumnEndpoint> singleColumnEndpoint(ParseTree expression) {
         Optional<FullGrammarColumnReference> directColumn = directColumnExpression(expression);
         if (directColumn.isEmpty()) {

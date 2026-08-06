@@ -369,9 +369,9 @@ closure。确定性`tripletCandidates`不复制进模型prompt；模型
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard item的owned grounding已校验；reconciliation只接受`resolutions`和`renames`，不能新增对象或relation。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`要求bundle携带合法`shardContext`并复用自动分片owner校验；owned/overlap集合唯一、互斥且存在，模型对象必须由owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | 门限应用于ownership/overlap完整渲染后的 shard prompt和merge后仅含冲突闭包的reconciliation prompt；两者超过`maxInputTokens`都在模型调用前失败，等于门限保留。配置、Javadoc和manifest均不把estimate称为exact token。 |
-| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | Codex和direct model-client均以固定path有界artifact交换request/response/output，writer独立校验大小、hash、JSON、usage和phase门限。OpenAI 2xx envelope在`1 MiB + 32 × maxOutputTokens`内流式落盘，错误body不物化且retry关闭stream。 |
-| `SEM-REQUEST-PACKAGE-01` | `MATCHED` | v1/v2均在物化前应用可信index/shard/count/token/path/size/hash/JSON/line/gzip门限，owner与sidecar用磁盘索引逐记录处理，完整digest与owner coverage通过后才原子发布。 |
-| `SEM-FINAL-CLOSURE-01` | `MATCHED` | plan的四类输入artifact以path/bytes/sha256快照绑定；selection后final write前重新校验evidence、owned grounding、candidate section、完整catalog/schema table/column身份以及semantic/review refs闭包。 |
+| `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | direct model-client使用固定path、writer验证和OpenAI流式envelope；Codex completion只消费统一detached snapshot，package token声明只能在调用方可信limits内收紧，全部copy/hash/limit校验在首次模型调用前完成。 |
+| `SEM-REQUEST-PACKAGE-01` | `MATCHED` | 独立v1/v2 reconstructor在物化前应用可信门限并完成digest/owner coverage；统一snapshot在预期不存在的scratch root内有界捕获manifest/index/bundle，验证v2 source hash并只清理自己创建的固定子项，completion不再分别读取manifest/index。 |
+| `SEM-FINAL-CLOSURE-01` | `MATCHED` | plan artifact快照与selected document闭包已实现；reconciliation patch先在局部proposed状态完整验证，identity-bearing名称必须保持重算正式ID不变，非法patch不写final或发布run，安全rename保持graph、review和正式ID稳定。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只消费typed endpoint和fact/candidate reference字段；description、diagnostic和attributes文本不能误连物理table。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 完整physical identity或业务name/type/owned-grounding identity确定性合并并重写refs；同名不同grounding生成review，冲突显式失败。 |
 | `SEM-SHARD-ARTIFACT-01` | `MATCHED` | 任何payload前原子写`IN_PROGRESS`；模式终态原子替换后才发布。普通失败写`FAILED`，终态写入失败时保留最后一个可解析`IN_PROGRESS`，半成品永不发布。 |
@@ -382,14 +382,15 @@ closure。确定性`tripletCandidates`不复制进模型prompt；模型
 | `SEM-CANDIDATE-01` | `MATCHED` | deterministic candidates只来自typed facts/events；名称驱动`METRIC_SOURCE`和未使用review limit分支已删除。 |
 | `SEM-GOVERNANCE-01` | `MATCHED` | `BUSINESS_APPROVED`会被拒绝；正式对象缺失状态补`SYSTEM_PROPOSED`，review item补`REVIEW_NEEDED`。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID直接由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
-| `SEM-NORMALIZED-ID-01` | `MATCHED` | 全部formal semantic ID由canonical content派生，模型`id`只作section-scoped临时alias；entity refs先重写，其他section与review随后canonicalize，数组、alias和shard顺序不影响正式ID。 |
+| `SEM-NORMALIZED-ID-01` | `MATCHED` | 常规normalizer的formal ID与ref rewrite符合canonical contract；reconciliation对entity、metric和dimension名称使用`SemanticCanonicalIdentity`重算并要求正式ID不变，description、physical display和canonical-equivalent rename不会改变正式identity。 |
 | `SEM-INGEST-MEMORY-01` | `MATCHED` | scan reader、section spool、外排offset/component/event contribution/association索引、全局owner与path-backed shard已实现。event base和association组合分别在对应列表物化前受同一预算；standalone raw、envelope和已选evidence共享硬门限；递归清理内存只随目录深度增长。低堆测试覆盖跨窗口宽event、64 MiB envelope和20,000路径。 |
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 正式命令只接受COMPLETE metadata inventory；table/column/constraint/FK及有序typed index members进入evidence/KG/ownership并通过共享closure rules。mixed physical/expression的kind、ordinal和完整交错顺序均可验证。 |
 | `SEM-DDL-INVENTORY-01` | `MATCHED` | file-only scan只有显式COMPLETE_SCOPE时才允许输出COMPLETE/DDL_DECLARATIONS；普通DDL声明解析失败会通过detached task result登记coverage gap，混合输入为PARTIAL，全失败且无事实为UNAVAILABLE，串行/并行测试保持一致。 |
 
-上述完整输入、模型输入请求预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
-identity、reconciliation限制、`final-only`晚期失败审计、全局磁盘owner、mixed-member ordinal及
-上述结构边界已按矩阵闭合；Codex/OpenAI外部响应输出预算、request-package可信上限、final typed closure和DDL混合解析失败完整性已通过负向契约测试闭合。现有内存
+上述完整输入、模型输入/输出预算、治理默认值、deterministic candidate、formal逐引用闭包、自动review
+identity、reconciliation限制、Codex request snapshot、`final-only`晚期失败审计、全局磁盘owner、
+mixed-member ordinal及上述结构边界已经闭合；OpenAI direct响应边界、Codex completion可信门限、
+reconciliation identity gate和DDL混合解析失败完整性已通过负向契约测试。现有内存
 门禁只证明指定输入形状在指定堆下有界完成或确定性预算拒绝，不作为吞吐承诺。
 
 独立归一化命令为：

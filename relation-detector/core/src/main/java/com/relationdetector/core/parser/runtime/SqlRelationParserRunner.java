@@ -71,30 +71,15 @@ public final class SqlRelationParserRunner {
             IdentifierRules identifierRules,
             NamespaceContext namespace
     ) {
-        StructuredParseResult structured = parseStructuredResult(statement, context, bundle.sqlParser());
+        StructuredParseResult structured = structuredParseExecutor.parse(
+                bundle.sqlParser(), statement, context);
         if (TypedLogNoiseClassifier.shouldSkip(config, statement, structured)) {
             return ParsedSqlRelations.empty();
         }
-        return parsed(statement, structured, new StructuredRelationshipExtractor(identifierRules, namespace));
-    }
-
-    private StructuredParseResult parseStructuredResult(
-            SqlStatementRecord statement,
-            AdaptorContext context,
-            com.relationdetector.contracts.spi.Collectors.StructuredSqlParser parser
-    ) {
-        return structuredParseExecutor.parse(parser, statement, context);
-    }
-
-    private ParsedSqlRelations parsed(
-            SqlStatementRecord statement,
-            StructuredParseResult structured,
-            StructuredRelationshipExtractor extractor
-    ) {
-        List<RelationshipCandidate> relationships = extractor.extract(statement, structured);
         return new ParsedSqlRelations(
                 java.util.Optional.of(structured),
-                relationships);
+                new StructuredRelationshipExtractor(identifierRules, namespace)
+                        .extract(statement, structured));
     }
 
     private static void warn(AdaptorContext context, SqlStatementRecord statement, String code, String message) {

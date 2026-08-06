@@ -23,7 +23,7 @@ class IdentifierQuoterTest {
     void doesNotInterpretDotsInsideOneTypedIdentifierComponent() {
         TableId table = new TableId(null, "tenant.one", "orders", "tenant.one.orders");
 
-        assertEquals("\"tenant.one\".\"orders\"", IdentifierQuoter.doubleQuote().table(table));
+        assertEquals("\"tenant.one\".\"orders\"", IdentifierQuoter.postgres().table(table));
     }
 
     @Test

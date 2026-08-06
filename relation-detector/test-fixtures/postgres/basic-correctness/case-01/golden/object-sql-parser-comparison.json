@@ -7,7 +7,5 @@
   "antlrRelations": 0,
   "missingSimpleRelations": [],
   "extraAntlrRelations": [],
-  "warningCodes": {
-    "DYNAMIC_SQL_UNRESOLVED": 6
-  }
+  "warningCodes": {}
 }

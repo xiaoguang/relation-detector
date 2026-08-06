@@ -42,8 +42,8 @@ public record ParserObservationFingerprint(
             Map<String, Object> attributes = evidence.attributes();
             result.add(new ParserObservationFingerprint(
                     "RELATIONSHIP",
-                    endpointKeys.referenceKey(candidate.source()),
-                    endpointKeys.referenceKey(candidate.target()),
+                    referenceKey(endpointKeys, candidate.source()),
+                    referenceKey(endpointKeys, candidate.target()),
                     candidate.relationType() + "/" + candidate.relationSubType(),
                     evidence.type().name(),
                     sourceIdentity(evidence.source(), attributes),
@@ -70,8 +70,8 @@ public record ParserObservationFingerprint(
             for (Endpoint source : candidate.sources()) {
                 result.add(new ParserObservationFingerprint(
                         "DATA_LINEAGE",
-                        endpointKeys.referenceKey(source),
-                        endpointKeys.referenceKey(candidate.target()),
+                        referenceKey(endpointKeys, source),
+                        referenceKey(endpointKeys, candidate.target()),
                         candidate.flowKind().name(),
                         candidate.transformType().name(),
                         sourceIdentity(evidence.source(), attributes),
@@ -91,6 +91,21 @@ public record ParserObservationFingerprint(
 
     private static List<DataLineageEvidence> observations(DataLineageCandidate candidate) {
         return candidate.rawEvidence().isEmpty() ? candidate.evidence() : candidate.rawEvidence();
+    }
+
+    private static String referenceKey(
+            CanonicalEndpointKeyProvider endpointKeys,
+            Endpoint endpoint
+    ) {
+        var key = endpointKeys.key(endpoint);
+        List<String> components = new ArrayList<>(4);
+        for (String component : List.of(
+                key.catalog(), key.schema(), key.table(), key.column())) {
+            if (component != null && !component.isBlank()) {
+                components.add(component);
+            }
+        }
+        return String.join(".", components);
     }
 
     private static String sourceIdentity(String fallback, Map<String, Object> attributes) {

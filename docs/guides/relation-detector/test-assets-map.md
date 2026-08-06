@@ -151,7 +151,7 @@ Relationship、Lineage、diagnostics 与 naming evidence 的当前 per-fixture �
 | `postgres/ddl-partial-index-boundary` | DDL primary / metadata | partial index 不作为全局唯一证据 |
 | `postgres/ddl-unique-include-index` | DDL primary | `CREATE UNIQUE INDEX ... INCLUDE` |
 | `postgres/postgres-basic-correctness-case-01-ddl` | DDL primary / real fixture | 真实 Postgres catalog DDL，186 张表，516 条关系 |
-| `postgres/postgres-basic-correctness-case-01-objects-sql` | SQL primary / warning diagnostics / real fixture | 真实 object SQL；当前主要验证 `DYNAMIC_SQL_UNRESOLVED` warning |
+| `postgres/postgres-basic-correctness-case-01-objects-sql` | SQL primary / warning diagnostics / real fixture | 真实 object SQL baseline；active correctness 明确不产生通用 raw-SQL `DYNAMIC_SQL_UNRESOLVED` warning。PostgreSQL dynamic `EXECUTE` 的 typed `POSTGRES_DYNAMIC_SQL_UNRESOLVED` 由 PL/pgSQL parser contract test 单独覆盖。 |
 | `postgres/postgres-basic-correctness-case-01-statements-sql` | SQL primary / real fixture | `pg_stat_statements` 样本入口；当前无可用样本 |
 | `postgres/sql-delete-using-no-alias` | SQL primary | Postgres DELETE USING，无 alias 情况 |
 | `postgres/sql-lateral-derived` | SQL primary | LATERAL/derived table 伪表过滤 |

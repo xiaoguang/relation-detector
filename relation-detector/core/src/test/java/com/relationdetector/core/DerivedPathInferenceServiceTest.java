@@ -55,7 +55,9 @@ class DerivedPathInferenceServiceTest {
         pool.add(naming(e, f));
         pool.add(naming(f, g));
 
-        List<NamingEvidenceCandidate> derived = service.deriveNamingEvidence(pool.merged(), config);
+        List<NamingEvidenceCandidate> derived = service
+                .infer(List.of(), List.of(), pool.merged(), config)
+                .derivedNamingEvidence();
 
         assertTrue(hasNaming(derived, a, c));
         assertTrue(hasNaming(derived, a, d));
@@ -87,7 +89,8 @@ class DerivedPathInferenceServiceTest {
         pool.add(naming(c, d));
 
         NamingEvidencePool merged = new NamingEvidencePool();
-        merged.addAll(service.deriveNamingEvidence(pool.merged(), config));
+        merged.addAll(service.infer(List.of(), List.of(), pool.merged(), config)
+                .derivedNamingEvidence());
         NamingEvidenceCandidate aToD = merged.merged().stream()
                 .filter(item -> item.source().equals(a) && item.target().equals(d))
                 .findFirst()
