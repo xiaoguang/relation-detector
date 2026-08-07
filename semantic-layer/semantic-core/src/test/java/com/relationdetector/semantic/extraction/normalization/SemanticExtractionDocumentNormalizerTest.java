@@ -801,6 +801,9 @@ final class SemanticExtractionDocumentNormalizerTest {
         assertEquals(1, normalized.path("events").size());
         assertEquals("event-candidate:projected",
                 normalized.path("events").get(0).path("eventCandidateRef").asText());
+        assertEquals(
+                JSON.readTree("[\"event-candidate:projected\"]"),
+                normalized.path("events").get(0).path("ownedGroundingRefs"));
         assertTrue(normalized.path("validation").path("isRefClosed").asBoolean());
     }
 

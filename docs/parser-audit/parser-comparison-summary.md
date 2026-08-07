@@ -27,11 +27,11 @@ maintainer-reviewed statements and are not refreshed or proved by `parser-summar
 | PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 |
 | PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 |
 | PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 367 | 384 | 248 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 331 | 248 | 0 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 |
 | SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
 | SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
 | SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 |
@@ -52,7 +52,7 @@ profile require a separately recorded audit session and must not be inferred fro
   `PERIOD ... WITHOUT OVERLAPS` constraint, whose temporal member is not promoted to an ordinary
   column relationship. The non-trivial `UPDATE ... RETURNING` self-update is retained in every
   applicable profile.
-- Oracle token-event and v26ai full-grammar match exactly on semantic observations. v12c retains a small lineage count difference caused by its version-specific natural SQL assets; relationships and direct naming counts remain aligned.
+- Oracle token-event and v26ai full-grammar again have exact direct semantic-observation parity after the typed system-value repair (`1703 / 1703`, missing/extra `0 / 0`). Root/v26ai counts are `366 / 329 / 248`; v19c/v21c share those fact counts. v12c intentionally has `366 / 331 / 248` because of version-specific natural SQL, while the approved `CASE_WHEN` expectation and system-value exclusions are fully audited.
 - SQL Server natural assets now conform to their DDL contract. Token-event and all five full-grammar profiles produce the same audited direct relationship, lineage fingerprint, and direct naming-id sets on the natural corpus.
 - `sample-data` counts should not be used as a semantic equality score because each dialect has native syntax and version-specific assets.
 
@@ -70,11 +70,11 @@ This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`
 | PostgreSQL full-grammar v16 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | PostgreSQL full-grammar v17 sample-data | 38 | 32 / 6 | 368 | 384 | 248 | 0 | 1264 | 62 | 905 |
 | PostgreSQL full-grammar v18 sample-data | 38 | 32 / 6 | 367 | 384 | 248 | 0 | 1264 | 62 | 905 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
-| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 330 | 248 | 0 | 984 | 57 | 724 |
-| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
-| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
-| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 328 | 248 | 0 | 984 | 57 | 724 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v12c sample-data | 38 | 32 / 6 | 366 | 331 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v19c sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v21c sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 | 984 | 57 | 724 |
+| Oracle full-grammar v26ai sample-data | 38 | 32 / 6 | 366 | 329 | 248 | 0 | 984 | 57 | 724 |
 | SQL Server token-event root sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
 | SQL Server full-grammar v2016 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
 | SQL Server full-grammar v2017 sample-data | 38 | 32 / 6 | 342 | 756 | 246 | 0 | 1115 | 195 | 811 |
@@ -117,7 +117,7 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 | --- | --- | --- | --- |
 | MySQL token-event vs MySQL full-grammar on broad sample-data | root/v8.0 `361 / 448 / 248` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage observations, and direct naming ids match between root token-event and v8_0 full. |
 | PostgreSQL token-event vs PostgreSQL full-grammar on broad sample-data | root/v18 `367 / 384 / 248`; v16/v17 `368 / 384 / 248` | `AUDITED_SET_MATCH` | Exact semantic observations match between root token-event and v18 full. v16/v17 retain one additional ordinary FK member pair because their compatibility SQL cannot use the v18 temporal `PERIOD` member. |
-| Oracle full-grammar vs Oracle token-event on broad sample-data | root/v26ai `366 / 328 / 248` | `AUDITED_SET_MATCH` | Exact observations match for the same v26ai asset; the v12c lineage count difference is a version-specific SQL asset delta. |
+| Oracle full-grammar vs Oracle token-event on broad sample-data | root/v26ai `366 / 329 / 248`; exact observations `1703 / 1703`, missing/extra `0 / 0` | `AUDITED_SET_MATCH` | Typed system values are excluded from physical lineage while predicate guards remain. v12c's `366 / 331 / 248` is a reviewed version-specific natural-SQL difference, not a root/v26ai parity failure. |
 | SQL Server full-grammar vs token-event on broad sample-data | all profiles `342 / 756 / 246` | `AUDITED_SET_MATCH` | Direct relationship fingerprints, exact lineage observations, and direct naming ids match across root and all five full profiles. |
 | Cross-dialect semantic-equivalent scenarios | all scenarios are `MATCHED` | `NO_CONFIRMED_GAP` | Use this benchmark as the primary proof that equivalent SQL can converge across parser categories. |
 | Dynamic SQL, parameters, local variables, temporary tables, pseudo rowsets | non-physical endpoints excluded by design | `EXPECTED_FILTERED_SCOPE` | Parameters, locals, dynamic SQL and pseudo rowsets do not become physical facts. A typed local temporary rowset may act only as an internal IN/tuple-IN bridge when its pre-predicate VALUE/DIRECT projection resolves uniquely to physical columns; the temporary endpoint itself never survives, and transformed, ambiguous, cyclic or self-folding paths remain suppressed. |

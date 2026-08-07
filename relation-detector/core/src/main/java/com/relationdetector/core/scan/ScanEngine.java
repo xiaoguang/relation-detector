@@ -13,6 +13,7 @@ import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 import com.relationdetector.core.adaptor.AdaptorContractValidator;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 import com.relationdetector.core.adaptor.ScanCapabilityValidator;
 import com.relationdetector.core.config.DatabaseConfig;
 import com.relationdetector.core.config.ResolvedScanConfig;
@@ -73,38 +74,37 @@ public final class ScanEngine {
         ScanScope scope = validatedAdaptor.canonicalizeScope(new ScanScope(
                 requestedDatabase.catalog(), requestedDatabase.schema(),
                 requestedDatabase.includeTables(), requestedDatabase.excludeTables()));
-        ResolvedScanConfig runtimeConfig = config;
         Connection connection = null;
+        ScanPipelineContext pipelineContext = null;
         try {
-            connection = openConnection(config.database());
-            runtimeConfig = discoverJdbcDatabaseVersion(config, connection);
-            if (connection != null) {
-                scope = validatedAdaptor.resolveLiveScope(connection, scope);
+            ResolvedScanConfig runtimeConfig;
+            try {
+                connection = openConnection(config.database());
+                runtimeConfig = discoverJdbcDatabaseVersion(config, connection);
+                if (connection != null) {
+                    scope = validatedAdaptor.resolveLiveScope(connection, scope);
+                }
+            } catch (LiveSourceConfigurationException | AdaptorContractException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new DatabaseConnectionException(ex);
             }
-        } catch (LiveSourceConfigurationException ex) {
-            closeQuietly(connection);
-            throw ex;
-        } catch (Exception ex) {
-            closeQuietly(connection);
-            throw new DatabaseConnectionException(ex);
-        }
 
-        ScanResult result = new ScanResult(
-                config.database().databaseType().name(), scope.catalog(), scope.schema());
+            ScanResult result = new ScanResult(
+                    config.database().databaseType().name(), scope.catalog(), scope.schema());
 
-        AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
-        List<RelationshipCandidate> candidates = new ArrayList<>();
-        List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();
-        ScanPipelineContext pipelineContext = new ScanPipelineContext(
-                runtimeConfig,
-                validatedAdaptor,
-                scope,
-                result,
-                context,
-                candidates,
-                dataLineageCandidates);
+            AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
+            List<RelationshipCandidate> candidates = new ArrayList<>();
+            List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();
+            pipelineContext = new ScanPipelineContext(
+                    runtimeConfig,
+                    validatedAdaptor,
+                    scope,
+                    result,
+                    context,
+                    candidates,
+                    dataLineageCandidates);
 
-        try {
             sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
             sourceCollectorPipeline.collectFileSources(pipelineContext);
             evidenceEnhancementPipeline.enhance(pipelineContext);
@@ -113,7 +113,9 @@ public final class ScanEngine {
             evidenceEnhancementPipeline.adjustWeights(pipelineContext);
             return resultAssembler.assemble(pipelineContext);
         } finally {
-            pipelineContext.close();
+            if (pipelineContext != null) {
+                pipelineContext.close();
+            }
             closeQuietly(connection);
         }
     }

@@ -81,6 +81,9 @@ public final class ScanConfigurationValidator {
         if (sources == null || parser == null || evidence == null || execution == null || output == null) {
             throw invalid("all resolved scan configuration groups are required");
         }
+        if (evidence.dataProfileOptions() == null) {
+            throw invalid("evidence.dataProfileOptions is required");
+        }
 
         String parserMode = normalizeParserMode(parser.mode());
         if (!PARSER_MODES.contains(parserMode)) {

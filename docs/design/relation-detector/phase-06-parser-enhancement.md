@@ -215,6 +215,8 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammar/v2016
 Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试扫描relation-detector与semantic-layer全部手写生产Java：visitor/collector设置400行上限，
 `Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade/Store/Planner/Publisher/Fingerprinter/Canonicalizer/Handler/Writer/Validator/Builder/Service/Index/Loader/Executor/Runner/Scheduler/Assembler`
 设置450行上限；generated Java、top-level record DTO 与`package-info`排除，不设永久allowlist。
+`Pipeline`与`Reconstructor`目前不在职责规模后缀集合中，因此`SourceCollectorPipeline`和
+`SemanticRequestBundleReconstructor`尚无450行门禁；生产范围总状态为`PARTIAL`。
 `StructuredScriptFramer`仅保留编排，
 五种 dialect slice算法已分别进入独立planner，并由额外的200/250行职责门禁保护。top-level record
 DTO豁免通过JDK compiler AST检查真实顶层声明；普通类注释或字符串中的伪`record`不能绕过门禁。
@@ -223,7 +225,8 @@ DTO豁免通过JDK compiler AST检查真实顶层声明；普通类注释或字�
 metadata inventory索引，`SemanticResultStore`已拆出selection/validation/document rendering，
 两套artifact writer已拆出事务文件、manifest与审计artifact职责，`JsonResultWriter`和
 `ExternalCanonicalJsonFingerprinter`分别拆出fact rendering与canonical object-field外排排序。
-保留原public facade，不允许改名、空wrapper或纯转发helper绕过门禁。双语设计注释门禁继续覆盖
+保留原public facade；已登记后缀不得用改名、空wrapper或纯转发helper绕过门禁，但未登记后缀仍需
+补充审计与门禁。双语设计注释门禁继续覆盖
 `Engine/Pipeline/Service/Collector/Extractor/Resolver/Merger/Framer/Analyzer/Visitor/Writer/Validator/Registry/Builder/Assembler/Assembly/Factory/Index/Facade/Executor/Runner/Scheduler/Loader/Normalizer/Dispatcher/Selector`，
 Javadoc门禁与职责规模门禁仍是两条独立契约：前者检查设计说明，后者检查有效代码规模；二者都不能
 单独代替代码评审。
@@ -548,26 +551,30 @@ Data Lineage v1 只输出数据库内部字段血缘。参数、literal、JSON p
 ```mermaid
 sequenceDiagram
   participant SE as ScanEngine
+  participant SPP as StatementParsePipeline
+  participant SES as StatementExecutionService
   participant DR as DdlRelationParserRunner
-  participant PBS as ParserBundleSelector
   participant PB as ParserBundle
   participant DP as StructuredDdlParser
   participant DE as DdlRelationExtractionVisitor
   participant RM as RelationshipMerger
 
-  SE->>DR: parseText(ddlSource, config)
-  DR->>PBS: select(adaptor, config, context)
-  PBS-->>DR: ParserBundle(sqlParser, ddlParser, selection)
-  DR->>PB: ddlParser()
+  SE->>SPP: executeDatabaseDdl(selected bundle, definition)
+  SPP->>SES: executeDdlText(bundle, ddl, DATABASE_DDL)
+  SES->>PB: ddlParser()
+  PB-->>SES: selected StructuredDdlParser
+  SES->>DR: parseTextWithEvidence(selected parser, ddl)
   alt full-grammar selected
-    PB->>DP: adaptor full-grammar DDL parser
+    DR->>DP: full-grammar parse
   else token-event fallback/forced
-    PB->>DP: adaptor token-event DDL parser
+    DR->>DP: token-event parse
   end
   DP-->>DR: StructuredParseResult(DDL_FOREIGN_KEY/DDL_INDEX/DDL_COLUMN)
   DR->>DE: extract(parseResult)
   DE-->>DR: DDL RelationshipCandidate
-  DR-->>SE: relations + warnings
+  DR-->>SES: relations + warnings + inventory
+  SES-->>SPP: StatementExecutionOutcome
+  SPP-->>SE: qualified outcome
   SE->>RM: merge(DDL relations)
 ```
 

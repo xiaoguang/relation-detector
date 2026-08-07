@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.relationdetector.semantic.extraction.artifact.SemanticRequestBundleReconstructor;
 import com.relationdetector.semantic.extraction.artifact.SemanticRequestPackageLimits;
+import com.relationdetector.semantic.extraction.artifact.SemanticCompletedRunVerifier;
 import com.relationdetector.semantic.extraction.artifact.SemanticRunArtifactWriter;
 import com.relationdetector.semantic.extraction.config.ArtifactRetention;
 import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
@@ -88,6 +89,15 @@ public final class SemanticExtractionFacade {
         return new CompletionResult(
                 result.status() == SemanticCodexSessionCompletionService.Status.PENDING,
                 result.runDirectory(), result.pendingManifest());
+    }
+
+    public void verifyCompletedCodexRun(
+            Path runDirectory,
+            String expectedModel,
+            String expectedReasoningEffort
+    ) {
+        new SemanticCompletedRunVerifier().verify(
+                runDirectory, expectedModel, expectedReasoningEffort);
     }
 
     public ReconstructionResult reconstructRequestBundle(Path runDirectory, Path target) {

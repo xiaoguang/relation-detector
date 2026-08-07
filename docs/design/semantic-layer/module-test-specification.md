@@ -85,7 +85,7 @@ window的大量同event typed contributions在成员列表物化前的预算拒�
 
 sample-data发布验收覆盖19类parser的38份direct/derived JSON：Java流式validator要求每份均为
 evidence-backed COMPLETE且同类direct/derived inventory一致；随后38份全部构建deterministic KG，
-38份direct/derived输入生成固定`gpt-5.6-sol/xhigh` Codex-session request package，并验证分片包可重建、owner覆盖与跨文件evidence closure。模型投影不得复制确定性triplet candidate；event endpoint数组必须为空，`semanticGraph/validation`必须为`null`，并由core在backfill后重建。确定性matrix本身不调用模型；真实enrichment作为独立tier消费响应并执行normalize、merge、reconciliation与最终closure。该tier输出38行`summary.tsv`和小型`semantic-e2e-manifest.json`，后者必须记录案例总数、COMPLETE/PENDING数以及实际model/reasoning配置。
+38份direct/derived输入生成固定`gpt-5.6-sol/xhigh` Codex-session request package，并验证分片包可重建、owner覆盖与跨文件evidence closure。模型投影不得复制确定性triplet candidate；event endpoint数组必须为空，`semanticGraph/validation`必须为`null`，并由core在backfill后重建。确定性matrix本身不调用模型；enrichment作为独立tier消费响应并执行normalize、merge、reconciliation与最终closure。该tier输出38行`summary.tsv`和小型`semantic-e2e-manifest.json`；completion成功后，独立verifier核验唯一直属run、COMPLETE manifest、provider/model/reasoning、全部phase状态、published time、artifact inventory与size/SHA以及final reference closure，任一case失败不得生成顶层COMPLETE manifest。
 
 ## 5. Normalization 与 Merge
 

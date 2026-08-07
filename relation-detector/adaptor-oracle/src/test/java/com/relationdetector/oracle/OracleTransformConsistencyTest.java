@@ -86,12 +86,13 @@ class OracleTransformConsistencyTest {
                 "CONTROL:DIRECT:[purchase_order_items.order_id, purchase_order_items.product_id, "
                         + "purchase_orders.id, purchase_orders.supplier_id, purchase_return_items.product_id, "
                         + "purchase_return_items.return_id, purchase_returns.id, purchase_returns.supplier_id, "
-                        + "supplier_products.product_id, supplier_products.supplier_id]");
+                        + "supplier_products.product_id, supplier_products.supplier_id]",
+                "VALUE:AGGREGATE:[purchase_order_items.received_qty, purchase_return_items.return_qty]");
         for (NamedParser parser : parsers()) {
             assertEquals(expected,
-                    targetFlowFingerprints(extract(parser.parser(), statement),
-                            "supplier_products.return_rate", "CONTROL"),
-                    () -> parser.name() + " nested scalar locator transform differs");
+                    targetFingerprints(extract(parser.parser(), statement),
+                            "supplier_products.return_rate"),
+                    () -> parser.name() + " nested scalar VALUE/CONTROL roles differ");
         }
     }
 

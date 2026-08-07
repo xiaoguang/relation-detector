@@ -3,6 +3,7 @@ package com.relationdetector.semantic.extraction.artifact;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,6 +62,57 @@ final class SemanticRequestBundleReconstructorLimitsTest {
         v1.index().remove("ownerManifest");
         v1.writeIndex();
         assertRejectedWithoutTargetChange(v1, SemanticRequestPackageLimits.defaults());
+    }
+
+    @Test
+    void reconstructsCompleteShardWhenDeterministicBackfillIsLargerThanModelProjection()
+            throws Exception {
+        Fixture fixture = fixture("large-deterministic-backfill", 2);
+        String candidateId = "triplet-candidate:large";
+        ObjectNode candidate = JSON.createObjectNode()
+                .put("id", candidateId)
+                .put("description", "deterministic".repeat(10_000));
+        ObjectNode bundle = (ObjectNode) JSON.readTree(fixture.bundle().toFile());
+        bundle.withArray("tripletCandidates").add(candidate);
+        ((ObjectNode) bundle.path("shardContext"))
+                .withArray("ownedCandidateRefs").add(candidateId);
+        JSON.writeValue(fixture.bundle().toFile(), bundle);
+
+        Files.writeString(
+                fixture.ownerManifest(),
+                encode(candidateId) + "\tTRIPLET_CANDIDATES\tshard-0001\n",
+                StandardCharsets.UTF_8,
+                java.nio.file.StandardOpenOption.APPEND);
+        SemanticRequestBundleCanonicalDigest.Accumulator candidateDigest =
+                SemanticRequestBundleCanonicalDigest.accumulator();
+        candidateDigest.add(candidate);
+        SemanticRequestBundleCanonicalDigest.SectionDigest triplets = candidateDigest.finish();
+        ((ObjectNode) fixture.index().path("sections").path("tripletCandidates"))
+                .put("count", triplets.count()).put("sha256", triplets.sha256());
+        ((ObjectNode) fixture.index().path("shards").get(0)).put("ownedCandidateCount", 1);
+        ((ObjectNode) fixture.index().path("coverage")).put("ownedCandidateCount", 1);
+        fixture.refreshArtifact("ownerManifest", fixture.ownerManifest());
+        fixture.refreshShardArtifact("bundle", fixture.bundle());
+        Map<String, SemanticRequestBundleCanonicalDigest.SectionDigest> digests =
+                new LinkedHashMap<>();
+        for (SemanticEvidenceStore.Section section : SemanticEvidenceStore.Section.values()) {
+            var value = fixture.index().path("sections").path(section.wireName());
+            digests.put(section.wireName(), new SemanticRequestBundleCanonicalDigest.SectionDigest(
+                    value.path("count").longValue(), value.path("sha256").textValue()));
+        }
+        fixture.index().put(
+                "fullBundleCanonicalSha256",
+                SemanticRequestBundleCanonicalDigest.bundleSha256(
+                        fixture.index().path("descriptor"), digests));
+        fixture.writeIndex();
+
+        int declaredModelTokens = fixture.index().path("shards").get(0)
+                .path("estimatedInputTokens").intValue();
+        assertTrue(Files.size(fixture.bundle())
+                > SemanticRequestPackageLimits.defaults()
+                        .maximumJsonBytesForEstimatedTokens(declaredModelTokens));
+        assertEquals(1L, reconstruct(fixture).sectionCounts()
+                .get("tripletCandidates").longValue());
     }
 
     @Test

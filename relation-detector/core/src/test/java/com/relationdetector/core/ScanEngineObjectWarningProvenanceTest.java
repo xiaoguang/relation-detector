@@ -4,6 +4,7 @@ import com.relationdetector.core.parser.antlr.SqlDialect;
 import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.scan.ScanEngine;
 import com.relationdetector.core.result.ScanResult;
+import com.relationdetector.core.adaptor.AdaptorContractException;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.runtime.*;
 import com.relationdetector.core.relation.*;
@@ -124,6 +125,20 @@ class ScanEngineObjectWarningProvenanceTest {
         assertThrows(LiveSourceConfigurationException.class,
                 () -> new ScanEngine().scan(config, new ConfigurationFailureAdaptor()));
         assertTrue(driver.closed.get(), "fail-fast must still close the JDBC connection");
+    }
+
+    @Test
+    void adaptorContractFailureDuringScopeResolutionEscapesAndClosesConnection() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        config.jdbcUrl = JDBC_URL;
+        config.metadataEnabled = false;
+        config.objectsEnabled = true;
+        config.objectsFromDatabase = true;
+
+        assertThrows(AdaptorContractException.class,
+                () -> new ScanEngine().scan(config, new ContractFailureAdaptor()));
+        assertTrue(driver.closed.get(), "contract failure must still close the JDBC connection");
     }
 
     @Test
@@ -248,6 +263,16 @@ class ScanEngineObjectWarningProvenanceTest {
                         throw new LiveSourceConfigurationException("database.catalog cannot be verified");
                     }),
                     Optional.empty(), Optional.of((file, hint) -> Stream.empty()));
+        }
+    }
+
+    private static final class ContractFailureAdaptor extends ObjectWarningAdaptor {
+        @Override
+        public com.relationdetector.contracts.spi.ScanScope resolveLiveScope(
+                Connection connection,
+                com.relationdetector.contracts.spi.ScanScope requested
+        ) {
+            throw new AdaptorContractException("scope contract failure");
         }
     }
 

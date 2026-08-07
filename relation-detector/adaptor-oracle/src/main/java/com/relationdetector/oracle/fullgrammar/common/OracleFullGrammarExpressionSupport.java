@@ -381,7 +381,14 @@ final class OracleFullGrammarExpressionSupport extends OracleFullGrammarParseTre
             return;
         }
         if (hasRole(tree, Role.GENERAL_ELEMENT)) {
-            columns.addGeneralElement(tree, reads);
+            adapter().generalElementView(tree).ifPresent(view -> {
+                if (view.kind() == GeneralElementKind.FUNCTION) {
+                    view.argumentExpressions().forEach(argument ->
+                            collectProjectionColumnReads(argument, reads));
+                } else {
+                    columns.addGeneralElement(tree, reads);
+                }
+            });
             return;
         }
         for (ParseTree child : typedChildren(tree)) {

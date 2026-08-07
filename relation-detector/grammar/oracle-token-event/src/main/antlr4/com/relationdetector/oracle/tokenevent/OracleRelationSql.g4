@@ -531,6 +531,7 @@ expression
     | functionCall withinGroupClause? windowClause?                       # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | triggerPseudoColumn                                                 # triggerPseudoColumnExpression
+    | systemValue                                                        # systemValueExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
     | LPAREN expression RPAREN                                            # parenExpression
@@ -608,8 +609,17 @@ literal
     | PARAMETER
     | DATE STRING_LITERAL
     | INTERVAL STRING_LITERAL identifier
-    | CURRENT_DATE
+    ;
+
+systemValue
+    : CURRENT_DATE
     | CURRENT_TIMESTAMP
+    | CURRENT_USER
+    | CURRENT_SCHEMA
+    | DBTIMEZONE
+    | LOCALTIMESTAMP
+    | SESSIONTIMEZONE
+    | SYSDATE
     | SYSTIMESTAMP
     ;
 
@@ -624,7 +634,8 @@ sqlToken
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER | PARTITION
-    | DATE | CURRENT_DATE | CURRENT_TIMESTAMP | SYSTIMESTAMP | INTERVAL
+    | DATE | CURRENT_DATE | CURRENT_TIMESTAMP | CURRENT_USER | CURRENT_SCHEMA
+    | DBTIMEZONE | LOCALTIMESTAMP | SESSIONTIMEZONE | SYSDATE | SYSTIMESTAMP | INTERVAL
     | UNION | ALL | INTERSECT | EXCEPT | FETCH | FIRST | ASC | DESC | NULLS | LAST
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
@@ -737,6 +748,12 @@ NULL: N U L L;
 DATE: D A T E;
 CURRENT_DATE: C U R R E N T '_' D A T E;
 CURRENT_TIMESTAMP: C U R R E N T '_' T I M E S T A M P;
+CURRENT_USER: C U R R E N T '_' U S E R;
+CURRENT_SCHEMA: C U R R E N T '_' S C H E M A;
+DBTIMEZONE: D B T I M E Z O N E;
+LOCALTIMESTAMP: L O C A L T I M E S T A M P;
+SESSIONTIMEZONE: S E S S I O N T I M E Z O N E;
+SYSDATE: S Y S D A T E;
 SYSTIMESTAMP: S Y S T I M E S T A M P;
 INTERVAL: I N T E R V A L;
 

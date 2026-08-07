@@ -19,28 +19,32 @@
 - 候选生成不会做全库列两两比较；只选择已有结构候选，或在 `discoverFromNamingEvidence=true` 时选择 top-level `namingEvidence` + target unique + type compatible 的命名候选。
 - profiling 只支持 live JDBC exact aggregate query。未实现的离线 `INSERT` 样本配置已从 runtime、SPI v6、示例和文档中删除；YAML transport 仅保留同名拒绝哨兵，旧字段会明确报配置错误。
 
-实现复核边界：内置四方言 profiler 通过 `DataProfileEvidenceBuilder` 执行下述负向 policy；core 的
-`ProfileOutcomeContractValidator` 会在 `DataProfilePipeline` 修改 candidate 前原子校验全部外部 SPI
-outcome。只有 `SUCCESS` 可携带非空 evidence 且不能携带 warning；evidence 只能是三类 data-profile evidence；
+实现复核边界：内置四方言 profiler 通过 `DataProfileEvidenceBuilder` 构造规范化证据并执行下述负向
+policy；core 的`ProfileOutcomeContractValidator`会在`DataProfilePipeline`修改candidate前原子校验全部
+外部SPI outcome。只有`SUCCESS`可携带非空evidence且不能携带warning；evidence只能是三类data-profile evidence；
 `NEGATIVE_VALUE_MISMATCH` 还必须重新通过 core-owned declared-FK policy。conditional/polymorphic
 判断同时读取 candidate summary、structural evidence 和 raw evidence attributes。因此“全局只允许
 非条件声明 FK 产生负向 evidence”在代码和 focused contract tests 中已经闭环。真实数据库 driver、
 权限与 optimizer 组合仍属于环境性 smoke 边界，不能由 fake-JDBC 测试替代。failure outcome 不得携带
 evidence；plugin warning 的 message/source/attributes 不受信任，core 只按已验证 status、adaptor id 与
-candidate endpoints 重建固定脱敏 warning。全部 bounded outcomes 通过后才统一写入，违规时无部分修改。
+candidate endpoints 重建固定脱敏 warning。外部`SUCCESS` evidence必须提供完整一致的typed metrics；
+score、source、detail和attributes由core使用插件调用前的可信request snapshot重建。负数、溢出、计数
+矛盾、重复evidence type、伪ratio/threshold和额外属性全部原子拒绝，插件敏感文本不能进入公开结果。
 
 `DataProfilePipeline.profileView()` 复用 `AdaptorResultDetachmentSupport` 重建完整 candidate：
 evidence、raw evidence、warning 和 candidate attributes 均递归复制，嵌套 list/set/map 对插件不可修改，
-未知可变 attribute 类型直接拒绝。`ProfileOutcomeContractValidator` 在任何 status、family、source type
+未知可变 attribute 类型直接拒绝。递归复制使用当前路径identity检测back-edge，并限制深度64、总容器
+元素10,000；cycle/depth/元素越界统一抛`AdaptorContractException`。`ProfileOutcomeContractValidator` 在任何 status、family、source type
 或 negative-policy 校验前，同样先重建 deep-detached evidence；因此插件对请求的原地修改或对原始
 返回容器的延迟修改都不能回写原 scan candidate。调用外部 profiler 前，
 `ProfileOutcomeContractValidator.captureNegativeEligibility()` 从原scan candidate固化声明FK、
 物理column-to-column及conditional/polymorphic状态；返回结果只读取该不可变快照。插件修改detached
 request、注入FK或删除guard均不能改变负向资格，相关正反向测试已闭环。
 
-Profile outcome 违约统一抛 `AdaptorContractException`。direct API 保留该类型，single CLI 映射为
-`ADAPTOR_ERROR`，batch case 保存同一 code 且整体仍返回 `BATCH_PARTIAL_FAILURE`。全部 bounded
-outcomes 继续延迟提交，最后一个 outcome 违约也不会留下前序 evidence、warning 或 source 状态。
+已被validator识别的profile outcome违约统一抛`AdaptorContractException`。direct API保留该类型，
+single CLI映射为`ADAPTOR_ERROR`，batch case保存同一code且整体仍返回`BATCH_PARTIAL_FAILURE`。整批
+outcome延迟提交，最后一个违约也不会留下前序evidence、warning或source状态；递归预算和成功evidence
+合同均使用同一错误类别。
 
 ## 设计原则
 
@@ -490,13 +494,15 @@ default List<ProfileOutcome> profileBatch(Connection connection, List<ProfileReq
 
 当前生产接口仍逐候选执行；仓库没有 batch profiling SPI，也不应把建议写成已实现能力。
 
-`ProfileOutcome` 不是 adaptor 的任意 evidence 注入口。生产契约只允许
+`ProfileOutcome`不应成为adaptor的任意evidence注入口。生产契约只允许
 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`；只有 `SUCCESS`
 可以携带非空 evidence。core 必须在 `DataProfilePipeline` 再验证一次，避免第三方 v6 adaptor 绕过
 candidate selection、conditional guard 或负向 evidence policy。当前 `ProfileOutcomeContractValidator` 在
-写入 warning 或 candidate 前原子校验全部 outcome 的 status、evidence allowlist、`DATA_PROFILE` source type 和负向策略；
+写入 warning 或 candidate 前原子校验全部 outcome 的 status、evidence family、`DATA_PROFILE` source type 和负向策略；
 pre-merge conditional/polymorphic判断在插件调用前同时读取原candidate、structural evidence与raw
 evidence attributes，并固化为`NegativeProfileEligibility`；插件返回后的mutable request不再参与policy。
+仍需由core重建外部成功证据的规范化score/metrics和安全source/detail/attributes，并为递归detachment
+增加identity cycle、深度及元素预算，才能闭合完整SPI trust boundary。
 
 ## 测试设计
 

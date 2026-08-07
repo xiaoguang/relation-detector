@@ -18,7 +18,7 @@ import com.relationdetector.semantic.extraction.model.SemanticReviewItem;
  * is downstream; it never approves objects, changes business content, or identities ungrounded objects.
  */
 public final class SemanticReviewGenerator {
-    public int generate(SemanticExtractionDocument document) {
+    public List<SemanticReviewItem> generate(SemanticExtractionDocument document) {
         Set<String> existingTargets = new LinkedHashSet<>();
         for (SemanticReviewItem item : document.reviewItems) {
             String targetRef = SemanticNormalizationSupport.nonBlank(item.targetRef, item.target);
@@ -26,24 +26,24 @@ public final class SemanticReviewGenerator {
                 existingTargets.add(targetRef);
             }
         }
-        int generated = 0;
-        generated += generate(document.reviewItems, existingTargets, document.entities, "entities");
-        generated += generate(document.reviewItems, existingTargets, document.events, "events");
-        generated += generate(document.reviewItems, existingTargets, document.relations, "relations");
-        generated += generate(document.reviewItems, existingTargets, document.lineage, "lineage");
-        generated += generate(document.reviewItems, existingTargets, document.metrics, "metrics");
-        generated += generate(document.reviewItems, existingTargets, document.dimensions, "dimensions");
-        generated += generate(document.reviewItems, existingTargets, document.triplets, "triplets");
-        return generated;
+        List<SemanticReviewItem> generated = new java.util.ArrayList<>();
+        generate(document.reviewItems, existingTargets, document.entities, "entities", generated);
+        generate(document.reviewItems, existingTargets, document.events, "events", generated);
+        generate(document.reviewItems, existingTargets, document.relations, "relations", generated);
+        generate(document.reviewItems, existingTargets, document.lineage, "lineage", generated);
+        generate(document.reviewItems, existingTargets, document.metrics, "metrics", generated);
+        generate(document.reviewItems, existingTargets, document.dimensions, "dimensions", generated);
+        generate(document.reviewItems, existingTargets, document.triplets, "triplets", generated);
+        return List.copyOf(generated);
     }
 
-    private int generate(
+    private void generate(
             List<SemanticReviewItem> reviewItems,
             Set<String> existingTargets,
             List<? extends SemanticItem> sectionItems,
-            String targetSection
+            String targetSection,
+            List<SemanticReviewItem> generated
     ) {
-        int generated = 0;
         for (SemanticItem item : sectionItems) {
             if (!"REVIEW_NEEDED".equalsIgnoreCase(item.reviewStatus())
                     || item.id() == null
@@ -62,8 +62,7 @@ public final class SemanticReviewGenerator {
             review.ownedGroundingRefs = List.copyOf(item.ownedGroundingRefs());
             review.evidenceRefs = item.evidenceRefs().isEmpty() ? List.of(item.id()) : List.copyOf(item.evidenceRefs());
             reviewItems.add(review);
-            generated++;
+            generated.add(review);
         }
-        return generated;
     }
 }

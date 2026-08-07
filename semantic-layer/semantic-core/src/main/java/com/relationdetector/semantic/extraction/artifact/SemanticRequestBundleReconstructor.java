@@ -358,11 +358,12 @@ public final class SemanticRequestBundleReconstructor {
             JsonNode shard = index.path("shards").get(ordinal);
             ShardArtifacts artifacts = shardArtifacts.get(ordinal);
             String shardId = shard.path("id").asText("");
-            int estimatedTokens = requiredPositiveInt(shard, "estimatedInputTokens");
-            long maximumBundleBytes = limits.maximumJsonBytesForEstimatedTokens(estimatedTokens);
+            requiredPositiveInt(shard, "estimatedInputTokens");
+            long maximumBundleBytes = maximumShardBundleBytes(limits);
             Path shardWorkspace = workspace.resolve("shard-" + ordinal);
             ObjectNode bundle = jsonReader.readObject(
-                    artifacts.bundle(), maximumBundleBytes, estimatedTokens, limits);
+                    artifacts.bundle(), maximumBundleBytes,
+                    limits.maxEstimatedTokensPerShardOrRecord(), limits);
             JsonNode context = bundle.path("shardContext");
             require(context.isObject()
                     && shardId.equals(context.path("shardId").asText("")));
@@ -428,8 +429,8 @@ public final class SemanticRequestBundleReconstructor {
         List<ShardArtifacts> result = new ArrayList<>();
         int ordinal = 0;
         for (JsonNode shard : index.path("shards")) {
-            int estimatedTokens = requiredPositiveInt(shard, "estimatedInputTokens");
-            long maximumBundleBytes = limits.maximumJsonBytesForEstimatedTokens(estimatedTokens);
+            requiredPositiveInt(shard, "estimatedInputTokens");
+            long maximumBundleBytes = maximumShardBundleBytes(limits);
             Path shardWorkspace = workspace.resolve(Integer.toString(ordinal++));
             result.add(new ShardArtifacts(
                     verifiedArtifact(
@@ -449,12 +450,12 @@ public final class SemanticRequestBundleReconstructor {
     ) {
         for (int ordinal = 0; ordinal < artifacts.size(); ordinal++) {
             JsonNode shard = index.path("shards").get(ordinal);
-            int estimatedTokens = requiredPositiveInt(shard, "estimatedInputTokens");
-            long maximumBundleBytes = limits.maximumJsonBytesForEstimatedTokens(estimatedTokens);
+            requiredPositiveInt(shard, "estimatedInputTokens");
+            long maximumBundleBytes = maximumShardBundleBytes(limits);
             ObjectNode bundle = jsonReader.readObject(
                     artifacts.get(ordinal).bundle(),
                     maximumBundleBytes,
-                    estimatedTokens,
+                    limits.maxEstimatedTokensPerShardOrRecord(),
                     limits);
             require(bundle.path("shardContext").isObject());
             for (SemanticEvidenceStore.Section section : SemanticEvidenceStore.Section.values()) {
@@ -669,6 +670,11 @@ public final class SemanticRequestBundleReconstructor {
         long value = requiredNonNegativeLong(object, field);
         require(value <= limits.maxReconstructedBytes());
         return value;
+    }
+
+    private long maximumShardBundleBytes(SemanticRequestPackageLimits limits) {
+        return limits.maximumJsonBytesForEstimatedTokens(
+                limits.maxEstimatedTokensPerShardOrRecord());
     }
 
     private boolean simpleName(String value) {

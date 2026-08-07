@@ -143,7 +143,7 @@ class RepositoryDocumentationContractTest {
                 "run-sample-data-isolated.sh",
                 "verify-all.sh",
                 "verify-release.sh");
-        Set<String> toolDirectories = Set.of("audit", "benchmark", "lib", "migration", "tests");
+        Set<String> toolDirectories = Set.of("audit", "benchmark", "lib", "tests");
         List<String> unexpected = new ArrayList<>();
         try (Stream<Path> children = Files.list(scripts)) {
             children.forEach(path -> {

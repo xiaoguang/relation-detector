@@ -57,10 +57,14 @@ Oracle 的 SPI v6 `OracleScriptFramer` 使用 generated script lexer 的 typed t
 - Oracle full-grammar 的版本 `.g4` 不再声明 PostgreSQL/MySQL 结构性语法：`LIMIT`、`UNLOGGED`、`CONCURRENTLY`、PostgreSQL `::` cast / JSON arrow、`TABLESAMPLE`、`WITH ORDINALITY`、`DO NOTHING` 和 materialized CTE 等都会在 versioned full-grammar 层失败，而不是被宽松 statement fallback 吞掉。
 - Oracle natural assets 已统一为跨版本可表达的 `GENERATED ALWAYS AS (...) VIRTUAL`；布尔比较生成列使用 `CASE WHEN ... THEN 1 ELSE 0 END`。无参 function/procedure definition 不再写空 `()`，四个 versioned grammar 对这种空参数括号产生 parse failure/unsupported diagnostic。未经官方来源确认的 `STORED` generated-column syntax 不进入 natural assets 或版本正向 fixture。
 - Oracle routine 参数、局部变量和嵌套 block 声明通过 typed grammar context 注册到 per-parse `OracleRoutineScope` symbol stack。token-event 和四个 full-grammar adapter 在生成 column read 前查询该 scope；不使用 `p_` / `v_` 前缀或名称黑名单排除非物理 endpoint。
+- 无括号系统值已由compact及四个versioned grammar的generated typed context覆盖，并从物理列路径排除；
+  predicate literal仍保留guard，qualified quoted同名列仍合法。实现未使用token text或名称黑名单。
 - Oracle live owner 由 `OracleOwnerResolver` 在首条 catalog SQL 前统一解析：显式 `database.schema` 优先，其次使用非空 `Connection.getSchema()`，最后使用非空 metadata username。三者都无法证明 owner 或 JDBC lookup 失败时抛出固定脱敏的 `LiveSourceConfigurationException`；metadata、object、database-DDL 和 profile 不允许执行 `OWNER=''` 查询。
 - Natural PL/SQL cursor loop 使用合法的 `FOR rec IN (SELECT ...) LOOP` 形式。sample-data 中的非法 `FOR rec IN SELECT ... LOOP` 已在源资产和 correctness input 中同步修正；parser 不为兼容非法资产而放宽 grammar。
 
-这些缺口记录在 `docs/parser-audit/oracle-sample-data-migration-review.md`，属于 `PARSER_GAP_BACKLOG` / `OFFICIAL_GRAMMAR_BACKLOG` / `RUNTIME_SMOKE_PENDING`，不是需要业务口径审核的 `REVIEW_NEEDED`。
+这些边界记录在 `docs/parser-audit/oracle-sample-data-migration-review.md`。尚未覆盖的官方statement family
+属于`PARSER_GAP_BACKLOG` / `OFFICIAL_GRAMMAR_BACKLOG`；系统值分类与已批准的四版本`CASE_WHEN`
+expectation已由focused parser测试和新鲜1,197-fixture correctness门禁闭合。
 
 Oracle full-grammar 已经以 `antlr/grammars-v4/sql/plsql` 作为主底座完成
 第一轮 vendor 和重接。固定上游 commit：

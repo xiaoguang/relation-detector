@@ -255,13 +255,13 @@ public final class SemanticRunArtifactWriter {
                     SemanticModelCallResult response = source.shard(shard, prompt, context);
                     SemanticModelArtifactValidator.ValidatedCall validated = scratch.validate(
                             response, context, activePlan.maxInputTokens());
-                    ObjectNode normalized = normalizer.normalizeOwnedShard(
+                    var normalized = normalizer.normalizeOwnedShardWithProvenance(
                             validated.output(), bundle);
                     results.append(shard, bundle, normalized);
                     audits.writeShard(
                             run.stagingDirectory(), shard.id(),
                             shard.externalAuditSidecar().path(),
-                            prompt, validated.artifacts(), normalized);
+                            prompt, validated.artifacts(), normalized.document());
                     completed.add(new ShardAudit(shard, validated.artifacts()));
                 }
                 results.finish();

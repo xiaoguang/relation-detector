@@ -29,7 +29,9 @@ import com.relationdetector.semantic.extraction.config.SemanticShardingOptions;
 import com.relationdetector.semantic.extraction.config.SemanticShardMode;
 
 import com.relationdetector.semantic.extraction.config.ArtifactRetention;
+import com.relationdetector.semantic.facade.SemanticExtractionFacade;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -650,6 +652,28 @@ final class SemanticPathBackedPipelineTest {
                 .path("status").asText());
         assertEquals(requestHash, sha256(fixture.requestRun().resolve("request-bundle-index.json")));
         assertFalse(Files.exists(responses.resolve("pending-responses.json")));
+        assertDoesNotThrow(() -> new SemanticExtractionFacade().verifyCompletedCodexRun(
+                result.runDirectory(), "gpt-5.6-sol", "xhigh"));
+    }
+
+    @Test
+    void completedRunVerifierRejectsArtifactTampering() throws Exception {
+        CodexFixture fixture = codexFixture("codex-complete-tamper", false);
+        Path responses = tempDir.resolve("codex-complete-tamper-responses");
+        writeShardResponses(fixture, responses);
+        SemanticCodexSessionCompletionService.Result result =
+                new SemanticCodexSessionCompletionService().complete(
+                        fixture.requestRun(), responses,
+                        tempDir.resolve("codex-complete-tamper-output"));
+        Files.writeString(
+                result.runDirectory().resolve("semantic-extraction-result.json"),
+                "\n",
+                java.nio.charset.StandardCharsets.UTF_8,
+                java.nio.file.StandardOpenOption.APPEND);
+
+        assertThrows(SemanticExtractionValidationException.class,
+                () -> new SemanticExtractionFacade().verifyCompletedCodexRun(
+                        result.runDirectory(), "gpt-5.6-sol", "xhigh"));
     }
 
     @Test
@@ -759,6 +783,8 @@ final class SemanticPathBackedPipelineTest {
                 identity.businessEntityId()).path("id").asText());
         assertEquals(reviewId, itemWithId(
                 document.path("semanticGraph").path("nodes"), reviewId).path("id").asText());
+        assertEquals(1, document.path("validation").path("generatedReviewItemCount").asInt(),
+                "the final count must include the unique generated review that survived canonical merge");
     }
 
     @Test

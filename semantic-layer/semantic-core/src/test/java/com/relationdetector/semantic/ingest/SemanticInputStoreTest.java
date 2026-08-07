@@ -149,6 +149,47 @@ final class SemanticInputStoreTest {
                         List.of(malformedInput), tempDir.resolve(".semantic-malformed-index")));
     }
 
+    @Test
+    void streamingReaderRequiresEveryNonNegativeSummaryCount() throws Exception {
+        ObjectNode missing = scanRoot("shop", "COMPLETE", "TABLE");
+        ((ObjectNode) missing.path("summary")).remove("directNamingEvidenceCount");
+        Path missingInput = writeRoot("missing-summary-count.json", missing);
+
+        ObjectNode negative = scanRoot("shop", "COMPLETE", "TABLE");
+        ((ObjectNode) negative.path("summary")).put("warningCount", -1);
+        Path negativeInput = writeRoot("negative-summary-count.json", negative);
+
+        ObjectNode overflow = scanRoot("shop", "COMPLETE", "TABLE");
+        ((ObjectNode) overflow.path("summary")).put("totalRelationshipCount", 2_147_483_648L);
+        Path overflowInput = writeRoot("overflow-summary-count.json", overflow);
+
+        assertRejectedAndCleaned(missingInput, ".semantic-missing-count");
+        assertRejectedAndCleaned(negativeInput, ".semantic-negative-count");
+        assertRejectedAndCleaned(overflowInput, ".semantic-overflow-count");
+    }
+
+    @Test
+    void streamingReaderChecksTotalsAgainstComponentsAndFactArrays() throws Exception {
+        ObjectNode inconsistentTotal = scanRoot("shop", "COMPLETE", "TABLE");
+        ((ObjectNode) inconsistentTotal.path("summary")).put("totalRelationshipCount", 1);
+        Path inconsistentInput = writeRoot("inconsistent-total.json", inconsistentTotal);
+
+        ObjectNode inconsistentNaming = scanRoot("shop", "COMPLETE", "TABLE");
+        ((ObjectNode) inconsistentNaming.path("summary")).put("directNamingEvidenceCount", 1);
+        ((ObjectNode) inconsistentNaming.path("summary")).put("totalNamingEvidenceCount", 1);
+        Path inconsistentNamingInput = writeRoot("inconsistent-naming.json", inconsistentNaming);
+
+        assertRejectedAndCleaned(inconsistentInput, ".semantic-inconsistent-total");
+        assertRejectedAndCleaned(inconsistentNamingInput, ".semantic-inconsistent-naming");
+    }
+
+    private void assertRejectedAndCleaned(Path input, String workspaceName) {
+        Path workspace = tempDir.resolve(workspaceName);
+        assertThrows(ScanResultContractException.class,
+                () -> new ScanResultReader().open(List.of(input), workspace));
+        assertFalse(Files.exists(workspace));
+    }
+
     private Path writeScan(
             String name,
             String catalog,

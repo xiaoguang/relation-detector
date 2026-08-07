@@ -17,6 +17,8 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.LiveSourceConfigurationException;
 import com.relationdetector.contracts.spi.ProfileOutcome;
+import com.relationdetector.contracts.spi.ProfileRequest;
+import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.core.adaptor.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.profile.ProfileOutcomeContractValidator;
 import com.relationdetector.core.scan.DatabaseConnectionException;
@@ -99,7 +101,7 @@ class CliErrorCodeContractTest {
                             Map.of());
                     ProfileOutcomeContractValidator validator = new ProfileOutcomeContractValidator();
                     validator.validate(
-                            validator.captureNegativeEligibility(candidate),
+                            validator.capture(new ProfileRequest(candidate, DataProfileOptions.defaults())),
                             ProfileOutcome.success(List.of(invalid)),
                             adaptor.id());
                     return result();

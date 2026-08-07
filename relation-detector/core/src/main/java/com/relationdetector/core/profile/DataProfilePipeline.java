@@ -55,10 +55,13 @@ public final class DataProfilePipeline {
                     continue;
                 }
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
-                var negativeEligibility = outcomeContract.captureNegativeEligibility(candidate);
-                ProfileRequest request = new ProfileRequest(profileView(candidate), evidenceConfig.dataProfileOptions());
-                ProfileOutcome outcome = profiler.profile(connection, request);
-                var validated = outcomeContract.validate(negativeEligibility, outcome, ctx.adaptor.id());
+                ProfileRequest trustedRequest = new ProfileRequest(
+                        profileView(candidate), evidenceConfig.dataProfileOptions());
+                ProfileValidationContext validationContext = outcomeContract.capture(trustedRequest);
+                ProfileRequest pluginRequest = new ProfileRequest(
+                        profileView(candidate), evidenceConfig.dataProfileOptions());
+                ProfileOutcome outcome = profiler.profile(connection, pluginRequest);
+                var validated = outcomeContract.validate(validationContext, outcome, ctx.adaptor.id());
                 applications.add(new ProfileApplication(candidate, existingCandidate,
                         validated.evidence(), validated.warnings()));
             }

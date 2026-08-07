@@ -108,7 +108,8 @@ verification summary/manifest记录；设计契约只要求估算值不超过统
    detached snapshot，package声明不能抬高response/output门限。
 3. 独立request-package v1/v2 reconstructor在物化前应用可信index/shard/count/token/path/size/hash/JSON/
    line/gzip上限，owner/sidecar通过磁盘索引逐记录处理，并强制验证owner manifest；v1仍仅允许证据包
-   重建。completion snapshot独占预期不存在的scratch root，有界验证manifest/index、v2 source hash和
+   重建。completion snapshot独占预期不存在的scratch root，有界验证manifest/index、v2
+   `sourceBundleSha256`字段的64 个小写十六进制字符格式和
    reconstructed plan；失败只清理自己创建的固定子项，completion不再分别读取manifest/index。
 4. plan的full bundle、owner manifest、shard bundle和sidecar均以path/bytes/sha256绑定，首次render/model前
    构造私有不变快照。final validator在写入前对selected document重做complete-store闭包；reconciliation
@@ -132,11 +133,12 @@ verification summary/manifest记录；设计契约只要求估算值不超过统
    Jackson单字符串上限和有界writer执行共享累计码点预算，字段通过后才物化`JsonNode`。临时树使用
    不跟随符号链接的`walkFileTree`逐项清理。默认、发布和extended memory profile分别固定为
    1 MiB/96 MiB、128 MiB/96 MiB和1 GiB/512 MiB。
-4. 400/450有效代码行门禁已扩展到relation-detector与semantic-layer全部目标职责后缀；原超限store、
-   artifact writer、output writer和fingerprinter已按真实职责拆分，无allowlist或改名绕过。
+4. 400/450有效代码行门禁已覆盖relation-detector与semantic-layer已登记职责后缀；原超限store、
+   artifact writer、output writer和fingerprinter已按真实职责拆分。`Pipeline`和`Reconstructor`尚未登记。
 
 以上状态以[Code / Design Traceability](code-design-traceability.md)为唯一矩阵。索引证据政策、
-typed mixed-member wire、consumer closure、结构对抗内存门禁和职责门禁均已闭合。内存门禁证明
+typed mixed-member wire、consumer closure和结构对抗内存门禁已闭合；职责规模门禁因未登记后缀保持
+`PARTIAL`。内存门禁证明
 指定输入形状在固定堆下有界完成或确定性拒绝，不能外推为业务吞吐承诺。后续发布级回归仍按完整
 验收链执行。
 
@@ -154,7 +156,9 @@ typed mixed-member wire、consumer closure、结构对抗内存门禁和职责�
 4. SQL runner 的空 policy helper、误导 Javadoc 和 direct execution 无效 config overload 已删除；
    fallback parser 通过 detached context 与统一结果契约后才转发。
 
-这些修改收紧了外部 v6 adaptor 的**生产主链**，不改变内置 parser 主事实语义或 golden。上一轮冻结的五项及parser selection前置shape处理均已闭合：
+这些修改收紧了外部v6 adaptor的**生产主链**，不改变内置parser主事实语义。shared recursive
+detachment现按调用限制深度64、总容器元素10,000，并用当前路径identity识别真正back-edge；普通共享
+无环子容器允许，cycle/depth/元素越界统一以脱敏`AdaptorContractException`原子失败：
 
 1. `AdaptorParseResultContractValidator` 对 `SqlLogExtractor`、`DialectScriptFramer` 以及生产 runner 中的
    `StructuredSqlParser` / `StructuredDdlParser` stream/result/warning 执行 detached、allowlist 和延迟提交
@@ -162,8 +166,9 @@ typed mixed-member wire、consumer closure、结构对抗内存门禁和职责�
    validator 已识别的`AdaptorContractException`不允许fallback。selector只捕获外部parser调用；
    null result/null attributes的shape检查和selection attribute装配发生在catch之外，因此同样保持
    contract violation类别且不会调用token parser。
-2. `EvidenceWeightAdjustmentService` 向外部 hook 提供 deep-detached evidence 与 deep-immutable
-   `AdaptorContext.options`，只接受 score 变化，并由 core 从 baseline 重建返回 evidence。
+2. `EvidenceWeightAdjustmentService`向外部hook提供有界detached evidence与immutable
+   `AdaptorContext.options`，只接受score变化，并由core从baseline重建返回evidence；递归预算违约不会
+   留下部分权重。
 3. `ScanTaskExecutor` 在串行和并行路径原样保留 `AdaptorContractException`，CLI 均归类为
    `ADAPTOR_ERROR`。
 4. MySQL `SHOW CREATE TABLE` 与 Oracle `DBMS_METADATA.GET_DDL` 成功但零行时生成带表身份的
@@ -387,7 +392,7 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 配置已从 runtime 和 SPI 删除：
 
 1. Oracle/SQL Server `METADATA` 与 `DATABASE_OBJECTS` capability 已有非空 live collector，支持组合 constraint/index 和 partial-success warning；这证明代码契约可执行，但真实权限/版本组合仍需 runtime smoke。
-2. `AdaptorContractValidator` 在 JDBC 前一次性校验并冻结 adaptor 的 SPI/id/database types/capabilities/identifier rules/grouped collectors/parsers/profiling；`ScanCapabilityValidator`只消费该快照验证实际请求。`AdaptorCollectors`不再把null Optional member归一为空，null顶层grouped record、nested member、core可见的畸形shape和null scope统一为`AdaptorContractException`，single/batch稳定保持`ADAPTOR_ERROR`。live DDL要求structured DDL parser，live objects要求structured SQL parser，纯文件scan不新增live capability要求。
+2. `AdaptorContractValidator` 在 JDBC 前一次性校验并冻结 adaptor 的 SPI/id/database types/capabilities/identifier rules/grouped collectors/parsers/profiling；`ScanCapabilityValidator`只消费该快照验证实际请求。`AdaptorCollectors`不再把null Optional member归一为空，null顶层grouped record、nested member和core可见畸形shape会成为`AdaptorContractException`。null live scope及其他契约异常原样传播为`ADAPTOR_ERROR`；只有普通连接异常包装为`DatabaseConnectionException`。live DDL要求structured DDL parser，live objects要求structured SQL parser，纯文件scan不新增live capability要求。
 3. `IndexEvidencePolicy` 不允许组合 PK/UNIQUE 成员证明单列唯一；普通组合索引仅首列可支持 lookup /
    `SOURCE_INDEX`，不单独决定方向。MySQL live metadata 的 `subParts`、visibility 和 expression 与
    token-event、full v5.7、full v8.0 的 typed index member 语义一致：只有可见、无表达式、无前缀的
@@ -429,7 +434,9 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
     `DDL_FOREIGN_KEY` / `METADATA_FOREIGN_KEY` 产生 `NEGATIVE_VALUE_MISMATCH`。`DataProfilePipeline`
     通过 `ProfileOutcomeContractValidator` 重验 status、evidence allowlist、source type、warning 状态契约和
     负向策略；pre-merge guard同时读取 candidate、structural evidence与raw evidence attributes。全部 outcome
-    通过后才统一应用，plugin warning message/source/attributes 不进入 scan result。
+    通过后才统一应用，plugin warning message/source/attributes 不进入 scan result。外部成功evidence
+    必须携带完整一致的typed metrics；score、source、detail和attributes由core从可信request snapshot
+    重建，插件文本和值不能进入公开结果。
 14. offline INSERT profiling 没有可执行 producer，其 runtime/SPI 字段已在 v6 删除；
     YAML transport 仅保留拒绝哨兵，旧字段明确返回 config format error，不会被静默忽略。
 15. `derivedPaths.minConfidence` 已按未舍入的 BigDecimal 衰减值执行输出过滤；低分 relationship、
@@ -438,10 +445,11 @@ catalog-aware fact identity 已闭环。runtime 配置由 core 统一校验，ne
 16. `DataProfilePipeline` 的 request candidate 和 `ProfileOutcomeContractValidator` 的返回 evidence
     均复用 core 递归 detachment 原语。输入/输出嵌套 list、set、map 不与插件共享，未知可变 attribute
     类型原子失败。negative eligibility在插件调用前从原scan candidate固化；插件注入声明FK、删除guard、
-    修改request或延迟修改result均不能回写scan或改变core-owned负向资格。
-17. `ProfileOutcomeContractValidator` 的所有违约统一使用 `AdaptorContractException`。direct API
-    原样抛出，single CLI 与 batch case 均归类为 `ADAPTOR_ERROR`；全批延迟提交保证最后一个 outcome
-    失败时也不留下部分 profiling 状态。
+    修改request或延迟修改result均不能回写scan或改变core-owned负向资格。递归原语对cycle、深度和
+    元素预算统一抛typed异常。
+17. `ProfileOutcomeContractValidator`对shape、typed metrics、score/source/detail/attributes、negative
+    policy和递归预算违约统一使用`AdaptorContractException`；direct API原样抛出，single CLI与batch case
+    归类为`ADAPTOR_ERROR`，且全批延迟提交。
 18. `derivedPaths.maxFacts`在relationship、lineage和derived naming全部生成、naming稳定合并后，
     按`RELATIONSHIP`、`DATA_LINEAGE`、`NAMING`及类内canonical key实施scan级总配额；低分path先过滤，
     被裁剪naming的可选引用同步清理或重写，`0`保持全部结果。
@@ -457,8 +465,8 @@ PostgreSQL/SQL Server 重建 DDL 明确属于 relationship parser 使用的 stru
 可回放 declaration；若未来增加回放契约，需另行补齐 type modifier、default、identity/generated/
 computed/collation 并建立数据库执行测试。
 
-代码结构方面，`DialectGrammarArchitectureTest` 对relation-detector与semantic-layer全部手写生产
-Java实施职责规模门禁：Visitor/Collector上限400，
+代码结构方面，`DialectGrammarArchitectureTest`扫描relation-detector与semantic-layer手写生产Java，
+并对已登记职责后缀实施规模门禁：Visitor/Collector上限400，
 Analyzer/Support/Extractor/Resolver/Merger/Framer/Facade/Store/Planner/Publisher/Fingerprinter/
 Canonicalizer/Handler/Writer上限450；
 Javadoc、普通注释和空行不计入职责规模。generated Java、top-level record DTO 和 `package-info`
@@ -468,7 +476,9 @@ SQL Server 的 slice 算法位于五个独立 planner，各受 250 行门禁保�
 top-level record 豁免通过 JDK compiler AST 检查实际顶层声明；普通类中的注释或字符串即使包含
 `record TypeName(` 也不能绕过门禁。semantic input/result store、两套artifact writer、JSON writer
 和canonical fingerprinter已按生命周期、校验、事务、section rendering与对象字段外排排序职责拆分；
-原public facade保持不变。全仓职责规模状态为`MATCHED`。
+原public facade保持不变。已登记职责后缀的规模门禁为`MATCHED`，但生产范围总状态为`PARTIAL`：
+`Pipeline`和`Reconstructor`未进入后缀集合，当前`SourceCollectorPipeline`与
+`SemanticRequestBundleReconstructor`不能由该门禁证明受450行上限约束。
 
 ## 后续技术债
 

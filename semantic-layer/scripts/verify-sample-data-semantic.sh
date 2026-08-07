@@ -19,8 +19,7 @@ SMOKE_CASE="mysql-v8_0-full/result.json"
 REQUEST_ROOT="${SAMPLE_DATA_SEMANTIC_REQUEST_ROOT:-$OUTPUT_ROOT/requests}"
 RESPONSE_ROOT="${SAMPLE_DATA_SEMANTIC_RESPONSE_ROOT:-$OUTPUT_ROOT/responses}"
 SUMMARY="$OUTPUT_ROOT/summary.tsv"
-ACTIVE_WORKER_ONE=""
-ACTIVE_WORKER_TWO=""
+ACTIVE_WORKER_PIDS=""
 
 terminate_worker() {
   local pid="$1"
@@ -33,9 +32,11 @@ terminate_worker() {
 
 cleanup_workers() {
   local status=$?
+  local pid
   trap - EXIT INT TERM
-  terminate_worker "$ACTIVE_WORKER_ONE"
-  terminate_worker "$ACTIVE_WORKER_TWO"
+  for pid in $ACTIVE_WORKER_PIDS; do
+    terminate_worker "$pid"
+  done
   exit "$status"
 }
 
@@ -57,8 +58,14 @@ fi
 if ! [[ "$SEMANTIC_MAX_SHARDS" =~ ^[1-9][0-9]*$ ]]; then
   fail "SAMPLE_DATA_SEMANTIC_MAX_SHARDS must be a positive integer" 2
 fi
-if [[ "$CASE_PARALLELISM" != "1" && "$CASE_PARALLELISM" != "2" ]]; then
-  fail "SAMPLE_DATA_SEMANTIC_CASE_PARALLELISM must be 1 or 2" 2
+if ! [[ "$CASE_PARALLELISM" =~ ^[1-9][0-9]*$ ]]; then
+  fail "SAMPLE_DATA_SEMANTIC_CASE_PARALLELISM must be a positive integer" 2
+fi
+if [[ "$TIER" != "enrichment" && "$CASE_PARALLELISM" -gt 2 ]]; then
+  fail "deterministic semantic tiers support at most 2 case workers" 2
+fi
+if [[ "$TIER" == "enrichment" && "$CASE_PARALLELISM" -gt 8 ]]; then
+  fail "semantic enrichment supports at most 8 case workers" 2
 fi
 if [[ "$KG_OUTPUT" != "full" && "$KG_OUTPUT" != "digest-only" ]]; then
   fail "SAMPLE_DATA_SEMANTIC_KG_OUTPUT must be full or digest-only" 2
@@ -169,38 +176,29 @@ run_case_list() {
   done <"$list_file"
 }
 
-wait_worker_pair() {
-  local first_pid="$1"
-  local second_pid="$2"
-  local first_done=0
-  local second_done=0
-  local code
-  while [[ "$first_done" -eq 0 || "$second_done" -eq 0 ]]; do
-    if [[ "$first_done" -eq 0 ]] && ! kill -0 "$first_pid" 2>/dev/null; then
+wait_worker_group() {
+  local pending="$ACTIVE_WORKER_PIDS"
+  local next_pending pid other code
+  while [[ -n "$pending" ]]; do
+    next_pending=""
+    for pid in $pending; do
+      if kill -0 "$pid" 2>/dev/null; then
+        next_pending="$next_pending $pid"
+        continue
+      fi
       set +e
-      wait "$first_pid"
+      wait "$pid"
       code=$?
       set -e
-      first_done=1
       if [[ "$code" -ne 0 ]]; then
-        terminate_worker "$second_pid"
+        for other in $ACTIVE_WORKER_PIDS; do
+          [[ "$other" == "$pid" ]] || terminate_worker "$other"
+        done
         return "$code"
       fi
-    fi
-    if [[ "$second_done" -eq 0 ]] && ! kill -0 "$second_pid" 2>/dev/null; then
-      set +e
-      wait "$second_pid"
-      code=$?
-      set -e
-      second_done=1
-      if [[ "$code" -ne 0 ]]; then
-        terminate_worker "$first_pid"
-        return "$code"
-      fi
-    fi
-    if [[ "$first_done" -eq 0 || "$second_done" -eq 0 ]]; then
-      sleep 1
-    fi
+    done
+    pending="${next_pending# }"
+    [[ -z "$pending" ]] || sleep 1
   done
 }
 
@@ -234,13 +232,11 @@ run_case_matrix() {
   done <"$all_cases"
   run_case_list "$first" "$OUTPUT_ROOT/rows-1.tsv" &
   local first_pid=$!
-  ACTIVE_WORKER_ONE="$first_pid"
   run_case_list "$second" "$OUTPUT_ROOT/rows-2.tsv" &
   local second_pid=$!
-  ACTIVE_WORKER_TWO="$second_pid"
-  wait_worker_pair "$first_pid" "$second_pid"
-  ACTIVE_WORKER_ONE=""
-  ACTIVE_WORKER_TWO=""
+  ACTIVE_WORKER_PIDS="$first_pid $second_pid"
+  wait_worker_group
+  ACTIVE_WORKER_PIDS=""
   LC_ALL=C sort -t $'\t' -k1,1 "$OUTPUT_ROOT/rows-1.tsv" "$OUTPUT_ROOT/rows-2.tsv" >>"$SUMMARY"
 }
 
@@ -280,48 +276,118 @@ run_deterministic_tier() {
   [[ "$rows" -eq "$expected_rows" ]] || fail "semantic deterministic tier summary is incomplete"
 }
 
+complete_enrichment_case() {
+  local request_run="$1"
+  local row_file="$2"
+  local case_name response_root result code status
+  local case_root completed_root discovered_run
+  case_root="$(dirname "$request_run")"
+  case_name="${case_root#"$REQUEST_ROOT"/}"
+  [[ "$case_name" != "$case_root" && "$case_name" == */*.json ]] || \
+    fail "semantic request identity is invalid"
+  request_run="$(run_directory "$case_root")"
+  response_root="$RESPONSE_ROOT/$case_name"
+  completed_root="$OUTPUT_ROOT/completed/$case_name"
+  set +e
+  result="$("$SEMANTIC_JAVA" "-Xmx$SEMANTIC_HEAP" -cp "$SEMANTIC_JAR" \
+    com.relationdetector.semantic.cli.SemanticCodexSessionCompletionMain \
+    --request-run "$request_run" \
+    --responses "$response_root" \
+    --output "$completed_root")"
+  code=$?
+  set -e
+  if [[ "$code" -eq 0 ]]; then
+    [[ -n "$result" && "$result" != *$'\n'* ]] || \
+      fail "semantic Codex-session completion returned an invalid run path"
+    discovered_run="$(run_directory "$completed_root")"
+    [[ ! -L "$discovered_run" && "$result" == "$discovered_run" ]] || \
+      fail "semantic Codex-session completion returned an unexpected run path"
+    "$SEMANTIC_JAVA" "-Xmx$SEMANTIC_HEAP" -cp "$SEMANTIC_JAR" \
+      com.relationdetector.semantic.cli.SemanticCompletedRunVerifierMain \
+      --run "$discovered_run" \
+      --model "$MODEL" \
+      --reasoning-effort "$REASONING_EFFORT" || \
+      fail "semantic completed-run verification failed"
+    status="COMPLETE"
+  elif [[ "$code" -eq 2 ]]; then
+    status="PENDING"
+  else
+    fail "semantic Codex-session completion failed"
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\n' \
+    "$case_name" "$request_run" "$response_root" "$status" "$result" >>"$row_file"
+}
+
+run_enrichment_list() {
+  local list_file="$1"
+  local row_file="$2"
+  local request_run
+  while IFS= read -r request_run; do
+    [[ -n "$request_run" ]] || continue
+    complete_enrichment_case "$request_run" "$row_file"
+  done <"$list_file"
+}
+
 run_enrichment_tier() {
   [[ -d "$REQUEST_ROOT" ]] || fail "semantic request matrix is unavailable" 2
   [[ -d "$RESPONSE_ROOT" ]] || fail "semantic response matrix is unavailable" 2
   printf 'case\trequestRun\tresponseRoot\tstatus\tresult\n' >"$SUMMARY"
-  local pending=0
-  local count=0
-  local request_run
   local request_runs="$OUTPUT_ROOT/request-runs.txt"
+  local first_rows="$OUTPUT_ROOT/enrichment-rows-1.tsv"
   validate_enrichment_request_matrix "$request_runs"
-  while IFS= read -r request_run; do
-    local case_name response_root result code status
-    local case_root
-    case_root="$(dirname "$request_run")"
-    case_name="${case_root#"$REQUEST_ROOT"/}"
-    [[ "$case_name" != "$case_root" && "$case_name" == */*.json ]] || \
-      fail "semantic request identity is invalid"
-    request_run="$(run_directory "$case_root")"
-    response_root="$RESPONSE_ROOT/$case_name"
-    set +e
-    result="$("$SEMANTIC_JAVA" "-Xmx$SEMANTIC_HEAP" -cp "$SEMANTIC_JAR" \
-      com.relationdetector.semantic.cli.SemanticCodexSessionCompletionMain \
-      --request-run "$request_run" \
-      --responses "$response_root" \
-      --output "$OUTPUT_ROOT/completed/$case_name")"
-    code=$?
-    set -e
-    if [[ "$code" -eq 0 ]]; then
-      status="COMPLETE"
-    elif [[ "$code" -eq 2 ]]; then
-      status="PENDING"
-      pending=$((pending + 1))
-    else
-      fail "semantic Codex-session completion failed"
-    fi
-    printf '%s\t%s\t%s\t%s\t%s\n' \
-      "$case_name" "$request_run" "$response_root" "$status" "$result" >>"$SUMMARY"
-    count=$((count + 1))
-  done <"$request_runs"
+  : >"$first_rows"
+  if [[ "$CASE_PARALLELISM" -eq 1 ]]; then
+    run_enrichment_list "$request_runs" "$first_rows"
+    LC_ALL=C sort -t $'\t' -k1,1 "$first_rows" >>"$SUMMARY"
+  else
+    local category_ordinal=-1
+    local previous_category=""
+    local request_run case_root case_name category worker worker_list worker_rows
+    worker=1
+    while [[ "$worker" -le "$CASE_PARALLELISM" ]]; do
+      : >"$OUTPUT_ROOT/enrichment-runs-$worker.txt"
+      : >"$OUTPUT_ROOT/enrichment-rows-$worker.tsv"
+      worker=$((worker + 1))
+    done
+    while IFS= read -r request_run; do
+      case_root="$(dirname "$request_run")"
+      case_name="${case_root#"$REQUEST_ROOT"/}"
+      category="${case_name%/*}"
+      if [[ "$category" != "$previous_category" ]]; then
+        category_ordinal=$((category_ordinal + 1))
+        previous_category="$category"
+      fi
+      worker=$((category_ordinal % CASE_PARALLELISM + 1))
+      printf '%s\n' "$request_run" >>"$OUTPUT_ROOT/enrichment-runs-$worker.txt"
+    done <"$request_runs"
+    ACTIVE_WORKER_PIDS=""
+    worker=1
+    while [[ "$worker" -le "$CASE_PARALLELISM" ]]; do
+      worker_list="$OUTPUT_ROOT/enrichment-runs-$worker.txt"
+      worker_rows="$OUTPUT_ROOT/enrichment-rows-$worker.tsv"
+      run_enrichment_list "$worker_list" "$worker_rows" &
+      ACTIVE_WORKER_PIDS="${ACTIVE_WORKER_PIDS}${ACTIVE_WORKER_PIDS:+ }$!"
+      worker=$((worker + 1))
+    done
+    wait_worker_group
+    ACTIVE_WORKER_PIDS=""
+    local all_rows="$OUTPUT_ROOT/enrichment-rows-all.tsv"
+    : >"$all_rows"
+    worker=1
+    while [[ "$worker" -le "$CASE_PARALLELISM" ]]; do
+      cat "$OUTPUT_ROOT/enrichment-rows-$worker.tsv" >>"$all_rows"
+      worker=$((worker + 1))
+    done
+    LC_ALL=C sort -t $'\t' -k1,1 "$all_rows" >>"$SUMMARY"
+  fi
+  local count pending
+  count="$(tail -n +2 "$SUMMARY" | wc -l | tr -d '[:space:]')"
+  pending="$(awk -F '\t' 'NR > 1 && $4 == "PENDING" {count++} END {print count + 0}' \
+    "$SUMMARY")"
   [[ "$count" -eq $((EXPECTED_CATEGORIES * 2)) ]] || \
     fail "semantic request matrix is incomplete"
-  write_enrichment_manifest "$count" "$pending"
   [[ "$pending" -eq 0 ]] || fail "semantic enrichment responses are incomplete" 3
+  write_enrichment_manifest "$count" "$pending"
 }
 
 write_enrichment_manifest() {

@@ -360,7 +360,7 @@ sources
 | Semantica 层 | 官方文档中的职责 | 本项目 Phase 1 对应 | 边界 |
 | --- | --- | --- | --- |
 | Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result是外部标准输入；生产链使用`SemanticInputStore/SemanticEvidenceStore`，`ScanBundle`仅是有界typed视图。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
-| Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader 读取 relation-detector JSON arrays，校验当前 writer 的 timestamp、fact shape、枚举、nested evidence/warning 和 summary contract，并在多 input 时要求 database type / catalog / schema 完全一致。reader 不做业务去重；持久化 catalog index 仍是后续增强。 | 不调用 LLM，不发明事实。 |
+| Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader读取relation-detector JSON arrays并校验timestamp、fact shape、枚举、nested evidence/warning及十项summary count的必填、非负、int范围、direct+derived=total、实际数组长度与溢出边界。多input的database type/catalog/schema必须完全一致。 | 不调用 LLM，不发明事实；standalone与生产流式reader共享完整summary合同。 |
 | Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector输出COMPLETE inventory与relationship、lineage、namingEvidence、diagnostics；生产链路流式写入section spool，在完整磁盘evidence store上全局归并event、计算typed table component与唯一owner。deterministic KG直接从全局records流式生成，模型请求才按token受限root/shard生成。 | 模型不接收可改写的正式KG；raw-byte阈值只控制外排I/O window，不能定义semantic boundary。owner/overlap、canonical merge、受限协调和完整bundle复验均使用全局计划，估算门限不称为provider精确上限。 |
 | Conflict / Dedup | 检测冲突、保留来源、去重合并。 | 当前 builder 只校验稳定 ID 并物化事实；片内/跨片 canonical identity merge 只处理本次抽取中的确定性重复。持久冲突检测、Review Queue 和治理仍是后续能力。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |
 | KG / Context Graph | 构建可查询图，记录事实、决策和推理路径。 | 当前已落地 JSON `SemanticKnowledgeGraph` artifact；Semantic Catalog / Context Graph 是后续承载方式。 | Phase 1 不要求完整 graph store。 |

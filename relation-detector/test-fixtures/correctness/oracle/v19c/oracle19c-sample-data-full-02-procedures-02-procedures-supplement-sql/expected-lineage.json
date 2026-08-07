@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:sales_orders.status->sales_orders.paid_amount",
     "CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.last_stocktake_date",
     "CONTROL:DIRECT:inventory.product_id,inventory.batch_id,inventory.warehouse_id->inventory.quantity",
     "CONTROL:DIRECT:inventory.product_id,inventory.warehouse_id,inventory.batch_id->inventory.quantity",

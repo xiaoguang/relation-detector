@@ -181,7 +181,9 @@ derivedPaths:
 - `output.minConfidence`、derived confidence/decay 和 profiling ratio 必须是 `[0,1]` 内有限数。
 - `ScanConfigurationValidator` 是 YAML override 后、batch 和 direct API 共用的主要行为校验入口；
   `ScanConfig.resolve()`、`ResolvedScanConfig` 构造与 `ScanEngine.scan()` 都会调用它。数值/source/parser
-  约束同时由 immutable config record 构造器防守。`NamingRuleSetResolver` 由 core 统一拥有 rule-file
+  约束通常由 immutable config record 构造器防守；当前`EvidenceConfig`仍允许直接构造空
+  `dataProfileOptions`，validator未拒绝，且在JDBC已打开后构造pipeline context时可触发NPE并绕过连接
+  关闭边界，这是待修复的direct API合同缺口。`NamingRuleSetResolver` 由 core 统一拥有 rule-file
   加载：CLI 只解析相对路径，direct API 按显式 base directory 或当前工作目录解析；system、file、inline
   typed rules 在 JDBC 前合并并检查重复 ID。parser compatibility view 只复制最终 typed rules，不再保留
   rule-file 路径，因此同一文件不会二次加载。
@@ -190,6 +192,9 @@ derivedPaths:
   batch CLI 都必须映射为 `CONFIG_FORMAT_ERROR`，不能降级 warning 或归入通用 argument/runtime error。
 - capability preflight 缺少请求的 producer/consumer 时统一抛 `AdaptorContractException`；single-scan
   映射为 `ADAPTOR_ERROR`，batch case 保留同一 code，batch 整体仍返回 `BATCH_PARTIAL_FAILURE`。
+- live scope producer返回`null`时，`ValidatedDatabaseAdaptor`会正确产生`AdaptorContractException`，但
+  `ScanEngine`当前把该异常包装为`DatabaseConnectionException`；single/batch因此错误映射为数据库连接
+  类错误，而不是`ADAPTOR_ERROR`。该分类在修复前不应视为闭环。
 - 上述 adaptor error 分类与 `execution.parallelism` 无关。串行 statement task 直接传播
   `AdaptorContractException`；并行 task 的 `ScanTaskExecutor` 从 `ExecutionException.cause`
   识别并原样传播同一异常。single 与 batch 因此都稳定映射为 `ADAPTOR_ERROR`，不按 message

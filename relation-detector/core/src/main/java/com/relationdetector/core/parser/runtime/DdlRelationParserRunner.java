@@ -52,8 +52,7 @@ import com.relationdetector.core.provenance.SourceProvenanceValidator;
  * <p>File input must be framed by the dialect script framer before it reaches
  * this runner. Direct catalog DDL such as {@code SHOW CREATE TABLE} may call
  * {@link #parseTextWithEvidence(DatabaseAdaptor, ScanConfig, String, String,
- * EvidenceSourceType, AdaptorContext)} because it is already one server-side
- * statement.
+ * EvidenceSourceType, AdaptorContext)} because it is already one server-side statement.
  */
 public final class DdlRelationParserRunner {
     private final DdlRelationExtractionVisitor visitor = new DdlRelationExtractionVisitor();
@@ -63,28 +62,6 @@ public final class DdlRelationParserRunner {
             new AdaptorParseResultContractValidator();
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
     private final DdlCatalogEventAssembler catalogAssembler = new DdlCatalogEventAssembler();
-
-    /**
-     *
-     * 解析来自非文件来源的 DDL 文本，例如 MySQL {@code SHOW CREATE TABLE}。
-     *
-     * <p>EN: Parses DDL text that came from a non-file source, such as MySQL
-     * {@code SHOW CREATE TABLE}.
-     *
-     * <p>DDL parsers naturally emit {@code DDL_FILE}, so this runner
-     * rewrites the evidence source type to {@code DATABASE_DDL} for catalog
-     * sourced text before candidates reach the merger.
-     */
-    public List<RelationshipCandidate> parseText(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            String ddl,
-            String sourceName,
-            EvidenceSourceType sourceType,
-            AdaptorContext context
-    ) {
-        return parseTextWithEvidence(adaptor, config, ddl, sourceName, sourceType, context).relationships();
-    }
 
     public DdlParseOutcome parseTextWithEvidence(
             DatabaseAdaptor adaptor,

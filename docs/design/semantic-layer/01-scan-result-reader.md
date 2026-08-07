@@ -29,7 +29,8 @@ Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，�
 - 把relationship、Data Lineage、namingEvidence、derived facts和diagnostics统一成可处理records；direct
   facts消费`rawEvidence`，derived relationship/lineage消费typed `evidenceSets`并拒绝旧笛卡尔积wire。
 - 当前代码保留原始 JSON payload snapshot、summary、sources 和输入文件路径，支撑后续 provenance；`sourceHash`、`scanRunId`、`parserMode`、`grammarProfile` 等更细 build metadata 仍是后续 catalog/profile 扩展点。
-- `ScanResultContractValidator` 在 typed fact 创建前校验 database、ISO-8601 `generatedAt`、summary、必需数组、endpoint、confidence、relation/lineage/evidence/warning 枚举、嵌套 evidence/warning 结构和 summary/数组计数一致性。
+- standalone`ScanResultContractValidator`在typed fact创建前执行完整wire校验；生产
+  `SemanticInputStoreLoader`复用section item校验，但summary计数合同仍有本节3.2所列的三个缺口。
 - database identity 是 `type + catalog + schema`；catalog 必须同时为空或精确相同，不能跨 catalog 合并同名对象。
 - 只做读取、标准化和合并，不判断业务实体、指标口径或 join path 是否业务正确。
 
@@ -95,7 +96,12 @@ consumer引用不闭合而拒绝。
 
 ### 3.2 输入 Schema 与当前校验边界
 
-下列字段是 relation-detector 的正常输出契约。reader 在构建 typed fact 前拒绝缺失必需数组、空 endpoint、越界 confidence、非法 summary 数值、summary/数组计数不一致、无法解析的时间戳、未知枚举值以及不符合 writer 契约的 nested evidence/warning。`catalog`、`schema` 可为空，但存在时必须是字符串；未知顶层扩展字段被忽略，不进入 `ScanBundle`。
+下列字段是 relation-detector 的正常输出契约。standalone `ScanResultContractValidator`与生产
+`SemanticInputStoreLoader`流式reader都会拒绝缺失必需数组、空endpoint、越界confidence、非法summary
+数值、summary/数组计数不一致、无法解析的时间戳、未知枚举值以及不符合writer契约的nested
+evidence/warning。十项summary count必须存在、非负、可表示为int；relationship、lineage、naming均满足
+direct+derived=total并与实际数组长度一致，求和显式防溢出。`catalog`、`schema`可为空，但存在时必须是
+字符串；未知顶层扩展字段被忽略，不进入`ScanBundle`。
 
 ```pseudo-json
 {
@@ -337,7 +343,7 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | relationship.source.table 缺失 | ERROR | 抛出 `ScanResultContractException` |
 | relationship.confidence 越界 | ERROR | 抛出 `ScanResultContractException`，不 clamp |
 | 必需 fact 数组缺失 | ERROR | 抛出 `ScanResultContractException` |
-| summary 与数组计数不一致 | ERROR | 抛出 `ScanResultContractException` |
+| summary 与数组计数不一致 | ERROR（已覆盖字段） | standalone validator全部拒绝；生产流式reader当前未校验`totalRelationshipCount`、`totalDataLineageCount`和`directNamingEvidenceCount`，其余已登记计数不一致会抛出`ScanResultContractException`。 |
 | 重复 stable fact id | ERROR | 拒绝存在重复语义身份的 bundle |
 | generatedAt 不是 ISO 8601 | ERROR | 抛出 `ScanResultContractException` |
 | 未知 relation/lineage/evidence/warning enum | ERROR | 抛出 `ScanResultContractException` |

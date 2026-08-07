@@ -108,7 +108,7 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 
 | ID | 状态 | 当前边界 |
 | --- | --- | --- |
-| `SEM-WIRE-01` | `MATCHED` | derived path至少包含三个endpoint，`pathLength == path.size()-1`，source/target与path两端一致；必需结构、枚举和嵌套evidence继续严格校验。 |
+| `SEM-WIRE-01` | `MATCHED` | standalone validator与生产流式reader都校验derived path、必需结构、枚举、嵌套evidence及十项summary count；计数必须存在、非负、可表示为int，并满足direct+derived=total及实际数组长度，求和防溢出。 |
 | `SEM-REF-01` | `MATCHED` | 显式typed ref必须解析成功，缺失时才允许display fallback；event display ref逐项校验，review target按规范化section查询owner。 |
 | `SEM-ID-01` | `MATCHED` | bundle typed ingestion 和 formal normalized semantic document 拒绝同 section / 跨 section owner ID 重复；`SemanticGraphAssembler` 拒绝 node 覆盖与冲突 edge。该结论不自动覆盖离线磁盘KG链。 |
 | `SEM-KG-01` | `MATCHED` | `SemanticKgStore/SemanticReferenceClosureStore` 要求非 diagnostic fact/event、endpoint node 与结构edge的 evidence refs非空且可解析；Evidence Graph唯一保存完整payload，标准KG不复制逐引用`SUPPORTED_BY_EVIDENCE`边。外排record store只允许完整内容相同的幂等重复，冲突node/edge ID原子失败。 |
@@ -116,13 +116,14 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | `SEM-EVENT-01` | `MATCHED` | event candidate只消费typed `mappingKind`、`sourceObjectType`与structured provenance，缺失时稳定降级，不读取路径、source前缀、表列名或detail推断结构。routine key/stable ID使用精确对象类型与`sourceObjectIdentity`；PostgreSQL full/live使用输入参数类型签名，compact token-event使用typed声明statement identity。 |
 | `SEM-EVENT-ID-01` | `MATCHED` | deterministic event candidate与formal缺省event ID都使用长度分隔的完整identity；formal ID由已验证的完整`eventCandidateRef`生成，不经过display slug。 |
 | `SEM-NORMALIZED-ID-01` | `MATCHED` | 常规normalizer中全部formal semantic ID由canonical content派生，模型`id`只作section-scoped临时alias；reconciliation对entity、metric和dimension名称重算canonical identity并要求正式ID不变，description、physical display和canonical-equivalent rename保持正式identity。 |
+| `SEM-FINAL-VALIDATION-METADATA-01` | `MATCHED` | path-backed merge以外排ID store跟踪normalizer与cross-shard生成的review，按最终ID去重并复核其仍存在于final section；writer输出最终保留且由core生成的唯一数量，模型 authored review不计入。 |
 | `SEM-CANDIDATE-01` | `MATCHED` | 完整bundle保留全部typed deterministic candidates；名称驱动的`METRIC_SOURCE`与未使用review limit分支已删除，正式metric仍必须由证据闭合的semantic normalization产生。 |
 | `SEM-SHARD-PLAN-01` | `MATCHED` | 完整磁盘store全局归并event并建立typed component、stable-root closure、唯一owner与overlap；raw-byte仅控制I/O window，不影响event、owner、shard或KG。 |
 | `SEM-SHARD-OUTPUT-01` | `MATCHED` | shard model output要求owned grounding；reconciliation只接受冲突variant选择和既有对象rename，不能新增对象、relation、fact或evidence。 |
 | `SEM-NORMALIZE-OWNER-01` | `MATCHED` | 独立`normalize-extraction`与自动分片共用owner-aware入口；bundle必须携带合法`shardContext`，owned/overlap refs唯一、互斥且存在，输出对象必须由当前片owned fact/candidate直接支撑。 |
 | `SEM-SHARD-BUDGET-01` | `MATCHED` | shard的完整owned/overlap prompt与reconciliation的冲突闭包prompt都使用带margin的确定性估算，并在模型调用前应用同一`maxInputTokens`；无关merged summary不进入协调请求。等于门限保留，manifest记录estimated tokens且不宣称exact。 |
 | `SEM-CODEX-OUTPUT-BUDGET-01` | `MATCHED` | direct model-client使用固定path、writer验证和OpenAI流式envelope；Codex completion只消费统一detached snapshot，package token声明只能在可信limits内收紧，全部copy/hash/limit校验在首次模型调用前完成。 |
-| `SEM-REQUEST-PACKAGE-01` | `MATCHED` | 独立v1/v2 reconstructor在物化前执行可信门限、磁盘owner/projection索引、digest/coverage和原子发布；统一snapshot在预期不存在的scratch root有界捕获manifest/index/bundle、验证v2 source hash并负责失败清理，completion不再分别读取manifest/index。 |
+| `SEM-REQUEST-PACKAGE-01` | `MATCHED` | 独立v1/v2 reconstructor在物化前执行可信门限、磁盘owner/projection索引、digest/coverage和原子发布；统一snapshot在预期不存在的scratch root有界捕获manifest/index/bundle、校验v2 `sourceBundleSha256`字段为64 个小写十六进制字符并负责失败清理，completion不再分别读取manifest/index。 |
 | `SEM-FINAL-CLOSURE-01` | `MATCHED` | plan artifact快照以及selected document的evidence/physical/ref闭包已实现；reconciliation patch先在局部proposed状态完整验证，identity-bearing名称必须保持重算正式ID不变，非法patch不写final或发布run，安全rename保持graph、review和正式ID。 |
 | `SEM-SHARD-GRAPH-01` | `MATCHED` | component只读取relationship/naming/lineage/event的typed endpoint字段及candidate typed refs；description、diagnostic与attributes文本不能建边。 |
 | `SEM-SHARD-MERGE-01` | `MATCHED` | 物理实体按完整`physicalName`，纯业务实体按规范名称、类型和owned grounding signature确定性合并；同名不同grounding保留并生成review，冲突内容显式失败。 |
@@ -138,11 +139,13 @@ Formal section normalization采用严格typed-ref优先：显式typed ref存在�
 | `SEM-CATALOG-INVENTORY-01` | `MATCHED` | 四类inventory、scope、counts和状态进入direct/derived JSON；正式命令只接受COMPLETE。共享closure rules验证table/column/constraint/FK及有序typed index members，mixed physical/expression的kind、ordinal和交错顺序可完整表达。 |
 | `SEM-DDL-INVENTORY-01` | `MATCHED` | 显式COMPLETE_SCOPE的typed file DDL可生成`COMPLETE/DDL_DECLARATIONS` inventory；typed gap、identity冲突及普通声明解析失败都会登记coverage gap。混合成功/失败为PARTIAL，全失败且无事实为UNAVAILABLE，非DDL查询失败不影响该状态。 |
 
-离线KG的evidence/identity逻辑门禁、typed event candidate identity、deterministic candidate、typed sharding、
-完整输入、模型输入/输出预算、strict configuration、reader/graph公开状态和governance默认值已经闭环。
-wire path shape、自动review identity、`final-only`晚期失败审计、CLI错误分类、全局磁盘owner、metadata
-mixed-index member顺序、Codex request snapshot、reconciliation identity gate及bounded-memory结构边界已经按
-上述窄契约闭合。独立KG目录发布和DDL混合解析失败完整性已通过定向负向测试闭合。详细
+离线KG evidence/identity、typed event identity、deterministic candidate、
+typed sharding、完整输入、模型预算、strict configuration、reader/graph公开状态、governance默认值、wire path、
+自动review identity、`final-only`审计、CLI错误分类、全局磁盘owner、metadata mixed-index顺序、Codex snapshot、
+reconciliation identity gate及bounded-memory结构均已按上述窄契约闭合。sample-data enrichment在
+completion成功后还使用独立verifier核验唯一直属run、COMPLETE manifest、全部phase状态、artifact
+inventory与size/SHA、最终reference closure以及model/reasoning；任一case失败不会写顶层COMPLETE manifest。
+独立KG目录发布和DDL混合解析失败完整性已通过定向负向测试闭合。详细
 证据见 [LLM Semantic Extraction](03-llm-semantic-enricher.md#42-当前实现差异矩阵)。Catalog Store、
 search、planner 等目标能力统一由 [Future Capabilities Roadmap](future-capabilities-roadmap.md) 管理，
 不因本矩阵状态变化而归类为当前实现。

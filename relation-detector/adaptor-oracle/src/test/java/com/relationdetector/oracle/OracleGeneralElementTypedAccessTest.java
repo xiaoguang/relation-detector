@@ -174,6 +174,70 @@ class OracleGeneralElementTypedAccessTest {
         }
     }
 
+    @Test
+    void typedSystemValuesNeverBecomePhysicalColumnsAcrossOracleParsers() {
+        for (String systemValue : List.of(
+                "CURRENT_DATE",
+                "CURRENT_TIMESTAMP",
+                "CURRENT_USER",
+                "CURRENT_SCHEMA",
+                "DBTIMEZONE",
+                "LOCALTIMESTAMP",
+                "SESSIONTIMEZONE",
+                "SYSDATE",
+                "SYSTIMESTAMP")) {
+            String sql = "INSERT INTO audit_values (value) SELECT CASE WHEN src.active_flag = 1 THEN "
+                    + systemValue + " ELSE " + systemValue + " END FROM source_rows src";
+            for (NamedParser parser : parsers()) {
+                StructuredParseResult result = parser.parser().parseSql(statement(sql), null);
+                assertEquals(0, result.attributes().get("syntaxErrors"),
+                        () -> parser.name() + " failed typed system value " + systemValue + ": "
+                                + result.attributes());
+                assertTrue(valueLineageSources(result, sql, "audit_values.value").isEmpty(),
+                        () -> parser.name() + " treated " + systemValue + " as a physical column: "
+                                + result.events());
+                assertEquals(Set.of("source_rows.active_flag"),
+                        controlLineageSources(result, sql, "audit_values.value"),
+                        () -> parser.name() + " lost the typed control source around " + systemValue
+                                + ": " + result.events());
+            }
+        }
+    }
+
+    @Test
+    void typedSystemValuesRemainNonPhysicalInsideFormattingFunctions() {
+        Map<String, Set<String>> cases = Map.of(
+                "INSERT INTO audit_values (value) SELECT TO_CHAR(CURRENT_DATE, 'YYYY-MM') "
+                        + "FROM source_rows src", Set.of(),
+                "INSERT INTO audit_values (value) SELECT 'PICK-' || TO_CHAR(CURRENT_TIMESTAMP, 'HH24MISS') "
+                        + "|| src.id FROM source_rows src", Set.of("source_rows.id"));
+
+        for (NamedParser parser : parsers()) {
+            for (Map.Entry<String, Set<String>> testCase : cases.entrySet()) {
+                String sql = testCase.getKey();
+                StructuredParseResult result = parser.parser().parseSql(statement(sql), null);
+                assertEquals(0, result.attributes().get("syntaxErrors"),
+                        () -> parser.name() + " failed a formatted typed system value: "
+                                + result.attributes());
+                assertEquals(testCase.getValue(), valueLineageSources(result, sql, "audit_values.value"),
+                        () -> parser.name() + " treated a formatted system value as a physical column: "
+                                + result.events());
+            }
+        }
+    }
+
+    @Test
+    void quotedSystemValueSpellingRemainsAVisiblePhysicalColumn() {
+        String sql = "INSERT INTO audit_values (value) SELECT so.\"SYSDATE\" FROM source_rows so";
+
+        for (NamedParser parser : parsers()) {
+            StructuredParseResult result = parser.parser().parseSql(statement(sql), null);
+            assertEquals(Set.of("source_rows.SYSDATE"),
+                    valueLineageSources(result, sql, "audit_values.value"),
+                    () -> parser.name() + " over-suppressed a quoted physical column: " + result.events());
+        }
+    }
+
     private Set<String> lineageSources(StructuredParseResult result, String sql) {
         return new StructuredDataLineageExtractor().extract(statement(sql), result).stream()
                 .filter(lineage -> "audit_values.value".equals(lineage.target().displayName()))
@@ -190,6 +254,19 @@ class OracleGeneralElementTypedAccessTest {
         return new StructuredDataLineageExtractor().extract(statement(sql), result).stream()
                 .filter(lineage -> target.equals(lineage.target().displayName()))
                 .filter(lineage -> lineage.flowKind() == LineageFlowKind.VALUE)
+                .flatMap((DataLineageCandidate lineage) -> lineage.sources().stream())
+                .map(source -> source.displayName())
+                .collect(Collectors.toSet());
+    }
+
+    private Set<String> controlLineageSources(
+            StructuredParseResult result,
+            String sql,
+            String target
+    ) {
+        return new StructuredDataLineageExtractor().extract(statement(sql), result).stream()
+                .filter(lineage -> target.equals(lineage.target().displayName()))
+                .filter(lineage -> lineage.flowKind() == LineageFlowKind.CONTROL)
                 .flatMap((DataLineageCandidate lineage) -> lineage.sources().stream())
                 .map(source -> source.displayName())
                 .collect(Collectors.toSet());

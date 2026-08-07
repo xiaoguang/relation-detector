@@ -467,7 +467,7 @@ Step 7: Answer（最终输出）
     ↓ openai-api: 顺序调用 Responses API，执行片内 normalization、exact-ID merge、受限 reconciliation
 [full-bundle normalization]
     ↓ 输出: merged-draft.json / semantic-extraction-result.json / run-manifest.json
-    ↓ sample-data enrichment tier: 38行summary.tsv + semantic-e2e-manifest.json
+    ↓ sample-data enrichment tier: completion后独立核验run/manifest/artifact hash/final closure，再写38行summary.tsv + semantic-e2e-manifest.json
 [semantic normalize-extraction]
     ↓ 输入: token预算内的raw result + 按选中记录预算闭合的evidence bundle slice
     ↓ 输出: ID/internal-ref-closed normalized semantic document
@@ -631,7 +631,8 @@ Step 7: Answer（最终输出）
 正式 wire、evidence closure、模型执行和 artifact 事务错误不可恢复，必须原子终止当前链路：
 
 ```text
-  - 当前 ScanResultReader: 文件不存在、wire contract 不完整、summary/数组计数不一致 → 终止
+  - 当前 ScanResultReader: 文件不存在或wire/summary合同不满足 → 终止；standalone与生产流式reader均校验
+    十项summary count的必填、非负、int范围、direct+derived=total、实际数组长度及溢出边界
   - 当前 ScanResultReader: 多 input 的 database.type/catalog/schema 任一不一致 → 终止
   - 当前 semantic extract: transport/429/5xx 在配置范围内重试，仍失败则整次执行失败，不返回部分
     正式结果；deterministic artifact先写staging，逐片成功结果和

@@ -75,7 +75,7 @@ final class OracleParseTreeAdapter extends AbstractOracleFullGrammarParseTreeAda
                 role(Role.REFERENCES_CLAUSE, ctx -> ctx instanceof References_clauseContext), role(Role.TABLE_INDEX_CLAUSE, ctx -> ctx instanceof Table_index_clauseContext),
                 role(Role.INDEX_EXPRESSION, ctx -> ctx instanceof Index_exprContext), role(Role.INLINE_CONSTRAINT, ctx -> ctx instanceof Inline_constraintContext),
                 role(Role.SCHEMA_NAME, ctx -> ctx instanceof Schema_nameContext), role(Role.IDENTIFIER, ctx -> ctx instanceof IdentifierContext),
-                role(Role.QUOTED_STRING, ctx -> ctx instanceof Quoted_stringContext), role(Role.SELECT_LIST_ELEMENT, ctx -> ctx instanceof Select_list_elementsContext),
+                role(Role.QUOTED_STRING, ctx -> ctx instanceof Quoted_stringContext), role(Role.SYSTEM_VALUE, ctx -> ctx instanceof Oracle_system_valueContext), role(Role.SELECT_LIST_ELEMENT, ctx -> ctx instanceof Select_list_elementsContext),
                 role(Role.SELECTED_LIST, ctx -> ctx instanceof Selected_listContext), role(Role.EXPRESSION, ctx -> ctx instanceof ExpressionContext),
                 role(Role.SIMPLE_CASE_EXPRESSION, ctx -> ctx instanceof Simple_case_expressionContext), role(Role.SEARCHED_CASE_EXPRESSION, ctx -> ctx instanceof Searched_case_expressionContext),
                 role(Role.CASE_WHEN_PART, ctx -> ctx instanceof Case_when_part_expressionContext), role(Role.CASE_ELSE_PART, ctx -> ctx instanceof Case_else_part_expressionContext),

@@ -42,7 +42,15 @@ reuse the Oracle token-event parser, but they still do not prove complete Oracle
 
 The Oracle full-grammar sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 
-Current audit note: Oracle token-event and v26ai full-grammar align on the same natural SQL facts and semantic observations. Lower version lineage totals differ only where their version-specific natural SQL assets differ. Token-event scalar aggregate updates include selected aggregate sources and predicate/correlated control sources; routine provenance is canonicalized without the historical trailing `)`.
+Current audit note: the typed system-value defect is closed in compact token-event and all four
+versioned full grammars. `CURRENT_DATE`, `CURRENT_TIMESTAMP`, `CURRENT_USER`, `CURRENT_SCHEMA`,
+`DBTIMEZONE`, `LOCALTIMESTAMP`, `SESSIONTIMEZONE`, `SYSDATE`, and `SYSTIMESTAMP` have generated
+typed contexts, do not enter the physical-column path, and still remain available as predicate
+literals so guards such as `attendance_date = CURRENT_DATE` are preserved. Qualified quoted
+columns such as `so."SYSDATE"` remain physical. The independently regenerated correctness run
+discovered, selected, executed, and passed all 1,197 fixtures. The explicitly approved
+`CONTROL:CASE_WHEN:sales_orders.status->sales_orders.paid_amount` expectation is synchronized in
+the four versioned Oracle fixtures; no broad golden refresh was used.
 
 ## Translation Method
 
@@ -88,11 +96,11 @@ carry known PostgreSQL/MySQL executable syntax residue.
 
 | Classification | Current status | Explanation |
 | --- | --- | --- |
-| `PARSER_GAP_BACKLOG` | Open | Oracle token-event and full-grammar now cover the sample-data surface, but still need broader PL/SQL, `CONNECT BY`, packages, Oracle `MERGE`, and version-specific SQL coverage beyond the sample set. |
+| `PARSER_GAP_BACKLOG` | Open | Broader PL/SQL, `CONNECT BY`, packages, Oracle `MERGE`, and version-specific SQL coverage remain backlog. The confirmed no-parenthesis system-value classification defect is closed by typed grammar/visitor rules and focused negative tests. |
 | `OFFICIAL_GRAMMAR_BACKLOG` | Open | `oracle/12c|19c|21c|26ai` `.g4` files now include official version-boundary rules for selected 19c/21c/26ai syntax, but they are not complete Oracle grammar conversions. Official strict full-grammar still needs broader source-of-truth conversion from Oracle SQL/PLSQL documentation. |
 | `RUNTIME_SQL_DIALECT_BACKLOG` | Narrowed | Known PostgreSQL/MySQL executable syntax residues are now blocked by the hygiene test. Real Oracle database loading and deeper PL/SQL/runtime behavior still need external smoke validation. |
 | `RUNTIME_SMOKE_PENDING` | Open | `sample-data/oracle/19c` and `sample-data/oracle/26ai` have not yet been loaded into a real Oracle instance in this environment. |
-| `REVIEW_NEEDED` | Closed | The latest verification lineage report records no pending review. The reviewed Oracle procedure lineage candidates have been promoted into correctness golden after the SQL was rewritten into Oracle syntax. |
+| `REVIEW_NEEDED` | Closed | The `CASE_WHEN` fact was explicitly approved, synchronized across v12c/v19c/v21c/v26ai, and verified by the fresh 1,197-fixture correctness run. |
 
 ## Rules For Future Oracle Work
 

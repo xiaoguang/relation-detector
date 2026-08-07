@@ -219,6 +219,7 @@ public final class SemanticCandidateBackfill {
             event.eventCandidateRef = candidate.id();
             event.description = firstPresent(candidate.businessActionHint(), "");
             applyEventEndpoints(event, candidate, namesByPhysical, entityRefsByPhysical);
+            event.ownedGroundingRefs = List.of(candidate.id());
             event.evidenceRefs = List.of(candidate.id());
             events.add(event);
         }

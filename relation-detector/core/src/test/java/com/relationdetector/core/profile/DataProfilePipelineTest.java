@@ -120,7 +120,8 @@ class DataProfilePipelineTest {
         AtomicInteger calls = new AtomicInteger();
         ScanPipelineContext context = contextReturningCandidates(List.of(first, second), (connection, request) -> {
             if (calls.incrementAndGet() == 1) {
-                return ProfileOutcome.success(List.of(evidence(EvidenceType.VALUE_CONTAINMENT_HIGH)));
+                return ProfileOutcome.success(List.of(
+                        validProfileEvidence(request, EvidenceType.VALUE_CONTAINMENT_HIGH)));
             }
             request.candidate().evidence().add(evidence(EvidenceType.VALUE_OVERLAP_HIGH));
             return ProfileOutcome.success(List.of(evidence(EvidenceType.SQL_LOG_JOIN)));
@@ -184,7 +185,8 @@ class DataProfilePipelineTest {
                         "operator", "EQUALS",
                         "value", "customer"))));
         ScanPipelineContext context = existingProfileContext(candidate,
-                ProfileOutcome.success(List.of(negativeEvidence())));
+                (connection, request) -> ProfileOutcome.success(List.of(
+                        validNegativeEvidenceForOptions(request.options()))));
 
         assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
 
@@ -195,7 +197,8 @@ class DataProfilePipelineTest {
     void acceptsNegativeEvidenceForUnconditionalDeclaredForeignKey() {
         RelationshipCandidate candidate = declaredCandidate(Map.of());
         ScanPipelineContext context = existingProfileContext(candidate,
-                ProfileOutcome.success(List.of(negativeEvidence())));
+                (connection, request) -> ProfileOutcome.success(List.of(
+                        validNegativeEvidenceForOptions(request.options()))));
 
         pipeline.profile(connection(), context);
 
@@ -215,7 +218,7 @@ class DataProfilePipelineTest {
                     "plugin.sql",
                     "plugin-injected declaration",
                     Map.of()));
-            return ProfileOutcome.success(List.of(negativeEvidence()));
+            return ProfileOutcome.success(List.of(validNegativeEvidence(request)));
         });
 
         assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), context));
@@ -230,8 +233,9 @@ class DataProfilePipelineTest {
     void profilerCannotRemovePrecomputedNegativeEligibilityFromRequest() {
         RelationshipCandidate candidate = declaredCandidate(Map.of());
         ScanPipelineContext context = contextReturningCandidates(List.of(candidate), (connection, request) -> {
+            Evidence negative = validNegativeEvidence(request);
             request.candidate().evidence().clear();
-            return ProfileOutcome.success(List.of(negativeEvidence()));
+            return ProfileOutcome.success(List.of(negative));
         });
 
         pipeline.profile(connection(), context);
@@ -284,28 +288,27 @@ class DataProfilePipelineTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void profilerResultEvidenceIsDeeplyDetachedBeforeItEntersTheScan() {
-        List<String> pluginNested = new ArrayList<>(List.of("validated"));
+    void profilerResultCycleIsRejectedWithoutPartialState() {
+        List<Object> pluginNested = new ArrayList<>();
+        pluginNested.add("secret-canary");
+        pluginNested.add(pluginNested);
         Evidence pluginEvidence = new Evidence(
                 EvidenceType.VALUE_CONTAINMENT_HIGH,
                 BigDecimal.valueOf(0.20d),
                 EvidenceSourceType.DATA_PROFILE,
                 "test-profile",
                 "containment",
-                Map.of("nested", pluginNested));
+                Map.of("profileMode", pluginNested));
         ScanPipelineContext context = contextReturning(ProfileOutcome.success(List.of(pluginEvidence)));
 
-        pipeline.profile(connection(), context);
-        pluginNested.add("late-plugin-mutation");
+        AdaptorContractException failure = assertThrows(
+                AdaptorContractException.class,
+                () -> pipeline.profile(connection(), context));
 
-        Evidence applied = context.relationshipCandidates.get(0).evidence().stream()
-                .filter(item -> item.type() == EvidenceType.VALUE_CONTAINMENT_HIGH)
-                .findFirst()
-                .orElseThrow();
-        List<String> appliedNested = (List<String>) applied.attributes().get("nested");
-        assertEquals(List.of("validated"), appliedNested);
-        assertThrows(UnsupportedOperationException.class, () -> appliedNested.add("scan-mutation"));
+        assertFalse(failure.getMessage().contains("secret-canary"));
+        assertTrue(context.relationshipCandidates.isEmpty());
+        assertTrue(context.result.warnings().isEmpty());
+        assertTrue(context.result.sources().isEmpty());
     }
 
     @Test
@@ -324,6 +327,74 @@ class DataProfilePipelineTest {
         assertTrue(context.relationshipCandidates.isEmpty());
         assertTrue(context.result.warnings().isEmpty());
         assertTrue(context.result.sources().isEmpty());
+    }
+
+    @Test
+    void rebuildsSuccessfulProfileEvidenceFromTrustedRequestAndTypedMetrics() {
+        String canary = "jdbc:secret://credential=canary";
+        RelationshipCandidate candidate = relationship(null, null);
+        candidate.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        ScanPipelineContext context = contextReturningCandidates(List.of(candidate), (connection, request) -> {
+            Evidence canonical = validContainmentEvidence(request);
+            Evidence pluginRendered = new Evidence(
+                    canonical.type(),
+                    BigDecimal.valueOf(0.01d),
+                    EvidenceSourceType.DATA_PROFILE,
+                    canary,
+                    canary,
+                    canonical.attributes());
+            return ProfileOutcome.success(List.of(pluginRendered));
+        });
+
+        pipeline.profile(connection(), context);
+
+        Evidence applied = candidate.evidence().stream()
+                .filter(item -> item.type() == EvidenceType.VALUE_CONTAINMENT_HIGH)
+                .findFirst()
+                .orElseThrow();
+        assertEquals("test-data-profile", applied.source());
+        assertEquals(com.relationdetector.contracts.scoring.DefaultEvidenceScores.VALUE_CONTAINMENT_HIGH,
+                applied.score().doubleValue());
+        assertEquals("source values are highly contained by target values", applied.detail());
+        assertFalse(applied.toString().contains(canary));
+    }
+
+    @Test
+    void rejectsExtraOrInconsistentSuccessfulProfileMetricsWithoutPartialState() {
+        RelationshipCandidate candidate = relationship(null, null);
+        candidate.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        ScanPipelineContext extra = contextReturningCandidates(List.of(candidate), (connection, request) -> {
+            Evidence canonical = validContainmentEvidence(request);
+            Map<String, Object> attributes = new java.util.LinkedHashMap<>(canonical.attributes());
+            attributes.put("secret", "business-value-canary");
+            return ProfileOutcome.success(List.of(new Evidence(
+                    canonical.type(), canonical.score(), canonical.sourceType(),
+                    canonical.source(), canonical.detail(), attributes)));
+        });
+
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), extra));
+
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                candidate.evidence().stream().map(Evidence::type).toList());
+        assertTrue(extra.result.warnings().isEmpty());
+        assertTrue(extra.result.sources().isEmpty());
+
+        RelationshipCandidate inconsistentCandidate = relationshipTables("archive_orders", "archive_customers");
+        inconsistentCandidate.evidence().add(evidence(EvidenceType.SQL_LOG_JOIN));
+        ScanPipelineContext inconsistent = contextReturningCandidates(
+                List.of(inconsistentCandidate), (connection, request) -> {
+                    Evidence canonical = validContainmentEvidence(request);
+                    Map<String, Object> attributes = new java.util.LinkedHashMap<>(canonical.attributes());
+                    attributes.put("missingDistinctSourceValues", 99L);
+                    return ProfileOutcome.success(List.of(new Evidence(
+                            canonical.type(), canonical.score(), canonical.sourceType(),
+                            canonical.source(), canonical.detail(), attributes)));
+                });
+
+        assertThrows(AdaptorContractException.class, () -> pipeline.profile(connection(), inconsistent));
+        assertEquals(List.of(EvidenceType.SQL_LOG_JOIN),
+                inconsistentCandidate.evidence().stream().map(Evidence::type).toList());
+        assertTrue(inconsistent.result.sources().isEmpty());
     }
 
     @Test
@@ -381,7 +452,8 @@ class DataProfilePipelineTest {
     void profileGeneratedEvidenceIsAdjustedExactlyOnceBeforeFinalAssembly() {
         AtomicInteger calls = new AtomicInteger();
         ScanPipelineContext context = contextReturning(
-                ProfileOutcome.success(List.of(evidence(EvidenceType.VALUE_CONTAINMENT_HIGH))),
+                (connection, request) -> ProfileOutcome.success(List.of(
+                        validProfileEvidence(request, EvidenceType.VALUE_CONTAINMENT_HIGH))),
                 (item, ignored) -> {
                     calls.incrementAndGet();
                     return new Evidence(item.type(), item.score().add(BigDecimal.valueOf(0.1d)),
@@ -402,7 +474,7 @@ class DataProfilePipelineTest {
             ScanResult result = new ResultAssembler().assemble(context);
 
             assertEquals(expectedCalls, calls.get());
-            assertEquals(List.of(BigDecimal.valueOf(0.3d)), result.relationships().get(0).rawEvidence().stream()
+            assertEquals(List.of(BigDecimal.valueOf(0.4d)), result.relationships().get(0).rawEvidence().stream()
                     .filter(item -> item.type() == EvidenceType.VALUE_CONTAINMENT_HIGH)
                     .map(Evidence::score)
                     .toList());
@@ -441,7 +513,9 @@ class DataProfilePipelineTest {
     }
 
     private ScanPipelineContext contextReturning(EvidenceType type) {
-        return contextReturning(ProfileOutcome.success(List.of(evidence(type))));
+        return contextReturning((connection, request) ->
+                ProfileOutcome.success(List.of(validProfileEvidence(request, type))),
+                (evidence, ignored) -> evidence);
     }
 
     private ScanPipelineContext contextReturning(ProfileOutcome profileOutcome) {
@@ -449,6 +523,10 @@ class DataProfilePipelineTest {
     }
 
     private ScanPipelineContext contextReturning(ProfileOutcome profileOutcome, EvidenceWeightAdjuster adjuster) {
+        return contextReturning((connection, request) -> profileOutcome, adjuster);
+    }
+
+    private ScanPipelineContext contextReturning(DataProfiler profiler, EvidenceWeightAdjuster adjuster) {
         ScanConfig config = new ScanConfig();
         config.databaseType = com.relationdetector.contracts.Enums.DatabaseType.MYSQL;
         config.jdbcUrl = "jdbc:test:data-profile-pipeline";
@@ -460,7 +538,7 @@ class DataProfilePipelineTest {
         ScanResult result = new ScanResult("mysql", "test");
         ScanPipelineContext ctx = new ScanPipelineContext(
                 config.resolve(),
-                new TestAdaptor(DatabaseType.MYSQL, (connection, request) -> profileOutcome, adjuster),
+                new TestAdaptor(DatabaseType.MYSQL, profiler, adjuster),
                 scope,
                 result,
                 new AdaptorContext(scope, Map.of(), result.warnings()::add),
@@ -500,7 +578,7 @@ class DataProfilePipelineTest {
         return ctx;
     }
 
-    private ScanPipelineContext existingProfileContext(RelationshipCandidate candidate, ProfileOutcome outcome) {
+    private ScanPipelineContext existingProfileContext(RelationshipCandidate candidate, DataProfiler profiler) {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
         config.jdbcUrl = "jdbc:test:data-profile-pipeline";
@@ -511,7 +589,7 @@ class DataProfilePipelineTest {
         ScanResult result = new ScanResult("mysql", null, null);
         ScanPipelineContext ctx = new ScanPipelineContext(
                 config.resolve(),
-                new TestAdaptor(DatabaseType.MYSQL, (connection, request) -> outcome,
+                new TestAdaptor(DatabaseType.MYSQL, profiler,
                         (evidence, ignored) -> evidence),
                 scope,
                 result,
@@ -558,16 +636,34 @@ class DataProfilePipelineTest {
         return candidate;
     }
 
-    private Evidence negativeEvidence() {
-        return new Evidence(
-                EvidenceType.NEGATIVE_VALUE_MISMATCH,
-                BigDecimal.valueOf(-0.20d),
-                EvidenceSourceType.DATA_PROFILE,
-                "test-profile",
-                "negative mismatch",
-                Map.of(
-                        "profileMode", "LIVE_DATABASE",
-                        "negativePolicy", "DECLARED_FOREIGN_KEY_ONLY"));
+    private Evidence validContainmentEvidence(ProfileRequest request) {
+        return validProfileEvidence(request, EvidenceType.VALUE_CONTAINMENT_HIGH);
+    }
+
+    private Evidence validProfileEvidence(ProfileRequest request, EvidenceType type) {
+        DataProfileMetrics metrics = type == EvidenceType.VALUE_OVERLAP_HIGH
+                ? DataProfileMetrics.live(120, 100, 85, 15, 100, false, false)
+                : DataProfileMetrics.live(120, 100, 99, 1, 110, false, false);
+        return new DataProfileEvidenceBuilder().build(request, metrics, "plugin-rendered-source").stream()
+                .filter(item -> item.type() == type)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private Evidence validNegativeEvidence(ProfileRequest request) {
+        return new DataProfileEvidenceBuilder().build(
+                request,
+                DataProfileMetrics.live(120, 100, 40, 60, 110, false, false),
+                "plugin-rendered-source").stream()
+                .filter(item -> item.type() == EvidenceType.NEGATIVE_VALUE_MISMATCH)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private Evidence validNegativeEvidenceForOptions(
+            com.relationdetector.contracts.spi.DataProfileOptions options
+    ) {
+        return validNegativeEvidence(new ProfileRequest(declaredCandidate(Map.of()), options));
     }
 
     private RelationshipCandidate relationship(String catalog, String schema) {

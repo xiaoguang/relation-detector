@@ -15,7 +15,9 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
-import com.relationdetector.core.parser.runtime.DdlRelationParserRunner;
+import com.relationdetector.core.execution.StatementExecutionService;
+import com.relationdetector.core.identity.NamespaceContext;
+import com.relationdetector.core.parser.runtime.ParserBundleSelector;
 import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
@@ -339,13 +341,17 @@ class PostgresDdlParserTest {
                         && "TARGET_UNIQUE".equals(event.role())),
                 () -> "Missing structured primary-key index event. Actual=" + structured.events());
 
-        List<RelationshipCandidate> relations = new DdlRelationParserRunner().parseText(
-                new PostgresDatabaseAdaptor(),
-                new ScanConfig(),
+        PostgresDatabaseAdaptor adaptor = new PostgresDatabaseAdaptor();
+        ScanConfig config = new ScanConfig();
+        List<RelationshipCandidate> relations = new StatementExecutionService().executeDdlText(
+                new ParserBundleSelector().select(adaptor, config, null),
                 ddlText,
                 "postgres-official-index-storage-ddl.ddl.sql",
                 EvidenceSourceType.DDL_FILE,
-                null);
+                null,
+                config,
+                adaptor.identifierRules(),
+                NamespaceContext.empty()).relationshipCandidates();
 
         assertHasEvidence(relations, "public.orders.user_id", "public.users.id", EvidenceType.TARGET_UNIQUE);
     }

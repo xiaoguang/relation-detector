@@ -24,12 +24,14 @@
 
 ## 2. 输入契约
 
-输入是已经通过 `ScanResultReader` wire validation 的relation-detector结果。兼容入口只接受明确有界的
+输入是已经通过`ScanResultReader`完整wire validation的relation-detector结果。standalone validator与
+生产`SemanticInputStore`流式入口执行相同的十项summary count必填、非负、int范围、算术和数组长度合同。
+兼容入口只接受明确有界的
 `ScanBundle`；生产入口先写入`SemanticInputStore`，再逐个物化原始字节受限的运输窗口。运输窗口不是
 component、root或shard语义边界；二者必须满足：
 
 - database identity 的 `type/catalog/schema` 完全一致。
-- relationship、lineage、naming、derived 和 warning 数组与 summary 一致。
+- relationship、lineage、naming、derived和warning数组与summary一致，direct+derived=total且求和防溢出。
 - fact、evidence 和 candidate ID 内容稳定且无冲突。
 - endpoint 保留完整 catalog/schema/table/column 身份。
 - input path 使用统一 portable label，不泄漏本机绝对路径。

@@ -3,6 +3,8 @@ package com.relationdetector.semantic.extraction.normalization;
 import com.relationdetector.semantic.extraction.shard.SemanticShardOutputOwnershipValidator;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -56,11 +58,22 @@ public final class SemanticExtractionDocumentNormalizer {
      * ownership before formal normalization, returning no partial document after an ownership or closure failure.
      */
     public ObjectNode normalizeOwnedShard(JsonNode rawDocument, JsonNode evidenceBundle) {
+        return normalizeOwnedShardWithProvenance(rawDocument, evidenceBundle).document();
+    }
+
+    public NormalizedOwnedShard normalizeOwnedShardWithProvenance(
+            JsonNode rawDocument,
+            JsonNode evidenceBundle
+    ) {
         ownershipValidator.validate(rawDocument, evidenceBundle);
-        return normalize(rawDocument, evidenceBundle);
+        return normalizeWithProvenance(rawDocument, evidenceBundle);
     }
 
     ObjectNode normalize(JsonNode rawDocument, JsonNode evidenceBundle) {
+        return normalizeWithProvenance(rawDocument, evidenceBundle).document();
+    }
+
+    private NormalizedOwnedShard normalizeWithProvenance(JsonNode rawDocument, JsonNode evidenceBundle) {
         SemanticReferenceIndex referenceIndex = SemanticReferenceIndex.from(evidenceBundle);
         SemanticPhysicalReferenceIndex physicalIndex = SemanticPhysicalReferenceIndex.from(evidenceBundle);
         SemanticExtractionDocument document = codec.read(rawDocument);
@@ -72,7 +85,9 @@ public final class SemanticExtractionDocumentNormalizer {
         SemanticGraphAssembler graph = new SemanticGraphAssembler();
         Session validation = referenceValidator.newSession(referenceIndex, physicalIndex);
         NormalizationResult normalized = sectionNormalizer.normalizeFacts(document, graph, validation);
-        validation.addGeneratedReviewItems(reviewGenerator.generate(document));
+        List<com.relationdetector.semantic.extraction.model.SemanticReviewItem> generatedReviews =
+                reviewGenerator.generate(document);
+        validation.addGeneratedReviewItems(generatedReviews.size());
         formalIdentityCanonicalizer.canonicalizeReviewItems(document.reviewItems, canonicalization);
         sectionNormalizer.normalizeReviewItems(document.reviewItems, graph, validation);
         document.semanticGraph = graph.build();
@@ -81,7 +96,11 @@ public final class SemanticExtractionDocumentNormalizer {
             throw new SemanticExtractionValidationException(
                     "semantic extraction contains unresolved references: " + document.validation);
         }
-        return codec.write(document);
+        Set<String> generatedReviewIds = generatedReviews.stream()
+                .map(review -> review.id)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toUnmodifiableSet());
+        return new NormalizedOwnedShard(codec.write(document), generatedReviewIds);
     }
 
     private void applyReviewDefaults(SemanticExtractionDocument document) {
@@ -100,6 +119,21 @@ public final class SemanticExtractionDocumentNormalizer {
             if (item.reviewStatus == null || item.reviewStatus.isBlank()) {
                 item.reviewStatus = value;
             }
+        }
+    }
+
+    public record NormalizedOwnedShard(ObjectNode document, Set<String> generatedReviewIds) {
+        public NormalizedOwnedShard {
+            if (document == null || generatedReviewIds == null) {
+                throw new IllegalArgumentException("normalized shard document and generated review ids are required");
+            }
+            document = document.deepCopy();
+            generatedReviewIds = Set.copyOf(generatedReviewIds);
+        }
+
+        @Override
+        public ObjectNode document() {
+            return document.deepCopy();
         }
     }
 }

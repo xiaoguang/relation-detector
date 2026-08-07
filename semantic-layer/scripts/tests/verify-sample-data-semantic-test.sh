@@ -57,6 +57,12 @@ if [[ "$*" == *"SemanticCodexSessionCompletionMain"* ]]; then
   printf '%s\n' "$output/run-test"
   exit 0
 fi
+if [[ "$*" == *"SemanticCompletedRunVerifierMain"* ]]; then
+  if [[ "${SAMPLE_DATA_SEMANTIC_TEST_FAIL_VERIFIER:-false}" == "true" ]]; then
+    exit 9
+  fi
+  exit 0
+fi
 command_name=""
 output=""
 previous=""
@@ -129,6 +135,7 @@ done < <(find "$TMP_ROOT/matrix/requests" -type d -name 'run-*' -print | sort)
 
 env "${COMMON_ENV[@]}" \
   SAMPLE_DATA_SEMANTIC_TIER=enrichment \
+  SAMPLE_DATA_SEMANTIC_CASE_PARALLELISM=4 \
   SAMPLE_DATA_SEMANTIC_OUTPUT_ROOT="$TMP_ROOT/enrichment" \
   SAMPLE_DATA_SEMANTIC_REQUEST_ROOT="$TMP_ROOT/matrix/requests" \
   SAMPLE_DATA_SEMANTIC_RESPONSE_ROOT="$TMP_ROOT/responses" \
@@ -152,6 +159,19 @@ fi
 [[ "$(wc -l <"$TMP_ROOT/enrichment/summary.tsv" | tr -d '[:space:]')" -eq 39 ]]
 [[ "$(awk -F '\t' 'NR > 1 && $4 == "COMPLETE" {count++} END {print count + 0}' \
   "$TMP_ROOT/enrichment/summary.tsv")" -eq 38 ]]
+[[ "$(tail -n +2 "$TMP_ROOT/enrichment/summary.tsv" | cut -f1)" == \
+   "$(tail -n +2 "$TMP_ROOT/enrichment/summary.tsv" | cut -f1 | LC_ALL=C sort)" ]]
+if [[ ! -f "$TMP_ROOT/enrichment/enrichment-runs-1.txt"
+    || ! -f "$TMP_ROOT/enrichment/enrichment-runs-2.txt"
+    || ! -f "$TMP_ROOT/enrichment/enrichment-runs-3.txt"
+    || ! -f "$TMP_ROOT/enrichment/enrichment-runs-4.txt" ]]; then
+  echo "semantic enrichment did not use the requested parallel worker split" >&2
+  exit 1
+fi
+[[ "$(wc -l <"$TMP_ROOT/enrichment/enrichment-runs-1.txt" | tr -d '[:space:]')" -eq 10 ]]
+[[ "$(wc -l <"$TMP_ROOT/enrichment/enrichment-runs-2.txt" | tr -d '[:space:]')" -eq 10 ]]
+[[ "$(wc -l <"$TMP_ROOT/enrichment/enrichment-runs-3.txt" | tr -d '[:space:]')" -eq 10 ]]
+[[ "$(wc -l <"$TMP_ROOT/enrichment/enrichment-runs-4.txt" | tr -d '[:space:]')" -eq 8 ]]
 jq -e '.status == "COMPLETE"
   and .model == "gpt-5.6-sol"
   and .reasoningEffort == "xhigh"
@@ -159,6 +179,20 @@ jq -e '.status == "COMPLETE"
   and .completeCount == 38
   and .pendingCount == 0' \
   "$TMP_ROOT/enrichment/semantic-e2e-manifest.json" >/dev/null
+[[ "$(grep -c 'SemanticCompletedRunVerifierMain' "$CALLS")" -eq 38 ]]
+
+if env "${COMMON_ENV[@]}" \
+    SAMPLE_DATA_SEMANTIC_TEST_FAIL_VERIFIER=true \
+    SAMPLE_DATA_SEMANTIC_TIER=enrichment \
+    SAMPLE_DATA_SEMANTIC_CASE_PARALLELISM=4 \
+    SAMPLE_DATA_SEMANTIC_OUTPUT_ROOT="$TMP_ROOT/invalid-completed-run" \
+    SAMPLE_DATA_SEMANTIC_REQUEST_ROOT="$TMP_ROOT/matrix/requests" \
+    SAMPLE_DATA_SEMANTIC_RESPONSE_ROOT="$TMP_ROOT/responses" \
+    bash "$SCRIPT" >/dev/null 2>&1; then
+  echo "semantic enrichment accepted an invalid completed run" >&2
+  exit 1
+fi
+[[ ! -e "$TMP_ROOT/invalid-completed-run/semantic-e2e-manifest.json" ]]
 
 if env "${COMMON_ENV[@]}" \
   SAMPLE_DATA_SEMANTIC_TIER=unknown \

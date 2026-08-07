@@ -6781,11 +6781,24 @@ case_else_part_expression
 
 atom
     : bind_variable
+    | oracle_system_value
     | constant
     | inquiry_directive
     | general_element outer_join_sign?
     | '(' subquery ')' subquery_operation_part*
     | '(' expressions_ ')'
+    ;
+
+oracle_system_value
+    : CURRENT_DATE
+    | CURRENT_TIMESTAMP
+    | CURRENT_USER
+    | CURRENT_SCHEMA
+    | DBTIMEZONE
+    | LOCALTIMESTAMP
+    | SESSIONTIMEZONE
+    | SYSDATE
+    | SYSTIMESTAMP
     ;
 
 quantified_expression
@@ -6797,14 +6810,14 @@ quantified_expression
 
 string_function
     : SUBSTR '(' expression ',' expression (',' expression)? ')'
-    | TO_CHAR '(' (table_element | standard_function | expression) (',' quoted_string)? (
+    | TO_CHAR '(' (oracle_system_value | table_element | standard_function | expression) (',' quoted_string)? (
         ',' quoted_string
     )? ')'
     | DECODE '(' expressions_ ')'
     | CHR '(' concatenation USING NCHAR_CS ')'
     | NVL '(' expression ',' expression ')'
     | TRIM '(' ((LEADING | TRAILING | BOTH)? expression? FROM)? concatenation ')'
-    | TO_DATE '(' (table_element | standard_function | expression) (
+    | TO_DATE '(' (oracle_system_value | table_element | standard_function | expression) (
         DEFAULT concatenation ON CONVERSION ERROR
     )? (',' quoted_string (',' quoted_string)?)? ')'
     ;
@@ -7721,8 +7734,6 @@ constant
     | NULL_
     | TRUE
     | FALSE
-    | DBTIMEZONE
-    | SESSIONTIMEZONE
     | MINVALUE
     | MAXVALUE
     | DEFAULT

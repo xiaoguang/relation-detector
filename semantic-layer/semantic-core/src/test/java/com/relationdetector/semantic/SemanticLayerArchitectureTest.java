@@ -66,6 +66,7 @@ final class SemanticLayerArchitectureTest {
                 "SemanticE2eCommandHandler.java",
                 "SemanticNormalizeExtractionCommandHandler.java",
                 "SemanticCodexSessionCompletionMain.java",
+                "SemanticCompletedRunVerifierMain.java",
                 "SemanticRequestBundleReconstructorMain.java")) {
             String text = Files.readString(cli.resolve(source));
             assertTrue(text.contains("com.relationdetector.semantic.facade."),

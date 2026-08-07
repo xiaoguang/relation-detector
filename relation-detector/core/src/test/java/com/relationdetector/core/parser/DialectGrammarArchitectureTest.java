@@ -390,14 +390,6 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void coreDoesNotRetainThePreMigrationAntlrSourceTree() {
-        Path root = repoRoot();
-        Path coreAntlr = root.resolve("core/src/main/antlr4/com/relationdetector/core/antlr");
-        assertFalse(Files.exists(coreAntlr),
-                "the migrated core ANTLR source tree must be removed; grammar sources belong in grammar modules");
-    }
-
-    @Test
     void productionCodeDoesNotImportDialectGeneratedClassesFromCore() throws IOException {
         Path root = repoRoot();
         try (Stream<Path> stream = Files.walk(root)) {

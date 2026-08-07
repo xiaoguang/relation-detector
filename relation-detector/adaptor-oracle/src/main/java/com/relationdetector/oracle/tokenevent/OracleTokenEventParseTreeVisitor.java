@@ -216,6 +216,8 @@ public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWrit
     private String literalValue(OracleRelationSqlParser.ExpressionContext expression) {
         if (expression instanceof OracleRelationSqlParser.LiteralExpressionContext literal)
             return cleanLiteral(literal.literal().getText());
+        if (expression instanceof OracleRelationSqlParser.SystemValueExpressionContext systemValue)
+            return cleanLiteral(systemValue.systemValue().getText());
         if (expression instanceof OracleRelationSqlParser.ParenExpressionContext paren)
             return literalValue(paren.expression());
         return null;

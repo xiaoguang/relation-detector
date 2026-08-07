@@ -92,7 +92,8 @@ public final class SemanticCodexSessionCompletionService {
             Files.createDirectories(responses);
             Files.createDirectories(output);
             Files.createDirectory(workspace);
-            SemanticCodexRequestSnapshot.Snapshot loaded = load(run, workspace);
+            SemanticCodexRequestSnapshot.Snapshot loaded = SemanticCodexRequestSnapshot.capture(
+                    run, workspace.resolve("request-snapshot"), trustedLimits);
             List<String> missing = missingShardResponses(loaded.plan(), responses);
             if (!missing.isEmpty()) {
                 return pending(responses, "SHARDS", missing);
@@ -133,18 +134,6 @@ public final class SemanticCodexSessionCompletionService {
         }
     }
 
-    /**
-     * CN: 校验已发布request run的manifest、package摘要、owner manifest与全部shard descriptor，并在独立
-     * workspace流式重建完整bundle。返回的plan只指向已校验文件；任何缺失、篡改或路径越界都会在响应处理前失败。
-     * EN: Validates the published request manifest, package digests, owner manifest, and every shard descriptor while
-     * reconstructing the complete bundle in an isolated workspace. The returned plan references only verified files;
-     * missing, tampered, or escaping paths fail before any response is processed.
-     */
-    private SemanticCodexRequestSnapshot.Snapshot load(Path run, Path workspace) {
-        return SemanticCodexRequestSnapshot.capture(
-                run, workspace.resolve("request-snapshot"), trustedLimits);
-    }
-
     private List<String> missingShardResponses(SemanticRunPlan plan, Path responses) {
         List<String> missing = new ArrayList<>();
         for (SemanticShardDescriptor shard : plan.shards()) {
@@ -171,7 +160,7 @@ public final class SemanticCodexSessionCompletionService {
                         shardResponse(responses, shard.id()),
                         plan.shardMaxOutputTokens(),
                         "semantic Codex shard result");
-                results.append(shard, bundle, normalizer.normalizeOwnedShard(raw, bundle));
+                results.append(shard, bundle, normalizer.normalizeOwnedShardWithProvenance(raw, bundle));
             }
             results.finish();
             return results.reconciliationPrompt(plan, plan.maxInputTokens());

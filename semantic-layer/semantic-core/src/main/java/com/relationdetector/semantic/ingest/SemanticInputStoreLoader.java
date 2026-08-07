@@ -35,6 +35,17 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  */
 final class SemanticInputStoreLoader {
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final List<String> SUMMARY_COUNT_FIELDS = List.of(
+            "directRelationshipCount",
+            "derivedRelationshipCount",
+            "totalRelationshipCount",
+            "directDataLineageCount",
+            "derivedDataLineageCount",
+            "totalDataLineageCount",
+            "directNamingEvidenceCount",
+            "derivedNamingEvidenceCount",
+            "totalNamingEvidenceCount",
+            "warningCount");
     private final Path workspace;
     private final Map<SemanticInputStore.Section, Path> sectionPaths =
             new EnumMap<>(SemanticInputStore.Section.class);
@@ -110,6 +121,12 @@ final class SemanticInputStoreLoader {
                 workspace.resolve("fact-keys.raw"), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
     }
 
+    /**
+     * CN: 流式读取一个 scan JSON，将受支持 section 写入磁盘 store，并在首个输入冻结数据库与
+     * metadata inventory 合同；不物化整份输入，也不接受跨输入身份漂移。
+     * EN: Streams one scan JSON into disk-backed section stores and freezes the database and metadata-inventory
+     * contract from the first input; it neither materializes the whole input nor accepts identity drift.
+     */
     private void readInput(Path input, boolean first) throws IOException {
         if (input == null || !Files.isRegularFile(input)) {
             throw new ScanResultContractException("scan result input file is unavailable");
@@ -146,7 +163,13 @@ final class SemanticInputStoreLoader {
         }
         sources.addAll(header.sources());
         inputFiles.add(SemanticInputPathCanonicalizer.canonicalize(input));
-        header.summary().forEach((key, value) -> summary.merge(key, value, Integer::sum));
+        header.summary().forEach((key, value) -> summary.merge(key, value, (left, right) -> {
+            try {
+                return Math.addExact(left, right);
+            } catch (ArithmeticException failure) {
+                throw new ScanResultContractException("merged scan summary count exceeds integer range");
+            }
+        }));
     }
 
     private void readFactArray(JsonParser parser, JsonToken token, String field, InputState state)
@@ -201,13 +224,25 @@ final class SemanticInputStoreLoader {
     private void validateFactCounts(Map<String, Integer> values, Map<String, Long> facts) {
         equal(values, "directRelationshipCount", facts, "relationships");
         equal(values, "derivedRelationshipCount", facts, "derivedRelationships");
+        total(values, "directRelationshipCount", "derivedRelationshipCount", "totalRelationshipCount");
         equal(values, "directDataLineageCount", facts, "dataLineages");
         equal(values, "derivedDataLineageCount", facts, "derivedDataLineages");
+        total(values, "directDataLineageCount", "derivedDataLineageCount", "totalDataLineageCount");
         equal(values, "warningCount", facts, "warnings");
         require(values.getOrDefault("totalNamingEvidenceCount", -1).longValue()
                         == facts.getOrDefault("namingEvidence", 0L),
                 "summary totalNamingEvidenceCount does not match namingEvidence");
         equal(values, "derivedNamingEvidenceCount", facts, "derivedNamingEvidence");
+        total(values, "directNamingEvidenceCount", "derivedNamingEvidenceCount", "totalNamingEvidenceCount");
+    }
+
+    private void total(Map<String, Integer> values, String direct, String derived, String total) {
+        try {
+            require(Math.addExact(values.get(direct), values.get(derived)) == values.get(total),
+                    "summary " + total + " does not equal direct plus derived counts");
+        } catch (ArithmeticException failure) {
+            throw new ScanResultContractException("summary count exceeds integer range");
+        }
     }
 
     private void equal(
@@ -261,11 +296,13 @@ final class SemanticInputStoreLoader {
 
     private Map<String, Integer> summary(JsonNode node) {
         Map<String, Integer> result = new LinkedHashMap<>();
-        node.fields().forEachRemaining(entry -> {
-            if (entry.getValue().isIntegralNumber() && entry.getValue().canConvertToInt()) {
-                result.put(entry.getKey(), entry.getValue().asInt());
-            }
-        });
+        for (String field : SUMMARY_COUNT_FIELDS) {
+            JsonNode value = node.get(field);
+            require(value != null && value.isIntegralNumber() && value.canConvertToInt()
+                            && value.asInt() >= 0,
+                    "summary." + field + " must be a non-negative integer");
+            result.put(field, value.asInt());
+        }
         return result;
     }
 

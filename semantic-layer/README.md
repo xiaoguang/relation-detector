@@ -99,11 +99,12 @@ but these fields are not the contract by themselves. The stable contract is:
 - review items use `targetRef` and `targetSection`; the normalizer auto-generates review items for `REVIEW_NEEDED`
   semantic items that do not already have one;
 - `semanticGraph.nodes` and `semanticGraph.edges` are built from the same ids;
-- `validation.isRefClosed` is false when there are unresolved references or missing `evidenceRefs`; evidence-backed
-  isolated entities are reported separately and do not break reference closure;
-- `validation.generatedReviewItemCount` reports review items created by the deterministic normalizer;
-- `validation.isolatedEntities`, `validation.unresolvedReferences`, and `validation.missingEvidenceRefs` explain what
-  still needs prompt tuning, parser evidence, or human review.
+- published formal results require `validation.isRefClosed=true`; unresolved references or missing `evidenceRefs`
+  fail normalization atomically, while evidence-backed isolated entities are reported separately and do not break closure;
+- `validation.generatedReviewItemCount` reports the unique generated review items retained in the final review
+  section after normalizer and cross-shard canonicalization; model-authored review items are not counted;
+- `validation.isolatedEntities` reports evidence-backed isolated entities; published formal results keep
+  `unresolvedReferences` and `missingEvidenceRefs` empty because either condition fails normalization atomically.
 
 For a no-API single-shard Codex-session test, use the exact evidence bundle in the published `run-<runId>`
 directory:

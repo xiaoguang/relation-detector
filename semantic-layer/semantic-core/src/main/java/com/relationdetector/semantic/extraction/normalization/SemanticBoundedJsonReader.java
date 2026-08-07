@@ -25,6 +25,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -101,6 +102,78 @@ public final class SemanticBoundedJsonReader {
         }
     }
 
+    /** Streams one bounded top-level object while retaining the same path, UTF-8, byte, token and parser limits. */
+    public void streamObjectFields(
+            Path path,
+            Limits limits,
+            String label,
+            FieldValueConsumer consumer
+    ) {
+        if (path == null || limits == null || consumer == null) {
+            throw new IllegalArgumentException("semantic JSON path, limits, and field consumer are required");
+        }
+        String safeLabel = safeLabel(label);
+        Path normalized = path.toAbsolutePath().normalize();
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(
+                    normalized, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (!attributes.isRegularFile() || attributes.size() > limits.maxBytes()) {
+                throw byteLimitExceeded(safeLabel);
+            }
+            if (SemanticPromptBudgetEstimator.minimumEstimateForUtf8Bytes(attributes.size())
+                    > limits.maxEstimatedTokens()) {
+                throw budgetExceeded(safeLabel);
+            }
+            Set<OpenOption> options = Set.of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+            try (SeekableByteChannel channel = Files.newByteChannel(normalized, options);
+                 InputStream bytes = new ByteLimitInputStream(
+                         Channels.newInputStream(channel), limits.maxBytes(), safeLabel);
+                 Reader source = new InputStreamReader(
+                         bytes,
+                         StandardCharsets.UTF_8.newDecoder()
+                                 .onMalformedInput(CodingErrorAction.REPORT)
+                                 .onUnmappableCharacter(CodingErrorAction.REPORT));
+                 TokenBudgetReader bounded = new TokenBudgetReader(
+                         source, limits.maxEstimatedTokens(), safeLabel);
+                 JsonParser parser = JSON.getFactory().createParser(bounded)) {
+                if (parser.nextToken() != JsonToken.START_OBJECT) {
+                    throw new SemanticExtractionValidationException(
+                            safeLabel + " must contain exactly one JSON object");
+                }
+                while (parser.nextToken() != JsonToken.END_OBJECT) {
+                    if (parser.currentToken() != JsonToken.FIELD_NAME) {
+                        throw new SemanticExtractionValidationException(
+                                safeLabel + " must contain exactly one JSON object");
+                    }
+                    String field = parser.currentName();
+                    requireCodePoints(field, safeLabel);
+                    if (parser.nextToken() == null) {
+                        throw new SemanticExtractionValidationException(
+                                safeLabel + " must contain exactly one JSON object");
+                    }
+                    consumer.accept(field, parser);
+                }
+                if (parser.nextToken() != null) {
+                    throw new SemanticExtractionValidationException(
+                            safeLabel + " must contain exactly one JSON object");
+                }
+                bounded.requireCompleteCodePoint();
+            }
+        } catch (SemanticExtractionValidationException failure) {
+            throw failure;
+        } catch (IOException failure) {
+            throw new SemanticExtractionValidationException(
+                    "failed to read bounded " + safeLabel);
+        }
+    }
+
+    public void validateStringLimits(JsonNode value, String label) {
+        if (value == null) {
+            throw new IllegalArgumentException("semantic JSON value is required");
+        }
+        requireStringLimits(value, safeLabel(label));
+    }
+
     public static long tokenDerivedByteLimit(int maxEstimatedTokens) {
         if (maxEstimatedTokens <= 0) {
             throw new IllegalArgumentException("semantic token limit must be positive");
@@ -166,6 +239,11 @@ public final class SemanticBoundedJsonReader {
                 throw new IllegalArgumentException("semantic JSON limits must be positive");
             }
         }
+    }
+
+    @FunctionalInterface
+    public interface FieldValueConsumer {
+        void accept(String field, JsonParser parser) throws IOException;
     }
 
     private static final class ByteLimitInputStream extends FilterInputStream {

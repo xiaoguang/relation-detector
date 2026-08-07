@@ -33,15 +33,18 @@ public final class SemanticResultDocumentWriter {
     private final Path workspace;
     private final Map<SemanticResultStore.Section, ExternalJsonRecordStore> sections;
     private final SemanticResultSelection selection;
+    private final ExternalJsonRecordStore generatedReviewIds;
 
     public SemanticResultDocumentWriter(
             Path workspace,
             Map<SemanticResultStore.Section, ExternalJsonRecordStore> sections,
-            SemanticResultSelection selection
+            SemanticResultSelection selection,
+            ExternalJsonRecordStore generatedReviewIds
     ) {
         this.workspace = workspace;
         this.sections = sections;
         this.selection = selection;
+        this.generatedReviewIds = generatedReviewIds;
     }
 
     public void write(Path target, boolean includeGraph) {
@@ -122,7 +125,7 @@ public final class SemanticResultDocumentWriter {
         generator.writeEndArray();
         generator.writeArrayFieldStart("missingEvidenceRefs");
         generator.writeEndArray();
-        generator.writeNumberField("generatedReviewItemCount", 0);
+        generator.writeNumberField("generatedReviewItemCount", generatedReviewIds.count());
         generator.writeBooleanField("isRefClosed", true);
         generator.writeEndObject();
     }

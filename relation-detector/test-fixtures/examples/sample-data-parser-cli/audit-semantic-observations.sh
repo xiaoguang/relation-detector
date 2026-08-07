@@ -55,8 +55,8 @@ audit_pair() {
   local label="$1"
   local token_case="$2"
   local full_case="$3"
-  local token_json="$RESULT_DIR/$token_case.json"
-  local full_json="$RESULT_DIR/$full_case.json"
+  local token_json="$RESULT_DIR/$token_case/direct.json"
+  local full_json="$RESULT_DIR/$full_case/direct.json"
 
   if ! requested "$token_case" || ! requested "$full_case"; then
     return
@@ -97,4 +97,3 @@ if [[ "$failed" == true ]]; then
   echo "Semantic observation parity failed; see $REPORT and $DIFF_DIR" >&2
   exit 1
 fi
-

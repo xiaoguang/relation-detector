@@ -49,6 +49,36 @@ class OracleObservationConsistencyTest {
     }
 
     @Test
+    void typedSystemValueRemainsAJoinGuardWithoutBecomingAColumn() {
+        SqlStatementRecord statement = statement("""
+                SELECT a.id
+                FROM attendance a
+                JOIN employees e
+                  ON a.employee_id = e.id
+                 AND a.attendance_date = CURRENT_DATE
+                """);
+        for (StructuredSqlParser parser : List.of(
+                token,
+                new com.relationdetector.oracle.fullgrammar.v12c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v19c.FullGrammarDialectModule().sqlParser(),
+                new com.relationdetector.oracle.fullgrammar.v21c.FullGrammarDialectModule().sqlParser(),
+                full)) {
+            StructuredParseResult parsed = parser.parseSql(statement, null);
+            var candidates = new StructuredRelationshipExtractor().extract(statement, parsed);
+            assertTrue(candidates.stream().anyMatch(candidate -> candidate.evidence().stream().anyMatch(evidence ->
+                            Boolean.TRUE.equals(evidence.attributes().get("conditional"))
+                                    && "CURRENT_DATE".equals(evidence.attributes().get("discriminatorValue")))),
+                    () -> parser.getClass().getName()
+                            + " lost the typed system-value guard: " + candidates);
+            assertFalse(parsed.events().stream().anyMatch(event ->
+                            "CURRENT_DATE".equalsIgnoreCase(event.sourceColumn())
+                                    || "CURRENT_DATE".equalsIgnoreCase(event.targetColumn())),
+                    () -> parser.getClass().getName()
+                            + " treated the typed system value as a physical column: " + parsed.events());
+        }
+    }
+
+    @Test
     void simpleCaseAndInSubqueryGuardsMatchAcrossModes() {
         assertConsistent("""
                 SELECT CASE c.party_type

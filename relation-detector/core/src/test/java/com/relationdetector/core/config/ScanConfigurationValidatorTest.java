@@ -162,6 +162,33 @@ class ScanConfigurationValidatorTest {
                 valid.output()));
     }
 
+    @Test
+    void rejectsMissingProfileOptionsEvenWhenProfilingIsDisabled() {
+        ResolvedScanConfig valid = validLiveConfig().resolve();
+        EvidenceConfig evidence = valid.evidence();
+        EvidenceConfig missingOptions = new EvidenceConfig(
+                false,
+                null,
+                evidence.namingMatchEnabled(),
+                evidence.namingMatchSystemRulesEnabled(),
+                evidence.namingMatchRuleFiles(),
+                evidence.namingMatchRules(),
+                evidence.derivedPathsEnabled(),
+                evidence.derivedRelationshipsEnabled(),
+                evidence.derivedDataLineageEnabled(),
+                evidence.derivedNamingEvidenceEnabled(),
+                evidence.derivedIncludeNamingEdgesInRelationshipPaths(),
+                evidence.derivedMaxPathLength(),
+                evidence.derivedMaxPathsPerPair(),
+                evidence.derivedMaxFacts(),
+                evidence.derivedConfidenceDecay(),
+                evidence.derivedMinConfidence());
+
+        assertThrows(ScanConfigurationException.class, () -> new ResolvedScanConfig(
+                valid.database(), valid.sources(), valid.parser(), missingOptions,
+                valid.execution(), valid.output()));
+    }
+
     private ScanConfig fileOnlyBase() {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.COMMON;

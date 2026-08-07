@@ -86,7 +86,8 @@ public interface DatabaseAdaptor {
   `profiling()` 与 dialect permission codes。集合和 grouped record 固化为不可变快照，registry、
   preflight 与 scan 不再重复读取插件 shape。null 顶层 grouped record、parser/profiling 中可见的
   null member、非法集合元素及 null scope 返回统一抛 `AdaptorContractException`；v5 仍在读取 v6
-  grouped shape 前以版本错误拒绝。
+  grouped shape 前以版本错误拒绝。`ScanEngine`原样传播该异常，single/batch稳定映射到
+  `ADAPTOR_ERROR`；只有普通连接异常包装为连接错误。
 - `AdaptorCollectors`不归一化null `Optional` member。内置adaptor必须显式返回`Optional.empty()`；
   外部adaptor返回null时，core在JDBC前将其作为SPI shape violation拒绝，不能与合法的absent collector混同。
 
@@ -154,15 +155,16 @@ public interface ObjectDefinitionCollector {
   family/source、definition identity 和 warning envelope。
 - `SourceCollectorPipeline` 只在整个对应 outcome 通过后写入 scan。null list、null element
   以及 null/blank SQL/DDL body 继续按 recoverable `DEFINITION_UNAVAILABLE` 处理；其余违约
-  统一抛 `AdaptorContractException`，不会留下部分 fact、candidate 或 warning。
+  在validator识别后抛`AdaptorContractException`，不会留下部分fact、candidate或warning。递归attributes
+  的cycle/depth/element-budget缺口不在该typed保证内。
 - snapshot/callback warning 的 plugin message、source 和 line 不被信任；core 只保留受限的
   SQLState、vendorCode、exceptionClass 和对象身份属性，并由 `LiveDiagnosticSanitizer`
   按 operation 重建固定消息与 source。
 
 其余 parser-facing SPI 也按完整 outcome 处理。`SqlLogExtractor` 的 stream 在提交前完整 materialize；
-`DialectScriptFramer` 与 `StructuredDdlParser` 的 statement/event/provenance/attributes/warnings 先
-deep-detach，再执行类型、来源和 warning allowlist 校验。任一元素违约都会使该次 outcome 整体失败，
-前序 statement、event 和 warning 均不会进入 scan。
+`DialectScriptFramer`与`StructuredDdlParser`的statement/event/provenance/attributes/warnings对普通
+无环attributes先detach，再执行类型、来源和warning allowlist校验。任一已识别元素违约都会使该次
+outcome整体失败，前序statement、event和warning均不会进入scan；自引用/超深容器仍可能越过该边界。
 
 `StructuredParseResult`与`ScriptFrameResult`只冻结非null collection，不把null collection或null
 element归一为空。`AdaptorParseResultContractValidator`因此能区分合法空结果与畸形null shape，并在
@@ -383,7 +385,9 @@ Optional<DatabaseDdlCollector> ddl = adaptor.collectors().databaseDdl();
 - MySQL adaptor 的 `canonicalizeScope()` 在 JDBC 前把 `database.catalog` 规范为 database；旧
   `database.schema` 仅作为兼容回退。两者同时非空且不同必须配置失败；canonical scope 固定为
   `catalog=<database>, schema=null`，且 include/exclude table 配置原样保留。
-- `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 `parser.mode` 选择后的 DDL extraction；默认无 profile/version 时使用 token-event DDL。
+- 生产链由`StatementParsePipeline`把已选`ParserBundle`和DDL text交给
+  `StatementExecutionService.executeDdlText(...)`，再调用`DdlRelationParserRunner.parseTextWithEvidence(...)`；
+  因此统一走`parser.mode`选择后的DDL extraction。公开`parseText(...)`目前只有测试调用，不是生产入口。
 - 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
 - collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。当前这两个字段是经 adaptor identifier rules 规范化后的精确表名列表，不是 glob 或正则；文件输入的 `paths + include` 才是路径 glob 契约。
 - 已枚举表身份后，definition query 返回 null/blank body 或成功但零行都表示
@@ -412,15 +416,17 @@ public interface DataProfiler {
   声明 FK、live mode 和 conditional/polymorphic policy，不能把外部 adaptor 视为可信边界。
 - `ProfileOutcome.warnings` 同样属于不可信 SPI 输入。core 只验证 status 对应的 warning type/code；
   plugin message/source/attributes 不进入 `ScanResult`，固定安全 warning 由 core 按 status、adaptor id 与
-  candidate endpoints 重建。所有 bounded outcomes 先完整验证再统一应用，任一违规不会留下部分结果。
+  candidate endpoints 重建。所有已覆盖的outcome先完整验证再统一应用，任一已识别违规不会留下部分结果。
 - request candidate 和返回 evidence 均复用 `AdaptorResultDetachmentSupport` 做递归复制，嵌套
   list/set/map 变为不可修改容器，未知可变 attribute 类型直接形成 contract violation。profile outcome
   先完成 deep detachment，再执行 status、family 与source type校验。negative policy不读取插件调用后的
   request，而使用调用前从原scan candidate固化的`NegativeProfileEligibility`；插件注入声明FK或删除
-  conditional guard都不能改变core-owned资格。
-- profile contract violation 统一抛 `AdaptorContractException`：direct API 原样保留，single-scan
-  映射为 `ADAPTOR_ERROR`，batch case 保留同一 code。整个 bounded batch 延迟提交，任一 outcome
-  违约不会留下前序 evidence、warning 或 candidate 状态。
+  conditional guard都不能改变core-owned资格。当前递归detachment尚无identity cycle、深度和元素预算；
+  外部成功evidence也未按core-owned score/metrics及source/detail/attributes白名单重建，这两项仍是
+  trust-boundary缺口。
+- 已被validator识别的profile contract violation统一抛`AdaptorContractException`：direct API原样保留，
+  single-scan映射为`ADAPTOR_ERROR`，batch case保留同一code。整批结果延迟提交，任一已识别违约不会
+  留下前序evidence、warning或candidate状态；cycle/depth与未规范化成功evidence不在此保证内。
 - 默认关闭。
 
 ## 权重修正接口
@@ -450,7 +456,9 @@ public interface EvidenceWeightAdjuster {
 deep-immutable options 和 deep-detached evidence baseline。service 先计算全部 relationship
 replacement，再完成 naming raw-evidence 转换；返回值相对 baseline 只允许 score 变化，core 使用
 baseline identity/attributes 与新 score 重建 evidence。relationship、naming 和 warning 只有整批成功后
-才替换，因此 hook 修改嵌套 list/map、保留插件容器引用或在最后一项违约都不会留下部分状态。
+才替换，因此对正常有界attributes，hook修改嵌套list/map、保留插件容器引用或在最后一项已识别违约
+都不会留下部分状态。当前shared detachment没有identity cycle、深度或元素预算；自引用/超深options或
+返回evidence可能触发`StackOverflowError`，不在上述typed/atomic保证内。
 
 四个内置 adaptor 为保持SPI v6 grouped record完整性继续返回identity adjuster，但不声明
 `EVIDENCE_WEIGHT_ADJUSTMENT`。core只在adaptor明确声明该能力时调用hook；因此identity占位实现

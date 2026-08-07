@@ -9,6 +9,7 @@ import com.relationdetector.semantic.extraction.artifact.SemanticResultSelection
 import com.relationdetector.semantic.extraction.artifact.SemanticOwnerManifestValidator;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticShardNormalizedResult;
+import com.relationdetector.semantic.extraction.normalization.SemanticExtractionDocumentNormalizer.NormalizedOwnedShard;
 
 import com.relationdetector.semantic.extraction.normalization.SemanticShardIdentityCanonicalizer;
 
@@ -53,6 +54,7 @@ public final class SemanticResultStore implements AutoCloseable {
     private final SemanticRunPlan runPlan;
     private final SemanticOwnerManifestValidator ownerManifestValidator;
     private final Map<Section, ExternalJsonRecordStore> sections = new EnumMap<>(Section.class);
+    private final ExternalJsonRecordStore generatedReviewIds;
     private final SemanticResultSelection selection;
     private final SemanticResultValidator validator;
     private final SemanticResultDocumentWriter documentWriter;
@@ -84,6 +86,7 @@ public final class SemanticResultStore implements AutoCloseable {
                     "semantic normalized result workspace already exists");
         }
         this.ownerManifestValidator = new SemanticOwnerManifestValidator(runPlan, evidenceLookup);
+        ExternalJsonRecordStore generatedReviewStore = null;
         try {
             Files.createDirectories(workspace);
             for (Section section : Section.values()) {
@@ -93,21 +96,26 @@ public final class SemanticResultStore implements AutoCloseable {
                         : new ExternalJsonRecordStore(
                                 workspace.resolve(section.wireName), this::mergeVariants));
             }
+            generatedReviewStore = new ExternalJsonRecordStore(workspace.resolve("generated-review-ids"));
         } catch (IOException failure) {
-            closeAfterConstructionFailure(failure);
+            closeAfterConstructionFailure(generatedReviewStore, failure);
             throw new ScanResultContractException("failed to create semantic normalized result store", failure);
         } catch (RuntimeException failure) {
-            closeAfterConstructionFailure(failure);
+            closeAfterConstructionFailure(generatedReviewStore, failure);
             throw failure;
         }
+        this.generatedReviewIds = generatedReviewStore;
         this.selection = new SemanticResultSelection(sections);
         this.validator = new SemanticResultValidator(
                 evidenceLookup, sections, selection);
         this.documentWriter = new SemanticResultDocumentWriter(
-                workspace, sections, selection);
+                workspace, sections, selection, generatedReviewIds);
     }
 
-    private void closeAfterConstructionFailure(Exception primary) {
+    private void closeAfterConstructionFailure(
+            ExternalJsonRecordStore generatedReviewStore,
+            Exception primary
+    ) {
         try {
             ownerManifestValidator.close();
         } catch (RuntimeException cleanup) {
@@ -120,17 +128,48 @@ public final class SemanticResultStore implements AutoCloseable {
                 primary.addSuppressed(cleanup);
             }
         }
+        closeStoreAfterConstructionFailure(generatedReviewStore, primary);
         SemanticFileTreeOperations.deleteRecursivelyBestEffort(workspace);
+    }
+
+    private void closeStoreAfterConstructionFailure(ExternalJsonRecordStore store, Exception primary) {
+        if (store == null) return;
+        try {
+            store.close();
+        } catch (RuntimeException cleanup) {
+            primary.addSuppressed(cleanup);
+        }
     }
 
     public void append(
             SemanticShardDescriptor descriptor,
             ObjectNode shardBundle,
-        ObjectNode normalized
+            ObjectNode normalized
+    ) {
+        append(descriptor, shardBundle, normalized, Set.of());
+    }
+
+    public void append(
+            SemanticShardDescriptor descriptor,
+            ObjectNode shardBundle,
+            NormalizedOwnedShard normalized
+    ) {
+        if (normalized == null) {
+            throw new IllegalArgumentException("normalized semantic shard is required");
+        }
+        append(descriptor, shardBundle, normalized.document(), normalized.generatedReviewIds());
+    }
+
+    private void append(
+            SemanticShardDescriptor descriptor,
+            ObjectNode shardBundle,
+            ObjectNode normalized,
+            Set<String> normalizerGeneratedReviewIds
     ) {
         ensureWritable();
         ownerManifestValidator.validate(descriptor, shardBundle);
-        ObjectNode canonical = canonicalize(descriptor, shardBundle, normalized);
+        ObjectNode canonical = canonicalize(
+                descriptor, shardBundle, normalized, normalizerGeneratedReviewIds);
         for (Section section : Section.values()) {
             JsonNode values = canonical.path(section.wireName);
             if (!values.isArray()) {
@@ -155,6 +194,13 @@ public final class SemanticResultStore implements AutoCloseable {
             return;
         }
         sections.values().forEach(ExternalJsonRecordStore::finish);
+        generatedReviewIds.finish();
+        generatedReviewIds.forEach(record -> {
+            if (!sections.get(Section.REVIEW_ITEMS).containsKey(record.key())) {
+                throw new SemanticExtractionValidationException(
+                        "generated semantic review is missing from the final review section");
+            }
+        });
         finished = true;
     }
 
@@ -189,7 +235,8 @@ public final class SemanticResultStore implements AutoCloseable {
     private ObjectNode canonicalize(
             SemanticShardDescriptor descriptor,
             ObjectNode bundle,
-            ObjectNode normalized
+            ObjectNode normalized,
+            Set<String> normalizerGeneratedReviewIds
     ) {
         JsonNode context = bundle.path("shardContext");
         Set<String> ownedFacts = textSet(context.path("ownedFactRefs"));
@@ -202,7 +249,28 @@ public final class SemanticResultStore implements AutoCloseable {
                         Map.of(descriptor.id(), Set.copyOf(ownedReferences)));
         ObjectNode document = result.results().get(0).document();
         ArrayNode reviews = document.withArray(Section.REVIEW_ITEMS.wireName);
-        result.generatedReviews().forEach(review -> reviews.add(review.deepCopy()));
+        Set<String> foundNormalizerIds = new LinkedHashSet<>();
+        reviews.forEach(review -> {
+            String id = review.path("id").asText("");
+            if (normalizerGeneratedReviewIds.contains(id)) {
+                foundNormalizerIds.add(id);
+                generatedReviewIds.append(id, JSON.getNodeFactory().textNode(id));
+            }
+        });
+        if (!foundNormalizerIds.equals(normalizerGeneratedReviewIds)) {
+            throw new SemanticExtractionValidationException(
+                    "generated semantic review identity changed during shard canonicalization");
+        }
+        result.generatedReviews().forEach(review -> {
+            ObjectNode detached = review.deepCopy();
+            String id = detached.path("id").asText("");
+            if (id.isBlank()) {
+                throw new SemanticExtractionValidationException(
+                        "generated semantic review is missing id");
+            }
+            reviews.add(detached);
+            generatedReviewIds.append(id, JSON.getNodeFactory().textNode(id));
+        });
         document.remove("semanticGraph");
         document.remove("validation");
         return document;
@@ -337,6 +405,12 @@ public final class SemanticResultStore implements AutoCloseable {
                 if (failure == null) failure = error;
                 else failure.addSuppressed(error);
             }
+        }
+        try {
+            generatedReviewIds.close();
+        } catch (RuntimeException error) {
+            if (failure == null) failure = error;
+            else failure.addSuppressed(error);
         }
         try {
             SemanticFileTreeOperations.deleteRecursively(workspace);

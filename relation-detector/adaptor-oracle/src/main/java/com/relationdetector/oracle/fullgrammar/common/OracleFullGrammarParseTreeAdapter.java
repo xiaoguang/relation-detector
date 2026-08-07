@@ -67,6 +67,7 @@ public interface OracleFullGrammarParseTreeAdapter {
         SCHEMA_NAME,
         IDENTIFIER,
         QUOTED_STRING,
+        SYSTEM_VALUE,
         SELECT_LIST_ELEMENT,
         SELECTED_LIST,
         EXPRESSION,
@@ -157,6 +158,9 @@ public interface OracleFullGrammarParseTreeAdapter {
             if (value.length() >= 2 && value.startsWith("'") && value.endsWith("'"))
                 value = value.substring(1, value.length() - 1).replace("''", "'");
             return Optional.of(value);
+        }
+        if (hasRole(tree, Role.SYSTEM_VALUE)) {
+            return Optional.of(tree.getText().strip());
         }
         List<ParseTree> children = typedChildren(tree);
         return children.size() == 1 ? literalValue(children.get(0)) : Optional.empty();

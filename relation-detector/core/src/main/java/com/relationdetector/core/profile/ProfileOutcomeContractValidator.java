@@ -11,6 +11,7 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.spi.ProfileOutcome;
+import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.contracts.spi.ProfileStatus;
 import com.relationdetector.core.diagnostics.LiveDiagnosticSanitizer;
 import com.relationdetector.core.adaptor.AdaptorContractException;
@@ -32,6 +33,7 @@ public final class ProfileOutcomeContractValidator {
             EvidenceType.NEGATIVE_VALUE_MISMATCH);
     private final NegativeProfileEvidencePolicy negativePolicy = new NegativeProfileEvidencePolicy();
     private final AdaptorResultDetachmentSupport detachment = new AdaptorResultDetachmentSupport();
+    private final DataProfileEvidenceBuilder evidenceBuilder = new DataProfileEvidenceBuilder();
 
     /**
      * CN: 在调用外部 profiler 前，从 core-owned candidate 捕获负向策略与诊断端点；返回值不引用可变
@@ -39,30 +41,40 @@ public final class ProfileOutcomeContractValidator {
      * EN: Captures negative-evidence policy and diagnostic endpoints from the core-owned candidate before the
      * external profiler runs. The snapshot retains no mutable candidate reference.
      */
-    public NegativeProfileEligibility captureNegativeEligibility(RelationshipCandidate candidate) {
-        if (candidate == null) {
+    public ProfileValidationContext capture(ProfileRequest request) {
+        if (request == null) {
             throw violation();
         }
-        return new NegativeProfileEligibility(
-                negativePolicy.allows(candidate),
-                candidate.source().normalizedKey(),
-                candidate.target().normalizedKey());
+        RelationshipCandidate candidate = request.candidate();
+        ProfileRequest trusted = new ProfileRequest(
+                detachment.relationshipCandidate(candidate, "data profile validation candidate"),
+                request.options());
+        return new ProfileValidationContext(
+                trusted,
+                new NegativeProfileEligibility(
+                        negativePolicy.allows(trusted.candidate()),
+                        trusted.candidate().source().normalizedKey(),
+                        trusted.candidate().target().normalizedKey()));
     }
 
     public ValidatedProfileOutcome validate(
-            NegativeProfileEligibility eligibility,
+            ProfileValidationContext context,
             ProfileOutcome outcome,
             String adaptorId
     ) {
-        if (eligibility == null || outcome == null) {
+        if (context == null || outcome == null) {
             throw violation();
         }
         List<Evidence> evidence = outcome.evidence().stream()
                 .map(item -> detachment.evidence(item, "data profile outcome evidence"))
                 .toList();
         validateStatusShape(outcome.status(), evidence, outcome.warnings());
-        validateEvidence(eligibility, evidence);
-        return new ValidatedProfileOutcome(evidence, rebuiltWarnings(eligibility, outcome, adaptorId));
+        List<Evidence> canonicalEvidence = outcome.status() == ProfileStatus.SUCCESS
+                ? validateAndRebuildEvidence(context, evidence, adaptorId)
+                : List.of();
+        return new ValidatedProfileOutcome(
+                canonicalEvidence,
+                rebuiltWarnings(context.negativeEligibility(), outcome, adaptorId));
     }
 
     private void validateStatusShape(
@@ -92,19 +104,79 @@ public final class ProfileOutcomeContractValidator {
         }
     }
 
-    private void validateEvidence(NegativeProfileEligibility eligibility, List<Evidence> evidence) {
+    private List<Evidence> validateAndRebuildEvidence(
+            ProfileValidationContext context,
+            List<Evidence> evidence,
+            String adaptorId
+    ) {
+        Set<EvidenceType> types = new java.util.LinkedHashSet<>();
         for (Evidence item : evidence) {
             if (item == null || !ALLOWED_TYPES.contains(item.type())
-                    || item.sourceType() != EvidenceSourceType.DATA_PROFILE) {
-                throw violation();
-            }
-            if (item.type() == EvidenceType.NEGATIVE_VALUE_MISMATCH
-                    && (!eligibility.negativeAllowed()
-                    || !"LIVE_DATABASE".equals(item.attributes().get("profileMode"))
-                    || !"DECLARED_FOREIGN_KEY_ONLY".equals(item.attributes().get("negativePolicy")))) {
+                    || item.sourceType() != EvidenceSourceType.DATA_PROFILE
+                    || !types.add(item.type())) {
                 throw violation();
             }
         }
+        DataProfileMetrics metrics = metrics(evidence.get(0).attributes());
+        String source = safeAdaptorId(adaptorId) + "-data-profile";
+        List<Evidence> canonical = evidenceBuilder.build(context.request(), metrics, source);
+        if (canonical.size() != evidence.size()) {
+            throw violation();
+        }
+        Map<EvidenceType, Evidence> expected = new java.util.EnumMap<>(EvidenceType.class);
+        canonical.forEach(item -> expected.put(item.type(), item));
+        for (Evidence item : evidence) {
+            Evidence canonicalItem = expected.get(item.type());
+            if (canonicalItem == null || !canonicalItem.attributes().equals(item.attributes())) {
+                throw violation();
+            }
+        }
+        return canonical;
+    }
+
+    private DataProfileMetrics metrics(Map<String, Object> attributes) {
+        if (attributes == null || !"LIVE_DATABASE".equals(attributes.get("profileMode"))) {
+            throw violation();
+        }
+        long sourceRows = count(attributes, "sourceNonNullRows");
+        long sourceDistinct = count(attributes, "sourceDistinctValues");
+        long matched = count(attributes, "matchedDistinctSourceValues");
+        long missing = count(attributes, "missingDistinctSourceValues");
+        long targetDistinct = count(attributes, "targetDistinctValues");
+        boolean timedOut = bool(attributes, "queryTimedOut");
+        boolean permissionDenied = bool(attributes, "permissionDenied");
+        if (timedOut || permissionDenied
+                || matched > sourceDistinct
+                || sourceDistinct > sourceRows
+                || matched > targetDistinct) {
+            throw violation();
+        }
+        try {
+            if (Math.subtractExact(sourceDistinct, matched) != missing) {
+                throw violation();
+            }
+        } catch (ArithmeticException failure) {
+            throw violation();
+        }
+        return new DataProfileMetrics(
+                "LIVE_DATABASE", sourceRows, sourceDistinct, matched, missing,
+                targetDistinct, false, false);
+    }
+
+    private long count(Map<String, Object> attributes, String field) {
+        Object value = attributes.get(field);
+        if (!(value instanceof Long count) || count < 0) {
+            throw violation();
+        }
+        return count;
+    }
+
+    private boolean bool(Map<String, Object> attributes, String field) {
+        Object value = attributes.get(field);
+        if (!(value instanceof Boolean result)) {
+            throw violation();
+        }
+        return result;
     }
 
     private List<WarningMessage> rebuiltWarnings(

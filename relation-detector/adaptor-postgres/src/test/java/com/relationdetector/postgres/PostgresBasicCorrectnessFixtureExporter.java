@@ -27,10 +27,11 @@ import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.core.parser.runtime.DdlRelationParserRunner;
+import com.relationdetector.core.execution.StatementExecutionService;
 import com.relationdetector.core.config.ScanConfig;
 import com.relationdetector.core.identity.NamespaceContext;
 import com.relationdetector.core.parser.runtime.SqlRelationParserRunner;
+import com.relationdetector.core.parser.runtime.ParserBundleSelector;
 
 /**
  * Manual, read-only exporter for anonymized PostgreSQL correctness fixtures.
@@ -451,14 +452,18 @@ public final class PostgresBasicCorrectnessFixtureExporter {
             String ddlText,
             Path fixturePath
     ) {
-        List<RelationshipCandidate> relationships = new DdlRelationParserRunner().parseText(
-                adaptor,
-                config,
+        AdaptorContext context = new AdaptorContext(scope, Map.of(), warning -> {
+        });
+        List<RelationshipCandidate> relationships = new StatementExecutionService().executeDdlText(
+                new ParserBundleSelector().select(adaptor, config, context),
                 ddlText,
                 fixturePath.toString(),
                 EvidenceSourceType.DATABASE_DDL,
-                new AdaptorContext(scope, Map.of(), warning -> {
-                }));
+                context,
+                config,
+                adaptor.identifierRules(),
+                new NamespaceContext(scope.catalog(), scope.schema(), List.of()))
+                .relationshipCandidates();
         return fingerprints(relationships);
     }
 
